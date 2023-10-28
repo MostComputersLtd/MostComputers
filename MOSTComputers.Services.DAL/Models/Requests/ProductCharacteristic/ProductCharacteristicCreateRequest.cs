@@ -1,0 +1,13 @@
+﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
+
+public class ProductCharacteristicCreateRequest
+{
+    public int? CategoryId { get; set; }
+    public string? Name { get; set; }
+    public string? Meaning { get; set; }
+    public int? DisplayOrder { get; set; }
+    public short? Active { get; set; }
+    public short? PKUserId { get; set; }
+    public DateTime? LastUpdate { get; } = null;
+    public short? KWPrCh { get; set; }
+}
