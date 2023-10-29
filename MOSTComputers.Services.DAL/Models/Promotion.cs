@@ -18,12 +18,12 @@ internal class Promotion
     public int? MaximumQuantity { get; set; }
     public int? QuantityIncrement { get; set; }
 
-    public List<int>? RequiredProductIds { get; set; }
+    public List<uint>? RequiredProductIds { get; set; }
     public string? RequiredProductIdsString
     {
         get => RequiredProductIds is not null ? string.Join(',', RequiredProductIds) : null;
         set => RequiredProductIds = value?.Split(',')
-            .Select(productId => int.Parse(productId))
+            .Select(productId => uint.Parse(productId))
             .ToList();
     }
 

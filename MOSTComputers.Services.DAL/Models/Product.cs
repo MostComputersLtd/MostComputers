@@ -3,7 +3,7 @@
 public class Product
 {
     public int Id { get; set; }
-    public string? SubType { get; set; }
+    public string? SearchString { get; set; }
     public decimal? AddWrr { get; set; }
     public long? AddWrrTerm { get; set; }
     public string? AddWrrDef { get; set; }
@@ -27,7 +27,11 @@ public class Product
     public string? SplModel2 { get; set; }
     public string? SplModel3 { get; set; }
     public List<ProductProperty> Properties { get; set; }
+    public List<ProductImage>? Images { get; set; }
+    public List<ProductImageFileNameInfo>? ImageFileNames { get; set; }
     public int? CategoryID { get; set; }
+    public Category? Category { get; set; }
     public short? ManifacturerId { get; set; }
+    public Manifacturer? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
 }
