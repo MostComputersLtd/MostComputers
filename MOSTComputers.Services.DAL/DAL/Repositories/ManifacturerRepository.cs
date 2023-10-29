@@ -8,7 +8,7 @@ using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal class ManifacturerRepository : RepositoryBase, IManifacturerRepository
+internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepository
 {
     private const string _tableName = "dbo.Manifacturer";
 
@@ -19,7 +19,11 @@ internal class ManifacturerRepository : RepositoryBase, IManifacturerRepository
 
     public IEnumerable<Manifacturer> GetAll()
     {
-        const string getAllQuery = $"SELECT * FROM {_tableName}";
+        const string getAllQuery = 
+            $"""
+            SELECT MfrID AS PersonalManifacturerId, BGName, Name, S AS ManifacturerDisplayOrder, Active
+            FROM {_tableName}
+            """;
 
         return _relationalDataAccess.GetData<Manifacturer, dynamic>(getAllQuery, new { });
     }
@@ -28,7 +32,8 @@ internal class ManifacturerRepository : RepositoryBase, IManifacturerRepository
     {
         const string getByIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT MfrID AS PersonalManifacturerId, BGName, Name, S AS ManifacturerDisplayOrder, Active
+            FROM {_tableName}
             WHERE MfrID = @id;
             """;
 
@@ -106,13 +111,15 @@ internal class ManifacturerRepository : RepositoryBase, IManifacturerRepository
 
         try
         {
-            _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 }

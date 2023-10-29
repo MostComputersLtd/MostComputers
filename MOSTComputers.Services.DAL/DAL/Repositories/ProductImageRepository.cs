@@ -5,15 +5,10 @@ using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal class ProductImageRepository : RepositoryBase, IProductImageRepository
+internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepository
 {
     private const string _firstImagesTableName = "dbo.Images";
     private const string _allImagesTableName = "dbo.ImagesAll";
@@ -27,7 +22,8 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
     {
         const string getAllInProductQuery =
             $"""
-            SELECT * FROM {_allImagesTableName}
+            SELECT ID, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            FROM {_allImagesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -38,7 +34,8 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
     {
         const string getAllFirstImagesForAllProductsQuery =
             $"""
-            SELECT * FROM {_firstImagesTableName}
+            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            FROM {_firstImagesTableName}
             """;
 
         IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getAllFirstImagesForAllProductsQuery, new { });
@@ -50,7 +47,8 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
     {
         const string getByIdInAllImagesQuery =
             $"""
-            SELECT * FROM {_allImagesTableName}
+            SELECT ID, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            FROM {_allImagesTableName}
             WHERE ID = @id;
             """;
 
@@ -61,7 +59,8 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
     {
         const string getByIdInFirstImagesQuery =
             $"""
-            SELECT * FROM {_firstImagesTableName}
+            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            FROM {_firstImagesTableName}
             WHERE ID = @productId;
             """;
 
@@ -89,7 +88,7 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
 
         var parameters = new
         {
-            productId = createRequest.CSTID,
+            productId = createRequest.ProductId,
             createRequest.XML,
             createRequest.ImageData,
             createRequest.ImageFileExtension,
@@ -208,14 +207,16 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
 
         try
         {
-            _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 
     public bool DeleteInFirstImagesByProductId(uint id)
@@ -228,14 +229,16 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
 
         try
         {
-            _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 
     public bool DeleteAllWithSameProductIdInAllImages(uint productId)
@@ -248,14 +251,16 @@ internal class ProductImageRepository : RepositoryBase, IProductImageRepository
 
         try
         {
-            _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 
     private static ProductImage Map(ProductFirstImage image)

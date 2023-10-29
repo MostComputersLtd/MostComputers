@@ -5,35 +5,27 @@ using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal class ProductPropertyRepository : RepositoryBase, IProductPropertyRepository
+internal sealed class ProductPropertyRepository : RepositoryBase, IProductPropertyRepository
 {
     private const string _tableName = "dbo.ProductXML";
 
     const string _getCharacteristicNameQuery =
-            $"""
-            SELECT TOP 1 Name FROM dbo.ProductKeyword
-            WHERE ProductKeywordID = @ProductCharacteristicId
-            """;
+        $"""
+        SELECT TOP 1 Name FROM dbo.ProductKeyword
+        WHERE ProductKeywordID = @ProductCharacteristicId
+        """;
 
     const string _checkIfPropertyWithSameNameExistsQuery =
         $"""
-            SELECT CASE WHEN EXISTS(
-                SELECT * FROM {_tableName}
-                WHERE CSTID = @productId
-                AND Keyword = @Name
-            ) THEN 1 ELSE 0 END;
-            """;
+        SELECT CASE WHEN EXISTS(
+            SELECT * FROM {_tableName}
+            WHERE CSTID = @productId
+            AND Keyword = @Name
+        ) THEN 1 ELSE 0 END;
+        """;
 
     public ProductPropertyRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -44,7 +36,8 @@ internal class ProductPropertyRepository : RepositoryBase, IProductPropertyRepos
     {
         const string getAllInProductQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
+            FROM {_tableName}
             WHERE CSTID = @productId;
             """;
 
@@ -55,7 +48,8 @@ internal class ProductPropertyRepository : RepositoryBase, IProductPropertyRepos
     {
         const string getByNameAndProductIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
+            FROM {_tableName}
             WHERE CSTID = @productId
             AND Keyword = @Name;
             """;
@@ -211,13 +205,15 @@ internal class ProductPropertyRepository : RepositoryBase, IProductPropertyRepos
 
         try
         {
-            _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId, characteristicId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId, characteristicId });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 }
