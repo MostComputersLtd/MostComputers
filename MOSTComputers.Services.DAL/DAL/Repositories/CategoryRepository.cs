@@ -8,7 +8,7 @@ using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal class CategoryRepository : RepositoryBase, ICategoryRepository
+internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 {
     private const string _tableName = "dbo.Categories";
 
@@ -114,13 +114,15 @@ internal class CategoryRepository : RepositoryBase, ICategoryRepository
             """;
         try
         {
-            _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 }

@@ -8,7 +8,7 @@ using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal class ProductCharacteristicsRepository : RepositoryBase, IProductCharacteristicsRepository
+internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProductCharacteristicsRepository
 {
     private const string _tableName = "dbo.ProductKeyword";
 
@@ -217,13 +217,15 @@ internal class ProductCharacteristicsRepository : RepositoryBase, IProductCharac
 
         try
         {
-            _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 }
