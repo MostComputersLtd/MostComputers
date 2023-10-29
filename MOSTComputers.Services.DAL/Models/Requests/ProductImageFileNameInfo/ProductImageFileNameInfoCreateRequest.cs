@@ -1,0 +1,8 @@
+﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
+
+public class ProductImageFileNameInfoCreateRequest
+{
+    public int ProductId { get; set; }
+    public string? FileName { get; set; }
+    public int? DisplayOrder { get; set; }
+}

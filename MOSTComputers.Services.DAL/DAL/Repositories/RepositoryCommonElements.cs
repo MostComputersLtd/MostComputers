@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MOSTComputers.Services.DAL.DAL.Repositories;
+
+internal static class RepositoryCommonElements
+{
+    internal static string GetDelimeteredListFromIds(List<uint> ids)
+    {
+        StringBuilder sb = new();
+
+        for (int i = 0; i < ids.Count - 1; i++)
+        {
+            uint id = ids[i];
+            sb.Append(id);
+            sb.Append(", ");
+        }
+
+        sb.Append(ids[^1]);
+
+        return sb.ToString();
+    }
+}
