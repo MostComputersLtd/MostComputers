@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models.Requests.Category;
 
-public class CategoryUpdateRequest
+public sealed class CategoryUpdateRequest
 {
     public int Id { get; set; }
     public string? Description { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-public class Product
+public sealed class Product
 {
     public int Id { get; set; }
     public string? SearchString { get; set; }

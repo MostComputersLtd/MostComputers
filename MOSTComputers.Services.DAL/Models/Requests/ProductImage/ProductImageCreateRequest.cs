@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductImage;
 
-public class ProductImageCreateRequest
+public sealed class ProductImageCreateRequest
 {
     public int? ProductId { get; set; }
     public string? XML { get; set; }

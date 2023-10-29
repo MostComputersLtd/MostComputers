@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 
-namespace MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-
-public class ProductPropertyCreateRequest
+public sealed class ProductPropertyCreateRequest
 {
     public int ProductId { get; set; }
     public int? ProductCharacteristicId { get; set; }

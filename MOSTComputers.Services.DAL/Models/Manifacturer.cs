@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-public class Manifacturer
+public sealed class Manifacturer
 {
     public int Id { get; set; }
     public string? BGName { get; set; }

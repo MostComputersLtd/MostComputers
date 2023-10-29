@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-internal class Promotion
+internal sealed class Promotion
 {
     public int Id { get; set; }
     public string? Name { get; set; }

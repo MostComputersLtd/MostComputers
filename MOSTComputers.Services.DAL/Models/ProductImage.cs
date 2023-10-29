@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-public class ProductImage
+public sealed class ProductImage
 {
     public int Id { get; set; }
     public int? ProductId { get; set; }

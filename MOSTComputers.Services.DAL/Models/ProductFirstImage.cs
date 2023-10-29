@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-internal class ProductFirstImage
+internal sealed class ProductFirstImage
 {
     public int Id { get; set; }
     public string? XML { get; set; }

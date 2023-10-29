@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 
-internal class ManifacturerUpdateRequest
+internal sealed class ManifacturerUpdateRequest
 {
     public int Id { get; set; }
     public string? BGName { get; set; }

@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductImage;
 
-namespace MOSTComputers.Services.DAL.Models.Requests.ProductImage;
-
-public class ProductFirstImageUpdateRequest
+public sealed class ProductFirstImageUpdateRequest
 {
     public int ProductId { get; set; }
     public string? XML { get; set; }

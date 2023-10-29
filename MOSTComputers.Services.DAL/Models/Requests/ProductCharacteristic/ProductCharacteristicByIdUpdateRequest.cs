@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 
-namespace MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
-
-public class ProductCharacteristicByIdUpdateRequest
+public sealed class ProductCharacteristicByIdUpdateRequest
 {
     public int Id { get; set; }
     public string? Name { get; set; }
