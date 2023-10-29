@@ -2,11 +2,6 @@
 using MOSTComputers.Services.DAL.DAL;
 using MOSTComputers.Services.DAL.Mapping;
 using MOSTComputers.Services.Mapping;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.DAL.Configuration;
 
@@ -29,11 +24,13 @@ public static class ConfigureServices
 
     private static void AddMappings(DapperDataAccess relationalDataAccess)
     {
+        relationalDataAccess.AddCustomEntityMap(new ProductEntityMap());
         relationalDataAccess.AddCustomEntityMap(new ManifacturerEntityMap());
         relationalDataAccess.AddCustomEntityMap(new CategoryEntityMap());
         relationalDataAccess.AddCustomEntityMap(new ProductCharacteristicEntityMap());
         relationalDataAccess.AddCustomEntityMap(new ProductPropertyEntityMap());
         relationalDataAccess.AddCustomEntityMap(new ProductImageEntityMap());
         relationalDataAccess.AddCustomEntityMap(new ProductFirstImageEntityMap());
+        relationalDataAccess.AddCustomEntityMap(new ProductImageFileNameInfoEntityMap());
     }
 }
