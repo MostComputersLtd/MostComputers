@@ -22,7 +22,8 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         const string getAllByCategoryIdQuery =
             $"""
             SELECT * FROM {_tableName}
-            WHERE TID = @categoryId;
+            WHERE TID = @categoryId
+            ORDER BY S;
             """;
 
         return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllByCategoryIdQuery, new { categoryId });

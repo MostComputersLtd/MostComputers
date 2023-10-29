@@ -38,7 +38,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             $"""
             SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
             FROM {_tableName}
-            WHERE CSTID = @productId;
+            WHERE CSTID = @productId
+            ORDER BY S;
             """;
 
         return _relationalDataAccess.GetData<ProductProperty, dynamic>(getAllInProductQuery, new { productId });

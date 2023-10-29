@@ -23,6 +23,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             $"""
             SELECT MfrID AS PersonalManifacturerId, BGName, Name, S AS ManifacturerDisplayOrder, Active
             FROM {_tableName}
+            ORDER BY S
             """;
 
         return _relationalDataAccess.GetData<Manifacturer, dynamic>(getAllQuery, new { });

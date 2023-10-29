@@ -22,6 +22,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         const string getAllQuery =
             $"""
             SELECT * FROM {_tableName}
+            ORDER BY S;
             """;
 
         return _relationalDataAccess.GetData<Category, dynamic>(getAllQuery, new { });

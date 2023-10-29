@@ -43,7 +43,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             LEFT JOIN {_categoriesTableName} cat
             ON cat.CategoryID = products.TID
             LEFT JOIN {_manifacturersTableName} man
-            ON man.MfrID = products.MfrID;
+            ON man.MfrID = products.MfrID
+            ORDER BY S;
             """;
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWithManifacturerAndCategoryQuery,
@@ -76,7 +77,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE CSTID IN
             """;
 
-        string queryWithIds = getAllWithManifacturerAndCategoryByIdsQuery + $" ({GetDelimeteredListFromIds(ids)});";
+        string queryWithIds = getAllWithManifacturerAndCategoryByIdsQuery + 
+            $"""
+            ({GetDelimeteredListFromIds(ids)})
+            ORDER BY S;
+            """;
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(queryWithIds,
             (product, category, manifacturer) =>
@@ -111,7 +116,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE CSTID IN
             """;
 
-        string queryWithIds = getAllWithManifacturerAndCategoryAndFirstImageByIdsQuery + $" ({GetDelimeteredListFromIds(ids)});";
+        string queryWithIds = getAllWithManifacturerAndCategoryAndFirstImageByIdsQuery +
+            $"""
+            ({GetDelimeteredListFromIds(ids)})
+            ORDER BY S;
+            """;
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductImage, dynamic>(queryWithIds,
             (product, category, manifacturer, image) =>
@@ -150,7 +159,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE products.CSTID IN
             """;
 
-        string queryWithIds = getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery + $" ({GetDelimeteredListFromIds(ids)});";
+        string queryWithIds = getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery +
+            $"""
+            ({GetDelimeteredListFromIds(ids)})
+            ORDER BY S; 
+            """;
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(queryWithIds,
             (product, category, manifacturer, property) =>
