@@ -3,14 +3,14 @@ using MOSTComputers.Services.DAL.Models;
 
 namespace MOSTComputers.Services.DAL.Mapping;
 
-public class ManifacturerEntityMap : EntityMap<Manifacturer>
+public sealed class ManifacturerEntityMap : EntityMap<Manifacturer>
 {
     public ManifacturerEntityMap()
     {
-        Map(x => x.Id).ToColumn("MfrID");
+        Map(x => x.Id).ToColumn("PersonalManifacturerId");
         Map(x => x.RealCompanyName).ToColumn("Name");
         Map(x => x.BGName).ToColumn("BGName");
-        Map(x => x.DisplayOrder).ToColumn("S");
+        Map(x => x.DisplayOrder).ToColumn("ManifacturerDisplayOrder");
         Map(x => x.Active).ToColumn("Active");
     }
 }
