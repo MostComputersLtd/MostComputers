@@ -11,10 +11,11 @@ using OneOf.Types;
 using FluentValidation.Results;
 using FluentValidation;
 using MOSTComputers.Services.DAL.Models.Requests.Promotions;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
-internal sealed class PromotionRepository : RepositoryBase
+internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 {
     private const string _tableName = "dbo.Promotions";
 
@@ -238,7 +239,7 @@ internal sealed class PromotionRepository : RepositoryBase
 
             return true;
         }
-        catch(InvalidOperationException)
+        catch (InvalidOperationException)
         {
             return false;
         }
