@@ -3,7 +3,7 @@ using MOSTComputers.Services.DAL.Models;
 
 namespace MOSTComputers.Services.DAL.Mapping;
 
-public class CategoryEntityMap : EntityMap<Category>
+public sealed class CategoryEntityMap : EntityMap<Category>
 {
     public CategoryEntityMap()
     {

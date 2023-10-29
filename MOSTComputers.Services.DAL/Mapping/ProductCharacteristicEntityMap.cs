@@ -3,7 +3,7 @@ using MOSTComputers.Services.DAL.Models;
 
 namespace MOSTComputers.Services.Mapping;
 
-internal class ProductCharacteristicEntityMap : EntityMap<ProductCharacteristic>
+internal sealed class ProductCharacteristicEntityMap : EntityMap<ProductCharacteristic>
 {
     internal ProductCharacteristicEntityMap()
     {
