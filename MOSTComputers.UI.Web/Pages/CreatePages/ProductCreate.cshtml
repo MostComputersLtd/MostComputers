@@ -1,0 +1,331 @@
+﻿@page
+@using MOSTComputers.Services.DAL.Models;
+@using MOSTComputers.Services.DAL;
+@model MOSTComputers.UI.Web.Pages.CreatePages.ProductCreateModel
+@{
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ProductInsert.css" asp-append-version="true" />
+}
+
+<div class="container">
+    <div class="element-collection">
+
+        <label class="element-collection-label">Product ID</label>
+
+        <div class="element-collection-dataItem">
+            <input id="Id_TextBox" class="full-parent-width" value="@Model.Id" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Search String</label>
+
+        <div class="element-collection-dataItem">
+            <input id="SearchString_TextBox" class="full-parent-width" value="@Model.SearchString" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">AddWrr</label>
+
+        <div class="element-collection-dataItem">
+            <input id="AddWrr_TextBox" class="full-parent-width" value="@Model.AddWrr" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">AddWrrTerm</label>
+
+        <div class="element-collection-dataItem">
+            <input id="AddWrrTerm_TextBox" class="full-parent-width" value="@Model.AddWrrTerm" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">AddWrrDef</label>
+
+        <div class="element-collection-dataItem">
+            <input id="AddWrrDef_TextBox" class="full-parent-width" value="@Model.AddWrrDef" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">DefWrrTerm</label>
+
+        <div class="element-collection-dataItem">
+            <input id="DefWrrTerm_TextBox" class="full-parent-width" value="@Model.DefWrrTerm" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">DisplayOrder</label>
+
+        <div class="element-collection-dataItem">
+            <input id="DisplayOrder_TextBox" class="full-parent-width" value="@Model.DisplayOrder" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Status</label>
+
+        <div class="element-collection-dataItem">
+            <select id="Status_select" class="full-parent-width" value="@Model.Status">
+                <option value="@ProductStatusEnum.Unavailable">Unavailable</option>
+                <option value="@ProductStatusEnum.Call">Call</option>
+                <option value="@ProductStatusEnum.Available">Available</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PlShow</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PlShow_TextBox" class="full-parent-width" value="@Model.PlShow" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Price1</label>
+
+        <div class="element-collection-dataItem">
+            <input id="Price1_TextBox" class="full-parent-width" value="@Model.Price1" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Price2</label>
+
+        <div class="element-collection-dataItem">
+            <input id="Price2_TextBox" class="full-parent-width" value="@Model.Price2" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Price3</label>
+
+        <div class="element-collection-dataItem">
+            <input id="Price3_TextBox" class="full-parent-width" value="@Model.Price3" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Currency</label>
+
+        <div class="element-collection-dataItem">
+            <select id="Currency_select" class="full-parent-width" value="@Model.Currency">
+                <option value="@CurrencyEnum.BGN">lv.</option>
+                <option value="@CurrencyEnum.USD">$</option>
+                <option value="@CurrencyEnum.EUR">eur.</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PromPid</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PromPid_TextBox" class="full-parent-width" value="@Model.PromPid" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PromRid</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PromRid_TextBox" class="full-parent-width" value="@Model.PromRid" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PromPictureId</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PromPictureId_TextBox" class="full-parent-width" value="@Model.PromPictureId" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PromExpDate</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PromExpDate_TextBox" class="full-parent-width" value="@Model.PromExpDate" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">AlertPictureId</label>
+
+        <div class="element-collection-dataItem">
+            <input id="AlertPictureId_TextBox" class="full-parent-width" value="@Model.AlertPictureId" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">PriceListDescription</label>
+
+        <div class="element-collection-dataItem">
+            <input id="PriceListDescription_TextBox" class="full-parent-width" value="@Model.PriceListDescription" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">SplModel1</label>
+
+        <div class="element-collection-dataItem">
+            <input id="SplModel1_TextBox" class="full-parent-width" value="@Model.SplModel1" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">SplModel2</label>
+
+        <div class="element-collection-dataItem">
+            <input id="SplModel2_TextBox" class="full-parent-width" value="@Model.SplModel2" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">SplModel3</label>
+
+        <div class="element-collection-dataItem">
+            <input id="SplModel3_TextBox" class="full-parent-width" value="@Model.SplModel3" />
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Manifacturer</label>
+
+        <div class="element-collection-dataItem">
+            <select id="Manifacturer_select" class="full-parent-width" asp-items="@Model.ManifacturerSelectItems" onselect="@Model.ManifacturerSelectItems"></select>
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Category</label>
+
+        <div class="element-collection-dataItem">
+            <select id="Category_select" class="full-parent-width" asp-items="@Model.CategorySelectItems" onchange="ProductCharacteristic_select_onselect(this.value)"></select>
+        </div>
+    </div>
+
+    <div class="element-collection">
+
+        <label class="element-collection-label">Properties</label>
+
+        <div class="element-collection-dataItem">
+            <table class="full-parent-width" style="list-style-type:none;margin-block-start: 0px;padding-left: 4px;justify-content: space-between;display: flex;">
+                <tbody class="full-parent-width">
+
+                @if (Model.Properties is not null)
+                {
+                    @for (int i = 0; i < Model.Properties.Count; i++)
+                    {
+                        var item = Model.Properties[i];
+                        var itemCharacteristicData = Model.ProductCharacteristicsForGivenCategory[i];
+                    
+
+                        <tr class="full-parent-width">
+                            <td style="width:20%">
+                                <label>@itemCharacteristicData.Text</label>
+                            </td>
+                            <td style="width:10%">
+                            </td>
+                            <td style="width:70%">
+                                <input class="full-parent-width" value="@item.Value"/>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="element-collection">
+        <label class="element-collection-label" runat="server" Text="Images"></label>
+
+        <div class="element-collection-dataItem" style="display:grid">
+            <textarea id="txtPaste" placeholder="Paste Image Here" style="height: 100px;"></textarea>
+
+            <div id="shop-item-image-container">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function ProductCharacteristic_select_onselect(value) {
+            $.getJSON(`/CreatePages/ProductCreate?handler=ProductCharacteristicsForGivenCategory_Initialize&categoryId=` + value,
+                function (data) {
+                    
+                });
+        }
+    </script>
+
+    <script type="text/javascript">
+
+        window.onload = function () {
+            document.getElementById('txtPaste').onkeydown = function (e) {
+
+                return false;
+            }
+        };
+
+        document.getElementById('txtPaste').onpaste = function (event) {
+            var items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            var blob = null;
+
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") === 0) {
+                    blob = items[i].getAsFile();
+                }
+            }
+            if (blob !== null) {
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    let img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.width = 300;
+                    img.className = "shop-item-image";
+
+                    let hiddenImageText = document.createElement('input');
+                    hiddenImageText.hidden = true;
+                    hiddenImageText.name = "ImageData";
+                    hiddenImageText.value = event.target.result;
+
+                    document.getElementById("shop-item-image-container").appendChild(img);
+                    document.getElementById("shop-item-image-container").appendChild(hiddenImageText);
+                };
+
+                reader.readAsDataURL(blob);
+            }
+        };
+
+    </script>
+</div>

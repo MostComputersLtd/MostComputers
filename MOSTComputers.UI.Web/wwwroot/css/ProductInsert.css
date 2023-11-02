@@ -1,0 +1,45 @@
+﻿body {
+}
+
+.element-collection {
+    padding: 0px 20px;
+    width: 100%;
+    margin: 12px 0px;
+    justify-content: space-between;
+    display: flex;
+}
+
+.element-collection-label {
+}
+
+.element-collection-dataItem {
+    width: 80%;
+}
+
+.element-collection-list {
+    padding: 0px;
+    margin: 0px;
+    justify-content: space-between;
+    display: flex;
+}
+
+    .element-collection-list > li {
+        display: inline-flex;
+    }
+
+.full-parent-width {
+    width: 100%;
+}
+
+.shop-item-image
+{
+    padding: 7px 10px;
+}
+
+#shop-item-image-container {
+    margin-top: 15px;
+}
+
+#txtPaste {
+    margin-top: 15px;
+}

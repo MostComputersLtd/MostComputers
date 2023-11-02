@@ -1,0 +1,37 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div>
+    <table id="tblList" class="table table-responsive hover">
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Search String</th>
+            <th>Part No. 1</th>
+            <th>Part No. 2</th>
+            <th>Price</th>
+            <th>Currency</th>
+            <th>Category</th>
+            <th>Manifacturer</th>
+        </tr>
+    </thead>
+    <tbody id="tbody">
+        @foreach (var product in Model.Products)
+        {
+            <tr>
+                <td>@product.Id</td>
+                <td>@product.SearchString</td>
+                <td>@product.SplModel1</td>
+                <td>@product.SplModel2</td>
+                <td>@product.Price1</td>
+                <td>@product.Currency</td>
+                <td>@product.Category?.Description</td>
+                <td>@product.Manifacturer?.RealCompanyName</td>
+            </tr>
+        }
+    </tbody>
+    </table>
+</div>
