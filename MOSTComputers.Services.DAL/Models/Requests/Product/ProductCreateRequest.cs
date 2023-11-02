@@ -34,7 +34,6 @@ public sealed class ProductCreateRequest
     public int? CategoryID { get; set; }
     public short? ManifacturerId { get; set; }
     public int? SubCategoryId { get; set; }
-
 }
 
 public sealed class CurrentProductPropertyCreateRequest

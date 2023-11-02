@@ -3,8 +3,10 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.Category;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
+using System.Data.SqlClient;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -39,20 +41,13 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         return _relationalDataAccess.GetData<Category, dynamic>(getByIdQuery, new { id }).FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(CategoryCreateRequest createRequest, IValidator<CategoryCreateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
             VALUES (@Description, @IsLeaf, @DisplayOrder, @RowGuid, @ProductsUpdateCounter, @ParentId);
             """;
-
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
 
         var parameters = new
         {
@@ -64,12 +59,12 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             ParentId = createRequest.ParentCategoryId,
         };
 
-        _relationalDataAccess.SaveData<Category, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(insertQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> Update(CategoryUpdateRequest updateRequest, IValidator<CategoryUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
@@ -83,13 +78,6 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             WHERE CategoryID = @id;
             """;
 
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             id = updateRequest.Id,
@@ -101,9 +89,9 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             ParentId = updateRequest.ParentCategoryId,
         };
 
-        _relationalDataAccess.SaveData<Category, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(updateQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public bool Delete(uint id)
@@ -122,6 +110,10 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             return true;
         }
         catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (SqlException)
         {
             return false;
         }

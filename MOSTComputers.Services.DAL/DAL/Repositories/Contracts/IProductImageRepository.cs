@@ -2,23 +2,24 @@
 using FluentValidation.Results;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
-namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts
+namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+
+public interface IProductImageRepository
 {
-    internal interface IProductImageRepository
-    {
-        bool DeleteAllWithSameProductIdInAllImages(uint productId);
-        bool DeleteInAllImagesById(uint id);
-        bool DeleteInFirstImagesByProductId(uint id);
-        IEnumerable<ProductImage> GetAllFirstImagesForAllProducts();
-        IEnumerable<ProductImage> GetAllInProduct(uint productId);
-        ProductImage? GetByIdInAllImages(uint id);
-        ProductImage? GetByProductIdInFirstImages(uint productId);
-        OneOf<Success, ValidationResult> InsertInAllImages(ProductImageCreateRequest createRequest, IValidator<ProductImageCreateRequest>? validator = null);
-        OneOf<Success, ValidationResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest, IValidator<ProductFirstImageCreateRequest>? validator = null);
-        OneOf<Success, ValidationResult> UpdateInAllImages(ProductImageUpdateRequest createRequest, IValidator<ProductImageUpdateRequest>? validator = null);
-        OneOf<Success, ValidationResult> UpdateInFirstImages(ProductFirstImageUpdateRequest createRequest, IValidator<ProductFirstImageUpdateRequest>? validator = null);
-    }
+    bool DeleteAllWithSameProductIdInAllImages(uint productId);
+    bool DeleteInAllImagesById(uint id);
+    bool DeleteInFirstImagesByProductId(uint id);
+    IEnumerable<ProductImage> GetAllFirstImagesForAllProducts();
+    IEnumerable<ProductImage> GetAllInProduct(uint productId);
+    ProductImage? GetByIdInAllImages(uint id);
+    ProductImage? GetByProductIdInFirstImages(uint productId);
+    IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<uint> productIds);
+    OneOf<Success, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest);
+    OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest);
+    OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest);
+    OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest createRequest);
 }

@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-internal sealed class Promotion
+public sealed class Promotion
 {
     public int Id { get; set; }
     public string? Name { get; set; }
@@ -9,8 +9,8 @@ internal sealed class Promotion
     public short? Type { get; set; } // 1 or 2
     public short? Status { get; set; } // 0, 1, 3 or 4
     public int? SPOID { get; set; }
-    public decimal? DiscountEUR { get; set; }
     public decimal? DiscountUSD { get; set; }
+    public decimal? DiscountEUR { get; set; }
     public short? Active { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? ExpirationDate { get; set; }

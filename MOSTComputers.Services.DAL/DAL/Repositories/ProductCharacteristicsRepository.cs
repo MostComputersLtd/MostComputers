@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -26,7 +27,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllByCategoryIdQuery, new { categoryId });
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllByCategoryIdQuery, new { categoryId = (int)categoryId });
     }
 
     public ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name)
@@ -38,24 +39,16 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             AND Name = @Name;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, new { categoryId, Name = name }).FirstOrDefault();
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, new { categoryId = (int)categoryId, Name = name }).FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(TID, Name, KeywordMeaning, S, Active, PKUserId, LastUpdate, KWPrCh)
             VALUES (@CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh)
             """;
-
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-
-        }
 
         ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueName(createRequest.Name, (uint)createRequest.CategoryId!);
 
@@ -73,12 +66,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             createRequest.KWPrCh,
         };
 
-        _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(insertQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByIdUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest)
     {
         const string updateByIdQuery =
             $"""
@@ -99,13 +92,6 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             SELECT TID FROM {_tableName}
             WHERE ProductKeywordID = @id;
             """;
-
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
 
         int? categoryId = _relationalDataAccess.GetData<int?, dynamic>(getCategoryIdByIdQuery, new { id = updateRequest.Id }).FirstOrDefault();
 
@@ -128,13 +114,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             updateRequest.KWPrCh,
         };
 
-        _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByIdQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest,
-        IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest)
     {
         const string updateByNameAndCategoryIdQuery =
             $"""
@@ -150,14 +135,6 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             WHERE TID = @categoryId
             AND Name = @OldName;
             """;
-
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-
-        }
 
         ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueName(updateRequest.Name, (uint)updateRequest.CategoryId);
 
@@ -176,9 +153,9 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             updateRequest.KWPrCh,
         };
 
-        _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByNameAndCategoryIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByNameAndCategoryIdQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     private ValidationResult ValidateWhetherCharacteristicHasAUniqueName(string? name, uint categoryId)
@@ -218,7 +195,29 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id = (int)id });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    public bool DeleteAllForCategory(uint productId)
+    {
+        const string deleteQuery =
+            $"""
+            DELETE FROM {_tableName}
+            WHERE TID = @productId;
+            """;
+
+        try
+        {
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { productId = (int)productId });
 
             if (rowsAffected == 0) return false;
 

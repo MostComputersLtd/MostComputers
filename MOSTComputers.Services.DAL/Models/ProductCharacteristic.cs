@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models;
 
-internal sealed class ProductCharacteristic
+public sealed class ProductCharacteristic
 {
     public int Id { get; set; }
     public int? CategoryId { get; set; }

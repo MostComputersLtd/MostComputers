@@ -2,7 +2,6 @@
 using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +11,7 @@ using FluentValidation.Results;
 using FluentValidation;
 using MOSTComputers.Services.DAL.Models.Requests.Promotions;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Responses;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -96,15 +96,8 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             .FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(PromotionCreateRequest createRequest, IValidator<PromotionCreateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
-
-            if (!validationResult.IsValid) return validationResult;
-        }
-
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
@@ -144,20 +137,13 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             createRequest.PromotionVisualizationId
         };
 
-        _relationalDataAccess.SaveData<Promotion, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(insertQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> Update(PromotionUpdateRequest updateRequest, IValidator<PromotionUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
-
-            if (!validationResult.IsValid) return validationResult;
-        }
-
         const string updateQuery =
             $"""
             UPDATE {_tableName}
@@ -218,9 +204,9 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             updateRequest.PromotionVisualizationId
         };
 
-        _relationalDataAccess.SaveData<Promotion, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(updateQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public bool Delete(uint id)

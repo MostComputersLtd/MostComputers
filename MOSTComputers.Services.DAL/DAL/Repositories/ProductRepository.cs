@@ -12,6 +12,7 @@ using OneOf.Types;
 using System.Data;
 using System.Text;
 using Dapper;
+using MOSTComputers.Services.DAL.Models.Responses;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -19,13 +20,13 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 {
     private const string _tableName = "dbo.MOSTPrices";
     private const string _categoriesTableName = "dbo.Categories";
-    private const string _manifacturersTableName = "dbo.Manifacturer";
+    private const string _manifacturersTableName = "dbo.Manufacturer";
     private const string _firstImagesTableName = "dbo.Images";
     private const string _allImagesTableName = "dbo.ImagesAll";
     private const string _propertiesTableName = "dbo.ProductXML";
     private const string _imageFileNamesTable = "dbo.ImageFileName";
 
-    internal ProductRepository(IRelationalDataAccess relationalDataAccess)
+    public ProductRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
     }
@@ -182,6 +183,47 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             new { });
     }
 
+    public IEnumerable<Product> GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(uint start, uint end)
+    {
+        const string getFirstBetweenStartAndEnd =
+            $"""
+            SELECT * FROM
+            (
+                SELECT TOP (@SelectStart + @SelectEnd) CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                    PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                    CategoryID, ParentId, Description, IsLeaf,
+                    man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
+                    ROW_NUMBER() OVER (ORDER BY products.S) AS RN
+
+                FROM dbo.MOSTPrices products
+                LEFT JOIN Categories cat
+                ON cat.CategoryID = products.TID
+                LEFT JOIN dbo.Manufacturer man
+                ON man.MfrID = products.MfrID
+            ) AS selectSt
+
+            WHERE @SelectStart < RN;
+            """;
+
+        var paramters = new
+        {
+            SelectStart = start,
+            SelectEnd = end,
+        };
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFirstBetweenStartAndEnd,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            paramters);
+    }
+
     public Product? GetById_WithManifacturerAndCategoryAndFirstImage(uint id)
     {
         const string getByIdWithManifacturerAndCategoryAndFirstImageQuery =
@@ -302,7 +344,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             .FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
         const string insertProductQuery =
             $"""
@@ -337,13 +379,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             VALUES (@ProductId, @XML, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             createRequest.Id,
@@ -375,18 +410,20 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             SPLMODEL2 = createRequest.SplModel3,
         };
 
-        _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic>(InsertAllRecordsInTransaction<dynamic>, parameters);
+        OneOf<Success, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
 
-        return new Success();
+        return result;
 
-        void InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
+        OneOf<Success, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
         {
             connection.Execute(insertProductQuery, parametersLocal, transaction, commandType: CommandType.Text);
 
             if (createRequest.Properties is not null
                 && createRequest.Properties.Count > 0)
             {
-                connection.Execute(insertPropertiesQuery, createRequest.Properties.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                int rowsAffected = connection.Execute(insertPropertiesQuery, createRequest.Properties.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+
+                if (rowsAffected == 0) return new UnexpectedFailureResult();
             }
 
 
@@ -414,10 +451,14 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), createRequest.Id), transaction, commandType: CommandType.Text);
             }
+
+            transaction.Commit();
+
+            return new Success();
         }
     }
 
-    public OneOf<Success, ValidationResult> Update(ProductUpdateRequest createRequest, IValidator<ProductUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest)
     {
         const string updateProductQuery =
             $"""
@@ -507,129 +548,150 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE ID = @ProductId;
             """;
 
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
-            CategoryId = createRequest.CategoryID,
-            createRequest.SearchString,
-            ADDWRR = createRequest.AddWrr,
-            ADDWRRTERM = createRequest.AddWrrTerm,
-            ADDWRRDEF = createRequest.AddWrrDef,
-            DEFWRRTERM = createRequest.DefWrrTerm,
-            createRequest.DisplayOrder,
-            createRequest.Status,
-            PLSHOW = createRequest.PlShow,
-            PRICE1 = createRequest.Price1,
-            PRICE2 = createRequest.Price2,
-            PRICE3 = createRequest.Price3,
-            CurrencyId = createRequest.Currency,
-            createRequest.RowGuid,
-            PromPID = createRequest.PromPid,
-            PromRID = createRequest.PromRid,
-            createRequest.PromPictureId,
-            createRequest.PromExpDate,
-            createRequest.AlertPictureId,
-            createRequest.AlertExpDate,
-            createRequest.PriceListDescription,
-            createRequest.ManifacturerId,
-            SubcategoryId = createRequest.SubCategoryId,
-            SPLMODEL = createRequest.SplModel1,
-            SPLMODEL1 = createRequest.SplModel2,
-            SPLMODEL2 = createRequest.SplModel3
+            CategoryId = updateRequest.CategoryID,
+            updateRequest.SearchString,
+            ADDWRR = updateRequest.AddWrr,
+            ADDWRRTERM = updateRequest.AddWrrTerm,
+            ADDWRRDEF = updateRequest.AddWrrDef,
+            DEFWRRTERM = updateRequest.DefWrrTerm,
+            updateRequest.DisplayOrder,
+            updateRequest.Status,
+            PLSHOW = updateRequest.PlShow,
+            PRICE1 = updateRequest.Price1,
+            PRICE2 = updateRequest.Price2,
+            PRICE3 = updateRequest.Price3,
+            CurrencyId = updateRequest.Currency,
+            updateRequest.RowGuid,
+            PromPID = updateRequest.PromPid,
+            PromRID = updateRequest.PromRid,
+            updateRequest.PromPictureId,
+            updateRequest.PromExpDate,
+            updateRequest.AlertPictureId,
+            updateRequest.AlertExpDate,
+            updateRequest.PriceListDescription,
+            updateRequest.ManifacturerId,
+            SubcategoryId = updateRequest.SubCategoryId,
+            SPLMODEL = updateRequest.SplModel1,
+            SPLMODEL1 = updateRequest.SplModel2,
+            SPLMODEL2 = updateRequest.SplModel3
         };
 
-        _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic>(UpdateAllRecordsInTransaction<dynamic>, parameters);
+        var result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(
+            UpdateAllRecordsInTransaction<dynamic>, parameters);
 
-        return new Success();
+        return result;
 
-        void UpdateAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U _)
+        OneOf<Success, UnexpectedFailureResult> UpdateAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U _)
         {
             connection.Execute(updateProductQuery, parameters, transaction, commandType: CommandType.Text);
 
-            if (createRequest.Properties is not null
-                && createRequest.Properties.Count > 0)
+            if (updateRequest.Properties is not null
+                && updateRequest.Properties.Count > 0)
             {
-                connection.Execute(updatePropertiesQuery, createRequest.Properties.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                int rowsAffected = connection.Execute(updatePropertiesQuery, updateRequest.Properties.Select(x => Map(x, updateRequest.Id)), transaction, commandType: CommandType.Text);
+
+                if (rowsAffected == 0) return new UnexpectedFailureResult();
             }
 
-            if (createRequest.ImageFileNames is not null
-                && createRequest.ImageFileNames.Count > 0)
+            if (updateRequest.ImageFileNames is not null
+                && updateRequest.ImageFileNames.Count > 0)
             {
-                connection.Execute(updateImageFilePathInfosQuery, createRequest.ImageFileNames
+                connection.Execute(updateImageFilePathInfosQuery, updateRequest.ImageFileNames
                     .OrderBy(x => x.DisplayOrder)
-                    .Select(x => Map(x, createRequest.Id)),
+                    .Select(x => Map(x, updateRequest.Id)),
                     transaction,
                     commandType: CommandType.Text);
             }
 
-            if (createRequest.Images is not null
-                && createRequest.Images.Count > 0)
+            if (updateRequest.Images is not null
+                && updateRequest.Images.Count > 0)
             {
-                connection.Execute(updateInAllImagesQuery, createRequest.Images.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                connection.Execute(updateInAllImagesQuery, updateRequest.Images.Select(x => Map(x, updateRequest.Id)), transaction, commandType: CommandType.Text);
 
-                connection.Execute(updateInFirstImagesQuery, MapToFirstImage(createRequest.Images.First(), createRequest.Id), transaction, commandType: CommandType.Text);
+                connection.Execute(updateInFirstImagesQuery, MapToFirstImage(updateRequest.Images.First(), updateRequest.Id), transaction, commandType: CommandType.Text);
             }
+
+            return new Success();
         }
     }
 
     public bool Delete(uint id)
     {
-        const string deleteProductQuery =
+        const string deleteProductAndRelatedItemsQuery =
             $"""
             DELETE FROM {_tableName}
             WHERE CSTID = @id;
-            """;
 
-        const string deletePropertiesForProductQuery =
-            $"""
             DELETE FROM {_propertiesTableName}
             WHERE CSTID = @productId;
-            """;
 
-        const string deleteImageFileNamesForProductQuery =
-            $"""
             DELETE FROM {_imageFileNamesTable}
             WHERE CSTID = @productId;
-            """;
 
-        const string deleteAllImagesForProductQuery =
-            $"""
             DELETE FROM {_allImagesTableName}
             WHERE CSTID = @productId;
-            """;
 
-        const string deleteFirstForProductImage =
-            $"""
             DELETE FROM {_firstImagesTableName}
             WHERE ID = @productId;
             """;
+
+        //const string deleteProductQuery =
+        //    $"""
+        //    DELETE FROM {_tableName}
+        //    WHERE CSTID = @id;
+        //    """;
+
+        //const string deletePropertiesForProductQuery =
+        //    $"""
+        //    DELETE FROM {_propertiesTableName}
+        //    WHERE CSTID = @productId;
+        //    """;
+
+        //const string deleteImageFileNamesForProductQuery =
+        //    $"""
+        //    DELETE FROM {_imageFileNamesTable}
+        //    WHERE CSTID = @productId;
+        //    """;
+
+        //const string deleteAllImagesForProductQuery =
+        //    $"""
+        //    DELETE FROM {_allImagesTableName}
+        //    WHERE CSTID = @productId;
+        //    """;
+
+        //const string deleteFirstForProductImage =
+        //    $"""
+        //    DELETE FROM {_firstImagesTableName}
+        //    WHERE ID = @productId;
+        //    """;
 
         var parameters = new
         {
             id
         };
 
-        _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic>(DeleteAllRecordsInTransaction, parameters);
+        OneOf<Success, UnexpectedFailureResult> result = 
+            _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(DeleteAllRecordsInTransaction, parameters);
 
-        return true;
+        return result.IsT0;
 
-        void DeleteAllRecordsInTransaction(IDbConnection connection, IDbTransaction transaction, dynamic _)
+        OneOf<Success, UnexpectedFailureResult> DeleteAllRecordsInTransaction(IDbConnection connection, IDbTransaction transaction, dynamic _)
         {
-            connection.Execute(deleteProductQuery, parameters, transaction, commandType: CommandType.Text);
+            int rowsAffected = connection.Execute(deleteProductAndRelatedItemsQuery, parameters, transaction, commandType: CommandType.Text);
 
-            connection.Execute(deletePropertiesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
+            return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
 
-            connection.Execute(deleteImageFileNamesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
+            //connection.Execute(deleteProductQuery, parameters, transaction, commandType: CommandType.Text);
 
-            connection.Execute(deleteAllImagesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
+            //connection.Execute(deletePropertiesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
 
-            connection.Execute(deleteFirstForProductImage, new { productId = id }, transaction, commandType: CommandType.Text);
+            //connection.Execute(deleteImageFileNamesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
+
+            //connection.Execute(deleteAllImagesForProductQuery, new { productId = id }, transaction, commandType: CommandType.Text);
+
+            //connection.Execute(deleteFirstForProductImage, new { productId = id }, transaction, commandType: CommandType.Text);
         }
     }
 

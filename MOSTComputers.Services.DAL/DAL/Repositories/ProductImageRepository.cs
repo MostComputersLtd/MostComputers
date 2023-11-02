@@ -3,8 +3,10 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 using OneOf;
 using OneOf.Types;
+using MOSTComputers.Services.DAL.Models.Responses;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -43,6 +45,22 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return images.Select(image => Map(image));
     }
 
+    public IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<uint> productIds)
+    {
+        const string getByIdInFirstImagesQuery =
+            $"""
+            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            FROM {_firstImagesTableName}
+            WHERE ID IN
+            """;
+
+        string queryWithIds = getByIdInFirstImagesQuery + $" ({GetDelimeteredListFromIds(productIds)});";
+
+        IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(queryWithIds, new { });
+
+        return images.Select(x => Map(x));
+    }
+
     public ProductImage? GetByIdInAllImages(uint id)
     {
         const string getByIdInAllImagesQuery =
@@ -71,7 +89,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return Map(image);
     }
 
-    public OneOf<Success, ValidationResult> InsertInAllImages(ProductImageCreateRequest createRequest, IValidator<ProductImageCreateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest)
     {
         const string insertInAllImagesQuery =
             $"""
@@ -79,13 +97,6 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             VALUES (@productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             productId = createRequest.ProductId,
@@ -95,12 +106,12 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             createRequest.DateModified,
         };
 
-        _relationalDataAccess.SaveData<ProductImage, dynamic>(insertInAllImagesQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(insertInAllImagesQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest, IValidator<ProductFirstImageCreateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest)
     {
         const string insertInFirstImagesQuery =
             $"""
@@ -108,13 +119,6 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             VALUES (@productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             productId = createRequest.ProductId,
@@ -124,12 +128,12 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             createRequest.DateModified,
         };
 
-        _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(insertInFirstImagesQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(insertInFirstImagesQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> UpdateInAllImages(ProductImageUpdateRequest createRequest, IValidator<ProductImageUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest)
     {
         const string updateInAllImagesQuery =
             $"""
@@ -142,13 +146,6 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             WHERE ID = @id;
             """;
 
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             id = createRequest.Id,
@@ -158,12 +155,12 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             createRequest.DateModified,
         };
 
-        _relationalDataAccess.SaveData<ProductImage, dynamic>(updateInAllImagesQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(updateInAllImagesQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> UpdateInFirstImages(ProductFirstImageUpdateRequest updateRequest, IValidator<ProductFirstImageUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest updateRequest)
     {
         const string updateInFirstImagesQuery =
             $"""
@@ -176,13 +173,6 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             WHERE ID = @productId;
             """;
 
-        if (validator != null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             productId = updateRequest.ProductId,
@@ -192,9 +182,9 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             updateRequest.DateModified,
         };
 
-        _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateInFirstImagesQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateInFirstImagesQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public bool DeleteInAllImagesById(uint id)

@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -42,8 +43,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId });
     }
 
-    public OneOf<Success, ValidationResult> Insert(ProductImageFileNameInfoCreateRequest createRequest,
-        IValidator<ProductImageFileNameInfoCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
@@ -62,16 +62,8 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             VALUES (@productId, @DisplayOrderInRange, @FileName)
             """;
 
-        ValidationResult result;
 
-        if (validator is not null)
-        {
-            result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
-        result = ValidateWhetherProductWithGivenIdExists((uint)createRequest.ProductId);
+        ValidationResult result = ValidateWhetherProductWithGivenIdExists((uint)createRequest.ProductId);
 
         if (!result.IsValid) return result;
 
@@ -82,13 +74,12 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             createRequest.FileName,
         };
 
-        _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(insertQuery, parameters, doInTransaction: true);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(insertQuery, parameters, doInTransaction: true);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest,
-        IValidator<ProductImageFileNameInfoUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
@@ -111,13 +102,6 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             AND DisplayOrder = @DisplayOrder;
             """;
 
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
 
         if (!internalValidationResult.IsValid) return internalValidationResult;
@@ -130,9 +114,9 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             updateRequest.FileName,
         };
 
-        _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateQuery, parameters, doInTransaction: true);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateQuery, parameters, doInTransaction: true);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     private ValidationResult ValidateWhetherProductWithGivenIdExists(uint productId, string propertyName = "ProductId")

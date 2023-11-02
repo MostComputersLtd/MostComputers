@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -10,7 +11,7 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepository
 {
-    private const string _tableName = "dbo.Manifacturer";
+    private const string _tableName = "dbo.Manufacturer";
 
     public ManifacturerRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -41,20 +42,13 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         return _relationalDataAccess.GetData<Manifacturer, dynamic>(getByIdQuery, new { id }).FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(ManifacturerInsertRequest insertRequest, IValidator<ManifacturerInsertRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(BGName, Name, S, Active)
             VALUES (@BGName, @Name, @DisplayOrder, @Active)
             """;
-
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(insertRequest);
-
-            if (!result.IsValid) return result;
-        }
 
         var parameters = new
         {
@@ -64,12 +58,12 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             insertRequest.Active,
         };
 
-        _relationalDataAccess.SaveData<Manifacturer, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(insertQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult> Update(ManifacturerUpdateRequest updateRequest, IValidator<ManifacturerUpdateRequest>? validator = null)
+    public OneOf<Success, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
@@ -81,13 +75,6 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             WHERE MfrID = @id;
             """;
 
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         var parameters = new
         {
             id = updateRequest.Id,
@@ -97,12 +84,12 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             updateRequest.Active,
         };
 
-        _relationalDataAccess.SaveData<Manifacturer, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(updateQuery, parameters);
 
-        return new Success();
+        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public bool TryDelete(uint id)
+    public bool Delete(uint id)
     {
         const string deleteQuery =
             $"""

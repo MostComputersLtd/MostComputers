@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Models;
 using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -58,7 +59,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         return _relationalDataAccess.GetData<ProductProperty, dynamic>(getByNameAndProductIdQuery, new { Name = name, productId }).FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult> Insert(ProductPropertyCreateRequest createRequest, IValidator<ProductPropertyCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductPropertyCreateRequest createRequest)
     {
         const string getAllInProductQuery =
             $"""
@@ -66,18 +67,9 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             VALUES(@ProductId, @ProductCharacteristicId, @DisplayOrder, @Name, @Value, @XmlPlacement)
             """;
 
-        ValidationResult? result;
-
-        if (validator is not null)
-        {
-            result = validator.Validate(createRequest);
-
-            if (!result.IsValid) return result;
-        }
-
         string? characteristicName = GetNameOfCharacteristic(createRequest.ProductCharacteristicId!.Value);
 
-        result = ValidateInternalConditions(createRequest, characteristicName);
+        ValidationResult? result = ValidateInternalConditions(createRequest, characteristicName);
 
         if (!result.IsValid) return result;
 
@@ -91,9 +83,9 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             createRequest.XmlPlacement,
         };
 
-        _relationalDataAccess.SaveData<ProductProperty, dynamic>(getAllInProductQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(getAllInProductQuery, parameters);
 
-        return new Success();
+        return rowsAffected != 0 ? new Success() : new UnexpectedFailureResult();
 
         ValidationResult ValidateInternalConditions(ProductPropertyCreateRequest createRequest, string? characteristicName)
         {
@@ -119,7 +111,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         }
     }
 
-    public OneOf<Success, ValidationResult> Update(ProductPropertyUpdateRequest updateRequest, IValidator<ProductPropertyUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductPropertyUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
@@ -133,13 +125,6 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             """;
 
         ValidationResult? result;
-
-        if (validator is not null)
-        {
-            result = validator.Validate(updateRequest);
-
-            if (!result.IsValid) return result;
-        }
 
         string? characteristicName = GetNameOfCharacteristic(updateRequest.ProductCharacteristicId!.Value);
 
@@ -156,9 +141,9 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             productKeywordId = updateRequest.ProductCharacteristicId,
         };
 
-        _relationalDataAccess.SaveData<ProductProperty, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(updateQuery, parameters);
 
-        return new Success();
+        return rowsAffected != 0 ? new Success() : new UnexpectedFailureResult();
 
         static ValidationResult ValidateInternalConditions(string? characteristicName)
         {
@@ -207,6 +192,50 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         try
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId, characteristicId });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    public bool DeleteAllForProduct(uint productId)
+    {
+        const string deleteByProductAndCharacteristicId =
+            $"""
+            DELETE FROM {_tableName}
+            WHERE CSTID = @productId;
+            """;
+
+        try
+        {
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId });
+
+            if (rowsAffected == 0) return false;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    public bool DeleteAllForCharacteristic(uint characteristicId)
+    {
+        const string deleteByProductAndCharacteristicId =
+            $"""
+            DELETE FROM {_tableName}
+            WHERE ProductKeywordID = @characteristicId;
+            """;
+
+        try
+        {
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { characteristicId });
 
             if (rowsAffected == 0) return false;
 

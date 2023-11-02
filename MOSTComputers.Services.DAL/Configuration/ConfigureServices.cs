@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Dapper.FluentMap;
+using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.DAL.DAL;
+using MOSTComputers.Services.DAL.DAL.Repositories;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Mapping;
 using MOSTComputers.Services.Mapping;
 
@@ -14,23 +17,42 @@ public static class ConfigureServices
             {
                 DapperDataAccess dapperDataAccess = new(connectionString);
 
-                AddMappings(dapperDataAccess);
-
                 return dapperDataAccess;
             });
+
+        AddMappings();
 
         return services;
     }
 
-    private static void AddMappings(DapperDataAccess relationalDataAccess)
+    public static IServiceCollection AddAllRepositories(this IServiceCollection services)
     {
-        relationalDataAccess.AddCustomEntityMap(new ProductEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ManifacturerEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new CategoryEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ProductCharacteristicEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ProductPropertyEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ProductImageEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ProductFirstImageEntityMap());
-        relationalDataAccess.AddCustomEntityMap(new ProductImageFileNameInfoEntityMap());
+
+        services.AddTransient<ICategoryRepository, CategoryRepository>();
+        services.AddTransient<IManifacturerRepository, ManifacturerRepository>();
+        services.AddTransient<IProductImageRepository, ProductImageRepository>();
+        services.AddTransient<IProductImageFileNameInfoRepository, ProductImageFileNameInfoRepository>();
+        services.AddTransient<IProductCharacteristicsRepository, ProductCharacteristicsRepository>();
+        services.AddTransient<IProductPropertyRepository, ProductPropertyRepository>();
+        services.AddTransient<IPromotionRepository, PromotionRepository>();
+        services.AddTransient<IProductRepository, ProductRepository>();
+
+        return services;
+    }
+
+    private static void AddMappings()
+    {
+        FluentMapper.Initialize(config =>
+        {
+            config.AddMap(new CategoryEntityMap());
+            config.AddMap(new ManifacturerEntityMap());
+            config.AddMap(new ProductCharacteristicEntityMap());
+            config.AddMap(new ProductPropertyEntityMap());
+            config.AddMap(new ProductImageEntityMap());
+            config.AddMap(new ProductFirstImageEntityMap());
+            config.AddMap(new ProductImageFileNameInfoEntityMap());
+            config.AddMap(new ProductEntityMap());
+            config.AddMap(new PromotionEntityMap());
+        });
     }
 }

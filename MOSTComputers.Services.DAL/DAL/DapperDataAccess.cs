@@ -3,6 +3,8 @@ using System.Data;
 using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
+using MOSTComputers.Services.DAL.Mapping;
+using MOSTComputers.Services.Mapping;
 
 namespace MOSTComputers.Services.DAL.DAL;
 
@@ -17,6 +19,8 @@ public interface IRelationalDataAccess
     IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     int SaveData<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
+    void SaveDataInTransactionUsingAction<T, U>(Action<IDbConnection, IDbTransaction, U> actionInTransaction, U parameters);
+    TReturn SaveDataInTransactionUsingAction<T, U, TReturn>(Func<IDbConnection, IDbTransaction, U, TReturn> actionInTransaction, U parameters);
     IEnumerable<T> GetDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, U>(string storedProcedureName, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, U>(string storedProcedureName, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
@@ -25,7 +29,6 @@ public interface IRelationalDataAccess
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     int SaveDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
-    void SaveDataInTransactionUsingAction<T, U>(Action<IDbConnection, IDbTransaction, U> actionInTransaction, U parameters);
 }
 
 internal class DapperDataAccess : IRelationalDataAccess
@@ -125,7 +128,7 @@ internal class DapperDataAccess : IRelationalDataAccess
         return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public int SaveData<T, U>(string sqlStatement, U parameters, bool doInTransaction)
+    public int SaveData<T, U>(string sqlStatement, U parameters, bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
@@ -146,6 +149,15 @@ internal class DapperDataAccess : IRelationalDataAccess
         using IDbTransaction transaction = connection.BeginTransaction();
 
         actionInTransaction(connection, transaction, parameters);
+    }
+
+    public TReturn SaveDataInTransactionUsingAction<T, U, TReturn>(Func<IDbConnection, IDbTransaction, U, TReturn> actionInTransaction, U parameters)
+    {
+        using IDbConnection connection = new SqlConnection(_connectionString);
+
+        using IDbTransaction transaction = connection.BeginTransaction();
+
+        return actionInTransaction(connection, transaction, parameters);
     }
 
     public IEnumerable<T> GetDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false)

@@ -1,6 +1,6 @@
 ﻿namespace MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 
-public sealed class ManifacturerInsertRequest
+public sealed class ManifacturerCreateRequest
 {
     public string? BGName { get; set; }
     public string? RealCompanyName { get; set; }
