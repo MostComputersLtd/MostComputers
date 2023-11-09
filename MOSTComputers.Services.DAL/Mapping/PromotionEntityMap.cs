@@ -1,10 +1,5 @@
 ﻿using Dapper.FluentMap.Mapping;
-using MOSTComputers.Services.DAL.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.DAL.Mapping;
 
@@ -14,7 +9,7 @@ internal sealed class PromotionEntityMap : EntityMap<Promotion>
     {
         Map(x => x.Id).ToColumn("PromotionID");
         Map(x => x.Name).ToColumn("PromotionName");
-        Map(x => x.ChgDate).ToColumn("ChgDate");
+        Map(x => x.PromotionAddedDate).ToColumn("ChgDate");
         Map(x => x.Source).ToColumn("PromSource");
         Map(x => x.Type).ToColumn("PromType");
         Map(x => x.Status).ToColumn("Status");

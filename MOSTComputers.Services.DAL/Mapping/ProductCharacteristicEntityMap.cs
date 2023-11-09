@@ -1,5 +1,5 @@
 ﻿using Dapper.FluentMap.Mapping;
-using MOSTComputers.Services.DAL.Models;
+using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.Mapping;
 
