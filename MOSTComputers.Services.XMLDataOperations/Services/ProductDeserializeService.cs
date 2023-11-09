@@ -1,14 +1,6 @@
-﻿using MOSTComputers.Services.DAL;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-using MOSTComputers.Services.XMLDataOperations.Mapping;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MOSTComputers.Services.XMLDataOperations.Models;
+using OneOf;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace MOSTComputers.Services.XMLDataOperations.Services;
@@ -24,12 +16,78 @@ public sealed class ProductDeserializeService
 
     public XmlObjectData? DeserializeProductsXml(string xml)
     {
-        using StringReader reader = new(xml);
+        string transformedXml = TransformInputToWorkingXml(xml);
+
+        using StringReader reader = new(transformedXml);
 
         object? dataAsObject = _xmlSerializer.Deserialize(reader);
 
         if (dataAsObject is null) return null;
 
-        return (XmlObjectData)dataAsObject;
+        XmlObjectData data = (XmlObjectData)dataAsObject;
+
+        TransformXmlDataBackToNormal(data);
+
+        return data;
+    }
+
+    public OneOf<XmlObjectData?, InvalidXmlResult> TryDeserializeProductsXml(string xml)
+    {
+        try
+        {
+            string transformedXml = TransformInputToWorkingXml(xml);
+
+            using StringReader reader = new(transformedXml);
+
+            object? dataAsObject = _xmlSerializer.Deserialize(reader);
+
+            if (dataAsObject is null) return null;
+
+            XmlObjectData data = (XmlObjectData)dataAsObject;
+
+            TransformXmlDataBackToNormal(data);
+
+            return data;
+        }
+        catch (InvalidOperationException invalidOperationEx)
+        {
+            return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
+        }
+
+    }
+
+    private static string TransformInputToWorkingXml(string xml)
+    {
+        int currentIndex = 0;
+
+        while (currentIndex != -1)
+        {
+            int startIndexRaw = xml.IndexOf("<searchstring>", currentIndex);
+            int endIndexRaw = xml.IndexOf("</searchstring>", currentIndex);
+
+            if (startIndexRaw == -1 || endIndexRaw == -1) break;
+
+            int searchStringStartIndex = startIndexRaw + 14;
+            int searchStringEndIndex = endIndexRaw - 1;
+
+            for (int i = searchStringStartIndex; i < searchStringEndIndex; i++)
+            {
+                if (xml[i] == '<') xml = xml[..(i)] + "|smallerSign|" + xml[(i + 1)..];
+            }
+
+            currentIndex = searchStringEndIndex + 19;
+        }
+
+        return xml;
+    }
+
+    private static bool TransformXmlDataBackToNormal(XmlObjectData xmlData)
+    {
+        foreach (XmlProduct item in xmlData.Products)
+        {
+            item.SearchString = item.SearchString.Replace("|smallerSign|", "<");
+        }
+
+        return true;
     }
 }
