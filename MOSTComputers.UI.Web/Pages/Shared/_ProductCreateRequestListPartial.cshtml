@@ -1,0 +1,103 @@
+﻿@using MOSTComputers.Models.Product.Models.Requests.Product;
+@using MOSTComputers.UI.Web.Mapping;
+@using MOSTComputers.UI.Web.Models;
+@model List<XmlProductCreateDisplay>
+
+@for (int i = 0; i < Model.Count; i++)
+{
+
+    <h1 class="create-request-name">@Model[i].Name</h1>
+
+    <ul class="create-request-image-list">
+
+        @if (Model[i].Images is not null)
+        {
+            foreach (CurrentProductImageCreateRequest imageCreateRequest in Model[i].Images!)
+            {
+                if (imageCreateRequest.ImageData is null) continue;
+
+                <li>
+                    <img src="data:@imageCreateRequest.ImageFileExtension;base64,@Convert.ToBase64String(imageCreateRequest.ImageData)"
+                    style="width:300px;" />
+                </li>
+            }
+        }
+
+    </ul>
+
+    <h3 class="create-request-origins-text">Origins and identification</h3>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">Category:</strong>
+
+        <label class="element-collection-dataItem">@Model[i].Category?.Description</label>
+
+    </div>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">Manifacturer:</strong>
+
+        <label class="element-collection-dataItem">@Model[i].Manifacturer?.RealCompanyName</label>
+
+    </div>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">Part No. 1:</strong>
+
+        <label class="element-collection-dataItem">@Model[i].PartNumber1</label>
+
+    </div>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">Part No. 2:</strong>
+
+        <label class="element-collection-dataItem">@Model[i].PartNumber2</label>
+
+    </div>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">SearchString:</strong>
+
+        <label class="element-collection-dataItem">@Model[i].SearchString</label>
+
+    </div>
+
+    <div class="element-collection">
+
+        <strong class="create-request-important-characteristic">Status:</strong>
+
+        <label class="element-collection-dataItem">@ProductStatusMapping.GetBGStatusStringFromStatusEnum(Model[i].Status)</label>
+
+    </div>
+
+    @if (Model[i].Properties is not null)
+    {
+        <h3 class="create-request-characteristics-text">Characteristics</h3>
+
+        <table class="full-parent-width" style="margin:20px 25px">
+            <tbody>
+                @foreach (DisplayPropertyCreateRequest propertyCreateRequest in Model[i].Properties!)
+                {
+                    <tr>
+                        <td style="width:20%;">
+                            <label>@propertyCreateRequest.Name</label>
+                        </td>
+
+                        <td style="width:60%;">
+                            <label class="element-collection-dataItem">@propertyCreateRequest.Value</label>
+                        </td>
+
+                        <td style="width:10%;">
+                            <label>ID: @propertyCreateRequest.ProductCharacteristicId</label>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}

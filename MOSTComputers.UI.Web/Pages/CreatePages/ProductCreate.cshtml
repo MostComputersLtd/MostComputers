@@ -1,6 +1,5 @@
 ﻿@page
-@using MOSTComputers.Services.DAL.Models;
-@using MOSTComputers.Services.DAL;
+@using MOSTComputers.Models.Product.Models;
 @model MOSTComputers.UI.Web.Pages.CreatePages.ProductCreateModel
 @{
 }
@@ -24,7 +23,7 @@
         <label class="element-collection-label">Search String</label>
 
         <div class="element-collection-dataItem">
-            <input id="SearchString_TextBox" class="full-parent-width" value="@Model.SearchString" />
+            <input id="Name_TextBox" class="full-parent-width" value="@Model.Name" />
         </div>
     </div>
 
@@ -33,7 +32,7 @@
         <label class="element-collection-label">AddWrr</label>
 
         <div class="element-collection-dataItem">
-            <input id="AddWrr_TextBox" class="full-parent-width" value="@Model.AddWrr" />
+            <input id="AdditionalWarrantyPrice_TextBox" class="full-parent-width" value="@Model.AdditionalWarrantyPrice" />
         </div>
     </div>
 
@@ -42,7 +41,7 @@
         <label class="element-collection-label">AddWrrTerm</label>
 
         <div class="element-collection-dataItem">
-            <input id="AddWrrTerm_TextBox" class="full-parent-width" value="@Model.AddWrrTerm" />
+            <input id="AdditionalWarrantyTermMonths_TextBox" class="full-parent-width" value="@Model.AdditionalWarrantyTermMonths" />
         </div>
     </div>
 
@@ -51,7 +50,7 @@
         <label class="element-collection-label">AddWrrDef</label>
 
         <div class="element-collection-dataItem">
-            <input id="AddWrrDef_TextBox" class="full-parent-width" value="@Model.AddWrrDef" />
+            <input id="StandardWarrantyPrice_TextBox" class="full-parent-width" value="@Model.StandardWarrantyPrice" />
         </div>
     </div>
 
@@ -60,7 +59,7 @@
         <label class="element-collection-label">DefWrrTerm</label>
 
         <div class="element-collection-dataItem">
-            <input id="DefWrrTerm_TextBox" class="full-parent-width" value="@Model.DefWrrTerm" />
+            <input id="StandardWarrantyTermMonths_TextBox" class="full-parent-width" value="@Model.StandardWarrantyTermMonths" />
         </div>
     </div>
 
@@ -95,32 +94,32 @@
         </div>
     </div>
 
-    <div class="element-collection">
+    <!-- <div class="element-collection">
 
         <label class="element-collection-label">Price1</label>
 
         <div class="element-collection-dataItem">
             <input id="Price1_TextBox" class="full-parent-width" value="@Model.Price1" />
         </div>
-    </div>
+    </div> -->
 
     <div class="element-collection">
 
-        <label class="element-collection-label">Price2</label>
+        <label class="element-collection-label">Price</label>
 
         <div class="element-collection-dataItem">
-            <input id="Price2_TextBox" class="full-parent-width" value="@Model.Price2" />
+            <input id="Price_TextBox" class="full-parent-width" value="@Model.DisplayPrice" />
         </div>
     </div>
 
-    <div class="element-collection">
+    <!-- <div class="element-collection">
 
         <label class="element-collection-label">Price3</label>
 
         <div class="element-collection-dataItem">
             <input id="Price3_TextBox" class="full-parent-width" value="@Model.Price3" />
         </div>
-    </div>
+    </div> -->
 
     <div class="element-collection">
 
@@ -130,7 +129,7 @@
             <select id="Currency_select" class="full-parent-width" value="@Model.Currency">
                 <option value="@CurrencyEnum.BGN">lv.</option>
                 <option value="@CurrencyEnum.USD">$</option>
-                <option value="@CurrencyEnum.EUR">eur.</option>
+                <option value="@CurrencyEnum.EUR">€</option>
             </select>
         </div>
     </div>
@@ -140,7 +139,7 @@
         <label class="element-collection-label">PromPid</label>
 
         <div class="element-collection-dataItem">
-            <input id="PromPid_TextBox" class="full-parent-width" value="@Model.PromPid" />
+            <input id="Promotionid_TextBox" class="full-parent-width" value="@Model.Promotionid" />
         </div>
     </div>
 
@@ -158,7 +157,7 @@
         <label class="element-collection-label">PromPictureId</label>
 
         <div class="element-collection-dataItem">
-            <input id="PromPictureId_TextBox" class="full-parent-width" value="@Model.PromPictureId" />
+            <input id="PromotionPictureId_TextBox" class="full-parent-width" value="@Model.PromotionPictureId" />
         </div>
     </div>
 
@@ -167,16 +166,7 @@
         <label class="element-collection-label">PromExpDate</label>
 
         <div class="element-collection-dataItem">
-            <input id="PromExpDate_TextBox" class="full-parent-width" value="@Model.PromExpDate" />
-        </div>
-    </div>
-
-    <div class="element-collection">
-
-        <label class="element-collection-label">AlertPictureId</label>
-
-        <div class="element-collection-dataItem">
-            <input id="AlertPictureId_TextBox" class="full-parent-width" value="@Model.AlertPictureId" />
+            <input id="PromotionExpireDate_TextBox" class="full-parent-width" value="@Model.PromotionExpireDate" />
         </div>
     </div>
 
@@ -194,7 +184,7 @@
         <label class="element-collection-label">SplModel1</label>
 
         <div class="element-collection-dataItem">
-            <input id="SplModel1_TextBox" class="full-parent-width" value="@Model.SplModel1" />
+            <input id="PartNumber1_TextBox" class="full-parent-width" value="@Model.PartNumber1" />
         </div>
     </div>
 
@@ -203,7 +193,7 @@
         <label class="element-collection-label">SplModel2</label>
 
         <div class="element-collection-dataItem">
-            <input id="SplModel2_TextBox" class="full-parent-width" value="@Model.SplModel2" />
+            <input id="PartNumber2_TextBox" class="full-parent-width" value="@Model.PartNumber2" />
         </div>
     </div>
 
@@ -212,7 +202,7 @@
         <label class="element-collection-label">SplModel3</label>
 
         <div class="element-collection-dataItem">
-            <input id="SplModel3_TextBox" class="full-parent-width" value="@Model.SplModel3" />
+            <input id="SearchString_TextBox" class="full-parent-width" value="@Model.SearchString" />
         </div>
     </div>
 

@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.Pages.CreatePages;
 
@@ -27,28 +26,28 @@ public class ProductCreateModel : PageModel
 
     [Required(AllowEmptyStrings = false, ErrorMessage = $"{nameof(Id)} must not be empty")]
     public int Id { get; set; }
-    public string? SearchString { get; set; }
-    public decimal? AddWrr { get; set; }
-    public long? AddWrrTerm { get; set; }
-    public string? AddWrrDef { get; set; }
-    public long? DefWrrTerm { get; set; }
+    public string? Name { get; set; }
+    public decimal? AdditionalWarrantyPrice { get; set; }
+    public long? AdditionalWarrantyTermMonths { get; set; }
+    public string? StandardWarrantyPrice { get; set; }
+    public long? StandardWarrantyTermMonths { get; set; }
     public int? DisplayOrder { get; set; }
     public ProductStatusEnum? Status { get; set; }
     public int? PlShow { get; set; }
     public decimal? Price1 { get; set; }
-    public decimal? Price2 { get; set; }
+    public decimal? DisplayPrice { get; set; }
     public decimal? Price3 { get; set; }
     public CurrencyEnum? Currency { get; set; }
-    public int? PromPid { get; set; }
+    public int? Promotionid { get; set; }
     public int? PromRid { get; set; }
-    public short? PromPictureId { get; set; }
-    public DateTime? PromExpDate { get; set; }
+    public short? PromotionPictureId { get; set; }
+    public DateTime? PromotionExpireDate { get; set; }
     public short? AlertPictureId { get; set; }
-    public DateTime? AlertExpDate { get; set; }
+    public DateTime? AlertExpireDate { get; set; }
     public string? PriceListDescription { get; set; }
-    public string? SplModel1 { get; set; }
-    public string? SplModel2 { get; set; }
-    public string? SplModel3 { get; set; }
+    public string? PartNumber1 { get; set; }
+    public string? PartNumber2 { get; set; }
+    public string? SearchString { get; set; }
 
     public List<CurrentProductPropertyCreateRequest>? Properties { get; set; }
     public List<CurrentProductImageCreateRequest>? Images { get; set; }

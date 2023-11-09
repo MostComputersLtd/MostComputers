@@ -3,10 +3,55 @@
 @{
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/ProductInsert.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ProductCreateRequestListPartial.css" asp-append-version="true" />
+}
+
 <form method="post">
     <div class="container">
         <textarea id="XMLInput" name="XMLInput" style="width:100%;height:500px" cols="200" rows="100"></textarea>
 
         <button type="submit" style="width:100%;height:50px"></button>
+
+        <div id="previewProductsContainer">
+        </div>
+
     </div>
+
+    <script>
+
+        document.getElementById("XMLInput").onpaste = function (event) {
+            console.log()
+
+            var data = { "XMLInput": event.clipboardData.getData('text/plain') };
+
+            $.ajax({
+                type: "GET",
+                url: "/CreatePages/XmlProductCreate?handler=ShowOnly",
+                contentType: "application/json; charset=utf-8",
+                data: data,
+                headers: {
+                    RequestVerificationToken:
+                        $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+            })
+                .done(function (result) {
+
+                    $("#previewProductsContainer").load("XmlProductCreate?handler=PartialView");
+                }).fail(function (jqXHR, textStatus) {
+
+                    let boldErrorText = document.createElement("strong");
+
+                    boldErrorText.textContent = jqXHR.responseText;
+
+                    boldErrorText.className = "invalid-xml-error-text";
+
+                    document.getElementById("previewProductsContainer").innerHTML = "";
+
+                    document.getElementById("previewProductsContainer").appendChild(boldErrorText);
+                });
+
+        }
+    </script>
 </form>

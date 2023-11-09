@@ -43,3 +43,9 @@
 #txtPaste {
     margin-top: 15px;
 }
+
+.invalid-xml-error-text {
+    color: red;
+    font-size: 20px;
+    text-align: center;
+}

@@ -1,7 +1,6 @@
 using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.XMLDataOperations.Services;
 using MOSTComputers.UI.Web.Services;
-using System.Net.Http;
 using System.Xml.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
