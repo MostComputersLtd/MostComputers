@@ -1,15 +1,10 @@
-﻿using MOSTComputers.Services.DAL.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.XMLDataOperations.Localization;
 
 internal static class ProductStatusMapping
 {
-    internal static string GetBGStatusStringFromStatusEnum(ProductStatusEnum productStatusEnum)
+    internal static string? GetStatusStringFromStatusEnum(ProductStatusEnum productStatusEnum)
     {
         return productStatusEnum switch
         {
@@ -20,13 +15,37 @@ internal static class ProductStatusMapping
         };
     }
 
-    internal static ProductStatusEnum? GetStatusEnumFromBGStatusString(string statusString)
+    internal static ProductStatusEnum? GetStatusEnumFromStatusString(string statusString)
     {
         return statusString switch
         {
             "Unavailable" => ProductStatusEnum.Unavailable,
             "Available" => ProductStatusEnum.Available,
             "Call" => ProductStatusEnum.Call,
+            _ => null
+        };
+    }
+
+    internal static string? GetBGStatusStringFromStatusEnum(ProductStatusEnum? productStatusEnum)
+    {
+        if (productStatusEnum is null) return null;
+
+        return productStatusEnum switch
+        {
+            ProductStatusEnum.Unavailable => "Не е в наличност",
+            ProductStatusEnum.Available => "В наличност",
+            ProductStatusEnum.Call => "Обадете се",
+            _ => "Unavailable"
+        };
+    }
+
+    internal static ProductStatusEnum? GetStatusEnumFromBGStatusString(string statusString)
+    {
+        return statusString switch
+        {
+            "Не е в наличност" => ProductStatusEnum.Unavailable,
+            "В наличност" => ProductStatusEnum.Available,
+            "Обадете се" => ProductStatusEnum.Call,
             _ => null
         };
     }

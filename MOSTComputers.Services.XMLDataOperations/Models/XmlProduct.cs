@@ -1,9 +1,5 @@
-﻿using MOSTComputers.Services.DAL.Models;
+﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.XMLDataOperations.Localization;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 using System.Xml.Serialization;
 
 namespace MOSTComputers.Services.XMLDataOperations.Models;
@@ -30,7 +26,7 @@ public class XmlProduct
     [XmlElement(ElementName = "product_status")]
     public string StatusString
     {
-        get => ProductStatusMapping.GetBGStatusStringFromStatusEnum(Status);
+        get => ProductStatusMapping.GetBGStatusStringFromStatusEnum(Status) ?? string.Empty;
         set => Status = ProductStatusMapping.GetStatusEnumFromBGStatusString(value) ?? ProductStatusEnum.Unavailable;
     }
 
@@ -55,7 +51,7 @@ public class XmlProduct
 
     [XmlArray(ElementName = "properties")]
     [XmlArrayItem(ElementName = "property")]
-    public List<XmlProductProperty> xmlProductProperties { get; set; }
+    public List<XmlProductProperty> XmlProductProperties { get; set; }
 }
 
 [Serializable]

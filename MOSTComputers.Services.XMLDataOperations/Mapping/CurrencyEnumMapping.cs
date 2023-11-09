@@ -1,10 +1,4 @@
-﻿using MOSTComputers.Services.DAL;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.XMLDataOperations.Mapping;
 

@@ -7,7 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MOSTComputers.Services.DAL\MOSTComputers.Services.DAL.csproj" />
+    <PackageReference Include="OneOf" Version="3.0.263" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
   </ItemGroup>
 
 </Project>
