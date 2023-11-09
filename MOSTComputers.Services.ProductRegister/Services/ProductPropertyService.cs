@@ -1,28 +1,31 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ProductPropertyService : IProductPropertyService
 {
-    public ProductPropertyService(IProductPropertyRepository productPropertyRepository)
+    public ProductPropertyService(
+        IProductPropertyRepository productPropertyRepository,
+        IValidator<ProductPropertyCreateRequest>? createRequestValidator = null,
+        IValidator<ProductPropertyUpdateRequest>? updateRequestValidator = null)
     {
         _productPropertyRepository = productPropertyRepository;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IProductPropertyRepository _productPropertyRepository;
+    private readonly IValidator<ProductPropertyCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ProductPropertyUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<ProductProperty> GetAllInProduct(uint productId)
     {
@@ -37,12 +40,9 @@ internal sealed class ProductPropertyService : IProductPropertyService
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductPropertyCreateRequest createRequest,
         IValidator<ProductPropertyCreateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productPropertyRepository.Insert(createRequest);
 
@@ -53,12 +53,9 @@ internal sealed class ProductPropertyService : IProductPropertyService
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductPropertyUpdateRequest updateRequest,
         IValidator<ProductPropertyUpdateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productPropertyRepository.Update(updateRequest);
 

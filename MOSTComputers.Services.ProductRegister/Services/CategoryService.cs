@@ -1,28 +1,37 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Category;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.Category;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
+using MOSTComputers.Services.ProductRegister.Mapping;
+
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class CategoryService : ICategoryService
 {
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(
+        ICategoryRepository categoryRepository,
+        ProductMapper productMapper,
+        IValidator<ServiceCategoryCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceCategoryUpdateRequest>? updateRequestValidator = null)
     {
         _categoryRepository = categoryRepository;
+        _productMapper = productMapper;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly ICategoryRepository _categoryRepository;
+    private readonly ProductMapper _productMapper;
+    private readonly IValidator<ServiceCategoryCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceCategoryUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<Category> GetAll()
     {
@@ -34,33 +43,36 @@ internal sealed class CategoryService : ICategoryService
         return _categoryRepository.GetById(id);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest,
-        IValidator<CategoryCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
+        IValidator<ServiceCategoryCreateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequest);
+        CategoryCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.RowGuid = Guid.NewGuid();
+        createRequestInternal.IsLeaf = (createRequestInternal.ParentCategoryId is not null);
+
+        OneOf<Success, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest,
-        IValidator<CategoryUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceCategoryUpdateRequest updateRequest,
+        IValidator<ServiceCategoryUpdateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _categoryRepository.Update(updateRequest);
+        CategoryUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.RowGuid = Guid.NewGuid();
+
+        OneOf<Success, UnexpectedFailureResult> result = _categoryRepository.Update(updateRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);

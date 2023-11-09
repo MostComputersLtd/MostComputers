@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Validation\" />
+    <PackageReference Include="Riok.Mapperly" Version="3.2.0" />
   </ItemGroup>
 
 </Project>

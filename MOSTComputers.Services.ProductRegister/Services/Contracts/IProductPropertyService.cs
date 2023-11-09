@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-using MOSTComputers.Services.DAL.Models.Responses;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
 using OneOf.Types;
 

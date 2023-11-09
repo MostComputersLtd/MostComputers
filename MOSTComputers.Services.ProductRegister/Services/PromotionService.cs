@@ -1,29 +1,35 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.DAL;
-using MOSTComputers.Services.DAL.Models.Requests.Promotions;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Services.ProductRegister.Mapping;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class PromotionService : IPromotionService
 {
-    public PromotionService(IPromotionRepository promotionRepository)
+    public PromotionService(
+        IPromotionRepository promotionRepository,
+        ProductMapper productMapper,
+        IValidator<ServicePromotionCreateRequest>? createRequestValidator = null,
+        IValidator<ServicePromotionUpdateRequest>? updateRequestValidator = null)
     {
         _promotionRepository = promotionRepository;
+        _productMapper = productMapper;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IPromotionRepository _promotionRepository;
+    private readonly ProductMapper _productMapper;
+    private readonly IValidator<ServicePromotionCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServicePromotionUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<Promotion> GetAll()
     {
@@ -55,31 +61,33 @@ internal sealed class PromotionService : IPromotionService
         return _promotionRepository.GetActiveForProduct(productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest, IValidator<PromotionCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServicePromotionCreateRequest createRequest, IValidator<ServicePromotionCreateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _promotionRepository.Insert(createRequest);
+        PromotionCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.PromotionAddedDate = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _promotionRepository.Insert(createRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest, IValidator<PromotionUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServicePromotionUpdateRequest updateRequest, IValidator<ServicePromotionUpdateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _promotionRepository.Update(updateRequest);
+        PromotionUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.PromotionAddedDate = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _promotionRepository.Update(updateRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);

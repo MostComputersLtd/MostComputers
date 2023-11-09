@@ -1,28 +1,41 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
-using MOSTComputers.Services.DAL.Models.Responses;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Mapping;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ProductImageService : IProductImageService
 {
-    public ProductImageService(IProductImageRepository productImageRepository)
+    public ProductImageService(
+        IProductImageRepository productImageRepository,
+        ProductMapper productMapper,
+        IValidator<ServiceProductImageCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceProductImageUpdateRequest>? updateRequestValidator = null,
+        IValidator<ServiceProductFirstImageCreateRequest>? firstImageCreateRequestValidator = null,
+        IValidator<ServiceProductFirstImageUpdateRequest>? firstImageUpdateRequestValidator = null)
     {
         _productImageRepository = productImageRepository;
+        _productMapper = productMapper;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
+        _firstImageCreateRequestValidator = firstImageCreateRequestValidator;
+        _firstImageUpdateRequestValidator = firstImageUpdateRequestValidator;
     }
 
     private readonly IProductImageRepository _productImageRepository;
+    private readonly ProductMapper _productMapper;
+    private readonly IValidator<ServiceProductImageCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceProductImageUpdateRequest>? _updateRequestValidator;
+    private readonly IValidator<ServiceProductFirstImageCreateRequest>? _firstImageCreateRequestValidator;
+    private readonly IValidator<ServiceProductFirstImageUpdateRequest>? _firstImageUpdateRequestValidator;
 
     public IEnumerable<ProductImage> GetAllInProduct(uint productId)
     {
@@ -49,65 +62,69 @@ internal sealed class ProductImageService : IProductImageService
         return _productImageRepository.GetByProductIdInFirstImages(productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest,
-        IValidator<ProductImageCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest,
+        IValidator<ServiceProductImageCreateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImages(createRequest);
+        ProductImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImages(createRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest,
-        IValidator<ProductFirstImageCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ServiceProductFirstImageCreateRequest createRequest,
+        IValidator<ServiceProductFirstImageCreateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _firstImageCreateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.InsertInFirstImages(createRequest);
+        ProductFirstImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.InsertInFirstImages(createRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest updateRequest,
-        IValidator<ProductImageUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInAllImages(ServiceProductImageUpdateRequest updateRequest,
+        IValidator<ServiceProductImageUpdateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.UpdateInAllImages(updateRequest);
+        ProductImageUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.UpdateInAllImages(updateRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest updateRequest,
-        IValidator<ProductFirstImageUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInFirstImages(ServiceProductFirstImageUpdateRequest updateRequest,
+        IValidator<ServiceProductFirstImageUpdateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _firstImageUpdateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.UpdateInFirstImages(updateRequest);
+        ProductFirstImageUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.UpdateInFirstImages(updateRequestInternal);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);

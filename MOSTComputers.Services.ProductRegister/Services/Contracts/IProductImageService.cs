@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
-using MOSTComputers.Services.DAL.Models.Responses;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
 using OneOf.Types;
 
@@ -15,10 +15,10 @@ public interface IProductImageService
     IEnumerable<ProductImage> GetAllInProduct(uint productId);
     ProductImage? GetByIdInAllImages(uint id);
     ProductImage? GetFirstImageForProduct(uint productId);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest, IValidator<ProductImageCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest, IValidator<ProductFirstImageCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest updateRequest, IValidator<ProductImageUpdateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest updateRequest, IValidator<ProductFirstImageUpdateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest, IValidator<ServiceProductImageCreateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ServiceProductFirstImageCreateRequest createRequest, IValidator<ServiceProductFirstImageCreateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInAllImages(ServiceProductImageUpdateRequest updateRequest, IValidator<ServiceProductImageUpdateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateInFirstImages(ServiceProductFirstImageUpdateRequest updateRequest, IValidator<ServiceProductFirstImageUpdateRequest>? validator = null);
     bool DeleteInFirstImagesByProductId(uint productId);
     bool DeleteAllImagesForProduct(uint productId);
     bool DeleteInAllImagesById(uint id);

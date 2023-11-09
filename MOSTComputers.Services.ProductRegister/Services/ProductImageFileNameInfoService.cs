@@ -1,29 +1,31 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.DAL;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInfoService
 {
-    public ProductImageFileNameInfoService(IProductImageFileNameInfoRepository imageFileNameInfoRepository)
+    public ProductImageFileNameInfoService(
+        IProductImageFileNameInfoRepository imageFileNameInfoRepository,
+        IValidator<ProductImageFileNameInfoCreateRequest>? createRequestValidator = null,
+        IValidator<ProductImageFileNameInfoUpdateRequest>? updateRequestValidator = null)
     {
         _imageFileNameInfoRepository = imageFileNameInfoRepository;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IProductImageFileNameInfoRepository _imageFileNameInfoRepository;
+    private readonly IValidator<ProductImageFileNameInfoCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ProductImageFileNameInfoUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<ProductImageFileNameInfo> GetAll()
     {
@@ -38,12 +40,9 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest,
         IValidator<ProductImageFileNameInfoCreateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!result.IsValid) return result;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         return _imageFileNameInfoRepository.Insert(createRequest);
     }
@@ -51,12 +50,9 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest,
         IValidator<ProductImageFileNameInfoUpdateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!result.IsValid) return result;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         return _imageFileNameInfoRepository.Update(updateRequest);
     }

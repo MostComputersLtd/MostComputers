@@ -1,28 +1,31 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ProductService : IProductService
 {
-    public ProductService(IProductRepository productRepository)
+    public ProductService(
+        IProductRepository productRepository,
+        IValidator<ProductCreateRequest>? createRequestValidator = null,
+        IValidator<ProductUpdateRequest>? updateRequestValidator = null)
     {
         _productRepository = productRepository;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IProductRepository _productRepository;
+    private readonly IValidator<ProductCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ProductUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<Product> GetAllWithoutImagesAndProps()
     {
@@ -67,11 +70,16 @@ internal sealed class ProductService : IProductService
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest,
         IValidator<ProductCreateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
+        if (!validationResult.IsValid) return validationResult;
+
+        if (createRequest.Images is not null)
+        {
+            foreach (var item in createRequest.Images)
+            {
+                item.DateModified = DateTime.Now;
+            }
         }
 
         OneOf<Success, UnexpectedFailureResult> result = _productRepository.Insert(createRequest);
@@ -82,11 +90,16 @@ internal sealed class ProductService : IProductService
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
+        if (!validationResult.IsValid) return validationResult;
+
+        if (updateRequest.Images is not null)
+        {
+            foreach (var item in updateRequest.Images)
+            {
+                item.DateModified = DateTime.Now;
+            }
         }
 
         OneOf<Success, UnexpectedFailureResult> result = _productRepository.Update(updateRequest);

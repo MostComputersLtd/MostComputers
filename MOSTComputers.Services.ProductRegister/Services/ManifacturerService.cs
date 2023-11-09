@@ -1,29 +1,31 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models.Requests.Category;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ManifacturerService : IManifacturerService
 {
-    public ManifacturerService(IManifacturerRepository manifacturerRepository)
+    public ManifacturerService(
+        IManifacturerRepository manifacturerRepository, 
+        IValidator<ManifacturerCreateRequest>? createRequestValidator,
+        IValidator<ManifacturerUpdateRequest>? updateRequestValidator)
     {
         _manifacturerRepository = manifacturerRepository;
+        _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IManifacturerRepository _manifacturerRepository;
+    private readonly IValidator<ManifacturerCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ManifacturerUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<Manifacturer> GetAll()
     {
@@ -38,12 +40,9 @@ internal sealed class ManifacturerService : IManifacturerService
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
         IValidator<ManifacturerCreateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         OneOf<Success, UnexpectedFailureResult> result = _manifacturerRepository.Insert(createRequest);
 
@@ -54,12 +53,9 @@ internal sealed class ManifacturerService : IManifacturerService
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest,
         IValidator<ManifacturerUpdateRequest>? validator = null)
     {
-        if (validator != null)
-        {
-            ValidationResult validationResult = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         OneOf<Success, UnexpectedFailureResult> result = _manifacturerRepository.Update(updateRequest);
 

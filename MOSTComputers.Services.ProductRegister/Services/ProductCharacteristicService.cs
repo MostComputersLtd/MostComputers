@@ -1,28 +1,34 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
-using MOSTComputers.Services.DAL.Models;
 using OneOf.Types;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FluentValidation.Results;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class ProductCharacteristicService : IProductCharacteristicService
 {
-    public ProductCharacteristicService(IProductCharacteristicsRepository productCharacteristicsRepository)
+    public ProductCharacteristicService(
+        IProductCharacteristicsRepository productCharacteristicsRepository,
+        IValidator<ProductCharacteristicCreateRequest>? createRequestValidator = null,
+        IValidator<ProductCharacteristicByIdUpdateRequest>? updateByIdRequestValidator = null,
+        IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? updateByNameAndCategoryIdRequestValidator = null)
     {
         _productCharacteristicsRepository = productCharacteristicsRepository;
+        _createRequestValidator = createRequestValidator;
+        _updateByIdRequestValidator = updateByIdRequestValidator;
+        _updateByNameAndCategoryIdRequestValidator = updateByNameAndCategoryIdRequestValidator;
     }
 
     private readonly IProductCharacteristicsRepository _productCharacteristicsRepository;
+    private readonly IValidator<ProductCharacteristicCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ProductCharacteristicByIdUpdateRequest>? _updateByIdRequestValidator;
+    private readonly IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? _updateByNameAndCategoryIdRequestValidator;
 
     public IEnumerable<ProductCharacteristic> GetAllByCategoryId(uint categoryId)
     {
@@ -36,36 +42,28 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult validationResult = validator.Validate(createRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
-            if (!validationResult.IsValid) return validationResult;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         return _productCharacteristicsRepository.Insert(createRequest);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByIdUpdateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateByIdRequestValidator);
 
-            if (!result.IsValid) return result;
-        }
+        if (!validationResult.IsValid) return validationResult;
 
         return _productCharacteristicsRepository.UpdateById(updateRequest);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? validator = null)
     {
-        if (validator is not null)
-        {
-            ValidationResult result = validator.Validate(updateRequest);
 
-            if (!result.IsValid) return result;
-        }
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateByNameAndCategoryIdRequestValidator);
+
+        if (!validationResult.IsValid) return validationResult;
 
         return _productCharacteristicsRepository.UpdateByNameAndCategoryId(updateRequest);
     }
