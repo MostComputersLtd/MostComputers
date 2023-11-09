@@ -15,4 +15,9 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.XMLDataOperations\MOSTComputers.Services.XMLDataOperations.csproj" />
+  </ItemGroup>
+
 </Project>
