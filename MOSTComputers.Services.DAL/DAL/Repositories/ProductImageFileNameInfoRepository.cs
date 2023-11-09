@@ -1,9 +1,8 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -40,7 +39,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             ORDER BY ImgNo;
             """;
 
-        return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId });
+        return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId = (int)productId });
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest)
@@ -133,7 +132,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parametersForValidationQuery = new
         {
-            productId
+            productId = (int)productId
         };
 
         bool productWithGivenIdExists = _relationalDataAccess.GetData<bool, dynamic>(checkWhetherProductsTableHasTheIdInTheRequest, parametersForValidationQuery).FirstOrDefault();
@@ -160,7 +159,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parameters = new
         {
-            productId
+            productId = (int)productId
         };
 
         try
@@ -192,7 +191,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parameters = new
         {
-            productId,
+            productId = (int)productId,
             DisplayOrder = displayOrder
         };
 

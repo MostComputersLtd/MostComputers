@@ -1,17 +1,10 @@
-﻿using MOSTComputers.Services.DAL.Models;
-using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 using OneOf;
 using OneOf.Types;
-using FluentValidation.Results;
-using FluentValidation;
-using MOSTComputers.Services.DAL.Models.Requests.Promotions;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models.Responses;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.Promotions;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -53,7 +46,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             WHERE CSTID = @productId;
             """;
 
-        return _relationalDataAccess.GetData<Promotion, dynamic>(getAllForProductQuery, new { productId });
+        return _relationalDataAccess.GetData<Promotion, dynamic>(getAllForProductQuery, new { productId = (int)productId });
     }
 
     public IEnumerable<Promotion> GetAllForSelectionOfProducts(List<uint> productIds)
@@ -92,7 +85,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             AND Active = 1;
             """;
 
-        return _relationalDataAccess.GetData<Promotion, dynamic>(getActiveForProductQuery, new { productId })
+        return _relationalDataAccess.GetData<Promotion, dynamic>(getActiveForProductQuery, new { productId = (int)productId })
             .FirstOrDefault();
     }
 
@@ -104,7 +97,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             ExpDate, MinQty, MaxQty, CampaignID, QtyIncrement, RequiredCSTIDs, ExpQty, SoldQty, PromotionName, Consignation, Points, RegistrationID,
             Timestamp, PromotionVisualizationId)
 
-            VALUES(@ProductId, @ChgDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
+            VALUES(@ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
             @ExpirationDate, @MinimumQuantity, @MaximumQuantity, @CampaignId, @QuantityIncrement, @RequiredProductIdsString, @ExpQuantity, @SoldQuantity,
             @Name, @Consignation, @Points, @RegistrationId, @TimeStamp, @PromotionVisualizationId)
             """;
@@ -112,7 +105,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         var parameters = new
         {
             createRequest.ProductId,
-            createRequest.ChgDate,
+            createRequest.PromotionAddedDate,
             createRequest.Source,
             createRequest.Type,
             createRequest.Status,
@@ -148,7 +141,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             $"""
             UPDATE {_tableName}
             SET CSTID = @ProductId,
-                ChgDate = @ChgDate,
+                ChgDate = @PromotionAddedDate,
                 PromSource = @Source,
                 PromType = @Type,
                 Status = @Status,
@@ -179,7 +172,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         {
             id = updateRequest.Id,
             updateRequest.ProductId,
-            updateRequest.ChgDate,
+            updateRequest.PromotionAddedDate,
             updateRequest.Source,
             updateRequest.Type,
             updateRequest.Status,
@@ -219,7 +212,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteQuery, new { id = (int)id });
 
             if (rowsAffected == 0) return false;
 
@@ -241,7 +234,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteAllByProductIdQuery, new { productId });
+            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteAllByProductIdQuery, new { productId = (int)productId });
 
             if (rowsAffected == 0) return false;
 

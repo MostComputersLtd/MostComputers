@@ -1,18 +1,15 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
-using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
+﻿using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Data;
-using System.Text;
 using Dapper;
-using MOSTComputers.Services.DAL.Models.Responses;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -207,8 +204,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var paramters = new
         {
-            SelectStart = start,
-            SelectEnd = end,
+            SelectStart = (int)start,
+            SelectEnd = (int)end,
         };
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFirstBetweenStartAndEnd,
@@ -260,7 +257,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,ImageProductId",
 
-            new { id })
+            new { id = (int)id })
             .FirstOrDefault();
     }
 
@@ -300,7 +297,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { id })
+            new { id = (int)id })
             .FirstOrDefault();
     }
 
@@ -340,7 +337,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,ImageProductId",
 
-            new { id })
+            new { id = (int)id })
             .FirstOrDefault();
     }
 
@@ -383,31 +380,31 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             createRequest.Id,
             CategoryId = createRequest.CategoryID,
-            CfgSubType = createRequest.SearchString,
-            ADDWRR = createRequest.AddWrr,
-            ADDWRRTERM = createRequest.AddWrrTerm,
-            ADDWRRDEF = createRequest.AddWrrDef,
-            DEFWRRTERM = createRequest.DefWrrTerm,
+            CfgSubType = createRequest.Name,
+            ADDWRR = createRequest.AdditionalWarrantyPrice,
+            ADDWRRTERM = createRequest.AdditionalWarrantyTermMonths,
+            ADDWRRDEF = createRequest.StandardWarrantyPrice,
+            DEFWRRTERM = createRequest.StandardWarrantyTermMonths,
             createRequest.DisplayOrder,
             OLD = createRequest.Status,
             PLSHOW = createRequest.PlShow,
             PRICE1 = createRequest.Price1,
-            PRICE2 = createRequest.Price2,
+            PRICE2 = createRequest.DisplayPrice,
             PRICE3 = createRequest.Price3,
             CurrencyId = createRequest.Currency,
             createRequest.RowGuid,
-            PromPID = createRequest.PromPid,
+            PromPID = createRequest.Promotionid,
             PromRID = createRequest.PromRid,
-            createRequest.PromPictureId,
-            createRequest.PromExpDate,
+            PromPictureId = createRequest.PromotionPictureId,
+            PromExpDate = createRequest.PromotionExpireDate,
             createRequest.AlertPictureId,
-            createRequest.AlertExpDate,
+            AlertExpDate = createRequest.AlertExpireDate,
             createRequest.PriceListDescription,
             createRequest.ManifacturerId,
             SubcategoryId = createRequest.SubCategoryId,
-            SPLMODEL = createRequest.SplModel1,
-            SPLMODEL1 = createRequest.SplModel2,
-            SPLMODEL2 = createRequest.SplModel3,
+            SPLMODEL = createRequest.PartNumber1,
+            SPLMODEL1 = createRequest.PartNumber2,
+            SPLMODEL2 = createRequest.SearchString,
         };
 
         OneOf<Success, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
@@ -550,32 +547,33 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var parameters = new
         {
+            id = updateRequest.Id,
             CategoryId = updateRequest.CategoryID,
-            updateRequest.SearchString,
-            ADDWRR = updateRequest.AddWrr,
-            ADDWRRTERM = updateRequest.AddWrrTerm,
-            ADDWRRDEF = updateRequest.AddWrrDef,
-            DEFWRRTERM = updateRequest.DefWrrTerm,
+            updateRequest.Name,
+            ADDWRR = updateRequest.AdditionalWarrantyPrice,
+            ADDWRRTERM = updateRequest.AdditionalWarrantyTermMonths,
+            ADDWRRDEF = updateRequest.StandardWarrantyPrice,
+            DEFWRRTERM = updateRequest.StandardWarrantyTermMonths,
             updateRequest.DisplayOrder,
             updateRequest.Status,
             PLSHOW = updateRequest.PlShow,
             PRICE1 = updateRequest.Price1,
-            PRICE2 = updateRequest.Price2,
+            PRICE2 = updateRequest.DisplayPrice,
             PRICE3 = updateRequest.Price3,
             CurrencyId = updateRequest.Currency,
             updateRequest.RowGuid,
-            PromPID = updateRequest.PromPid,
+            PromPID = updateRequest.Promotionid,
             PromRID = updateRequest.PromRid,
-            updateRequest.PromPictureId,
-            updateRequest.PromExpDate,
+            PromPictureId = updateRequest.PromotionPictureId,
+            PromExpDate = updateRequest.PromotionExpireDate,
             updateRequest.AlertPictureId,
-            updateRequest.AlertExpDate,
+            AlertExpDate = updateRequest.AlertExpireDate,
             updateRequest.PriceListDescription,
             updateRequest.ManifacturerId,
             SubcategoryId = updateRequest.SubCategoryId,
-            SPLMODEL = updateRequest.SplModel1,
-            SPLMODEL1 = updateRequest.SplModel2,
-            SPLMODEL2 = updateRequest.SplModel3
+            SPLMODEL = updateRequest.PartNumber1,
+            SPLMODEL1 = updateRequest.PartNumber2,
+            SPLMODEL2 = updateRequest.SearchString
         };
 
         var result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(
@@ -669,7 +667,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var parameters = new
         {
-            id
+            id = (int)id
         };
 
         OneOf<Success, UnexpectedFailureResult> result = 
@@ -694,8 +692,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             //connection.Execute(deleteFirstForProductImage, new { productId = id }, transaction, commandType: CommandType.Text);
         }
     }
-
-    
 
     private static ProductPropertyCreateRequest Map(CurrentProductPropertyCreateRequest request, int productId)
     {

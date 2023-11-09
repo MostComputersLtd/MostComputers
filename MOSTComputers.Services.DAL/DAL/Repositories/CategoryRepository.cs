@@ -1,9 +1,7 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Category;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Category;
-using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 using System.Data.SqlClient;
@@ -38,13 +36,17 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             WHERE CategoryID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Category, dynamic>(getByIdQuery, new { id }).FirstOrDefault();
+        return _relationalDataAccess.GetData<Category, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
+            IF EXISTS (
+                SELECT 1 FROM {_tableName}
+                WHERE CategoryID = @parentId
+            )
             INSERT INTO {_tableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
             VALUES (@Description, @IsLeaf, @DisplayOrder, @RowGuid, @ProductsUpdateCounter, @ParentId);
             """;
@@ -70,7 +72,6 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             $"""
             UPDATE {_tableName}
             SET Description = @Description,
-                IsLeaf = @IsLeaf,
                 S = @DisplayOrder,
                 rowguid = @RowGuid,
                 ProductsUpdateCounter = @ProductsUpdateCounter
@@ -80,13 +81,11 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         var parameters = new
         {
-            id = updateRequest.Id,
+            id = (int)updateRequest.Id,
             updateRequest.Description,
-            updateRequest.IsLeaf,
             updateRequest.DisplayOrder,
             updateRequest.RowGuid,
             updateRequest.ProductsUpdateCounter,
-            ParentId = updateRequest.ParentCategoryId,
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(updateQuery, parameters);
@@ -103,7 +102,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             """;
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = (int)id });
 
             if (rowsAffected == 0) return false;
 

@@ -1,12 +1,10 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+﻿using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 using OneOf;
 using OneOf.Types;
-using MOSTComputers.Services.DAL.Models.Responses;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -29,7 +27,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             WHERE CSTID = @productId;
             """;
 
-        return _relationalDataAccess.GetData<ProductImage, dynamic>(getAllInProductQuery, new { productId });
+        return _relationalDataAccess.GetData<ProductImage, dynamic>(getAllInProductQuery, new { productId = (int)productId });
     }
 
     public IEnumerable<ProductImage> GetAllFirstImagesForAllProducts()
@@ -70,7 +68,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             WHERE ID = @id;
             """;
 
-        return _relationalDataAccess.GetData<ProductImage, dynamic>(getByIdInAllImagesQuery, new { id }).FirstOrDefault();
+        return _relationalDataAccess.GetData<ProductImage, dynamic>(getByIdInAllImagesQuery, new { id = (int)id }).FirstOrDefault();
     }
 
     public ProductImage? GetByProductIdInFirstImages(uint productId)
@@ -82,7 +80,8 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             WHERE ID = @productId;
             """;
 
-        ProductFirstImage? image = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery, new { productId }).FirstOrDefault();
+        ProductFirstImage? image = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery, new { productId = (int)productId })
+            .FirstOrDefault();
 
         if (image is null) return null;
 
@@ -197,7 +196,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id = (int)id });
 
             if (rowsAffected == 0) return false;
 
@@ -219,7 +218,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id = (int)id });
 
             if (rowsAffected == 0) return false;
 
@@ -241,7 +240,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId = (int)productId });
 
             if (rowsAffected == 0) return false;
 

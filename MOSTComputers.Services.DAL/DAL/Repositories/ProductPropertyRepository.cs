@@ -1,9 +1,8 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
-using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -43,7 +42,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getAllInProductQuery, new { productId });
+        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getAllInProductQuery, new { productId = (int)productId });
     }
 
     public ProductProperty? GetByNameAndProductId(string name, uint productId)
@@ -56,7 +55,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             AND Keyword = @Name;
             """;
 
-        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getByNameAndProductIdQuery, new { Name = name, productId }).FirstOrDefault();
+        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getByNameAndProductIdQuery, new { Name = name, productId = (int)productId })
+            .FirstOrDefault();
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductPropertyCreateRequest createRequest)
@@ -191,7 +191,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId, characteristicId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId = (int)productId, characteristicId = (int)characteristicId });
 
             if (rowsAffected == 0) return false;
 
@@ -213,7 +213,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId = (int)productId });
 
             if (rowsAffected == 0) return false;
 
@@ -235,7 +235,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { characteristicId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { characteristicId = (int)characteristicId });
 
             if (rowsAffected == 0) return false;
 

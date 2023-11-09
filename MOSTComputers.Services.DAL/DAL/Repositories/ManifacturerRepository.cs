@@ -1,9 +1,7 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.DAL.Models;
-using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
-using MOSTComputers.Services.DAL.Models.Responses;
 using OneOf;
 using OneOf.Types;
 
@@ -39,7 +37,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             WHERE MfrID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Manifacturer, dynamic>(getByIdQuery, new { id }).FirstOrDefault();
+        return _relationalDataAccess.GetData<Manifacturer, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
@@ -99,7 +97,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id });
+            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id = (int)id });
 
             if (rowsAffected == 0) return false;
 
