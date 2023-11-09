@@ -3,8 +3,6 @@ using System.Data;
 using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
-using MOSTComputers.Services.DAL.Mapping;
-using MOSTComputers.Services.Mapping;
 
 namespace MOSTComputers.Services.DAL.DAL;
 
