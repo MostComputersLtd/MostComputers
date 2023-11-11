@@ -3,10 +3,10 @@ using Respawn;
 
 namespace MOSTComputers.Tests.Integration.Common;
 
-public abstract class SingleIntegrationTestBase<TEntryPoint> : IAsyncLifetime
+public abstract class SingleIntegrationTestBaseForWebProjects<TEntryPoint> : IAsyncLifetime
     where TEntryPoint : class
 {
-    protected SingleIntegrationTestBase(string connectionString, WebApplicationFactory<TEntryPoint>? webApplicationFactory = null, RespawnerOptions? respawnerOptions = null)
+    protected SingleIntegrationTestBaseForWebProjects(string connectionString, WebApplicationFactory<TEntryPoint>? webApplicationFactory = null, RespawnerOptions? respawnerOptions = null)
     {
         _connectionString = connectionString;
 

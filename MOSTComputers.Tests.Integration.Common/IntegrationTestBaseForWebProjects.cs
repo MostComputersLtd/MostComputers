@@ -3,12 +3,10 @@ using Respawn;
 
 namespace MOSTComputers.Tests.Integration.Common;
 
-public class IntegrationTestBase<TProgramClass> : IAsyncLifetime
+public class IntegrationTestBaseForWebProjects<TProgramClass> : IAsyncLifetime
     where TProgramClass : class
 {
-    protected readonly string _connString;
-
-    public IntegrationTestBase(string connString)
+    public IntegrationTestBaseForWebProjects(string connString, RespawnerOptions? respawnerOptions = null)
     {
         WebApplicationFactory<TProgramClass> webAppFactory = new();
         //.WithWebHostBuilder(builder =>
@@ -22,20 +20,26 @@ public class IntegrationTestBase<TProgramClass> : IAsyncLifetime
         //);
 
         _connString = connString;
-
+        _respawnerOptions = respawnerOptions;
         _client = webAppFactory.CreateClient();
     }
 
     protected readonly HttpClient _client;
 
+    protected readonly string _connString;
+
     protected Respawner _respawner = default!;
+
+    private readonly RespawnerOptions? _respawnerOptions;
 
     public virtual async Task InitializeAsync()
     {
-        _respawner = await Respawner.CreateAsync(_connString, new()
-        {
-            DbAdapter = DbAdapter.SqlServer
-        });
+        _respawner = await Respawner.CreateAsync(
+            _connString,
+            _respawnerOptions ?? new()
+            {
+                DbAdapter = DbAdapter.SqlServer
+            });
     }
 
     public virtual async Task DisposeAsync()

@@ -1,10 +1,10 @@
 namespace MOSTComputers.Tests.Integration.Common;
 
-public class IntegrationTestBaseWithContainer<TEntryPoint, TWebApplicationFactoryWithContainer> : IAsyncLifetime
+public class IntegrationTestBaseForWebProjectsWithContainer<TEntryPoint, TWebApplicationFactoryWithContainer> : IAsyncLifetime
     where TEntryPoint : class
     where TWebApplicationFactoryWithContainer : WebApplicationFactoryWithContainer<TEntryPoint>
 {
-    public IntegrationTestBaseWithContainer(TWebApplicationFactoryWithContainer webApplicationFactory)
+    public IntegrationTestBaseForWebProjectsWithContainer(TWebApplicationFactoryWithContainer webApplicationFactory)
     {
         client = webApplicationFactory.get_client;
         _resetDatabaseAction = webApplicationFactory.ResetDatabaseAsync;
