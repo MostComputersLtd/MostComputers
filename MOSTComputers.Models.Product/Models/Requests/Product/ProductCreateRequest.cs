@@ -2,7 +2,6 @@
 
 public sealed class ProductCreateRequest
 {
-    public int Id { get; set; }
     public string? Name { get; set; }
     public decimal? AdditionalWarrantyPrice { get; set; }
     public long? AdditionalWarrantyTermMonths { get; set; }
