@@ -37,16 +37,16 @@ internal sealed class ManifacturerService : IManifacturerService
         return _manifacturerRepository.GetById(id);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
         IValidator<ManifacturerCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> result = _manifacturerRepository.Insert(createRequest);
+        OneOf<uint, UnexpectedFailureResult> result = _manifacturerRepository.Insert(createRequest);
 
-        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 

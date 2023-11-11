@@ -13,7 +13,7 @@ public interface ICategoryService
 {
     IEnumerable<Category> GetAll();
     Category? GetById(uint id);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest, IValidator<ServiceCategoryCreateRequest>? validator = null);
+    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest, IValidator<ServiceCategoryCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceCategoryUpdateRequest updateRequest, IValidator<ServiceCategoryUpdateRequest>? validator = null);
     bool Delete(uint id);
 }

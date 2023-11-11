@@ -43,7 +43,7 @@ internal sealed class CategoryService : ICategoryService
         return _categoryRepository.GetById(id);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
         IValidator<ServiceCategoryCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
@@ -55,10 +55,10 @@ internal sealed class CategoryService : ICategoryService
         createRequestInternal.RowGuid = Guid.NewGuid();
         createRequestInternal.IsLeaf = (createRequestInternal.ParentCategoryId is not null);
 
-        OneOf<Success, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequestInternal);
+        OneOf<uint, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequestInternal);
 
-        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-            success => success, unexpectedFailure => unexpectedFailure);
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+            id => id, unexpectedFailure => unexpectedFailure);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceCategoryUpdateRequest updateRequest,

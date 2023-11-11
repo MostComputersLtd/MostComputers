@@ -67,7 +67,7 @@ internal sealed class ProductService : IProductService
         return _productRepository.GetById_WithManifacturerAndCategoryAndImages(id);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest,
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest,
         IValidator<ProductCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
@@ -82,9 +82,9 @@ internal sealed class ProductService : IProductService
             }
         }
 
-        OneOf<Success, UnexpectedFailureResult> result = _productRepository.Insert(createRequest);
+        OneOf<uint, UnexpectedFailureResult> result = _productRepository.Insert(createRequest);
 
-        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
     }
 

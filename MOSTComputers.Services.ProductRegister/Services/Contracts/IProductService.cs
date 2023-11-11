@@ -17,7 +17,7 @@ public interface IProductService
     Product? GetSelectionWithImages(uint id);
     IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<uint> ids);
     IEnumerable<Product> GetSelectionWithProps(List<uint> ids);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
+    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null);
     bool Delete(uint id);
 }
