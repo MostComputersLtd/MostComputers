@@ -5,6 +5,7 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+
 public interface IProductRepository
 {
     IEnumerable<Product> GetAll_WithManifacturerAndCategory();
@@ -15,7 +16,7 @@ public interface IProductRepository
     Product? GetById_WithManifacturerAndCategoryAndFirstImage(uint id);
     Product? GetById_WithManifacturerAndCategoryAndImages(uint id);
     Product? GetById_WithManifacturerAndCategoryAndProperties(uint id);
-    OneOf<Success, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
+    OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest);
     bool Delete(uint id);
 }

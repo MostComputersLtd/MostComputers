@@ -10,7 +10,7 @@ public interface IManifacturerRepository
 {
     IEnumerable<Manifacturer> GetAll();
     Manifacturer? GetById(uint id);
-    OneOf<Success, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest);
+    OneOf<uint, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest);
     bool Delete(uint id);
 }

@@ -39,16 +39,18 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         return _relationalDataAccess.GetData<Category, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
+    public OneOf<uint, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
-            IF EXISTS (
+            IF @parentId IS NULL
+            OR EXISTS (
                 SELECT 1 FROM {_tableName}
                 WHERE CategoryID = @parentId
             )
             INSERT INTO {_tableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
-            VALUES (@Description, @IsLeaf, @DisplayOrder, @RowGuid, @ProductsUpdateCounter, @ParentId);
+            OUTPUT INSERTED.CategoryID
+            VALUES (@Description, @IsLeaf, @DisplayOrder, @RowGuid, @ProductsUpdateCounter, @parentId);
             """;
 
         var parameters = new
@@ -58,12 +60,12 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             createRequest.DisplayOrder,
             createRequest.RowGuid,
             createRequest.ProductsUpdateCounter,
-            ParentId = createRequest.ParentCategoryId,
+            parentId = createRequest.ParentCategoryId,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(insertQuery, parameters);
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (uint)id.Value : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest)

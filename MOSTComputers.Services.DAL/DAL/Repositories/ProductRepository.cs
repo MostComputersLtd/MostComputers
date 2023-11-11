@@ -75,7 +75,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE CSTID IN
             """;
 
-        string queryWithIds = getAllWithManifacturerAndCategoryByIdsQuery + 
+        string queryWithIds = getAllWithManifacturerAndCategoryByIdsQuery +
             $"""
             ({GetDelimeteredListFromIds(ids)})
             ORDER BY S;
@@ -341,33 +341,54 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             .FirstOrDefault();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
+
+
+    // ====================================================================================================
+
+
+
+
+
+    // FIX IDS IN THE PRODUCTS AND ALL IMAGES QUERIES
+
+
+
+
+
+    // ====================================================================================================
+
+    public OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
         const string insertProductQuery =
             $"""
+            CREATE TABLE #Temp_Table (ID INT)
+            
             INSERT INTO {_tableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
-                PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2
-
-            VALUES (@Id, @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
+                PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2)
+            OUTPUT INSERTED.CSTID INTO #Temp_Table
+            VALUES (100000, @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
                 @PromPID, @PromRID, @PromPictureId, @PromExpDate, @AlertPictureId, @AlertExpDate, @PriceListDescription, @ManifacturerId, @SubcategoryId, @SPLMODEL, @SPLMODEL1, @SPLMODEL2)
+
+            SELECT TOP 1 ID FROM #Temp_Table
             """;
 
         const string insertPropertiesQuery =
             $"""
             INSERT INTO {_propertiesTableName}(CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
-            VALUES(@ProductId, @ProductCharacteristicId, @DisplayOrder, @Name, @Value, @XmlPlacement)
+            VALUES(@ProductId, @ProductCharacteristicId, @DisplayOrder,
+            (SELECT Name FROM dbo.ProductKeyword WHERE ProductKeywordID = @ProductCharacteristicId), @Value, @XmlPlacement)
             """;
 
         const string insertImageFilePathInfosQuery =
             $"""
-            INSERT INTO {_imageFileNamesTable}(CSTID, ImgNo, FileName)
-            VALUES (@ProductId, @DisplayOrderInRange, @FileName)
+            INSERT INTO {_imageFileNamesTable}(CSTID, ImgNo, ImgFileName)
+            VALUES (@ProductId, @DisplayOrder, @FileName)
             """;
 
-        const string insertInAllImagesQuery =
-            $"""
-            INSERT INTO {_allImagesTableName}(CSTID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@CSTID, @XML, @ImageData, @ImageFileExtension, @DateModified)
+        string insertInAllImagesQuery =
+           $"""
+            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            VALUES (@Id, @ProductId, @XML, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
         const string insertInFirstImagesQuery =
@@ -378,7 +399,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var parameters = new
         {
-            createRequest.Id,
             CategoryId = createRequest.CategoryID,
             CfgSubType = createRequest.Name,
             ADDWRR = createRequest.AdditionalWarrantyPrice,
@@ -407,22 +427,26 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             SPLMODEL2 = createRequest.SearchString,
         };
 
-        OneOf<Success, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
+        OneOf<uint, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<uint, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
 
         return result;
 
-        OneOf<Success, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
+        OneOf<uint, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
         {
-            connection.Execute(insertProductQuery, parametersLocal, transaction, commandType: CommandType.Text);
+            int id = connection.ExecuteScalar<int>(insertProductQuery, parametersLocal, transaction, commandType: CommandType.Text);
 
             if (createRequest.Properties is not null
                 && createRequest.Properties.Count > 0)
             {
-                int rowsAffected = connection.Execute(insertPropertiesQuery, createRequest.Properties.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                int rowsAffected = connection.Execute(insertPropertiesQuery, createRequest.Properties.Select(x => Map(x, id)), transaction, commandType: CommandType.Text);
 
-                if (rowsAffected == 0) return new UnexpectedFailureResult();
+                if (rowsAffected == 0)
+                {
+                    transaction.Rollback();
+
+                    return new UnexpectedFailureResult();
+                }
             }
-
 
             if (createRequest.ImageFileNames is not null
                 && createRequest.ImageFileNames.Count > 0)
@@ -438,20 +462,20 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     imageFileNameCreateRequest.DisplayOrder = i + 1;
                 }
 
-                connection.Execute(insertImageFilePathInfosQuery, orderedImageFileNames.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                connection.Execute(insertImageFilePathInfosQuery, orderedImageFileNames.Select(x => Map(x, id)), transaction, commandType: CommandType.Text);
             }
 
             if (createRequest.Images is not null
                 && createRequest.Images.Count > 0)
             {
-                connection.Execute(insertInAllImagesQuery, createRequest.Images.Select(x => Map(x, createRequest.Id)), transaction, commandType: CommandType.Text);
+                connection.Execute(insertInAllImagesQuery, createRequest.Images.Select(x => MapToLocal(x, id)), transaction, commandType: CommandType.Text);
 
-                connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), createRequest.Id), transaction, commandType: CommandType.Text);
+                connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), id), transaction, commandType: CommandType.Text);
             }
 
             transaction.Commit();
 
-            return new Success();
+            return (uint)id;
         }
     }
 
@@ -670,7 +694,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             id = (int)id
         };
 
-        OneOf<Success, UnexpectedFailureResult> result = 
+        OneOf<Success, UnexpectedFailureResult> result =
             _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(DeleteAllRecordsInTransaction, parameters);
 
         return result.IsT0;
@@ -715,6 +739,34 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         };
     }
 
+    public class LocalProductImageCreateRequest
+    {
+        public int? Id { get; set; }
+        public int? ProductId { get; set; }
+        public string? XML { get; set; }
+        public byte[]? ImageData { get; set; }
+        public string? ImageFileExtension { get; set; }
+        public DateTime? DateModified { get; set; }
+    }
+
+    int V = 40000;
+
+    private LocalProductImageCreateRequest MapToLocal(CurrentProductImageCreateRequest request, int productId)
+    {
+
+        LocalProductImageCreateRequest output = new()
+        {
+            Id = ++V,
+            ProductId = productId,
+            ImageData = request.ImageData,
+            ImageFileExtension = request.ImageFileExtension,
+            XML = request.XML,
+            DateModified = request.DateModified,
+        };
+
+        return output;
+    }
+
     private static ProductImageCreateRequest Map(CurrentProductImageCreateRequest request, int productId)
     {
         return new()
@@ -723,6 +775,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
             XML = request.XML,
+            DateModified = request.DateModified,
         };
     }
 

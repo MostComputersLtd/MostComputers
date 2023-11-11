@@ -11,6 +11,6 @@ public interface ICategoryRepository
     bool Delete(uint id);
     IEnumerable<Category> GetAll();
     Category? GetById(uint id);
-    OneOf<Success, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest);
+    OneOf<uint, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest);
 }

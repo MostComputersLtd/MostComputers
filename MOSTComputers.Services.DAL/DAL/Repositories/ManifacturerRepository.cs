@@ -40,11 +40,12 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         return _relationalDataAccess.GetData<Manifacturer, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
+    public OneOf<uint, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(BGName, Name, S, Active)
+            OUTPUT INSERTED.MfrID
             VALUES (@BGName, @Name, @DisplayOrder, @Active)
             """;
 
@@ -56,9 +57,9 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             insertRequest.Active,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(insertQuery, parameters);
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest)
