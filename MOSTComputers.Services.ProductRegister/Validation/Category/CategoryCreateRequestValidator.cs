@@ -14,7 +14,8 @@ internal sealed class CategoryCreateRequestValidator : AbstractValidator<Service
     public CategoryCreateRequestValidator()
     {
         RuleFor(x => x.Description).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
-        RuleFor(x => x.DisplayOrder).NotEqual(0);
-        RuleFor(x => x.ParentCategoryId).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.ParentCategoryId).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.ProductsUpdateCounter).Must(NullOrGreaterThanOrEqualToZero);
     }
 }
