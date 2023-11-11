@@ -112,12 +112,12 @@ public class XmlProductCreateModel : PageModel
     {
         foreach (var productCreateRequest in productCreateRequests)
         {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
 
             bool isSuccessResult = false;
 
             IActionResult insertActionResult = insertResult.Match(
-                success =>
+                id =>
                 {
                     isSuccessResult = true;
 
