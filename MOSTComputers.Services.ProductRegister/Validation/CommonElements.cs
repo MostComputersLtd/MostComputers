@@ -93,10 +93,10 @@ internal static class CommonElements
 
         foreach (char character in str)
         {
-            if (char.IsWhiteSpace(character)) return false;
+            if (!char.IsWhiteSpace(character)) return true;
         }
 
-        return true;
+        return false;
     }
 
     public static bool IsNotEmptyOrWhiteSpace(string? str)
@@ -107,10 +107,10 @@ internal static class CommonElements
 
         foreach (char character in str)
         {
-            if (char.IsWhiteSpace(character)) return false;
+            if (!char.IsWhiteSpace(character)) return true;
         }
 
-        return true;
+        return false;
     }
 
     public static bool IsNotWhiteSpace(string? str)
