@@ -2,22 +2,29 @@
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Tests.Integration.Common;
+using MOSTComputers.Services.ProductRegister.Tests.Integration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MOSTComputers.Tests.Integration.Common.DependancyInjection;
+using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models.Validation;
+using OneOf;
 
-namespace MOSTComputers.Services.DAL.Tests.Integration;
+namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class CategoryRepositoryTests : IntegrationTestBaseWithContainer<MOSTComputers.Services.ProductRegister.IEntryPoint, CustomWebApplicationFactory>
+public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 {
-    public CategoryRepositoryTests(CustomWebApplicationFactory webApplicationFactory)
-        : base(webApplicationFactory)
+    public CategoryServiceTests(ICategoryService categoryService)
+        : base(Startup.ConnectionString)
     {
-        _categoryService = webApplicationFactory.Services.GetRequiredService<ICategoryService>();
+        _categoryService = categoryService;
     }
 
     private readonly ICategoryService _categoryService;
@@ -29,74 +36,79 @@ public sealed class CategoryRepositoryTests : IntegrationTestBaseWithContainer<M
         ProductsUpdateCounter = 0,
         ParentCategoryId = null
     };
+
     private const int _insertRequiredIdValue = -100;
 
     [Fact]
     public void GetAll_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
-        ServiceCategoryCreateRequest request = new()
-        {
-            Description = "description",
-            DisplayOrder = 13123,
-            ProductsUpdateCounter = 0,
-            ParentCategoryId = null
-        };
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _categoryService.Insert(_validCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _categoryService.Insert(_validCreateRequest);
 
-        _categoryService.Insert(request);
-        _categoryService.Insert(request);
+        Assert.True(result1.IsT0);
+        Assert.True(result2.IsT0);
 
         IEnumerable<Category> categories = _categoryService.GetAll();
 
-        Assert.True(categories.Count() == 2);
+        Assert.True(categories.Count() >= 2);
+
+        uint id1 = result1.AsT0;
+        uint id2 = result2.AsT0;
+
+        Assert.Contains(categories, x => x.Id == (int)id1);
+        Assert.Contains(categories, x => x.Id == (int)id2);
+
+        // Deterministic Delete
+        DeleteRange(id1, id2);
     }
 
     [Fact]
     public void GetById_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
-        ServiceCategoryCreateRequest request = new()
-        {
-            Description = "description",
-            DisplayOrder = 13123,
-            ProductsUpdateCounter = 0,
-            ParentCategoryId = null
-        };
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
-        _categoryService.Insert(request);
+        Assert.True(createResult.IsT0);
 
-        IEnumerable<Category> categories = _categoryService.GetAll();
+        uint id = createResult.AsT0;
 
-        Assert.True(categories.Count() == 1);
-
-        int id = categories.First().Id;
-
-        Category? category = _categoryService.GetById((uint)id);
+        Category? category = _categoryService.GetById(id);
 
         Assert.NotNull(category);
 
-        Assert.True(category.Description == request.Description);
-        Assert.True(category.DisplayOrder == request.DisplayOrder);
-        Assert.True(category.ProductsUpdateCounter == request.ProductsUpdateCounter);
-        Assert.True(category.ParentCategoryId == request.ParentCategoryId);
+        Assert.True(category.Description == _validCreateRequest.Description);
+        Assert.True(category.DisplayOrder == _validCreateRequest.DisplayOrder);
+        Assert.True(category.ProductsUpdateCounter == _validCreateRequest.ProductsUpdateCounter);
+        Assert.True(category.ParentCategoryId == _validCreateRequest.ParentCategoryId);
         Assert.True(category.IsLeaf == false);
 
         //Assert.NotNull(category.RowGuid);
 
         Assert.True(category.RowGuid != Guid.Empty);
+
+        DeleteRange(id);
     }
 
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InExpectedManner_Data))]
     public void Insert_ShouldSucceedOrFail_InExpectedManner(ServiceCategoryCreateRequest request, bool expected)
     {
-        _categoryService.Insert(request);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(request);
 
-        IEnumerable<Category> categories = _categoryService.GetAll();
+        uint? id = createResult.Match<uint?>(
+            id => id,
+            _ => null,
+            _ => null);
 
-        Assert.Equal(categories.Count() == 1, expected);
+        Assert.Equal(expected, id is not null);
 
-        Category category = categories.First();
+        Category? category = null;
 
-        Assert.Equal(category is not null, expected);
+        if (id is not null)
+        {
+            category = _categoryService.GetById(id.Value);
+        }
+
+        Assert.Equal(expected, category is not null);
 
         if (expected)
         {
@@ -109,6 +121,11 @@ public sealed class CategoryRepositoryTests : IntegrationTestBaseWithContainer<M
             //Assert.NotNull(category.RowGuid);
 
             Assert.True(category.RowGuid != Guid.Empty);
+        }
+
+        if (expected)
+        {
+            DeleteRange(id!.Value);
         }
     }
 
@@ -227,38 +244,39 @@ public sealed class CategoryRepositoryTests : IntegrationTestBaseWithContainer<M
     [MemberData(nameof(Update_ShouldSucceedOrFail_InExpectedManner_Data))]
     public void Update_ShouldSucceedOrFail_InExpectedManner(ServiceCategoryUpdateRequest request, bool expected)
     {
-        _categoryService.Insert(_validCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
-        IEnumerable<Category> categoriesInsert = _categoryService.GetAll();
+        uint? id = createResult.Match<uint?>(
+            id => id,
+            _ => null,
+            _ => null);
 
-        Assert.Equal(categoriesInsert.Count() == 1, expected);
+        Assert.NotNull(id);
 
-        Category categoryInserted = categoriesInsert.First();
+        Category? categoryInserted = _categoryService.GetById(id.Value);
 
-        Assert.Equal(categoryInserted is not null, expected);
+        Assert.NotNull(categoryInserted);
 
-        if (request.Id == _insertRequiredIdValue) request.Id = categoryInserted!.Id;
+        if (request.Id == _insertRequiredIdValue) request.Id = categoryInserted.Id;
 
         _categoryService.Update(request);
 
-        IEnumerable<Category> categories = _categoryService.GetAll();
+        Category? updatedCategory = _categoryService.GetById(id.Value);
 
-        Assert.Equal(categories.Count() == 1, expected);
-
-        Category category = categories.First();
-
-        Assert.Equal(category is not null, expected);
+        Assert.NotNull(updatedCategory);
 
         if (expected)
         {
-            Assert.True(category!.Description == request.Description);
-            Assert.True(category.DisplayOrder == request.DisplayOrder);
-            Assert.True(category.ProductsUpdateCounter == request.ProductsUpdateCounter);
+            Assert.True(updatedCategory!.Description == request.Description);
+            Assert.True(updatedCategory.DisplayOrder == request.DisplayOrder);
+            Assert.True(updatedCategory.ProductsUpdateCounter == request.ProductsUpdateCounter);
 
             //Assert.NotNull(category.RowGuid);
 
-            Assert.True(category.RowGuid != Guid.Empty);
+            Assert.True(updatedCategory.RowGuid != Guid.Empty);
         }
+
+        DeleteRange(id.Value);
     }
 
     public static List<object[]> Update_ShouldSucceedOrFail_InExpectedManner_Data => new()
@@ -363,22 +381,36 @@ public sealed class CategoryRepositoryTests : IntegrationTestBaseWithContainer<M
     [Fact]
     public void Delete_ShouldSucceed_WhenIdIsValid()
     {
-        _categoryService.Insert(_validCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
-        IEnumerable<Category> categoriesInsert = _categoryService.GetAll();
+        uint? id = createResult.Match<uint?>(
+            id => id,
+            _ => null,
+            _ => null);
 
-        Assert.Single(categoriesInsert);
+        Assert.NotNull(id);
 
-        Category categoryInserted = categoriesInsert.First();
+        Category? categoryInserted = _categoryService.GetById(id.Value);
 
         Assert.NotNull(categoryInserted);
 
-        uint id = (uint)categoryInserted.Id;
+        bool success = _categoryService.Delete(id.Value);
 
-        _categoryService.Delete(id);
+        Category? categoriesDelete = _categoryService.GetById(id.Value);
 
-        IEnumerable<Category> categoriesDelete = _categoryService.GetAll();
+        Assert.Null(categoriesDelete);
+        Assert.True(success);
+    }
 
-        Assert.Empty(categoriesDelete);
+    private bool DeleteRange(params uint[] ids)
+    {
+        foreach (uint id in ids)
+        {
+            bool success = _categoryService.Delete(id);
+
+            if (!success) return false;
+        }
+
+        return true;
     }
 }
