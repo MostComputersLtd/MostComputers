@@ -16,7 +16,6 @@ internal sealed class ProductCreateRequestValidator : AbstractValidator<ProductC
 {
     public ProductCreateRequestValidator()
     {
-        RuleFor(x => x.Id).GreaterThan(0);
         RuleFor(x => x.Name).Must(IsNotEmptyOrWhiteSpace).MaximumLength(30);
         RuleFor(x => x.AdditionalWarrantyPrice).GreaterThanOrEqualTo(0);
         RuleFor(x => x.AdditionalWarrantyTermMonths).GreaterThanOrEqualTo(0);
@@ -52,7 +51,7 @@ internal sealed class CurrentProductPropertyCreateRequestValidator : AbstractVal
 {
     public CurrentProductPropertyCreateRequestValidator()
     {
-        RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
+        //RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
         RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
     }
