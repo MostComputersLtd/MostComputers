@@ -109,7 +109,7 @@ public class ProductXmlToCreateRequestMapperService
     {
         XmlProductCreateDisplay output = new()
         {
-            Id = createRequest.Id,
+            Id = xmlProduct.Id,
             Name = createRequest.Name,
             AdditionalWarrantyPrice = createRequest.AdditionalWarrantyPrice,
             AdditionalWarrantyTermMonths = createRequest.AdditionalWarrantyTermMonths,
@@ -174,7 +174,6 @@ public class ProductXmlToCreateRequestMapperService
 
         return new ProductCreateRequest()
         {
-            Id = product.Id,
             Name = product.Name,
             Status = product.Status,
             DisplayPrice = product.Price,
