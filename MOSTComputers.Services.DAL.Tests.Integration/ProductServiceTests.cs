@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
+[Collection(DefaultTestCollection.Name)]
 public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 {
     public ProductServiceTests(IProductService productService)
