@@ -468,7 +468,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             if (createRequest.Images is not null
                 && createRequest.Images.Count > 0)
             {
-                connection.Execute(insertInAllImagesQuery, createRequest.Images.Select(x => MapToLocal(x, id)), transaction, commandType: CommandType.Text);
+                connection.Execute(insertInAllImagesQuery, MapToLocalAllImages(createRequest.Images, id), transaction, commandType: CommandType.Text);
 
                 connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), id), transaction, commandType: CommandType.Text);
             }
@@ -739,32 +739,47 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         };
     }
 
-    public class LocalProductImageCreateRequest
+    private List<LocalProductImageCreateRequest> MapToLocalAllImages(List<CurrentProductImageCreateRequest> requests, int productId)
     {
-        public int? Id { get; set; }
-        public int? ProductId { get; set; }
-        public string? XML { get; set; }
-        public byte[]? ImageData { get; set; }
-        public string? ImageFileExtension { get; set; }
-        public DateTime? DateModified { get; set; }
-    }
+        List<LocalProductImageCreateRequest> output = new();
 
-    int V = 40000;
+        int highestId = GetHighestImageId();
 
-    private LocalProductImageCreateRequest MapToLocal(CurrentProductImageCreateRequest request, int productId)
-    {
-
-        LocalProductImageCreateRequest output = new()
+        for (int i = 0; i < requests.Count; i++)
         {
-            Id = ++V,
-            ProductId = productId,
-            ImageData = request.ImageData,
-            ImageFileExtension = request.ImageFileExtension,
-            XML = request.XML,
-            DateModified = request.DateModified,
-        };
+            CurrentProductImageCreateRequest? item = requests[i];
+
+            LocalProductImageCreateRequest localRequest = new()
+            {
+                Id = highestId + (i + 1),
+                ProductId = productId,
+                ImageData = item.ImageData,
+                ImageFileExtension = item.ImageFileExtension,
+                XML = item.XML,
+                DateModified = item.DateModified,
+            };
+
+            output.Add(localRequest);
+        }
 
         return output;
+    }
+
+    private int GetHighestImageId()
+    {
+        const string getHighestIdFromAllImages =
+            $"""
+            SELECT MAX(ID) FROM {_allImagesTableName}
+            """;
+
+        int highestId = _relationalDataAccess.GetDataFirstOrDefault<int, dynamic>(getHighestIdFromAllImages, new { });
+
+        if (highestId == 0)
+        {
+            highestId = 1;
+        }
+
+        return highestId;
     }
 
     private static ProductImageCreateRequest Map(CurrentProductImageCreateRequest request, int productId)
@@ -823,4 +838,15 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             XML = request.XML,
         };
     }
+
+    private class LocalProductImageCreateRequest
+    {
+        public int? Id { get; set; }
+        public int? ProductId { get; set; }
+        public string? XML { get; set; }
+        public byte[]? ImageData { get; set; }
+        public string? ImageFileExtension { get; set; }
+        public DateTime? DateModified { get; set; }
+    }
+
 }

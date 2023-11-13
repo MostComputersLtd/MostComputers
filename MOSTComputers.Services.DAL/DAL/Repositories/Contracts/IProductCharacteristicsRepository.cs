@@ -11,9 +11,9 @@ public interface IProductCharacteristicsRepository
 {
     IEnumerable<ProductCharacteristic> GetAllByCategoryId(uint categoryId);
     ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
+    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest);
     bool Delete(uint id);
-    bool DeleteAllForCategory(uint productId);
+    bool DeleteAllForCategory(uint categoryId);
 }

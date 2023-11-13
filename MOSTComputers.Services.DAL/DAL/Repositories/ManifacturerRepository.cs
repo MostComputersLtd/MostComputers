@@ -44,9 +44,9 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
     {
         const string insertQuery =
             $"""
-            INSERT INTO {_tableName}(BGName, Name, S, Active)
+            INSERT INTO {_tableName}(MfrID, BGName, Name, S, Active)
             OUTPUT INSERTED.MfrID
-            VALUES (@BGName, @Name, @DisplayOrder, @Active)
+            VALUES ((SELECT MAX(MfrID) + 1 FROM {_tableName}), @BGName, @Name, @DisplayOrder, @Active)
             """;
 
         var parameters = new
@@ -57,7 +57,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             insertRequest.Active,
         };
 
-        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
+        double? id = _relationalDataAccess.SaveDataAndReturnValue<double?, dynamic>(insertQuery, parameters);
 
         return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }

@@ -41,11 +41,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, new { categoryId = (int)categoryId, Name = name }).FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(TID, Name, KeywordMeaning, S, Active, PKUserId, LastUpdate, KWPrCh)
+            OUTPUT INSERTED.ProductKeywordID
             VALUES (@CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh)
             """;
 
@@ -65,9 +66,9 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             createRequest.KWPrCh,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(insertQuery, parameters);
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest)
@@ -171,7 +172,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         bool duplicateCharacteristicExists = _relationalDataAccess.GetData<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery, 
-            new { categoryId, Name = name })
+            new { categoryId = (int)categoryId, Name = name })
             .FirstOrDefault();
 
         if (!duplicateCharacteristicExists) return output;
@@ -206,7 +207,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         }
     }
 
-    public bool DeleteAllForCategory(uint productId)
+    public bool DeleteAllForCategory(uint categoryId)
     {
         const string deleteQuery =
             $"""
@@ -216,7 +217,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { productId = (int)productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { productId = (int)categoryId });
 
             if (rowsAffected == 0) return false;
 
