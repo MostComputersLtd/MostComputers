@@ -170,12 +170,15 @@ public class ProductXmlToCreateRequestMapperService
 
         List<CurrentProductImageCreateRequest> images = await GetImagesFromXmlDataAsync(product.ShopItemImages, xml);
 
+        int? standardWarrantyTermMonths = GetWarrantyData(product.XmlProductProperties);
+
         if (resultOfPropsMapping.IsT1) return resultOfPropsMapping.AsT1;
 
         return new ProductCreateRequest()
         {
             Name = product.Name,
             Status = product.Status,
+            StandardWarrantyTermMonths = standardWarrantyTermMonths,
             DisplayPrice = product.Price,
             Currency = CurrencyEnumMapping.GetCurrencyEnumFromString(product.CurrencyCode),
             Properties = resultOfPropsMapping.AsT0,
@@ -235,18 +238,19 @@ public class ProductXmlToCreateRequestMapperService
 
         return output;
 
-        static int? GetWarrantyData(List<XmlProductProperty> xmlProductProperties)
-        {
-            string? standardWarrantyXmlData = xmlProductProperties.FirstOrDefault(prop => prop.Name == "Warranty")?.Value ?? null;
+    }
 
-            if (standardWarrantyXmlData is null) return null;
+    static int? GetWarrantyData(List<XmlProductProperty> xmlProductProperties)
+    {
+        string? standardWarrantyXmlData = xmlProductProperties.FirstOrDefault(prop => prop.Name == "Warranty")?.Value ?? null;
 
-            ReadOnlySpan<char> standartWarrantyTermMonthsData = standardWarrantyXmlData.AsSpan(standardWarrantyXmlData.IndexOf("Months") - 1);
+        if (standardWarrantyXmlData is null) return null;
 
-            int? standardWarrantyTermMonths = int.Parse(standartWarrantyTermMonthsData);
+        ReadOnlySpan<char> standartWarrantyTermMonthsData = standardWarrantyXmlData.AsSpan(0, standardWarrantyXmlData.IndexOf("Months") - 1);
 
-            return standardWarrantyTermMonths;
-        }
+        int? standardWarrantyTermMonths = int.Parse(standartWarrantyTermMonthsData);
+
+        return standardWarrantyTermMonths;
     }
 
     private OneOf<List<CurrentProductPropertyCreateRequest>, ValidationResult> GetPropertyCreateRequestsFromXmlData(
