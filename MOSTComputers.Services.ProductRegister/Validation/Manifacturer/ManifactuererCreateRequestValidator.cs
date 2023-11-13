@@ -13,6 +13,8 @@ internal sealed class ManifacturerCreateRequestValidator : AbstractValidator<Man
 {
     public ManifacturerCreateRequestValidator()
     {
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.RealCompanyName).Must(IsNotEmptyOrWhiteSpace);
+        RuleFor(x => x.BGName).Must(IsNotEmptyOrWhiteSpace);
     }
 }

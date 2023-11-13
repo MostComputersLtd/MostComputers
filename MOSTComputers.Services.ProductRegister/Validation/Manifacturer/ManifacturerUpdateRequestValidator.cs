@@ -14,6 +14,8 @@ internal sealed class ManifacturerUpdateRequestValidator : AbstractValidator<Man
     public ManifacturerUpdateRequestValidator()
     {
         RuleFor(x => x.Id).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.RealCompanyName).Must(IsNotEmptyOrWhiteSpace);
+        RuleFor(x => x.BGName).Must(IsNotEmptyOrWhiteSpace);
     }
 }
