@@ -121,7 +121,7 @@ public class XmlProductCreateModel : PageModel
                 {
                     isSuccessResult = true;
 
-                    return new OkResult();
+                    return Page();
                 },
                 validationResult => this.GetResultFromValidationResult(validationResult),
                 unexpectedFailureResult => StatusCode(500));
@@ -132,7 +132,7 @@ public class XmlProductCreateModel : PageModel
             }
         }
 
-        return new OkResult();
+        return Page();
     }
 
     public IActionResult OnGetPartialView()
