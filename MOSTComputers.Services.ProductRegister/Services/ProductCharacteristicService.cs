@@ -40,7 +40,7 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
@@ -73,8 +73,8 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.Delete(id);
     }
 
-    public bool DeleteAllForCategory(uint productId)
+    public bool DeleteAllForCategory(uint categoryId)
     {
-        return _productCharacteristicsRepository.DeleteAllForCategory(productId);
+        return _productCharacteristicsRepository.DeleteAllForCategory(categoryId);
     }
 }
