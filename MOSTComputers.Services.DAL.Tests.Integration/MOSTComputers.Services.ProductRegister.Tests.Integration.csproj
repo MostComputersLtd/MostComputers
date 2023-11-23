@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
-	  <ProjectReference Include="..\MOSTComputers.Tests.Integration.Common\MOSTComputers.Tests.Integration.Common.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Tests.Integration.Common\MOSTComputers.Tests.Integration.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

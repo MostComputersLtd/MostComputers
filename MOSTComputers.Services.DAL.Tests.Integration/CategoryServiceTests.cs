@@ -15,7 +15,6 @@ using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
-using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
@@ -30,13 +29,21 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
     private readonly ICategoryService _categoryService;
 
+    private readonly ServiceCategoryCreateRequest _validCreateRequest = new()
+    {
+        Description = "description",
+        DisplayOrder = 13123,
+        ProductsUpdateCounter = 0,
+        ParentCategoryId = null
+    };
+
     private const int _insertRequiredIdValue = -100;
 
     [Fact]
     public void GetAll_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _categoryService.Insert(ValidCategoryCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _categoryService.Insert(ValidCategoryCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _categoryService.Insert(_validCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _categoryService.Insert(_validCreateRequest);
 
         Assert.True(result1.IsT0);
         Assert.True(result2.IsT0);
@@ -58,7 +65,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
     [Fact]
     public void GetById_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
         Assert.True(createResult.IsT0);
 
@@ -68,10 +75,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.NotNull(category);
 
-        Assert.True(category.Description == ValidCategoryCreateRequest.Description);
-        Assert.True(category.DisplayOrder == ValidCategoryCreateRequest.DisplayOrder);
-        Assert.True(category.ProductsUpdateCounter == ValidCategoryCreateRequest.ProductsUpdateCounter);
-        Assert.True(category.ParentCategoryId == ValidCategoryCreateRequest.ParentCategoryId);
+        Assert.True(category.Description == _validCreateRequest.Description);
+        Assert.True(category.DisplayOrder == _validCreateRequest.DisplayOrder);
+        Assert.True(category.ProductsUpdateCounter == _validCreateRequest.ProductsUpdateCounter);
+        Assert.True(category.ParentCategoryId == _validCreateRequest.ParentCategoryId);
         Assert.True(category.IsLeaf == false);
 
         //Assert.NotNull(category.RowGuid);
@@ -237,7 +244,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
     [MemberData(nameof(Update_ShouldSucceedOrFail_InExpectedManner_Data))]
     public void Update_ShouldSucceedOrFail_InExpectedManner(ServiceCategoryUpdateRequest request, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
         uint? id = createResult.Match<uint?>(
             id => id,
@@ -374,7 +381,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
     [Fact]
     public void Delete_ShouldSucceed_WhenIdIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(_validCreateRequest);
 
         uint? id = createResult.Match<uint?>(
             id => id,
