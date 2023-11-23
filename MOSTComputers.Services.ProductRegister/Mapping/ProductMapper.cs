@@ -1,6 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models.Requests.Category;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using Riok.Mapperly.Abstractions;
 using System;
