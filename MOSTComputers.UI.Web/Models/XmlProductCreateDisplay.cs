@@ -1,5 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace MOSTComputers.UI.Web.Models;
 
@@ -33,6 +34,7 @@ public sealed class XmlProductCreateDisplay
     public List<DisplayPropertyCreateRequest>? Properties { get; set; }
     public List<CurrentProductImageCreateRequest>? Images { get; set; }
     public List<CurrentProductImageFileNameInfoCreateRequest>? ImageFileNames { get; set; }
+    public IEnumerable<SelectListItem>? Characteristics { get; set; }
 
     public Category? Category { get; set; }
     public Manifacturer? Manifacturer { get; set; }
