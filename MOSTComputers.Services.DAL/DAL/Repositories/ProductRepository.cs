@@ -102,7 +102,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+                ID AS ImageProductId, firstImages.Description AS XMLData, Image, ImageFileExt, DateModified
 
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -154,16 +154,13 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ON man.MfrID = products.MfrID
             LEFT JOIN {_propertiesTableName} properties
             ON properties.CSTID = products.CSTID
-            WHERE products.CSTID IN
+            WHERE products.CSTID IN @productIds
+            ORDER BY S;
             """;
 
-        string queryWithIds = getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery +
-            $"""
-            ({GetDelimeteredListFromIds(ids)})
-            ORDER BY S; 
-            """;
 
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(queryWithIds,
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery,
             (product, category, manifacturer, property) =>
             {
                 product.Category = category;
@@ -177,7 +174,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { });
+            new { productIds = ids.Select(x => (int)x)});
     }
 
     public IEnumerable<Product> GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(uint start, uint end)
@@ -229,7 +226,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+                ID AS ImageProductId, firstImages.Description AS XMLData, Image, ImageFileExt, DateModified
             
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -281,24 +278,31 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE products.CSTID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(
+        Product? output = null;
+
+        _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(
             getByIdWithManifacturerAndCategoryAndPropertiesQuery,
 
             (product, category, manifacturer, property) =>
             {
-                product.Category = category;
-                product.Manifacturer = manifacturer;
+                if (output is null)
+                {
+                    output ??= product;
+                    output.Category = category;
+                    output.Manifacturer = manifacturer;
 
-                product.Properties ??= new();
+                    output.Properties = new();
+                }
 
-                product.Properties.Add(property);
+                output.Properties.Add(property);
 
                 return product;
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { id = (int)id })
-            .FirstOrDefault();
+            new { id = (int)id });
+
+        return output;
     }
 
     public Product? GetById_WithManifacturerAndCategoryAndImages(uint id)
@@ -309,7 +313,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+                ID, images.CSTID AS ImageProductId, images.Description AS XMLData, Image, ImageFileExt, DateModified
             
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -321,41 +325,33 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE products.CSTID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductImage, dynamic>(
+        Product? output = null;
+
+        _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductImage, dynamic>(
             getByIdWithManifacturerAndCategoryAndImagesQuery,
 
             (product, category, manifacturer, image) =>
             {
-                product.Category = category;
-                product.Manifacturer = manifacturer;
+                if (output is null)
+                {
+                    output = product;
 
-                product.Images ??= new();
+                    output.Category = category;
+                    output.Manifacturer = manifacturer;
 
-                product.Images.Add(image);
+                    output.Images = new();
+                }
+
+                output.Images!.Add(image);
 
                 return product;
             },
             splitOn: "CategoryID,PersonalManifacturerId,ImageProductId",
 
-            new { id = (int)id })
-            .FirstOrDefault();
+            new { id = (int)id });
+
+        return output;
     }
-
-
-
-    // ====================================================================================================
-
-
-
-
-
-    // FIX IDS IN THE PRODUCTS AND ALL IMAGES QUERIES
-
-
-
-
-
-    // ====================================================================================================
 
     public OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
@@ -366,7 +362,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             INSERT INTO {_tableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2)
             OUTPUT INSERTED.CSTID INTO #Temp_Table
-            VALUES (100000, @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
+            VALUES ((SELECT MAX(CSTID) + 1 FROM {_tableName}), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
                 @PromPID, @PromRID, @PromPictureId, @PromExpDate, @AlertPictureId, @AlertExpDate, @PriceListDescription, @ManifacturerId, @SubcategoryId, @SPLMODEL, @SPLMODEL1, @SPLMODEL2)
 
             SELECT TOP 1 ID FROM #Temp_Table
@@ -385,7 +381,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             VALUES (@ProductId, @DisplayOrder, @FileName)
             """;
 
-        string insertInAllImagesQuery =
+        const string insertInAllImagesQuery =
            $"""
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             VALUES (@Id, @ProductId, @XML, @ImageData, @ImageFileExtension, @DateModified)
@@ -468,12 +464,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             if (createRequest.Images is not null
                 && createRequest.Images.Count > 0)
             {
-                connection.Execute(insertInAllImagesQuery, MapToLocalAllImages(createRequest.Images, id), transaction, commandType: CommandType.Text);
+                connection.Execute(insertInAllImagesQuery, MapToLocalAllImages(createRequest.Images, id, connection, transaction), transaction, commandType: CommandType.Text);
 
                 connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), id), transaction, commandType: CommandType.Text);
             }
-
-            transaction.Commit();
 
             return (uint)id;
         }
@@ -647,16 +641,16 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE CSTID = @id;
 
             DELETE FROM {_propertiesTableName}
-            WHERE CSTID = @productId;
+            WHERE CSTID = @id;
 
             DELETE FROM {_imageFileNamesTable}
-            WHERE CSTID = @productId;
+            WHERE CSTID = @id;
 
             DELETE FROM {_allImagesTableName}
-            WHERE CSTID = @productId;
+            WHERE CSTID = @id;
 
             DELETE FROM {_firstImagesTableName}
-            WHERE ID = @productId;
+            WHERE ID = @id;
             """;
 
         //const string deleteProductQuery =
@@ -717,7 +711,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         }
     }
 
-    private static ProductPropertyCreateRequest Map(CurrentProductPropertyCreateRequest request, int productId)
+    private static ProductPropertyByCharacteristicIdCreateRequest Map(CurrentProductPropertyCreateRequest request, int productId)
     {
         return new()
         {
@@ -739,11 +733,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         };
     }
 
-    private List<LocalProductImageCreateRequest> MapToLocalAllImages(List<CurrentProductImageCreateRequest> requests, int productId)
+    private List<LocalProductImageCreateRequest> MapToLocalAllImages(List<CurrentProductImageCreateRequest> requests, int productId, IDbConnection connection, IDbTransaction transaction)
     {
         List<LocalProductImageCreateRequest> output = new();
 
-        int highestId = GetHighestImageId();
+        int highestId = GetHighestImageId(connection, transaction);
 
         for (int i = 0; i < requests.Count; i++)
         {
@@ -765,14 +759,14 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         return output;
     }
 
-    private int GetHighestImageId()
+    private int GetHighestImageId(IDbConnection connection, IDbTransaction transaction)
     {
         const string getHighestIdFromAllImages =
             $"""
             SELECT MAX(ID) FROM {_allImagesTableName}
             """;
 
-        int highestId = _relationalDataAccess.GetDataFirstOrDefault<int, dynamic>(getHighestIdFromAllImages, new { });
+        int highestId = _relationalDataAccess.GetDataFirstOrDefault<int, dynamic>(getHighestIdFromAllImages, new { }, connection, transaction);
 
         if (highestId == 0)
         {
