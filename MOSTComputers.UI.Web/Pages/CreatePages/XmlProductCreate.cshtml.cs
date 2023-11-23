@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -10,7 +11,6 @@ using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Validation;
 using OneOf;
-using OneOf.Types;
 using static MOSTComputers.UI.Web.Validation.ValidationCommonElements;
 
 namespace MOSTComputers.UI.Web.Pages.CreatePages;
@@ -28,7 +28,6 @@ public class XmlProductCreateModel : PageModel
     private readonly IProductService _productService;
     private readonly ProductDeserializeService _productDeserializeService;
 
-    public static List<ProductCreateRequest> CreateRequests { get; set; } = new();
     public static List<XmlProductCreateDisplay> DisplayCreateRequests { get; set; } = new();
 
     public void OnGet()
@@ -55,10 +54,10 @@ public class XmlProductCreateModel : PageModel
 
     private async Task<IActionResult> MapXmlToRequestsAndCreateProductsAsync(string xml)
     {
-        if (CreateRequests is not null
-            && CreateRequests.Count > 0)
+        if (DisplayCreateRequests is not null
+            && DisplayCreateRequests.Count > 0)
         {
-            return CreateProducts(CreateRequests);
+            return CreateProducts(DisplayCreateRequests);
         }
 
         OneOf<List<ProductCreateRequest>, ValidationResult, UnexpectedFailureResult, InvalidXmlResult> requestMappingResult
@@ -84,28 +83,54 @@ public class XmlProductCreateModel : PageModel
 
         if (xmlObjectData is null) return StatusCode(500);
 
-        OneOf<List<ProductCreateRequest>, ValidationResult> requestMappingResult
-            = await _mapperService.GetProductCreateRequestsFromXmlAsync(xmlObjectData, xml);
+        OneOf<List<XmlProductCreateDisplay>, ValidationResult> requestMappingResult
+            = await _mapperService.GetProductXmlDisplayFromXmlAsync(xmlObjectData, xml);
 
         return requestMappingResult.Match(
             productCreateRequests =>
             {
                 DisplayCreateRequests = new();
-                CreateRequests = new();
 
                 for (int i = 0; i < productCreateRequests.Count; i++)
                 {
-                    ProductCreateRequest item = productCreateRequests[i];
+                    XmlProductCreateDisplay item = productCreateRequests[i];
                     XmlProduct xmlItem = xmlObjectData.Products[i];
 
-                    CreateRequests.Add(item);
-
-                    DisplayCreateRequests.Add(_mapperService.GetProductXmlDisplayFromProductData(xmlItem, item));
+                    DisplayCreateRequests.Add(item);
                 }
 
                 return new OkResult();
             },
             validationResult => this.GetResultFromValidationResult(validationResult));
+    }
+
+    private IActionResult CreateProducts(List<XmlProductCreateDisplay> productDisplays)
+    {
+        foreach (var productDisplay in productDisplays)
+        {
+            ProductCreateRequest productCreateRequest = _mapperService.GetProductCreateRequestFromProductXmlDisplay(productDisplay);
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
+
+            bool isSuccessResult = false;
+
+            IActionResult insertActionResult = insertResult.Match(
+                id =>
+                {
+                    isSuccessResult = true;
+
+                    return Page();
+                },
+                validationResult => this.GetResultFromValidationResult(validationResult),
+                unexpectedFailureResult => StatusCode(500));
+
+            if (!isSuccessResult)
+            {
+                return insertActionResult;
+            }
+        }
+
+        return Page();
     }
 
     private IActionResult CreateProducts(List<ProductCreateRequest> productCreateRequests)
@@ -137,6 +162,43 @@ public class XmlProductCreateModel : PageModel
 
     public IActionResult OnGetPartialView()
     {
+        return Partial("_ProductCreateRequestListPartial", DisplayCreateRequests);
+    }
+
+    public IActionResult OnGetAlterFailedRequest(int requestIndex, string propertyName, int newCharacteristicId)
+    {
+        string newChatacteristicIdString = newCharacteristicId.ToString();
+
+        XmlProductCreateDisplay displayAtIndex = DisplayCreateRequests[requestIndex];
+
+        if (displayAtIndex.Properties is null || displayAtIndex.Characteristics is null) return BadRequest("Invalid characteristic index");
+
+        DisplayPropertyCreateRequest? displayPropToUpdate = displayAtIndex.Properties.FirstOrDefault(x => x.Name == propertyName);
+
+        if (displayPropToUpdate == null) return BadRequest("Invalid characteristic index");
+
+        SelectListItem? newCharacteristicForProperty = null;
+        int? newCharacteristicForPropertyIndex = null;
+
+        List<SelectListItem> characteristicDataList = displayAtIndex.Characteristics.ToList();
+
+        for (int i = 0; i < characteristicDataList.Count; i++)
+        {
+            SelectListItem characteristicData = characteristicDataList[i];
+
+            if (characteristicData.Value == newChatacteristicIdString)
+            {
+                newCharacteristicForProperty = characteristicData;
+                newCharacteristicForPropertyIndex = i;
+            }
+        }
+
+        if (displayPropToUpdate == null) return BadRequest("Invalid characteristic Index");
+        if (newCharacteristicForProperty == null) return BadRequest("Invalid characteristic ID");
+
+        displayPropToUpdate.Name = newCharacteristicForProperty.Text;
+        displayPropToUpdate.ProductCharacteristicId = int.Parse(newCharacteristicForProperty.Value);
+
         return Partial("_ProductCreateRequestListPartial", DisplayCreateRequests);
     }
 }
