@@ -16,7 +16,7 @@ public interface IProductImageRepository
     ProductImage? GetByIdInAllImages(uint id);
     ProductImage? GetByProductIdInFirstImages(uint productId);
     IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<uint> productIds);
-    OneOf<Success, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest);
+    OneOf<uint, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest createRequest);

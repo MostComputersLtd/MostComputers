@@ -47,7 +47,7 @@ internal sealed class ProductImageService : IProductImageService
         return _productImageRepository.GetAllFirstImagesForAllProducts();
     }
 
-    public IEnumerable<ProductImage> GetAllFirstImagesForAllProducts(List<uint> productIds)
+    public IEnumerable<ProductImage> GetAllFirstImagesForSelectionOfProducts(List<uint> productIds)
     {
         return _productImageRepository.GetFirstImagesForSelectionOfProducts(productIds);
     }
@@ -62,7 +62,7 @@ internal sealed class ProductImageService : IProductImageService
         return _productImageRepository.GetByProductIdInFirstImages(productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest,
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest,
         IValidator<ServiceProductImageCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
@@ -73,10 +73,10 @@ internal sealed class ProductImageService : IProductImageService
 
         createRequestInternal.DateModified = DateTime.Today;
 
-        OneOf<Success, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImages(createRequestInternal);
+        OneOf<uint, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImages(createRequestInternal);
 
-        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-            success => success, unexpectedFailure => unexpectedFailure);
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+            id => id, unexpectedFailure => unexpectedFailure);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ServiceProductFirstImageCreateRequest createRequest,

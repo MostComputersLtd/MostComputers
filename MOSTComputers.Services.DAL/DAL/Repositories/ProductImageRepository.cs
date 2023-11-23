@@ -49,12 +49,10 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             $"""
             SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
             FROM {_firstImagesTableName}
-            WHERE ID IN
+            WHERE ID IN @productIds
             """;
 
-        string queryWithIds = getByIdInFirstImagesQuery + $" ({GetDelimeteredListFromIds(productIds)});";
-
-        IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(queryWithIds, new { });
+        IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery, new { productIds = productIds.Select(x => (int)x) });
 
         return images.Select(x => Map(x));
     }
@@ -88,12 +86,17 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return Map(image);
     }
 
-    public OneOf<Success, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest)
+    public OneOf<uint, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest)
     {
         const string insertInAllImagesQuery =
             $"""
-            INSERT INTO {_allImagesTableName}(CSTID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+            CREATE TABLE #Temp_Table (ID INT)
+
+            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            OUTPUT INSERTED.ID INTO #Temp_Table
+            VALUES ((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), @productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+
+            SELECT TOP 1 ID FROM #Temp_Table
             """;
 
         var parameters = new
@@ -105,9 +108,9 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             createRequest.DateModified,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(insertInAllImagesQuery, parameters);
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertInAllImagesQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest)
