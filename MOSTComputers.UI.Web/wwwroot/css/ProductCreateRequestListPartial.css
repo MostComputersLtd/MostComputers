@@ -31,3 +31,9 @@
 .create-request-important-characteristic {
     color: #e6382c;
 }
+
+.invalid-characteristic-name-text {
+    color: #d11b0e;
+    font-size: 12px;
+    margin-bottom: 1px;
+}
