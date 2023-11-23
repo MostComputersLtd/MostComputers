@@ -3,9 +3,6 @@ using System.Data;
 using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
-using System.Data.Common;
-using System.Transactions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MOSTComputers.Services.DAL.DAL;
 
