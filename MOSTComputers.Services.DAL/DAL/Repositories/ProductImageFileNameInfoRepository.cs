@@ -23,8 +23,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         const string getAllQuery =
             $"""
             SELECT * FROM {_tableName}
-            GROUP BY CSTID
-            ORDER BY ImgNo;
+            ORDER BY CSTID, ImgNo;
             """;
 
         return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllQuery, new { });
@@ -46,18 +45,22 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string insertQuery =
             $"""
-            SELECT @DisplayOrderInRange = ISNULL(
-                (SELECT MAX(ImgNo) + 1 AS MaxNoPlus1 FROM dbo.ImageFileName
-                WHERE MaxNoPlus1 <= @DisplayOrder),
+            DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
+
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_tableName}
+            WHERE CSTID = @productId;
+
+            SELECT TOP 1 @DisplayOrderInRange = ISNULL(
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_tableName}
+                WHERE @MaxDisplayOrderForProduct <= @DisplayOrder),
                 @DisplayOrder);
 
-            UPDATE dbo.ImageFileName
+            UPDATE {_tableName}
                 SET ImgNo = ImgNo + 1
-
             WHERE CSTID = @productId
             AND ImgNo >= @DisplayOrderInRange;
 
-            INSERT INTO dbo.ImageFileName(CSTID, ImgNo, FileName)
+            INSERT INTO {_tableName}(CSTID, ImgNo, ImgFileName)
             VALUES (@productId, @DisplayOrderInRange, @FileName)
             """;
 
@@ -75,30 +78,36 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(insertQuery, parameters, doInTransaction: true);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
-            SELECT @NewDisplayOrderInRange = ISNULL(
-                (SELECT MAX(ImgNo) + 1 AS MaxNoPlus1 FROM dbo.ImageFileName
-                WHERE MaxNoPlus1 <= @NewDisplayOrder),
+            DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
+            
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImgNo <> @DisplayOrder;
+            
+            SELECT TOP 1 @DisplayOrderInRange = ISNULL(
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_tableName}
+                WHERE @MaxDisplayOrderForProduct <= @NewDisplayOrder),
                 @NewDisplayOrder);
             
-            UPDATE dbo.ImageFileName
+            UPDATE {_tableName}
                 SET ImgNo = ImgNo + 1
-            
             WHERE CSTID = @productId
-            AND ImgNo >= @NewDisplayOrderInRange;
+            AND ImgNo >= @DisplayOrderInRange
+            AND ImgNo <> @DisplayOrder;
 
             UPDATE {_tableName}
-            SET ImgNo = @NewDisplayOrderInRange,
-                FileName = @FileName
+            SET ImgNo = @DisplayOrderInRange,
+                ImgFileName = @FileName
 
             WHERE CSTID = @productId
-            AND DisplayOrder = @DisplayOrder;
+            AND ImgNo = @DisplayOrder;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
@@ -115,7 +124,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateQuery, parameters, doInTransaction: true);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     private ValidationResult ValidateWhetherProductWithGivenIdExists(uint productId, string propertyName = "ProductId")
@@ -141,7 +150,6 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         {
             result.Errors.Add(
                 new(propertyName, "Id does not correspond to any product Id"));
-
 
             return result;
         }
