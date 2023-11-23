@@ -1,5 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
 using OneOf.Types;
@@ -14,7 +14,7 @@ public interface IPromotionRepository
     IEnumerable<Promotion> GetAllForProduct(uint productId);
     IEnumerable<Promotion> GetAllForSelectionOfProducts(List<uint> productIds);
     Promotion? GetActiveForProduct(uint productId);
-    OneOf<Success, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest);
+    OneOf<uint, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest);
     bool Delete(uint id);
     bool DeleteAllByProductId(uint productId);

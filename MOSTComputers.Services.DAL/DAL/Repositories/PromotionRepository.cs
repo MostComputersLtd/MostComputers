@@ -4,7 +4,7 @@ using OneOf.Types;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Models.Product.Models.Requests.Promotion;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -89,14 +89,14 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             .FirstOrDefault();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
+    public OneOf<uint, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
             INSERT INTO {_tableName}(CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
             ExpDate, MinQty, MaxQty, CampaignID, QtyIncrement, RequiredCSTIDs, ExpQty, SoldQty, PromotionName, Consignation, Points, RegistrationID,
             Timestamp, PromotionVisualizationId)
-
+            OUTPUT INSERTED.PromotionID
             VALUES(@ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
             @ExpirationDate, @MinimumQuantity, @MaximumQuantity, @CampaignId, @QuantityIncrement, @RequiredProductIdsString, @ExpQuantity, @SoldQuantity,
             @Name, @Consignation, @Points, @RegistrationId, @TimeStamp, @PromotionVisualizationId)
@@ -130,9 +130,9 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             createRequest.PromotionVisualizationId
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(insertQuery, parameters);
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest)

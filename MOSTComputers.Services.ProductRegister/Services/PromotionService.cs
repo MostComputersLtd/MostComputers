@@ -6,7 +6,7 @@ using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
@@ -61,7 +61,7 @@ internal sealed class PromotionService : IPromotionService
         return _promotionRepository.GetActiveForProduct(productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServicePromotionCreateRequest createRequest, IValidator<ServicePromotionCreateRequest>? validator = null)
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServicePromotionCreateRequest createRequest, IValidator<ServicePromotionCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
@@ -71,10 +71,10 @@ internal sealed class PromotionService : IPromotionService
 
         createRequestInternal.PromotionAddedDate = DateTime.Today;
 
-        OneOf<Success, UnexpectedFailureResult> result = _promotionRepository.Insert(createRequestInternal);
+        OneOf<uint, UnexpectedFailureResult> result = _promotionRepository.Insert(createRequestInternal);
 
-        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-            success => success, unexpectedFailure => unexpectedFailure);
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+            id => id, unexpectedFailure => unexpectedFailure);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServicePromotionUpdateRequest updateRequest, IValidator<ServicePromotionUpdateRequest>? validator = null)
