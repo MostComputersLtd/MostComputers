@@ -37,6 +37,8 @@ public static class ConfigureServices
         services.AddTransient<IPromotionRepository, PromotionRepository>();
         services.AddTransient<IProductRepository, ProductRepository>();
 
+        services.AddTransient<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
+
         return services;
     }
 
@@ -53,6 +55,8 @@ public static class ConfigureServices
             config.AddMap(new ProductImageFileNameInfoEntityMap());
             config.AddMap(new ProductEntityMap());
             config.AddMap(new PromotionEntityMap());
+
+            config.AddMap(new FailedPropertyNameOfProductEntityMap());
         });
     }
 }
