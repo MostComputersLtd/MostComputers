@@ -17,5 +17,6 @@ internal sealed class ProductCharacteristicByIdUpdateRequestValidator : Abstract
         RuleFor(x => x.Name).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.Meaning).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.KWPrCh).Must(NullOrGreaterThanOrEqualToZero);
     }
 }
