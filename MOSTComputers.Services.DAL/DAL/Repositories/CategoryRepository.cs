@@ -92,7 +92,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(updateQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public bool Delete(uint id)
@@ -106,7 +106,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         {
             int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }
