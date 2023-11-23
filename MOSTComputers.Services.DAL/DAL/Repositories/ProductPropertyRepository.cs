@@ -5,27 +5,42 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
+using System.Reflection.PortableExecutable;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductPropertyRepository : RepositoryBase, IProductPropertyRepository
 {
     private const string _tableName = "dbo.ProductXML";
+    private const string _productCharacteristicTableName = "dbo.ProductKeyword";
+    private const string _productsTableName = "dbo.MOSTPrices";
 
     const string _getCharacteristicNameQuery =
         $"""
-        SELECT TOP 1 Name FROM dbo.ProductKeyword
+        SELECT TOP 1 Name FROM {_productCharacteristicTableName}
         WHERE ProductKeywordID = @ProductCharacteristicId
         """;
 
-    const string _checkIfPropertyWithSameNameExistsQuery =
+    const string _checkIfPropertyWithSameNameExistsByNameQuery =
         $"""
         SELECT CASE WHEN EXISTS(
             SELECT * FROM {_tableName}
             WHERE CSTID = @productId
             AND Keyword = @Name
         ) THEN 1 ELSE 0 END;
+    
         """;
+
+    const string _checkIfPropertyWithSameNameExistsByIdQuery =
+        $"""
+        SELECT CASE WHEN EXISTS(
+            SELECT * FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ProductKeywordID = @characteristicId
+        ) THEN 1 ELSE 0 END;
+    
+        """;
+
 
     public ProductPropertyRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -59,7 +74,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             .FirstOrDefault();
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductPropertyCreateRequest createRequest)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicId(ProductPropertyByCharacteristicIdCreateRequest createRequest)
     {
         const string getAllInProductQuery =
             $"""
@@ -87,13 +102,13 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         return rowsAffected != 0 ? new Success() : new UnexpectedFailureResult();
 
-        ValidationResult ValidateInternalConditions(ProductPropertyCreateRequest createRequest, string? characteristicName)
+        ValidationResult ValidateInternalConditions(ProductPropertyByCharacteristicIdCreateRequest createRequest, string? characteristicName)
         {
             ValidationResult result = new();
 
             if (characteristicName == null)
             {
-                result.Errors.Add(new(nameof(ProductPropertyCreateRequest.ProductCharacteristicId), "Id does not correspond to any known characteristic"));
+                result.Errors.Add(new(nameof(ProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId), "Id does not correspond to any known characteristic"));
 
                 return result;
             }
@@ -102,7 +117,78 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
             if (duplicatePropertyExists)
             {
-                result.Errors.Add(new(nameof(ProductPropertyCreateRequest.ProductCharacteristicId), "There is already a property on the product for that characteristic"));
+                result.Errors.Add(new(nameof(ProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId), "There is already a property on the product for that characteristic"));
+
+                return result;
+            }
+
+            return result;
+        }
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicName(ProductPropertyByCharacteristicNameCreateRequest createRequest)
+    {
+        const string getAllInProductQuery =
+            $"""
+            INSERT INTO {_tableName}(CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
+            VALUES(@ProductId, @ProductCharacteristicId, @DisplayOrder, @Name, @Value, @XmlPlacement)
+            """;
+
+        const string getIdOfCharacteristicByNameAndProductId =
+            $"""
+            DECLARE @CategoryId INT
+
+            SELECT TOP 1 @CategoryId = TID FROM {_productsTableName}
+            WHERE CSTID = @productId;
+
+            SELECT TOP 1 ProductKeywordID FROM {_productCharacteristicTableName}
+            WHERE TID = @CategoryId
+            AND Name = @Name;
+            """;
+
+        var parametersLocal = new
+        {
+            productId = createRequest.ProductId,
+            Name = createRequest.ProductCharacteristicName
+        };
+
+        int? characteristicId = _relationalDataAccess.GetDataFirstOrDefault<int, dynamic>(getIdOfCharacteristicByNameAndProductId, parametersLocal);
+
+        ValidationResult? result = ValidateInternalConditions(createRequest, characteristicId);
+
+        if (!result.IsValid) return result;
+
+        var parameters = new
+        {
+            createRequest.ProductId,
+            ProductCharacteristicId = characteristicId,
+            Name = createRequest.ProductCharacteristicName,
+            createRequest.DisplayOrder,
+            createRequest.Value,
+            createRequest.XmlPlacement,
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(getAllInProductQuery, parameters);
+
+        return rowsAffected != 0 ? new Success() : new UnexpectedFailureResult();
+
+        ValidationResult ValidateInternalConditions(ProductPropertyByCharacteristicNameCreateRequest createRequest, int? characteristicId)
+        {
+            ValidationResult result = new();
+
+            if (characteristicId is null
+                || characteristicId <= 0)
+            {
+                result.Errors.Add(new(nameof(ProductPropertyByCharacteristicNameCreateRequest.ProductCharacteristicName), "Name does not correspond to any known characteristic"));
+
+                return result;
+            }
+
+            bool duplicatePropertyExists = DoesDuplicatePropertyExist(createRequest.ProductId, characteristicId);
+
+            if (duplicatePropertyExists)
+            {
+                result.Errors.Add(new(nameof(ProductPropertyByCharacteristicNameCreateRequest.ProductCharacteristicName), "There is already a property on the product for that characteristic"));
 
                 return result;
             }
@@ -174,7 +260,21 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             Name = characteristicName
         };
 
-        bool duplicatePropertyExists = _relationalDataAccess.GetData<bool, dynamic>(_checkIfPropertyWithSameNameExistsQuery, parametersForDuplicateQuery)
+        bool duplicatePropertyExists = _relationalDataAccess.GetData<bool, dynamic>(_checkIfPropertyWithSameNameExistsByNameQuery, parametersForDuplicateQuery)
+            .FirstOrDefault();
+
+        return duplicatePropertyExists;
+    }
+
+    bool DoesDuplicatePropertyExist(int productId, int? characteristicId)
+    {
+        var parametersForDuplicateQuery = new
+        {
+            productId,
+            characteristicId
+        };
+
+        bool duplicatePropertyExists = _relationalDataAccess.GetData<bool, dynamic>(_checkIfPropertyWithSameNameExistsByIdQuery, parametersForDuplicateQuery)
             .FirstOrDefault();
 
         return duplicatePropertyExists;

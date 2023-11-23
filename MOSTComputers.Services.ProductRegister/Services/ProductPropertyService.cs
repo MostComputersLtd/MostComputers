@@ -15,16 +15,19 @@ internal sealed class ProductPropertyService : IProductPropertyService
 {
     public ProductPropertyService(
         IProductPropertyRepository productPropertyRepository,
-        IValidator<ProductPropertyCreateRequest>? createRequestValidator = null,
+        IValidator<ProductPropertyByCharacteristicIdCreateRequest>? createRequestByIdValidator = null,
+        IValidator<ProductPropertyByCharacteristicNameCreateRequest>? createRequestByNameValidator = null,
         IValidator<ProductPropertyUpdateRequest>? updateRequestValidator = null)
     {
         _productPropertyRepository = productPropertyRepository;
-        _createRequestValidator = createRequestValidator;
+        _createRequestByIdValidator = createRequestByIdValidator;
+        _createRequestByNameValidator = createRequestByNameValidator;
         _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IProductPropertyRepository _productPropertyRepository;
-    private readonly IValidator<ProductPropertyCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ProductPropertyByCharacteristicIdCreateRequest>? _createRequestByIdValidator;
+    private readonly IValidator<ProductPropertyByCharacteristicNameCreateRequest>? _createRequestByNameValidator;
     private readonly IValidator<ProductPropertyUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<ProductProperty> GetAllInProduct(uint productId)
@@ -37,14 +40,27 @@ internal sealed class ProductPropertyService : IProductPropertyService
         return _productPropertyRepository.GetByNameAndProductId(name, productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductPropertyCreateRequest createRequest,
-        IValidator<ProductPropertyCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicId(ProductPropertyByCharacteristicIdCreateRequest createRequest,
+        IValidator<ProductPropertyByCharacteristicIdCreateRequest>? validator = null)
     {
-        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestByIdValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productPropertyRepository.Insert(createRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productPropertyRepository.InsertWithCharacteristicId(createRequest);
+
+        return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+            success => success, validationResult => validationResult, unexpectedResult => unexpectedResult);
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicName(ProductPropertyByCharacteristicNameCreateRequest createRequest,
+        IValidator<ProductPropertyByCharacteristicNameCreateRequest>? validator = null)
+    {
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestByNameValidator);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productPropertyRepository.InsertWithCharacteristicName(createRequest);
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, validationResult => validationResult, unexpectedResult => unexpectedResult);
