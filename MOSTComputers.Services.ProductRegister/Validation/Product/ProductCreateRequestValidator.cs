@@ -51,7 +51,7 @@ internal sealed class CurrentProductPropertyCreateRequestValidator : AbstractVal
 {
     public CurrentProductPropertyCreateRequestValidator()
     {
-        //RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
         RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
     }
