@@ -45,6 +45,9 @@ public class XmlProduct
     [XmlElement(ElementName = "manufacturer")]
     public XmlManifacturer Manifacturer { get; set; }
 
+    [XmlElement(ElementName = "partnum")]
+    public string PartNumbers { get; set; }
+
     [XmlArray(ElementName = "gallery")]
     [XmlArrayItem(ElementName = "picture")]
     public List<XmlShopItemImage> ShopItemImages { get; set; }
