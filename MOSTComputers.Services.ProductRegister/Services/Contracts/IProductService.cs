@@ -14,10 +14,11 @@ public interface IProductService
     Product? GetByIdWithFirstImage(uint id);
     Product? GetByIdWithProps(uint id);
     IEnumerable<Product> GetSelectionWithFirstImage(List<uint> ids);
-    Product? GetSelectionWithImages(uint id);
+    Product? GetByIdWithImages(uint id);
     IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<uint> ids);
     IEnumerable<Product> GetSelectionWithProps(List<uint> ids);
     OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null);
     bool Delete(uint id);
+    IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(uint start, uint end);
 }

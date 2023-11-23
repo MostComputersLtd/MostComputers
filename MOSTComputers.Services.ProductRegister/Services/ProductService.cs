@@ -62,7 +62,7 @@ internal sealed class ProductService : IProductService
         return _productRepository.GetById_WithManifacturerAndCategoryAndProperties(id);
     }
 
-    public Product? GetSelectionWithImages(uint id)
+    public Product? GetByIdWithImages(uint id)
     {
         return _productRepository.GetById_WithManifacturerAndCategoryAndImages(id);
     }
