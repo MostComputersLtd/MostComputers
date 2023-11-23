@@ -5,7 +5,6 @@
 
 @for (int i = 0; i < Model.Count; i++)
 {
-
     <h1 class="create-request-name">@Model[i].Name</h1>
 
     <ul class="create-request-image-list">
@@ -22,7 +21,6 @@
                 </li>
             }
         }
-
     </ul>
 
     <h3 class="create-request-origins-text">Origins and identification</h3>
@@ -75,29 +73,54 @@
 
     </div>
 
-    @if (Model[i].Properties is not null)
+    var properties = Model[i].Properties;
+
+    @if (properties is not null)
     {
         <h3 class="create-request-characteristics-text">Characteristics</h3>
 
-        <table class="full-parent-width" style="margin:20px 25px">
-            <tbody>
-                @foreach (DisplayPropertyCreateRequest propertyCreateRequest in Model[i].Properties!)
-                {
-                    <tr>
-                        <td style="width:20%;">
-                            <label>@propertyCreateRequest.Name</label>
-                        </td>
+        <div id="propertiesDataContainer,@i">
 
-                        <td style="width:60%;">
-                            <label class="element-collection-dataItem">@propertyCreateRequest.Value</label>
-                        </td>
+            <table class="full-parent-width" style="margin:20px 25px">
+                <tbody>
+                    @for (int j = 0; j < properties.Count; j++)
+                    {
+                        DisplayPropertyCreateRequest propertyCreateRequest = properties[j];
+                        <tr>
+                            <td style="width:20%;">
+                                @if (propertyCreateRequest.ProductCharacteristicId == null)
+                                {
+                                     // <select asp-items="@Model[i].Characteristics" onselect="Failed_Characteristic_Name_Select_onSelect(@i,@propertyCreateRequest.Name,this.value)"></select>
+                                    <select name="InvalidPropertySelect,@i.ToString(),@j.ToString()" asp-items="@Model[i].Characteristics" onchange="Failed_Characteristic_Name_Select_onSelect(@i,'@propertyCreateRequest.Name',this.value)"></select>
+                                }
+                                else
+                                {  
+                                    <label>@propertyCreateRequest.Name</label>
+                                }
 
-                        <td style="width:10%;">
-                            <label>ID: @propertyCreateRequest.ProductCharacteristicId</label>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                            </td>
+
+                            <td style="width:60%;">
+                                <label class="element-collection-dataItem">@propertyCreateRequest.Value</label>
+                            </td>
+
+                            <td style="width:10%;">
+                                <label name="PropertyIdText,@i.ToString(),@j.ToString()">ID: @propertyCreateRequest.ProductCharacteristicId</label>
+                            </td>
+                        </tr>
+
+                        if (propertyCreateRequest.ProductCharacteristicId == null)
+                        {
+                            <tr>
+                                <td colspan="3">
+                                    <p class="invalid-characteristic-name-text">The product characteristic "@propertyCreateRequest.Name" does not exist, please select a characteristic from the ones above</p>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+        </div>
     }
 }

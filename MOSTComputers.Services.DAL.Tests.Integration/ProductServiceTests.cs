@@ -1,26 +1,43 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
+using OneOf;
+using OneOf.Types;
 using Respawn;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 {
-    public ProductServiceTests(IProductService productService)
+    public ProductServiceTests(
+        IProductService productService,
+        IProductImageService productImageService,
+        IProductImageFileNameInfoService productImageFileNameInfoService,
+        IProductPropertyService productPropertyService)
         : base(Startup.ConnectionString)
     {
         _productService = productService;
+        _productImageService = productImageService;
+        _productImageFileNameInfoService = productImageFileNameInfoService;
+        _productPropertyService = productPropertyService;
     }
 
     private readonly IProductService _productService;
+    private readonly IProductImageService _productImageService;
+    private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
+    private readonly IProductPropertyService _productPropertyService;
+
+    private const int _useRequiredValue = -100;
 
     private static readonly ProductCreateRequest _validCreateRequest = new()
     {
@@ -61,21 +78,698 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         SubCategoryId = null,
     };
 
-    [Theory]
-    [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductCreateRequest productCreateRequest, bool expected)
+    [Fact]
+    public void GetAllWithoutImagesAndProps_ShouldSucceed_WhenInsertsAreValid()
     {
-        _productService.Insert(productCreateRequest);
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+        Product product2 = allProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
     }
 
+    [Fact]
+    public void GetSelectionWithoutImagesAndProps_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
+
+        Assert.True(insertedProducts.Count() >= 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetSelectionWithFirstImage_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
+
+        Assert.True(insertedProducts.Count() >= 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        List<CurrentProductImageCreateRequest> firstImageInRequest = new() { validCreateRequest.Images!.First() };
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product1.Images));
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product2.Images));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetSelectionWithProps_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
+
+        Assert.True(insertedProducts.Count() >= 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+        Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product1.Properties));
+
+        Assert.Equal((int)productId2, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+        Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product2.Properties));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetFirstItemsBetweenStartAndEnd_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        List<uint> productIds = new();
+
+        for (int i = 0; i < 20; i++)
+        {
+            // Updating display order so that everything is ordered
+            validCreateRequest.DisplayOrder = i + 1;
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+            Assert.True(insertResult.Match(
+                _ => true,
+                _ => false,
+                _ => false));
+
+            uint productId = insertResult.AsT0;
+
+            productIds.Add(productId);
+        }
+
+        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+            .Skip(10)
+            .Take(10)
+            .ToList();
+
+        List<Product> productsInRange = _productService.GetFirstItemsBetweenStartAndEnd(10, 20).ToList();
+
+        Assert.True(productsInRange.Count >= 2);
+
+        Assert.Equal(productsInRange.Count, allProductsRanged.Count);
+
+        for (int i = 0; i < allProductsRanged.Count; i++)
+        {
+            Product productInAll = allProductsRanged[i];
+            Product productInRange = productsInRange[i];
+
+            AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productIds.ToArray());
+    }
+
+    [Fact]
+    public void GetByIdWithFirstImage_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+
+        Assert.NotNull(insertedProduct);
+
+        List<CurrentProductImageCreateRequest> firstImageInRequest = new() { validCreateRequest.Images!.First() };
+
+        Assert.Equal((int)productId, insertedProduct.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, insertedProduct.Images));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
+    public void GetByIdWithProps_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithProps(productId);
+
+        Assert.NotNull(insertedProduct);
+
+        Assert.Equal((int)productId, insertedProduct.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
+        Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, insertedProduct.Properties));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
+    public void GetByIdWithImages_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithImages(productId);
+
+        Assert.NotNull(insertedProduct);
+
+        Assert.Equal((int)productId, insertedProduct.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(validCreateRequest.Images, insertedProduct.Images));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Theory]
+    [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductCreateRequest createRequest, bool expected)
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
+
+        Assert.Equal(expected, insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        if (expected)
+        {
+            uint productId = insertResult.AsT0;
+
+            Product? insertedProduct = _productService.GetByIdWithProps(productId);
+
+            List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId).ToList();
+            List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
+
+            Assert.NotNull(insertedProduct);
+
+            AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, createRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, insertedProduct.Properties));
+            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
+
+            // Deterministic delete
+            _productService.DeleteProducts(productId);
+        }
+    }
+    
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
         new object[2]
         {
-            _validCreateRequest,
+            ValidProductCreateRequest,
             true
         }
     };
 #pragma warning restore CA2211 // Non-constant fields should not be visible
+
+    [Theory]
+    [MemberData(nameof(Update_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ProductUpdateRequest updateRequest, bool expected)
+    {
+        ProductCreateRequest createRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        if (updateRequest.Id == _useRequiredValue)
+        {
+            updateRequest.Id = (int)productId;
+        }
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productService.Update(updateRequest);
+
+        Assert.Equal(expected, updateResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        Product? updatedProduct = _productService.GetByIdWithProps(productId);
+
+        List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId).ToList();
+        List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
+
+        Assert.NotNull(updatedProduct);
+
+        if (expected)
+        {
+            AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, updateRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(updateRequest.Properties, updatedProduct.Properties));
+            Assert.True(CompareImagesInRequestAndProduct(updateRequest.Images, productImagesForProduct));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(updateRequest.ImageFileNames, productImageFileNamesForProduct));
+        }
+        else
+        {
+            AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, createRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, updatedProduct.Properties));
+            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+#pragma warning disable CA2211 // Non-constant fields should not be visible
+    public static List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    {
+        new object[2]
+        {
+            ValidProductCreateRequest,
+            true
+        }
+    };
+#pragma warning restore CA2211 // Non-constant fields should not be visible
+
+    [Fact]
+    public void Delete_ShouldSucceed_WhenInsertIsValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        bool? success = _productService.Delete(productId);
+
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+
+        Assert.Null(insertedProduct);
+
+        // Deterministic delete (in case delete in test fails)
+        _productService.DeleteProducts(productId);
+    }
+
+    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductCreateRequest createRequest)
+    {
+        Assert.Equal(createRequest.Name, insertedProduct.Name);
+        Assert.Equal(createRequest.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
+        Assert.Equal(createRequest.AdditionalWarrantyTermMonths, insertedProduct.AdditionalWarrantyTermMonths);
+        Assert.Equal(createRequest.StandardWarrantyPrice, insertedProduct.StandardWarrantyPrice);
+        Assert.Equal(createRequest.StandardWarrantyTermMonths, insertedProduct.StandardWarrantyTermMonths);
+        Assert.Equal(createRequest.DisplayOrder, insertedProduct.DisplayOrder);
+        Assert.Equal(createRequest.Status, insertedProduct.Status);
+        Assert.Equal(createRequest.PlShow, insertedProduct.PlShow);
+        Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
+        Assert.Equal(createRequest.Currency, insertedProduct.Currency);
+        Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
+        Assert.Equal(createRequest.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
+        Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
+        Assert.Equal(createRequest.AlertPictureId, insertedProduct.AlertPictureId);
+        Assert.Equal(createRequest.AlertExpireDate, insertedProduct.AlertExpireDate);
+        Assert.Equal(createRequest.PriceListDescription, insertedProduct.PriceListDescription);
+        Assert.Equal(createRequest.PartNumber1, insertedProduct.PartNumber1);
+        Assert.Equal(createRequest.PartNumber2, insertedProduct.PartNumber2);
+        Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
+
+        Assert.Equal(createRequest.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductUpdateRequest updateRequest)
+    {
+        Assert.Equal(updateRequest.Name, insertedProduct.Name);
+        Assert.Equal(updateRequest.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
+        Assert.Equal(updateRequest.AdditionalWarrantyTermMonths, insertedProduct.AdditionalWarrantyTermMonths);
+        Assert.Equal(updateRequest.StandardWarrantyPrice, insertedProduct.StandardWarrantyPrice);
+        Assert.Equal(updateRequest.StandardWarrantyTermMonths, insertedProduct.StandardWarrantyTermMonths);
+        Assert.Equal(updateRequest.DisplayOrder, insertedProduct.DisplayOrder);
+        Assert.Equal(updateRequest.Status, insertedProduct.Status);
+        Assert.Equal(updateRequest.PlShow, insertedProduct.PlShow);
+        Assert.Equal(updateRequest.DisplayPrice, insertedProduct.Price);
+        Assert.Equal(updateRequest.Currency, insertedProduct.Currency);
+        Assert.Equal(updateRequest.RowGuid, insertedProduct.RowGuid);
+        Assert.Equal(updateRequest.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(updateRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(updateRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
+        Assert.Equal(updateRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
+        Assert.Equal(updateRequest.AlertPictureId, insertedProduct.AlertPictureId);
+        Assert.Equal(updateRequest.AlertExpireDate, insertedProduct.AlertExpireDate);
+        Assert.Equal(updateRequest.PriceListDescription, insertedProduct.PriceListDescription);
+        Assert.Equal(updateRequest.PartNumber1, insertedProduct.PartNumber1);
+        Assert.Equal(updateRequest.PartNumber2, insertedProduct.PartNumber2);
+        Assert.Equal(updateRequest.SearchString, insertedProduct.SearchString);
+
+        Assert.Equal(updateRequest.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(updateRequest.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static void AssertProductIsEqualToProductWithoutPropsOrImages(Product insertedProduct, Product product)
+    {
+        Assert.Equal(product.Name, insertedProduct.Name);
+        Assert.Equal(product.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
+        Assert.Equal(product.AdditionalWarrantyTermMonths, insertedProduct.AdditionalWarrantyTermMonths);
+        Assert.Equal(product.StandardWarrantyPrice, insertedProduct.StandardWarrantyPrice);
+        Assert.Equal(product.StandardWarrantyTermMonths, insertedProduct.StandardWarrantyTermMonths);
+        Assert.Equal(product.DisplayOrder, insertedProduct.DisplayOrder);
+        Assert.Equal(product.Status, insertedProduct.Status);
+        Assert.Equal(product.PlShow, insertedProduct.PlShow);
+        Assert.Equal(product.Price, insertedProduct.Price);
+        Assert.Equal(product.Currency, insertedProduct.Currency);
+        Assert.Equal(product.RowGuid, insertedProduct.RowGuid);
+        Assert.Equal(product.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(product.PromRid, insertedProduct.PromRid);
+        Assert.Equal(product.PromotionPictureId, insertedProduct.PromotionPictureId);
+        Assert.Equal(product.PromotionExpireDate, insertedProduct.PromotionExpireDate);
+        Assert.Equal(product.AlertPictureId, insertedProduct.AlertPictureId);
+        Assert.Equal(product.AlertExpireDate, insertedProduct.AlertExpireDate);
+        Assert.Equal(product.PriceListDescription, insertedProduct.PriceListDescription);
+        Assert.Equal(product.PartNumber1, insertedProduct.PartNumber1);
+        Assert.Equal(product.PartNumber2, insertedProduct.PartNumber2);
+        Assert.Equal(product.SearchString, insertedProduct.SearchString);
+
+        Assert.Equal(product.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(product.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(product.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyCreateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
+    {
+        if (propsInRequest is null && propsInObject is null) return true;
+
+        if (propsInRequest is null || propsInObject is null) return false;
+
+        if (propsInRequest.Count != propsInObject.Count) return false;
+
+        List<CurrentProductPropertyCreateRequest> orderedPropsInRequest = propsInRequest.OrderBy(x => x.ProductCharacteristicId).ToList();
+        List<ProductProperty> orderedPropsInObject = propsInObject.OrderBy(x => x.ProductCharacteristicId).ToList();
+
+        for (int i = 0; i < orderedPropsInRequest.Count; i++)
+        {
+            CurrentProductPropertyCreateRequest propInRequest = orderedPropsInRequest[i];
+            ProductProperty propInObject = orderedPropsInObject[i];
+
+            if (propInRequest.ProductCharacteristicId != propInObject.ProductCharacteristicId
+                || propInRequest.Value != propInObject.Value
+                || propInRequest.DisplayOrder != propInObject.DisplayOrder
+                || propInRequest.XmlPlacement != propInObject.XmlPlacement)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool CompareImagesInRequestAndProduct(List<CurrentProductImageCreateRequest>? imagesInRequest, List<ProductImage>? imagesInObject)
+    {
+        if (imagesInRequest is null && imagesInObject is null) return true;
+
+        if (imagesInRequest is null || imagesInObject is null) return false;
+
+        if (imagesInRequest.Count != imagesInObject.Count) return false;
+
+        for (int i = 0; i < imagesInRequest.Count; i++)
+        {
+            CurrentProductImageCreateRequest imageInRequest = imagesInRequest[i];
+
+            bool isMatched = false;
+
+            for (int j = 0; j < imagesInObject.Count; j++)
+            {
+                ProductImage imageInObject = imagesInObject[j];
+
+                if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
+                    && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
+                    && imageInRequest.XML == imageInObject.XML)
+                {
+                    isMatched = true;
+
+                    break;
+                }
+            }
+
+            if (!isMatched) return false;
+        }
+
+        return true;
+    }
+
+    private static bool CompareImageFileNamesInRequestAndProduct(List<CurrentProductImageFileNameInfoCreateRequest>? imageFileNamesInRequest, List<ProductImageFileNameInfo>? imageFileNamesInObject)
+    {
+        if (imageFileNamesInRequest is null && imageFileNamesInObject is null) return true;
+
+        if (imageFileNamesInRequest is null || imageFileNamesInObject is null) return false;
+
+        if (imageFileNamesInRequest.Count != imageFileNamesInObject.Count) return false;
+
+        List<CurrentProductImageFileNameInfoCreateRequest> orderedImageFileNamesInRequest = imageFileNamesInRequest.OrderBy(x => x.DisplayOrder).ToList();
+        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = imageFileNamesInObject.OrderBy(x => x.DisplayOrder).ToList();
+
+        for (int i = 0; i < orderedImageFileNamesInRequest.Count; i++)
+        {
+            CurrentProductImageFileNameInfoCreateRequest imageFileNameInRequest = orderedImageFileNamesInRequest[i];
+            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i];
+
+            if (imageFileNameInRequest.FileName != imageFileNameInObject.FileName
+                || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyUpdateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
+    {
+        if (propsInRequest is null && propsInObject is null) return true;
+
+        if (propsInRequest is null || propsInObject is null) return false;
+
+        if (propsInRequest.Count != propsInObject.Count) return false;
+
+        List<CurrentProductPropertyUpdateRequest> orderedPropsInRequest = propsInRequest.OrderBy(x => x.ProductCharacteristicId).ToList();
+        List<ProductProperty> orderedPropsInObject = propsInObject.OrderBy(x => x.ProductCharacteristicId).ToList();
+
+        for (int i = 0; i < orderedPropsInRequest.Count; i++)
+        {
+            CurrentProductPropertyUpdateRequest propInRequest = orderedPropsInRequest[i];
+            ProductProperty propInObject = orderedPropsInObject[i];
+
+            if (propInRequest.ProductCharacteristicId != propInObject.ProductCharacteristicId
+                || propInRequest.Value != propInObject.Value
+                || propInRequest.DisplayOrder != propInObject.DisplayOrder
+                || propInRequest.XmlPlacement != propInObject.XmlPlacement)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool CompareImagesInRequestAndProduct(List<CurrentProductImageUpdateRequest>? imagesInRequest, List<ProductImage>? imagesInObject)
+    {
+        if (imagesInRequest is null && imagesInObject is null) return true;
+
+        if (imagesInRequest is null || imagesInObject is null) return false;
+
+        if (imagesInRequest.Count != imagesInObject.Count) return false;
+
+        for (int i = 0; i < imagesInRequest.Count; i++)
+        {
+            CurrentProductImageUpdateRequest imageInRequest = imagesInRequest[i];
+
+            bool isMatched = false;
+
+            for (int j = 0; j < imagesInObject.Count; j++)
+            {
+                ProductImage imageInObject = imagesInObject[j];
+
+                if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
+                    && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
+                    && imageInRequest.XML == imageInObject.XML
+                    && imageInRequest.DateModified == imageInObject.DateModified)
+                {
+                    isMatched = true;
+
+                    break;
+                }
+            }
+
+            if (!isMatched) return false;
+        }
+
+        return true;
+    }
+
+    private static bool CompareImageFileNamesInRequestAndProduct(List<CurrentProductImageFileNameInfoUpdateRequest>? imageFileNamesInRequest, List<ProductImageFileNameInfo>? imageFileNamesInObject)
+    {
+        if (imageFileNamesInRequest is null && imageFileNamesInObject is null) return true;
+
+        if (imageFileNamesInRequest is null || imageFileNamesInObject is null) return false;
+
+        if (imageFileNamesInRequest.Count != imageFileNamesInObject.Count) return false;
+
+        List<CurrentProductImageFileNameInfoUpdateRequest> orderedImageFileNamesInRequest = imageFileNamesInRequest.OrderBy(x => x.DisplayOrder).ToList();
+        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = imageFileNamesInObject.OrderBy(x => x.DisplayOrder).ToList();
+
+        for (int i = 0; i < orderedImageFileNamesInRequest.Count; i++)
+        {
+            CurrentProductImageFileNameInfoUpdateRequest imageFileNameInRequest = orderedImageFileNamesInRequest[i];
+            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i];
+
+            if (imageFileNameInRequest.FileName != imageFileNameInObject.FileName
+                || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
