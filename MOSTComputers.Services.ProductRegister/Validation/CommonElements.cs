@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
+using System.Numerics;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
 
@@ -62,6 +63,21 @@ internal static class CommonElements
         return num > 0;
     }
 
+    public static bool NullOrGreaterThanZero(byte? num)
+    {
+        if (num == null) return true;
+
+        return num > 0;
+    }
+
+    public static bool NullOrGreaterThanZero<T>(T? num)
+        where T : INumber<T>
+    {
+        if (num == null) return true;
+        
+        return num.CompareTo(T.Zero) > 0;
+    }
+
     public static bool NullOrGreaterThanOrEqualToZero(int? num)
     {
         return num == null || num >= 0;
@@ -85,6 +101,17 @@ internal static class CommonElements
     public static bool NullOrGreaterThanOrEqualToZero(float? num)
     {
         return num == null || num >= 0;
+    }
+
+    public static bool NullOrGreaterThanOrEqualToZero(byte? num)
+    {
+        return num == null || num >= 0;
+    }
+
+    public static bool NullOrGreaterThanOrEqualToZero<T>(T? num)
+        where T : INumberBase<T>, IComparable<T>
+    {
+        return num == null || num.CompareTo(T.Zero) > 0;
     }
 
     public static bool IsNotNullEmptyOrWhiteSpace(string? str)
@@ -130,5 +157,12 @@ internal static class CommonElements
     public static bool IsEmpty(string str)
     {
         return !(str == string.Empty);
+    }
+
+    public static bool IsNullOrNotEmpty(byte[]? x)
+    {
+        if (x is null) return true;
+
+        return x.Length != 0;
     }
 }
