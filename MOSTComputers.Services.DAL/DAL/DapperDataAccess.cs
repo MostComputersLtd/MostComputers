@@ -3,6 +3,9 @@ using System.Data;
 using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
+using System.Data.Common;
+using System.Transactions;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MOSTComputers.Services.DAL.DAL;
 
@@ -16,6 +19,12 @@ public interface IRelationalDataAccess
     IEnumerable<T1> GetData<T1, T2, T3, T4, T5, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
+    T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
+    T GetDataFirst<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
+    T GetDataSingle<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
+    T GetDataFirst<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction);
+    T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction);
+    T GetDataSingle<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction);
     int SaveData<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
     void SaveDataInTransactionUsingAction<T, U>(Action<IDbConnection, IDbTransaction, U> actionInTransaction, U parameters);
     TReturn SaveDataInTransactionUsingAction<T, U, TReturn>(Func<IDbConnection, IDbTransaction, U, TReturn> actionInTransaction, U parameters);
@@ -27,9 +36,6 @@ public interface IRelationalDataAccess
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
     int SaveDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
-    T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
-    T GetDataFirst<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
-    T GetDataSingle<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
     T? SaveDataAndReturnValue<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
     T? SaveDataAndReturnValueStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
 }
@@ -181,6 +187,20 @@ internal class DapperDataAccess : IRelationalDataAccess
         return connection.QuerySingle<T>(sqlStatement, parameters, commandType: CommandType.Text);
     }
 
+    public T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction)
+    {
+        return dbConnection.QueryFirstOrDefault<T>(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+    }
+
+    public T GetDataFirst<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction)
+    {
+        return dbConnection.QueryFirst<T>(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+    }
+
+    public T GetDataSingle<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction)
+    {
+        return dbConnection.QuerySingle<T>(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+    }
 
     public int SaveData<T, U>(string sqlStatement, U parameters, bool doInTransaction = false)
     {
@@ -192,7 +212,11 @@ internal class DapperDataAccess : IRelationalDataAccess
 
             using IDbTransaction transaction = connection.BeginTransaction();
 
-            return connection.Execute(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+            int rowsAffected = connection.Execute(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return rowsAffected;
         }
 
         return connection.Execute(sqlStatement, parameters, commandType: CommandType.Text);
@@ -208,7 +232,11 @@ internal class DapperDataAccess : IRelationalDataAccess
 
             using IDbTransaction transaction = connection.BeginTransaction();
 
-            return (T?)connection.ExecuteScalar(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+            T? data = (T?)connection.ExecuteScalar(sqlStatement, parameters, transaction, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
         }
 
         return (T?)connection.ExecuteScalar(sqlStatement, parameters, commandType: CommandType.Text);
@@ -223,6 +251,8 @@ internal class DapperDataAccess : IRelationalDataAccess
         using IDbTransaction transaction = connection.BeginTransaction();
 
         actionInTransaction(connection, transaction, parameters);
+
+        transaction.Commit();
     }
 
     public TReturn SaveDataInTransactionUsingAction<T, U, TReturn>(Func<IDbConnection, IDbTransaction, U, TReturn> actionInTransaction, U parameters)
@@ -233,7 +263,11 @@ internal class DapperDataAccess : IRelationalDataAccess
 
         using IDbTransaction transaction = connection.BeginTransaction();
 
-        return actionInTransaction(connection, transaction, parameters);
+        TReturn data = actionInTransaction(connection, transaction, parameters);
+
+        transaction.Commit();
+
+        return data;
     }
 
     public IEnumerable<T> GetDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false)
@@ -328,7 +362,11 @@ internal class DapperDataAccess : IRelationalDataAccess
 
             using IDbTransaction transaction = connection.BeginTransaction();
 
-            return connection.Execute(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure);
+            int rowsAffected = connection.Execute(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return rowsAffected;
         }
 
         return connection.Execute(storedProcedureName, parameters, commandType: CommandType.StoredProcedure);
@@ -344,7 +382,11 @@ internal class DapperDataAccess : IRelationalDataAccess
 
             using IDbTransaction transaction = connection.BeginTransaction();
 
-            return (T?)connection.ExecuteScalar(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure);
+            T? data = (T?)connection.ExecuteScalar(storedProcedureName, parameters, transaction, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
         }
 
         return (T?)connection.ExecuteScalar(storedProcedureName, parameters, commandType: CommandType.StoredProcedure);
