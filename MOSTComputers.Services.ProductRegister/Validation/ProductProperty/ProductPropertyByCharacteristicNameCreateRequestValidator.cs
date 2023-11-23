@@ -9,12 +9,12 @@ using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
 
-internal sealed class ProductPropertyUpdateRequestValidator : AbstractValidator<ProductPropertyUpdateRequest>
+internal sealed class ProductPropertyByCharacteristicNameCreateRequestValidator : AbstractValidator<ProductPropertyByCharacteristicNameCreateRequest>
 {
-    public ProductPropertyUpdateRequestValidator()
+    public ProductPropertyByCharacteristicNameCreateRequestValidator()
     {
         RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.ProductCharacteristicName).Must(IsNotNullEmptyOrWhiteSpace);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
         RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
     }
