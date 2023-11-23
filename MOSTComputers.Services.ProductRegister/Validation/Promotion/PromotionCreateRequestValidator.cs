@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models.Requests.Promotions;
+using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using System;
 using System.Collections.Generic;
 using System.Linq;

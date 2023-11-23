@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MOSTComputers.Models.Product.Models.Requests.Promotions;
+namespace MOSTComputers.Models.Product.Models.Requests.Promotion;
 
 public sealed class PromotionUpdateRequest
 {
