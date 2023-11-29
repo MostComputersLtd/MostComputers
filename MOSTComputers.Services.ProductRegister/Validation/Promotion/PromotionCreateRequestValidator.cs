@@ -9,12 +9,11 @@ using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.Promotion;
 
-internal sealed class PromotionCreateRequestValidator : AbstractValidator<PromotionCreateRequest>
+internal sealed class PromotionCreateRequestValidator : AbstractValidator<ServicePromotionCreateRequest>
 {
     public PromotionCreateRequestValidator()
     {
         RuleFor(x => x.Name).Must(IsNotEmptyOrWhiteSpace).MaximumLength(100);
-        RuleFor(x => x.PromotionAddedDate).NotEqual(new DateTime(0));
         RuleFor(x => x.Source).Must(NullOrGreaterThanZero); // 4 or 8
         RuleFor(x => x.Type).Must(NullOrGreaterThanZero); // 1 or 2
         RuleFor(x => x.Status).Must(NullOrGreaterThanOrEqualToZero); // 0, 1, 3 or 4
