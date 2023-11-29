@@ -114,6 +114,12 @@ internal static class CommonElements
         return num == null || num.CompareTo(T.Zero) > 0;
     }
 
+    public static bool NullOrGreaterThanOrEqualTo<T>(T? num, T comparisonNum)
+        where T : struct, INumberBase<T>, IComparable<T>
+    {
+        return num == null || num.Value.CompareTo(comparisonNum) > 0;
+    }
+
     public static bool IsNotNullEmptyOrWhiteSpace(string? str)
     {
         if (string.IsNullOrEmpty(str)) return false;
