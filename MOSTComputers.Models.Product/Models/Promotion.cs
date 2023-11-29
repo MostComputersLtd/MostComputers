@@ -1,4 +1,6 @@
-﻿namespace MOSTComputers.Models.Product.Models;
+﻿using System.Data;
+
+namespace MOSTComputers.Models.Product.Models;
 
 public sealed class Promotion
 {
@@ -22,9 +24,27 @@ public sealed class Promotion
     public string? RequiredProductIdsString
     {
         get => RequiredProductIds is not null ? string.Join(',', RequiredProductIds) : null;
-        set => RequiredProductIds = value?.Split(',')
-            .Select(productId => uint.Parse(productId))
-            .ToList();
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                RequiredProductIds = null;
+
+                return;
+            }
+
+            try
+            {
+                RequiredProductIds = value?.Split(',')
+                .Select(productId => uint.Parse(productId))
+                .ToList();
+            }
+            catch (FormatException)
+            {
+                return;
+            }
+
+        }
     }
 
     public int? ExpQuantity { get; set; }
