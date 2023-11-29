@@ -22,6 +22,7 @@ internal sealed class PromotionEntityMap : EntityMap<Promotion>
         Map(x => x.MinimumQuantity).ToColumn("MinQty");
         Map(x => x.MaximumQuantity).ToColumn("MaxQty");
         Map(x => x.RequiredProductIds).Ignore();
+        Map(x => x.QuantityIncrement).ToColumn("QtyIncrement");
         Map(x => x.RequiredProductIdsString).ToColumn("RequiredCSTIDs");
         Map(x => x.ExpQuantity).ToColumn("ExpQty");
         Map(x => x.SoldQuantity).ToColumn("SoldQty");
