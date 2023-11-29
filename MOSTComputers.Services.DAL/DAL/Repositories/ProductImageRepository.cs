@@ -159,7 +159,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(updateInAllImagesQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest updateRequest)
@@ -186,7 +186,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateInFirstImagesQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
     }
 
     public bool DeleteInAllImagesById(uint id)
@@ -201,7 +201,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }
@@ -223,7 +223,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }
@@ -245,7 +245,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId = (int)productId });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }

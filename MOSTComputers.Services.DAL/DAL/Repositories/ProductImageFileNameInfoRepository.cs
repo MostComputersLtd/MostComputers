@@ -172,14 +172,14 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         try
         {
-            _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(deleteQuery, parameters);
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(deleteQuery, parameters);
+
+            return (rowsAffected > 0);
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-
-        return true;
     }
 
     public bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder)

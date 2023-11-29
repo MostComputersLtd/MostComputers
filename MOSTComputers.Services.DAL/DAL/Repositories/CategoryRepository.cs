@@ -106,9 +106,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         {
             int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected <= 0) return false;
-
-            return true;
+            return (rowsAffected > 0);
         }
         catch (InvalidOperationException)
         {

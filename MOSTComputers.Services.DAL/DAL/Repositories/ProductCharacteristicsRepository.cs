@@ -277,7 +277,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }
@@ -299,7 +299,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { productId = (int)categoryId });
 
-            if (rowsAffected == 0) return false;
+            if (rowsAffected <= 0) return false;
 
             return true;
         }

@@ -93,11 +93,11 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string insertQuery =
             $"""
-            INSERT INTO {_tableName}(CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
+            INSERT INTO {_tableName}(PromotionID, CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
             ExpDate, MinQty, MaxQty, CampaignID, QtyIncrement, RequiredCSTIDs, ExpQty, SoldQty, PromotionName, Consignation, Points, RegistrationID,
             Timestamp, PromotionVisualizationId)
             OUTPUT INSERTED.PromotionID
-            VALUES(@ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
+            VALUES(ISNULL((SELECT MAX(PromotionID) + 1 FROM {_tableName}), 1), @ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
             @ExpirationDate, @MinimumQuantity, @MaximumQuantity, @CampaignId, @QuantityIncrement, @RequiredProductIdsString, @ExpQuantity, @SoldQuantity,
             @Name, @Consignation, @Points, @RegistrationId, @TimeStamp, @PromotionVisualizationId)
             """;
