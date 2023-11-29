@@ -32,6 +32,14 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
     private const int _insertRequiredIdValue = -100;
 
+    private readonly ServiceCategoryCreateRequest _invalidCategoryCreateRequest = new()
+    {
+        Description = "     ",
+        DisplayOrder = 13123,
+        ProductsUpdateCounter = 0,
+        ParentCategoryId = null
+    };
+
     [Fact]
     public void GetAll_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
@@ -56,6 +64,24 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
     [Fact]
+    public void GetAll_ShouldFail_WithUnsuccessfullyCreatedObjects()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _categoryService.Insert(_invalidCategoryCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _categoryService.Insert(_invalidCategoryCreateRequest);
+
+        Assert.True(result1.IsT1);
+        Assert.True(result2.IsT1);
+
+        IEnumerable<Category> categories = _categoryService.GetAll();
+
+        Assert.DoesNotContain(categories,
+            x => x.Description == _invalidCategoryCreateRequest.Description
+            && x.DisplayOrder == _invalidCategoryCreateRequest.DisplayOrder
+            && x.ProductsUpdateCounter == _invalidCategoryCreateRequest.ProductsUpdateCounter
+            && x.ParentCategoryId == _invalidCategoryCreateRequest.ParentCategoryId);
+    }
+
+    [Fact]
     public void GetById_ShouldSucceed_WithSuccessfullyCreatedObjects()
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
@@ -77,6 +103,22 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
         //Assert.NotNull(category.RowGuid);
 
         Assert.True(category.RowGuid != Guid.Empty);
+
+        DeleteRange(id);
+    }
+
+    [Fact]
+    public void GetById_ShouldFail_WithInvalidId()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(createResult.IsT0);
+
+        uint id = createResult.AsT0;
+
+        Category? category = _categoryService.GetById(id + 1000);
+
+        Assert.Null(category);
 
         DeleteRange(id);
     }
@@ -393,6 +435,42 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Null(categoriesDelete);
         Assert.True(success);
+
+        if (id is not null)
+        {
+            // Deterministic delete (in case delete in test fails)
+            DeleteRange(id.Value);
+        }    
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenIdIsInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> createResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        uint? id = createResult.Match<uint?>(
+            id => id,
+            _ => null,
+            _ => null);
+
+        Assert.NotNull(id);
+
+        Category? categoryInserted = _categoryService.GetById(id.Value);
+
+        Assert.NotNull(categoryInserted);
+
+        bool success = _categoryService.Delete(id.Value + 1000);
+
+        Category? categoryToDelete = _categoryService.GetById(id.Value);
+
+        Assert.NotNull(categoryToDelete);
+        Assert.False(success);
+
+        if (id is not null)
+        {
+            // Deterministic delete (in case delete in test fails)
+            DeleteRange(id.Value);
+        }
     }
 
     private bool DeleteRange(params uint[] ids)

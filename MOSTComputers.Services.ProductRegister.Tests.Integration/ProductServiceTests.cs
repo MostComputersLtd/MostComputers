@@ -117,6 +117,45 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
     [Fact]
+    public void GetAllWithoutImagesAndProps_ShouldOnlyGetTheDataThatWasSuccessfullyInserted()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
+
+        invalidCreateRequest.Name = "  ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.DoesNotContain(allProducts, x =>
+            CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1);
+    }
+
+    [Fact]
     public void GetSelectionWithoutImagesAndProps_ShouldSucceed_WhenInsertsAreValid()
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
@@ -143,7 +182,49 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
 
-        Assert.True(insertedProducts.Count() >= 2);
+        Assert.True(insertedProducts.Count() == 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetSelectionWithoutImagesAndProps_ShouldOnlyGetProductsWithValidIds()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2, 0 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
+
+        Assert.True(insertedProducts.Count() == 2);
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -185,7 +266,53 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
 
-        Assert.True(insertedProducts.Count() >= 2);
+        Assert.True(insertedProducts.Count() == 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        List<CurrentProductImageCreateRequest> firstImageInRequest = new() { validCreateRequest.Images!.First() };
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product1.Images));
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+        Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product2.Images));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetSelectionWithFirstImage_ShouldOnlyGetProductsWithValidIds()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2, 0 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
+
+        Assert.True(insertedProducts.Count() == 2);
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -231,7 +358,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
 
-        Assert.True(insertedProducts.Count() >= 2);
+        Assert.True(insertedProducts.Count() == 2);
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -240,7 +367,51 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
         Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product1.Properties));
 
-        Assert.Equal((int)productId2, product1.Id);
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+        Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product2.Properties));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetSelectionWithProps_ShouldOnlyGetProductsWithValidIds()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        List<uint> productIds = new() { productId1, productId2, 0 };
+
+        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
+
+        Assert.True(insertedProducts.Count() == 2);
+
+        Product product1 = insertedProducts.Single(x => x.Id == productId1);
+        Product product2 = insertedProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+        Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product1.Properties));
+
+        Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
         Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product2.Properties));
 
@@ -251,12 +422,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     [Fact]
     public void GetFirstItemsBetweenStartAndEnd_ShouldSucceed_WhenInsertsAreValid()
     {
-        ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
-
         List<uint> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
+            ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
             // Updating display order so that everything is ordered
             validCreateRequest.DisplayOrder = i + 1;
 
@@ -277,11 +448,11 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             .Take(10)
             .ToList();
 
-        List<Product> productsInRange = _productService.GetFirstItemsBetweenStartAndEnd(10, 20).ToList();
+        List<Product> productsInRange = _productService.GetFirstItemsBetweenStartAndEnd(new() { Start = 10, Length = 10 }).ToList();
 
         Assert.True(productsInRange.Count >= 2);
 
-        Assert.Equal(productsInRange.Count, allProductsRanged.Count);
+        Assert.Equal(allProductsRanged.Count, productsInRange.Count);
 
         for (int i = 0; i < allProductsRanged.Count; i++)
         {
@@ -324,6 +495,28 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
     [Fact]
+    public void GetByIdWithFirstImage_ShouldFail_WhenIdDoesNotExist()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(0);
+
+        Assert.Null(insertedProduct);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
     public void GetByIdWithProps_ShouldSucceed_WhenInsertsAreValid()
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
@@ -350,6 +543,28 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
     [Fact]
+    public void GetByIdWithProps_ShouldFail_WhenIdDoesNotExist()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithProps(0);
+
+        Assert.Null(insertedProduct);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
     public void GetByIdWithImages_ShouldSucceed_WhenInsertsAreValid()
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
@@ -370,6 +585,28 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId, insertedProduct.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
         Assert.True(CompareImagesInRequestAndProduct(validCreateRequest.Images, insertedProduct.Images));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
+    public void GetByIdWithImages_ShouldFail_WhenIdDoesNotExist()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        Product? insertedProduct = _productService.GetByIdWithImages(0);
+
+        Assert.Null(insertedProduct);
 
         // Deterministic delete
         _productService.DeleteProducts(productId);
@@ -407,7 +644,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             _productService.DeleteProducts(productId);
         }
     }
-    
+
 #pragma warning disable CA2211 // Non-constant fields should not be visible
     public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
@@ -415,8 +652,223 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         {
             ValidProductCreateRequest,
             true
-        }
+        },
+
+        new object[2]
+        {
+            GetValidProductCreateRequestUsingRandomData(),
+            true
+        },
+
+        new object[2]
+        {
+            new ProductCreateRequest()
+            {
+                Name = string.Empty,
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                Promotionid = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = null,
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+                Images = new List<CurrentProductImageCreateRequest>()
+                {
+                },
+                ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
+                {
+                    new() { FileName = "20143.png", DisplayOrder = 1 },
+                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                },
+
+                CategoryID = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+            },
+
+            false
+        },
+
+        new object[2]
+        {
+            new ProductCreateRequest()
+            {
+                Name = "    ",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                Promotionid = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = null,
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                Images = new List<CurrentProductImageCreateRequest>()
+                {
+                },
+
+                ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
+                {
+                    new() { FileName = "20143.png", DisplayOrder = 1 },
+                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                },
+
+                CategoryID = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+            },
+
+            false
+        },
+
+        new object[2]
+        {
+            new ProductCreateRequest()
+            {
+                Name = "Product name",
+                AdditionalWarrantyPrice = -1M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                Promotionid = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = null,
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                Images = new List<CurrentProductImageCreateRequest>()
+                {
+                },
+
+                ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
+                {
+                    new() { FileName = "20143.png", DisplayOrder = 1 },
+                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                },
+
+                CategoryID = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+            },
+
+            false
+        },
+
+        new object[2]
+        {
+            new ProductCreateRequest()
+            {
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = -1,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                Promotionid = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = null,
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+                Images = new List<CurrentProductImageCreateRequest>()
+                {
+                },
+                ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
+                {
+                    new() { FileName = "20143.png", DisplayOrder = 1 },
+                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                },
+
+                CategoryID = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+            },
+
+            false
+        },
     };
+
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
     [Theory]
@@ -459,7 +911,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             Assert.True(ComparePropertiesInRequestAndProduct(updateRequest.Properties, updatedProduct.Properties));
             Assert.True(CompareImagesInRequestAndProduct(updateRequest.Images, productImagesForProduct));
-            Assert.True(CompareImageFileNamesInRequestAndProduct(updateRequest.ImageFileNames, productImageFileNamesForProduct));
+            Assert.True(CompareUpdateRequestDataWithActualUpdatedData(createRequest.ImageFileNames, updateRequest.ImageFileNames, productImageFileNamesForProduct));
         }
         else
         {
@@ -479,9 +931,11 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         new object[2]
         {
-            ValidProductCreateRequest,
+            GetValidProductUpdateRequest(_useRequiredValue),
             true
-        }
+        },
+
+        
     };
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
@@ -506,6 +960,30 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Null(insertedProduct);
 
         // Deterministic delete (in case delete in test fails)
+        _productService.DeleteProducts(productId);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenIdDoesNotExist()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = insertResult.AsT0;
+
+        bool? success = _productService.Delete(0);
+
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+
+        Assert.NotNull(insertedProduct);
+
+        // Deterministic delete
         _productService.DeleteProducts(productId);
     }
 
@@ -594,6 +1072,93 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(product.CategoryID, insertedProduct.CategoryID);
         Assert.Equal(product.ManifacturerId, insertedProduct.ManifacturerId);
         Assert.Equal(product.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static bool CompareProductAndRequestWithoutPropsOrImages(Product insertedProduct, ProductCreateRequest createRequest)
+    {
+        return (createRequest.Name == insertedProduct.Name
+            && createRequest.AdditionalWarrantyPrice == insertedProduct.AdditionalWarrantyPrice
+            && createRequest.AdditionalWarrantyTermMonths == insertedProduct.AdditionalWarrantyTermMonths
+            && createRequest.StandardWarrantyPrice == insertedProduct.StandardWarrantyPrice
+            && createRequest.StandardWarrantyTermMonths == insertedProduct.StandardWarrantyTermMonths
+            && createRequest.DisplayOrder == insertedProduct.DisplayOrder
+            && createRequest.Status == insertedProduct.Status
+            && createRequest.PlShow == insertedProduct.PlShow
+            && createRequest.DisplayPrice == insertedProduct.Price
+            && createRequest.Currency == insertedProduct.Currency
+            && createRequest.RowGuid == insertedProduct.RowGuid
+            && createRequest.Promotionid == insertedProduct.Promotionid
+            && createRequest.PromRid == insertedProduct.PromRid
+            && createRequest.PromotionPictureId == insertedProduct.PromotionPictureId
+            && createRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
+            && createRequest.AlertPictureId == insertedProduct.AlertPictureId
+            && createRequest.AlertExpireDate == insertedProduct.AlertExpireDate
+            && createRequest.PriceListDescription == insertedProduct.PriceListDescription
+            && createRequest.PartNumber1 == insertedProduct.PartNumber1
+            && createRequest.PartNumber2 == insertedProduct.PartNumber2
+            && createRequest.SearchString == insertedProduct.SearchString
+
+            && createRequest.CategoryID == insertedProduct.CategoryID
+            && createRequest.ManifacturerId == insertedProduct.ManifacturerId
+            && createRequest.SubCategoryId == insertedProduct.SubCategoryId);
+    }
+
+    private static bool CompareProductAndRequestWithoutPropsOrImages(Product insertedProduct, ProductUpdateRequest updateRequest)
+    {
+        return (updateRequest.Name == insertedProduct.Name
+        && updateRequest.AdditionalWarrantyPrice == insertedProduct.AdditionalWarrantyPrice
+        && updateRequest.AdditionalWarrantyTermMonths == insertedProduct.AdditionalWarrantyTermMonths
+        && updateRequest.StandardWarrantyPrice == insertedProduct.StandardWarrantyPrice
+        && updateRequest.StandardWarrantyTermMonths == insertedProduct.StandardWarrantyTermMonths
+        && updateRequest.DisplayOrder == insertedProduct.DisplayOrder
+        && updateRequest.Status == insertedProduct.Status
+        && updateRequest.PlShow == insertedProduct.PlShow
+        && updateRequest.DisplayPrice == insertedProduct.Price
+        && updateRequest.Currency == insertedProduct.Currency
+        && updateRequest.RowGuid == insertedProduct.RowGuid
+        && updateRequest.Promotionid == insertedProduct.Promotionid
+        && updateRequest.PromRid == insertedProduct.PromRid
+        && updateRequest.PromotionPictureId == insertedProduct.PromotionPictureId
+        && updateRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
+        && updateRequest.AlertPictureId == insertedProduct.AlertPictureId
+        && updateRequest.AlertExpireDate == insertedProduct.AlertExpireDate
+        && updateRequest.PriceListDescription == insertedProduct.PriceListDescription
+        && updateRequest.PartNumber1 == insertedProduct.PartNumber1
+        && updateRequest.PartNumber2 == insertedProduct.PartNumber2
+        && updateRequest.SearchString == insertedProduct.SearchString
+
+        && updateRequest.CategoryID == insertedProduct.CategoryID
+        && updateRequest.ManifacturerId == insertedProduct.ManifacturerId
+        && updateRequest.SubCategoryId == insertedProduct.SubCategoryId);
+    }
+
+    private static bool CompareProductAndProductWithoutPropsOrImages(Product insertedProduct, Product product)
+    {
+        return (product.Name == insertedProduct.Name
+        && product.AdditionalWarrantyPrice == insertedProduct.AdditionalWarrantyPrice
+        && product.AdditionalWarrantyTermMonths == insertedProduct.AdditionalWarrantyTermMonths
+        && product.StandardWarrantyPrice == insertedProduct.StandardWarrantyPrice
+        && product.StandardWarrantyTermMonths == insertedProduct.StandardWarrantyTermMonths
+        && product.DisplayOrder == insertedProduct.DisplayOrder
+        && product.Status == insertedProduct.Status
+        && product.PlShow == insertedProduct.PlShow
+        && product.Price == insertedProduct.Price
+        && product.Currency == insertedProduct.Currency
+        && product.RowGuid == insertedProduct.RowGuid
+        && product.Promotionid == insertedProduct.Promotionid
+        && product.PromRid == insertedProduct.PromRid
+        && product.PromotionPictureId == insertedProduct.PromotionPictureId
+        && product.PromotionExpireDate == insertedProduct.PromotionExpireDate
+        && product.AlertPictureId == insertedProduct.AlertPictureId
+        && product.AlertExpireDate == insertedProduct.AlertExpireDate
+        && product.PriceListDescription == insertedProduct.PriceListDescription
+        && product.PartNumber1 == insertedProduct.PartNumber1
+        && product.PartNumber2 == insertedProduct.PartNumber2
+        && product.SearchString == insertedProduct.SearchString
+
+        && product.CategoryID == insertedProduct.CategoryID
+        && product.ManifacturerId == insertedProduct.ManifacturerId
+        && product.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
     private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyCreateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
@@ -732,8 +1297,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
                     && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
-                    && imageInRequest.XML == imageInObject.XML
-                    && imageInRequest.DateModified == imageInObject.DateModified)
+                    && imageInRequest.XML == imageInObject.XML)
                 {
                     isMatched = true;
 
@@ -747,29 +1311,53 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         return true;
     }
 
-    private static bool CompareImageFileNamesInRequestAndProduct(List<CurrentProductImageFileNameInfoUpdateRequest>? imageFileNamesInRequest, List<ProductImageFileNameInfo>? imageFileNamesInObject)
+    private static bool CompareUpdateRequestDataWithActualUpdatedData(List<CurrentProductImageFileNameInfoCreateRequest>? createRequestData, List<CurrentProductImageFileNameInfoUpdateRequest>? updateRequests, List<ProductImageFileNameInfo> imageFileNamesInObject)
     {
-        if (imageFileNamesInRequest is null && imageFileNamesInObject is null) return true;
-
-        if (imageFileNamesInRequest is null || imageFileNamesInObject is null) return false;
-
-        if (imageFileNamesInRequest.Count != imageFileNamesInObject.Count) return false;
-
-        List<CurrentProductImageFileNameInfoUpdateRequest> orderedImageFileNamesInRequest = imageFileNamesInRequest.OrderBy(x => x.DisplayOrder).ToList();
-        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = imageFileNamesInObject.OrderBy(x => x.DisplayOrder).ToList();
-
-        for (int i = 0; i < orderedImageFileNamesInRequest.Count; i++)
+        if (updateRequests is null)
         {
-            CurrentProductImageFileNameInfoUpdateRequest imageFileNameInRequest = orderedImageFileNamesInRequest[i];
-            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i];
+            return CompareImageFileNamesInRequestAndProduct(createRequestData, imageFileNamesInObject);
+        }
 
-            if (imageFileNameInRequest.FileName != imageFileNameInObject.FileName
-                || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder)
+        if (createRequestData is null)
+        {
+            return imageFileNamesInObject.Count == 0;
+        }
+
+        int? maxDisplayOrder = createRequestData.Max(x => x.DisplayOrder);
+        
+        foreach (CurrentProductImageFileNameInfoUpdateRequest updateRequest in updateRequests)
+        {
+            if (updateRequest.NewDisplayOrder < 1)
             {
-                return false;
+                updateRequest.NewDisplayOrder = 1;
+            }
+            else if (updateRequest.NewDisplayOrder > maxDisplayOrder)
+            {
+                updateRequest.NewDisplayOrder = maxDisplayOrder;
+            }
+
+            foreach (CurrentProductImageFileNameInfoCreateRequest createRequestInner in createRequestData)
+            {
+                if (createRequestInner.DisplayOrder == updateRequest.DisplayOrder)
+                {
+                    createRequestInner.DisplayOrder = updateRequest.NewDisplayOrder;
+                    createRequestInner.FileName = updateRequest.FileName;
+                }
+                else if (updateRequest.DisplayOrder < updateRequest.NewDisplayOrder
+                    && createRequestInner.DisplayOrder > updateRequest.DisplayOrder
+                    && createRequestInner.DisplayOrder <= updateRequest.NewDisplayOrder)
+                {
+                    createRequestInner.DisplayOrder--;
+                }
+                else if (updateRequest.DisplayOrder > updateRequest.NewDisplayOrder
+                    && createRequestInner.DisplayOrder < updateRequest.DisplayOrder
+                    && createRequestInner.DisplayOrder >= updateRequest.NewDisplayOrder)
+                {
+                    createRequestInner.DisplayOrder++;
+                }
             }
         }
 
-        return true;
+        return CompareImageFileNamesInRequestAndProduct(createRequestData, imageFileNamesInObject);
     }
 }

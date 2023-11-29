@@ -58,6 +58,43 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Contains(promotions, x =>
         ComparePromotionAndCreateRequest(validCreateRequest, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void GetAll_ShouldFail_WhenInsertsAreInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        invalidCreateRequest.Name = "    ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+
+        Assert.True(result.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Promotion> promotions = _promotionService.GetAll();
+
+        Assert.DoesNotContain(promotions, x =>
+        ComparePromotionAndCreateRequest(invalidCreateRequest, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     [Fact]
@@ -86,6 +123,44 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Contains(promotions, x =>
         ComparePromotionAndCreateRequest(validCreateRequest, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void GetAllActive_ShouldFail_WhenInsertsAreInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Name = "   ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+
+        Assert.True(result.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActive();
+
+        Assert.DoesNotContain(promotions, x =>
+        ComparePromotionAndCreateRequest(invalidCreateRequest, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     [Fact]
@@ -106,12 +181,53 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
+        Assert.True(result.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
         IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId);
 
         Assert.True(promotions.Count() == 1);
 
         Assert.Contains(promotions, x =>
         ComparePromotionAndCreateRequest(validCreateRequest, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void GetAllForProduct_ShouldFail_WhenInsertsAreInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        invalidCreateRequest.Name = "   ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+
+        Assert.True(result.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId);
+
+        Assert.Empty(promotions);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     [Fact]
@@ -163,6 +279,66 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Contains(promotions, x =>
         ComparePromotionAndCreateRequest(validCreateRequest3, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetAllForSelectionOfProducts_ShouldOnlyGetTheDataWhichWasSuccessfullyInserted()
+    {
+        ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+
+        Assert.True(productInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = productInsertResult1.AsT0;
+
+        ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+
+        Assert.True(productInsertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = productInsertResult2.AsT0;
+
+        ServicePromotionCreateRequest validCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
+        ServicePromotionCreateRequest invalidCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
+
+        invalidCreateRequest2.Name = "  ";
+
+        ServicePromotionCreateRequest validCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
+
+        Assert.True(result1.Match(_ => true, _ => false, _ => false));
+        Assert.True(result2.Match(_ => false, _ => true, _ => false));
+        Assert.True(result3.Match(_ => true, _ => false, _ => false));
+
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(new() { productId1, productId2 });
+
+        Assert.True(promotions.Count() == 2);
+
+        Assert.Contains(promotions, x =>
+        ComparePromotionAndCreateRequest(validCreateRequest1, x));
+
+        Assert.DoesNotContain(promotions, x =>
+        ComparePromotionAndCreateRequest(invalidCreateRequest2, x));
+
+        Assert.Contains(promotions, x =>
+        ComparePromotionAndCreateRequest(validCreateRequest3, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId1, productId2);
     }
 
     [Fact]
@@ -216,6 +392,64 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Contains(promotions, x =>
         ComparePromotionAndCreateRequest(validCreateRequest3, x));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetAllActiveForSelectionOfProducts_ShouldFail_WhenInsertsAreInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+
+        Assert.True(productInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = productInsertResult1.AsT0;
+
+        ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+
+        Assert.True(productInsertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = productInsertResult2.AsT0;
+
+        ServicePromotionCreateRequest invalidCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
+
+        invalidCreateRequest1.Active = 1;
+        invalidCreateRequest1.Name = "   ";
+
+        ServicePromotionCreateRequest invalidCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
+
+        invalidCreateRequest2.Name = "   ";
+
+        ServicePromotionCreateRequest invalidCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
+
+        invalidCreateRequest3.Active = 1;
+        invalidCreateRequest3.Name = "   ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(invalidCreateRequest1);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(invalidCreateRequest3);
+
+        Assert.True(result1.Match(_ => false, _ => true, _ => false));
+        Assert.True(result2.Match(_ => false, _ => true, _ => false));
+        Assert.True(result3.Match(_ => false, _ => true, _ => false));
+
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProducts(new() { productId1, productId2 });
+
+        Assert.Empty(promotions);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId1, productId2);
     }
 
     [Fact]
@@ -246,6 +480,41 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.NotNull(promotion);
 
         Assert.True(ComparePromotionAndCreateRequest(validCreateRequest, promotion));
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void GetActiveForProduct_ShouldFail_WhenInsertsAreInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+
+        ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Name = "   ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+
+        Assert.True(result.Match(_ => false, _ => true, _ => false));
+
+        Promotion? promotion = _promotionService.GetActiveForProduct(productId);
+
+        Assert.Null(promotion);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     [Theory]
@@ -277,9 +546,19 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId);
 
-        Promotion promotion = promotions.Single();
+        if (expected)
+        {
+            Promotion promotion = promotions.Single();
 
-        Assert.True(ComparePromotionAndCreateRequest(createRequest, promotion));
+            Assert.True(ComparePromotionAndCreateRequest(createRequest, promotion));
+        }
+        else
+        {
+            Assert.Empty(promotions);
+        }
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     public static readonly List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
@@ -388,6 +667,13 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             _ => false,
             _ => false));
 
+        uint promotionId = insertResult.AsT0;
+
+        if (updateRequest.Id == _useRequiredValue)
+        {
+            updateRequest.Id = (int)promotionId;
+        }
+
         OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _promotionService.Update(updateRequest);
 
         Assert.Equal(expected, result.Match(
@@ -407,6 +693,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         {
             Assert.True(ComparePromotionAndCreateRequest(validCreateRequest, promotion));
         }
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     public static readonly List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
@@ -415,6 +704,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         {
             new ServicePromotionUpdateRequest()
             {
+                Id = _useRequiredValue,
                 Name = "2023_Q4",
                 Source = 1,
                 Type = 2,
@@ -450,6 +740,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         {
             new ServicePromotionUpdateRequest()
             {
+                Id = _useRequiredValue,
                 Name = string.Empty,
                 Source = 1,
                 Type = 2,
@@ -485,6 +776,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         {
             new ServicePromotionUpdateRequest()
             {
+                Id = _useRequiredValue,
                 Name = "    ",
                 Source = 1,
                 Type = 2,
@@ -549,6 +841,46 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         Promotion? promotion = _promotionService.GetActiveForProduct(productId);
 
         Assert.Null(promotion);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenIdIsInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        validCreateRequest.Active = 1;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+
+        Assert.True(result.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint promotionId = result.AsT0;
+
+        bool success = _promotionService.Delete(0);
+
+        Promotion? promotion = _promotionService.GetActiveForProduct(productId);
+
+        Assert.NotNull(promotion);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     [Fact]
@@ -578,11 +910,50 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         uint promotionId = result.AsT0;
 
-        bool success = _promotionService.DeleteAllByProductId(promotionId);
+        bool success = _promotionService.DeleteAllByProductId(productId);
 
         Promotion? promotion = _promotionService.GetActiveForProduct(productId);
 
         Assert.Null(promotion);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
+    }
+
+    [Fact]
+    public void DeleteAllByProductId_ShouldFail_WhenInsertIsInvalid()
+    {
+        ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
+
+        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Name = "   ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+
+        Assert.True(result.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        bool success = _promotionService.DeleteAllByProductId(productId);
+
+        Promotion? promotion = _promotionService.GetActiveForProduct(productId);
+
+        Assert.Null(promotion);
+
+        // Deterministic Delete
+        DeleteRangeByProductIds(productId);
     }
 
     private static bool ComparePromotionAndCreateRequest(ServicePromotionCreateRequest createRequest, Promotion promotion)
@@ -644,5 +1015,17 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         && updateRequest.CampaignId == promotion.CampaignId
         && updateRequest.RegistrationId == promotion.RegistrationId
         && updateRequest.PromotionVisualizationId == promotion.PromotionVisualizationId);
+    }
+
+    private bool DeleteRangeByProductIds(params uint[] productIds)
+    {
+        foreach (uint productId in productIds)
+        {
+            bool success = _promotionService.DeleteAllByProductId(productId);
+
+            if (!success) return false;
+        }
+
+        return true;
     }
 }

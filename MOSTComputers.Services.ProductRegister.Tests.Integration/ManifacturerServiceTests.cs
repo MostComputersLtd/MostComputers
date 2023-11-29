@@ -33,6 +33,15 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         DisplayOrder = 12,
         Active = 1
     };
+
+    private static readonly ManifacturerCreateRequest _invalidCreateRequest = new()
+    {
+        BGName = null,
+        RealCompanyName = "HP@",
+        DisplayOrder = -12,
+        Active = 1
+    };
+
     private const int _useRequiredIdValue = -100;
 
     [Fact]
@@ -59,6 +68,24 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     }
 
     [Fact]
+    public void GetAll_ShouldFail_WhenInsertsAreInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_invalidCreateRequest);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _manifacturerService.Insert(_invalidCreateRequest);
+
+        Assert.True(result1.IsT1);
+        Assert.True(result2.IsT1);
+
+        IEnumerable<Manifacturer> manifacturers = _manifacturerService.GetAll();
+
+        Assert.DoesNotContain(manifacturers,
+            x => x.RealCompanyName == _invalidCreateRequest.RealCompanyName
+            && x.BGName == _invalidCreateRequest.BGName
+            && x.DisplayOrder == _invalidCreateRequest.DisplayOrder
+            && x.Active == _invalidCreateRequest.Active);
+    }
+
+    [Fact]
     public void GetById_ShouldSucceed_WhenInsertIsValid()
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_validCreateRequest);
@@ -79,6 +106,23 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
 
         // Deterministic delete
         DeleteRange(id1);
+    }
+
+    [Fact]
+    public void GetById_ShouldFail_WhenIdIsInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_validCreateRequest);
+
+        Assert.True(result1.IsT0);
+
+        uint id = result1.AsT0;
+
+        Manifacturer? manifacturer = _manifacturerService.GetById(0);
+
+        Assert.Null(manifacturer);
+
+        // Deterministic delete
+        DeleteRange(id);
     }
 
     [Theory]
@@ -402,6 +446,29 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Null(manifacturer);
 
         // Deterministic delete (just in case delete fails in test)
+        DeleteRange(id);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenIdIsValid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _manifacturerService.Insert(_validCreateRequest);
+
+        Assert.True(insertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint id = insertResult.AsT0;
+
+        bool success = _manifacturerService.Delete(0);
+
+        Manifacturer? manifacturer = _manifacturerService.GetById(id);
+
+        Assert.NotNull(manifacturer);
+        Assert.False(success);
+
+        // Deterministic delete
         DeleteRange(id);
     }
 

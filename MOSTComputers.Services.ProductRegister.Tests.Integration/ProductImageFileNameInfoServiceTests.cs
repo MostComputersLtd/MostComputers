@@ -188,6 +188,47 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         DeleteProduct(productId);
     }
 
+    [Fact]
+    public void GetAllForProduct_ShouldFail_WhenInsertsAreInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "   ", displayOrder: 3);
+        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
+
+        Assert.True(imageFileNameInfoInsertResult1.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult2 = _productImageFileNameInfoService.Insert(createRequest2);
+
+        Assert.True(imageFileNameInfoInsertResult2.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+
+        if (ValidProductCreateRequest.ImageFileNames is not null)
+        {
+            Assert.True(productImageFileNames.Count() == ValidProductCreateRequest.ImageFileNames.Count);
+        }
+
+        // Deterministic Delete
+        DeleteAllInProduct(productId);
+        DeleteProduct(productId);
+    }
+
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductImageFileNameInfoCreateRequest createRequest, bool expected)
@@ -472,7 +513,52 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     }
 
     [Fact]
-    public void DeleteByProductIdAndDisplayOrder_ShouldSucceed_WhenInsertsAndDisplayOrderAreValid()
+    public void DeleteAllForProductId_ShouldFail_WhenInsertsAreInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "", displayOrder: 3);
+        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
+
+        Assert.True(imageFileNameInfoInsertResult1.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult2 = _productImageFileNameInfoService.Insert(createRequest2);
+
+        Assert.True(imageFileNameInfoInsertResult2.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        bool deleteSuccess = _productImageFileNameInfoService.DeleteAllForProductId(productId);
+
+        Assert.False(deleteSuccess);
+
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+
+        if (ValidProductCreateRequestWithNoImages.ImageFileNames is not null)
+        {
+            Assert.Equal(ValidProductCreateRequestWithNoImages.ImageFileNames.Count, productImageFileNames.Count());
+        }
+
+        // Deterministic Delete (in case delete in test fails)
+        DeleteAllInProduct(productId);
+        DeleteProduct(productId);
+    }
+
+    [Fact]
+    public void DeleteByProductIdAndDisplayOrder_ShouldSucceed_AndUpdateDisplayOrdersToBeInOrder_WhenInsertsAndDisplayOrderAreValid()
     {
         const string firstFileName1 = "11111.png";
         const string firstFileName2 = "12222.png";
@@ -507,9 +593,62 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        List<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
 
         Assert.DoesNotContain(productImageFileNames, x =>
+        x.ProductId == productId
+        && x.FileName == createRequest1.FileName
+        && x.DisplayOrder == createRequest1.DisplayOrder);
+
+        for (int i = 0; i < productImageFileNames.Count; i++)
+        {
+            Assert.Equal(i + 1, productImageFileNames[i].DisplayOrder);
+        }
+
+        // Deterministic Delete (in case delete in test fails)
+        DeleteAllInProduct(productId);
+        DeleteProduct(productId);
+    }
+
+    [Fact]
+    public void DeleteByProductIdAndDisplayOrder_ShouldFail_WhenProductIdIsInvalid()
+    {
+        const string firstFileName1 = "11111.png";
+        const string firstFileName2 = "12222.png";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, firstFileName1, displayOrder: 3);
+        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, firstFileName2, displayOrder: 4);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
+
+        Assert.True(imageFileNameInfoInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult2 = _productImageFileNameInfoService.Insert(createRequest2);
+
+        Assert.True(imageFileNameInfoInsertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        bool deleteSuccess = _productImageFileNameInfoService.DeleteByProductIdAndDisplayOrder(0, 3);
+
+        Assert.False(deleteSuccess);
+
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+
+        Assert.Contains(productImageFileNames, x =>
         x.ProductId == productId
         && x.FileName == createRequest1.FileName
         && x.DisplayOrder == createRequest1.DisplayOrder);

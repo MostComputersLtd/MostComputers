@@ -1,5 +1,6 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
@@ -114,11 +115,11 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
         var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProduct(productId);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId);
 
-        Assert.True(characteristicsInCategory.Count() >= 2);
+        Assert.True(propsInProduct.Count() >= 2);
 
-        Assert.Contains(characteristicsInCategory, x =>
+        Assert.Contains(propsInProduct, x =>
         x.ProductId == productId
         && x.ProductCharacteristicId == characteristicId1
         && x.Characteristic == characteristicName1
@@ -126,13 +127,215 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.DisplayOrder == propertyCreateRequest1.DisplayOrder
         && x.XmlPlacement == propertyCreateRequest1.XmlPlacement);
 
-        Assert.Contains(characteristicsInCategory, x =>
+        Assert.Contains(propsInProduct, x =>
         x.ProductId == productId
         && x.ProductCharacteristicId == characteristicId2
         && x.Characteristic == characteristicName2
         && x.Value == propertyCreateRequest2.Value
         && x.DisplayOrder == propertyCreateRequest2.DisplayOrder
         && x.XmlPlacement == propertyCreateRequest2.XmlPlacement);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId1, characteristicId2);
+    }
+
+    [Fact]
+    public void GetAllInProduct_ShouldFail_WhenProductExistsAndInsertsAreValid_ButCharacteristicDoesNotExist()
+    {
+        const string characteristicName1 = "NAMEOFCHAR1";
+        const string characteristicName2 = "NAMEOFCHAR2";
+        const string propertyValue1 = "VAL1";
+        const string propertyValue2 = "VAL2";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(characteristicCreateRequest1);
+
+        Assert.True(characteristicInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId1 = characteristicInsertResult1.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, propertyValue1);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById((int)productId, 0, propertyValue2);
+
+        var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
+        var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
+
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId);
+
+        Assert.NotEmpty(propsInProduct);
+
+        Assert.Contains(propsInProduct, x =>
+        x.ProductId == productId
+        && x.ProductCharacteristicId == characteristicId1
+        && x.Characteristic == characteristicName1
+        && x.Value == propertyCreateRequest1.Value
+        && x.DisplayOrder == propertyCreateRequest1.DisplayOrder
+        && x.XmlPlacement == propertyCreateRequest1.XmlPlacement);
+
+        Assert.DoesNotContain(propsInProduct, x =>
+        x.ProductId == productId
+        && x.ProductCharacteristicId == 0
+        && x.Characteristic == characteristicName2
+        && x.Value == propertyCreateRequest2.Value
+        && x.DisplayOrder == propertyCreateRequest2.DisplayOrder
+        && x.XmlPlacement == propertyCreateRequest2.XmlPlacement);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId1);
+    }
+
+    [Fact]
+    public void GetAllInProduct_ShouldFail_WhenCharacteristicExistsAndInsertsAreValid_ButProductDoesNotExist()
+    {
+        const string characteristicName1 = "NAMEOFCHAR1";
+        const string characteristicName2 = "NAMEOFCHAR2";
+        const string propertyValue1 = "VAL1";
+        const string propertyValue2 = "VAL2";
+        const int invalidProductId = 0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
+        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(characteristicCreateRequest1);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(characteristicCreateRequest2);
+
+        Assert.True(characteristicInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        Assert.True(characteristicInsertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId1 = characteristicInsertResult1.AsT0;
+        uint characteristicId2 = characteristicInsertResult2.AsT0;
+
+
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById(invalidProductId, (int)characteristicId1, propertyValue1);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById(invalidProductId, (int)characteristicId2, propertyValue2);
+
+        var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
+        var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
+
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(invalidProductId);
+
+        // Deterministic delete
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId1, characteristicId2);
+    }
+
+    [Fact]
+    public void GetAllInProduct_ShouldFail_WhenCharacteristicAndProductExist_ButInsertsAreInvalid()
+    {
+        const string characteristicName1 = "NAMEOFCHAR1";
+        const string characteristicName2 = "NAMEOFCHAR2";
+        const string invalidPropertyValue1 = " ";
+        const string invalidPropertyValue2 = "";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        ProductCreateRequest productCreateRequest = GetValidProductCreateRequest((int)categoryId);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
+        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(characteristicCreateRequest1);
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(characteristicCreateRequest2);
+
+        Assert.True(characteristicInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        Assert.True(characteristicInsertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId1 = characteristicInsertResult1.AsT0;
+        uint characteristicId2 = characteristicInsertResult2.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, invalidPropertyValue1);
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest2 = GetValidCreateRequestById((int)productId, (int)characteristicId2, invalidPropertyValue2);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest1);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest2);
+
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId);
+
+        if (productCreateRequest.Properties is not null)
+        {
+            Assert.Equal(productCreateRequest.Properties.Count, propsInProduct.Count());
+        }
+
+        Assert.DoesNotContain(propsInProduct, x =>
+        x.ProductId == productId
+        && x.ProductCharacteristicId == characteristicId1
+        && x.Characteristic == characteristicName1
+        && x.Value == invalidPropertyCreateRequest1.Value
+        && x.DisplayOrder == invalidPropertyCreateRequest1.DisplayOrder
+        && x.XmlPlacement == invalidPropertyCreateRequest1.XmlPlacement);
+
+        Assert.DoesNotContain(propsInProduct, x =>
+        x.ProductId == productId
+        && x.ProductCharacteristicId == characteristicId2
+        && x.Characteristic == characteristicName2
+        && x.Value == invalidPropertyCreateRequest2.Value
+        && x.DisplayOrder == invalidPropertyCreateRequest2.DisplayOrder
+        && x.XmlPlacement == invalidPropertyCreateRequest2.XmlPlacement);
 
         // Deterministic delete
         _productService.DeleteProducts(productId);
@@ -179,7 +382,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest);
 
-        Assert.True(productInsertResult.Match(
+        Assert.True(propertyInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
@@ -194,6 +397,148 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         Assert.Equal(propertyCreateRequest.Value, property.Value);
         Assert.Equal(propertyCreateRequest.DisplayOrder, property.DisplayOrder);
         Assert.Equal(propertyCreateRequest.XmlPlacement, property.XmlPlacement);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId);
+    }
+
+    [Fact]
+    public void GetByNameAndProductId_ShouldFail_WhenProductExists_ButCharacteristicDoesNotExist()
+    {
+        const string characteristicName = "NAMEOFCHAR1";
+        const string propertyValue = "VAL1";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, 0, propertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId);
+
+        Assert.Null(property);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+    }
+
+    [Fact]
+    public void GetByNameAndProductId_ShouldFail_WhenCharacteristicExists_ButProductDoesNotExist()
+    {
+        const string characteristicName = "NAMEOFCHAR1";
+        const string propertyValue = "VAL1";
+        const int invalidProductId = 0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(characteristicCreateRequest);
+
+        Assert.True(characteristicInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId = characteristicInsertResult.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById(invalidProductId, (int)characteristicId, propertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, invalidProductId);
+
+        Assert.Null(property);
+
+        // Deterministic delete
+        _productService.DeleteProducts(invalidProductId);
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId);
+    }
+
+    [Fact]
+    public void GetByNameAndProductId_ShouldFail_WhenCharacteristicAndProductExist_ButInsertIsInvalid()
+    {
+        const string characteristicName = "NAMEOFCHAR1";
+        const string invalidPropertyValue = "";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(characteristicCreateRequest);
+
+        Assert.True(characteristicInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId = characteristicInsertResult.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, invalidPropertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId);
+
+        Assert.Null(property);
 
         // Deterministic delete
         _productService.DeleteProducts(productId);
@@ -722,12 +1067,170 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest);
 
-        Assert.True(productInsertResult.Match(
+        Assert.True(propertyInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
         bool success = _productPropertyService.Delete(productId, characteristicId);
+
+        Assert.True(success);
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId);
+
+        Assert.Null(property);
+
+        // Deterministic delete (in case delete in test fails)
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenCharacteristicExists_ButProductDoesNotExist()
+    {
+        const string characteristicName = "NAMEOFCHAR1_DELETED";
+        const string propertyValue = "VAL1";
+        const int invalidProductId = 0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(characteristicCreateRequest);
+
+        Assert.True(characteristicInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId = characteristicInsertResult.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById(invalidProductId, (int)characteristicId, propertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        bool success = _productPropertyService.Delete(invalidProductId, characteristicId);
+
+        Assert.False(success);
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, invalidProductId);
+
+        Assert.Null(property);
+
+        // Deterministic delete (in case delete in test fails)
+        _categoryService.DeleteRangeCategories(categoryId);
+        _productCharacteristicService.DeleteRangeCharacteristics(characteristicId);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenProductExists_ButCharacteristicDoesNotExist()
+    {
+        const string characteristicName = "NAMEOFCHAR1_DELETED";
+        const string propertyValue = "VAL1";
+        const int invalidCharacteristicId = 0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, invalidCharacteristicId, propertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        bool success = _productPropertyService.Delete(productId, invalidCharacteristicId);
+
+        Assert.False(success);
+
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId);
+
+        Assert.Null(property);
+
+        // Deterministic delete (in case delete in test fails)
+        _productService.DeleteProducts(productId);
+        _categoryService.DeleteRangeCategories(categoryId);
+    }
+
+    [Fact]
+    public void Delete_ShouldFail_WhenCharacteristicAndProductExist_ButInsertIsInvalid()
+    {
+        const string characteristicName = "NAMEOFCHAR1_DELETED";
+        const string invalidPropertyValue = "";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        Assert.True(categoryInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint categoryId = categoryInsertResult.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(characteristicCreateRequest);
+
+        Assert.True(characteristicInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint characteristicId = characteristicInsertResult.AsT0;
+
+        ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, invalidPropertyValue);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest);
+
+        Assert.True(propertyInsertResult.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        bool success = _productPropertyService.Delete(productId, characteristicId);
+
+        Assert.False(success);
 
         ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId);
 
