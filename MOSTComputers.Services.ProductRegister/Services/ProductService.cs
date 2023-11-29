@@ -47,9 +47,13 @@ internal sealed class ProductService : IProductService
         return _productRepository.GetAll_WithManifacturerAndCategoryAndProperties_ByIds(ids);
     }
 
-    public IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(uint start, uint end)
+    public IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(ProductRangeSearchRequest rangeSearchRequest)
     {
-        return _productRepository.GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(start, end);
+        uint end = rangeSearchRequest.Start + rangeSearchRequest.Length;
+
+        if (rangeSearchRequest.Start == end) return Enumerable.Empty<Product>();
+
+        return _productRepository.GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(rangeSearchRequest.Start, end);
     }
 
     public Product? GetByIdWithFirstImage(uint id)

@@ -11,6 +11,7 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductService
 {
     IEnumerable<Product> GetAllWithoutImagesAndProps();
+    IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(ProductRangeSearchRequest rangeSearchRequest);
     Product? GetByIdWithFirstImage(uint id);
     Product? GetByIdWithProps(uint id);
     IEnumerable<Product> GetSelectionWithFirstImage(List<uint> ids);
@@ -20,5 +21,4 @@ public interface IProductService
     OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null);
     bool Delete(uint id);
-    IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(uint start, uint end);
 }
