@@ -18,32 +18,32 @@ internal sealed class ProductCreateRequestValidator : AbstractValidator<ProductC
     {
         RuleFor(x => x.Name).Must(IsNotEmptyOrWhiteSpace).MaximumLength(30);
         RuleFor(x => x.AdditionalWarrantyPrice).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.AdditionalWarrantyTermMonths).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.AdditionalWarrantyTermMonths).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
         RuleFor(x => x.StandardWarrantyPrice).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
-        RuleFor(x => x.StandardWarrantyTermMonths).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.StandardWarrantyTermMonths).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
+        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);  // not seen null
         RuleFor(x => x.PlShow).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.Price1).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.DisplayPrice).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.Price3).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.Price1).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
+        RuleFor(x => x.DisplayPrice).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
+        RuleFor(x => x.Price3).Must(NullOrGreaterThanOrEqualToZero);   // not seen null
         RuleFor(x => x.Promotionid).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.PromRid).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.PromotionPictureId).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.PromotionExpireDate).NotEqual(new DateTime());
+        RuleFor(x => x.PromRid).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.PromotionPictureId).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.PromotionExpireDate).NotEqual(new DateTime(0));
         RuleFor(x => x.AlertPictureId).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.AlertExpireDate).NotEqual(new DateTime());
-        RuleFor(x => x.PriceListDescription).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x.PartNumber1).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x.PartNumber2).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x.SearchString).Must(IsNotEmptyOrWhiteSpace);
+        RuleFor(x => x.AlertExpireDate).NotEqual(new DateTime(0));
+        RuleFor(x => x.PriceListDescription).Must(IsNotEmptyOrWhiteSpace);  // only null
+        RuleFor(x => x.PartNumber1).Must(IsNotEmptyOrWhiteSpace); // seen empty
+        RuleFor(x => x.PartNumber2).Must(IsNotEmptyOrWhiteSpace); // seen empty
+        RuleFor(x => x.SearchString).Must(IsNotEmptyOrWhiteSpace);  // seen empty
 
         RuleForEach(x => x.Properties).SetValidator(x => new CurrentProductPropertyCreateRequestValidator());
         RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageCreateRequestValidator());
         RuleForEach(x => x.ImageFileNames).SetValidator(x => new CurrentProductImageFileNameInfoCreateRequestValidator());
 
-        RuleFor(x => x.CategoryID).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.ManifacturerId).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.CategoryID).Must(NullOrGreaterThanZero);  // not seen null
+        RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
+        RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);  
     }
 }
 
