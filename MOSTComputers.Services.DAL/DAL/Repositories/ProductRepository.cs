@@ -158,11 +158,20 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ORDER BY S;
             """;
 
+        Dictionary<int, Product> productsAndIdsDict = new();
 
-
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery,
+        _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery,
             (product, category, manifacturer, property) =>
             {
+                bool exists = productsAndIdsDict.TryGetValue(product.Id, out Product? productSaved);
+
+                if (exists)
+                {
+                    productSaved!.Properties.Add(property);
+
+                    return product;
+                }
+
                 product.Category = category;
                 product.Manifacturer = manifacturer;
 
@@ -170,11 +179,15 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 product.Properties.Add(property);
 
+                productsAndIdsDict.Add(product.Id, product);
+
                 return product;
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { productIds = ids.Select(x => (int)x)});
+            new { productIds = ids.Select(x => (int)x) } );
+
+        return productsAndIdsDict.Values;
     }
 
     public IEnumerable<Product> GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(uint start, uint end)
@@ -196,7 +209,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 ON man.MfrID = products.MfrID
             ) AS selectSt
 
-            WHERE @SelectStart < RN;
+            WHERE @SelectStart < RN
+            AND RN <= @SelectEnd;
             """;
 
         var paramters = new
@@ -479,7 +493,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             $"""
             UPDATE {_tableName}
             SET TID = @CategoryId,
-                CFGSUBTYPE = @SearchString,
+                CFGSUBTYPE = @Name,
                 ADDWRR = @ADDWRR,
                 ADDWRRTERM = @ADDWRRTERM,
                 ADDWRRDEF = @ADDWRRDEF,
@@ -512,7 +526,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             $"""
             UPDATE {_propertiesTableName}
             SET S = @DisplayOrder,
-                Keyword = @Name,
                 KeywordValue = @Value,
                 Discr = @XmlPlacement
             
@@ -522,24 +535,67 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string updateImageFilePathInfosQuery =
             $"""
-            SELECT @NewDisplayOrderInRange = ISNULL(
-                (SELECT MAX(ImgNo) + 1 AS MaxNoPlus1 FROM dbo.ImageFileName
-                WHERE MaxNoPlus1 <= @NewDisplayOrder),
-                @NewDisplayOrder);
-            
-            UPDATE dbo.ImageFileName
-                SET ImgNo = ImgNo + 1
-            
-            WHERE CSTID = @productId
-            AND ImgNo >= @NewDisplayOrderInRange;
+            SET @NewDisplayOrder = 
+            CASE 
+                WHEN @NewDisplayOrder < 1 THEN 1
+                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1) THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                ELSE @NewDisplayOrder
+            END;
 
             UPDATE {_imageFileNamesTable}
-            SET ImgNo = @NewDisplayOrderInRange,
-                FileName = @FileName
+            SET ImgNo = 
+                CASE
+                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
+                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
+                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
+                    ELSE ImgNo
+                END
+            WHERE CSTID = @productId;
 
-            WHERE CSTID = @productId
-            AND DisplayOrder = @DisplayOrder;
+            UPDATE {_imageFileNamesTable}
+            SET ImgFileName = 
+                CASE
+                    WHEN ImgNo = @NewDisplayOrder THEN @FileName
+                    ELSE ImgFileName
+                END
+            WHERE CSTID = @productId;
             """;
+
+
+        //DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
+
+        //SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_imageFileNamesTable}
+        //WHERE CSTID = @productId
+        //AND ImgNo <> @DisplayOrder;
+
+        //SELECT TOP 1 @DisplayOrderInRange = ISNULL(
+        //    (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_imageFileNamesTable}
+        //    WHERE @MaxDisplayOrderForProduct <= @NewDisplayOrder),
+        //    @NewDisplayOrder);
+
+        //UPDATE {_imageFileNamesTable}
+        //    SET ImgNo = ImgNo + 1
+        //WHERE CSTID = @productId
+        //AND ImgNo >= @DisplayOrderInRange
+        //AND ImgNo <> @DisplayOrder;
+
+        //UPDATE {_imageFileNamesTable}
+        //SET ImgNo = @DisplayOrderInRange,
+        //    ImgFileName = @FileName
+
+        //WHERE CSTID = @productId
+        //AND ImgNo = @DisplayOrder;
+
+        //UPDATE {_imageFileNamesTable} 
+        //    SET ImgNo = rowNumber
+        //FROM {_imageFileNamesTable}
+        //INNER JOIN 
+        //    (SELECT ImgNo, CSTID, ROW_NUMBER() OVER (ORDER BY ImgNo) as rowNumber
+        //    FROM {_imageFileNamesTable}
+        //    WHERE CSTID = @productId) drRowNumbers
+        //        ON drRowNumbers.ImgNo = {_imageFileNamesTable}.ImgNo
+        //WHERE {_imageFileNamesTable}.CSTID = @productId;
+        //""";
 
         const string updateInAllImagesQuery =
             $"""
@@ -615,7 +671,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 && updateRequest.ImageFileNames.Count > 0)
             {
                 connection.Execute(updateImageFilePathInfosQuery, updateRequest.ImageFileNames
-                    .OrderBy(x => x.DisplayOrder)
                     .Select(x => Map(x, updateRequest.Id)),
                     transaction,
                     commandType: CommandType.Text);
