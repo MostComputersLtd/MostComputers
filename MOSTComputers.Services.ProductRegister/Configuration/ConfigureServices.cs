@@ -72,8 +72,8 @@ public static class ConfigureServices
         services.AddTransient<IValidator<ProductPropertyByCharacteristicIdCreateRequest>, ProductPropertyByCharacteristicIdCreateRequestValidator>();
         services.AddTransient<IValidator<ProductPropertyByCharacteristicNameCreateRequest>, ProductPropertyByCharacteristicNameCreateRequestValidator>();
         services.AddTransient<IValidator<ProductPropertyUpdateRequest>, ProductPropertyUpdateRequestValidator>();
-        services.AddTransient<IValidator<PromotionCreateRequest>, PromotionCreateRequestValidator>();
-        services.AddTransient<IValidator<PromotionUpdateRequest>, PromotionUpdateRequestValidator>();
+        services.AddTransient<IValidator<ServicePromotionCreateRequest>, PromotionCreateRequestValidator>();
+        services.AddTransient<IValidator<ServicePromotionUpdateRequest>, PromotionUpdateRequestValidator>();
 
         services.AddTransient<IValidator<FailedPropertyNameOfProductCreateRequest>, FailedPropertyNameOfProductCreateRequestValidator>();
         services.AddTransient<IValidator<FailedPropertyNameOfProductMultiCreateRequest>, FailedPropertyNameOfProductMultiCreateRequestValidator>();
