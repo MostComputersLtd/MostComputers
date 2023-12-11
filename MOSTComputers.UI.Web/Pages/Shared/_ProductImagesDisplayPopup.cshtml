@@ -1,0 +1,70 @@
+﻿@using System.Collections.Generic;
+@using MOSTComputers.Models.Product.Models;
+
+@model ProductImagesDisplayPopupModel;
+
+<div class="modal-header full-parent-width">
+    <h5 class="modal-title modal-title-xml-modal">Images:</h5>
+
+    <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
+    <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal">ID: @Model.Product.Id</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductImages_modal()">
+    </button>
+</div>
+<div id="ProductImages_popup" class="modal-body full-parent-width bg-white">
+    <div class="container border-2 full-parent-width full-parent-height">
+        <div id="ProductImages_popup_main_img_display">
+
+            @if (Model.Product.Images is not null
+                && Model.Product.Images.Count > 0)
+            {
+                ProductImage firstImage = Model.Product.Images.First();
+
+                <img id="productCurrentImageDisplay" name="Image #0" src="data:@firstImage.ImageFileExtension;base64,@Convert.ToBase64String(firstImage.ImageData!)" style="height:inherit" />
+            }
+
+        </div>
+        
+        <ul id="productImageDisplay_ul" class="full-parent-width bg-white" onmousewheel="scrollHorizontally()">
+            @if (Model.Product.Images is not null)
+            {
+                for (int i = 0; i < Model.Product.Images.Count; i++)
+                {
+                    ProductImage image = Model.Product.Images[i];
+
+                    if (image.ImageData is null) continue;
+
+                    string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
+
+                    <li>
+
+                        <button class="btn bg-white" onclick="displayImage('@imageSrc', 'Image #@i')" name="Image #@i">
+                            <img src="@imageSrc" title="Image #@i" />
+                        </button>
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+</div>
+
+<div class="modal-footer full-parent-width" style="height:60px;">
+    <table id="ProductImages_modal_footer_buttons_table" class="full-parent-width full-parent-height">
+        <tr class="full-parent-width full-parent-height">
+            <td width="50%" style="padding:0px">
+                <button id="copyImageButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="copyImageDataToClipboard()">
+                    <h7 class="copy-to-xml-button-main-text">Copy to clipboard</h7>
+                    <p class="copy-to-xml-button-small-text">(Or just press Ctrl + S)</p>
+                </button>
+            </td>
+
+            <td width="50%" style="padding:0px">
+                <button id="copyImageButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="getImageFileData(@Model.Product.Id)">
+                    <h7 class="copy-to-xml-button-main-text">Save</h7>
+                    <p class="copy-to-xml-button-small-text">(Or just press Ctrl + A)</p>
+                </button>
+            </td>
+        </tr>
+    </table>
+</div>

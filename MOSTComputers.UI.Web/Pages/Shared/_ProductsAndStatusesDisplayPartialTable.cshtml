@@ -1,0 +1,57 @@
+﻿@using System.Collections.Generic;
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Pages;
+
+@model ProductsAndStatusesDisplayPartialTableModel;
+@{
+}
+
+@for (int i = 0; i < Model.ProductsAndStatuses.Count; i++)
+{
+    Product product = Model.ProductsAndStatuses[i].Product;
+    ProductStatuses productStatuses = Model.ProductsAndStatuses[i].ProductStatuses;
+
+    <tr>
+        <td>
+            <label>@product.Status</label>
+        </td>
+
+        <td style="padding-left:10px">
+            <a class="btn" asp-page="/ProductPropertiesEditor" asp-route-ProductId="@product.Id" name="Name_label">@product.Name</a>
+        </td>
+
+        <td>
+            <label name="SearchString_label">@product.SearchString</label>
+        </td>
+
+        <td style="text-align:center">
+            <label>@product.Id</label>
+        </td>
+
+        <td style="text-align:center">
+            <label>@product.Category?.Description</label>
+        </td>
+
+        <td style="text-align:center">
+            <label>@product.Price</label>
+        </td>
+
+        <td style="text-align:center">
+            <label>@productStatuses.NeedsToBeUpdated</label>
+        </td>
+
+        <td style="text-align:center">
+            <label>@productStatuses.IsProcessed</label>
+        </td>
+
+        <td>
+            <button class="btn" onclick="showImagePopupData(@product.Id)">
+                <img src="img/show_Images_ProductDisplay_icon.png" alt="Images" style="max-width:60px;max-height:60px;" />
+            </button>
+        </td>
+
+        <td>
+            <button class="btn btn-secondary" onclick="showXmlPopupData(@product.Id)">View XML</button>
+        </td>
+    </tr>
+}

@@ -1,0 +1,616 @@
+﻿@page
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Pages.Shared;
+
+@model MOSTComputers.UI.Web.Pages.ProductDisplayModel
+@{
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ProductDisplay.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ProductDisplayPopups.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
+}
+
+
+<div class="container" style="padding:0px;">
+    <table id="productDisplay_table">
+        <thead>
+            <tr>
+                <td class="productDisplay_table_header_td">
+
+                    <label>Status</label>
+
+                    <select id="StatusSearch_select" placeholder="Search..." style="width:90px;">
+                        <option value="null" selected>All</option>
+                        <option value="@Convert.ToInt32(ProductStatusEnum.Unavailable)">Unavailable</option>
+                        <option value="@Convert.ToInt32(ProductStatusEnum.Call)">Call</option>
+                        <option value="@Convert.ToInt32(ProductStatusEnum.Available)">Live</option>
+                    </select>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>Name</label>
+                    <input id="NameSearch_input" placeholder="Search..." />
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>SearchString</label>
+                    <input id="SearchStringSearch_input" placeholder="Search..." />
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>ID</label>
+                    <input id="IDSearch_input" placeholder="Search..." style="width:60px;" oninput="IDSearch_input_oninput_search()" />
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>Category</label>
+                    <select id="CategorySearch_select" asp-items="Model.AllCategoriesSelectItems"></select>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>Price</label>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label style="width:120px;">Should Update</label>
+                    <select id="NeedsToBeUpdatedSearch_select" class="full-parent-width">
+                        <option value="null" selected>All</option>
+                        <option value=True>New</option>
+                        <option value=False>Hold</option>
+                    </select>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>Processed</label>
+                    <select id="IsProcessedSearch_select" class="full-parent-width">
+                        <option value="null" selected>All</option>
+                        <option value=True>Yes</option>
+                        <option value=False>No</option>
+                    </select>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>View Images</label>
+                </td>
+
+                <td class="productDisplay_table_header_td">
+                    <label>Export to XML</label>
+                </td>
+            </tr>
+        </thead>
+
+        <tbody id="tableDataHolder">
+
+            <partial name="_ProductsAndStatusesDisplayPartialTable"
+                model="new ProductsAndStatusesDisplayPartialTableModel() { ProductsAndStatuses = ProductDisplayModel.ProductsAndStatuses, AllCategoriesSelectItems = Model.AllCategoriesSelectItems }" />
+
+        </tbody>
+    </table>
+
+    <div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
+        <div id="ProductXml-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
+            <div id="ProductXml_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+                
+            </div>
+        </div>
+    </div>
+
+    <div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
+        <div id="ProductImages-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
+            <div id="ProductImages_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+            </div>
+        </div>
+    </div>
+
+    <ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
+
+    @Html.AntiForgeryToken()
+
+    <script>
+
+        function showXmlPopupData(productId)
+        {
+            $("#ProductXml_popup_modal-content").load("/ProductDisplay?handler=PartialViewXmlForProduct&productId=" + productId);
+
+            let dialog = document.getElementById("ProductXml-modal-dialog");
+
+            dialog.style.height = window.innerHeight;
+
+            $("#ProductXml_modal").modal("show");
+        }
+
+        function close_ProductXml_modal()
+        {
+            $("#ProductXml_modal").modal("toggle");
+        }
+
+        function copyXmlTextToClipboard()
+        {
+            var xmlTextArea = document.getElementById("Xml_textarea");
+
+            navigator.clipboard.writeText(xmlTextArea.value);
+
+            showNotificationWithText("Copied!");
+        }
+
+        function showNotificationWithText(text)
+        {
+            let notificationLi = document.createElement("li");
+
+            notificationLi.classList = "copy-to-xml-success-message";
+            notificationLi.innerHTML = text;
+
+            document.getElementById("copiedXmlNotificationBox").appendChild(notificationLi);
+
+            setTimeout(() =>
+            {
+                document.getElementById("copiedXmlNotificationBox").removeChild(notificationLi);
+            },
+            1200);
+        }
+
+        </script>
+
+        <script>
+
+        document.onkeydown = (e) =>
+        {
+            if (e.ctrlKey && e.key === 's')
+            {
+                let xmlTextArea = document.getElementById("Xml_textarea");
+
+                if (xmlTextArea != null)
+                {
+                    if (xmlTextArea.value != null)
+                    {
+                        e.preventDefault();
+
+                        copyXmlTextToClipboard();
+
+                        return;
+                    }
+                }
+
+                let productImagesPopup = document.getElementById("ProductImages_popup");
+
+                if (productImagesPopup === null) return;
+
+                e.preventDefault();
+
+                copyImageDataToClipboard();
+            }
+            else if (e.ctrlKey && e.key === 'a')
+            {
+                e.preventDefault();
+
+                let productIdInput = document.getElementById("modal-title_productIdShow");
+
+                if (productIdInput === null) return;
+
+                var productIdText = productIdInput.innerText;
+
+                if (productIdText === null) return;
+
+                var startIndexOfProductId = productIdText.indexOf("ID: ") + 4;
+
+                var productId = productIdText.substring(startIndexOfProductId);
+
+                getImageFileData(productId);
+            }
+        }
+
+    </script>
+
+    <script>
+
+        function showImagePopupData(productId)
+        {
+            $("#ProductImages_popup_modal-content").load("/ProductDisplay?handler=PartialViewImagesForProduct&productId=" + productId);
+
+            let dialog = document.getElementById("ProductImages-modal-dialog");
+
+            dialog.style.height = window.innerHeight;
+
+            $("#ProductImages_modal").modal("show");
+        }
+
+        function close_ProductImages_modal()
+        {
+            $("#ProductImages_modal").modal("toggle");
+        }
+
+        function displayImage(data, name)
+        {
+            document.getElementById("productCurrentImageDisplay").src = data;
+            document.getElementById("productCurrentImageDisplay").setAttribute("name", name);
+        }
+
+        function scrollHorizontally(e)
+        {
+            e = window.event || e;
+            var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+            document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
+            e.preventDefault();
+        }
+
+        function copyImageDataToClipboard()
+        {
+            let selectedImage = document.getElementById("productCurrentImageDisplay");
+
+            if (selectedImage === null) return;
+
+            navigator.clipboard.writeText(selectedImage.src);
+
+            showNotificationWithText("Copied!");
+        }
+
+        function getImageFileData(productId)
+        {
+            let currentSelectedImage = document.getElementById("productCurrentImageDisplay");
+
+            if (currentSelectedImage === null) return;
+
+            var nameOfActiveImage = currentSelectedImage.getAttribute("name");
+
+            var indexOfTagInName = nameOfActiveImage.indexOf('#');
+
+            var imageIndex = nameOfActiveImage.substring(indexOfTagInName + 1)
+
+            var urlFileResult = "/ProductDisplay?handler=CurrentImageFileResultSingle" + "&productId=" + productId + "&imageIndex=" + imageIndex;
+
+            window.location.href = urlFileResult;
+
+            showNotificationWithText("Saved!");
+        }
+
+    </script>
+
+    <script>
+
+        function debounce(func, delay)
+        {
+            let timer;
+
+            return function ()
+            {
+                let context = this,
+                    args = null;
+                clearTimeout(timer);
+                timer = setTimeout(() =>
+                {
+                    func.apply(context, args);
+                }, delay);
+            }
+        }
+
+        let lastFunc;
+        let lastRan;
+
+        function throttleCust(func, limit)
+        {
+            return function ()
+            {
+                let context = this;
+                let args = arguments;
+
+                if (!lastRan)
+                {
+                    func.apply(context, args);
+                    lastRan = Date.now();
+                }
+                else
+                {
+                    clearTimeout(lastFunc);
+                    lastFunc = setTimeout(function ()
+                    {
+                        if ((Date.now() - lastRan) >= limit)
+                        {
+                            func.apply(context, args);
+                            lastRan = Date.now();
+                        }
+                    }, limit - (Date.now() - lastRan));
+                }
+            };
+        }
+
+    </script>
+
+
+    <script>
+
+        function IDSearch_input_oninput_search()
+        {
+            var productId = document.getElementById("IDSearch_input").value;
+
+            if ((isNaN(productId) || isNaN(parseInt(productId)))
+            && (productId.length !== 0)) return;
+
+            var url = "/ProductDisplay?handler=SearchProductById&productId=" + productId;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                data: null,
+                headers: {
+                    RequestVerificationToken:
+                        $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+            })
+                .done(function (result)
+                {
+                    $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView");
+                })
+                .fail(function (jqXHR, textStatus)
+                {
+                });
+        }
+
+        function LoadDisplayData(func)
+        {
+            $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView", func);
+        }
+
+        function DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, nameOfTextDisplayinputs, length, customSpanName)
+        {
+            var spanStart = "<span name='" + customSpanName + "' style='background-color:#FAF2B1'>";
+
+            var searchStringLabels = document.getElementsByName(nameOfTextDisplayinputs);
+
+            if (searchStringLabels.length > length)
+            {
+                var excessLength = searchStringLabels.length - length;
+
+                console.log("EXCESS: " + excessLength);
+
+                $("#tableDataHolder").children().slice(0, excessLength).remove();
+
+                [].slice.call(searchStringLabels, excessLength);
+            }
+
+            for (let i = 0; i < searchStringLabels.length; i++)
+            {
+                var searchStringLabel = searchStringLabels[i];
+
+                var text = searchStringLabel.textContent;
+
+                var textToUpperCase = searchStringLabel.textContent.toUpperCase();
+
+                var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
+
+                if (substringIndex != -1) 
+                {
+                    var dataFromSubstringInActualString = text.substring(substringIndex, substringIndex + substring.length);
+
+                    text = text.replace(dataFromSubstringInActualString, spanStart + dataFromSubstringInActualString + "</span>")
+
+                    searchStringLabel.innerHTML = text;
+                }
+            }
+        }
+
+        function SearchStringSearch_input_oninput_search()
+        {
+            var substring = document.getElementById("SearchStringSearch_input").value;
+
+            var url = "/ProductDisplay?handler=SearchProductWhereSearchStringMatches&subString=" + substring;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                data: null,
+                headers: {
+                    RequestVerificationToken:
+                        $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+            })
+                .done(function (result)
+                {
+                    DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "SearchString_label", result.length, "customSpanForSearchString");
+
+                    // $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView", function ()
+                    // {
+                    //     var spanStart = "<span name='customSpanForSearchString' style='background-color:#FAF2B1'>";
+
+                    //     var searchStringLabels = document.getElementsByName("SearchString_label");
+
+                    //     if (searchStringLabels.length > result.length)
+                    //     {
+                    //         console.log(searchStringLabels);
+
+                    //         var excessLength = searchStringLabels.length - result.length;
+
+                    //         $("#tableDataHolder").children().slice(0, excessLength).remove();
+
+                    //         [].slice.call(searchStringLabels, excessLength);
+                    //     }
+
+                    //     for (let i = 0; i < searchStringLabels.length; i++)
+                    //     {
+                    //         var searchStringLabel = searchStringLabels[i];
+
+                    //         var text = searchStringLabel.textContent;
+
+                    //         var textToUpperCase = searchStringLabel.textContent.toUpperCase();
+
+                    //         var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
+
+                    //         if (substringIndex != -1)
+                    //         {
+                    //             var dataFromSubstringInActualString = text.substring(substringIndex, substringIndex + substring.length);
+
+                    //             text = text.replace(dataFromSubstringInActualString, spanStart + dataFromSubstringInActualString + "</span>")
+
+                    //             searchStringLabel.innerHTML = text;
+                    //         }
+                    //     }
+                    // });
+                })
+                .fail(function (jqXHR, textStatus)
+                {
+                });
+        }
+
+        function NameSearch_input_oninput_search()
+        {
+            var substring = document.getElementById("NameSearch_input").value;
+
+            var url = "/ProductDisplay?handler=SearchProductWhereNameMatches&subString=" + substring;
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                data: null,
+                headers: {
+                    RequestVerificationToken:
+                        $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+            })
+                .done(function (result)
+                {
+                    LoadDisplayData();
+                    DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "Name_label", result.length, "customSpanForName");
+
+                    // $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView", function ()
+                    // {
+                    //     var spanStart = "<span name='customSpanForName' style='background-color:#FAF2B1'>";
+
+                    //     var searchStringLabels = document.getElementsByName("Name_label");
+
+                    //     if (searchStringLabels.length > result.length)
+                    //     {
+                    //         console.log(searchStringLabels);
+
+                    //         var excessLength = searchStringLabels.length - result.length;
+
+                    //         $("#tableDataHolder").children().slice(0, excessLength).remove();
+
+                    //         [].slice.call(searchStringLabels, excessLength);
+                    //     }
+
+                    //     for (let i = 0; i < searchStringLabels.length; i++)
+                    //     {
+                    //         var searchStringLabel = searchStringLabels[i];
+
+                    //         var text = searchStringLabel.textContent;
+
+                    //         var textToUpperCase = searchStringLabel.textContent.toUpperCase();
+
+                    //         var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
+
+                    //         if (substringIndex != -1)
+                    //         {
+                    //             var dataFromSubstringInActualString = text.substring(substringIndex, substringIndex + substring.length);
+
+                    //             text = text.replace(dataFromSubstringInActualString, spanStart + dataFromSubstringInActualString + "</span>")
+
+                    //             searchStringLabel.innerHTML = text;
+                    //         }
+                    //     }
+                    // });
+                })
+                .fail(function (jqXHR, textStatus)
+                {
+                });
+        }
+
+        function MultiSearch()
+        {
+            var categoryId = document.getElementById("CategorySearch_select").value;
+            var searchStringSubstring = document.getElementById("SearchStringSearch_input").value;
+            var nameSubstring = document.getElementById("NameSearch_input").value;
+            var status = document.getElementById("StatusSearch_select").value;
+            var needsToBeUpdated = document.getElementById("NeedsToBeUpdatedSearch_select").value;
+            var isProcessed = document.getElementById("IsProcessedSearch_select").value;
+
+            if (categoryId === "null")
+            {
+                categoryId = null;
+            }
+
+            if (nameSubstring === "")
+            {
+                nameSubstring = null;
+            }
+
+            if (searchStringSubstring === "")
+            {
+                searchStringSubstring = null;
+            }
+
+            if (status === "null")
+            {
+                status = null;
+            }
+
+            if (needsToBeUpdated === "null")
+            {
+                needsToBeUpdated = null;
+            }
+
+            if (isProcessed === "null")
+            {
+                isProcessed = null;
+            }
+
+            var data =
+            {
+                CategoryId: categoryId,
+                SearchStringSubstring: searchStringSubstring,
+                NameSubstring: nameSubstring,
+                StatusInt: status,
+                NeedsToBeUpdated: needsToBeUpdated,
+                IsProcessed: isProcessed
+            };
+
+            var url = "/ProductDisplay?handler=SearchProductWhereAllConditionsMatch";
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(data),
+                headers: {
+                    RequestVerificationToken:
+                        $('input:hidden[name="__RequestVerificationToken"]').val()
+                },
+            })
+                .done(function (result)
+                {
+                    LoadDisplayData(
+                    function ()
+                    {
+                        if (nameSubstring != null)
+                        {
+                            DisplayInputColoringAndClearExtraOutputAfterTextSearch(nameSubstring, "Name_label", result.length, "customSpanForName");
+                        }
+
+                        if (searchStringSubstring != null)
+                        {
+                            DisplayInputColoringAndClearExtraOutputAfterTextSearch(searchStringSubstring, "SearchString_label", result.length, "customSpanForSearchString");
+                        }
+                    });
+                })
+                .fail(function (jqXHR, textStatus)
+                {
+                });
+        }
+        
+    </script>
+
+    <script>
+
+        document.getElementById("SearchStringSearch_input").oninput = throttleCust(MultiSearch, 120);
+        document.getElementById("NameSearch_input").oninput = throttleCust(MultiSearch, 120);
+        document.getElementById("CategorySearch_select").onchange = throttleCust(MultiSearch, 120);
+        document.getElementById("StatusSearch_select").onchange = throttleCust(MultiSearch, 120);
+        document.getElementById("NeedsToBeUpdatedSearch_select").onchange = throttleCust(MultiSearch, 120);
+        document.getElementById("IsProcessedSearch_select").onchange = throttleCust(MultiSearch, 120);
+
+    </script>
+
+</div>

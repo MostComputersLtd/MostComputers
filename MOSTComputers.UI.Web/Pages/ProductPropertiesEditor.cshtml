@@ -1,0 +1,586 @@
+﻿@page "{ProductId}"
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Mapping;
+
+@model MOSTComputers.UI.Web.Pages.ProductPropertiesEditorModel
+@{
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ProductDisplayPopups.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/CustomTextSelection.css" asp-append-version="true" />
+}
+
+<table class="full-parent-width" style="margin:10px 15px">
+    <tr>
+        <td>
+            <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
+        </td>
+        <td>
+            <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal" style="min-width:120px;">ID: @Model.Product.Id</h4>
+        </td>
+
+        <td style="width:99%">
+        </td>
+
+        <td>
+            <ul class="full-parent-width" style="display:inline-flex; justify-content: flex-end; margin: 0px;">
+                <li style="display:inline; margin: 0px 10px;">
+                    <button class="btn full-parent-height" onclick="showImagePopupData()">
+                        <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images" style="max-width: 60px; max-height: 60px;" />
+                    </button>
+                </li>
+                <li style="display:inline; margin: 0px 10px; min-width: 80px;">
+                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData()">View XML</button>
+                </li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
+        <td colspan="3">
+            <div id="modal-title_productSearchStringShow" contenteditable="false" class="modal-title modal-product-name-xml-modal full-parent-width custom-text-selection"
+            readonly style="outline:none; border: 0px; word-break: break-all;" ondblclick="modalTitle_productSearchStringShow_ColorRelatedSelections_onselect('searchStringSearchMatch_span')"
+            onmouseout="modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()">@Model.Product.SearchString</div>
+        </td>
+    </tr>
+</table>
+
+<table id="propertyDisplay_table" class="full-parent-width" style="margin:20px 25px">
+
+    <tbody>
+        @for (int i = 0; i < Model.ProductProperties.Count; i++)
+        {
+            ProductProperty productProperty = Model.ProductProperties[i];
+
+            Model.ProductPropertiesFromUI ??= new();
+
+            Model.ProductPropertiesFromUI.Add(productProperty);
+
+            if (productProperty.ProductCharacteristicId is null)
+            {
+                <tr>
+                    <td style="width: 20%;vertical-align: top; padding-top: 8.5px;">
+                        <select asp-items="Model.GetRemainingCharacteristics()"></select>
+                    </td>
+
+                    <td style="padding:5px 60px 5px 0px;">
+                        <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
+                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
+                            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updateAllPropertiesInTable(@i)">@productProperty.Value</div>
+                        </div>
+                    </td>
+
+                    <td style="width: 10%; vertical-align: top; padding-top: 8.5px; margin-right: 20px;">
+                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
+                    </td>
+
+                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3">
+                        <p class="invalid-characteristic-name-text">The product characteristic "@productProperty.ProductCharacteristicId" does not exist, please select a characteristic from the ones above</p>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                <tr>
+                    <td style="width: 20%;vertical-align: top; padding-top: 8.5px;">
+                        <label>@productProperty.Characteristic</label>
+                    </td>
+
+                    <td style="padding:5px 60px 5px 0px;">
+                        <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
+                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div" asp-for="@Model.ProductPropertiesFromUI[i].Value" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
+                            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updateAllPropertiesInTable(@i)">@productProperty.Value</div>
+                        </div>
+                    </td>
+
+                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px; margin-right: 20px;">
+                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
+                    </td>
+
+                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable()">Add</button>
+
+<div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductXml-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductXml_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductImages-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductImages_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
+
+@Html.AntiForgeryToken()
+
+<script>
+
+    function showXmlPopupData()
+    {
+        $("#ProductXml_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewXmlForProduct");
+
+        let dialog = document.getElementById("ProductXml-modal-dialog");
+
+        dialog.style.height = window.innerHeight;
+
+        $("#ProductXml_modal").modal("show");
+    }
+
+    function close_ProductXml_modal()
+    {
+        $("#ProductXml_modal").modal("toggle");
+    }
+
+    function copyXmlTextToClipboard()
+    {
+        var xmlTextArea = document.getElementById("Xml_textarea");
+
+        navigator.clipboard.writeText(xmlTextArea.value);
+
+        showNotificationWithText("Copied!");
+    }
+
+    function showNotificationWithText(text)
+    {
+        let notificationLi = document.createElement("li");
+
+        notificationLi.classList = "copy-to-xml-success-message";
+        notificationLi.innerHTML = text;
+
+        document.getElementById("copiedXmlNotificationBox").appendChild(notificationLi);
+
+        setTimeout(() =>
+        {
+            document.getElementById("copiedXmlNotificationBox").removeChild(notificationLi);
+        },
+            1200);
+    }
+
+</script>
+
+<script>
+
+    document.onkeydown = (e) =>
+    {
+        if (e.ctrlKey && e.key === 's')
+        {
+            let xmlTextArea = document.getElementById("Xml_textarea");
+
+            if (xmlTextArea != null)
+            {
+                if (xmlTextArea.value != null)
+                {
+                    e.preventDefault();
+
+                    copyXmlTextToClipboard();
+
+                    return;
+                }
+            }
+
+            let productImagesPopup = document.getElementById("ProductImages_popup");
+
+            if (productImagesPopup === null) return;
+
+            e.preventDefault();
+
+            copyImageDataToClipboard();
+        }
+        else if (e.ctrlKey && e.key === 'a')
+        {
+            e.preventDefault();
+
+            let productIdInput = document.getElementById("modal-title_productIdShow");
+
+            if (productIdInput === null) return;
+
+            var productIdText = productIdInput.innerText;
+
+            if (productIdText === null) return;
+
+            var startIndexOfProductId = productIdText.indexOf("ID: ") + 4;
+
+            var productId = productIdText.substring(startIndexOfProductId);
+
+            getImageFileData(productId);
+        }
+    }
+
+</script>
+
+<script>
+
+    function showImagePopupData()
+    {
+        $("#ProductImages_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewImagesForProduct");
+
+        let dialog = document.getElementById("ProductImages-modal-dialog");
+
+        dialog.style.height = window.innerHeight;
+
+        $("#ProductImages_modal").modal("show");
+    }
+
+    function close_ProductImages_modal()
+    {
+        $("#ProductImages_modal").modal("toggle");
+    }
+
+    function displayImage(data, name)
+    {
+        document.getElementById("productCurrentImageDisplay").src = data;
+        document.getElementById("productCurrentImageDisplay").setAttribute("name", name);
+    }
+
+    function scrollHorizontally(e)
+    {
+        e = window.event || e;
+        var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+        document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
+        e.preventDefault();
+    }
+
+    function copyImageDataToClipboard()
+    {
+        let selectedImage = document.getElementById("productCurrentImageDisplay");
+
+        if (selectedImage === null) return;
+
+        navigator.clipboard.writeText(selectedImage.src);
+
+        showNotificationWithText("Copied!");
+    }
+
+    function getImageFileData()
+    {
+        let currentSelectedImage = document.getElementById("productCurrentImageDisplay");
+
+        if (currentSelectedImage === null) return;
+
+        var nameOfActiveImage = currentSelectedImage.getAttribute("name");
+
+        var indexOfTagInName = nameOfActiveImage.indexOf('#');
+
+        var imageIndex = nameOfActiveImage.substring(indexOfTagInName + 1)
+
+        var urlFileResult = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=CurrentImageFileResultSingle" + "&imageIndex=" + imageIndex;
+
+        window.location.href = urlFileResult;
+
+        showNotificationWithText("Saved!");
+    }
+
+</script>
+
+<script>
+    function getSelectionHtml()
+    {
+        var html = "";
+
+        if (typeof window.getSelection != "undefined")
+        {
+            var sel = window.getSelection();
+
+            if (sel.rangeCount)
+            {
+                var container = document.createElement("div");
+                for (var i = 0, len = sel.rangeCount; i < len; ++i)
+                {
+                    container.appendChild(sel.getRangeAt(i).cloneContents());
+                }
+
+                html = container.innerHTML;
+            }
+        }
+        else if (typeof document.selection != "undefined")
+        {
+            if (document.selection.type == "Text")
+            {
+                html = document.selection.createRange().htmlText;
+            }
+        }
+        return html;
+    }
+
+    function modalTitle_productSearchStringShow_ColorRelatedSelections_onselect(customSpanName)
+    {
+        var selectedText = getSelectionHtml().trim();
+
+        if (selectedText === null
+        || selectedText.length === 0) return;
+
+        var valueTextAreas = document.getElementsByName("productPropertyDisplay_Value_div");
+
+        for (var i = 0; i < valueTextAreas.length; i++)
+        {
+            var valueTextArea = valueTextAreas[i];
+
+            RemoveOldSelectedText(valueTextArea)
+
+            valueTextArea.innerHTML = valueTextArea.innerHTML.replace(new RegExp(selectedText, "g"), "<span name='" + customSpanName + "'style='background-color:#FAF2B1'>" + selectedText + "</span>");
+        }
+    }
+
+    function modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()
+    {
+        var valueTextAreas = document.getElementsByName("productPropertyDisplay_Value_div");
+
+        for (var i = 0; i < valueTextAreas.length; i++)
+        {
+            var valueTextArea = valueTextAreas[i];
+
+            RemoveOldSelectedText(valueTextArea)
+        }
+    }
+    
+    function RemoveOldSelectedText(valueTextArea)
+    {
+        var oldSelectedSpanStartIndex = valueTextArea.innerHTML.indexOf("<span");
+
+        if (oldSelectedSpanStartIndex !== -1)
+        {
+            var oldSelectedSpanEndIndex = valueTextArea.innerHTML.indexOf("</span>") + 7;
+
+            var oldSelectedValueSpan = valueTextArea.innerHTML.substring(oldSelectedSpanStartIndex, oldSelectedSpanEndIndex);
+
+            var oldSelectedValueStartIndex = valueTextArea.innerHTML.indexOf('>', oldSelectedSpanStartIndex) + 1;
+            var oldSelectedValueEndIndex = valueTextArea.innerHTML.indexOf('<', oldSelectedSpanStartIndex + 5);
+
+            var oldSelectedValue = valueTextArea.innerHTML.substring(oldSelectedValueStartIndex, oldSelectedValueEndIndex);
+
+            valueTextArea.innerHTML = valueTextArea.innerHTML.replace(new RegExp(oldSelectedValueSpan, "g"), oldSelectedValue);
+        }
+    }
+
+</script>
+
+<script>
+    function addPropertyToTable()
+    {
+        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=AddNewItem";
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            contentType: "application/json; charset=utf-8",
+            data: null,
+            headers: {
+                RequestVerificationToken:
+                    $('input:hidden[name="__RequestVerificationToken"]').val()
+            },
+        })
+            .done(function (result)
+            {
+                console.log(result);
+
+                document.getElementById("propertyDisplay_table").innerHTML += result;
+            })
+            .fail(function (jqXHR, textStatus)
+            {
+            });
+    }
+
+    function PropertyWithoutCharacteristic_select_onchange(value, index)
+    {
+        var labelWithIdText = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
+
+        labelWithIdText.textContent = "ID: " + value;
+    }
+
+</script>
+
+<script>
+
+    function updatePropertyInTable(index) {
+        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=UpdateProperty";
+
+        var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
+        var productPropValueInput = document.getElementById("productPropertyDisplay_Value_div#" + index);
+        var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select#" + index);
+        var productPropWithoutCharacteristicSelect = document.getElementById("PropertyWithoutCharacteristic_Characteristic_select#" + index);
+
+        var productPropIsNew;
+
+        var productPropCharacteristicId = parseInt(id);
+
+        if (productPropCharacteristicIdInput !== null)
+        {
+            var idText = productPropCharacteristicIdInput.innerHTML;
+
+            var idStartIndex = idText.indexOf("ID:") + 4;
+
+            var id = idText.substring(idStartIndex);
+
+            productPropCharacteristicId = parseInt(id);
+
+            productPropIsNew = false;
+        }
+
+        var productPropValue;
+
+        productPropValue = productPropValueInput.innerHTML;
+
+        var productPropXmlPlacement = [];
+
+        var productXmlPlacementString = productPropXmlPlacementSelect.value;
+
+        productPropXmlPlacement = parseInt(productXmlPlacementString);
+
+        if (productPropWithoutCharacteristicSelect !== null)
+        {
+            var productPropWithoutCharacteristicSelect = productPropWithoutCharacteristicSelect;
+
+            var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('#') + 1;
+
+            var indexOfSelect = productPropWithoutCharacteristicSelect.id.substring(indexOfListIndexStart);
+
+            var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
+
+            productPropCharacteristicId = parseInt(productPropWithoutCharacteristicValue);
+            productPropIsNew = true;
+        }
+
+        var data =
+        {
+            ProductCharacteristicId: productPropCharacteristicId,
+            Value: productPropValue,
+            XmlPlacement: productPropXmlPlacement,
+            IsNew: productPropIsNew
+        };
+
+        // console.log(data);
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(data),
+            headers: {
+                RequestVerificationToken:
+                    $('input:hidden[name="__RequestVerificationToken"]').val()
+            },
+        })
+            .done(function (result) {
+                // document.getElementById("propertyDisplay_table").innerHTML += result;
+            })
+            .fail(function (jqXHR, textStatus) {
+            });
+    }
+
+    function updateAllPropertiesInTable(index)
+    {
+        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=UpdateAndInsertProperties";
+
+        var productPropCharacteristicIdInputs = document.getElementsByName("productPropertyDisplay_CharacteristicId_Data_label");
+        var productPropValueInputs = document.getElementsByName("productPropertyDisplay_Value_div");
+        var productPropXmlPlacementSelects = document.getElementsByName("productPropertyDisplay_XmlPlacement_select");
+        var productPropWithoutCharacteristicSelects = document.getElementsByName("PropertyWithoutCharacteristic_Characteristic_select");
+
+        var productPropCharacteristicIds = [];
+
+        var productPropIsNew = [];
+
+        for (var i = 0; i < productPropCharacteristicIdInputs.length; i++)
+        {
+            var idText = productPropCharacteristicIdInputs[i].innerHTML;
+
+            var idStartIndex = idText.indexOf("ID:") + 4
+
+            var id = idText.substring(idStartIndex);
+
+            productPropCharacteristicIds.push(parseInt(id));
+
+            productPropIsNew.push(false);
+        }
+
+        var productPropValues = [];
+
+        for (var i = 0; i < productPropValueInputs.length; i++)
+        {
+            productPropValues.push(productPropValueInputs[i].innerHTML)
+        }
+
+        var productPropXmlPlacements = [];
+
+        for (var i = 0; i < productPropXmlPlacementSelects.length; i++)
+        {
+            var productXmlPlacementString = productPropXmlPlacementSelects[i].value;
+
+            productPropXmlPlacements.push(parseInt(productXmlPlacementString));
+        }
+
+        console.log(productPropWithoutCharacteristicSelects);
+
+        for (var i = 0; i < productPropWithoutCharacteristicSelects.length; i++)
+        {
+            var productPropWithoutCharacteristicSelect = productPropWithoutCharacteristicSelects[i]
+
+            var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('#') + 1;
+
+            var indexOfSelect = productPropWithoutCharacteristicSelect.id.substring(indexOfListIndexStart);
+            
+            var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
+
+            productPropCharacteristicIds.splice(parseInt(indexOfSelect), 0, parseInt(productPropWithoutCharacteristicValue));
+            productPropIsNew.splice(parseInt(indexOfSelect), 0, true);
+        }
+
+        // console.log(productPropIsNew);
+
+        var data = [];
+
+        for (var i = 0; i < productPropCharacteristicIdInputs.length; i++)
+        {
+            var dataEntry =
+            {
+                ProductCharacteristicId: productPropCharacteristicIds[i],
+                Value: productPropValues[i],
+                XmlPlacement: productPropXmlPlacements[i],
+                IsNew: productPropIsNew[i]
+            };
+
+            data.push(dataEntry);
+        }
+
+        // console.log(data);
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            contentType: "application/json; charset=utf-8",
+            data: JSON.stringify(data),
+            headers: {
+                RequestVerificationToken:
+                    $('input:hidden[name="__RequestVerificationToken"]').val()
+            },
+        })
+            .done(function (result)
+            {
+                // document.getElementById("propertyDisplay_table").innerHTML += result;
+            })
+            .fail(function (jqXHR, textStatus)
+            {
+            });
+    }
+</script>
