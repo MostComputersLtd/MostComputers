@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.DAL.Repositories;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
@@ -30,6 +31,37 @@ internal sealed class ProductService : IProductService
     public IEnumerable<Product> GetAllWithoutImagesAndProps()
     {
         return _productRepository.GetAll_WithManifacturerAndCategory();
+    }
+
+    public IEnumerable<Product> GetAllWhereSearchStringMatches(string subString)
+    {
+        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(subString, ProductSearchByTextEnum.SearchBySearchString);
+    }
+
+    public IEnumerable<Product> GetAllWhereNameMatches(string subString)
+    {
+        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(subString, ProductSearchByTextEnum.SearchByName);
+    }
+
+    public IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
+    {
+        uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+
+        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(productRangeSearchRequest.Start, end, subString, ProductSearchByTextEnum.SearchBySearchString);
+    }
+
+    public IEnumerable<Product> GetFirstInRangeWhereNameMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
+    {
+        uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+
+        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(productRangeSearchRequest.Start, end, subString, ProductSearchByTextEnum.SearchByName);
+    }
+
+    public IEnumerable<Product> GetFirstInRangeWhereAllConditionsAreMet(ProductRangeSearchRequest productRangeSearchRequest, ProductConditionalSearchRequest productConditionalSearchRequest)
+    {
+        uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+
+        return _productRepository.GetFirstInRange_WithManifacturerAndCategoryAndStatuses_WhereAllConditionsAreMet(productRangeSearchRequest.Start, end, productConditionalSearchRequest);
     }
 
     public IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<uint> ids)
