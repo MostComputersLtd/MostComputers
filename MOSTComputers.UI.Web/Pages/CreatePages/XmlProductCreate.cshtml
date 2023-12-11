@@ -38,10 +38,12 @@
                         $('input:hidden[name="__RequestVerificationToken"]').val()
                 },
             })
-                .done(function (result) {
-
+                .done(function (result)
+                {
                     $("#previewProductsContainer").load("XmlProductCreate?handler=PartialView");
-                }).fail(function (jqXHR, textStatus) {
+                })
+                .fail(function (jqXHR, textStatus)
+                {
 
                     let boldErrorText = document.createElement("strong");
 
