@@ -113,7 +113,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        validCreateRequest.Active = 1;
+        validCreateRequest.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
@@ -144,7 +144,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
@@ -368,12 +368,12 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
 
-        validCreateRequest1.Active = 1;
+        validCreateRequest1.Active = true;
 
         ServicePromotionCreateRequest validCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
         ServicePromotionCreateRequest validCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
 
-        validCreateRequest3.Active = 1;
+        validCreateRequest3.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(validCreateRequest2);
@@ -424,7 +424,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest invalidCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
 
-        invalidCreateRequest1.Active = 1;
+        invalidCreateRequest1.Active = true;
         invalidCreateRequest1.Name = "   ";
 
         ServicePromotionCreateRequest invalidCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
@@ -433,7 +433,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest invalidCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
 
-        invalidCreateRequest3.Active = 1;
+        invalidCreateRequest3.Active = true;
         invalidCreateRequest3.Name = "   ";
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(invalidCreateRequest1);
@@ -469,7 +469,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
        
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        validCreateRequest.Active = 1;
+        validCreateRequest.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
@@ -502,7 +502,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
@@ -580,7 +580,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 SPOID = null,
                 DiscountUSD = 4.99M,
                 DiscountEUR = 4.99M,
-                Active = 0,
+                Active = false,
                 StartDate = DateTime.Today.AddDays(-5),
                 ExpirationDate = DateTime.Today.AddDays(7),
                 MinimumQuantity = 2,
@@ -614,7 +614,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 SPOID = null,
                 DiscountUSD = 4.99M,
                 DiscountEUR = 4.99M,
-                Active = 0,
+                Active = false,
                 StartDate = DateTime.Today.AddDays(-5),
                 ExpirationDate = DateTime.Today.AddDays(7),
                 MinimumQuantity = 2,
@@ -712,7 +712,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 SPOID = null,
                 DiscountUSD = 4.99M,
                 DiscountEUR = 4.99M,
-                Active = 0,
+                Active = false,
                 StartDate = DateTime.Today.AddDays(-5),
                 ExpirationDate = DateTime.Today.AddDays(7),
                 MinimumQuantity = 2,
@@ -748,7 +748,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 SPOID = null,
                 DiscountUSD = 4.99M,
                 DiscountEUR = 4.99M,
-                Active = 0,
+                Active = false,
                 StartDate = DateTime.Today.AddDays(-5),
                 ExpirationDate = DateTime.Today.AddDays(7),
                 MinimumQuantity = 2,
@@ -784,7 +784,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 SPOID = null,
                 DiscountUSD = 4.99M,
                 DiscountEUR = 4.99M,
-                Active = 0,
+                Active = false,
                 StartDate = DateTime.Today.AddDays(-5),
                 ExpirationDate = DateTime.Today.AddDays(7),
                 MinimumQuantity = 2,
@@ -825,7 +825,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        validCreateRequest.Active = 1;
+        validCreateRequest.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
@@ -862,7 +862,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        validCreateRequest.Active = 1;
+        validCreateRequest.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
@@ -899,7 +899,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        validCreateRequest.Active = 1;
+        validCreateRequest.Active = true;
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
@@ -936,7 +936,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        invalidCreateRequest.Active = 1;
+        invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);

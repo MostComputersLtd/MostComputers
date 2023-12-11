@@ -31,7 +31,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         BGName = null,
         RealCompanyName = "HP@",
         DisplayOrder = 12,
-        Active = 1
+        Active = true
     };
 
     private static readonly ManifacturerCreateRequest _invalidCreateRequest = new()
@@ -39,7 +39,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         BGName = null,
         RealCompanyName = "HP@",
         DisplayOrder = -12,
-        Active = 1
+        Active = true
     };
 
     private const int _useRequiredIdValue = -100;
@@ -169,7 +169,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = "Еич Пи @",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -181,7 +181,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = null,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -193,7 +193,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = string.Empty,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -205,7 +205,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = "       ",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -217,7 +217,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = string.Empty,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -229,7 +229,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "     ",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -241,7 +241,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 0,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -253,7 +253,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 0
+                Active = false
             },
             false
         },
@@ -317,7 +317,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -330,7 +330,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = "Еич Пи @",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -343,7 +343,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = null,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -356,7 +356,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = string.Empty,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -369,7 +369,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = "       ",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -382,7 +382,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = string.Empty,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -395,7 +395,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "     ",
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -408,7 +408,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 0,
-                Active = 1
+                Active = true
             },
             false
         },

@@ -7,7 +7,7 @@ public sealed class ProductCharacteristicByNameAndCategoryIdUpdateRequest
     public string? NewName { get; set; }
     public string? Meaning { get; set; }
     public int? DisplayOrder { get; set; }
-    public short? Active { get; set; }
+    public bool? Active { get; set; }
     public short? PKUserId { get; set; }
     public DateTime? LastUpdate { get; set; }
     public short? KWPrCh { get; set; }

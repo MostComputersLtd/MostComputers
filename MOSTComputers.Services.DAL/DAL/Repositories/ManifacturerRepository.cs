@@ -100,9 +100,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         {
             int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id = (int)id });
 
-            if (rowsAffected == 0) return false;
-
-            return true;
+            return rowsAffected > 0;
         }
         catch (InvalidOperationException)
         {

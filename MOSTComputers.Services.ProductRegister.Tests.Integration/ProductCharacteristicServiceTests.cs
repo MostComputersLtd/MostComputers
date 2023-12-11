@@ -309,7 +309,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             PKUserId = 91,
             KWPrCh = 0,
             DisplayOrder = 12,
-            Active = 1
+            Active = true
         };
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(invalidCreateRequest);
@@ -546,7 +546,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 0,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -561,7 +561,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -576,7 +576,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -591,7 +591,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -606,7 +606,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -701,7 +701,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -716,7 +716,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 0,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -731,7 +731,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -746,7 +746,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -761,7 +761,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -776,7 +776,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -791,7 +791,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = -12,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -892,7 +892,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -908,7 +908,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 0,
-                Active = 1
+                Active = true
             },
             true
         },
@@ -924,7 +924,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -940,7 +940,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -956,7 +956,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -972,7 +972,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = 0,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },
@@ -988,7 +988,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
                 PKUserId = 91,
                 KWPrCh = -12,
                 DisplayOrder = 12,
-                Active = 1
+                Active = true
             },
             false
         },

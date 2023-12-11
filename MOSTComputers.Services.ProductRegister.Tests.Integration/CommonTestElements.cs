@@ -347,7 +347,7 @@ internal static class CommonTestElements
         PKUserId = 91,
         KWPrCh = 0,
         DisplayOrder = 12,
-        Active = 1
+        Active = true
     };
 
     internal static ServiceProductImageCreateRequest GetCreateRequestWithImageData(int productId)
@@ -383,7 +383,7 @@ internal static class CommonTestElements
             SPOID = null,
             DiscountUSD = 4.99M,
             DiscountEUR = 4.99M,
-            Active = 0,
+            Active = false,
             StartDate = DateTime.Today.AddDays(-5),
             ExpirationDate = DateTime.Today.AddDays(7),
             MinimumQuantity = 2,

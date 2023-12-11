@@ -15,7 +15,7 @@ public sealed class ServicePromotionCreateRequest
     public int? SPOID { get; set; }
     public decimal? DiscountUSD { get; set; }
     public decimal? DiscountEUR { get; set; }
-    public short? Active { get; set; }
+    public bool? Active { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? ExpirationDate { get; set; }
     public int? MinimumQuantity { get; set; }
