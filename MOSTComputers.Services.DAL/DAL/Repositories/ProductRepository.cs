@@ -10,6 +10,8 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using System.Data.SqlTypes;
+using System.Runtime.CompilerServices;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -22,6 +24,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     private const string _allImagesTableName = "dbo.ImagesAll";
     private const string _propertiesTableName = "dbo.ProductXML";
     private const string _imageFileNamesTable = "dbo.ImageFileName";
+    private const string _productStatusesTable = "dbo.ProductStatuses";
 
     public ProductRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -56,6 +59,51 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             new { });
+    }
+
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(string subString, ProductSearchByTextEnum productSearchByTextEnum)
+    {
+        string fieldToSearchBy = productSearchByTextEnum switch
+        {
+            ProductSearchByTextEnum.SearchBySearchString => "SPLMODEL2",
+            ProductSearchByTextEnum.SearchByName => "CFGSUBTYPE",
+            _ => throw new InvalidOperationException()
+        };
+
+        string getAllWhereFieldMatchesWithManifacturerAndCategoryQuery =
+            $"""
+            SELECT * FROM
+            (
+                SELECT CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                    PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                    CategoryID, ParentId, Description, IsLeaf,
+                    man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
+                    CHARINDEX(@subString, products.{fieldToSearchBy}) AS SubPosition
+
+                FROM {_tableName} products
+                LEFT JOIN {_categoriesTableName} cat
+                ON cat.CategoryID = products.TID
+                LEFT JOIN {_manifacturersTableName} man
+                ON man.MfrID = products.MfrID
+            )
+                AS Data
+            WHERE SubPosition <> 0
+            ORDER BY SubPosition, S;
+            """;
+
+#pragma warning disable IDE0037 // Use inferred member name
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereFieldMatchesWithManifacturerAndCategoryQuery,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            new { subString = subString });
+#pragma warning restore IDE0037 // Use inferred member name
     }
 
     public IEnumerable<Product> GetAll_WithManifacturerAndCategory_ByIds(List<uint> ids)
@@ -232,6 +280,257 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             paramters);
     }
 
+    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(uint start, uint end, string subString, ProductSearchByTextEnum productSearchByTextEnum)
+    {
+        string fieldToSearchBy = productSearchByTextEnum switch
+        {
+            ProductSearchByTextEnum.SearchBySearchString => "SPLMODEL2",
+            ProductSearchByTextEnum.SearchByName => "CFGSUBTYPE",
+            _ => throw new InvalidOperationException()
+        };
+
+        string getAllWithManifacturerAndCategoryQuery =
+            $"""
+            SELECT * FROM
+            (
+                SELECT TOP (@start + @end) CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
+                    PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                    CategoryID, ParentId, Description, IsLeaf,
+                    PersonalManifacturerId, BGName, Name, ManifacturerDisplayOrder, Active,
+                    SubPosition,
+                    ROW_NUMBER() OVER (ORDER BY SubPosition, S) AS RN
+                FROM
+                (
+                    SELECT CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                        PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                        CategoryID, ParentId, Description, IsLeaf,
+                        man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
+                        CHARINDEX(@subString, products.{fieldToSearchBy}) AS SubPosition
+
+                    FROM {_tableName} products
+                    LEFT JOIN {_categoriesTableName} cat
+                    ON cat.CategoryID = products.TID
+                    LEFT JOIN {_manifacturersTableName} man
+                    ON man.MfrID = products.MfrID
+                    WHERE CHARINDEX(@subString, products.{fieldToSearchBy}) > 0
+                )
+                    AS Data
+            ) AS TopData
+
+            WHERE RN BETWEEN @start AND @end;
+            """;
+
+#pragma warning disable IDE0037 // Use inferred member name
+
+        var parameters = new
+        {
+            start = (int)start,
+            end = (int)end,
+            subString = subString
+        };
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWithManifacturerAndCategoryQuery,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            parameters);
+#pragma warning restore IDE0037 // Use inferred member name
+    }
+
+    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategoryAndStatuses_WhereAllConditionsAreMet(
+        uint start,
+        uint end,
+        ProductConditionalSearchRequest productConditionalSearchRequest)
+    {
+        const string searchStringSubPosition = "SearchStringSubPosition";
+        const string nameSubPosition = "NameSubPosition";
+
+        string getFirstInRangeWhenConditionsAreMet = GetQueryFromRequest(productConditionalSearchRequest);
+
+#pragma warning disable IDE0037 // Use inferred member name
+
+        var parameters = new
+        {
+            start = (int)start,
+            end = (int)end,
+            SearchStringSubstring = productConditionalSearchRequest.SearchStringSubstring,
+            NameSubstring = productConditionalSearchRequest.NameSubstring,
+            CategoryId = productConditionalSearchRequest.CategoryId,
+            Status = productConditionalSearchRequest.Status,
+            IsProcessed = productConditionalSearchRequest.IsProcessed,
+            NeedsToBeUpdated = productConditionalSearchRequest.NeedsToBeUpdated,
+        };
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFirstInRangeWhenConditionsAreMet,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            parameters);
+#pragma warning restore IDE0037 // Use inferred member name
+
+        string GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(bool isWhereAlreadyWritten)
+        {
+            return isWhereAlreadyWritten ? "AND" : "WHERE";
+        }
+
+        string GetOrderByStringFromRequest(ProductConditionalSearchRequest productConditionalSearchRequest)
+        {
+            if (productConditionalSearchRequest.SearchStringSubstring is null
+            && productConditionalSearchRequest.NameSubstring is null)
+            {
+                return "ORDER BY S";
+            }
+
+            if (productConditionalSearchRequest.SearchStringSubstring is not null
+            && productConditionalSearchRequest.NameSubstring is not null)
+            {
+                return $"ORDER BY {searchStringSubPosition} + {nameSubPosition}, S";
+            }
+
+            else if (productConditionalSearchRequest.SearchStringSubstring is not null)
+            {
+                return $"ORDER BY {searchStringSubPosition}, S";
+            }
+            else
+            {
+                return $"ORDER BY {nameSubPosition}, S";
+            }
+        }
+
+        string GetQueryFromRequest(ProductConditionalSearchRequest productConditionalSearchRequest)
+        {
+            string orderByString = GetOrderByStringFromRequest(productConditionalSearchRequest);
+
+            string queryStart =
+                $"""
+                SELECT * FROM
+                (
+                    SELECT TOP (@start + @end) CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
+                        PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                        CategoryID, ParentId, Description, IsLeaf,
+                        PersonalManifacturerId, BGName, Name, ManifacturerDisplayOrder, Active
+                """;
+                
+            string queryFirstSelect =
+                $"""
+                ,
+                        ROW_NUMBER() OVER ({orderByString}) AS RN
+                    FROM
+                    (
+                        SELECT products.CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                            PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                            CategoryID, ParentId, Description, IsLeaf,
+                            man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
+                """;
+
+            string querySecondSelect =
+                $"""
+                        FROM {_tableName} products
+                        LEFT JOIN {_categoriesTableName} cat
+                        ON cat.CategoryID = products.TID
+                        LEFT JOIN {_manifacturersTableName} man
+                        ON man.MfrID = products.MfrID
+                """;
+
+            string queryWhereStatementInSelect = "";
+
+            string queryEnd =
+                """
+                    ) AS Data
+                ) AS TopData
+
+                WHERE RN BETWEEN @start AND @end;
+                """;
+
+            bool hasWhereStatementInSelectPart = false;
+
+            if (productConditionalSearchRequest.SearchStringSubstring is not null)
+            {
+                queryStart += $", {searchStringSubPosition}";
+
+                queryFirstSelect +=
+                    $"""
+                    ,
+                    CHARINDEX(@SearchStringSubstring, products.SPLMODEL2) AS {searchStringSubPosition}
+                    """;
+
+                queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} CHARINDEX(@SearchStringSubstring, products.SPLMODEL2) > 0";
+
+                hasWhereStatementInSelectPart = true;
+            }
+
+            if (productConditionalSearchRequest.NameSubstring is not null)
+            {
+                queryStart += $", {nameSubPosition}";
+
+                queryFirstSelect +=
+                    $"""
+                    ,
+                    CHARINDEX(@NameSubstring, products.CFGSUBTYPE) AS {nameSubPosition}
+                    """;
+
+                queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} CHARINDEX(@NameSubstring, products.CFGSUBTYPE) > 0";
+
+                hasWhereStatementInSelectPart = true;
+            }
+
+            if (productConditionalSearchRequest.Status is not null)
+            {
+                queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} products.OLD = @Status";
+
+                hasWhereStatementInSelectPart = true;
+            }
+
+            if (productConditionalSearchRequest.CategoryId is not null)
+            {
+                queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} products.TID = @CategoryId";
+
+                hasWhereStatementInSelectPart = true;
+            }
+
+            if (productConditionalSearchRequest.IsProcessed is not null
+                || productConditionalSearchRequest.NeedsToBeUpdated is not null)
+            {
+                querySecondSelect +=
+                    $"""
+
+                    INNER JOIN {_productStatusesTable} productStatuses
+                    ON productStatuses.CSTID = products.CSTID
+                    """;
+
+                if (productConditionalSearchRequest.IsProcessed is not null)
+                {
+                    queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} productStatuses.IsProcessed = @IsProcessed";
+                }
+
+                if (productConditionalSearchRequest.NeedsToBeUpdated is not null)
+                {
+                    queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} productStatuses.NeedsToBeUpdated = @NeedsToBeUpdated";
+                }
+            }
+
+            return
+                $"""
+                {queryStart + queryFirstSelect}
+                {querySecondSelect}
+                {queryWhereStatementInSelect}
+                {queryEnd}
+                """;
+        }
+    }
+
     public Product? GetById_WithManifacturerAndCategoryAndFirstImage(uint id)
     {
         const string getByIdWithManifacturerAndCategoryAndFirstImageQuery =
@@ -262,7 +561,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 product.Images ??= new();
 
-                product.Images.Add(image);
+                if (image is not null)
+                {
+                    product.Images.Add(image);
+                }
 
                 return product;
             },
@@ -307,8 +609,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                     output.Properties = new();
                 }
-
-                output.Properties.Add(property);
+                if (property is not null)
+                {
+                    output.Properties.Add(property);
+                }
 
                 return product;
             },
@@ -897,5 +1201,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         public string? ImageFileExtension { get; set; }
         public DateTime? DateModified { get; set; }
     }
+}
 
+public enum ProductSearchByTextEnum
+{
+    SearchBySearchString = 0,
+    SearchByName = 1,
 }
