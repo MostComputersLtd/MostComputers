@@ -1,5 +1,6 @@
 ﻿using MOSTComputers.Services.XMLDataOperations.Models;
 using OneOf;
+using System.Threading.Tasks.Dataflow;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -53,7 +54,33 @@ public sealed class ProductDeserializeService
         {
             return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
         }
+    }
 
+    public string SerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes)
+    {
+        using StringWriter writer = new();
+
+        _xmlSerializer.Serialize(writer, xmlObjectData);
+
+        string xml = writer.ToString();
+
+        if (!shouldRemoveXmlSerializeEscapes) return xml;
+
+        string unescapedXml = TransformToOriginalAfterSerialization(xml);
+
+        return unescapedXml;
+    }
+
+    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes)
+    {
+        try
+        {
+            return SerializeProductsXml(xmlObjectData, shouldRemoveXmlSerializeEscapes);
+        }
+        catch (InvalidOperationException invalidOperationEx)
+        {
+            return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
+        }
     }
 
     private static string TransformInputToWorkingXml(string xml)
@@ -89,5 +116,14 @@ public sealed class ProductDeserializeService
         }
 
         return true;
+    }
+
+    private static string TransformToOriginalAfterSerialization(string xml)
+    {
+        return xml.Replace("&lt;", "<")
+            .Replace("&gt;", ">")
+            .Replace("&apos;", "'")
+            .Replace("&quot;", "\"")
+            .Replace("&amp;", "&");
     }
 }
