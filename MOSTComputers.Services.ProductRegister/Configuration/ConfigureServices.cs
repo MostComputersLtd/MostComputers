@@ -9,6 +9,7 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
@@ -22,6 +23,7 @@ using MOSTComputers.Services.ProductRegister.Validation.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Validation.ProductImage;
 using MOSTComputers.Services.ProductRegister.Validation.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
+using MOSTComputers.Services.ProductRegister.Validation.ProductStatuses;
 using MOSTComputers.Services.ProductRegister.Validation.Promotion;
 using static MOSTComputers.Services.DAL.Configuration.ConfigureServices;
 
@@ -46,6 +48,7 @@ public static class ConfigureServices
         services.AddTransient<IProductPropertyService, ProductPropertyService>();
         services.AddTransient<IPromotionService, PromotionService>();
         services.AddTransient<IProductService, ProductService>();
+        services.AddTransient<IProductStatusesService, ProductStatusesService>();
 
         services.AddTransient<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
 
@@ -74,7 +77,9 @@ public static class ConfigureServices
         services.AddTransient<IValidator<ProductPropertyUpdateRequest>, ProductPropertyUpdateRequestValidator>();
         services.AddTransient<IValidator<ServicePromotionCreateRequest>, PromotionCreateRequestValidator>();
         services.AddTransient<IValidator<ServicePromotionUpdateRequest>, PromotionUpdateRequestValidator>();
-
+        services.AddTransient<IValidator<ProductStatusesCreateRequest>, ProductStatusesCreateRequestValidator>();
+        services.AddTransient<IValidator<ProductStatusesUpdateRequest>, ProductStatusesUpdateRequestValidator>();
+        
         services.AddTransient<IValidator<FailedPropertyNameOfProductCreateRequest>, FailedPropertyNameOfProductCreateRequestValidator>();
         services.AddTransient<IValidator<FailedPropertyNameOfProductMultiCreateRequest>, FailedPropertyNameOfProductMultiCreateRequestValidator>();
         services.AddTransient<IValidator<FailedPropertyNameOfProductUpdateRequest>, FailedPropertyNameOfProductUpdateRequestValidator>();
