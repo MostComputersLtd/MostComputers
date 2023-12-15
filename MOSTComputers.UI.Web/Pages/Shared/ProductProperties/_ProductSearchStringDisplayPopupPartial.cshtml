@@ -1,0 +1,97 @@
+﻿@model MOSTComputers.UI.Web.Pages.Shared.ProductProperties.ProductSearchStringDisplayPopupPartialModel
+@{
+    Layout = null;
+}
+
+<div id="ProductSearchString_modal-header" class="modal-header full-parent-width">
+    <h5 class="modal-title modal-title-xml-modal">Search string info:</h5>
+
+    <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
+    <h4 class="modal-title modal-product-name-xml-modal">ID: @Model.Product.Id</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductSearchString_modal()">
+    </button>
+</div>
+
+<div id="ProductSearchString_popup" name="ProductSearchString_popup" class="modal-body full-parent-width" style="display: contents;">
+
+    <p id="__hidden_ProductSearchString_popup_searchString_label" name="__hidden_ProductSearchString_popup_searchString_label" style="text-align: center;" hidden>@Model.Product.SearchString</p>
+
+    @{var searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();}
+
+    @if (searchStringParts is not null)
+    {
+        <ul style="display: flex; align-content: center; list-style: none; flex-wrap: wrap; justify-content: center; padding: 0px;">
+            @for (int i = 0; i < searchStringParts.Count; i++)
+            {
+                string searchStringPart = searchStringParts.Keys.ElementAt(i);
+
+                <li id="ProductSearchString_popup_searchStringPart_h2#@i" name="ProductSearchString_popup_searchStringPart_h2"
+                    onmouseover="colorSearchStringOriginDisplayAndGiveItABorder(this.textContent, '#fffaed', '2px', '#000000', 0.25)"
+                    onmouseout="colorSearchStringOriginDisplay(this.textContent, '#FFFFFF')"
+                    onclick="transportToSearchStringOriginDisplay(this.textContent)" style="display: inline;">
+
+                    <h2>@searchStringPart</h2>
+                </li>
+
+                <li style="display: inline;">
+                    <h2>&nbsp;</h2>
+                </li>
+            }
+        </ul>
+    }
+
+    <ul id="ProductSearchString_popup_searchStringPartsOrigin_ul" name="ProductSearchString_popup_searchStringPartsOrigin_ul"
+        style="list-style: none; display: flex; flex-wrap: wrap; overflow-y: scroll;" class="full-parent-height">
+            
+        @if (searchStringParts is not null)
+        {
+            int i = 0;
+
+            foreach (KeyValuePair<string, SearchStringPartOriginData?> kvp in searchStringParts)
+            {
+                string searchStringPart = kvp.Key;
+
+                SearchStringPartOriginData? searchStringPartOriginData = kvp.Value;
+
+                <li id="ProductSearchStringPopup_searchStringPartOrigin_li#@i" name="ProductSearchStringPopup_searchStringPartOrigin_li"
+                    style="display: inline; min-width: 100px; padding: 20px 25px;">
+
+                    @if (searchStringPartOriginData is not null)
+                    {
+                        <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                                style="display: inline;">
+                                <h4 style="margin: 0px;">@searchStringPart</h4>
+                            </li>
+                            <li style="display: inline;">
+                                <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                    ID: @searchStringPartOriginData.Characteristic.Id
+                                </h6>
+                            </li>
+                        </ul>
+
+                        <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
+                    }
+                    else
+                    {
+                        <h4 id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                            style="text-align: center;">@searchStringPart</h4>
+                        <h4>No information could be found.</h4>
+                    }
+                </li>
+
+                i++;
+            }
+        }
+
+
+    </ul>
+</div>
+
+<div id="ProductSearchString_modal-footer" class="modal-footer full-parent-width">
+    <button id="copySearchStringButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="copySearchStringTextToClipboard()">
+        <h7 class="copy-to-xml-button-main-text">Copy to clipboard</h7>
+        <p class="copy-to-xml-button-small-text">(Or just press Ctrl + S)</p>
+    </button>
+</div>

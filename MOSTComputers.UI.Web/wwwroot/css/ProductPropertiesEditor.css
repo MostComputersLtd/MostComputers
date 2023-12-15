@@ -1,0 +1,62 @@
+﻿.product-properties-editor-product-id-label {
+    min-width: 120px;
+}
+
+.buttons-for-popups-list {
+    display: inline-flex;
+    justify-content: flex-end;
+    margin: 0px;
+}
+
+.button-for-popup-li {
+    display: inline;
+    margin: 0px 10px;
+}
+
+#modal-title_productSearchStringShow {
+    outline: none;
+    border: 0px;
+    word-break: break-all;
+}
+
+#propertyDisplay_table {
+    margin: 20px 25px;
+}
+
+.property-td-alignedOnTop {
+    vertical-align: top;
+    padding-top: 8.5px;
+}
+
+.propertyWithoutCharacteristicId-characteristic-select-td {
+    width: 20%;
+}
+
+.property-value-td {
+    padding: 5px 60px 5px 0px;
+}
+
+.property-value-div {
+    word-break: break-all;
+    padding: 4px 5px;
+    outline-style: inset;
+    outline-width: thin;
+}
+
+.property-characterisricId-td {
+    width: 8%;
+}
+
+.property-xmlPlacement-td {
+    width: 10%;
+    margin-right: 20px;
+}
+
+.property-characteristic-td {
+    width: 20%;
+}
+
+.property-delete-button-td {
+    width: 6%;
+    direction: rtl;
+}
