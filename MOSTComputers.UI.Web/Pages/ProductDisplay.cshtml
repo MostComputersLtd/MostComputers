@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
 }
 
+@section Scripts {
+    <script src="~/js/ProductXmlPopupControl.js"></script>
+    <script src="~/js/ProductImagesPopupControl.js"></script>
+    <script src="~/js/NotificationBox.js"></script>
+}
+
 
 <div class="container" style="padding:0px;">
     <table id="productDisplay_table">
@@ -114,41 +120,18 @@
         {
             $("#ProductXml_popup_modal-content").load("/ProductDisplay?handler=PartialViewXmlForProduct&productId=" + productId);
 
-            let dialog = document.getElementById("ProductXml-modal-dialog");
-
-            dialog.style.height = window.innerHeight;
-
-            $("#ProductXml_modal").modal("show");
-        }
-
-        function close_ProductXml_modal()
-        {
-            $("#ProductXml_modal").modal("toggle");
+            open_ProductXml_modal();
         }
 
         function copyXmlTextToClipboard()
         {
-            var xmlTextArea = document.getElementById("Xml_textarea");
+            var xmlTextAreaValue = getXmlValue();
 
-            navigator.clipboard.writeText(xmlTextArea.value);
+            if (xmlTextAreaValue === null) return;
 
-            showNotificationWithText("Copied!");
-        }
+            navigator.clipboard.writeText(xmlTextAreaValue);
 
-        function showNotificationWithText(text)
-        {
-            let notificationLi = document.createElement("li");
-
-            notificationLi.classList = "copy-to-xml-success-message";
-            notificationLi.innerHTML = text;
-
-            document.getElementById("copiedXmlNotificationBox").appendChild(notificationLi);
-
-            setTimeout(() =>
-            {
-                document.getElementById("copiedXmlNotificationBox").removeChild(notificationLi);
-            },
-            1200);
+            showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
         }
 
         </script>
@@ -185,17 +168,7 @@
             {
                 e.preventDefault();
 
-                let productIdInput = document.getElementById("modal-title_productIdShow");
-
-                if (productIdInput === null) return;
-
-                var productIdText = productIdInput.innerText;
-
-                if (productIdText === null) return;
-
-                var startIndexOfProductId = productIdText.indexOf("ID: ") + 4;
-
-                var productId = productIdText.substring(startIndexOfProductId);
+                var productId = getProductId();
 
                 getImageFileData(productId);
             }
@@ -209,81 +182,32 @@
         {
             $("#ProductImages_popup_modal-content").load("/ProductDisplay?handler=PartialViewImagesForProduct&productId=" + productId);
 
-            let dialog = document.getElementById("ProductImages-modal-dialog");
-
-            dialog.style.height = window.innerHeight;
-
-            $("#ProductImages_modal").modal("show");
-        }
-
-        function close_ProductImages_modal()
-        {
-            $("#ProductImages_modal").modal("toggle");
-        }
-
-        function displayImage(data, name)
-        {
-            document.getElementById("productCurrentImageDisplay").src = data;
-            document.getElementById("productCurrentImageDisplay").setAttribute("name", name);
-        }
-
-        function scrollHorizontally(e)
-        {
-            e = window.event || e;
-            var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
-            document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
-            e.preventDefault();
+            open_ProductImages_modal();
         }
 
         function copyImageDataToClipboard()
         {
-            let selectedImage = document.getElementById("productCurrentImageDisplay");
+            let selectedImageData = getSelectedImageData();
 
-            if (selectedImage === null) return;
+            navigator.clipboard.writeText(selectedImageData);
 
-            navigator.clipboard.writeText(selectedImage.src);
-
-            showNotificationWithText("Copied!");
+            showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
         }
 
         function getImageFileData(productId)
         {
-            let currentSelectedImage = document.getElementById("productCurrentImageDisplay");
-
-            if (currentSelectedImage === null) return;
-
-            var nameOfActiveImage = currentSelectedImage.getAttribute("name");
-
-            var indexOfTagInName = nameOfActiveImage.indexOf('#');
-
-            var imageIndex = nameOfActiveImage.substring(indexOfTagInName + 1)
+            var imageIndex = getSelectedImageIndex();
 
             var urlFileResult = "/ProductDisplay?handler=CurrentImageFileResultSingle" + "&productId=" + productId + "&imageIndex=" + imageIndex;
 
             window.location.href = urlFileResult;
 
-            showNotificationWithText("Saved!");
+            showNotificationWithText("copiedXmlNotificationBox", "Saved!", "copy-to-xml-success-message");
         }
 
     </script>
 
     <script>
-
-        function debounce(func, delay)
-        {
-            let timer;
-
-            return function ()
-            {
-                let context = this,
-                    args = null;
-                clearTimeout(timer);
-                timer = setTimeout(() =>
-                {
-                    func.apply(context, args);
-                }, delay);
-            }
-        }
 
         let lastFunc;
         let lastRan;
@@ -409,45 +333,10 @@
             })
                 .done(function (result)
                 {
-                    DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "SearchString_label", result.length, "customSpanForSearchString");
-
-                    // $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView", function ()
-                    // {
-                    //     var spanStart = "<span name='customSpanForSearchString' style='background-color:#FAF2B1'>";
-
-                    //     var searchStringLabels = document.getElementsByName("SearchString_label");
-
-                    //     if (searchStringLabels.length > result.length)
-                    //     {
-                    //         console.log(searchStringLabels);
-
-                    //         var excessLength = searchStringLabels.length - result.length;
-
-                    //         $("#tableDataHolder").children().slice(0, excessLength).remove();
-
-                    //         [].slice.call(searchStringLabels, excessLength);
-                    //     }
-
-                    //     for (let i = 0; i < searchStringLabels.length; i++)
-                    //     {
-                    //         var searchStringLabel = searchStringLabels[i];
-
-                    //         var text = searchStringLabel.textContent;
-
-                    //         var textToUpperCase = searchStringLabel.textContent.toUpperCase();
-
-                    //         var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
-
-                    //         if (substringIndex != -1)
-                    //         {
-                    //             var dataFromSubstringInActualString = text.substring(substringIndex, substringIndex + substring.length);
-
-                    //             text = text.replace(dataFromSubstringInActualString, spanStart + dataFromSubstringInActualString + "</span>")
-
-                    //             searchStringLabel.innerHTML = text;
-                    //         }
-                    //     }
-                    // });
+                    LoadDisplayData(function() =>
+                    {
+                        DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "SearchString_label", result.length, "customSpanForSearchString");
+                    });
                 })
                 .fail(function (jqXHR, textStatus)
                 {
@@ -472,46 +361,10 @@
             })
                 .done(function (result)
                 {
-                    LoadDisplayData();
-                    DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "Name_label", result.length, "customSpanForName");
-
-                    // $("#tableDataHolder").load("/ProductDisplay?handler=GetTablePartialView", function ()
-                    // {
-                    //     var spanStart = "<span name='customSpanForName' style='background-color:#FAF2B1'>";
-
-                    //     var searchStringLabels = document.getElementsByName("Name_label");
-
-                    //     if (searchStringLabels.length > result.length)
-                    //     {
-                    //         console.log(searchStringLabels);
-
-                    //         var excessLength = searchStringLabels.length - result.length;
-
-                    //         $("#tableDataHolder").children().slice(0, excessLength).remove();
-
-                    //         [].slice.call(searchStringLabels, excessLength);
-                    //     }
-
-                    //     for (let i = 0; i < searchStringLabels.length; i++)
-                    //     {
-                    //         var searchStringLabel = searchStringLabels[i];
-
-                    //         var text = searchStringLabel.textContent;
-
-                    //         var textToUpperCase = searchStringLabel.textContent.toUpperCase();
-
-                    //         var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
-
-                    //         if (substringIndex != -1)
-                    //         {
-                    //             var dataFromSubstringInActualString = text.substring(substringIndex, substringIndex + substring.length);
-
-                    //             text = text.replace(dataFromSubstringInActualString, spanStart + dataFromSubstringInActualString + "</span>")
-
-                    //             searchStringLabel.innerHTML = text;
-                    //         }
-                    //     }
-                    // });
+                    LoadDisplayData(function() =>
+                    {
+                        DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "Name_label", result.length, "customSpanForName");
+                    });
                 })
                 .fail(function (jqXHR, textStatus)
                 {

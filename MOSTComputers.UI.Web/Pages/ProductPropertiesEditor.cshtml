@@ -10,6 +10,16 @@
     <link rel="stylesheet" href="~/css/ProductDisplayPopups.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CustomTextSelection.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/ProductPropertiesEditor.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/TextSelection.js"></script>
+    <script src="~/js/ProductXmlPopupControl.js"></script>
+    <script src="~/js/ProductImagesPopupControl.js"></script>
+    <script src="~/js/ProductSearchStringPopupControl.js"></script>
+    <script src="~/js/NotificationBox.js" ></script>
 }
 
 <table class="full-parent-width" style="margin:10px 15px">
@@ -18,20 +28,20 @@
             <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
         </td>
         <td>
-            <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal" style="min-width:120px;">ID: @Model.Product.Id</h4>
+            <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal product-properties-editor-product-id-label">ID: @Model.Product.Id</h4>
         </td>
 
         <td style="width:99%">
         </td>
 
         <td>
-            <ul class="full-parent-width" style="display:inline-flex; justify-content: flex-end; margin: 0px;">
-                <li style="display:inline; margin: 0px 10px;">
+            <ul class="full-parent-width buttons-for-popups-list">
+                <li class="button-for-popup-li" style="">
                     <button class="btn full-parent-height" onclick="showImagePopupData()">
                         <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images" style="max-width: 60px; max-height: 60px;" />
                     </button>
                 </li>
-                <li style="display:inline; margin: 0px 10px; min-width: 80px;">
+                <li class="button-for-popup-li" style="min-width: 80px;">
                     <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData()">View XML</button>
                 </li>
             </ul>
@@ -40,44 +50,46 @@
 
     <tr>
         <td colspan="3">
-            <div id="modal-title_productSearchStringShow" contenteditable="false" class="modal-title modal-product-name-xml-modal full-parent-width custom-text-selection"
-            readonly style="outline:none; border: 0px; word-break: break-all;" ondblclick="modalTitle_productSearchStringShow_ColorRelatedSelections_onselect('searchStringSearchMatch_span')"
-            onmouseout="modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()">@Model.Product.SearchString</div>
+            <div id="modal-title_productSearchStringShow" contenteditable="inherit" class="modal-title modal-product-name-xml-modal full-parent-width custom-text-selection"
+            readonly ondblclick="modalTitle_productSearchStringShow_ColorRelatedSelections_onselect('searchStringSearchMatch_span')"
+            onfocusout="modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()">@Model.Product.SearchString</div>
+        </td>
+
+        <td>
+            <button class="btn btn-primary" onclick="showSearchStringPopupData()">See</button>
         </td>
     </tr>
 </table>
 
-<table id="propertyDisplay_table" class="full-parent-width" style="margin:20px 25px">
+<table id="propertyDisplay_table" class="full-parent-width">
 
-    <tbody>
+    <tbody id="propertyDisplay_table_tbody">
         @for (int i = 0; i < Model.ProductProperties.Count; i++)
         {
             ProductProperty productProperty = Model.ProductProperties[i];
 
-            Model.ProductPropertiesFromUI ??= new();
-
-            Model.ProductPropertiesFromUI.Add(productProperty);
-
-            if (productProperty.ProductCharacteristicId is null)
+            if (productProperty.ProductCharacteristicId is null
+                || productProperty.ProductCharacteristicId == 0)
             {
-                <tr>
-                    <td style="width: 20%;vertical-align: top; padding-top: 8.5px;">
+                <tr id="propertytr#@i">
+                    <td class="propertyWithoutCharacteristicId-characteristic-select-td property-td-alignedOnTop">
                         <select asp-items="Model.GetRemainingCharacteristics()"></select>
                     </td>
 
-                    <td style="padding:5px 60px 5px 0px;">
+                    <td class="property-value-td">
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
-                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
-                            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updateAllPropertiesInTable(@i)">@productProperty.Value</div>
+                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
+                                class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
+                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@i)">@productProperty.Value</div>
                         </div>
                     </td>
 
-                    <td style="width: 10%; vertical-align: top; padding-top: 8.5px; margin-right: 20px;">
-                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
+                    <td class="property-td-alignedOnTop property-characterisricId-td">
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
                     </td>
 
-                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
-                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+                    <td class="property-td-alignedOnTop property-xmlPlacement-td">
+                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
                     </td>
                 </tr>
 
@@ -89,24 +101,32 @@
             }
             else
             {
-                <tr>
-                    <td style="width: 20%;vertical-align: top; padding-top: 8.5px;">
+                <tr id="propertytr#@i">
+                    <td class="property-characteristic-td">
                         <label>@productProperty.Characteristic</label>
                     </td>
 
-                    <td style="padding:5px 60px 5px 0px;">
+                    <td class="property-value-td property-td-alignedOnTop">
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
-                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div" asp-for="@Model.ProductPropertiesFromUI[i].Value" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
-                            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updateAllPropertiesInTable(@i)">@productProperty.Value</div>
+                            <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
+                                class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
+                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@i)">@productProperty.Value</div>
                         </div>
                     </td>
 
-                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px; margin-right: 20px;">
+                    <td class="property-td-alignedOnTop property-characterisricId-td">
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
+                    </td>
+
+                    <td class="property-td-alignedOnTop property-xmlPlacement-td">
                         <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
                     </td>
 
-                    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
-                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
+                    <td class="property-td-alignedOnTop property-delete-button-td">
+                        <button id="productPropertyDisplay_Delete_button#@i" name="productPropertyDisplay_Delete_button"
+                                class="btn btn-danger" onclick="deletePropertyInTable(@productProperty.ProductCharacteristicId, @i, false)">
+                            X
+                        </button>
                     </td>
                 </tr>
             }
@@ -130,6 +150,13 @@
     </div>
 </div>
 
+<div id="ProductSearchString_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductSearchString-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductSearchString_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
 <ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
 
 @Html.AntiForgeryToken()
@@ -140,41 +167,18 @@
     {
         $("#ProductXml_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewXmlForProduct");
 
-        let dialog = document.getElementById("ProductXml-modal-dialog");
-
-        dialog.style.height = window.innerHeight;
-
-        $("#ProductXml_modal").modal("show");
-    }
-
-    function close_ProductXml_modal()
-    {
-        $("#ProductXml_modal").modal("toggle");
+        open_ProductXml_modal();
     }
 
     function copyXmlTextToClipboard()
     {
-        var xmlTextArea = document.getElementById("Xml_textarea");
+        var xmlTextAreaValue = getXmlValue();
 
-        navigator.clipboard.writeText(xmlTextArea.value);
+        if (xmlTextAreaValue === null) return;
 
-        showNotificationWithText("Copied!");
-    }
+        navigator.clipboard.writeText(xmlTextAreaValue);
 
-    function showNotificationWithText(text)
-    {
-        let notificationLi = document.createElement("li");
-
-        notificationLi.classList = "copy-to-xml-success-message";
-        notificationLi.innerHTML = text;
-
-        document.getElementById("copiedXmlNotificationBox").appendChild(notificationLi);
-
-        setTimeout(() =>
-        {
-            document.getElementById("copiedXmlNotificationBox").removeChild(notificationLi);
-        },
-            1200);
+        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
     }
 
 </script>
@@ -211,17 +215,7 @@
         {
             e.preventDefault();
 
-            let productIdInput = document.getElementById("modal-title_productIdShow");
-
-            if (productIdInput === null) return;
-
-            var productIdText = productIdInput.innerText;
-
-            if (productIdText === null) return;
-
-            var startIndexOfProductId = productIdText.indexOf("ID: ") + 4;
-
-            var productId = productIdText.substring(startIndexOfProductId);
+            var productId = getProductId();
 
             getImageFileData(productId);
         }
@@ -235,93 +229,57 @@
     {
         $("#ProductImages_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewImagesForProduct");
 
-        let dialog = document.getElementById("ProductImages-modal-dialog");
-
-        dialog.style.height = window.innerHeight;
-
-        $("#ProductImages_modal").modal("show");
-    }
-
-    function close_ProductImages_modal()
-    {
-        $("#ProductImages_modal").modal("toggle");
-    }
-
-    function displayImage(data, name)
-    {
-        document.getElementById("productCurrentImageDisplay").src = data;
-        document.getElementById("productCurrentImageDisplay").setAttribute("name", name);
-    }
-
-    function scrollHorizontally(e)
-    {
-        e = window.event || e;
-        var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
-        document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
-        e.preventDefault();
+        open_ProductImages_modal();
     }
 
     function copyImageDataToClipboard()
     {
-        let selectedImage = document.getElementById("productCurrentImageDisplay");
+        let selectedImageData = getSelectedImageData();
 
-        if (selectedImage === null) return;
+        navigator.clipboard.writeText(selectedImageData);
 
-        navigator.clipboard.writeText(selectedImage.src);
-
-        showNotificationWithText("Copied!");
+        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
     }
 
     function getImageFileData()
     {
-        let currentSelectedImage = document.getElementById("productCurrentImageDisplay");
-
-        if (currentSelectedImage === null) return;
-
-        var nameOfActiveImage = currentSelectedImage.getAttribute("name");
-
-        var indexOfTagInName = nameOfActiveImage.indexOf('#');
-
-        var imageIndex = nameOfActiveImage.substring(indexOfTagInName + 1)
+        var imageIndex = getSelectedImageIndex();
 
         var urlFileResult = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=CurrentImageFileResultSingle" + "&imageIndex=" + imageIndex;
 
         window.location.href = urlFileResult;
 
-        showNotificationWithText("Saved!");
+        showNotificationWithText("copiedXmlNotificationBox", "Saved!", "copy-to-xml-success-message");
     }
 
 </script>
 
 <script>
-    function getSelectionHtml()
+
+    function showSearchStringPopupData()
     {
-        var html = "";
-
-        if (typeof window.getSelection != "undefined")
+        $("#ProductSearchString_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=GetSearchStringPartialView", function()
         {
-            var sel = window.getSelection();
+            open_ProductSearchString_modal();
+        });
 
-            if (sel.rangeCount)
-            {
-                var container = document.createElement("div");
-                for (var i = 0, len = sel.rangeCount; i < len; ++i)
-                {
-                    container.appendChild(sel.getRangeAt(i).cloneContents());
-                }
-
-                html = container.innerHTML;
-            }
-        }
-        else if (typeof document.selection != "undefined")
-        {
-            if (document.selection.type == "Text")
-            {
-                html = document.selection.createRange().htmlText;
-            }
-        }
-        return html;
     }
+
+    function copySearchStringDataToClipboard()
+    {
+        let searchStringData = getSearchStringData();
+
+        if (searchStringData === null
+        || searchStringData === undefined) return;
+
+        navigator.clipboard.writeText(searchStringData);
+
+        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
+    }
+
+</script>
+
+<script>
 
     function modalTitle_productSearchStringShow_ColorRelatedSelections_onselect(customSpanName)
     {
@@ -373,9 +331,31 @@
         }
     }
 
+    function RemoveSpanFromSelectedText(text)
+    {
+        var oldSelectedSpanStartIndex = text.indexOf("<span");
+
+        if (oldSelectedSpanStartIndex !== -1)
+        {
+            var oldSelectedSpanEndIndex = text.indexOf("</span>") + 7;
+
+            var oldSelectedValueSpan = text.substring(oldSelectedSpanStartIndex, oldSelectedSpanEndIndex);
+
+            var oldSelectedValueStartIndex = text.indexOf('>', oldSelectedSpanStartIndex) + 1;
+            var oldSelectedValueEndIndex = text.indexOf('<', oldSelectedSpanStartIndex + 5);
+
+            var oldSelectedValue = text.substring(oldSelectedValueStartIndex, oldSelectedValueEndIndex);
+
+            text = text.replace(new RegExp(oldSelectedValueSpan, "g"), oldSelectedValue);
+        }
+
+        return text;
+    }
+
 </script>
 
 <script>
+
     function addPropertyToTable()
     {
         var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=AddNewItem";
@@ -394,7 +374,7 @@
             {
                 console.log(result);
 
-                document.getElementById("propertyDisplay_table").innerHTML += result;
+                document.getElementById("propertyDisplay_table_tbody").innerHTML += result;
             })
             .fail(function (jqXHR, textStatus)
             {
@@ -412,7 +392,8 @@
 
 <script>
 
-    function updatePropertyInTable(index) {
+    function updatePropertyInTable(index)
+    {
         var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=UpdateProperty";
 
         var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
@@ -420,9 +401,9 @@
         var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select#" + index);
         var productPropWithoutCharacteristicSelect = document.getElementById("PropertyWithoutCharacteristic_Characteristic_select#" + index);
 
-        var productPropIsNew;
+        var productPropCharacteristicId;
 
-        var productPropCharacteristicId = parseInt(id);
+        var productPropIsNew;
 
         if (productPropCharacteristicIdInput !== null)
         {
@@ -433,15 +414,17 @@
             var id = idText.substring(idStartIndex);
 
             productPropCharacteristicId = parseInt(id);
-
             productPropIsNew = false;
         }
 
         var productPropValue;
 
-        productPropValue = productPropValueInput.innerHTML;
+        if (productPropValueInput.innerHTML !== null)
+        {
+            productPropValue = RemoveSpanFromSelectedText(productPropValueInput.innerHTML);
+        }
 
-        var productPropXmlPlacement = [];
+        var productPropXmlPlacement;
 
         var productXmlPlacementString = productPropXmlPlacementSelect.value;
 
@@ -449,16 +432,11 @@
 
         if (productPropWithoutCharacteristicSelect !== null)
         {
-            var productPropWithoutCharacteristicSelect = productPropWithoutCharacteristicSelect;
-
-            var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('#') + 1;
-
-            var indexOfSelect = productPropWithoutCharacteristicSelect.id.substring(indexOfListIndexStart);
-
             var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
 
             productPropCharacteristicId = parseInt(productPropWithoutCharacteristicValue);
             productPropIsNew = true;
+
         }
 
         var data =
@@ -518,7 +496,7 @@
 
         for (var i = 0; i < productPropValueInputs.length; i++)
         {
-            productPropValues.push(productPropValueInputs[i].innerHTML)
+            productPropValues.push(RemoveSpanFromSelectedText(productPropValueInputs[i].innerHTML));
         }
 
         var productPropXmlPlacements = [];
@@ -583,4 +561,71 @@
             {
             });
     }
+
+    function deletePropertyInTable(productCharacteristicId, index, deleteEvenOnFail)
+    {
+        if (productCharacteristicId === null
+            || isNaN(productCharacteristicId)
+            || isNaN(parseInt(productCharacteristicId))
+            || productCharacteristicId === undefined
+            || productCharacteristicId <= 0)
+        {
+            if (deleteEvenOnFail)
+            {
+                var childProperty = document.getElementById("propertytr#" + index);
+
+                document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+
+                return;
+            }
+
+            return;
+        }
+
+        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=DeleteProperty&productCharacteristicId=" + productCharacteristicId;
+
+        // console.log(data);
+
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            contentType: "application/json; charset=utf-8",
+            data: null,
+            headers: {
+                RequestVerificationToken:
+                    $('input:hidden[name="__RequestVerificationToken"]').val()
+            },
+        })
+            .done(function (result)
+            {
+                var childProperty = document.getElementById("propertytr#" + index);
+
+                document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+            })
+            .fail(function (jqXHR, textStatus)
+            {
+                if (deleteEvenOnFail)
+                {
+                    var childProperty = document.getElementById("propertytr#" + index);
+
+                    document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+                }
+            });
+    }
+
+    function getCurrentId(index)
+    {
+        var characteristicIdEl = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
+
+        var idText = characteristicIdEl.innerHTML;
+
+        var idStartIndex = idText.indexOf("ID:") + 4;
+
+        var id = idText.substring(idStartIndex);
+
+        console.log("getCurrentId " + parseInt(id));
+
+        return parseInt(id);
+    }
+
 </script>

@@ -52,7 +52,6 @@ public class ProductPropertiesEditorModel : PageModel
     public int ProductId { get; set; }
     public Product Product { get; set; }
     public List<ProductProperty> ProductProperties { get; set; }
-    public List<ProductProperty> ProductPropertiesFromUI { get; set; }
     public List<ProductPropertyByCharacteristicIdCreateRequest> ProductPropertyCreateRequests { get; set; }
     public IEnumerable<SelectListItem> CharacteristicsForProductCategory { get; set; }
 
@@ -75,7 +74,7 @@ public class ProductPropertiesEditorModel : PageModel
     {
         if (categoryId == null) return;
 
-        IEnumerable<ProductCharacteristic> characteristicsForProductCategory = _productCharacteristicService.GetAllByCategoryId(categoryId.Value);
+        IEnumerable<ProductCharacteristic> characteristicsForProductCategory = _productCharacteristicService.GetCharacteristicsOnlyByCategoryId(categoryId.Value);
 
         CharacteristicsForProductCategory = characteristicsForProductCategory
             .Select(productCharacteristic =>
@@ -150,6 +149,30 @@ public class ProductPropertiesEditorModel : PageModel
             invalidXmlResult => null);
     }
 
+    public IActionResult OnGetGetSearchStringPartialView()
+    {
+        Product? product = _productService.GetByIdWithFirstImage((uint)ProductId);
+
+        if (product == null) return BadRequest();
+
+        Product = product;
+
+        if (product.SearchString is null) return new OkResult();
+
+        IEnumerable<ProductCharacteristic>? characteristicAndSearchStringAbbreviations = null;
+
+        if (product.CategoryID is not null)
+        {
+            characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((uint)product.CategoryID);
+        }
+
+        return base.Partial("ProductProperties/_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
+        {
+            Product = product,
+            CharacteristicsAndSearchStringAbbreviationsForProduct = characteristicAndSearchStringAbbreviations ?? Array.Empty<ProductCharacteristic>(),
+        });
+    }
+
     public IEnumerable<SelectListItem> GetRemainingCharacteristics()
     {
         IEnumerable<string?> productPropNames = Product.Properties.Select(prop => prop.Characteristic);
@@ -187,10 +210,30 @@ public class ProductPropertiesEditorModel : PageModel
             });
     }
 
-    
-
     public IActionResult OnPutUpdateProperty([FromBody] ProductPropertyEditorData data)
     {
+        if (data is null
+            || data.ProductCharacteristicId == 0) return BadRequest();
+
+        if (data.IsNew)
+        {
+            ProductPropertyByCharacteristicIdCreateRequest productPropertyCreateRequest = new()
+            {
+                ProductCharacteristicId = data.ProductCharacteristicId,
+                ProductId = ProductId,
+                XmlPlacement = data.XmlPlacement,
+                Value = data.Value,
+                DisplayOrder = null,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> createResult = _productPropertyService.InsertWithCharacteristicId(productPropertyCreateRequest);
+
+            return createResult.Match<IActionResult>(
+                _ => new OkResult(),
+                validationResult => BadRequest(validationResult),
+                _ => StatusCode(500));
+        }
+
         ProductPropertyUpdateRequest productPropertyUpdateRequest = new()
         {
             ProductCharacteristicId = data.ProductCharacteristicId,
@@ -310,16 +353,26 @@ public class ProductPropertiesEditorModel : PageModel
             {
                 return updateActionResult;
             }
-        }    
-
-        //foreach (ProductPropertyUpdateRequest propertyUpdateRequest in propertyUpdateRequests)
-        //{
-        //    OneOf<Success, ValidationResult, UnexpectedFailureResult> updatePropResult = _productPropertyService.Update(propertyUpdateRequest);
-        //}
+        }
 
         foreach (ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest in propertyCharacteristicIdCreateRequests)
         {
             OneOf<Success, ValidationResult, UnexpectedFailureResult> createPropResult = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest);
+        }
+
+        return new OkResult();
+    }
+
+    public IActionResult OnDeleteDeleteProperty(uint productCharacteristicId)
+    {
+        if (ProductId <= 0
+            || productCharacteristicId == 0) return BadRequest();
+
+        bool deleteResult = _productPropertyService.Delete((uint)ProductId, productCharacteristicId);
+
+        if (!deleteResult)
+        {
+            return NotFound();
         }
 
         return new OkResult();
