@@ -4,7 +4,7 @@
     Layout = null;
 }
 
-<tr>
+<tr id="propertytr#@Model.PropertyIndex">
     <td style="width: 20%;vertical-align: top; padding-top: 8.5px;">
         <select id="PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex" name="PropertyWithoutCharacteristic_Characteristic_select"
             asp-items="Model.ProductCharacteristicsForSelect" onchange="PropertyWithoutCharacteristic_select_onchange(this.value, @Model.PropertyIndex)"></select>
@@ -13,15 +13,23 @@
     <td style="padding:5px 60px 5px 0px;">
         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@Model.PropertyIndex" class="full-parent-width full-parent-height">
             <div id="productPropertyDisplay_Value_div#@Model.PropertyIndex" name="productPropertyDisplay_Value_div" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
-            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updateAllPropertiesInTable(@Model.PropertyIndex)">@Model.ProductProperty?.Value</div>
+            style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updatePropertyInTable(@Model.PropertyIndex)">@Model.ProductProperty?.Value</div>
         </div>
+    </td>
+
+    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
+        <label id="productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
     </td>
 
     <td style="width: 10%;vertical-align: top; padding-top: 8.5px; margin-right: 20px;">
         <select id="productPropertyDisplay_XmlPlacement_select#@Model.PropertyIndex" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(Model.ProductProperty?.XmlPlacement)"></select>
     </td>
 
-    <td style="width: 10%;vertical-align: top; padding-top: 8.5px;">
-        <label id="productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+    <td style="width: 10%;vertical-align: top; padding-top: 8.5px; direction: rtl;">
+        <button id="productPropertyDisplay_Delete_button#@Model.PropertyIndex" name="productPropertyDisplay_Delete_button"
+                class="btn btn-danger" onclick="deletePropertyInTable(getCurrentId(@Model.PropertyIndex), @Model.PropertyIndex, true)">
+            X
+        </button>
     </td>
+
 </tr>
