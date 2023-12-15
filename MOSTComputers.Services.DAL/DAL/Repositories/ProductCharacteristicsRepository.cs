@@ -17,28 +17,87 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
     }
 
-    public IEnumerable<ProductCharacteristic> GetAllByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(uint categoryId)
     {
-        const string getAllByCategoryIdQuery =
+        const string getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery =
             $"""
             SELECT * FROM {_tableName}
             WHERE TID = @categoryId
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllByCategoryIdQuery, new { categoryId = (int)categoryId });
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery, new { categoryId = (int)categoryId });
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsByCategoryId(uint categoryId)
     {
-        const string getAllByCategoryIdQuery =
+        const string getAllCharacteristicsByCategoryIdQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE TID = @categoryId
+            AND KWPrCh = 1
+            ORDER BY S;
+            """;
+
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsByCategoryIdQuery, new { categoryId = (int)categoryId });
+    }
+
+    public IEnumerable<ProductCharacteristic> GetAllSearchStringAbbreviationsByCategoryId(uint categoryId)
+    {
+        const string getAllSearchStringAbbreviationsByCategoryIdQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE TID = @categoryId
+            AND KWPrCh = 0
+            ORDER BY S;
+            """;
+
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllSearchStringAbbreviationsByCategoryIdQuery, new { categoryId = (int)categoryId });
+    }
+
+    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    {
+        const string getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
             $"""
             SELECT * FROM {_tableName}
             WHERE TID IN @categoryIds
             ORDER BY S;
             """;
 
-        IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllByCategoryIdQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+        IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
+            getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+
+        return data.GroupBy(x => (uint)x.CategoryId!);
+    }
+
+    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    {
+        const string getCharacteristicsForSelectionOfCategoryIdsQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE TID IN @categoryIds
+            AND KWPrCh = 1
+            ORDER BY S;
+            """;
+
+        IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
+            getCharacteristicsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+
+        return data.GroupBy(x => (uint)x.CategoryId!);
+    }
+
+    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    {
+        const string getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE TID IN @categoryIds
+            AND KWPrCh = 0
+            ORDER BY S;
+            """;
+
+        IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
+            getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
 
         return data.GroupBy(x => (uint)x.CategoryId!);
     }

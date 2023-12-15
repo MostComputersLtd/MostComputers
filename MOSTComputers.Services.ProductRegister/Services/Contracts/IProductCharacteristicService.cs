@@ -11,7 +11,11 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductCharacteristicService
 {
     IEnumerable<ProductCharacteristic> GetAllByCategoryId(uint categoryId);
+    IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(uint categoryId);
+    IEnumerable<ProductCharacteristic> GetSearchStringAbbreviationsOnlyByCategoryId(uint categoryId);
     IEnumerable<IGrouping<uint, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
+    IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsOnlyForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
+    IEnumerable<IGrouping<uint, ProductCharacteristic>> GetStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
     ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name);
     IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(uint categoryId, List<string> names);
     OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null);
