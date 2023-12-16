@@ -21,14 +21,15 @@
 
     @if (searchStringParts is not null)
     {
-        <ul style="display: flex; align-content: center; list-style: none; flex-wrap: wrap; justify-content: center; padding: 0px;">
+        <ul id="ProductSearchString_popup_searchStringPartDisplay_ul" style="display: flex; align-content: center; list-style: none; flex-wrap: wrap; justify-content: center; padding: 0px;">
             @for (int i = 0; i < searchStringParts.Count; i++)
             {
                 string searchStringPart = searchStringParts.Keys.ElementAt(i);
 
                 <li id="ProductSearchString_popup_searchStringPart_h2#@i" name="ProductSearchString_popup_searchStringPart_h2"
-                    onmouseover="colorSearchStringOriginDisplayAndGiveItABorder(this.textContent, '#fffaed', '2px', '#000000', 0.25)"
-                    onmouseout="colorSearchStringOriginDisplay(this.textContent, '#FFFFFF')"
+                    class="productSearchString-popup-searchStringPart-label"
+                    onmouseover="colorSearchStringOriginDisplayAndGiveItABorder(this.textContent, '#fffaed', '1px', '#ed9e79', '5%')"
+                    onmouseout="colorSearchStringOriginDisplayAndGiveItABorder(this.textContent, '#FFFFFF', '1px', '#FFFFFF', '0%')"
                     onclick="transportToSearchStringOriginDisplay(this.textContent)" style="display: inline;">
 
                     <h2>@searchStringPart</h2>
@@ -48,17 +49,17 @@
         {
             int i = 0;
 
-            foreach (KeyValuePair<string, SearchStringPartOriginData?> kvp in searchStringParts)
+            foreach (KeyValuePair<string, List<SearchStringPartOriginData>?> kvp in searchStringParts)
             {
                 string searchStringPart = kvp.Key;
 
-                SearchStringPartOriginData? searchStringPartOriginData = kvp.Value;
-
                 <li id="ProductSearchStringPopup_searchStringPartOrigin_li#@i" name="ProductSearchStringPopup_searchStringPartOrigin_li"
-                    style="display: inline; min-width: 100px; padding: 20px 25px;">
+                    style="display: inline; min-width: 100px; padding: 20px 25px; border: 1px solid white;">
 
-                    @if (searchStringPartOriginData is not null)
+                    @if (kvp.Value?.Count == 1)
                     {
+                        SearchStringPartOriginData searchStringPartOriginData = kvp.Value[0];
+
                         <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
                             <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
                                 style="display: inline;">
@@ -72,6 +73,47 @@
                         </ul>
 
                         <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
+                    }
+                    else if (kvp.Value?.Count > 1)
+                    {
+                        <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                                style="display: inline;">
+                                <h4 style="margin: 0px;">@searchStringPart</h4>
+                            </li>
+                            <li style="display: inline;">
+                                <h6></h6>
+                            </li>
+                            <li style="display: inline;">
+                                <button onclick="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsShow(@i, '@searchStringPart')">@kvp.Value.Count possibilities ></button>
+
+                                <ul id="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#@i"
+                                    style="display: flex; flex-direction: column; list-style: none; visibility: collapse; position: absolute; left: 0px; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px;">
+                                    @for (int j = 0; j < kvp.Value.Count; j++)
+                                    {
+                                        SearchStringPartOriginData searchStringPartOriginData = kvp.Value[j];
+
+                                        <li style="border-bottom: 1.5px solid darkgray;">
+
+                                            <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                                <li style="display: inline;">
+                                                    <h4 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel" style="margin: 0px;">@searchStringPartOriginData.Characteristic.Name</h4>
+                                                </li>
+                                                <li style="display: inline;">
+                                                    <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                                        ID: @searchStringPartOriginData.Characteristic.Id
+                                                    </h6>
+                                                </li>
+                                            </ul>
+
+                                            <h5 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel">@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                        </li>
+                                    }
+                                </ul>
+                            </li>
+                        </ul>
+
+
                     }
                     else
                     {
