@@ -1,0 +1,7 @@
+﻿.productSearchString-popup-searchStringPart-label > h2 {
+    border-bottom: 4px solid white;
+}
+
+.productSearchString-popup-searchStringPart-label:hover > h2 {
+    border-bottom : 4px solid black;
+}
