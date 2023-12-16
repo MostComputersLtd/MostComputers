@@ -18,11 +18,11 @@ public class ProductSearchStringDisplayPopupPartialModel
         return output;
     }
 
-    public Dictionary<string, SearchStringPartOriginData?>? GetSearchStringPartsAndDataAboutTheirOrigin()
+    public Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin()
     {
         if (Product.SearchString == null) return null;
 
-        Dictionary<string, SearchStringPartOriginData?> output = new();
+        Dictionary<string, List<SearchStringPartOriginData>?> output = new();
 
         string[] searchStringParts = Product.SearchString
             .Trim()
@@ -30,19 +30,45 @@ public class ProductSearchStringDisplayPopupPartialModel
 
         foreach (string searchStringPart in searchStringParts)
         {
-            ProductCharacteristic? productCharacteristic
-             = CharacteristicsAndSearchStringAbbreviationsForProduct.FirstOrDefault(x => x.Name == searchStringPart);
+            List<ProductCharacteristic>? productCharacteristics
+             = GetCharacteristicsForSearchStringPart(searchStringPart);
 
-            if (productCharacteristic is null)
+            if (productCharacteristics is null)
             {
                 output.Add(searchStringPart, null);
 
                 continue;
             }
 
-            output.Add(searchStringPart, new SearchStringPartOriginData(searchStringPart, productCharacteristic));
+            IEnumerable<SearchStringPartOriginData> productOriginDataFromRelatedCharacteristics
+                = productCharacteristics.Select(characteristic => new SearchStringPartOriginData(searchStringPart, characteristic));
+
+            output.Add(searchStringPart, productOriginDataFromRelatedCharacteristics.ToList());
         }
 
         return output;
+    }
+
+    public List<ProductCharacteristic>? GetCharacteristicsForSearchStringPart(string searchStringPart)
+    {
+        ProductCharacteristic? output = CharacteristicsAndSearchStringAbbreviationsForProduct
+             .FirstOrDefault(x => x.Name == searchStringPart);
+
+        if (output is not null) return new() { output };
+
+        output = CharacteristicsAndSearchStringAbbreviationsForProduct
+            .FirstOrDefault(x => string.Equals(x.Name, searchStringPart, StringComparison.OrdinalIgnoreCase));
+
+        if (output is not null) return new() { output };
+
+        IEnumerable<ProductCharacteristic> characteristicsContainingInput = CharacteristicsAndSearchStringAbbreviationsForProduct
+            .Where(x => x.Name?.Contains(searchStringPart) ?? false);
+
+        if (characteristicsContainingInput.Any())
+        {
+            return characteristicsContainingInput.ToList();
+        }
+
+        return null;
     }
 }
