@@ -49,6 +49,8 @@ public static class ConfigureServices
         services.AddTransient<IPromotionService, PromotionService>();
         services.AddTransient<IProductService, ProductService>();
         services.AddTransient<IProductStatusesService, ProductStatusesService>();
+        services.AddTransient<ILocalChangesService, LocalChangesService>();
+        services.AddTransient<IExternalChangesService, ExternalChangesService>();
 
         services.AddTransient<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
 

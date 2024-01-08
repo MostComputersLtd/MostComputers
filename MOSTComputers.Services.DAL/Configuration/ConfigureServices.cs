@@ -37,6 +37,8 @@ public static class ConfigureServices
         services.AddTransient<IPromotionRepository, PromotionRepository>();
         services.AddTransient<IProductRepository, ProductRepository>();
         services.AddTransient<IProductStatusesRepository, ProductStatusesRepository>();
+        services.AddTransient<ILocalChangesRepository, LocalChangesRepository>();
+        services.AddTransient<IExternalChangesRepository, ExternalChangesRepository>();
 
         services.AddTransient<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
 
@@ -57,6 +59,8 @@ public static class ConfigureServices
             config.AddMap(new ProductEntityMap());
             config.AddMap(new PromotionEntityMap());
             config.AddMap(new ProductStatusesEntityMap());
+            config.AddMap(new LocalChangeDataEntityMap());
+            config.AddMap(new ExternalChangeDataEntityMap());
 
             config.AddMap(new FailedPropertyNameOfProductEntityMap());
         });
