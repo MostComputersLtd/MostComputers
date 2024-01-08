@@ -6,9 +6,9 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
-using MOSTComputers.UI.Web.Services;
+using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.UI.Web.Validation;
 using OneOf;
 using static MOSTComputers.UI.Web.Validation.ValidationCommonElements;
@@ -17,16 +17,16 @@ namespace MOSTComputers.UI.Web.Pages.CreatePages;
 
 public class XmlProductCreateModel : PageModel
 {
-    public XmlProductCreateModel(ProductXmlToCreateRequestMapperService mapperService, IProductService productService, ProductDeserializeService productDeserializeService)
+    public XmlProductCreateModel(IProductXmlToCreateRequestMapperService mapperService, IProductService productService, IProductDeserializeService productDeserializeService)
     {
         _mapperService = mapperService;
         _productService = productService;
         _productDeserializeService = productDeserializeService;
     }
 
-    private readonly ProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductXmlToCreateRequestMapperService _mapperService;
     private readonly IProductService _productService;
-    private readonly ProductDeserializeService _productDeserializeService;
+    private readonly IProductDeserializeService _productDeserializeService;
 
     public static List<XmlProductCreateDisplay> DisplayCreateRequests { get; set; } = new();
 

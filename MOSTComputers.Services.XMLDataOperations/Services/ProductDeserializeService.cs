@@ -1,4 +1,5 @@
 ﻿using MOSTComputers.Services.XMLDataOperations.Models;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using OneOf;
 using System.Threading.Tasks.Dataflow;
 using System.Xml;
@@ -6,7 +7,7 @@ using System.Xml.Serialization;
 
 namespace MOSTComputers.Services.XMLDataOperations.Services;
 
-public sealed class ProductDeserializeService
+public sealed class ProductDeserializeService : IProductDeserializeService
 {
     public ProductDeserializeService(XmlSerializerFactory xmlSerializerFactory)
     {
@@ -52,6 +53,12 @@ public sealed class ProductDeserializeService
         }
         catch (InvalidOperationException invalidOperationEx)
         {
+            if (invalidOperationEx.InnerException is null
+                || invalidOperationEx.InnerException is not XmlException)
+            {
+                return new InvalidXmlResult() { Text = "Something went wrong" };
+            }
+
             return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
         }
     }
@@ -79,6 +86,12 @@ public sealed class ProductDeserializeService
         }
         catch (InvalidOperationException invalidOperationEx)
         {
+            if (invalidOperationEx.InnerException is null
+                || invalidOperationEx.InnerException is not XmlException)
+            {
+                return new InvalidXmlResult() { Text = "Something went wrong" };
+            }
+
             return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
         }
     }

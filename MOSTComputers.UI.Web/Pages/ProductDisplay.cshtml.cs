@@ -5,9 +5,9 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Pages.Shared;
-using MOSTComputers.UI.Web.Services;
+using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 
 namespace MOSTComputers.UI.Web.Pages;
@@ -16,8 +16,8 @@ public sealed class ProductDisplayModel : PageModel
 {
     public ProductDisplayModel(
         ICategoryService categoryService,
-        ProductXmlToCreateRequestMapperService mapperService,
-        ProductDeserializeService productDeserializeService,
+        IProductXmlToCreateRequestMapperService mapperService,
+        IProductDeserializeService productDeserializeService,
         IProductService productService,
         IProductPropertyService productPropertyService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
@@ -79,8 +79,8 @@ public sealed class ProductDisplayModel : PageModel
     }
 
     private readonly ICategoryService _categoryService;
-    private readonly ProductXmlToCreateRequestMapperService _mapperService;
-    private readonly ProductDeserializeService _productDeserializeService;
+    private readonly IProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductDeserializeService _productDeserializeService;
     private readonly IProductService _productService;
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;

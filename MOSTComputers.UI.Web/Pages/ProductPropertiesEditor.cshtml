@@ -1,26 +1,32 @@
 ﻿@page "{ProductId}"
 @using MOSTComputers.Models.Product.Models;
 @using MOSTComputers.UI.Web.Mapping;
+@using MOSTComputers.UI.Web.Models;
+@using MOSTComputers.UI.Web.StaticUtilities;
 
 @model MOSTComputers.UI.Web.Pages.ProductPropertiesEditorModel
 @{
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/ProductDisplayPopups.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/ProductSearchStringPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayXmlPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayImagesPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductSearchStringPopup.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CustomTextSelection.css" asp-append-version="true" />
 
-    <link rel="stylesheet" href="~/css/ProductPropertiesEditor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/ProductPropertiesEditor.css" asp-append-version="true" />
 }
 
 @section Scripts {
     <script src="~/js/TextSelection.js"></script>
-    <script src="~/js/ProductXmlPopupControl.js"></script>
-    <script src="~/js/ProductImagesPopupControl.js"></script>
-    <script src="~/js/ProductSearchStringPopupControl.js"></script>
-    <script src="~/js/NotificationBox.js" ></script>
+    <script src="~/js/Pages/Shared/ProductXmlPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductSearchStringPopupControl.js"></script>
+    <script src="~/js/NotificationBox.js"></script>
+    <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
+    <script src="~/js/Pages/ProductPropertiesEditor.js"></script>
 }
 
 <table class="full-parent-width" style="margin:10px 15px">
@@ -38,28 +44,129 @@
         <td>
             <ul class="full-parent-width buttons-for-popups-list">
                 <li class="button-for-popup-li" style="">
-                    <button class="btn full-parent-height" onclick="showImagePopupData()">
+                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId)">
                         <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images" style="max-width: 60px; max-height: 60px;" />
                     </button>
                 </li>
                 <li class="button-for-popup-li" style="min-width: 80px;">
-                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData()">View XML</button>
+                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId)">View XML</button>
                 </li>
             </ul>
         </td>
     </tr>
 
     <tr>
-        <td colspan="3">
-            <div id="modal-title_productSearchStringShow" contenteditable="inherit" class="modal-title modal-product-name-xml-modal full-parent-width custom-text-selection"
-            readonly ondblclick="modalTitle_productSearchStringShow_ColorRelatedSelections_onselect('searchStringSearchMatch_span')"
-            onfocusout="modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()">@Model.Product.SearchString</div>
-        </td>
+        @{
+            var searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();
+        }
+
+        @if (searchStringParts is not null)
+        {
+            <td>
+                
+                <ul id="searchStringPartAndOriginPopupDisplay_ul" style="display: flex; list-style: none; flex-wrap: nowrap; justify-content: center; align-items: center; padding: 0px; margin: 0px;">
+
+                    @{int i = 0;}
+
+                    @foreach (KeyValuePair<string, List<SearchStringPartOriginData>?> kvp in searchStringParts)
+                    {
+                        string searchStringPart = kvp.Key;
+
+                        <li>
+                            <table onmouseleave="removeSearchStringOriginDataSmallPopup(@i, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
+                                <tr>
+                                    <td id="searchStringPart_h2#@i" name="searchStringPart_h2"
+                                        onmouseover="showSearchStringOriginDataSmallPopup(@i)"
+                                        onclick="displayPopupAndTransportToSearchStringOriginDisplay(@Model.ProductId, @i)" style="display: flex; margin: 0px 1px;">
+
+                                        <h7 class="productSearchString-popup-searchStringPart-label">@searchStringPart</h7>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td id="searchStringPartOrigin_li#@i" name="searchStringPartOrigin_li"
+                                        style="display: inline; min-width: 100px; border: 1px solid #ed9e79; border-radius: 5%; position: absolute; visibility: hidden; background-color: #fffaed;">
+
+                                        @if (kvp.Value?.Count == 1)
+                                        {
+                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Value[0];
+
+                                            <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                style="display: inline;">
+                                                    <h4 style="margin: 0px;">@searchStringPart</h4>
+                                                </li>
+                                                <li style="display: inline;">
+                                                    <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                                        ID: @searchStringPartOriginData.Characteristic.Id
+                                                    </h6>
+                                                </li>
+                                            </ul>
+
+                                            <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                        }
+                                        else if (kvp.Value?.Count > 1)
+                                        {
+                                            <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                    style="display: inline;">
+                                                    <h4 style="margin: 0px;">@searchStringPart</h4>
+                                                </li>
+                                                
+                                                <li style="display: inline;">
+                                                    <button onclick="searchStringPartOrigin_multipleOriginsShow(@i, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">@kvp.Value.Count possibilities ></button>
+
+                                                    <ul id="searchStringPartOrigin_multipleOriginsDisplayList#@i"
+                                                        style="display: flex; flex-direction: column; list-style: none; visibility: hidden; position: absolute; left: 0px; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px;">
+                                                        @for (int j = 0; j < kvp.Value.Count; j++)
+                                                        {
+                                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Value[j];
+
+                                                            <li style="border-bottom: 1.5px solid darkgray;">
+
+                                                                <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                                                    <li style="display: inline;">
+                                                                        <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@i" style="margin: 0px;">@searchStringPartOriginData.Characteristic.Name</h4>
+                                                                    </li>
+                                                                    <li style="display: inline;">
+                                                                        <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                                                            ID: @searchStringPartOriginData.Characteristic.Id
+                                                                        </h6>
+                                                                    </li>
+                                                                </ul>
+
+                                                                <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@i">@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <h4 id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                style="text-align: center;">
+                                                @searchStringPart
+                                            </h4>
+                                            <h4>No information could be found.</h4>
+                                        }
+                                    </td>
+                                </tr>
+                            </table>
+                        </li>
+
+                        i++;
+                    }
+                </ul>
+            </td>
+        }
 
         <td>
-            <button class="btn btn-primary" onclick="showSearchStringPopupData()">See</button>
+            <button class="btn btn-primary" onclick="showSearchStringPopupData(@Model.ProductId)">See</button>
         </td>
     </tr>
+
+    
 </table>
 
 <table id="propertyDisplay_table" class="full-parent-width">
@@ -73,7 +180,7 @@
                 || productProperty.ProductCharacteristicId == 0)
             {
                 <tr id="propertytr#@i">
-                    <td class="propertyWithoutCharacteristicId-characteristic-select-td property-td-alignedOnTop">
+                    <td class="property-td-alignedOnTop propertyWithoutCharacteristicId-characteristic-select-td">
                         <select asp-items="Model.GetRemainingCharacteristics()"></select>
                     </td>
 
@@ -81,7 +188,7 @@
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
                             <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
                                 class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
-                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@i)">@productProperty.Value</div>
+                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
                         </div>
                     </td>
 
@@ -103,7 +210,7 @@
             else
             {
                 <tr id="propertytr#@i">
-                    <td class="property-characteristic-td">
+                    <td class="property-td-alignedOnTop property-characteristic-td">
                         <label>@productProperty.Characteristic</label>
                     </td>
 
@@ -111,7 +218,7 @@
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
                             <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
                                 class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
-                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@i)">@productProperty.Value</div>
+                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
                         </div>
                     </td>
 
@@ -125,7 +232,7 @@
 
                     <td class="property-td-alignedOnTop property-delete-button-td">
                         <button id="productPropertyDisplay_Delete_button#@i" name="productPropertyDisplay_Delete_button"
-                                class="btn btn-danger" onclick="deletePropertyInTable(@productProperty.ProductCharacteristicId, @i, false)">
+                                class="btn btn-danger" onclick="deletePropertyInTable(@Model.ProductId, @productProperty.ProductCharacteristicId, @i, false)">
                             X
                         </button>
                     </td>
@@ -135,7 +242,7 @@
     </tbody>
 </table>
 
-<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable()">Add</button>
+<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable(@Model.ProductId)">Add</button>
 
 <div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
     <div id="ProductXml-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
@@ -161,99 +268,6 @@
 <ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
 
 @Html.AntiForgeryToken()
-
-<script>
-
-    function highlightAllElementsTextsWhereValueIsPresent(elements, value, selectionColor, customSpanName)
-    {
-        for (var i = 0; i < elements.length; i++)
-        {
-            var element = elements[i];
-
-            element.innerHTML = element.innerHTML.replace(new RegExp(value, "g"), "<span name='" + customSpanName + "'style='line-height: normal; background-color:" + selectionColor + "'>" + value + "</span>");
-        }
-    }
-
-    function removeHighlightAllElementsTextsWhereValueIsPresent(elements, value)
-    {
-        for (var i = 0; i < elements.length; i++)
-        {
-            var element = elements[i];
-
-            var stop = false;
-
-            var startIndex = 0;
-
-            while (!stop)
-            {
-                var startIndexOfSpan = element.innerHTML.indexOf("<span", startIndex);
-
-                // console.log(startIndexOfSpan);
-
-                if (startIndexOfSpan < 0
-                    || startIndexOfSpan === null)
-                {
-                    stop = true;
-
-                    break;
-                }
-
-                var endIndexOfSpan = element.innerHTML.indexOf("</span>") + 7;
-
-                var substringBetweenSpan = element.innerHTML.substring(startIndexOfSpan, endIndexOfSpan);
-
-                var dataWithExtra = substringBetweenSpan.substring(substringBetweenSpan.indexOf(">", 7));
-
-                console.log(dataWithExtra);
-
-                var indexOfSpanEnd = dataWithExtra.length - 7;
-
-                var valueInSpan = dataWithExtra.substring(1, indexOfSpanEnd);
-
-                if (valueInSpan === value)
-                {
-                    element.innerHTML = element.innerHTML.replace(new RegExp(substringBetweenSpan, "g"), value);
-
-                    stop = true;
-
-                    break;
-                }
-
-                startIndex = endIndexOfSpan;
-            }
-        }
-    }
-
-    function highlightStringTextsWhereValueIsPresent(valueToHighlight, substring, selectionColor, customSpanName)
-    {
-        valueToHighlight = valueToHighlight.replace(new RegExp(substring, "g"), "<span name='" + customSpanName + "'style='line-height: normal; background-color:" + selectionColor + "'>" + substring + "</span>");
-
-        return valueToHighlight;
-    }
-
-</script>
-
-<script>
-
-    function showXmlPopupData()
-    {
-        $("#ProductXml_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewXmlForProduct");
-
-        open_ProductXml_modal();
-    }
-
-    function copyXmlTextToClipboard()
-    {
-        var xmlTextAreaValue = getXmlValue();
-
-        if (xmlTextAreaValue === null) return;
-
-        navigator.clipboard.writeText(xmlTextAreaValue);
-
-        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-    }
-
-</script>
 
 <script>
 
@@ -291,413 +305,6 @@
 
             getImageFileData(productId);
         }
-    }
-
-</script>
-
-<script>
-
-    function showImagePopupData()
-    {
-        $("#ProductImages_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=PartialViewImagesForProduct");
-
-        open_ProductImages_modal();
-    }
-
-    function copyImageDataToClipboard()
-    {
-        let selectedImageData = getSelectedImageData();
-
-        navigator.clipboard.writeText(selectedImageData);
-
-        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-    }
-
-    function getImageFileData()
-    {
-        var imageIndex = getSelectedImageIndex();
-
-        var urlFileResult = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=CurrentImageFileResultSingle" + "&imageIndex=" + imageIndex;
-
-        window.location.href = urlFileResult;
-
-        showNotificationWithText("copiedXmlNotificationBox", "Saved!", "copy-to-xml-success-message");
-    }
-
-</script>
-
-<script>
-
-    function showSearchStringPopupData()
-    {
-        $("#ProductSearchString_popup_modal-content").load("/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=GetSearchStringPartialView", function()
-        {
-            open_ProductSearchString_modal();
-        });
-
-    }
-
-    function copySearchStringDataToClipboard()
-    {
-        let searchStringData = getSearchStringData();
-
-        if (searchStringData === null
-        || searchStringData === undefined) return;
-
-        navigator.clipboard.writeText(searchStringData);
-
-        showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-    }
-
-</script>
-
-<script>
-
-    function modalTitle_productSearchStringShow_ColorRelatedSelections_onselect(customSpanName)
-    {
-        var selectedText = getSelectionHtml().trim();
-
-        if (selectedText === null
-        || selectedText.length === 0) return;
-
-        var valueTextAreas = document.getElementsByName("productPropertyDisplay_Value_div");
-
-        for (var i = 0; i < valueTextAreas.length; i++)
-        {
-            var valueTextArea = valueTextAreas[i];
-
-            RemoveOldSelectedText(valueTextArea)
-
-            valueTextArea.innerHTML = valueTextArea.innerHTML.replace(new RegExp(selectedText, "g"), "<span name='" + customSpanName + "'style='background-color:#FAF2B1'>" + selectedText + "</span>");
-        }
-    }
-
-    function modalTitle_productSearchStringShow_ColorRelatedSelections_onlostfocus()
-    {
-        var valueTextAreas = document.getElementsByName("productPropertyDisplay_Value_div");
-
-        for (var i = 0; i < valueTextAreas.length; i++)
-        {
-            var valueTextArea = valueTextAreas[i];
-
-            RemoveOldSelectedText(valueTextArea)
-        }
-    }
-    
-    function RemoveOldSelectedText(valueTextArea)
-    {
-        var oldSelectedSpanStartIndex = valueTextArea.innerHTML.indexOf("<span");
-
-        if (oldSelectedSpanStartIndex !== -1)
-        {
-            var oldSelectedSpanEndIndex = valueTextArea.innerHTML.indexOf("</span>") + 7;
-
-            var oldSelectedValueSpan = valueTextArea.innerHTML.substring(oldSelectedSpanStartIndex, oldSelectedSpanEndIndex);
-
-            var oldSelectedValueStartIndex = valueTextArea.innerHTML.indexOf('>', oldSelectedSpanStartIndex) + 1;
-            var oldSelectedValueEndIndex = valueTextArea.innerHTML.indexOf('<', oldSelectedSpanStartIndex + 5);
-
-            var oldSelectedValue = valueTextArea.innerHTML.substring(oldSelectedValueStartIndex, oldSelectedValueEndIndex);
-
-            valueTextArea.innerHTML = valueTextArea.innerHTML.replace(new RegExp(oldSelectedValueSpan, "g"), oldSelectedValue);
-        }
-    }
-
-    function RemoveSpanFromSelectedText(text)
-    {
-        var oldSelectedSpanStartIndex = text.indexOf("<span");
-
-        if (oldSelectedSpanStartIndex !== -1)
-        {
-            var oldSelectedSpanEndIndex = text.indexOf("</span>") + 7;
-
-            var oldSelectedValueSpan = text.substring(oldSelectedSpanStartIndex, oldSelectedSpanEndIndex);
-
-            var oldSelectedValueStartIndex = text.indexOf('>', oldSelectedSpanStartIndex) + 1;
-            var oldSelectedValueEndIndex = text.indexOf('<', oldSelectedSpanStartIndex + 5);
-
-            var oldSelectedValue = text.substring(oldSelectedValueStartIndex, oldSelectedValueEndIndex);
-
-            text = text.replace(new RegExp(oldSelectedValueSpan, "g"), oldSelectedValue);
-        }
-
-        return text;
-    }
-
-</script>
-
-<script>
-
-    function addPropertyToTable()
-    {
-        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=AddNewItem";
-
-        $.ajax({
-            type: "POST",
-            url: url,
-            contentType: "application/json; charset=utf-8",
-            data: null,
-            headers: {
-                RequestVerificationToken:
-                    $('input:hidden[name="__RequestVerificationToken"]').val()
-            },
-        })
-            .done(function (result)
-            {
-                console.log(result);
-
-                document.getElementById("propertyDisplay_table_tbody").innerHTML += result;
-            })
-            .fail(function (jqXHR, textStatus)
-            {
-            });
-    }
-
-    function PropertyWithoutCharacteristic_select_onchange(value, index)
-    {
-        var labelWithIdText = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
-
-        labelWithIdText.textContent = "ID: " + value;
-    }
-
-</script>
-
-<script>
-
-    function updatePropertyInTable(index)
-    {
-        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=UpdateProperty";
-
-        var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
-        var productPropValueInput = document.getElementById("productPropertyDisplay_Value_div#" + index);
-        var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select#" + index);
-        var productPropWithoutCharacteristicSelect = document.getElementById("PropertyWithoutCharacteristic_Characteristic_select#" + index);
-
-        var productPropCharacteristicId;
-
-        var productPropIsNew;
-
-        if (productPropCharacteristicIdInput !== null)
-        {
-            var idText = productPropCharacteristicIdInput.innerHTML;
-
-            var idStartIndex = idText.indexOf("ID:") + 4;
-
-            var id = idText.substring(idStartIndex);
-
-            productPropCharacteristicId = parseInt(id);
-            productPropIsNew = false;
-        }
-
-        var productPropValue;
-
-        if (productPropValueInput.innerHTML !== null)
-        {
-            productPropValue = RemoveSpanFromSelectedText(productPropValueInput.innerHTML);
-        }
-
-        var productPropXmlPlacement;
-
-        var productXmlPlacementString = productPropXmlPlacementSelect.value;
-
-        productPropXmlPlacement = parseInt(productXmlPlacementString);
-
-        if (productPropWithoutCharacteristicSelect !== null)
-        {
-            var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
-
-            productPropCharacteristicId = parseInt(productPropWithoutCharacteristicValue);
-            productPropIsNew = true;
-
-        }
-
-        var data =
-        {
-            ProductCharacteristicId: productPropCharacteristicId,
-            Value: productPropValue,
-            XmlPlacement: productPropXmlPlacement,
-            IsNew: productPropIsNew
-        };
-
-        // console.log(data);
-
-        $.ajax({
-            type: "PUT",
-            url: url,
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify(data),
-            headers: {
-                RequestVerificationToken:
-                    $('input:hidden[name="__RequestVerificationToken"]').val()
-            },
-        })
-            .done(function (result) {
-                // document.getElementById("propertyDisplay_table").innerHTML += result;
-            })
-            .fail(function (jqXHR, textStatus) {
-            });
-    }
-
-    function updateAllPropertiesInTable(index)
-    {
-        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=UpdateAndInsertProperties";
-
-        var productPropCharacteristicIdInputs = document.getElementsByName("productPropertyDisplay_CharacteristicId_Data_label");
-        var productPropValueInputs = document.getElementsByName("productPropertyDisplay_Value_div");
-        var productPropXmlPlacementSelects = document.getElementsByName("productPropertyDisplay_XmlPlacement_select");
-        var productPropWithoutCharacteristicSelects = document.getElementsByName("PropertyWithoutCharacteristic_Characteristic_select");
-
-        var productPropCharacteristicIds = [];
-
-        var productPropIsNew = [];
-
-        for (var i = 0; i < productPropCharacteristicIdInputs.length; i++)
-        {
-            var idText = productPropCharacteristicIdInputs[i].innerHTML;
-
-            var idStartIndex = idText.indexOf("ID:") + 4
-
-            var id = idText.substring(idStartIndex);
-
-            productPropCharacteristicIds.push(parseInt(id));
-
-            productPropIsNew.push(false);
-        }
-
-        var productPropValues = [];
-
-        for (var i = 0; i < productPropValueInputs.length; i++)
-        {
-            productPropValues.push(RemoveSpanFromSelectedText(productPropValueInputs[i].innerHTML));
-        }
-
-        var productPropXmlPlacements = [];
-
-        for (var i = 0; i < productPropXmlPlacementSelects.length; i++)
-        {
-            var productXmlPlacementString = productPropXmlPlacementSelects[i].value;
-
-            productPropXmlPlacements.push(parseInt(productXmlPlacementString));
-        }
-
-        console.log(productPropWithoutCharacteristicSelects);
-
-        for (var i = 0; i < productPropWithoutCharacteristicSelects.length; i++)
-        {
-            var productPropWithoutCharacteristicSelect = productPropWithoutCharacteristicSelects[i]
-
-            var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('#') + 1;
-
-            var indexOfSelect = productPropWithoutCharacteristicSelect.id.substring(indexOfListIndexStart);
-            
-            var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
-
-            productPropCharacteristicIds.splice(parseInt(indexOfSelect), 0, parseInt(productPropWithoutCharacteristicValue));
-            productPropIsNew.splice(parseInt(indexOfSelect), 0, true);
-        }
-
-        // console.log(productPropIsNew);
-
-        var data = [];
-
-        for (var i = 0; i < productPropCharacteristicIdInputs.length; i++)
-        {
-            var dataEntry =
-            {
-                ProductCharacteristicId: productPropCharacteristicIds[i],
-                Value: productPropValues[i],
-                XmlPlacement: productPropXmlPlacements[i],
-                IsNew: productPropIsNew[i]
-            };
-
-            data.push(dataEntry);
-        }
-
-        // console.log(data);
-
-        $.ajax({
-            type: "PUT",
-            url: url,
-            contentType: "application/json; charset=utf-8",
-            data: JSON.stringify(data),
-            headers: {
-                RequestVerificationToken:
-                    $('input:hidden[name="__RequestVerificationToken"]').val()
-            },
-        })
-            .done(function (result)
-            {
-                // document.getElementById("propertyDisplay_table").innerHTML += result;
-            })
-            .fail(function (jqXHR, textStatus)
-            {
-            });
-    }
-
-    function deletePropertyInTable(productCharacteristicId, index, deleteEvenOnFail)
-    {
-        if (productCharacteristicId === null
-            || isNaN(productCharacteristicId)
-            || isNaN(parseInt(productCharacteristicId))
-            || productCharacteristicId === undefined
-            || productCharacteristicId <= 0)
-        {
-            if (deleteEvenOnFail)
-            {
-                var childProperty = document.getElementById("propertytr#" + index);
-
-                document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
-
-                return;
-            }
-
-            return;
-        }
-
-        var url = "/ProductPropertiesEditor/" + @Model.Product.Id + "?handler=DeleteProperty&productCharacteristicId=" + productCharacteristicId;
-
-        // console.log(data);
-
-        $.ajax({
-            type: "DELETE",
-            url: url,
-            contentType: "application/json; charset=utf-8",
-            data: null,
-            headers: {
-                RequestVerificationToken:
-                    $('input:hidden[name="__RequestVerificationToken"]').val()
-            },
-        })
-            .done(function (result)
-            {
-                var childProperty = document.getElementById("propertytr#" + index);
-
-                document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
-            })
-            .fail(function (jqXHR, textStatus)
-            {
-                if (deleteEvenOnFail)
-                {
-                    var childProperty = document.getElementById("propertytr#" + index);
-
-                    document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
-                }
-            });
-    }
-
-    function getCurrentId(index)
-    {
-        var characteristicIdEl = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
-
-        var idText = characteristicIdEl.innerHTML;
-
-        var idStartIndex = idText.indexOf("ID:") + 4;
-
-        var id = idText.substring(idStartIndex);
-
-        console.log("getCurrentId " + parseInt(id));
-
-        return parseInt(id);
     }
 
 </script>

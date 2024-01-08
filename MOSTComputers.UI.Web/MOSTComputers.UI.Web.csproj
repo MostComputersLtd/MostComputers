@@ -11,12 +11,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\js\ProductImagesPopupControl.js" />
+    <None Include="wwwroot\js\Pages\Shared\ProductImagesPopupControl.js" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.XMLDataOperations\MOSTComputers.Services.XMLDataOperations.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\js\Pages\CreatePages\" />
   </ItemGroup>
 
 </Project>

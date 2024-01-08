@@ -4,10 +4,10 @@
 @model ProductImagesDisplayPopupModel;
 
 <div class="modal-header full-parent-width">
-    <h5 class="modal-title modal-title-xml-modal">Images:</h5>
+    <h5 class="modal-title modal-title">Images:</h5>
 
-    <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
-    <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal">ID: @Model.Product.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+    <h4 id="modal-title_productIdShow" class="modal-title modal-product-name">ID: @Model.Product.Id</h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductImages_modal()">
     </button>
@@ -53,16 +53,16 @@
     <table id="ProductImages_modal_footer_buttons_table" class="full-parent-width full-parent-height">
         <tr class="full-parent-width full-parent-height">
             <td width="50%" style="padding:0px">
-                <button id="copyImageButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="copyImageDataToClipboard()">
-                    <h7 class="copy-to-xml-button-main-text">Copy to clipboard</h7>
-                    <p class="copy-to-xml-button-small-text">(Or just press Ctrl + S)</p>
+                <button id="copyImageButton" class="full-parent-width footer-button btn btn-primary" onclick="copyImageDataToClipboard()">
+                    <h7 class="footer-button-main-text">Copy to clipboard</h7>
+                    <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
                 </button>
             </td>
 
             <td width="50%" style="padding:0px">
-                <button id="copyImageButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="getImageFileData(@Model.Product.Id)">
-                    <h7 class="copy-to-xml-button-main-text">Save</h7>
-                    <p class="copy-to-xml-button-small-text">(Or just press Ctrl + A)</p>
+                <button id="copyImageButton" class="full-parent-width footer-button btn btn-primary" onclick="getImageFileData(@Model.Product.Id)">
+                    <h7 class="footer-button-main-text">Save</h7>
+                    <p class="footer-button-small-text">(Or just press Ctrl + A)</p>
                 </button>
             </td>
         </tr>

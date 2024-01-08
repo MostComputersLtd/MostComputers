@@ -1,13 +1,14 @@
 ﻿@model MOSTComputers.UI.Web.Pages.Shared.ProductGeneratedXmlPopupPartialModel;
 
 <div class="modal-header full-parent-width">
-    <h5 class="modal-title modal-title-xml-modal">XML:</h5>
+    <h5 class="modal-title modal-title">XML:</h5>
 
-    <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductXml_modal()">
     </button>
 </div>
+
 <div id="ProductXml_popup" class="modal-body full-parent-width">
     <div class="container border-2 full-parent-width full-parent-height">
         <textarea id="Xml_textarea" class="full-parent-width full-parent-height" contenteditable="false" spellcheck="false">@Model.XmlData</textarea>
@@ -15,8 +16,8 @@
 </div>
 
 <div class="modal-footer full-parent-width">
-    <button id="copyXmlButton" class="full-parent-width copy-to-xml-button btn btn-primary" onclick="copyXmlTextToClipboard()">
-        <h7 class="copy-to-xml-button-main-text">Copy to clipboard</h7>
-        <p class="copy-to-xml-button-small-text">(Or just press Ctrl + S)</p>
+    <button id="copyXmlButton" class="full-parent-width footer-button btn btn-primary" onclick="copyXmlTextToClipboard()">
+        <h7 class="footer-button-main-text">Copy to clipboard</h7>
+        <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
     </button>
 </div>

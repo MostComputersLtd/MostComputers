@@ -9,11 +9,12 @@ using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Pages.Shared.ProductProperties;
 using MOSTComputers.UI.Web.Services;
+using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Runtime.CompilerServices;
@@ -30,8 +31,9 @@ public class ProductPropertiesEditorModel : PageModel
         IProductPropertyService productPropertyService,
         IProductCharacteristicService productCharacteristicService,
         IProductImageService productImageService,
-        ProductXmlToCreateRequestMapperService mapperService,
-        ProductDeserializeService productDeserializeService)
+        IProductXmlToCreateRequestMapperService mapperService,
+        IProductDeserializeService productDeserializeService,
+        ISearchStringOriginService searchStringOriginService)
     {
         _productService = productService;
         _productPropertyService = productPropertyService;
@@ -39,14 +41,16 @@ public class ProductPropertiesEditorModel : PageModel
         _productImageService = productImageService;
         _mapperService = mapperService;
         _productDeserializeService = productDeserializeService;
+        _searchStringOriginService = searchStringOriginService;
     }
 
     private readonly IProductService _productService;
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IProductImageService _productImageService;
-    private readonly ProductXmlToCreateRequestMapperService _mapperService;
-    private readonly ProductDeserializeService _productDeserializeService;
+    private readonly IProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductDeserializeService _productDeserializeService;
+    private readonly ISearchStringOriginService _searchStringOriginService;
 
     [BindProperty(SupportsGet = true)]
     public int ProductId { get; set; }
@@ -74,7 +78,7 @@ public class ProductPropertiesEditorModel : PageModel
     {
         if (categoryId == null) return;
 
-        IEnumerable<ProductCharacteristic> characteristicsForProductCategory = _productCharacteristicService.GetCharacteristicsOnlyByCategoryId(categoryId.Value);
+        IEnumerable<ProductCharacteristic> characteristicsForProductCategory = _productCharacteristicService.GetCharacteristicsOnlyByCategoryId((int)categoryId.Value);
 
         CharacteristicsForProductCategory = characteristicsForProductCategory
             .Select(productCharacteristic =>
@@ -149,6 +153,11 @@ public class ProductPropertiesEditorModel : PageModel
             invalidXmlResult => null);
     }
 
+    public Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin()
+    {
+        return _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(Product);
+    }
+
     public IActionResult OnGetGetSearchStringPartialView()
     {
         Product? product = _productService.GetByIdWithFirstImage((uint)ProductId);
@@ -163,13 +172,14 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (product.CategoryID is not null)
         {
-            characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((uint)product.CategoryID);
+            characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((int)product.CategoryID);
         }
 
-        return base.Partial("ProductProperties/_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
+        return base.Partial("_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
         {
             Product = product,
             CharacteristicsAndSearchStringAbbreviationsForProduct = characteristicAndSearchStringAbbreviations ?? Array.Empty<ProductCharacteristic>(),
+            SearchStringOriginService = _searchStringOriginService,
         });
     }
 
@@ -201,10 +211,10 @@ public class ProductPropertiesEditorModel : PageModel
 
         InitializeCharacteristicsForProductCategory((uint?)product.CategoryID);
 
-        return Partial("ProductProperties/_ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartial",
+        return Partial("_ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartial",
             new ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartialModel()
             {
-                ProductProperty = new ProductProperty() { ProductCharacteristicId = null },
+                ProductProperty = new ProductProperty() { ProductCharacteristicId = null, ProductId = ProductId },
                 ProductCharacteristicsForSelect = GetRemainingCharacteristics(),
                 PropertyIndex = (uint)product.Properties.Count,
             });

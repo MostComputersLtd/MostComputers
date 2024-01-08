@@ -5,20 +5,21 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Mapping;
 using MOSTComputers.UI.Web.Models;
+using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 using System.Xml;
 
 namespace MOSTComputers.UI.Web.Services;
 
-public class ProductXmlToCreateRequestMapperService
+public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequestMapperService
 {
     public ProductXmlToCreateRequestMapperService(
         IProductCharacteristicService productCharacteristicService,
         IHttpClientFactory httpClientFactory,
-        ProductDeserializeService productDeserializeService,
+        IProductDeserializeService productDeserializeService,
         IFailedPropertyNameOfProductService failedPropertyNameOfProductService)
     {
         _productCharacteristicService = productCharacteristicService;
@@ -29,7 +30,7 @@ public class ProductXmlToCreateRequestMapperService
 
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly HttpClient _httpClient;
-    private readonly ProductDeserializeService _productDeserializeService;
+    private readonly IProductDeserializeService _productDeserializeService;
     private readonly IFailedPropertyNameOfProductService _failedPropertyNameOfProductService;
 
     public async Task<OneOf<List<ProductCreateRequest>, ValidationResult, UnexpectedFailureResult, InvalidXmlResult>> GetProductCreateRequestsFromXmlAsync(string xmlText)
@@ -54,7 +55,7 @@ public class ProductXmlToCreateRequestMapperService
             itemMappingResult.Switch(
                 output.Add,
                 validationRes => validationResult = validationRes);
-            
+
             if (validationResult is not null) return validationResult;
         }
 
@@ -301,11 +302,11 @@ public class ProductXmlToCreateRequestMapperService
             neededCategoriesAndRequestsToBeUpdatedForThem[value].Add(item);
         }
 
-        IEnumerable<uint> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
-            .Select(x => x.Key);
+        IEnumerable<int> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
+            .Select(x => (int)x.Key);
 
         IEnumerable<Tuple<uint, IEnumerable<ProductCharacteristic>>> characteristicsForNeededCategories = _productCharacteristicService.GetAllForSelectionOfCategoryIds(categoryIds)
-            .Select(x => Tuple.Create(x.Key, x.AsEnumerable()));
+            .Select(x => Tuple.Create((uint)x.Key, x.AsEnumerable()));
 
         foreach (var grouping in characteristicsForNeededCategories)
         {
@@ -414,11 +415,12 @@ public class ProductXmlToCreateRequestMapperService
             neededCategoriesAndRequestsToBeUpdatedForThem[value].Add(item);
         }
 
-        IEnumerable<uint> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
-            .Select(x => x.Key);
+        IEnumerable<int> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
+            .Select(x => (int)x.Key);
 
-        IEnumerable<Tuple<uint, IEnumerable<ProductCharacteristic>>> characteristicsForNeededCategories = _productCharacteristicService.GetAllForSelectionOfCategoryIds(categoryIds)
-            .Select(x => Tuple.Create(x.Key, x.AsEnumerable()));
+        IEnumerable<Tuple<uint, IEnumerable<ProductCharacteristic>>> characteristicsForNeededCategories
+            = _productCharacteristicService.GetAllForSelectionOfCategoryIds(categoryIds)
+            .Select(x => Tuple.Create((uint)x.Key, x.AsEnumerable()));
 
         foreach (Tuple<uint, IEnumerable<ProductCharacteristic>> grouping in characteristicsForNeededCategories)
         {
@@ -450,7 +452,7 @@ public class ProductXmlToCreateRequestMapperService
 
         needsToGetCharacteristics = false;
 
-        IEnumerable<ProductCharacteristic> productCharacteristics = _productCharacteristicService.GetSelectionByCategoryIdAndNames((uint)product.Category.Id, propertyNames);
+        IEnumerable<ProductCharacteristic> productCharacteristics = _productCharacteristicService.GetSelectionByCategoryIdAndNames(product.Category.Id, propertyNames);
 
         for (int i = 0; i < product.XmlProductProperties!.Count; i++)
         {
@@ -543,7 +545,7 @@ public class ProductXmlToCreateRequestMapperService
         {
             XmlProductProperty property = properties[i];
 
-            ProductCharacteristic? productCharacteristic = _productCharacteristicService.GetByCategoryIdAndName(categoryId, property.Name);
+            ProductCharacteristic? productCharacteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, property.Name);
 
             // RETURN AFTER TESTS ================================================================================================================
 
