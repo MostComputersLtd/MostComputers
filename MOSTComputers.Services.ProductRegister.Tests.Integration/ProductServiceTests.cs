@@ -1,6 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
@@ -23,20 +24,22 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         IProductService productService,
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
-        IProductPropertyService productPropertyService)
+        IProductPropertyService productPropertyService,
+        IProductStatusesService productStatusesService)
         : base(Startup.ConnectionString)
     {
         _productService = productService;
         _productImageService = productImageService;
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productPropertyService = productPropertyService;
+        _productStatusesService = productStatusesService;
     }
 
     private readonly IProductService _productService;
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductPropertyService _productPropertyService;
-
+    private readonly IProductStatusesService _productStatusesService;
     private const int _useRequiredValue = -100;
 
     private static readonly ProductCreateRequest _validCreateRequest = new()
@@ -117,6 +120,82 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
     [Fact]
+    public void GetWithoutImagesAndPropsWhereSearchStringMatches_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        IEnumerable<Product> allProducts = _productService.GetAllWhereSearchStringMatches(validCreateRequest.SearchString!);
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+        Product product2 = allProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
+    public void GetWithoutImagesAndPropsWhereNameMatches_ShouldSucceed_WhenInsertsAreValid()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId2 = insertResult2.AsT0;
+
+        IEnumerable<Product> allProducts = _productService.GetAllWhereNameMatches(validCreateRequest.Name!);
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+        Product product2 = allProducts.Single(x => x.Id == productId2);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.Equal((int)productId2, product2.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1, productId2);
+    }
+
+    [Fact]
     public void GetAllWithoutImagesAndProps_ShouldOnlyGetTheDataThatWasSuccessfullyInserted()
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
@@ -142,6 +221,84 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             _ => false));
 
         IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.DoesNotContain(allProducts, x =>
+            CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1);
+    }
+
+    [Fact]
+    public void GetWithoutImagesAndPropsWhereSearchStringMatches_ShouldOnlyGetTheDataThatWasSuccessfullyInserted()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
+
+        invalidCreateRequest.Name = "  ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Product> allProducts = _productService.GetAllWhereSearchStringMatches(validCreateRequest.SearchString!);
+
+        Product product1 = allProducts.Single(x => x.Id == productId1);
+
+        Assert.Equal((int)productId1, product1.Id);
+        AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
+
+        Assert.DoesNotContain(allProducts, x =>
+            CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
+
+        // Deterministic delete
+        _productService.DeleteProducts(productId1);
+    }
+
+    [Fact]
+    public void GetWithoutImagesAndPropsWhereNameMatches_ShouldOnlyGetTheDataThatWasSuccessfullyInserted()
+    {
+        ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = insertResult1.AsT0;
+
+        ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
+
+        invalidCreateRequest.Name = "  ";
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+
+        Assert.True(insertResult2.Match(
+            _ => false,
+            _ => true,
+            _ => false));
+
+        IEnumerable<Product> allProducts = _productService.GetAllWhereNameMatches(validCreateRequest.Name!);
 
         Product product1 = allProducts.Single(x => x.Id == productId1);
 
@@ -464,6 +621,294 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         // Deterministic delete
         _productService.DeleteProducts(productIds.ToArray());
+    }
+
+    [Fact]
+    public void GetFirstInRangeWhereSearchStringMatches_ShouldSucceed_WhenInsertsAreValid()
+    {
+        const string searchStringOfData = "hic opriwopirvoprjvopi og otioiok/df3243";
+
+        List<uint> productIds = new();
+
+        for (int i = 0; i < 20; i++)
+        {
+            ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+            // Updating display order so that everything is ordered
+            validCreateRequest.SearchString = searchStringOfData;
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+            Assert.True(insertResult.Match(
+                _ => true,
+                _ => false,
+                _ => false));
+
+            uint productId = insertResult.AsT0;
+
+            productIds.Add(productId);
+        }
+
+        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+            .Where(x => x.SearchString == searchStringOfData)
+            .Skip(10)
+            .Take(10)
+            .ToList();
+
+        List<Product> productsInRange = _productService.GetFirstInRangeWhereSearchStringMatches(new() { Start = 10, Length = 10 }, searchStringOfData)
+            .ToList();
+
+        Assert.Equal(10, productsInRange.Count);
+
+        Assert.Equal(allProductsRanged.Count, productsInRange.Count);
+
+        for (int i = 0; i < allProductsRanged.Count; i++)
+        {
+            Product productInAll = allProductsRanged[i];
+            Product productInRange = productsInRange[i];
+
+            AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productIds.ToArray());
+    }
+
+    [Fact]
+    public void GetFirstInRangeWhereNameMatches_ShouldSucceed_WhenInsertsAreValid()
+    {
+        const string nameOfData = "hic opriwopirvoppi og /df3243";
+
+        List<uint> productIds = new();
+
+        for (int i = 0; i < 20; i++)
+        {
+            ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+            // Updating display order so that everything is ordered
+            validCreateRequest.Name = nameOfData;
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+            Assert.True(insertResult.Match(
+                _ => true,
+                _ => false,
+                _ => false));
+
+            uint productId = insertResult.AsT0;
+
+            productIds.Add(productId);
+        }
+
+        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+            .Where(x => x.Name == nameOfData)
+            .Skip(10)
+            .Take(10)
+            .ToList();
+
+        List<Product> productsInRange = _productService.GetFirstInRangeWhereNameMatches(new() { Start = 10, Length = 10 }, nameOfData).ToList();
+
+        Assert.Equal(10, productsInRange.Count);
+
+        Assert.Equal(allProductsRanged.Count, productsInRange.Count);
+
+        for (int i = 0; i < allProductsRanged.Count; i++)
+        {
+            Product productInAll = allProductsRanged[i];
+            Product productInRange = productsInRange[i];
+
+            AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productIds.ToArray());
+    }
+
+    [Fact]
+    public void GetFirstInRangeWhereAllConditionsAreMet_ShouldSucceed_WhenInsertsAreValid_AndAllConditionsExceptForTheStatusesTableAndCategoryAreUsed()
+    {
+        const string nameOfData = "hic opriwopirvoppi og /df3243";
+        const string searchStringOfData = "hic opriwopirvoprjsdsvopi og otioiok/df3243";
+        const ProductStatusEnum statusOfData = ProductStatusEnum.Available;
+
+        const string nameOfProductThatDoesntFollowCondition = "not the name in the condition";
+
+        List<uint> productIds = new();
+
+        for (int i = 0; i < 20; i++)
+        {
+            ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+            // Updating display order so that everything is ordered
+            validCreateRequest.Name = nameOfData;
+            validCreateRequest.SearchString = searchStringOfData;
+            validCreateRequest.Status = statusOfData;
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+            Assert.True(insertResult.Match(
+                _ => true,
+                _ => false,
+                _ => false));
+
+            uint productId = insertResult.AsT0;
+
+            productIds.Add(productId);
+        }
+
+        ProductCreateRequest validCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
+
+        validCreateRequest2.Name = nameOfProductThatDoesntFollowCondition;
+        validCreateRequest2.Status = statusOfData;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
+
+        Assert.True(insertResultForProductThatDoesntMatchConditions.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.AsT0;
+
+        productIds.Add(productIdForProductThatDoesntMatchConditions);
+
+        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+            .Where(x =>
+            {
+                return (x.Name == nameOfData
+                    && x.SearchString == searchStringOfData
+                    && x.Status == statusOfData);
+            })
+            .Skip(10)
+            .Take(10)
+            .ToList();
+
+        ProductConditionalSearchRequest productConditionalSearchRequest = new()
+        {
+            NameSubstring = nameOfData,
+            SearchStringSubstring = searchStringOfData,
+            Status = statusOfData,
+        };
+
+        List<Product> productsInRange = _productService.GetFirstInRangeWhereAllConditionsAreMet(new() { Start = 10, Length = 10 }, productConditionalSearchRequest)
+            .ToList();
+
+        Assert.True(productsInRange.Count == 10);
+
+        Assert.Equal(allProductsRanged.Count, productsInRange.Count);
+
+        for (int i = 0; i < allProductsRanged.Count; i++)
+        {
+            Product productInAll = allProductsRanged[i];
+            Product productInRange = productsInRange[i];
+
+            AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productIds.ToArray());
+    }
+
+    [Fact]
+    public void GetFirstInRangeWhereAllConditionsAreMet_ShouldSucceed_WhenInsertsAreValid_AndAllConditionsExceptCategoryAreUsed()
+    {
+        const string nameOfData = "hic opriwopirvoppi og /df3243";
+        const string searchStringOfData = "hic opri3rcrwopirvoprjvopi og iok/df3243";
+        const ProductStatusEnum statusOfData = ProductStatusEnum.Available;
+        const string nameOfProductThatDoesntFollowCondition = "not the name in the condition";
+        const bool isProcessedForData = false;
+        const bool needsToBeUpdatedForData = true;
+
+        List<uint> productIds = new();
+
+        for (int i = 0; i < 20; i++)
+        {
+            ProductCreateRequest validCreateRequest = GetValidProductCreateRequestUsingRandomData();
+
+            // Updating display order so that everything is ordered
+            validCreateRequest.Name = nameOfData;
+            validCreateRequest.SearchString = searchStringOfData;
+            validCreateRequest.Status = statusOfData;
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+
+            Assert.True(insertResult.Match(
+                _ => true,
+                _ => false,
+                _ => false));
+
+            uint productId = insertResult.AsT0;
+
+            ProductStatusesCreateRequest productStatusesCreateRequest = new()
+            {
+                ProductId = (int)productId,
+                IsProcessed = isProcessedForData,
+                NeedsToBeUpdated = needsToBeUpdatedForData
+            };
+
+            OneOf<Success, ValidationResult> productStatusesInsertResult = _productStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+
+            Assert.True(productStatusesInsertResult.Match(
+                _ => true,
+                _ => false));
+
+            productIds.Add(productId);
+        }
+
+        ProductCreateRequest validCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
+
+        validCreateRequest2.Name = nameOfProductThatDoesntFollowCondition;
+        validCreateRequest2.Status = statusOfData;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
+
+        Assert.True(insertResultForProductThatDoesntMatchConditions.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.AsT0;
+
+        productIds.Add(productIdForProductThatDoesntMatchConditions);
+
+        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+            .Where(x =>
+            {
+                return (x.Name == nameOfData
+                    && x.SearchString == searchStringOfData
+                    && x.Status == statusOfData);
+            })
+            .Skip(10)
+            .Take(10)
+            .ToList();
+
+        ProductConditionalSearchRequest productConditionalSearchRequest = new()
+        {
+            NameSubstring = nameOfData,
+            SearchStringSubstring = searchStringOfData,
+            Status = statusOfData,
+            IsProcessed = isProcessedForData,
+            NeedsToBeUpdated = needsToBeUpdatedForData
+        };
+
+        List<Product> productsInRange = _productService.GetFirstInRangeWhereAllConditionsAreMet(new() { Start = 10, Length = 10 }, productConditionalSearchRequest)
+            .ToList();
+
+        Assert.True(productsInRange.Count == 10);
+
+        Assert.Equal(allProductsRanged.Count, productsInRange.Count);
+
+        for (int i = 0; i < allProductsRanged.Count; i++)
+        {
+            Product productInAll = allProductsRanged[i];
+            Product productInRange = productsInRange[i];
+
+            AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
+        }
+
+        // Deterministic delete
+        _productService.DeleteProducts(productIds.ToArray());
+        _productStatusesService.DeleteRangeProductStatusesByProductIds(productIds.ToArray());
     }
 
     [Fact]
