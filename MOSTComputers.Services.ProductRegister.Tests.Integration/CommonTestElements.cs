@@ -338,17 +338,22 @@ internal static class CommonTestElements
         ParentCategoryId = null
     };
 
-    internal static ProductCharacteristicCreateRequest GetValidCharacteristicCreateRequest(int categoryId, string name = "Name") =>
-    new()
+    internal static ProductCharacteristicCreateRequest GetValidCharacteristicCreateRequest(
+        int categoryId,
+        string name = "Name",
+        ProductCharacteristicTypeEnum type = ProductCharacteristicTypeEnum.ProductCharacteristic)
     {
-        CategoryId = categoryId,
-        Name = name,
-        Meaning = "Name of the object",
-        PKUserId = 91,
-        KWPrCh = 0,
-        DisplayOrder = 12,
-        Active = true
-    };
+        return new()
+        {
+            CategoryId = categoryId,
+            Name = name,
+            Meaning = "Name of the object",
+            PKUserId = 91,
+            KWPrCh = type,
+            DisplayOrder = 12,
+            Active = true
+        };
+    }
 
     internal static ServiceProductImageCreateRequest GetCreateRequestWithImageData(int productId)
     {
@@ -460,6 +465,18 @@ internal static class CommonTestElements
         foreach (uint id in ids)
         {
             bool success = productCharacteristicService.Delete(id);
+
+            if (!success) return false;
+        }
+
+        return true;
+    }
+
+    internal static bool DeleteRangeProductStatusesByProductIds(this IProductStatusesService productStatusesService, params uint[] productIds)
+    {
+        foreach (var productId in productIds)
+        {
+            bool success = productStatusesService.DeleteByProductId(productId);
 
             if (!success) return false;
         }
