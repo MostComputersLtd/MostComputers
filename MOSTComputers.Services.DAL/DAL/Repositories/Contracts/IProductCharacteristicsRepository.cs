@@ -9,14 +9,14 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
 public interface IProductCharacteristicsRepository
 {
-    IEnumerable<ProductCharacteristic> GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(uint categoryId);
-    IEnumerable<ProductCharacteristic> GetAllCharacteristicsByCategoryId(uint categoryId);
-    IEnumerable<ProductCharacteristic> GetAllSearchStringAbbreviationsByCategoryId(uint categoryId);
-    IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
-    IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
-    IEnumerable<IGrouping<uint, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds);
-    ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name);
-    IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(uint categoryId, List<string> names);
+    IEnumerable<ProductCharacteristic> GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(int categoryId);
+    IEnumerable<ProductCharacteristic> GetAllCharacteristicsByCategoryId(int categoryId);
+    IEnumerable<ProductCharacteristic> GetAllSearchStringAbbreviationsByCategoryId(int categoryId);
+    IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
+    IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
+    IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
+    ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name);
+    IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names);
     OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest);

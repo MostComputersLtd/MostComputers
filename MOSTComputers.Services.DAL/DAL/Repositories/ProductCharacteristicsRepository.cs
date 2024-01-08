@@ -7,6 +7,7 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
+#pragma warning disable IDE0037 // Use inferred member name
 
 internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProductCharacteristicsRepository
 {
@@ -17,7 +18,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
     }
 
-    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(int categoryId)
     {
         const string getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery =
             $"""
@@ -26,10 +27,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery, new { categoryId = (int)categoryId });
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery,
+            new { categoryId = categoryId });
     }
 
-    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetAllCharacteristicsByCategoryId(int categoryId)
     {
         const string getAllCharacteristicsByCategoryIdQuery =
             $"""
@@ -39,10 +41,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsByCategoryIdQuery, new { categoryId = (int)categoryId });
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllCharacteristicsByCategoryIdQuery,
+            new { categoryId = categoryId });
     }
 
-    public IEnumerable<ProductCharacteristic> GetAllSearchStringAbbreviationsByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetAllSearchStringAbbreviationsByCategoryId(int categoryId)
     {
         const string getAllSearchStringAbbreviationsByCategoryIdQuery =
             $"""
@@ -52,10 +55,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllSearchStringAbbreviationsByCategoryIdQuery, new { categoryId = (int)categoryId });
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getAllSearchStringAbbreviationsByCategoryIdQuery,
+            new { categoryId = categoryId });
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         const string getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
             $"""
@@ -65,12 +69,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
-            getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+            getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds });
 
-        return data.GroupBy(x => (uint)x.CategoryId!);
+        return data.GroupBy(x => (int)x.CategoryId!);
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         const string getCharacteristicsForSelectionOfCategoryIdsQuery =
             $"""
@@ -81,12 +85,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
-            getCharacteristicsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+            getCharacteristicsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds });
 
-        return data.GroupBy(x => (uint)x.CategoryId!);
+        return data.GroupBy(x => (int)x.CategoryId!);
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         const string getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
             $"""
@@ -97,12 +101,12 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         IEnumerable<ProductCharacteristic> data = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
-            getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds.Select(x => (int)x) });
+            getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery, new { categoryIds = categoryIds });
 
-        return data.GroupBy(x => (uint)x.CategoryId!);
+        return data.GroupBy(x => (int)x.CategoryId!);
     }
 
-    public ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name)
+    public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
     {
         const string getByCategoryIdAndNameQuery =
             $"""
@@ -111,10 +115,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             AND Name = @Name;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, new { categoryId = (int)categoryId, Name = name }).FirstOrDefault();
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
+            new { categoryId = categoryId, Name = name }).FirstOrDefault();
     }
 
-    public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(uint categoryId, List<string> names)
+    public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
     {
         const string getByCategoryIdAndNameQuery =
             $"""
@@ -125,7 +130,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         var parameters = new
         {
-            categoryId = (int)categoryId,
+            categoryId = categoryId,
             Names = names,
         };
 
@@ -368,3 +373,5 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         }
     }
 }
+
+#pragma warning restore IDE0037 // Use inferred member name
