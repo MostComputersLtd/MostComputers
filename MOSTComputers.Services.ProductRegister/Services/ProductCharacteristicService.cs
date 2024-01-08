@@ -30,42 +30,42 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
     private readonly IValidator<ProductCharacteristicByIdUpdateRequest>? _updateByIdRequestValidator;
     private readonly IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? _updateByNameAndCategoryIdRequestValidator;
 
-    public IEnumerable<ProductCharacteristic> GetAllByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetAllByCategoryId(int categoryId)
     {
         return _productCharacteristicsRepository.GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(categoryId);
     }
 
-    public IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(int categoryId)
     {
         return _productCharacteristicsRepository.GetAllCharacteristicsByCategoryId(categoryId);
     }
 
-    public IEnumerable<ProductCharacteristic> GetSearchStringAbbreviationsOnlyByCategoryId(uint categoryId)
+    public IEnumerable<ProductCharacteristic> GetSearchStringAbbreviationsOnlyByCategoryId(int categoryId)
     {
         return _productCharacteristicsRepository.GetAllSearchStringAbbreviationsByCategoryId(categoryId);
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         return _productCharacteristicsRepository.GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetCharacteristicsOnlyForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         return _productCharacteristicsRepository.GetCharacteristicsForSelectionOfCategoryIds(categoryIds);
     }
 
-    public IEnumerable<IGrouping<uint, ProductCharacteristic>> GetStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<uint> categoryIds)
+    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
     {
         return _productCharacteristicsRepository.GetSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
     }
 
-    public ProductCharacteristic? GetByCategoryIdAndName(uint categoryId, string name)
+    public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
     {
         return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
     }
 
-    public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(uint categoryId, List<string> names)
+    public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
     {
         return _productCharacteristicsRepository.GetSelectionByCategoryIdAndNames(categoryId, names);
     }
