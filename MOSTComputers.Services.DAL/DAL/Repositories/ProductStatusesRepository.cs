@@ -59,20 +59,21 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string insertQuery =
             $"""
+            DECLARE @StatusCode INT = 0;
             IF EXISTS (
                 SELECT 1 FROM {_tableName}
                 WHERE CSTID = @productId
-            ) RETURN 1;
+            ) SET @StatusCode = 1;
 
             IF NOT EXISTS (
                 SELECT 1 FROM {_productTableName}
                 WHERE CSTID = @productId
-            ) RETURN 2;
+            ) SET @StatusCode = 2;
 
             INSERT INTO {_tableName}(CSTID, IsProcessed, NeedsToBeUpdated)
             VALUES(@productId, @IsProcessed, @NeedsToBeUpdated)
 
-            RETURN 0;
+            SELECT @StatusCode;
             """;
 
         var parameters = new
