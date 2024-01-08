@@ -90,7 +90,7 @@ public class ProductCreateModel : PageModel
 
     public IActionResult OnGetProductCharacteristicsForGivenCategory_Initialize(int categoryId)
     {
-        IEnumerable<ProductCharacteristic> productCharacteristics = _productCharacteristicService.GetAllByCategoryId((uint)categoryId)
+        IEnumerable<ProductCharacteristic> productCharacteristics = _productCharacteristicService.GetAllByCategoryId(categoryId)
             .Where(x => !string.IsNullOrEmpty(x.Name));
 
         ProductCharacteristicsForGivenCategory = productCharacteristics
