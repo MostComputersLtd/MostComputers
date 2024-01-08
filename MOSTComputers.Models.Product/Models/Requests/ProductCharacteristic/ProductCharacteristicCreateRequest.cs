@@ -9,5 +9,5 @@ public sealed class ProductCharacteristicCreateRequest
     public bool? Active { get; set; }
     public short? PKUserId { get; set; }
     public DateTime? LastUpdate { get; } = null;
-    public byte? KWPrCh { get; set; }
+    public ProductCharacteristicTypeEnum? KWPrCh { get; set; }
 }

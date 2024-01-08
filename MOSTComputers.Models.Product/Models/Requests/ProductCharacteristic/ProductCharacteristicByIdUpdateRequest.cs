@@ -9,5 +9,5 @@ public sealed class ProductCharacteristicByIdUpdateRequest
     public bool? Active { get; set; }
     public short? PKUserId { get; set; }
     public DateTime? LastUpdate { get; set; }
-    public short? KWPrCh { get; set; }
+    public ProductCharacteristicTypeEnum? KWPrCh { get; set; }
 }

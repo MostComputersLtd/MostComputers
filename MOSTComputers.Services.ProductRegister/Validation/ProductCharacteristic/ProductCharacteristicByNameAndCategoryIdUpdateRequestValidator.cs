@@ -18,6 +18,6 @@ internal sealed class ProductCharacteristicByNameAndCategoryIdUpdateRequestValid
         RuleFor(x => x.NewName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.Meaning).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
-        RuleFor(x => x.KWPrCh).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.KWPrCh).NotNull();
     }
 }
