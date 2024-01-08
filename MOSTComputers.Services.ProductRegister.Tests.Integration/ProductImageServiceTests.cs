@@ -1237,7 +1237,9 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         return true;
     }
 
+#pragma warning disable IDE0051 // Remove unused private members
     private bool DeleteAllImagesInProduct(params uint[] productIds)
+#pragma warning restore IDE0051 // Remove unused private members
     {
         foreach (var productId in productIds)
         {
