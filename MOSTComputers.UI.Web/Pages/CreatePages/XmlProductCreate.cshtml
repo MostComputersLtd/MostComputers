@@ -4,8 +4,12 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/ProductInsert.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/ProductCreateRequestListPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/CreatePages/ProductCreate.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductCreateRequestListPartial.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/Pages/CreatePages/XmlProductCreate.js"></script>
 }
 
 <form method="post">
@@ -20,41 +24,11 @@
 
     </div>
 
-    <script src="~/js/XmlProductCreate.js"></script>
-
     <script>
 
-        document.getElementById("XMLInput").oninput = function (event) {
-
-            var data = { "XMLInput": event.target.value };
-
-            $.ajax({
-                type: "GET",
-                url: "/CreatePages/XmlProductCreate?handler=ShowOnly",
-                contentType: "application/json; charset=utf-8",
-                data: data,
-                headers: {
-                    RequestVerificationToken:
-                        $('input:hidden[name="__RequestVerificationToken"]').val()
-                },
-            })
-                .done(function (result)
-                {
-                    $("#previewProductsContainer").load("XmlProductCreate?handler=PartialView");
-                })
-                .fail(function (jqXHR, textStatus)
-                {
-
-                    let boldErrorText = document.createElement("strong");
-
-                    boldErrorText.textContent = jqXHR.responseText;
-
-                    boldErrorText.className = "invalid-xml-error-text";
-
-                    document.getElementById("previewProductsContainer").innerHTML = "";
-
-                    document.getElementById("previewProductsContainer").appendChild(boldErrorText);
-                });
+        document.getElementById("XMLInput").oninput = function (event)
+        {
+            showXmlPreviewData(event.target.value);
         }
     </script>
 
