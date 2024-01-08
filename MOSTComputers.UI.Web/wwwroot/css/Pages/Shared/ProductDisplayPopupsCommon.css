@@ -1,0 +1,39 @@
+﻿.modal-dialog-full-parent-width {
+    max-width: none;
+    position: fixed !important;
+    margin: 0px;
+    left: 80px;
+    right: 80px;
+    top: 70px;
+    bottom: 50px;
+}
+
+.modal-header {
+}
+
+.modal-title {
+    margin-left: 10px;
+}
+
+.modal-product-name {
+    margin-left: 35px;
+}
+
+.modal-footer {
+    padding: 0px;
+}
+
+.footer-button {
+    height: 60px;
+    margin: 0px;
+    background-color: white;
+    color: black;
+}
+
+.footer-button-main-text {
+    font-size: 19px
+}
+
+.footer-button-small-text {
+    font-size: 12px;
+}
