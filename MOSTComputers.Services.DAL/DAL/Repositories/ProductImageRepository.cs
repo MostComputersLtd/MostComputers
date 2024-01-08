@@ -94,7 +94,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO #Temp_Table
-            VALUES ((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), @productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
 
             SELECT TOP 1 ID FROM #Temp_Table
             """;
