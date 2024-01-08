@@ -317,7 +317,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     AS Data
             ) AS TopData
 
-            WHERE RN BETWEEN @start AND @end;
+            WHERE RN BETWEEN @start + 1 AND @end;
             """;
 
 #pragma warning disable IDE0037 // Use inferred member name
@@ -451,7 +451,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     ) AS Data
                 ) AS TopData
 
-                WHERE RN BETWEEN @start AND @end;
+                WHERE RN BETWEEN @start + 1 AND @end;
                 """;
 
             bool hasWhereStatementInSelectPart = false;
@@ -1096,7 +1096,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         List<LocalProductImageCreateRequest> output = new();
 
-        int highestId = GetHighestImageId(connection, transaction);
+        int highestId = GetHighestImageId(connection, transaction) ?? 0;
 
         for (int i = 0; i < requests.Count; i++)
         {
@@ -1118,19 +1118,14 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         return output;
     }
 
-    private int GetHighestImageId(IDbConnection connection, IDbTransaction transaction)
+    private int? GetHighestImageId(IDbConnection connection, IDbTransaction transaction)
     {
         const string getHighestIdFromAllImages =
             $"""
             SELECT MAX(ID) FROM {_allImagesTableName}
             """;
 
-        int highestId = _relationalDataAccess.GetDataFirstOrDefault<int, dynamic>(getHighestIdFromAllImages, new { }, connection, transaction);
-
-        if (highestId == 0)
-        {
-            highestId = 1;
-        }
+        int? highestId = _relationalDataAccess.GetDataFirstOrDefault<int?, dynamic>(getHighestIdFromAllImages, new { }, connection, transaction);
 
         return highestId;
     }
