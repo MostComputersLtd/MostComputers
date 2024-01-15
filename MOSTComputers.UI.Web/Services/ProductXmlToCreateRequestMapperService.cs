@@ -482,7 +482,7 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
                 failedPropertyNames.Add(xmlProp.Name);
             }
 
-            // RETURN AFTER TESTS ================================================================================================================
+            // RETURN WHEN NECESSARY ================================================================================================================
 
             //if (productCharacteristic is null) return new ValidationResult(new List<ValidationFailure>
             //{
