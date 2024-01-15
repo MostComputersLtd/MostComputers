@@ -1,4 +1,5 @@
 using MOSTComputers.Services.ProductRegister.Configuration;
+using MOSTComputers.Services.SearchStringOrigin.Configuration;
 using MOSTComputers.Services.XMLDataOperations.Services;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services;
@@ -19,7 +20,7 @@ builder.Services.AddTransient<IProductDeserializeService, ProductDeserializeServ
 
 builder.Services.AddTransient<IProductXmlToCreateRequestMapperService, ProductXmlToCreateRequestMapperService>();
 
-builder.Services.AddTransient<ISearchStringOriginService, SearchStringOriginService>();
+builder.Services.AddSearchStringOriginService();
 
 builder.Services.AddRazorPages();
 
