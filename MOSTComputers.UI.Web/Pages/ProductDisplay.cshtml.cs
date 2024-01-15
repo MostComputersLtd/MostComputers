@@ -1,14 +1,21 @@
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Services.Contracts;
+using MOSTComputers.UI.Web.StaticUtilities;
 using OneOf;
+using OneOf.Types;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -115,11 +122,11 @@ public sealed class ProductDisplayModel : PageModel
 
     public IActionResult OnGetPartialViewImagesForProduct(uint productId)
     {
-        Product? product = GetProductByIdFromCollection(productId, addImages: true);
+        Product? product = GetProductByIdFromCollection(productId, addImages: true, addImageFilePaths: true);
 
         if (product is null) return BadRequest();
 
-        return Partial("_ProductImagesDisplayPopup", new ProductImagesDisplayPopupModel() { Product = product });
+        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupModel(product));
     }
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint productId, uint imageIndex)
@@ -286,6 +293,7 @@ public sealed class ProductDisplayModel : PageModel
 
         ProductStatusEnum? productStatusEnum = (ProductStatusEnum?)data.StatusInt;
 
+
         ProductsAndStatuses = new();
 
         ProductRangeSearchRequest productRangeSearchRequest = new()
@@ -304,20 +312,20 @@ public sealed class ProductDisplayModel : PageModel
             NeedsToBeUpdated = needsToBeUpdated,
         };
 
-        IEnumerable<Product> products = _productService.GetFirstInRangeWhereAllConditionsAreMet(productRangeSearchRequest, productConditionalSearchRequest);
+        IEnumerable<Product>? products = GetProductsForSearchStringData(data, productRangeSearchRequest, productConditionalSearchRequest);
 
-        if (!products.Any())
+        if (!products!.Any())
         {
             PopulateProductsFromStartToEnd(0, 12);
 
             return new JsonResult(new { length = 12 });
         }
 
-        IEnumerable<uint> productIds = products.Select(product => (uint)product.Id);
+        IEnumerable<uint> productIds = products!.Select(product => (uint)product.Id);
 
         IEnumerable<ProductStatuses> productStatuses = _productStatusesService.GetSelectionByProductIds(productIds);
 
-        foreach (Product product in products)
+        foreach (Product product in products!)
         {
             ProductStatuses? productStatusesForProduct = productStatuses.FirstOrDefault(x => x.ProductId == product.Id);
 
@@ -331,6 +339,66 @@ public sealed class ProductDisplayModel : PageModel
         }
 
         return new JsonResult(new { length = products.Count() });
+    }
+
+    private IEnumerable<Product> GetProductsForSearchStringData(ProductConditionalSearchRequestDTO data, ProductRangeSearchRequest productRangeSearchRequest, ProductConditionalSearchRequest productConditionalSearchRequest)
+    {
+        IEnumerable<Product>? products = null;
+
+        if (data.SearchStringSubstring is null)
+        {
+            products = _productService.GetFirstInRangeWhereAllConditionsAreMet(productRangeSearchRequest, productConditionalSearchRequest);
+
+            return products;
+        }
+
+        (string firstSearchString, string? secondSearchString) = GetSearchStrings(data.SearchStringSubstring);
+
+        productConditionalSearchRequest.SearchStringSubstring = firstSearchString;
+
+        IEnumerable<Product> products1 = _productService.GetFirstInRangeWhereAllConditionsAreMet(productRangeSearchRequest, productConditionalSearchRequest);
+
+        if (!string.IsNullOrWhiteSpace(secondSearchString))
+        {
+            productConditionalSearchRequest.SearchStringSubstring = secondSearchString;
+
+            IEnumerable<Product> products2 = _productService.GetFirstInRangeWhereAllConditionsAreMet(productRangeSearchRequest, productConditionalSearchRequest);
+
+            products = products1.Union(products2)
+                .OrderBy(x => x.DisplayOrder)
+                .Take(12);
+
+            return products;
+        }
+
+        return products1;
+    }
+
+    private static (string firstSearchString, string? secondSearchString) GetSearchStrings(string searchStringData)
+    {
+        int indexOfParenthesesInSearchStringSubstr = searchStringData.IndexOf('[');
+
+        if (indexOfParenthesesInSearchStringSubstr == -1) return (searchStringData, null);
+
+        int endIndexOfParenthesesInSearchStringSubstr = searchStringData.IndexOf(']');
+
+        if (endIndexOfParenthesesInSearchStringSubstr == -1) return (searchStringData, null);
+
+        string firstSearchData = searchStringData[..(indexOfParenthesesInSearchStringSubstr - 1)]
+            .Trim();
+
+        int secondSearchStringDataLength = endIndexOfParenthesesInSearchStringSubstr - indexOfParenthesesInSearchStringSubstr - 1;
+
+        string secondSearchData = searchStringData.Substring(indexOfParenthesesInSearchStringSubstr + 1, secondSearchStringDataLength)
+            .Trim();
+
+        string endString = searchStringData[(endIndexOfParenthesesInSearchStringSubstr + 1)..]
+            .Trim();
+
+        string? firstSearchString = $"{firstSearchData} {endString}";
+        string? secondSearchString = $"{secondSearchData} {endString}";
+
+        return (firstSearchString, secondSearchString);
     }
 
     private static bool TryParseNullableBool(string? value, out bool? result)
@@ -367,6 +435,145 @@ public sealed class ProductDisplayModel : PageModel
             });
     }
 
+    public IActionResult OnPostAddNewImageToProduct(uint productId, IFormFile fileInfo)
+    {
+        using MemoryStream stream = new();
+
+        fileInfo.CopyTo(stream);
+
+        byte[] imageBytes = stream.ToArray();
+
+        string contentType = fileInfo.ContentType;
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertImageResult = InsertImageWithData(productId, imageBytes, contentType);
+
+        OneOf<int, IActionResult> getIdOfInsertedImageResult = insertImageResult.Match<OneOf<int, IActionResult>>(
+            id => (int)id,
+            _ => StatusCode(500),
+            _ => BadRequest());
+
+        if (getIdOfInsertedImageResult.IsT1) return getIdOfInsertedImageResult.AsT1;
+
+        //int idOfInsertedImage = getIdOfInsertedImageResult.AsT0;
+
+        Product? product = GetProductByIdFromCollection(productId, addImages: true, addImageFilePaths: true);
+
+        if (product is null) return BadRequest();
+
+        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupModel(product));
+    }
+
+    private OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertImageWithData(uint productId, byte[] imageBytes, string contentType)
+    {
+        ServiceProductImageCreateRequest imageCreateRequest = new()
+        {
+            ImageData = imageBytes,
+            ImageFileExtension = contentType,
+            ProductId = (int)productId,
+            XML = GetProductXML(productId)
+        };
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImagesAndImageFileNameInfos(imageCreateRequest, null);
+
+        return insertImageResult;
+    }
+
+    public IActionResult OnPutUpdateImageOrder(uint productId, uint oldDisplayOrder, uint newDisplayOrder)
+    {
+        if (oldDisplayOrder == newDisplayOrder) return new OkResult();
+
+        IEnumerable<ProductImageFileNameInfo> imageFileNameInfosForProduct
+            = _productImageFileNameInfoService.GetAllForProduct(productId);
+
+        ProductImageFileNameInfo? imageFileNameInfoThatWasUpdated = imageFileNameInfosForProduct.FirstOrDefault(x => x.DisplayOrder == oldDisplayOrder);
+
+        if (imageFileNameInfoThatWasUpdated is null) return BadRequest();
+
+        ProductImageFileNameInfoUpdateRequest fileNameInfoUpdateRequest = new()
+        {
+            DisplayOrder = (int)oldDisplayOrder,
+            NewDisplayOrder = (int)newDisplayOrder,
+            FileName = imageFileNameInfoThatWasUpdated.FileName,
+            ProductId = imageFileNameInfoThatWasUpdated.ProductId,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoUpdateResult
+            = _productImageFileNameInfoService.Update(fileNameInfoUpdateRequest);
+
+        IStatusCodeActionResult statusCodeActionResult = imageFileNameInfoUpdateResult.Match<IStatusCodeActionResult>(
+            _ => new OkResult(),
+            validationResult => BadRequest(validationResult),
+            _ => StatusCode(500));
+
+        if (statusCodeActionResult.StatusCode != 200) return statusCodeActionResult;
+
+        if (oldDisplayOrder == 1)
+        {
+            ProductImageFileNameInfo newFirstImageFileInfo = imageFileNameInfosForProduct.ElementAt(1);
+
+            if (newFirstImageFileInfo is null) return StatusCode(500);
+
+            return ReplaceFirstImageWithNewOneFromImageFileName(productId, newFirstImageFileInfo.FileName);
+        }
+        else if (newDisplayOrder == 1)
+        {
+            return ReplaceFirstImageWithNewOneFromImageFileName(productId, imageFileNameInfoThatWasUpdated.FileName);
+        }
+
+        return statusCodeActionResult;
+
+        IActionResult ReplaceFirstImageWithNewOneFromImageFileName(uint productId, string? fileName)
+        {
+            ProductImage? newFirstImage = GetImageFromFileNameInfoName(fileName);
+
+            if (newFirstImage is null) return StatusCode(500);
+
+            ServiceProductFirstImageCreateRequest imageCreateRequest = GetFirstImageCreateRequestFromImage(newFirstImage);
+
+            bool removeFirstImageResult = _productImageService.DeleteInFirstImagesByProductId(productId);
+
+            if (!removeFirstImageResult) return StatusCode(500);
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> addNewFirstImageResult
+                = _productImageService.InsertInFirstImages(imageCreateRequest);
+
+            return addNewFirstImageResult.Match<IActionResult>(
+                _ => new OkResult(),
+                validationResult => BadRequest(validationResult),
+                _ => StatusCode(500));
+        }
+    }
+
+    private static ServiceProductFirstImageCreateRequest GetFirstImageCreateRequestFromImage(ProductImage newFirstImage)
+    {
+        return new()
+        {
+            ProductId = (int)newFirstImage.ProductId!,
+            ImageData = newFirstImage.ImageData,
+            ImageFileExtension = newFirstImage.ImageFileExtension,
+            XML = newFirstImage.XML,
+        };
+    }
+
+    private ProductImage? GetImageFromFileNameInfoName(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
+
+        int? idOfImage = ImageFileNameInfoToImageDataUtils.GetImageIdFromImageFileNameInfoName(fileName);
+
+        if (idOfImage is null) return null;
+
+        ProductImage? newFirstImage = _productImageService.GetByIdInAllImages((uint)idOfImage);
+
+        return newFirstImage;
+    }
+
+    public IActionResult OnDeleteDeleteImageFromProduct(uint imageId)
+    {
+        bool deleteImageResult = _productImageService.DeleteInAllImagesAndImageFilePathInfosById(imageId);
+
+        return deleteImageResult ? new OkResult() : BadRequest();
+    }
 
     public string? GetProductXML(uint productId)
     {
