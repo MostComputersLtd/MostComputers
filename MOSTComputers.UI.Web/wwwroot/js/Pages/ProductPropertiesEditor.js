@@ -1,3 +1,10 @@
+function copySearchStringPartToClipboard(data)
+{
+    navigator.clipboard.writeText(data);
+
+    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
+}
+
 function showSearchStringOriginDataSmallPopup(index)
 {
     if (index === null
