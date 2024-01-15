@@ -1,5 +1,6 @@
 ﻿@page "{ProductId}"
 @using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Services.SearchStringOrigin.Models;
 @using MOSTComputers.UI.Web.Mapping;
 @using MOSTComputers.UI.Web.Models;
 @using MOSTComputers.UI.Web.StaticUtilities;
@@ -91,9 +92,15 @@
                                         {
                                             SearchStringPartOriginData searchStringPartOriginData = kvp.Value[0];
 
-                                            <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                            <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; margin-bottom: 8px;">
+                                                <li style="display: inline-flex">
+                                                    <button style="position: relative; left: 0px; top: 0px;" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                        +
+                                                    </button>
+
+                                                </li>
                                                 <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                style="display: inline;">
+                                                style="display: inline-flex; flex-grow: 1; justify-content: center;">
                                                     <h4 style="margin: 0px;">@searchStringPart</h4>
                                                 </li>
                                                 <li style="display: inline;">
@@ -161,12 +168,7 @@
             </td>
         }
 
-        <td>
-            <button class="btn btn-primary" onclick="showSearchStringPopupData(@Model.ProductId)">See</button>
-        </td>
     </tr>
-
-    
 </table>
 
 <table id="propertyDisplay_table" class="full-parent-width">
