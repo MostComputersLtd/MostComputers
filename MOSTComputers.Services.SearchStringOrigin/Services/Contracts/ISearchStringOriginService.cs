@@ -1,7 +1,8 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.UI.Web.Models;
+using MOSTComputers.Services.SearchStringOrigin.Models;
 
-namespace MOSTComputers.UI.Web.Services.Contracts;
+namespace MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
+
 public interface ISearchStringOriginService
 {
     Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product);

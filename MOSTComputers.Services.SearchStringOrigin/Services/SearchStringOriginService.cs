@@ -1,9 +1,9 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.UI.Web.Models;
-using MOSTComputers.UI.Web.Services.Contracts;
+using MOSTComputers.Services.SearchStringOrigin.Models;
+using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 
-namespace MOSTComputers.UI.Web.Services;
+namespace MOSTComputers.Services.SearchStringOrigin.Services;
 
 internal class SearchStringOriginService : ISearchStringOriginService
 {
