@@ -10,6 +10,9 @@
     justify-content: center;
 }
 
+.draggedImageLi {
+    opacity: 0 !important;
+}
 
 #productImageDisplay_ul {
     height: 100px;
