@@ -8,6 +8,8 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.SearchStringOrigin.Models;
+using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
@@ -17,6 +19,7 @@ using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 using OneOf.Types;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static MOSTComputers.UI.Web.Mapping.XmlPlacementEnumMapping;
 
@@ -31,6 +34,7 @@ public class ProductPropertiesEditorModel : PageModel
         IProductPropertyService productPropertyService,
         IProductCharacteristicService productCharacteristicService,
         IProductImageService productImageService,
+        IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductXmlToCreateRequestMapperService mapperService,
         IProductDeserializeService productDeserializeService,
         ISearchStringOriginService searchStringOriginService)
@@ -39,6 +43,7 @@ public class ProductPropertiesEditorModel : PageModel
         _productPropertyService = productPropertyService;
         _productCharacteristicService = productCharacteristicService;
         _productImageService = productImageService;
+        _productImageFileNameInfoService = productImageFileNameInfoService;
         _mapperService = mapperService;
         _productDeserializeService = productDeserializeService;
         _searchStringOriginService = searchStringOriginService;
@@ -48,6 +53,7 @@ public class ProductPropertiesEditorModel : PageModel
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IProductImageService _productImageService;
+    private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductXmlToCreateRequestMapperService _mapperService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly ISearchStringOriginService _searchStringOriginService;
@@ -113,9 +119,12 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (product == null) return BadRequest();
 
+        product.ImageFileNames = _productImageFileNameInfoService.GetAllForProduct((uint)product.Id)
+            .ToList();
+
         Product = product;
 
-        return Partial("_ProductImagesDisplayPopup", new ProductImagesDisplayPopupModel() { Product = Product });
+        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupModel(Product));
     }
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint imageIndex)
