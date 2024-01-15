@@ -12,6 +12,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 {
     private const string _firstImagesTableName = "dbo.Images";
     private const string _allImagesTableName = "dbo.ImagesAll";
+    private const string _imageFileNameInfosTable = "dbo.ImageFileName";
 
     public ProductImageRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -113,6 +114,57 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
+    public OneOf<uint, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, uint? displayOrder = null)
+    {
+        const string insertInAllImagesAndImageFileNameInfosQuery =
+            $"""
+            CREATE TABLE #Temp_Table (ID INT)
+
+            DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
+
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_imageFileNameInfosTable}
+            WHERE CSTID = @productId;
+            
+            SET @displayOrder = ISNULL(@displayOrder, ISNULL(@MaxDisplayOrderForProduct, 1));
+
+            SELECT TOP 1 @DisplayOrderInRange = ISNULL(
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_imageFileNameInfosTable}
+                WHERE @MaxDisplayOrderForProduct <= @displayOrder),
+                @displayOrder);
+            
+            UPDATE {_imageFileNameInfosTable}
+                SET ImgNo = ImgNo + 1
+            WHERE CSTID = @productId
+            AND ImgNo >= @DisplayOrderInRange;
+
+            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            OUTPUT INSERTED.ID INTO #Temp_Table
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+
+            INSERT INTO {_imageFileNameInfosTable}(CSTID, ImgNo, ImgFileName)
+            VALUES (@productId,
+                @DisplayOrderInRange,
+                CONCAT(CAST((SELECT TOP 1 ID FROM #Temp_Table) AS VARCHAR), '.', SUBSTRING(@ImageFileExtension, CHARINDEX('/', @ImageFileExtension) + 1, 100)))
+
+            SELECT TOP 1 ID FROM #Temp_Table
+            """;
+
+        var parameters = new
+        {
+            productId = createRequest.ProductId,
+            displayOrder = (int?)displayOrder,
+            createRequest.XML,
+            createRequest.ImageData,
+            createRequest.ImageFileExtension,
+            createRequest.DateModified,
+        };
+
+        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(
+            insertInAllImagesAndImageFileNameInfosQuery, parameters, doInTransaction: true);
+
+        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+    }
+
     public OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest)
     {
         const string insertInFirstImagesQuery =
@@ -200,6 +252,44 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         try
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id = (int)id });
+
+            if (rowsAffected <= 0) return false;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    public bool DeleteInAllImagesAndImageFilePathInfosById(uint id)
+    {
+        const string deleteInAllImagesAndImageFilePathInfosByIdQuery =
+            $"""
+            DECLARE @displayOrderOfDeletedImage INT;
+            DECLARE @productIdOfDeletedImage INT;
+
+            DELETE FROM {_allImagesTableName}
+            WHERE ID = @id;
+
+            SELECT TOP 1 @displayOrderOfDeletedImage = ImgNo, @productIdOfDeletedImage = CSTID
+            FROM {_imageFileNameInfosTable}
+            WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
+
+            DELETE FROM {_imageFileNameInfosTable}
+            WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
+
+            UPDATE {_imageFileNameInfosTable}
+                SET ImgNo = ImgNo - 1
+
+            WHERE CSTID = @productIdOfDeletedImage
+            AND ImgNo > @displayOrderOfDeletedImage;
+            """;
+
+        try
+        {
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteInAllImagesAndImageFilePathInfosByIdQuery, new { id = (int)id });
 
             if (rowsAffected <= 0) return false;
 

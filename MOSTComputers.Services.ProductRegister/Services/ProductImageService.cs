@@ -9,6 +9,7 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -16,6 +17,7 @@ internal sealed class ProductImageService : IProductImageService
 {
     public ProductImageService(
         IProductImageRepository productImageRepository,
+        IProductImageFileNameInfoRepository fileNameInfoRepository,
         ProductMapper productMapper,
         IValidator<ServiceProductImageCreateRequest>? createRequestValidator = null,
         IValidator<ServiceProductImageUpdateRequest>? updateRequestValidator = null,
@@ -23,6 +25,7 @@ internal sealed class ProductImageService : IProductImageService
         IValidator<ServiceProductFirstImageUpdateRequest>? firstImageUpdateRequestValidator = null)
     {
         _productImageRepository = productImageRepository;
+        _imageFileNameInfoRepository = fileNameInfoRepository;
         _productMapper = productMapper;
         _createRequestValidator = createRequestValidator;
         _updateRequestValidator = updateRequestValidator;
@@ -31,6 +34,7 @@ internal sealed class ProductImageService : IProductImageService
     }
 
     private readonly IProductImageRepository _productImageRepository;
+    private readonly IProductImageFileNameInfoRepository _imageFileNameInfoRepository;
     private readonly ProductMapper _productMapper;
     private readonly IValidator<ServiceProductImageCreateRequest>? _createRequestValidator;
     private readonly IValidator<ServiceProductImageUpdateRequest>? _updateRequestValidator;
@@ -77,6 +81,69 @@ internal sealed class ProductImageService : IProductImageService
 
         return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
             id => id, unexpectedFailure => unexpectedFailure);
+    }
+
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImagesAndFileInfos(ServiceProductImageCreateRequest createRequest,
+        uint displayOrder,
+        IValidator<ServiceProductImageCreateRequest>? validator = null)
+    {
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        ProductImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<uint, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImages(createRequestInternal);
+
+        return result.Match(
+            id =>
+            {
+                string? imageFileType = createRequest.ImageFileExtension;
+
+                if (imageFileType is null
+                    || createRequest.ProductId is null) return new UnexpectedFailureResult();
+
+                int imageFileExtensionStartIndex = imageFileType.IndexOf('/') + 1;
+
+                string imageFileExtension = imageFileType[..imageFileExtensionStartIndex];
+
+                ProductImageFileNameInfoCreateRequest imageFileNameInfoCreateRequest = new()
+                {
+                    FileName = $"{id}.{imageFileExtension}",
+                    ProductId = createRequest.ProductId.Value,
+                    DisplayOrder = (int)displayOrder,
+                };
+
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFileNameInfoResult
+                    = _imageFileNameInfoRepository.Insert(imageFileNameInfoCreateRequest);
+
+                return insertFileNameInfoResult.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+                    _ => id,
+                    validationResult => validationResult,
+                    unexpectedFailureResult => unexpectedFailureResult);
+            },
+            unexpectedFailure => unexpectedFailure);
+    }
+
+    public OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ServiceProductImageCreateRequest createRequest,
+        uint? displayOrder = null,
+        IValidator<ServiceProductImageCreateRequest>? validator = null)
+    {
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        ProductImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<uint, UnexpectedFailureResult> result = _productImageRepository.InsertInAllImagesAndImageFileNameInfos(createRequestInternal, displayOrder);
+
+        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+            id => id,
+            unexpectedFailureResult => unexpectedFailureResult);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertInFirstImages(ServiceProductFirstImageCreateRequest createRequest,
@@ -133,6 +200,11 @@ internal sealed class ProductImageService : IProductImageService
     public bool DeleteInAllImagesById(uint id)
     {
         return _productImageRepository.DeleteInAllImagesById(id);
+    }
+
+    public bool DeleteInAllImagesAndImageFilePathInfosById(uint id)
+    {
+        return _productImageRepository.DeleteInAllImagesAndImageFilePathInfosById(id);
     }
 
     public bool DeleteAllImagesForProduct(uint productId)

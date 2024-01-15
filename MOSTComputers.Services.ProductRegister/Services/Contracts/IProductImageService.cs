@@ -22,4 +22,6 @@ public interface IProductImageService
     bool DeleteInFirstImagesByProductId(uint productId);
     bool DeleteAllImagesForProduct(uint productId);
     bool DeleteInAllImagesById(uint id);
+    OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ServiceProductImageCreateRequest createRequest, uint? displayOrder = null, IValidator<ServiceProductImageCreateRequest>? validator = null);
+    bool DeleteInAllImagesAndImageFilePathInfosById(uint id);
 }

@@ -9,6 +9,7 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IProductImageRepository
 {
     bool DeleteAllWithSameProductIdInAllImages(uint productId);
+    bool DeleteInAllImagesAndImageFilePathInfosById(uint id);
     bool DeleteInAllImagesById(uint id);
     bool DeleteInFirstImagesByProductId(uint id);
     IEnumerable<ProductImage> GetAllFirstImagesForAllProducts();
@@ -17,6 +18,7 @@ public interface IProductImageRepository
     ProductImage? GetByProductIdInFirstImages(uint productId);
     IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<uint> productIds);
     OneOf<uint, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest);
+    OneOf<uint, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, uint? displayOrder = null);
     OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest createRequest);
