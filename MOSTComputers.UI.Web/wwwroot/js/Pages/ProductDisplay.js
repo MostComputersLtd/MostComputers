@@ -179,6 +179,237 @@ function DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, nameO
     }
 }
 
+const spanStartPlaceholder = "|?";
+const spanEndPlaceholder = "|/";
+
+function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(wholeSearchStringText, nameOfTextDisplayinputs, length, customSpanName)
+{
+    var spanStart = "<span name='" + customSpanName + "' style='background-color:#FAF2B1'>";
+    const spanEnd = "</span>";
+
+    var searchStringLabels = Array.from(document.getElementsByName(nameOfTextDisplayinputs));
+
+    if (searchStringLabels.length > length)
+    {
+        var excessLength = searchStringLabels.length - length;
+
+        $("#tableDataHolder").children().slice(0, excessLength).remove();
+
+        [].slice.call(searchStringLabels, excessLength);
+    }
+
+    var searchStrings = splitSearchStringIntoTwoSearchStrings(wholeSearchStringText);
+
+    for (let i = 0; i < searchStrings.length; i++)
+    {
+        var searchString = searchStrings[i];
+
+        if (searchString === null || searchString === undefined
+            || searchStrings === "") break;
+
+        var substrings = searchString.trim().split(' ');
+
+        for (let j = 0; j < searchStringLabels.length; j++)
+        {
+            var originatesFromThisSearchString = true;
+
+            var searchStringLabel = searchStringLabels[j];
+
+            var text = searchStringLabel.textContent;
+
+            var localText = searchStringLabel.textContent;
+
+            for (let k1 = 0; k1 < substrings.length; k1++)
+            {
+                var substring = substrings[k1];
+
+                var textToUpperCase = text.toUpperCase();
+
+                var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
+
+                if (substringIndex === -1)
+                {
+                    originatesFromThisSearchString = false;
+
+                    break;
+                }
+            }
+
+            if (!originatesFromThisSearchString) continue;
+
+            for (let k = 0; k < substrings.length; k++)
+            {
+                var substring = substrings[k];
+
+                var localTextWithNewSpans = getAllTextWithSpansWithData(localText, substring);
+
+                localText = localTextWithNewSpans;
+            }
+
+            searchStringLabel.innerHTML = localText.replaceAll(spanStartPlaceholder, spanStart)
+                .replaceAll(spanEndPlaceholder, spanEnd);
+
+            searchStringLabels.splice(j, 1);
+
+            j--;
+        }
+    }
+}
+
+function getAllTextWithSpansWithData(textWithSpans, substring)
+{
+    var indexesOfSubstringInTextWithSpansWithSkips = indexOfThatSkipsCharacters(textWithSpans, substring.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder]);
+
+    var startRealIndex = indexesOfSubstringInTextWithSpansWithSkips[0];
+    var endRealIndex = indexesOfSubstringInTextWithSpansWithSkips[1];
+
+    var indexOfEndOfPreviousSpan = textWithSpans.lastIndexOf(spanEndPlaceholder, startRealIndex);
+    var indexOfStartOfNextSpan = textWithSpans.indexOf(spanStartPlaceholder, endRealIndex);
+
+    if (indexOfEndOfPreviousSpan === -1)
+    {
+        indexOfEndOfPreviousSpan = 0;
+    }
+    else
+    {
+        indexOfEndOfPreviousSpan = indexOfEndOfPreviousSpan + 2
+    }
+
+    if (indexOfStartOfNextSpan === -1)
+    {
+        indexOfStartOfNextSpan = textWithSpans.length;
+    }
+
+    var substringBetweenOutsideSpans = textWithSpans.substring(indexOfEndOfPreviousSpan, indexOfStartOfNextSpan);
+
+    var indexOfStartOfThisSpan = substringBetweenOutsideSpans.lastIndexOf(spanStartPlaceholder, startRealIndex - indexOfEndOfPreviousSpan);
+    var indexOfEndOfThisSpan = substringBetweenOutsideSpans.indexOf(spanEndPlaceholder, endRealIndex - indexOfEndOfPreviousSpan);
+
+    if (indexOfStartOfThisSpan === -1)
+    {
+        if (indexOfEndOfThisSpan === -1)
+        {
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+        }
+        else
+        {
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring + textWithSpans.substring(endRealIndex);
+        }
+    }
+    else if (indexOfEndOfThisSpan === -1)
+    {
+        textWithSpans = textWithSpans.substring(0, startRealIndex) + substring + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+    }
+
+    return textWithSpans;
+}
+
+function indexOfThatSkipsCharacters(string, substring, stringsToSkip, fromIndex = 0)
+{
+    if (typeof string !== "string" || typeof substring !== "string")
+    {
+        throw new TypeError("The first and second arguments must be strings");
+    }
+
+    if (Object.prototype.toString.call(stringsToSkip) !== '[object Array]')
+    {
+        throw new TypeError("The third argument must be string array");
+    }
+
+    if (typeof fromIndex !== "number" || isNaN(fromIndex))
+    {
+        throw new TypeError("The fourth argument must be a number");
+    }
+
+    if (substring === "")
+    {
+        return [fromIndex, fromIndex];
+    }
+
+    let i = fromIndex;
+
+    var endIndex = fromIndex;
+
+    while (i < string.length)
+    {
+        if (string[i] === substring[0])
+        {
+            let found = true;
+
+            for (let j = 1; j < substring.length; j++)
+            {
+                if (string[i + j] !== substring[j])
+                {
+                    let skipped = false;
+
+                    for (let k = 0; k < stringsToSkip.length; k++)
+                    {
+                        var stringToSkip = stringsToSkip[k];
+
+                        var subStringForStrToSkip = string.substring(i + j, i + j + stringToSkip.length);
+
+                        if (subStringForStrToSkip === stringToSkip)
+                        {
+                            skipped = true;
+
+                            j += stringToSkip.length;
+
+                            endIndex += stringToSkip.length;
+
+                            break;
+                        }
+                    }
+
+                    if (!skipped)
+                    {
+                        found = false;
+
+                        endIndex = i;
+
+                        break;
+                    }
+                }
+            }
+            if (found)
+            {
+                return [i, endIndex + substring.length];
+            }
+        }
+
+        i++;
+        endIndex++;
+    }
+
+    return [-1, -1];
+}
+
+function splitSearchStringIntoTwoSearchStrings(searchStringData)
+{
+    var indexOfParenthesesInSearchStringSubstr = searchStringData.indexOf('[');
+
+    if (indexOfParenthesesInSearchStringSubstr == -1) return [searchStringData, null];
+
+    var endIndexOfParenthesesInSearchStringSubstr = searchStringData.indexOf(']');
+
+    if (endIndexOfParenthesesInSearchStringSubstr == -1) return [searchStringData, null];
+
+    var firstSearchData = searchStringData.substring(0, indexOfParenthesesInSearchStringSubstr - 1)
+        .trim();
+
+    var secondSearchStringDataLength = endIndexOfParenthesesInSearchStringSubstr - indexOfParenthesesInSearchStringSubstr - 1;
+
+    var secondSearchData = searchStringData.substring(indexOfParenthesesInSearchStringSubstr + 1, indexOfParenthesesInSearchStringSubstr + 1 + secondSearchStringDataLength)
+        .trim();
+
+    var endString = searchStringData.substring(endIndexOfParenthesesInSearchStringSubstr + 1)
+        .trim();
+
+    var firstSearchString = firstSearchData + " " + endString;
+    var secondSearchString = secondSearchData + " " + endString;
+
+    return [firstSearchString, secondSearchString];
+}
+
 function SearchStringSearch_input_oninput_search()
 {
     var substring = document.getElementById("SearchStringSearch_input").value;
@@ -199,7 +430,7 @@ function SearchStringSearch_input_oninput_search()
         {
             LoadDisplayData(function()
             {
-                DisplayInputColoringAndClearExtraOutputAfterTextSearch(substring, "SearchString_label", result.length, "customSpanForSearchString");
+                DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(substring, "SearchString_label", result.length, "customSpanForSearchString");
             });
         })
         .fail(function (jqXHR, textStatus)
@@ -308,7 +539,7 @@ function MultiSearch()
 
                 if (searchStringSubstring != null)
                 {
-                    DisplayInputColoringAndClearExtraOutputAfterTextSearch(searchStringSubstring, "SearchString_label", result.length, "customSpanForSearchString");
+                    DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(searchStringSubstring, "SearchString_label", result.length, "customSpanForSearchString");
                 }
             });
         })
