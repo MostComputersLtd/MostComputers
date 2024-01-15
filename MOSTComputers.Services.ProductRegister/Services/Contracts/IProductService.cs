@@ -11,7 +11,7 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductService
 {
     IEnumerable<Product> GetAllWithoutImagesAndProps();
-    IEnumerable<Product> GetAllWhereSearchStringMatches(string subString);
+    IEnumerable<Product> GetAllWhereSearchStringMatches(string searchStringParts);
     IEnumerable<Product> GetAllWhereNameMatches(string subString);
     IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(ProductRangeSearchRequest rangeSearchRequest);
     IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString);

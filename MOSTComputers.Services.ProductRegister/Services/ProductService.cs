@@ -33,14 +33,14 @@ internal sealed class ProductService : IProductService
         return _productRepository.GetAll_WithManifacturerAndCategory();
     }
 
-    public IEnumerable<Product> GetAllWhereSearchStringMatches(string subString)
+    public IEnumerable<Product> GetAllWhereSearchStringMatches(string searchStringParts)
     {
-        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(subString, ProductSearchByTextEnum.SearchBySearchString);
+        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(searchStringParts);
     }
 
     public IEnumerable<Product> GetAllWhereNameMatches(string subString)
     {
-        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(subString, ProductSearchByTextEnum.SearchByName);
+        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchNameContainsSubstring(subString);
     }
 
     public IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)

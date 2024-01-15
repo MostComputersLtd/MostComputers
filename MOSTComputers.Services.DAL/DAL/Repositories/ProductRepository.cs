@@ -61,16 +61,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             new { });
     }
 
-    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(string subString, ProductSearchByTextEnum productSearchByTextEnum)
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchNameContainsSubstring(string subString)
     {
-        string fieldToSearchBy = productSearchByTextEnum switch
-        {
-            ProductSearchByTextEnum.SearchBySearchString => "SPLMODEL2",
-            ProductSearchByTextEnum.SearchByName => "CFGSUBTYPE",
-            _ => throw new InvalidOperationException()
-        };
-
-        string getAllWhereFieldMatchesWithManifacturerAndCategoryQuery =
+        const string getAllWhereNameMatchesWithManifacturerAndCategoryQuery =
             $"""
             SELECT * FROM
             (
@@ -78,7 +71,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                     CategoryID, ParentId, Description, IsLeaf,
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                    CHARINDEX(@subString, products.{fieldToSearchBy}) AS SubPosition
+                    CHARINDEX(@subString, products.CFGSUBTYPE) AS SubPosition
 
                 FROM {_tableName} products
                 LEFT JOIN {_categoriesTableName} cat
@@ -92,7 +85,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             """;
 
 #pragma warning disable IDE0037 // Use inferred member name
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereFieldMatchesWithManifacturerAndCategoryQuery,
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereNameMatchesWithManifacturerAndCategoryQuery,
             (product, category, manifacturer) =>
             {
                 product.Category = category;
@@ -103,6 +96,68 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             new { subString = subString });
+#pragma warning restore IDE0037 // Use inferred member name
+    }
+
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(string searchStringParts)
+    {
+        const string getAllWhereSearchStringMatchesAllSearchStringPartsQuery =
+            $"""
+            CREATE TABLE #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES (SearchStringPart VARCHAR(50));
+            
+            DECLARE @StartIndex INT = 1;
+
+            SET @searchStringParts = TRIM(@searchStringParts);
+
+            WHILE (@StartIndex != 0)
+            BEGIN
+                SET @StartIndex = CHARINDEX(' ', @searchStringParts);
+
+                INSERT INTO #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
+                VALUES (
+                    CASE
+                        WHEN @StartIndex != 0 THEN SUBSTRING(@searchStringParts, 0, @StartIndex - 1)
+                        ELSE @searchStringParts
+                    END);
+
+                SET @searchStringParts = RIGHT(@searchStringParts, LEN(@searchStringParts) - @StartIndex)
+
+                IF (LEN(@searchStringParts) = 0) BREAK;
+            END
+
+            SELECT * FROM
+            (
+                SELECT CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                    PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                    CategoryID, ParentId, Description, IsLeaf,
+                    man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
+                        (SELECT SUM(LocalPosition) FROM
+                            (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2) AS LocalPosition
+                                FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES)) AS SubPosition
+
+                FROM {_tableName} products
+                LEFT JOIN {_categoriesTableName} cat
+                ON cat.CategoryID = products.TID
+                LEFT JOIN {_manifacturersTableName} man
+                ON man.MfrID = products.MfrID
+            )
+                AS Data
+            WHERE SubPosition <> 0
+            ORDER BY SubPosition, S;
+            """;
+
+#pragma warning disable IDE0037 // Use inferred member name
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereSearchStringMatchesAllSearchStringPartsQuery,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            new { searchStringParts = searchStringParts });
 #pragma warning restore IDE0037 // Use inferred member name
     }
 
@@ -359,7 +414,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             start = (int)start,
             end = (int)end,
-            SearchStringSubstring = productConditionalSearchRequest.SearchStringSubstring,
+            searchStringParts = productConditionalSearchRequest.SearchStringSubstring,
             NameSubstring = productConditionalSearchRequest.NameSubstring,
             CategoryId = productConditionalSearchRequest.CategoryId,
             Status = productConditionalSearchRequest.Status,
@@ -367,7 +422,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             NeedsToBeUpdated = productConditionalSearchRequest.NeedsToBeUpdated,
         };
 
-        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFirstInRangeWhenConditionsAreMet,
+       return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFirstInRangeWhenConditionsAreMet,
             (product, category, manifacturer) =>
             {
                 product.Category = category;
@@ -415,6 +470,28 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             string queryStart =
                 $"""
+                CREATE TABLE #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES (SearchStringPart VARCHAR(50));
+                
+                DECLARE @StartIndex INT = 1;
+                
+                SET @searchStringParts = TRIM(@searchStringParts);
+                
+                WHILE (@StartIndex != 0)
+                BEGIN
+                    SET @StartIndex = CHARINDEX(' ', @searchStringParts);
+                
+                    INSERT INTO #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
+                    VALUES (
+                        CASE
+                            WHEN @StartIndex != 0 THEN SUBSTRING(@searchStringParts, 0, @StartIndex)
+                            ELSE @searchStringParts
+                        END);
+                
+                    SET @searchStringParts = RIGHT(@searchStringParts, LEN(@searchStringParts) - @StartIndex)
+                
+                    IF (LEN(@searchStringParts) = 0) BREAK;
+                END
+                            
                 SELECT * FROM
                 (
                     SELECT TOP (@start + @end) CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
@@ -463,10 +540,19 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 queryFirstSelect +=
                     $"""
                     ,
-                    CHARINDEX(@SearchStringSubstring, products.SPLMODEL2) AS {searchStringSubPosition}
+                            (SELECT SUM(LocalPosition) FROM
+                                (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
+                                    FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS {searchStringSubPosition}
                     """;
 
-                queryWhereStatementInSelect += $" {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} CHARINDEX(@SearchStringSubstring, products.SPLMODEL2) > 0";
+                queryWhereStatementInSelect +=
+                    $"""
+                        {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} 0 < ISNULL(
+                            (SELECT SUM(LocalPos) FROM
+                                (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPos
+                                    FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringSubPos
+                                    HAVING MIN(LocalPos) > 0), 0)
+                    """;
 
                 hasWhereStatementInSelectPart = true;
             }

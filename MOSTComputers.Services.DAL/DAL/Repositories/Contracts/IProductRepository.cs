@@ -9,7 +9,7 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IProductRepository
 {
     IEnumerable<Product> GetAll_WithManifacturerAndCategory();
-    IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringContainsSubstring(string substring, ProductSearchByTextEnum productSearchByTextEnum);
+    IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchNameContainsSubstring(string substring);
     IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndFirstImage_ByIds(List<uint> ids);
     IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndProperties_ByIds(List<uint> ids);
     IEnumerable<Product> GetAll_WithManifacturerAndCategory_ByIds(List<uint> ids);
@@ -22,4 +22,5 @@ public interface IProductRepository
     OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest);
     bool Delete(uint id);
+    IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(string searchStringParts);
 }
