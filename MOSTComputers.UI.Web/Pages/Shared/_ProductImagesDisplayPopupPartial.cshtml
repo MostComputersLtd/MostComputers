@@ -26,7 +26,10 @@
 
         </div>
         
-        <ul id="productImageDisplay_ul" class="full-parent-width bg-white" onmousewheel="scrollHorizontally()">
+        <ul id="productImageDisplay_ul" class="full-parent-width bg-white" onmousewheel="scrollHorizontally()"
+            
+            ondragover="productImageDisplay_ul_ondragover(event)">
+
             @if (Model.Product.Images is not null)
             {
                 for (int i = 0; i < Model.Product.Images.Count; i++)
@@ -37,13 +40,25 @@
 
                     string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
 
-                    <li>
+                    <li id="productImageDisplay_ul_li#@i" draggable="true" ondragstart="productImageDisplay_ul_li_ondragstart(event)" ondragend="productImageDisplay_ul_li_ondragend(event)">
 
                         <button class="btn bg-white" onclick="displayImage('@imageSrc', 'Image #@i')" name="Image #@i">
-                            <img src="@imageSrc" title="Image #@i" />
+                            <img src="@imageSrc" title="Image #@i" draggable="false" />
                         </button>
+
+                        <div style="display: inline; position: relative; top: 10px; bottom: 0px;">
+                            <button type="button" class="btn-close" aria-label="Close" onclick="delete_productImageDisplay_ul_li('productImageDisplay_ul_li#@i', @image.Id)"
+                                    style="position: absolute; width: 10px; height: 10px; padding: 0px;" />
+                        </div>
                     </li>
                 }
+
+                <li id="removeButtonLi" style="height: 100%; position: relative; border: 1px solid black; border-radius: 4px; ">
+                    <input class="btn bg-white" type="file" accept="image/*" onchange="addNewImage(this)"
+                    style="position: absolute; top:0px; bottom: 0px; visibility: visible; opacity: 0; width: 150px;" />
+
+                    <label style="font-size: 52px; text-align: center; width: 150px;">+</label>
+                </li>
             }
         </ul>
     </div>
