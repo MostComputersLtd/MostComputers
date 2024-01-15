@@ -85,29 +85,31 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string updateQuery =
             $"""
-            DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
-            
-            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_tableName}
-            WHERE CSTID = @productId
-            AND ImgNo <> @DisplayOrder;
-            
-            SELECT TOP 1 @DisplayOrderInRange = ISNULL(
-                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_tableName}
-                WHERE @MaxDisplayOrderForProduct <= @NewDisplayOrder),
-                @NewDisplayOrder);
+            SET @NewDisplayOrder = 
+            CASE 
+                WHEN @NewDisplayOrder < 1 THEN 1
+                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                    THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                ELSE @NewDisplayOrder
+            END;
             
             UPDATE {_tableName}
-                SET ImgNo = ImgNo + 1
-            WHERE CSTID = @productId
-            AND ImgNo >= @DisplayOrderInRange
-            AND ImgNo <> @DisplayOrder;
-
+            SET ImgNo = 
+                CASE
+                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
+                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
+                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
+                    ELSE ImgNo
+                END
+            WHERE CSTID = @productId;
+            
             UPDATE {_tableName}
-            SET ImgNo = @DisplayOrderInRange,
-                ImgFileName = @FileName
-
-            WHERE CSTID = @productId
-            AND ImgNo = @DisplayOrder;
+            SET ImgFileName = 
+                CASE
+                    WHEN ImgNo = @NewDisplayOrder THEN @FileName
+                    ELSE ImgFileName
+                END
+            WHERE CSTID = @productId;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
@@ -130,7 +132,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     private ValidationResult ValidateWhetherProductWithGivenIdExists(uint productId, string propertyName = "ProductId")
     {
         const string checkWhetherProductsTableHasTheIdInTheRequest =
-        $"""
+            $"""
             SELECT CASE WHEN EXISTS(
                 SELECT CSTID FROM {_productsTableName}
                 WHERE CSTID = @productId
@@ -190,7 +192,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             WHERE CSTID = @productId
             AND ImgNo = @DisplayOrder;
 
-            UPDATE dbo.ImageFileName
+            UPDATE {_tableName}
                 SET ImgNo = ImgNo - 1
             
             WHERE CSTID = @productId
