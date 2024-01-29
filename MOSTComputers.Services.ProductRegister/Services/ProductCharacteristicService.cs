@@ -60,6 +60,11 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.GetSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
     }
 
+    public ProductCharacteristic? GetById(uint id)
+    {
+        return _productCharacteristicsRepository.GetById(id);
+    }
+
     public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
     {
         return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
@@ -103,7 +108,7 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.Delete(id);
     }
 
-    public bool DeleteAllForCategory(uint categoryId)
+    public bool DeleteAllForCategory(int categoryId)
     {
         return _productCharacteristicsRepository.DeleteAllForCategory(categoryId);
     }
