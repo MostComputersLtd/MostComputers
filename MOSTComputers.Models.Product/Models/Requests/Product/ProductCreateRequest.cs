@@ -55,4 +55,5 @@ public sealed class CurrentProductImageFileNameInfoCreateRequest
 {
     public string? FileName { get; set; }
     public int? DisplayOrder { get; set; }
+    public bool Active { get; set; }
 }
