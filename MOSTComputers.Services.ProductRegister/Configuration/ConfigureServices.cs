@@ -13,8 +13,10 @@ using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.UsingCache;
 using MOSTComputers.Services.ProductRegister.Validation.Category;
 using MOSTComputers.Services.ProductRegister.Validation.FailureData.FailedPropertyNameOfProduct;
 using MOSTComputers.Services.ProductRegister.Validation.Manifacturer;
@@ -36,54 +38,55 @@ public static class ConfigureServices
         services.AddDataAccess(connectionString)
             .AddAllRepositories();
 
-        services.AddTransient<ProductMapper>();
+        services.AddScoped<ProductMapper>();
 
         AddValidation(services);
 
-        services.AddTransient<ICategoryService, CategoryService>();
-        services.AddTransient<IManifacturerService, ManifacturerService>();
-        services.AddTransient<IProductImageService, ProductImageService>();
-        services.AddTransient<IProductImageFileNameInfoService, ProductImageFileNameInfoService>();
-        services.AddTransient<IProductCharacteristicService, ProductCharacteristicService>();
-        services.AddTransient<IProductPropertyService, ProductPropertyService>();
-        services.AddTransient<IPromotionService, PromotionService>();
-        services.AddTransient<IProductService, ProductService>();
-        services.AddTransient<IProductStatusesService, ProductStatusesService>();
-        services.AddTransient<ILocalChangesService, LocalChangesService>();
-        services.AddTransient<IExternalChangesService, ExternalChangesService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IManifacturerService, ManifacturerService>();
+        services.AddScoped<IProductImageService, ProductImageService>();
+        services.AddScoped<IProductImageFileNameInfoService, ProductImageFileNameInfoService>();
+        services.AddScoped<IProductCharacteristicService, ProductCharacteristicService>();
+        services.AddScoped<IProductPropertyService, ProductPropertyService>();
+        services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductStatusesService, ProductStatusesService>();
+        services.AddScoped<ILocalChangesService, LocalChangesService>();
+        services.AddScoped<IExternalChangesService, ExternalChangesService>();
 
-        services.AddTransient<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
+        services.AddScoped<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
+        services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
 
         return services;
     }
 
     private static void AddValidation(IServiceCollection services)
     {
-        services.AddTransient<IValidator<ServiceCategoryCreateRequest>, CategoryCreateRequestValidator>();
-        services.AddTransient<IValidator<ServiceCategoryUpdateRequest>, CategoryUpdateRequestValidator>();
-        services.AddTransient<IValidator<ManifacturerCreateRequest>, ManifacturerCreateRequestValidator>();
-        services.AddTransient<IValidator<ManifacturerUpdateRequest>, ManifacturerUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductCreateRequest>, ProductCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductUpdateRequest>, ProductUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductCharacteristicCreateRequest>, ProductCharacteristicCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductCharacteristicByIdUpdateRequest>, ProductCharacteristicByIdUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>, ProductCharacteristicByNameAndCategoryIdUpdateRequestValidator>();
-        services.AddTransient<IValidator<ServiceProductImageCreateRequest>, ProductImageCreateRequestValidator>();
-        services.AddTransient<IValidator<ServiceProductFirstImageCreateRequest>, ProductFirstImageCreateRequestValidator>();
-        services.AddTransient<IValidator<ServiceProductImageUpdateRequest>, ProductImageUpdateRequestValidator>();
-        services.AddTransient<IValidator<ServiceProductFirstImageUpdateRequest>, ProductFirstImageUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductImageFileNameInfoCreateRequest>, ProductImageFileNameInfoCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductImageFileNameInfoUpdateRequest>, ProductImageFileNameInfoUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductPropertyByCharacteristicIdCreateRequest>, ProductPropertyByCharacteristicIdCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductPropertyByCharacteristicNameCreateRequest>, ProductPropertyByCharacteristicNameCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductPropertyUpdateRequest>, ProductPropertyUpdateRequestValidator>();
-        services.AddTransient<IValidator<ServicePromotionCreateRequest>, PromotionCreateRequestValidator>();
-        services.AddTransient<IValidator<ServicePromotionUpdateRequest>, PromotionUpdateRequestValidator>();
-        services.AddTransient<IValidator<ProductStatusesCreateRequest>, ProductStatusesCreateRequestValidator>();
-        services.AddTransient<IValidator<ProductStatusesUpdateRequest>, ProductStatusesUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceCategoryCreateRequest>, CategoryCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceCategoryUpdateRequest>, CategoryUpdateRequestValidator>();
+        services.AddScoped<IValidator<ManifacturerCreateRequest>, ManifacturerCreateRequestValidator>();
+        services.AddScoped<IValidator<ManifacturerUpdateRequest>, ManifacturerUpdateRequestValidator>();
+        services.AddScoped<IValidator<ProductCreateRequest>, ProductCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductUpdateRequest>, ProductUpdateRequestValidator>();
+        services.AddScoped<IValidator<ProductCharacteristicCreateRequest>, ProductCharacteristicCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductCharacteristicByIdUpdateRequest>, ProductCharacteristicByIdUpdateRequestValidator>();
+        services.AddScoped<IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>, ProductCharacteristicByNameAndCategoryIdUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageCreateRequest>, ProductImageCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductFirstImageCreateRequest>, ProductFirstImageCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageUpdateRequest>, ProductImageUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductFirstImageUpdateRequest>, ProductFirstImageUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageFileNameInfoCreateRequest>, ProductImageFileNameInfoCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageFileNameInfoUpdateRequest>, ProductImageFileNameInfoUpdateRequestValidator>();
+        services.AddScoped<IValidator<ProductPropertyByCharacteristicIdCreateRequest>, ProductPropertyByCharacteristicIdCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductPropertyByCharacteristicNameCreateRequest>, ProductPropertyByCharacteristicNameCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductPropertyUpdateRequest>, ProductPropertyUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionCreateRequest>, PromotionCreateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionUpdateRequest>, PromotionUpdateRequestValidator>();
+        services.AddScoped<IValidator<ProductStatusesCreateRequest>, ProductStatusesCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductStatusesUpdateRequest>, ProductStatusesUpdateRequestValidator>();
         
-        services.AddTransient<IValidator<FailedPropertyNameOfProductCreateRequest>, FailedPropertyNameOfProductCreateRequestValidator>();
-        services.AddTransient<IValidator<FailedPropertyNameOfProductMultiCreateRequest>, FailedPropertyNameOfProductMultiCreateRequestValidator>();
-        services.AddTransient<IValidator<FailedPropertyNameOfProductUpdateRequest>, FailedPropertyNameOfProductUpdateRequestValidator>();
+        services.AddScoped<IValidator<FailedPropertyNameOfProductCreateRequest>, FailedPropertyNameOfProductCreateRequestValidator>();
+        services.AddScoped<IValidator<FailedPropertyNameOfProductMultiCreateRequest>, FailedPropertyNameOfProductMultiCreateRequestValidator>();
+        services.AddScoped<IValidator<FailedPropertyNameOfProductUpdateRequest>, FailedPropertyNameOfProductUpdateRequestValidator>();
     }
 }
