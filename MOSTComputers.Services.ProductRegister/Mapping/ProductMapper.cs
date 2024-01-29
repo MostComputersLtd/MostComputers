@@ -1,7 +1,9 @@
 ﻿using MOSTComputers.Models.Product.Models.Requests.Category;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using Riok.Mapperly.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -45,4 +47,15 @@ public sealed partial class ProductMapper
 
     [MapperIgnoreTarget(nameof(PromotionCreateRequest.PromotionAddedDate))]
     internal partial PromotionUpdateRequest Map(ServicePromotionUpdateRequest serviceCategoryUpdateRequest);
+
+#pragma warning disable IDE0079 // Remove unnecessary suppression
+#pragma warning disable RMG020 // Source member is not mapped to any target member
+    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoCreateRequest.Active))]
+    internal partial ProductImageFileNameInfoCreateRequest Map(ServiceProductImageFileNameInfoCreateRequest serviceCategoryUpdateRequest);
+
+
+    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoUpdateRequest.Active))]
+    internal partial ProductImageFileNameInfoUpdateRequest Map(ServiceProductImageFileNameInfoUpdateRequest serviceCategoryUpdateRequest);
+#pragma warning restore RMG020 // Source member is not mapped to any target member
+#pragma warning restore IDE0079 // Remove unnecessary suppression
 }
