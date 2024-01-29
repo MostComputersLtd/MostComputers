@@ -13,7 +13,7 @@ public static class ConfigureServices
 {
     public static IServiceCollection AddSearchStringOriginService(this IServiceCollection services)
     {
-        services.AddTransient<ISearchStringOriginService, SearchStringOriginService>();
+        services.AddScoped<ISearchStringOriginService, SearchStringOriginService>();
 
         return services;
     }
