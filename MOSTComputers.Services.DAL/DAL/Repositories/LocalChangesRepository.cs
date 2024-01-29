@@ -23,7 +23,8 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getAllQuery =
         $"""
-        SELECT * FROM {_tableName};
+        SELECT * FROM {_tableName}
+        ORDER BY TimeStamp;
         """;
 
         return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllQuery, new { });
@@ -34,7 +35,8 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         const string getAllForTableQuery =
         $"""
         SELECT * FROM {_tableName}
-        WHERE TableName = @tableName;
+        WHERE TableName = @tableName
+        ORDER BY TimeStamp;
         """;
 
         var parameters = new
@@ -50,7 +52,8 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         const string getAllForOperationTypeQuery =
         $"""
         SELECT * FROM {_tableName}
-        WHERE Operation = @changeOperationType;
+        WHERE Operation = @changeOperationType
+        ORDER BY TimeStamp;
         """;
 
         var parameters = new
