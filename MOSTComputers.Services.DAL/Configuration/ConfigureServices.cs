@@ -12,7 +12,7 @@ public static class ConfigureServices
 {
     public static IServiceCollection AddDataAccess(this IServiceCollection services, string connectionString)
     {
-        services.AddTransient<IRelationalDataAccess, DapperDataAccess>(
+        services.AddScoped<IRelationalDataAccess, DapperDataAccess>(
             _ =>
             {
                 DapperDataAccess dapperDataAccess = new(connectionString);
@@ -28,19 +28,19 @@ public static class ConfigureServices
     public static IServiceCollection AddAllRepositories(this IServiceCollection services)
     {
 
-        services.AddTransient<ICategoryRepository, CategoryRepository>();
-        services.AddTransient<IManifacturerRepository, ManifacturerRepository>();
-        services.AddTransient<IProductImageRepository, ProductImageRepository>();
-        services.AddTransient<IProductImageFileNameInfoRepository, ProductImageFileNameInfoRepository>();
-        services.AddTransient<IProductCharacteristicsRepository, ProductCharacteristicsRepository>();
-        services.AddTransient<IProductPropertyRepository, ProductPropertyRepository>();
-        services.AddTransient<IPromotionRepository, PromotionRepository>();
-        services.AddTransient<IProductRepository, ProductRepository>();
-        services.AddTransient<IProductStatusesRepository, ProductStatusesRepository>();
-        services.AddTransient<ILocalChangesRepository, LocalChangesRepository>();
-        services.AddTransient<IExternalChangesRepository, ExternalChangesRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IManifacturerRepository, ManifacturerRepository>();
+        services.AddScoped<IProductImageRepository, ProductImageRepository>();
+        services.AddScoped<IProductImageFileNameInfoRepository, ProductImageFileNameInfoRepository>();
+        services.AddScoped<IProductCharacteristicsRepository, ProductCharacteristicsRepository>();
+        services.AddScoped<IProductPropertyRepository, ProductPropertyRepository>();
+        services.AddScoped<IPromotionRepository, PromotionRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductStatusesRepository, ProductStatusesRepository>();
+        services.AddScoped<ILocalChangesRepository, LocalChangesRepository>();
+        services.AddScoped<IExternalChangesRepository, ExternalChangesRepository>();
 
-        services.AddTransient<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
+        services.AddScoped<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
 
         return services;
     }
