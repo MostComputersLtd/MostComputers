@@ -106,6 +106,18 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return data.GroupBy(x => (int)x.CategoryId!);
     }
 
+    public ProductCharacteristic? GetById(uint id)
+    {
+        const string getByCategoryIdAndNameQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE ProductKeywordID = id;
+            """;
+
+        return _relationalDataAccess.GetDataFirstOrDefault<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
+            new { id });
+    }
+
     public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
     {
         const string getByCategoryIdAndNameQuery =
@@ -351,17 +363,17 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         }
     }
 
-    public bool DeleteAllForCategory(uint categoryId)
+    public bool DeleteAllForCategory(int categoryId)
     {
         const string deleteQuery =
             $"""
             DELETE FROM {_tableName}
-            WHERE TID = @productId;
+            WHERE TID = @categoryId;
             """;
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { productId = (int)categoryId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { categoryId = categoryId });
 
             if (rowsAffected <= 0) return false;
 
