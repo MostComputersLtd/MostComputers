@@ -4,6 +4,7 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
+using System.Data;
 using System.Data.SqlClient;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
@@ -36,7 +37,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             WHERE CategoryID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Category, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<Category, dynamic>(getByIdQuery, new { id = (int)id });
     }
 
     public OneOf<uint, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
