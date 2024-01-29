@@ -870,7 +870,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             {
                 connection.Execute(insertInAllImagesQuery, MapToLocalAllImages(createRequest.Images, id, connection, transaction), transaction, commandType: CommandType.Text);
 
-                connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images.First(), id), transaction, commandType: CommandType.Text);
+                connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images[0], id), transaction, commandType: CommandType.Text);
             }
 
             return (uint)id;
