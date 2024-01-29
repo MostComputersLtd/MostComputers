@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductImageFileNameInfo;
 
-internal sealed class ProductImageFileNameInfoUpdateRequestValidator : AbstractValidator<ProductImageFileNameInfoUpdateRequest>
+internal sealed class ProductImageFileNameInfoUpdateRequestValidator : AbstractValidator<ServiceProductImageFileNameInfoUpdateRequest>
 {
     public ProductImageFileNameInfoUpdateRequestValidator()
     {

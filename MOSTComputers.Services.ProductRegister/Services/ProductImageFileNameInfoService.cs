@@ -8,6 +8,8 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Mapping;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -15,17 +17,20 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
 {
     public ProductImageFileNameInfoService(
         IProductImageFileNameInfoRepository imageFileNameInfoRepository,
-        IValidator<ProductImageFileNameInfoCreateRequest>? createRequestValidator = null,
-        IValidator<ProductImageFileNameInfoUpdateRequest>? updateRequestValidator = null)
+        ProductMapper mapper,
+        IValidator<ServiceProductImageFileNameInfoCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceProductImageFileNameInfoUpdateRequest>? updateRequestValidator = null)
     {
         _imageFileNameInfoRepository = imageFileNameInfoRepository;
+        _mapper = mapper;
         _createRequestValidator = createRequestValidator;
         _updateRequestValidator = updateRequestValidator;
     }
 
     private readonly IProductImageFileNameInfoRepository _imageFileNameInfoRepository;
-    private readonly IValidator<ProductImageFileNameInfoCreateRequest>? _createRequestValidator;
-    private readonly IValidator<ProductImageFileNameInfoUpdateRequest>? _updateRequestValidator;
+    private readonly ProductMapper _mapper;
+    private readonly IValidator<ServiceProductImageFileNameInfoCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceProductImageFileNameInfoUpdateRequest>? _updateRequestValidator;
 
     public IEnumerable<ProductImageFileNameInfo> GetAll()
     {
@@ -37,24 +42,32 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.GetAllForProduct(productId);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest,
-        IValidator<ProductImageFileNameInfoCreateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
+        IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        return _imageFileNameInfoRepository.Insert(createRequest);
+        ProductImageFileNameInfoCreateRequest createRequestInternal = _mapper.Map(createRequest);
+
+        createRequestInternal.Active = createRequest.Active ?? false;
+
+        return _imageFileNameInfoRepository.Insert(createRequestInternal);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest,
-        IValidator<ProductImageFileNameInfoUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoUpdateRequest updateRequest,
+        IValidator<ServiceProductImageFileNameInfoUpdateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        return _imageFileNameInfoRepository.Update(updateRequest);
+        ProductImageFileNameInfoUpdateRequest updateRequestInternal = _mapper.Map(updateRequest);
+
+        updateRequestInternal.Active = updateRequest.Active ?? false;
+
+        return _imageFileNameInfoRepository.Update(updateRequestInternal);
     }
 
     public bool DeleteAllForProductId(uint productId)

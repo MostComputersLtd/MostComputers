@@ -10,5 +10,5 @@ public sealed class ProductStatusesUpdateRequest
 {
     public int ProductId { get; set; }
     public bool IsProcessed { get; set; }
-    public int NeedsToBeUpdated { get; set; }
+    public bool NeedsToBeUpdated { get; set; }
 }

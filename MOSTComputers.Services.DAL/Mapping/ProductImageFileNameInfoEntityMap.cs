@@ -10,5 +10,6 @@ internal sealed class ProductImageFileNameInfoEntityMap : EntityMap<ProductImage
         Map(x => x.ProductId).ToColumn("CSTID");
         Map(x => x.DisplayOrder).ToColumn("ImgNo");
         Map(x => x.FileName).ToColumn("ImgFileName");
+        Map(x => x.Active).ToColumn("Active");
     }
 }

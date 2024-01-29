@@ -3,6 +3,7 @@ using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using OneOf;
 using OneOf.Types;
 
@@ -12,8 +13,8 @@ public interface IProductImageFileNameInfoService
 {
     IEnumerable<ProductImageFileNameInfo> GetAll();
     IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest, IValidator<ProductImageFileNameInfoCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest, IValidator<ProductImageFileNameInfoUpdateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest, IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoUpdateRequest>? validator = null);
     bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);
     bool DeleteAllForProductId(uint productId);
 }

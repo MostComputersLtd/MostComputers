@@ -60,8 +60,8 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             WHERE CSTID = @productId
             AND ImgNo >= @DisplayOrderInRange;
 
-            INSERT INTO {_tableName}(CSTID, ImgNo, ImgFileName)
-            VALUES (@productId, @DisplayOrderInRange, @FileName)
+            INSERT INTO {_tableName}(CSTID, ImgNo, ImgFileName, Active)
+            VALUES (@productId, @DisplayOrderInRange, @FileName, @Active)
             """;
 
 
@@ -74,6 +74,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             productId = createRequest.ProductId,
             createRequest.DisplayOrder,
             createRequest.FileName,
+            createRequest.Active
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(insertQuery, parameters, doInTransaction: true);
@@ -104,17 +105,42 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             WHERE CSTID = @productId;
             
             UPDATE {_tableName}
-            SET ImgFileName = 
-                CASE
-                    WHEN ImgNo = @NewDisplayOrder THEN @FileName
-                    ELSE ImgFileName
-                END
-            WHERE CSTID = @productId;
+            SET ImgFileName = @FileName,
+                Active = @Active
+
+            WHERE CSTID = @productId
+            AND ImgNo = @NewDisplayOrder;
+            """;
+
+        const string updateQueryWithNoDisplayOrderChanges =
+            $"""
+            UPDATE {_tableName}
+            SET ImgFileName = @FileName,
+                Active = @Active
+
+            WHERE CSTID = @productId
+            AND ImgNo = @DisplayOrder;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
 
         if (!internalValidationResult.IsValid) return internalValidationResult;
+
+        if (updateRequest.NewDisplayOrder is null
+            || updateRequest.NewDisplayOrder == updateRequest.DisplayOrder)
+        {
+            var parametersSimple = new
+            {
+                productId = updateRequest.ProductId,
+                updateRequest.DisplayOrder,
+                updateRequest.FileName,
+                updateRequest.Active,
+            };
+
+            int rowsAffectedSimple = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateQueryWithNoDisplayOrderChanges, parametersSimple, doInTransaction: true);
+
+            return (rowsAffectedSimple > 0) ? new Success() : new UnexpectedFailureResult();
+        }
 
         var parameters = new
         {
@@ -122,6 +148,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             updateRequest.DisplayOrder,
             updateRequest.NewDisplayOrder,
             updateRequest.FileName,
+            updateRequest.Active,
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateQuery, parameters, doInTransaction: true);
