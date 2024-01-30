@@ -815,11 +815,13 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Equal(2, data.Count());
 
-        Assert.Contains(data, x => x.TableName == _productsTableName
+        Assert.Contains(data, x =>
+            x.TableName == _productsTableName
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId1);
 
-        Assert.Contains(data, x => x.TableName == _productsTableName
+        Assert.Contains(data, x =>
+            x.TableName == _productsTableName
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId2);
 
