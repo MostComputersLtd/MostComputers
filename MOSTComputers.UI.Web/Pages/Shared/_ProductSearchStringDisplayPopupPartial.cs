@@ -15,7 +15,7 @@ public class ProductSearchStringDisplayPopupPartialModel
     public required IEnumerable<ProductCharacteristic> CharacteristicsAndSearchStringAbbreviationsForProduct { get; set; }
     public required ISearchStringOriginService SearchStringOriginService { get; set; }
 
-    public Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin()
+    public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin()
     {
         return SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(Product);
     }
