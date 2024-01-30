@@ -246,7 +246,8 @@ function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(wholeSea
                 localText = localTextWithNewSpans;
             }
 
-            searchStringLabel.innerHTML = localText.replaceAll(spanStartPlaceholder, spanStart)
+            searchStringLabel.innerHTML = localText
+                .replaceAll(spanStartPlaceholder, spanStart)
                 .replaceAll(spanEndPlaceholder, spanEnd);
 
             searchStringLabels.splice(j, 1);
@@ -289,16 +290,16 @@ function getAllTextWithSpansWithData(textWithSpans, substring)
     {
         if (indexOfEndOfThisSpan === -1)
         {
-            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring.toUpperCase() + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
         }
         else
         {
-            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring + textWithSpans.substring(endRealIndex);
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring.toUpperCase() + textWithSpans.substring(endRealIndex);
         }
     }
     else if (indexOfEndOfThisSpan === -1)
     {
-        textWithSpans = textWithSpans.substring(0, startRealIndex) + substring + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+        textWithSpans = textWithSpans.substring(0, startRealIndex) + substring.toUpperCase() + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
     }
 
     return textWithSpans;
@@ -546,4 +547,81 @@ function MultiSearch()
         .fail(function (jqXHR, textStatus)
         {
         });
+}
+
+function copySearchStringPartToClipboard(data)
+{
+    navigator.clipboard.writeText(data);
+
+    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
+}
+
+function showSearchStringOriginDataSmallPopup(productIndex, index, searchStringPart)
+{
+    if (productIndex === null
+        || productIndex === undefined
+        || (isNaN(productIndex) && isNaN(parseInt(productIndex)))
+        || index === null
+        || index === undefined
+        || (isNaN(index) && isNaN(parseInt(index)))) return;
+
+    showSearchStringOriginDataSmallPopupCommon(
+        "searchStringPartOrigin_li#" + productIndex + "#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList#" + productIndex + "#" + index,
+        searchStringPart,
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productIndex + "#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productIndex + "#" + index);
+}
+
+function removeSearchStringOriginDataSmallPopup(productIndex, index, searchStringPart)
+{
+    if (productIndex === null
+        || productIndex === undefined
+        || (isNaN(productIndex) && isNaN(parseInt(productIndex)))
+        || index === null
+        || index === undefined
+        || (isNaN(index) && isNaN(parseInt(index)))) return;
+
+    searchStringPart = decodeHtmlString(searchStringPart);
+
+    removeSearchStringOriginDataSmallPopupCommon(
+        "searchStringPartOrigin_li#" + productIndex + "#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList#" + productIndex + "#" + index,
+        searchStringPart,
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productIndex + "#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productIndex + "#" + index);
+}
+
+function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
+{
+    if (index === null
+        || index === undefined
+        || (isNaN(index) && isNaN(parseInt(index)))) return;
+
+    $("#ProductSearchString_modal").one("shown.bs.modal", function()
+    {
+        transportToSearchStringOriginDisplay(index);
+    });
+
+    showSearchStringPopupData(productId);
+}
+
+function showSearchStringPopupData(productId)
+{
+    $("#ProductSearchString_popup_modal-content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
+    {
+        open_ProductSearchString_modal();
+    });
+}
+
+function copySearchStringDataToClipboard()
+{
+    let searchStringData = getSearchStringData();
+
+    if (searchStringData === null
+    || searchStringData === undefined) return;
+
+    navigator.clipboard.writeText(searchStringData);
+
+    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
 }
