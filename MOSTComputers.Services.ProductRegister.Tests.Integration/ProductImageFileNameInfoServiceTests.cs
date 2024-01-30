@@ -5,6 +5,7 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -34,7 +35,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductService _productService;
 
-    private static ProductImageFileNameInfoCreateRequest GetCreateRequest(int productId, string fileName = "20183.png", uint displayOrder = 1) =>
+    private static ServiceProductImageFileNameInfoCreateRequest GetCreateRequest(int productId, string fileName = "20183.png", uint displayOrder = 1) =>
     new()
     {
         FileName = fileName,
@@ -100,8 +101,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -150,8 +151,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -200,8 +201,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "   ", displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "   ", displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -231,7 +232,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductImageFileNameInfoCreateRequest createRequest, bool expected)
+    public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageFileNameInfoCreateRequest createRequest, bool expected)
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
@@ -315,7 +316,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
     [Theory]
     [MemberData(nameof(Update_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ProductImageFileNameInfoUpdateRequest updateRequest, bool expected)
+    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageFileNameInfoUpdateRequest updateRequest, bool expected)
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
@@ -326,7 +327,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest = GetCreateRequest((int)productId, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest = GetCreateRequest((int)productId, displayOrder: 3);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageFileNameInfoService.Insert(createRequest);
 
@@ -387,7 +388,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     {
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -399,7 +400,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -411,7 +412,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -423,7 +424,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = 0,
@@ -435,7 +436,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -447,7 +448,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = 3,
@@ -459,7 +460,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoUpdateRequest()
             {
                 ProductId = 0,
                 DisplayOrder = 3,
@@ -482,8 +483,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -524,8 +525,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "", displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, "", displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, "", displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -572,8 +573,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, firstFileName1, displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, firstFileName2, displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, firstFileName1, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, firstFileName2, displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
@@ -625,8 +626,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         uint productId = productInsertResult.AsT0;
 
-        ProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, firstFileName1, displayOrder: 3);
-        ProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, firstFileName2, displayOrder: 4);
+        ServiceProductImageFileNameInfoCreateRequest createRequest1 = GetCreateRequest((int)productId, firstFileName1, displayOrder: 3);
+        ServiceProductImageFileNameInfoCreateRequest createRequest2 = GetCreateRequest((int)productId, firstFileName2, displayOrder: 4);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult1 = _productImageFileNameInfoService.Insert(createRequest1);
 
