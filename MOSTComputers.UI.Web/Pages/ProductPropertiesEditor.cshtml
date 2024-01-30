@@ -22,11 +22,13 @@
 
 @section Scripts {
     <script src="~/js/TextSelection.js"></script>
+    <script src="~/js/TextHighlight.js"></script>
     <script src="~/js/Pages/Shared/ProductXmlPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductSearchStringPopupControl.js"></script>
     <script src="~/js/NotificationBox.js"></script>
     <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
+    <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
     <script src="~/js/Pages/ProductPropertiesEditor.js"></script>
 }
 
@@ -69,15 +71,15 @@
 
                     @{int i = 0;}
 
-                    @foreach (KeyValuePair<string, List<SearchStringPartOriginData>?> kvp in searchStringParts)
+                    @foreach (Tuple<string, List<SearchStringPartOriginData>?> kvp in searchStringParts)
                     {
-                        string searchStringPart = kvp.Key;
+                        string searchStringPart = kvp.Item1;
 
                         <li>
                             <table onmouseleave="removeSearchStringOriginDataSmallPopup(@i, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
                                 <tr>
                                     <td id="searchStringPart_h2#@i" name="searchStringPart_h2"
-                                        onmouseover="showSearchStringOriginDataSmallPopup(@i)"
+                                        onmouseover="showSearchStringOriginDataSmallPopup(@i, '@searchStringPart')"
                                         onclick="displayPopupAndTransportToSearchStringOriginDisplay(@Model.ProductId, @i)" style="display: flex; margin: 0px 1px;">
 
                                         <h7 class="productSearchString-popup-searchStringPart-label">@searchStringPart</h7>
@@ -88,16 +90,15 @@
                                     <td id="searchStringPartOrigin_li#@i" name="searchStringPartOrigin_li"
                                         style="display: inline; min-width: 100px; border: 1px solid #ed9e79; border-radius: 5%; position: absolute; visibility: hidden; background-color: #fffaed;">
 
-                                        @if (kvp.Value?.Count == 1)
+                                        @if (kvp.Item2?.Count == 1)
                                         {
-                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Value[0];
+                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[0];
 
                                             <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; margin-bottom: 8px;">
                                                 <li style="display: inline-flex">
                                                     <button style="position: relative; left: 0px; top: 0px;" onclick="copySearchStringPartToClipboard('@searchStringPart')">
                                                         +
                                                     </button>
-
                                                 </li>
                                                 <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
                                                 style="display: inline-flex; flex-grow: 1; justify-content: center;">
@@ -112,22 +113,29 @@
 
                                             <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
                                         }
-                                        else if (kvp.Value?.Count > 1)
+                                        else if (kvp.Item2?.Count > 1)
                                         {
                                             <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
+                                                <li style="display: inline-flex">
+                                                    <button style="position: relative; left: 0px; top: 0px;" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                        +
+                                                    </button>
+                                                </li>
+
                                                 <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
                                                     style="display: inline;">
                                                     <h4 style="margin: 0px;">@searchStringPart</h4>
                                                 </li>
                                                 
                                                 <li style="display: inline;">
-                                                    <button onclick="searchStringPartOrigin_multipleOriginsShow(@i, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">@kvp.Value.Count possibilities ></button>
+                                                    <p style="margin: 2px 5px 8px 5px;">@kvp.Item2.Count possibilities</p>
 
                                                     <ul id="searchStringPartOrigin_multipleOriginsDisplayList#@i"
-                                                        style="display: flex; flex-direction: column; list-style: none; visibility: hidden; position: absolute; left: 0px; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px;">
-                                                        @for (int j = 0; j < kvp.Value.Count; j++)
+                                                        style="display: flex; flex-direction: column; list-style: none; position: absolute; left: 0px; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px; width: max-content; max-width: 400px;">
+
+                                                        @for (int j = 0; j < kvp.Item2.Count; j++)
                                                         {
-                                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Value[j];
+                                                            SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[j];
 
                                                             <li style="border-bottom: 1.5px solid darkgray;">
 
