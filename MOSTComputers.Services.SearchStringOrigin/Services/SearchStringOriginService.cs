@@ -24,26 +24,35 @@ internal class SearchStringOriginService : ISearchStringOriginService
         return output;
     }
 
-    public Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product)
+    public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product)
     {
         if (product.SearchString == null) return null;
 
-        Dictionary<string, List<SearchStringPartOriginData>?> output = new();
+        List<Tuple<string, List<SearchStringPartOriginData>?>> output = new();
 
         string[] searchStringParts = product.SearchString
             .Trim()
             .Split(' ');
 
-        List<ProductCharacteristic> categories = GetCharacteristicsRelatedToProduct(product);
+        List<ProductCharacteristic> characteristicsRelatedToProduct = GetCharacteristicsRelatedToProduct(product);
 
         foreach (string searchStringPart in searchStringParts)
         {
+            Tuple<string, List<SearchStringPartOriginData>?>? tupleWithSameValue = output.FirstOrDefault(x => x.Item1 == searchStringPart);
+
+            if (tupleWithSameValue is not null)
+            {
+                output.Add(tupleWithSameValue);
+
+                continue;
+            }
+
             List<ProductCharacteristic>? productCharacteristics
-             = GetCharacteristicsForSearchStringPart(categories, searchStringPart);
+             = GetCharacteristicsForSearchStringPart(characteristicsRelatedToProduct, searchStringPart);
 
             if (productCharacteristics is null)
             {
-                output.Add(searchStringPart, null);
+                output.Add(new(searchStringPart, null));
 
                 continue;
             }
@@ -51,7 +60,7 @@ internal class SearchStringOriginService : ISearchStringOriginService
             IEnumerable<SearchStringPartOriginData> productOriginDataFromRelatedCharacteristics
                 = productCharacteristics.Select(characteristic => new SearchStringPartOriginData(searchStringPart, characteristic));
 
-            output.Add(searchStringPart, productOriginDataFromRelatedCharacteristics.ToList());
+            output.Add(new(searchStringPart, productOriginDataFromRelatedCharacteristics.ToList()));
         }
 
         return output;

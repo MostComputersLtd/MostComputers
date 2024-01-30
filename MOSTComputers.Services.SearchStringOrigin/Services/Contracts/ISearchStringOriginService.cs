@@ -5,5 +5,5 @@ namespace MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 
 public interface ISearchStringOriginService
 {
-    Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product);
+    List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product);
 }
