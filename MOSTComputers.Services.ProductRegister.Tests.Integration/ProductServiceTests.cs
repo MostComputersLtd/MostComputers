@@ -1144,8 +1144,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 },
                 ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
                 {
-                    new() { FileName = "20143.png", DisplayOrder = 1 },
-                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                    new() { FileName = "20143.png", DisplayOrder = 1, Active = true },
+                    new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
                 CategoryID = 7,
@@ -1197,8 +1197,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
                 {
-                    new() { FileName = "20143.png", DisplayOrder = 1 },
-                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                    new() { FileName = "20143.png", DisplayOrder = 1, Active = true },
+                    new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
                 CategoryID = 7,
@@ -1250,8 +1250,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
                 {
-                    new() { FileName = "20143.png", DisplayOrder = 1 },
-                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                    new() { FileName = "20143.png", DisplayOrder = 1, Active = true },
+                    new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
                 CategoryID = 7,
@@ -1301,8 +1301,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 },
                 ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
                 {
-                    new() { FileName = "20143.png", DisplayOrder = 1 },
-                    new() { FileName = "20144.png", DisplayOrder = 2 }
+                    new() { FileName = "20143.png", DisplayOrder = 1, Active = true },
+                    new() { FileName = "20144.png", DisplayOrder = 2, Active = true }
                 },
 
                 CategoryID = 7,
@@ -1685,7 +1685,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i];
 
             if (imageFileNameInRequest.FileName != imageFileNameInObject.FileName
-                || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder)
+                || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder
+                || imageFileNameInRequest.Active != imageFileNameInObject.Active)
             {
                 return false;
             }
