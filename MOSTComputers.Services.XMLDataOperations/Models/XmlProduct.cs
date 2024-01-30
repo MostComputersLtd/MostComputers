@@ -1,6 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Services.XMLDataOperations.Localization;
 using System.Xml.Serialization;
+using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
 
 namespace MOSTComputers.Services.XMLDataOperations.Models;
 
@@ -26,8 +26,8 @@ public class XmlProduct
     [XmlElement(ElementName = "product_status")]
     public string StatusString
     {
-        get => ProductStatusMapping.GetBGStatusStringFromStatusEnum(Status) ?? string.Empty;
-        set => Status = ProductStatusMapping.GetStatusEnumFromBGStatusString(value) ?? ProductStatusEnum.Unavailable;
+        get => GetBGStatusStringFromStatusEnum(Status) ?? string.Empty;
+        set => Status = GetStatusEnumFromBGStatusString(value) ?? ProductStatusEnum.Unavailable;
     }
 
     [XmlElement(ElementName = "price")]
