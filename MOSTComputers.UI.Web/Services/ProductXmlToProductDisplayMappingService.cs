@@ -1,22 +1,21 @@
-﻿using FluentValidation.Results;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using MOSTComputers.Models.Product.Models;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
-using MOSTComputers.UI.Web.Mapping;
 using MOSTComputers.UI.Web.Models;
-using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
-using System.Xml;
+using FluentValidation.Results;
+using MOSTComputers.Models.Product.MappingUtils;
+using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.UI.Web.Services.Contracts;
 
 namespace MOSTComputers.UI.Web.Services;
 
-public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequestMapperService
+internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToProductDisplayMappingService
 {
-    public ProductXmlToCreateRequestMapperService(
+    public ProductXmlToProductDisplayMappingService(
         IProductCharacteristicService productCharacteristicService,
         IHttpClientFactory httpClientFactory,
         IProductDeserializeService productDeserializeService,
@@ -32,56 +31,6 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
     private readonly HttpClient _httpClient;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly IFailedPropertyNameOfProductService _failedPropertyNameOfProductService;
-
-    public async Task<OneOf<List<ProductCreateRequest>, ValidationResult, UnexpectedFailureResult, InvalidXmlResult>> GetProductCreateRequestsFromXmlAsync(string xmlText)
-    {
-        OneOf<XmlObjectData?, InvalidXmlResult> result = _productDeserializeService.TryDeserializeProductsXml(xmlText);
-
-        if (result.IsT1) return result.AsT1;
-
-        XmlObjectData? xmlObjectData = result.AsT0;
-
-        if (xmlObjectData is null) return new UnexpectedFailureResult();
-
-        List<ProductCreateRequest> output = new();
-
-        ValidationResult? validationResult = null;
-
-        foreach (XmlProduct item in xmlObjectData.Products)
-        {
-            OneOf<ProductCreateRequest, ValidationResult> itemMappingResult =
-                await GetProductFromXmlDataAsync(item, xmlText);
-
-            itemMappingResult.Switch(
-                output.Add,
-                validationRes => validationResult = validationRes);
-
-            if (validationResult is not null) return validationResult;
-        }
-
-        return output;
-    }
-
-    public async Task<OneOf<List<ProductCreateRequest>, ValidationResult>> GetProductCreateRequestsFromXmlAsync(XmlObjectData xmlObjectData, string xmlTextForImages)
-    {
-        List<ProductCreateRequest> output = new();
-
-        ValidationResult? validationResult = null;
-
-        foreach (XmlProduct item in xmlObjectData.Products)
-        {
-            OneOf<ProductCreateRequest, ValidationResult> itemMappingResult =
-                await GetProductFromXmlDataAsync(item, xmlTextForImages);
-
-            itemMappingResult.Switch(
-                output.Add,
-                validationRes => validationResult = validationRes);
-
-            if (validationResult is not null) return validationResult;
-        }
-
-        return output;
-    }
 
     public async Task<OneOf<List<XmlProductCreateDisplay>, ValidationResult, InvalidXmlResult, UnexpectedFailureResult>> GetProductXmlDisplayFromXmlAsync(string xmlText)
     {
@@ -295,7 +244,6 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
             if (!neededCategoriesAndRequestsToBeUpdatedForThem.ContainsKey(value))
             {
                 neededCategoriesAndRequestsToBeUpdatedForThem.Add(value, new() { item });
-
                 continue;
             }
 
@@ -317,37 +265,6 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
         }
 
         return output;
-    }
-
-    private async Task<OneOf<ProductCreateRequest, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xml)
-    {
-        OneOf<List<CurrentProductPropertyCreateRequest>, ValidationResult> resultOfPropsMapping
-            = GetPropertyCreateRequestsFromXmlData(product.XmlProductProperties, (uint)product.Category.Id);
-
-        List<CurrentProductImageCreateRequest> images = await GetImagesFromXmlDataAsync(product.ShopItemImages, xml);
-
-        int? standardWarrantyTermMonths = GetWarrantyData(product.XmlProductProperties);
-
-        if (resultOfPropsMapping.IsT1) return resultOfPropsMapping.AsT1;
-
-        (string? partNumber1, string? partNumber2) = GetPartNumbers(product);
-
-        return new ProductCreateRequest()
-        {
-            Name = product.Name,
-            Status = product.Status,
-            StandardWarrantyTermMonths = standardWarrantyTermMonths,
-            DisplayPrice = product.Price,
-            Currency = CurrencyEnumMapping.GetCurrencyEnumFromString(product.CurrencyCode),
-            Properties = resultOfPropsMapping.AsT0,
-            ImageFileNames = GetImageFileInfoCreateRequestsFromXmlData(product.ShopItemImages),
-            Images = images,
-            CategoryID = (short?)product.Category.Id,
-            ManifacturerId = (short?)product.Manifacturer.Id,
-            SearchString = product.SearchString,
-            PartNumber1 = partNumber1,
-            PartNumber2 = partNumber2,
-        };
     }
 
     private async Task<OneOf<List<XmlProductCreateDisplay>, ValidationResult>> GetDisplayProductsFromXmlDataAsync(IEnumerable<XmlProduct> products, string xml)
@@ -508,65 +425,56 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
         return characteristicName.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    static int? GetWarrantyData(List<XmlProductProperty> xmlProductProperties)
+    private static Category Map(XmlShopItemCategory category)
     {
-        string? standardWarrantyXmlData = xmlProductProperties.FirstOrDefault(prop => prop.Name == "Warranty")?.Value ?? null;
-
-        if (standardWarrantyXmlData is null) return null;
-
-        ReadOnlySpan<char> standartWarrantyTermMonthsData = standardWarrantyXmlData.AsSpan(0, standardWarrantyXmlData.IndexOf("Months") - 1);
-
-        int? standardWarrantyTermMonths = int.Parse(standartWarrantyTermMonthsData);
-
-        return standardWarrantyTermMonths;
-    }
-
-    private static (string? partNumber1, string? partNumber2) GetPartNumbers(XmlProduct product)
-    {
-        string partNumbers = product.PartNumbers;
-
-        if (partNumbers.Length <= 0) return (null, null);
-
-        int mediumLineIndex = partNumbers.IndexOf("/");
-
-        string partNumber1 = partNumbers[..(mediumLineIndex - 2)];
-        string partNumber2 = partNumbers[(mediumLineIndex + 2)..];
-
-        return (partNumber1, partNumber2);
-    }
-
-    private OneOf<List<CurrentProductPropertyCreateRequest>, ValidationResult> GetPropertyCreateRequestsFromXmlData(
-        List<XmlProductProperty> properties,
-        uint categoryId)
-    {
-        List<CurrentProductPropertyCreateRequest> output = new();
-
-        for (int i = 0; i < properties.Count; i++)
+        return new()
         {
-            XmlProductProperty property = properties[i];
+            Id = category.Id,
+            Description = category.Name,
+            ParentCategoryId = category.ParentCategoryId,
+        };
+    }
 
-            ProductCharacteristic? productCharacteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, property.Name);
+    private static Manifacturer Map(XmlManifacturer manifacturer)
+    {
+        return new()
+        {
+            Id = manifacturer.Id,
+            RealCompanyName = manifacturer.Name,
+        };
+    }
 
-            // RETURN AFTER TESTS ================================================================================================================
+    private async Task<List<CurrentProductImageCreateRequest>> GetImagesFromXmlDataAsync(List<XmlShopItemImage> images, string xml)
+    {
+        List<CurrentProductImageCreateRequest> output = new();
 
-            //if (productCharacteristic is null) return new ValidationResult(new List<ValidationFailure>
-            //{
-            //    new(nameof(XmlProductProperty.Name), "Name is not a valid name for a characteristic")
-            //});
+        for (int i = 0; i < images.Count; i++)
+        {
+            XmlShopItemImage item = images[i];
 
-            CurrentProductPropertyCreateRequest request = new()
+            byte[] imageData = await _httpClient.GetByteArrayAsync(item.PictureUrl);
+
+            int fileExtensionStartIndex = item.PictureUrl.LastIndexOf('.') + 1;
+
+            CurrentProductImageCreateRequest imageFileNameInfo = new()
             {
-                ProductCharacteristicId = productCharacteristic?.Id, // REMOVE "?? 0" after tests
-                DisplayOrder = int.Parse(property.Order),
-                Value = property.Value,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList
+                ImageData = imageData,
+                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(fileExtensionStartIndex)),
+                XML = xml,
             };
 
-            output.Add(request);
+            output.Add(imageFileNameInfo);
         }
 
         return output;
     }
+
+
+
+
+
+
+
 
     private static List<CurrentProductImageFileNameInfoCreateRequest> GetImageFileInfoCreateRequestsFromXmlData(List<XmlShopItemImage> images)
     {
@@ -588,156 +496,30 @@ public class ProductXmlToCreateRequestMapperService : IProductXmlToCreateRequest
         return output;
     }
 
-    private async Task<List<CurrentProductImageCreateRequest>> GetImagesFromXmlDataAsync(List<XmlShopItemImage> images, string xml)
+    private static (string? partNumber1, string? partNumber2) GetPartNumbers(XmlProduct product)
     {
-        List<CurrentProductImageCreateRequest> output = new();
+        string partNumbers = product.PartNumbers;
 
-        for (int i = 0; i < images.Count; i++)
-        {
-            XmlShopItemImage item = images[i];
+        if (partNumbers.Length <= 0) return (null, null);
 
-            byte[] imageData = await _httpClient.GetByteArrayAsync(item.PictureUrl);
+        int mediumLineIndex = partNumbers.IndexOf("/");
 
-            CurrentProductImageCreateRequest imageFileNameInfo = new()
-            {
-                ImageData = imageData,
-                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
-                XML = xml,
-            };
+        string partNumber1 = partNumbers[..(mediumLineIndex - 2)];
+        string partNumber2 = partNumbers[(mediumLineIndex + 2)..];
 
-            output.Add(imageFileNameInfo);
-        }
-
-        return output;
+        return (partNumber1, partNumber2);
     }
 
-    private static Category Map(XmlShopItemCategory category)
+    static int? GetWarrantyData(List<XmlProductProperty> xmlProductProperties)
     {
-        return new()
-        {
-            Id = category.Id,
-            Description = category.Name,
-            ParentCategoryId = category.ParentCategoryId,
-        };
-    }
+        string? standardWarrantyXmlData = xmlProductProperties.FirstOrDefault(prop => prop.Name == "Warranty")?.Value ?? null;
 
-    private static Manifacturer Map(XmlManifacturer manifacturer)
-    {
-        return new()
-        {
-            Id = manifacturer.Id,
-            RealCompanyName = manifacturer.Name,
-        };
-    }
+        if (standardWarrantyXmlData is null) return null;
 
-    public XmlObjectData GetXmlDataFromProducts(List<Product> products)
-    {
-        List<XmlProduct> xmlProducts = new();
+        ReadOnlySpan<char> standartWarrantyTermMonthsData = standardWarrantyXmlData.AsSpan(0, standardWarrantyXmlData.IndexOf("Months") - 1);
 
-        foreach (var product in products)
-        {
-            xmlProducts.Add(MapToXmlProduct(product));
-        }
+        int? standardWarrantyTermMonths = int.Parse(standartWarrantyTermMonthsData);
 
-        XmlObjectData output = new()
-        {
-            DateOfExport = DateTime.Today,
-            Products = xmlProducts,
-            TotalNumberOfItems = products.Count,
-        };
-
-        return output;
-    }
-
-    public static XmlProduct MapToXmlProduct(Product product)
-    {
-        const string _initialImageFileNameInfoPath = "http://www.mostcomputers.bg/upload/";
-        return new()
-        {
-            Id = product.Id,
-            UId = 0,
-            Name = product.Name ?? string.Empty,
-            StatusString = ProductStatusMapping.GetBGStatusStringFromStatusEnum(product.Status) ?? string.Empty,
-            Price = product.Price ?? 0,
-            Code = product.Name ?? string.Empty,
-            CurrencyCode = CurrencyEnumMapping.GetStringFromCurrencyEnum(product.Currency) ?? string.Empty,
-            SearchString = product.SearchString ?? string.Empty,
-            ShopItemImages = product.ImageFileNames is not null ? GetXmlImageDataFromImageFilePathInfos(product.ImageFileNames, _initialImageFileNameInfoPath) : new(),
-            PartNumbers = GetPartNumberXmlStringFromPartNumbers(product.PartNumber1, product.PartNumber2),
-            Category = product.Category is not null ? Map(product.Category) : new(),
-            Manifacturer = product.Manifacturer is not null ? Map(product.Manifacturer) : new(),
-            XmlProductProperties = product.Properties is not null ? GetXmlPropertiesFromProductProperties(product.Properties) : new()
-        };
-    }
-
-    private static string GetPartNumberXmlStringFromPartNumbers(string? partNumber1, string? partNumber2)
-    {
-        if (partNumber1 is null)
-        {
-            if (partNumber2 is null) return string.Empty;
-
-            return $"/{partNumber2}";
-        }
-
-        if (partNumber2 is null) return $"/{partNumber1}";
-
-        return $"{partNumber1}/{partNumber2}";
-    }
-
-    private static XmlShopItemCategory Map(Category category)
-    {
-        return new()
-        {
-            Id = category.Id,
-            Name = category.Description ?? string.Empty,
-            ParentCategoryId = category.ParentCategoryId,
-        };
-    }
-
-    private static XmlManifacturer Map(Manifacturer manifacturer)
-    {
-        return new()
-        {
-            Id = manifacturer.Id,
-            Name = manifacturer.RealCompanyName ?? string.Empty,
-        };
-    }
-
-    private static List<XmlShopItemImage> GetXmlImageDataFromImageFilePathInfos(List<ProductImageFileNameInfo> productImageFileNameInfos, string initialPath)
-    {
-        List<XmlShopItemImage> output = new();
-
-        foreach (ProductImageFileNameInfo fileNameInfo in productImageFileNameInfos)
-        {
-            XmlShopItemImage xmlShopItem = new()
-            {
-                PictureUrl = initialPath + fileNameInfo.FileName,
-                ThumbnailUrl = initialPath + fileNameInfo.FileName,
-                DisplayOrder = (short)(fileNameInfo.DisplayOrder ?? 0)
-            };
-
-            output.Add(xmlShopItem);
-        }
-
-        return output;
-    }
-
-    private static List<XmlProductProperty> GetXmlPropertiesFromProductProperties(List<ProductProperty> productProperties)
-    {
-        List<XmlProductProperty> output = new();
-
-        foreach (ProductProperty property in productProperties)
-        {
-            XmlProductProperty xmlProductProperty = new()
-            {
-                Name = property.Characteristic ?? string.Empty,
-                Value = property.Value ?? string.Empty,
-                Order = property.DisplayOrder?.ToString() ?? string.Empty
-            };
-
-            output.Add(xmlProductProperty);
-        }
-
-        return output;
+        return standardWarrantyTermMonths;
     }
 }
