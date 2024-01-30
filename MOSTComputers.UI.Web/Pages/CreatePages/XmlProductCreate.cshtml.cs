@@ -17,14 +17,20 @@ namespace MOSTComputers.UI.Web.Pages.CreatePages;
 
 public class XmlProductCreateModel : PageModel
 {
-    public XmlProductCreateModel(IProductXmlToCreateRequestMapperService mapperService, IProductService productService, IProductDeserializeService productDeserializeService)
+    public XmlProductCreateModel(
+        IProductXmlToCreateRequestMappingService createRequestMapperService,
+        IProductXmlToProductDisplayMappingService displayMappingService,
+        IProductService productService,
+        IProductDeserializeService productDeserializeService)
     {
-        _mapperService = mapperService;
+        _createRequestMapperService = createRequestMapperService;
+        _displayMappingService = displayMappingService;
         _productService = productService;
         _productDeserializeService = productDeserializeService;
     }
 
-    private readonly IProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductXmlToCreateRequestMappingService _createRequestMapperService;
+    private readonly IProductXmlToProductDisplayMappingService _displayMappingService;
     private readonly IProductService _productService;
     private readonly IProductDeserializeService _productDeserializeService;
 
@@ -61,7 +67,7 @@ public class XmlProductCreateModel : PageModel
         }
 
         OneOf<List<ProductCreateRequest>, ValidationResult, UnexpectedFailureResult, InvalidXmlResult> requestMappingResult
-            = await _mapperService.GetProductCreateRequestsFromXmlAsync(xml);
+            = await _createRequestMapperService.GetProductCreateRequestsFromXmlAsync(xml);
 
         return requestMappingResult.Match(
             productCreateRequests => CreateProducts(productCreateRequests),
@@ -84,7 +90,7 @@ public class XmlProductCreateModel : PageModel
         if (xmlObjectData is null) return StatusCode(500);
 
         OneOf<List<XmlProductCreateDisplay>, ValidationResult> requestMappingResult
-            = await _mapperService.GetProductXmlDisplayFromXmlAsync(xmlObjectData, xml);
+            = await _displayMappingService.GetProductXmlDisplayFromXmlAsync(xmlObjectData, xml);
 
         return requestMappingResult.Match(
             productCreateRequests =>
@@ -108,7 +114,7 @@ public class XmlProductCreateModel : PageModel
     {
         foreach (var productDisplay in productDisplays)
         {
-            ProductCreateRequest productCreateRequest = _mapperService.GetProductCreateRequestFromProductXmlDisplay(productDisplay);
+            ProductCreateRequest productCreateRequest = _displayMappingService.GetProductCreateRequestFromProductXmlDisplay(productDisplay);
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
 
