@@ -1,5 +1,6 @@
 using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.SearchStringOrigin.Configuration;
+using MOSTComputers.Services.XMLDataOperations.Configuration;
 using MOSTComputers.Services.XMLDataOperations.Services;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services;
@@ -14,11 +15,10 @@ builder.Services.AddProductServices(builder.Configuration.GetConnectionString("M
 
 builder.Services.AddHttpClient();
 
-builder.Services.AddTransient<XmlSerializerFactory>();
+builder.Services.AddXmlDeserializeService();
 
-builder.Services.AddTransient<IProductDeserializeService, ProductDeserializeService>();
-
-builder.Services.AddTransient<IProductXmlToCreateRequestMapperService, ProductXmlToCreateRequestMapperService>();
+builder.Services.AddScoped<IProductXmlToCreateRequestMappingService, ProductXmlToCreateRequestMappingService>();
+builder.Services.AddScoped<IProductXmlToProductDisplayMappingService, ProductXmlToProductDisplayMappingService>();
 
 builder.Services.AddSearchStringOriginService();
 
