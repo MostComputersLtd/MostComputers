@@ -20,7 +20,6 @@ function displayImage(data, name)
 
 function scrollHorizontally(e)
 {
-    e = window.event || e;
     var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
     document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
     e.preventDefault();
@@ -175,6 +174,35 @@ function addNewImage(fileInputElement)
             imagesPopupModalContent.innerHTML = result;
         })
         .fail(function (jqXHR, textStatus) {
+        });
+}
+
+function update_productImageDisplay_ul_li_activeState(elementId, elementCheckBoxId, productId, displayOrder, fileName)
+{
+    var elementCheckbox = document.getElementById(elementCheckBoxId);
+
+    var checkboxIsChecked = elementCheckbox.checked;
+
+    const url = "/ProductDisplay/" + "?handler=UpdateImageActiveStatus" + "&productId=" + productId + "&displayOrder=" + displayOrder + "&fileName=" + fileName + "&active=" + checkboxIsChecked;
+
+    $.ajax({
+        type: "PUT",
+        url: url,
+        contentType: "application/json",
+        data: null,
+        headers: {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    })
+        .done(function (result)
+        {
+            var opacityOfLi = checkboxIsChecked ? 1 : 0.5;
+
+            document.getElementById(elementId).style.opacity = opacityOfLi;
+        })
+        .fail(function (jqXHR, textStatus)
+        {
         });
 }
 
