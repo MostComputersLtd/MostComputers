@@ -1,5 +1,7 @@
-﻿using MOSTComputers.Services.XMLDataOperations.Models;
+﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Services.XMLDataOperations.Models;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.XMLDataOperations.Services.Mapping;
 using OneOf;
 using System.Threading.Tasks.Dataflow;
 using System.Xml;
@@ -9,12 +11,16 @@ namespace MOSTComputers.Services.XMLDataOperations.Services;
 
 public sealed class ProductDeserializeService : IProductDeserializeService
 {
-    public ProductDeserializeService(XmlSerializerFactory xmlSerializerFactory)
+    public ProductDeserializeService(
+        XmlSerializerFactory xmlSerializerFactory,
+        IProductToXmlProductMappingService productToXmlProductMappingService)
     {
         _xmlSerializer = xmlSerializerFactory.CreateSerializer(typeof(XmlObjectData));
+        _productToXmlProductMappingService = productToXmlProductMappingService;
     }
 
     private readonly XmlSerializer _xmlSerializer;
+    private readonly IProductToXmlProductMappingService _productToXmlProductMappingService;
 
     public XmlObjectData? DeserializeProductsXml(string xml)
     {
@@ -78,11 +84,44 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         return unescapedXml;
     }
 
+    public string SerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes)
+    {
+        using StringWriter writer = new();
+
+        _xmlSerializer.Serialize(writer, _productToXmlProductMappingService.MapToXmlProduct(product));
+
+        string xml = writer.ToString();
+
+        if (!shouldRemoveXmlSerializeEscapes) return xml;
+
+        string unescapedXml = TransformToOriginalAfterSerialization(xml);
+
+        return unescapedXml;
+    }
+
     public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes)
     {
         try
         {
             return SerializeProductsXml(xmlObjectData, shouldRemoveXmlSerializeEscapes);
+        }
+        catch (InvalidOperationException invalidOperationEx)
+        {
+            if (invalidOperationEx.InnerException is null
+                || invalidOperationEx.InnerException is not XmlException)
+            {
+                return new InvalidXmlResult() { Text = "Something went wrong" };
+            }
+
+            return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
+        }
+    }
+
+    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes)
+    {
+        try
+        {
+            return SerializeProductsXml(product, shouldRemoveXmlSerializeEscapes);
         }
         catch (InvalidOperationException invalidOperationEx)
         {
