@@ -8,7 +8,10 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.SearchStringOrigin.Models;
+using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Models;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Pages.Shared;
@@ -23,13 +26,14 @@ public sealed class ProductDisplayModel : PageModel
 {
     public ProductDisplayModel(
         ICategoryService categoryService,
-        IProductXmlToCreateRequestMapperService mapperService,
+        IProductXmlToCreateRequestMappingService mapperService,
         IProductDeserializeService productDeserializeService,
         IProductService productService,
         IProductPropertyService productPropertyService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductStatusesService productStatusesService,
-        IProductImageService productImageService)
+        IProductImageService productImageService,
+        ISearchStringOriginService searchStringOriginService)
     {
         _categoryService = categoryService;
         _mapperService = mapperService;
@@ -39,6 +43,7 @@ public sealed class ProductDisplayModel : PageModel
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productStatusesService = productStatusesService;
         _productImageService = productImageService;
+        _searchStringOriginService = searchStringOriginService;
 
         AllCategoriesSelectItems = InitializeCategorySelectItems();
 
@@ -78,7 +83,8 @@ public sealed class ProductDisplayModel : PageModel
             {
                 Product = product,
                 ProductStatuses = productStatuses.FirstOrDefault(x => x.ProductId == product.Id)
-                    ?? new() { ProductId = product.Id, IsProcessed = false, NeedsToBeUpdated = false }
+                    ?? new() { ProductId = product.Id, IsProcessed = false, NeedsToBeUpdated = false },
+                SearchStringPartOriginDataList = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(product)!
             };
 
             ProductsAndStatuses.Add(item);
@@ -86,13 +92,14 @@ public sealed class ProductDisplayModel : PageModel
     }
 
     private readonly ICategoryService _categoryService;
-    private readonly IProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductXmlToCreateRequestMappingService _mapperService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly IProductService _productService;
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductStatusesService _productStatusesService;
     private readonly IProductImageService _productImageService;
+    private readonly ISearchStringOriginService _searchStringOriginService;
 
     // So i dont have to new up lists for range searches
     private readonly List<Product> _singleProductList = new();
@@ -332,7 +339,8 @@ public sealed class ProductDisplayModel : PageModel
             ProductAndStatuses item = new()
             {
                 Product = product,
-                ProductStatuses = productStatusesForProduct ?? new() { ProductId = product.Id, IsProcessed = false, NeedsToBeUpdated = false }
+                ProductStatuses = productStatusesForProduct ?? new() { ProductId = product.Id, IsProcessed = false, NeedsToBeUpdated = false },
+                SearchStringPartOriginDataList = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(product)
             };
 
             ProductsAndStatuses.Add(item);
@@ -489,12 +497,13 @@ public sealed class ProductDisplayModel : PageModel
 
         if (imageFileNameInfoThatWasUpdated is null) return BadRequest();
 
-        ProductImageFileNameInfoUpdateRequest fileNameInfoUpdateRequest = new()
+        ServiceProductImageFileNameInfoUpdateRequest fileNameInfoUpdateRequest = new()
         {
             DisplayOrder = (int)oldDisplayOrder,
             NewDisplayOrder = (int)newDisplayOrder,
             FileName = imageFileNameInfoThatWasUpdated.FileName,
             ProductId = imageFileNameInfoThatWasUpdated.ProductId,
+            Active = imageFileNameInfoThatWasUpdated.Active,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoUpdateResult
@@ -566,6 +575,24 @@ public sealed class ProductDisplayModel : PageModel
         ProductImage? newFirstImage = _productImageService.GetByIdInAllImages((uint)idOfImage);
 
         return newFirstImage;
+    }
+
+    public IActionResult OnPutUpdateImageActiveStatus(uint productId, uint displayOrder, string fileName, bool active)
+    {
+        ServiceProductImageFileNameInfoUpdateRequest updateRequest = new()
+        {
+            ProductId = (int)productId,
+            DisplayOrder = (int)displayOrder,
+            FileName = fileName,
+            Active = active,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateImageFileNameInfoResult = _productImageFileNameInfoService.Update(updateRequest);
+
+        return updateImageFileNameInfoResult.Match<IActionResult>(
+            _ => new OkResult(),
+            validationResult => BadRequest(validationResult),
+            _ => StatusCode(500));
     }
 
     public IActionResult OnDeleteDeleteImageFromProduct(uint imageId)
@@ -663,6 +690,7 @@ public class ProductAndStatuses
 {
     public required Product Product { get; set; }
     public required ProductStatuses ProductStatuses { get; set; }
+    public List<Tuple<string, List<SearchStringPartOriginData>?>>? SearchStringPartOriginDataList { get; set; }
 }
 
 public class ProductConditionalSearchRequestDTO
