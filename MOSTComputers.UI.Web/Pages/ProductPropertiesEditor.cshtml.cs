@@ -35,7 +35,7 @@ public class ProductPropertiesEditorModel : PageModel
         IProductCharacteristicService productCharacteristicService,
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
-        IProductXmlToCreateRequestMapperService mapperService,
+        IProductXmlToCreateRequestMappingService mapperService,
         IProductDeserializeService productDeserializeService,
         ISearchStringOriginService searchStringOriginService)
     {
@@ -54,7 +54,7 @@ public class ProductPropertiesEditorModel : PageModel
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
-    private readonly IProductXmlToCreateRequestMapperService _mapperService;
+    private readonly IProductXmlToCreateRequestMappingService _mapperService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly ISearchStringOriginService _searchStringOriginService;
 
@@ -162,7 +162,7 @@ public class ProductPropertiesEditorModel : PageModel
             invalidXmlResult => null);
     }
 
-    public Dictionary<string, List<SearchStringPartOriginData>?>? GetSearchStringPartsAndDataAboutTheirOrigin()
+    public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin()
     {
         return _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(Product);
     }
