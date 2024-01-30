@@ -5,15 +5,18 @@ function copySearchStringPartToClipboard(data)
     showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
 }
 
-function showSearchStringOriginDataSmallPopup(index)
+function showSearchStringOriginDataSmallPopup(index, searchStringPart)
 {
     if (index === null
         || index === undefined
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
-    var searchStringPartOriginSmallPopupToShow = document.getElementById("searchStringPartOrigin_li#" + index);
-
-    searchStringPartOriginSmallPopupToShow.style.visibility = "visible";
+    showSearchStringOriginDataSmallPopupCommon(
+        "searchStringPartOrigin_li#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList#" + index,
+        searchStringPart,
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
 }
 
 function removeSearchStringOriginDataSmallPopup(index, searchStringPart)
@@ -24,17 +27,12 @@ function removeSearchStringOriginDataSmallPopup(index, searchStringPart)
 
     searchStringPart = decodeHtmlString(searchStringPart);
 
-    var searchStringPartOriginSmallPopupToShow = document.getElementById("searchStringPartOrigin_li#" + index);
-
-    var searchStringPartOriginMultipleOriginList = document.getElementById("searchStringPartOrigin_multipleOriginsDisplayList#" + index);
-
-    searchStringPartOriginSmallPopupToShow.style.visibility = "hidden";
-
-    if (searchStringPartOriginMultipleOriginList !== null
-        && searchStringPartOriginMultipleOriginList.style.visibility !== "hidden")
-    {
-        searchStringPartOrigin_multipleOriginsShow(index, searchStringPart);
-    }
+    removeSearchStringOriginDataSmallPopupCommon(
+        "searchStringPartOrigin_li#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList#" + index,
+        searchStringPart,
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
 }
 
 function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
@@ -49,73 +47,6 @@ function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
     });
 
     showSearchStringPopupData(productId);
-}
-
-function highlightAllElementsTextsWhereValueIsPresent(elements, value, selectionColor, customSpanName)
-{
-    for (var i = 0; i < elements.length; i++)
-    {
-        var element = elements[i];
-
-        element.innerHTML = element.innerHTML.replace(new RegExp(value, "g"), "<span name='" + customSpanName + "'style='line-height: normal; background-color:" + selectionColor + "'>" + value + "</span>");
-    }
-}
-
-function removeHighlightAllElementsTextsWhereValueIsPresent(elements, value)
-{
-    for (var i = 0; i < elements.length; i++)
-    {
-        var element = elements[i];
-
-        var stop = false;
-
-        var startIndex = 0;
-
-        while (!stop)
-        {
-            var startIndexOfSpan = element.innerHTML.indexOf("<span", startIndex);
-
-            // console.log(startIndexOfSpan);
-
-            if (startIndexOfSpan < 0
-                || startIndexOfSpan === null)
-            {
-                stop = true;
-
-                break;
-            }
-
-            var endIndexOfSpan = element.innerHTML.indexOf("</span>") + 7;
-
-            var substringBetweenSpan = element.innerHTML.substring(startIndexOfSpan, endIndexOfSpan);
-
-            var dataWithExtra = substringBetweenSpan.substring(substringBetweenSpan.indexOf(">", 7));
-
-            console.log(dataWithExtra);
-
-            var indexOfSpanEnd = dataWithExtra.length - 7;
-
-            var valueInSpan = dataWithExtra.substring(1, indexOfSpanEnd);
-
-            if (valueInSpan === value)
-            {
-                element.innerHTML = element.innerHTML.replace(new RegExp(substringBetweenSpan, "g"), value);
-
-                stop = true;
-
-                break;
-            }
-
-            startIndex = endIndexOfSpan;
-        }
-    }
-}
-
-function highlightStringTextsWhereValueIsPresent(valueToHighlight, substring, selectionColor, customSpanName)
-{
-    valueToHighlight = valueToHighlight.replace(new RegExp(substring, "g"), "<span name='" + customSpanName + "'style='line-height: normal; background-color:" + selectionColor + "'>" + substring + "</span>");
-
-    return valueToHighlight;
 }
 
 function showXmlPopupData(productId)
@@ -218,64 +149,6 @@ function copySearchStringDataToClipboard()
     navigator.clipboard.writeText(searchStringData);
 
     showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-}
-
-function searchStringPartOrigin_multipleOriginsShow(index, substringToHighlight)
-{
-    if (index === null
-        || index === undefined
-        || (isNaN(index) && isNaN(parseInt(index)))) return;
-
-    substringToHighlight = decodeHtmlString(substringToHighlight);
-
-    var listOfOptionsToShow = document.getElementById("searchStringPartOrigin_multipleOriginsDisplayList#" + index);
-
-    var nameLabels = document.getElementsByName("searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index);
-    var meaningLabels = document.getElementsByName("searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
-
-    var allLabels = [];
-
-    for (var i = 0; i < nameLabels.length; i++)
-    {
-        allLabels.push(nameLabels[i]);
-    }
-
-    for (var i = 0; i < meaningLabels.length; i++)
-    {
-        allLabels.push(meaningLabels[i]);
-    }
-
-    if (listOfOptionsToShow.style.visibility === "hidden")
-    {
-        listOfOptionsToShow.style.visibility = "visible";
-
-        highlightAllElementsTextsWhereValueIsPresent(allLabels, substringToHighlight, "#FAF2B1", "customSearchStringSelectSpan");
-    }
-    else
-    {
-        listOfOptionsToShow.style.visibility = "hidden";
-
-        removeHighlightAllElementsTextsWhereValueIsPresent(allLabels, substringToHighlight)
-    }
-}
-   
-function RemoveOldSelectedText(valueTextArea)
-{
-    var oldSelectedSpanStartIndex = valueTextArea.innerHTML.indexOf("<span");
-
-    if (oldSelectedSpanStartIndex !== -1)
-    {
-        var oldSelectedSpanEndIndex = valueTextArea.innerHTML.indexOf("</span>") + 7;
-
-        var oldSelectedValueSpan = valueTextArea.innerHTML.substring(oldSelectedSpanStartIndex, oldSelectedSpanEndIndex);
-
-        var oldSelectedValueStartIndex = valueTextArea.innerHTML.indexOf('>', oldSelectedSpanStartIndex) + 1;
-        var oldSelectedValueEndIndex = valueTextArea.innerHTML.indexOf('<', oldSelectedSpanStartIndex + 5);
-
-        var oldSelectedValue = valueTextArea.innerHTML.substring(oldSelectedValueStartIndex, oldSelectedValueEndIndex);
-
-        valueTextArea.innerHTML = valueTextArea.innerHTML.replace(new RegExp(oldSelectedValueSpan, "g"), oldSelectedValue);
-    }
 }
 
 function RemoveSpanFromSelectedText(text)
