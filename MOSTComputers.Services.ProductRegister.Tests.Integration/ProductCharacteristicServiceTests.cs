@@ -1783,7 +1783,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         uint id2 = characteristicInsertResult2.AsT0;
 
-        bool success = _productCharacteristicService.DeleteAllForCategory(categoryId);
+        bool success = _productCharacteristicService.DeleteAllForCategory((int)categoryId);
 
         IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryId((int)categoryId);
 
@@ -1825,7 +1825,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             _ => true,
             _ => false));
 
-        bool success = _productCharacteristicService.DeleteAllForCategory(categoryId);
+        bool success = _productCharacteristicService.DeleteAllForCategory((int)categoryId);
 
         Assert.False(success);
 
