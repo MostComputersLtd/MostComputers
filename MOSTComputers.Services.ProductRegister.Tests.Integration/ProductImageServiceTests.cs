@@ -22,16 +22,19 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 {
     public ProductImageServiceTests(
         IProductImageService productImageService,
+        IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductService productService)
         : base(Startup.ConnectionString)
     {
         _productImageService = productImageService;
+        _productImageFileNameInfoService = productImageFileNameInfoService;
         _productService = productService;
     }
 
     private const int _useRequiredValue = -100;
 
     private readonly IProductImageService _productImageService;
+    private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductService _productService;
 
     private static ServiceProductFirstImageCreateRequest GetInvalidFirstImageCreateRequest(int productId) => new()
@@ -589,6 +592,145 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     };
 
     [Theory]
+    [MemberData(nameof(InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    public void InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner(
+        ServiceProductImageCreateRequest createRequest,
+        uint? displayOrder,
+        bool expected)
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+
+        Assert.True(productInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = productInsertResult1.AsT0;
+
+        if (createRequest.ProductId == _useRequiredValue)
+        {
+            createRequest.ProductId = (int)productId1;
+        }
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest, displayOrder);
+
+        Assert.Equal(expected, insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+
+        if (expected)
+        {
+            uint id = insertResult1.AsT0;
+
+            ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+
+            Assert.NotNull(productImage);
+
+            Assert.Equal((int)productId1, productImage.ProductId);
+            Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+        }
+
+        // Deterministic Delete
+        _productService.DeleteProducts(productId1);
+        DeleteFirstImagesInProduct(productId1);
+    }
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+    public static List<object[]> InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    {
+        new object[3]
+        {
+            GetCreateRequestWithImageData(_useRequiredValue),
+            null,
+            true
+        },
+
+
+        new object[3]
+        {
+            new ServiceProductImageCreateRequest()
+            {
+                ProductId = _useRequiredValue,
+                ImageData = null,
+                ImageFileExtension = null,
+                XML = null
+            },
+            null,
+            true
+        },
+
+        new object[3]
+        {
+            GetCreateRequestWithImageData(_useRequiredValue),
+            1000,
+            false
+        },
+
+        new object[3]
+        {
+            GetCreateRequestWithImageData(_useRequiredValue),
+            0,
+            false
+        },
+
+        new object[3]
+        {
+            new ServiceProductImageCreateRequest()
+            {
+                ProductId = _useRequiredValue,
+                ImageData = Array.Empty<byte>(),
+                ImageFileExtension = null,
+                XML = null
+            },
+            null,
+            false
+        },
+
+        new object[3]
+        {
+            new ServiceProductImageCreateRequest()
+            {
+                ProductId = _useRequiredValue,
+                ImageData = Array.Empty<byte>(),
+                ImageFileExtension = "image/png",
+                XML = null
+            },
+            null,
+            false
+        },
+
+        new object[3]
+        {
+            new ServiceProductImageCreateRequest()
+            {
+                ProductId = _useRequiredValue,
+                ImageData = LocalTestImageData,
+                ImageFileExtension = null,
+                XML = null
+            },
+            null,
+            false
+        },
+
+        new object[3]
+        {
+            new ServiceProductImageCreateRequest()
+            {
+                ProductId = _useRequiredValue,
+                ImageData = LocalTestImageData,
+                ImageFileExtension = "       ",
+                XML = null
+            },
+            null,
+            false
+        },
+    };
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+
+    [Theory]
     [MemberData(nameof(InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductFirstImageCreateRequest createRequest, bool expected)
     {
@@ -1035,6 +1177,80 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         // Deterministic Delete (In case delete in test fails)
         _productService.DeleteProducts(productId1);
         DeleteFirstImagesInProduct(productId1);
+    }
+
+    [Fact]
+    public void DeleteInAllImagesAndImageFilePathInfosById_ShouldSucceed_WhenInsertIsValid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+
+        Assert.True(productInsertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId1 = productInsertResult1.AsT0;
+
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId1);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint id = insertResult1.AsT0;
+
+        bool success = _productImageService.DeleteInAllImagesAndImageFilePathInfosById(id);
+
+        Assert.True(success);
+
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+
+        Assert.Null(productImage);
+
+        // Deterministic Delete (In case delete in test fails)
+        _productService.DeleteProducts(productId1);
+        DeleteFirstImagesInProduct(productId1);
+    }
+
+    [Fact]
+    public void DeleteInAllImagesAndImageFilePathInfosById_ShouldFail_WhenIdIsInvalid()
+    {
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+
+        Assert.True(productInsertResult.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint productId = productInsertResult.AsT0;
+
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId);
+
+        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
+
+        Assert.True(insertResult1.Match(
+            _ => true,
+            _ => false,
+            _ => false));
+
+        uint id = insertResult1.AsT0;
+
+        bool success = _productImageService.DeleteInAllImagesById(0);
+
+        Assert.False(success);
+
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImageFileNameInfo? productImageFileNameInfo = _productImageFileNameInfoService.GetAllForProduct(productId)
+            .FirstOrDefault(x => x.FileName?[x.FileName.IndexOf('.')..] == id.ToString());
+
+        Assert.NotNull(productImage);
+
+        // Deterministic Delete (In case delete in test fails)
+        _productService.DeleteProducts(productId);
+        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
