@@ -53,7 +53,7 @@ public static class CacheKeyUtils
         internal const string GetAllKey = _coreWord;
         internal static string GetByProductIdKey(int productId)
         {
-            return $"{_coreWord}:{productId}";
+            return $"products/{_coreWord}:{productId}";
         }
     }
 
