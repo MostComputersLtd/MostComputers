@@ -9,20 +9,21 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Grouping;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductCharacteristic;
+using MOSTComputers.Services.ProductRegister.StaticUtilities;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
 internal sealed class CachedProductCharacteristicService : IProductCharacteristicService
 {
     public CachedProductCharacteristicService(
-        IProductCharacteristicService productCharacteristicService,
+        ProductCharacteristicService productCharacteristicService,
         ICache<string> cache)
     {
         _productCharacteristicService = productCharacteristicService;
         _cache = cache;
     }
 
-    private readonly IProductCharacteristicService _productCharacteristicService;
+    private readonly ProductCharacteristicService _productCharacteristicService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<ProductCharacteristic> GetAllByCategoryId(int categoryId)
@@ -354,7 +355,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
     {
         IEnumerable<ProductCharacteristic> characteristicsInCategory = GetAllByCategoryId(categoryId);
 
-        if (!characteristicsInCategory.Any()) return true;
+        if (!characteristicsInCategory.Any()) return false;
 
         bool success = _productCharacteristicService.DeleteAllForCategory(categoryId);
 
