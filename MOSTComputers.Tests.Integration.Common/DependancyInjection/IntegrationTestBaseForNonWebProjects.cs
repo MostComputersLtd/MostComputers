@@ -17,7 +17,7 @@ public class IntegrationTestBaseForNonWebProjects : IAsyncLifetime
     }
 
     protected Respawner _respawner = default!;
-    protected string _connString = default!;
+    protected string _connString;
     private readonly RespawnerOptions? _respawnerOptions;
 
     public virtual async Task InitializeAsync()
@@ -30,12 +30,9 @@ public class IntegrationTestBaseForNonWebProjects : IAsyncLifetime
             });
     }
 
-    public virtual async Task DisposeAsync()
+    public virtual Task DisposeAsync()
     {
-
-        //await ResetDatabaseAsync();
-
-        return;
+        return Task.CompletedTask;
     }
 
     protected virtual async Task ResetDatabaseAsync()
