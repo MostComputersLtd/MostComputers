@@ -111,7 +111,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertInAllImagesQuery, parameters);
 
-        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id >= 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<uint, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, uint? displayOrder = null)
@@ -162,7 +162,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(
             insertInAllImagesAndImageFileNameInfosQuery, parameters, doInTransaction: true);
 
-        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id >= 0) ? (uint)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest)
