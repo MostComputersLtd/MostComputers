@@ -16,14 +16,14 @@ namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 internal sealed class CachedManifacturerService : IManifacturerService
 {
     public CachedManifacturerService(
-        IManifacturerService manifacturerService,
+        ManifacturerService manifacturerService,
         ICache<string> cache)
     {
         _manifacturerService = manifacturerService;
         _cache = cache;
     }
 
-    private readonly IManifacturerService _manifacturerService;
+    private readonly ManifacturerService _manifacturerService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<Manifacturer> GetAll()
