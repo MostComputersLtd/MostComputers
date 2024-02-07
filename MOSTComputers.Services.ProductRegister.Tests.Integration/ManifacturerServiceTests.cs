@@ -19,7 +19,7 @@ namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProjects
 {
     public ManifacturerServiceTests(IManifacturerService manifacturerService)
-        : base(Startup.ConnectionString)
+        : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _manifacturerService = manifacturerService;
     }
@@ -44,27 +44,56 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
 
     private const int _useRequiredIdValue = -100;
 
+    private readonly List<uint> _manifacturerIdsToDelete = new();
+
+    private void ScheduleManifactuerersForDeleteAfterTest(params uint[] ids)
+    {
+        _manifacturerIdsToDelete.AddRange(ids);
+    }
+
+    public override async Task DisposeAsync()
+    {
+        await ResetDatabaseAsync();
+
+        DeleteRange(_manifacturerIdsToDelete.ToArray());
+    }
+
     [Fact]
     public void GetAll_ShouldSucceed_WhenInsertsAreValid()
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_validCreateRequest);
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(result1.IsT0);
-        Assert.True(result2.IsT0);
+        uint? id1 = result1.Match<uint?>(
+            id =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        uint? id2 = result2.Match<uint?>(
+            id =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(id1);
+        Assert.NotNull(id2);
 
         IEnumerable<Manifacturer> manifacturers = _manifacturerService.GetAll();
 
         Assert.True(manifacturers.Count() >= 2);
 
-        uint id1 = result1.AsT0;
-        uint id2 = result2.AsT0;
 
         Assert.Contains(manifacturers, x => x.Id == id1);
         Assert.Contains(manifacturers, x => x.Id == id2);
-
-        // Deterministic delete
-        DeleteRange(id1, id2);
     }
 
     [Fact]
@@ -73,8 +102,25 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_invalidCreateRequest);
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _manifacturerService.Insert(_invalidCreateRequest);
 
-        Assert.True(result1.IsT1);
-        Assert.True(result2.IsT1);
+        Assert.True(result1.Match(
+            id =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(id);
+
+                return false;
+            },
+            validationResult => true,
+            unexpectedFailureResult => false));
+
+        Assert.True(result2.Match(
+            id =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(id);
+
+                return false;
+            },
+            validationResult => true,
+            unexpectedFailureResult => false));
 
         IEnumerable<Manifacturer> manifacturers = _manifacturerService.GetAll();
 
@@ -90,22 +136,27 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(result1.IsT0);
+        uint? id = result1.Match<uint?>(
+            idInResult =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(idInResult);
 
-        uint id1 = result1.AsT0;
+                return idInResult;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id1);
+        Assert.NotNull(id);
+
+        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
 
         Assert.NotNull(manifacturer);
 
-        Assert.Equal(id1, (uint)manifacturer.Id);
+        Assert.Equal(id, (uint)manifacturer.Id);
         Assert.Equal(_validCreateRequest.RealCompanyName, manifacturer.RealCompanyName);
         Assert.Equal(_validCreateRequest.BGName, manifacturer.BGName);
         Assert.Equal(_validCreateRequest.DisplayOrder, manifacturer.DisplayOrder);
         Assert.Equal(_validCreateRequest.Active, manifacturer.Active);
-
-        // Deterministic delete
-        DeleteRange(id1);
     }
 
     [Fact]
@@ -113,16 +164,21 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(result1.IsT0);
+        uint? id = result1.Match<uint?>(
+            idInResult =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(idInResult);
 
-        uint id = result1.AsT0;
+                return idInResult;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(id);
 
         Manifacturer? manifacturer = _manifacturerService.GetById(0);
 
         Assert.Null(manifacturer);
-
-        // Deterministic delete
-        DeleteRange(id);
     }
 
     [Theory]
@@ -131,26 +187,31 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _manifacturerService.Insert(createRequest);
 
+        uint? id = result1.Match<uint?>(
+            id =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
         if (expected)
         {
-            Assert.True(result1.IsT0);
+            Assert.NotNull(id);
 
-            uint id1 = result1.AsT0;
-
-            Manifacturer? manifacturer = _manifacturerService.GetById(id1);
+            Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
 
             Assert.Equal(expected, manifacturer is not null);
 
             Assert.NotNull(manifacturer);
 
-            Assert.Equal(id1, (uint)manifacturer.Id);
+            Assert.Equal(id, (uint)manifacturer.Id);
             Assert.Equal(createRequest.RealCompanyName, manifacturer.RealCompanyName);
             Assert.Equal(createRequest.BGName, manifacturer.BGName);
             Assert.Equal(createRequest.DisplayOrder, manifacturer.DisplayOrder);
             Assert.Equal(createRequest.Active, manifacturer.Active);
-
-            // Deterministic delete
-            DeleteRange(id1);
         }
     }
 
@@ -265,30 +326,38 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(insertResult.IsT0);
+        uint? id = insertResult.Match<uint?>(
+            idInResult =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(idInResult);
 
-        uint id1 = insertResult.AsT0;
+                return idInResult;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(id);
 
         if (updateRequest.Id == _useRequiredIdValue)
         {
-            updateRequest.Id = (int)id1;
+            updateRequest.Id = (int)id;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _manifacturerService.Update(updateRequest);
 
         Assert.Equal(expected,
             updateResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+            success => true,
+            validationResult => false,
+            unexpectedFailureResult => false));
 
-        Manifacturer? updatedManifacturer = _manifacturerService.GetById(id1);
+        Manifacturer? updatedManifacturer = _manifacturerService.GetById(id.Value);
 
         Assert.NotNull(updatedManifacturer);
 
         if (expected)
         {
-            Assert.Equal(id1, (uint)updatedManifacturer.Id);
+            Assert.Equal(id, (uint)updatedManifacturer.Id);
             Assert.Equal(updateRequest.RealCompanyName, updatedManifacturer.RealCompanyName);
             Assert.Equal(updateRequest.BGName, updatedManifacturer.BGName);
             Assert.Equal(updateRequest.DisplayOrder, updatedManifacturer.DisplayOrder);
@@ -296,15 +365,12 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         }
         else
         {
-            Assert.Equal(id1, (uint)updatedManifacturer.Id);
+            Assert.Equal(id, (uint)updatedManifacturer.Id);
             Assert.Equal(_validCreateRequest.RealCompanyName, updatedManifacturer.RealCompanyName);
             Assert.Equal(_validCreateRequest.BGName, updatedManifacturer.BGName);
             Assert.Equal(_validCreateRequest.DisplayOrder, updatedManifacturer.DisplayOrder);
             Assert.Equal(_validCreateRequest.Active, updatedManifacturer.Active);
         }
-
-        // Deterministic delete
-        DeleteRange(id1);
     }
 
     public static List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -432,21 +498,23 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? id = insertResult.Match<uint?>(
+            idInResult =>
+            {
+                ScheduleManifactuerersForDeleteAfterTest(idInResult);
 
-        uint id = insertResult.AsT0;
+                return idInResult;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        bool success = _manifacturerService.Delete(id);
+        Assert.NotNull(id);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id);
+        bool success = _manifacturerService.Delete(id.Value);
+
+        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
 
         Assert.Null(manifacturer);
-
-        // Deterministic delete (just in case delete fails in test)
-        DeleteRange(id);
     }
 
     [Fact]
@@ -454,22 +522,24 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _manifacturerService.Insert(_validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? id = insertResult.Match<uint?>(
+             idInResult =>
+             {
+                 ScheduleManifactuerersForDeleteAfterTest(idInResult);
 
-        uint id = insertResult.AsT0;
+                 return idInResult;
+             },
+             validationResult => null,
+             unexpectedFailureResult => null);
+
+        Assert.NotNull(id);
 
         bool success = _manifacturerService.Delete(0);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id);
+        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
 
         Assert.NotNull(manifacturer);
         Assert.False(success);
-
-        // Deterministic delete
-        DeleteRange(id);
     }
 
     private bool DeleteRange(params uint[] ids)
