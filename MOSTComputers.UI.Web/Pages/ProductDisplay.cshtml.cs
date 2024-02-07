@@ -491,7 +491,7 @@ public sealed class ProductDisplayModel : PageModel
         if (oldDisplayOrder == newDisplayOrder) return new OkResult();
 
         IEnumerable<ProductImageFileNameInfo> imageFileNameInfosForProduct
-            = _productImageFileNameInfoService.GetAllForProduct(productId);
+            = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         ProductImageFileNameInfo? imageFileNameInfoThatWasUpdated = imageFileNameInfosForProduct.FirstOrDefault(x => x.DisplayOrder == oldDisplayOrder);
 
@@ -666,7 +666,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (addImageFilePaths)
         {
-            List<ProductImageFileNameInfo> imageFileNamesOfProduct = _productImageFileNameInfoService.GetAllForProduct(productId)
+            List<ProductImageFileNameInfo> imageFileNamesOfProduct = _productImageFileNameInfoService.GetAllInProduct(productId)
             .ToList();
 
             if (imageFileNamesOfProduct.Count > 0)
