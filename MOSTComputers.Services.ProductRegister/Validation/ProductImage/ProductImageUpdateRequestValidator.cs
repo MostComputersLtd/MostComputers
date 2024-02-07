@@ -13,7 +13,7 @@ internal sealed class ProductImageUpdateRequestValidator : AbstractValidator<Ser
 {
     public ProductImageUpdateRequestValidator()
     {
-        RuleFor(x => x.Id).GreaterThan(0);
+        RuleFor(x => x.Id).GreaterThanOrEqualTo(0);
         RuleFor(x => x.XML).Must(IsNotEmptyOrWhiteSpace);
         RuleFor(x => x).Must(x => (x.ImageData is not null) == (x.ImageFileExtension is not null));
         RuleFor(x => x.ImageData).Must(IsNullOrNotEmpty);
