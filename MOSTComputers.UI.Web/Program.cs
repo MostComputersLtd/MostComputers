@@ -6,12 +6,15 @@ using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
 using System.Xml.Serialization;
+using MOSTComputers.Services.Caching.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddProductServices(builder.Configuration.GetConnectionString("MostDBNew")!);
+builder.Services.AddMemoryCachingServices();
+
+builder.Services.AddCachedProductServices(builder.Configuration.GetConnectionString("MostDBNew")!);
 
 builder.Services.AddHttpClient();
 
