@@ -80,19 +80,21 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByIdQuery, parameters);
     }
 
-    public LocalChangeData? GetByTableNameAndElementId(string tableName, int elementId)
+    public LocalChangeData? GetByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum changeOperationType)
     {
         const string getByTableNameAndElementIdQuery =
         $"""
         SELECT * FROM {_tableName}
         WHERE TableName = @tableName
-        AND ID = @elementId;
+        AND ID = @elementId
+        AND Operation = @changeOperationType;
         """;
 
         var parameters = new
         {
             tableName = tableName,
-            elementId = elementId
+            elementId = elementId,
+            changeOperationType = (int)changeOperationType
         };
 
         return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
