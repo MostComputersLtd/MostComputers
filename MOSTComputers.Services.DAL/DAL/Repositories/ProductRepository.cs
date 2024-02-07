@@ -132,8 +132,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     CategoryID, ParentId, Description, IsLeaf,
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                         (SELECT SUM(LocalPosition) FROM
-                            (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2) AS LocalPosition
-                                FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES)) AS SubPosition
+                            (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
+                                FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
 
                 FROM {_tableName} products
                 LEFT JOIN {_categoriesTableName} cat
@@ -746,7 +746,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     output.Images = new();
                 }
 
-                output.Images!.Add(image);
+                if (image is not null)
+                {
+                    output.Images!.Add(image);
+                }
 
                 return product;
             },
@@ -766,7 +769,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             INSERT INTO {_tableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2)
             OUTPUT INSERTED.CSTID INTO #Temp_Table
-            VALUES ((SELECT MAX(CSTID) + 1 FROM {_tableName}), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
+            VALUES (ISNULL((SELECT MAX(CSTID) + 1 FROM {_tableName}), 1), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
                 @PromPID, @PromRID, @PromPictureId, @PromExpDate, @AlertPictureId, @AlertExpDate, @PriceListDescription, @ManifacturerId, @SubcategoryId, @SPLMODEL, @SPLMODEL1, @SPLMODEL2)
 
             SELECT TOP 1 ID FROM #Temp_Table
@@ -781,8 +784,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string insertImageFilePathInfosQuery =
             $"""
-            INSERT INTO {_imageFileNamesTable}(CSTID, ImgNo, ImgFileName)
-            VALUES (@ProductId, @DisplayOrder, @FileName)
+            INSERT INTO {_imageFileNamesTable}(CSTID, ImgNo, ImgFileName, Active)
+            VALUES (@ProductId, @DisplayOrder, @FileName, @Active)
             """;
 
         const string insertInAllImagesQuery =
@@ -943,12 +946,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE CSTID = @productId;
 
             UPDATE {_imageFileNamesTable}
-            SET ImgFileName = 
-                CASE
-                    WHEN ImgNo = @NewDisplayOrder THEN @FileName
-                    ELSE ImgFileName
-                END
-            WHERE CSTID = @productId;
+            SET ImgFileName = @FileName,
+                Active = @Active
+
+            WHERE CSTID = @productId
+            AND ImgNo = @NewDisplayOrder;
             """;
 
 
@@ -1175,6 +1177,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ProductId = productId,
             DisplayOrder = request.DisplayOrder,
             FileName = request.FileName,
+            Active = request.Active,
         };
     }
 
