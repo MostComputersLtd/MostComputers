@@ -1,30 +1,22 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
+[Collection(DefaultTestCollection.Name)]
 public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseForNonWebProjects
 {
     public ProductImageFileNameInfoServiceTests(
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductService productService)
-        : base(Startup.ConnectionString)
+        : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productService = productService;
@@ -35,6 +27,11 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductService _productService;
 
+    public override async Task DisposeAsync()
+    {
+        await ResetDatabaseAsync();
+    }
+
     private static ServiceProductImageFileNameInfoCreateRequest GetCreateRequest(int productId, string fileName = "20183.png", uint displayOrder = 1) =>
     new()
     {
@@ -42,52 +39,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         DisplayOrder = (int)displayOrder,
         ProductId = productId
     };
-
-    //private readonly ProductCreateRequest _validProductCreateRequest = new()
-    //{
-    //    Name = "Product name",
-    //    AdditionalWarrantyPrice = 3.00M,
-    //    AdditionalWarrantyTermMonths = 36,
-    //    StandardWarrantyPrice = "0.00",
-    //    StandardWarrantyTermMonths = 36,
-    //    DisplayOrder = 12324,
-    //    Status = ProductStatusEnum.Call,
-    //    PlShow = 0,
-    //    Price1 = 123.4M,
-    //    DisplayPrice = 123.99M,
-    //    Price3 = 122.5M,
-    //    Currency = CurrencyEnum.EUR,
-    //    RowGuid = Guid.NewGuid(),
-    //    Promotionid = null,
-    //    PromRid = null,
-    //    PromotionPictureId = null,
-    //    PromotionExpireDate = null,
-    //    AlertPictureId = null,
-    //    AlertExpireDate = null,
-    //    PriceListDescription = null,
-    //    PartNumber1 = "DF FKD@$ 343432 wdwfc",
-    //    PartNumber2 = "123123/DD",
-    //    SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
-
-    //    Properties = new()
-    //    {
-    //        new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-    //        new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-    //        new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-    //    },
-    //    Images = new List<CurrentProductImageCreateRequest>()
-    //    {
-    //    },
-    //    ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
-    //    {
-    //        new() { FileName = "20143.png", DisplayOrder = 1 },
-    //        new() { FileName = "20144.png", DisplayOrder = 2 }
-    //    },
-
-    //    CategoryID = 7,
-    //    ManifacturerId = 12,
-    //    SubCategoryId = null,
-    //};
 
     [Fact]
     public void GetAll_ShouldSucceed_WhenInsertsAreValid()
@@ -133,10 +84,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             x.ProductId == createRequest2.ProductId
             && x.DisplayOrder == createRequest2.DisplayOrder
             && x.FileName == createRequest2.FileName);
-
-        // Deterministic Delete
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Fact]
@@ -168,7 +115,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.True(productImageFileNames.Count() >= 2);
 
@@ -183,10 +130,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             x.ProductId == createRequest2.ProductId
             && x.DisplayOrder == createRequest2.DisplayOrder
             && x.FileName == createRequest2.FileName);
-
-        // Deterministic Delete
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Fact]
@@ -218,16 +161,12 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => true,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (ValidProductCreateRequest.ImageFileNames is not null)
         {
             Assert.True(productImageFileNames.Count() == ValidProductCreateRequest.ImageFileNames.Count);
         }
-
-        // Deterministic Delete
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Theory]
@@ -255,7 +194,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (expected)
         {
@@ -275,10 +214,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 && x.DisplayOrder == createRequest.DisplayOrder
                 && x.FileName == createRequest.FileName);
         }
-
-        // Determinstic Delete
-        DeleteProduct(productId);
-        DeleteAllInProduct(productId);
     }
 
     public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -353,7 +288,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.True(productImageFileNames.Any());
 
@@ -378,10 +313,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 && x.DisplayOrder == createRequest.DisplayOrder
                 && x.FileName == createRequest.FileName);
         }
-
-        // Determinstic Delete
-        DeleteProduct(productId);
-        DeleteAllInProduct(productId);
     }
 
     public static List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -504,13 +435,9 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.Empty(productImageFileNames);
-
-        // Deterministic Delete (in case delete in test fails)
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Fact]
@@ -546,16 +473,12 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.False(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (ValidProductCreateRequestWithNoImages.ImageFileNames is not null)
         {
             Assert.Equal(ValidProductCreateRequestWithNoImages.ImageFileNames.Count, productImageFileNames.Count());
         }
-
-        // Deterministic Delete (in case delete in test fails)
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Fact]
@@ -594,7 +517,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        List<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
+        List<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId).ToList();
 
         Assert.DoesNotContain(productImageFileNames, x =>
         x.ProductId == productId
@@ -605,10 +528,6 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         {
             Assert.Equal(i + 1, productImageFileNames[i].DisplayOrder);
         }
-
-        // Deterministic Delete (in case delete in test fails)
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
     }
 
     [Fact]
@@ -647,25 +566,11 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.False(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.Contains(productImageFileNames, x =>
         x.ProductId == productId
         && x.FileName == createRequest1.FileName
         && x.DisplayOrder == createRequest1.DisplayOrder);
-
-        // Deterministic Delete (in case delete in test fails)
-        DeleteAllInProduct(productId);
-        DeleteProduct(productId);
-    }
-
-    private bool DeleteAllInProduct(uint productId)
-    {
-        return _productImageFileNameInfoService.DeleteAllForProductId(productId);
-    }
-
-    private bool DeleteProduct(uint productId)
-    {
-        return _productService.Delete(productId);
     }
 }
