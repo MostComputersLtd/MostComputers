@@ -8,7 +8,7 @@ public interface ILocalChangesService
     IEnumerable<LocalChangeData> GetAllForOperationType(ChangeOperationTypeEnum operationType);
     IEnumerable<LocalChangeData> GetAllForTable(string tableName);
     LocalChangeData? GetById(uint id);
-    LocalChangeData? GetByTableNameAndElementId(string tableName, int elementId);
+    LocalChangeData? GetByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum changeOperationType);
     bool DeleteById(uint id);
     bool DeleteByTableNameAndElementId(string tableName, int elementId);
     bool DeleteRangeByIds(IEnumerable<uint> ids);

@@ -34,9 +34,9 @@ internal sealed class LocalChangesService : ILocalChangesService
         return _localChangesRepository.GetById(id);
     }
 
-    public LocalChangeData? GetByTableNameAndElementId(string tableName, int elementId)
+    public LocalChangeData? GetByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum changeOperationType)
     {
-        return _localChangesRepository.GetByTableNameAndElementId(tableName, elementId);
+        return _localChangesRepository.GetByTableNameAndElementIdAndOperationType(tableName, elementId, changeOperationType);
     }
 
     public bool DeleteById(uint id)
