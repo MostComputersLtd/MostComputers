@@ -8,13 +8,14 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductProperty;
+using MOSTComputers.Services.ProductRegister.StaticUtilities;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
 internal sealed class CachedProductPropertyService : IProductPropertyService
 {
     public CachedProductPropertyService(
-        IProductPropertyService productPropertyService,
+        ProductPropertyService productPropertyService,
         ICache<string> cache)
     {
         _productPropertyService = productPropertyService;
@@ -23,7 +24,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         _allCachedItemsTokenSource = new();
     }
 
-    private readonly IProductPropertyService _productPropertyService;
+    private readonly ProductPropertyService _productPropertyService;
     private readonly ICache<string> _cache;
 
     private readonly CancellationTokenSource _allCachedItemsTokenSource = new();
@@ -55,11 +56,13 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         bool successFromResult = result.Match(
             success => true,
             _ => false,
-            _ => false);
+        _ => false);
 
         if (successFromResult)
         {
             _cache.Evict(GetByProductIdKey(createRequest.ProductId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
         }
 
         return result;
@@ -78,6 +81,8 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         if (successFromResult)
         {
             _cache.Evict(GetByProductIdKey(createRequest.ProductId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
         }
 
         return result;
@@ -96,6 +101,8 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         if (successFromResult)
         {
             _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
         }
 
         return result;
@@ -116,6 +123,8 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
 
             _cache.Evict(key);
 
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+
             _cache.Add(key, cachedProductProperties.Where(x => x.ProductCharacteristicId != (int)characteristicId));
         }
 
@@ -129,6 +138,8 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         if (success)
         {
             _cache.Evict(GetByProductIdKey((int)productId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
         }
 
         return success;
