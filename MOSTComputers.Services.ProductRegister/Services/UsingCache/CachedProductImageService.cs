@@ -11,20 +11,19 @@ using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImage;
-
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class CachedProductImageService : IProductImageService
 {
     public CachedProductImageService(
-        IProductImageService productImageService,
+        ProductImageService productImageService,
         ICache<string> cache)
     {
         _productImageService = productImageService;
         _cache = cache;
     }
 
-    private readonly IProductImageService _productImageService;
+    private readonly ProductImageService _productImageService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<ProductImage> GetAllInProduct(uint productId)
@@ -46,14 +45,14 @@ internal sealed class CachedProductImageService : IProductImageService
         {
             uint productId = productIds[i];
 
-            ProductImage? cachedproductImages
+            ProductImage? cachedproductFirstImage
                 = _cache.GetValueOrDefault<ProductImage>(GetInFirstImagesByIdKey((int)productId));
 
-            if (cachedproductImages is not null)
+            if (cachedproductFirstImage is not null)
             {
                 cachedImages ??= new();
 
-                cachedImages.Add(cachedproductImages);
+                cachedImages.Add(cachedproductFirstImage);
 
                 productIds.RemoveAt(i);
 
@@ -117,6 +116,8 @@ internal sealed class CachedProductImageService : IProductImageService
             if (createRequest.ProductId is null) return result;
 
             _cache.Evict(GetInAllImagesByProductIdKey(createRequest.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -142,6 +143,8 @@ internal sealed class CachedProductImageService : IProductImageService
             _cache.Evict(GetInAllImagesByProductIdKey(createRequest.ProductId.Value));
 
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(createRequest.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -161,7 +164,9 @@ internal sealed class CachedProductImageService : IProductImageService
         {
             if (createRequest.ProductId is null) return result;
 
-            _cache.Evict(GetInAllImagesByIdKey(createRequest.ProductId.Value));
+            _cache.Evict(GetInFirstImagesByIdKey(createRequest.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -187,6 +192,8 @@ internal sealed class CachedProductImageService : IProductImageService
                 || updatedOrOldProductImage.ProductId is null) return result;
 
             _cache.Evict(GetInAllImagesByProductIdKey(updatedOrOldProductImage.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updatedOrOldProductImage.ProductId.Value));
         }
 
         return result;
@@ -204,7 +211,9 @@ internal sealed class CachedProductImageService : IProductImageService
 
         if (successFromResult)
         {
-            _cache.Evict(GetInAllImagesByIdKey(updateRequest.ProductId));
+            _cache.Evict(GetInFirstImagesByIdKey(updateRequest.ProductId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
         }
 
         return result;
@@ -214,7 +223,7 @@ internal sealed class CachedProductImageService : IProductImageService
     {
         ProductImage? productImage = GetByIdInAllImages(id);
 
-        if (productImage is null) return true;
+        if (productImage is null) return false;
 
         bool success = _productImageService.DeleteInAllImagesById(id);
 
@@ -225,6 +234,8 @@ internal sealed class CachedProductImageService : IProductImageService
             if (productImage.ProductId is null) return success;
 
             _cache.Evict(GetInAllImagesByProductIdKey(productImage.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(productImage.ProductId.Value));
         }
 
         return success;
@@ -234,7 +245,7 @@ internal sealed class CachedProductImageService : IProductImageService
     {
         ProductImage? productImage = GetByIdInAllImages(id);
 
-        if (productImage is null) return true;
+        if (productImage is null) return false;
 
         bool success = _productImageService.DeleteInAllImagesAndImageFilePathInfosById(id);
 
@@ -247,6 +258,8 @@ internal sealed class CachedProductImageService : IProductImageService
             _cache.Evict(GetInAllImagesByProductIdKey(productImage.ProductId.Value));
 
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productImage.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(productImage.ProductId.Value));
         }
 
         return success;
@@ -256,7 +269,7 @@ internal sealed class CachedProductImageService : IProductImageService
     {
         IEnumerable<ProductImage> imagesForProduct = GetAllInProduct(productId);
 
-        if (!imagesForProduct.Any()) return true;
+        if (!imagesForProduct.Any()) return false;
 
         bool success = _productImageService.DeleteAllImagesForProduct(productId);
 
@@ -267,7 +280,9 @@ internal sealed class CachedProductImageService : IProductImageService
                 _cache.Evict(GetInAllImagesByIdKey(image.Id));
             }
 
-            _cache.Evict(GetInAllImagesByIdKey((int)productId));
+            _cache.Evict(GetInAllImagesByProductIdKey((int)productId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
         }
 
         return success;
@@ -280,6 +295,8 @@ internal sealed class CachedProductImageService : IProductImageService
         if (success)
         {
             _cache.Evict(GetInFirstImagesByIdKey((int)productId));
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
         }
 
         return success;
