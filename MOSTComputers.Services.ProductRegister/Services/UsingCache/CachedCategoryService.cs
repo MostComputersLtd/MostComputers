@@ -14,14 +14,14 @@ namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 internal sealed class CachedCategoryService : ICategoryService
 {
     public CachedCategoryService(
-        ICategoryService categoryService,
+        CategoryService categoryService,
         ICache<string> cache)
     {
         _categoryService = categoryService;
         _cache = cache;
     }
 
-    private readonly ICategoryService _categoryService;
+    private readonly CategoryService _categoryService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<Category> GetAll()
