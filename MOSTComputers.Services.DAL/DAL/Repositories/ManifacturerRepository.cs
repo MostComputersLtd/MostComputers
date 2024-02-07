@@ -46,7 +46,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             $"""
             INSERT INTO {_tableName}(MfrID, BGName, Name, S, Active)
             OUTPUT INSERTED.MfrID
-            VALUES ((SELECT MAX(MfrID) + 1 FROM {_tableName}), @BGName, @Name, @DisplayOrder, @Active)
+            VALUES (ISNULL((SELECT MAX(MfrID) + 1 FROM {_tableName}), 1), @BGName, @Name, @DisplayOrder, @Active)
             """;
 
         var parameters = new
