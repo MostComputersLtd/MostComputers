@@ -60,6 +60,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
         const string insertQuery =
             $"""
             DECLARE @StatusCode INT = 0;
+
             IF EXISTS (
                 SELECT 1 FROM {_tableName}
                 WHERE CSTID = @productId
@@ -70,8 +71,11 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
                 WHERE CSTID = @productId
             ) SET @StatusCode = 2;
 
-            INSERT INTO {_tableName}(CSTID, IsProcessed, NeedsToBeUpdated)
-            VALUES(@productId, @IsProcessed, @NeedsToBeUpdated)
+            IF @StatusCode = 0
+            BEGIN
+                INSERT INTO {_tableName}(CSTID, IsProcessed, NeedsToBeUpdated)
+                VALUES(@productId, @IsProcessed, @NeedsToBeUpdated)
+            END
 
             SELECT @StatusCode;
             """;
