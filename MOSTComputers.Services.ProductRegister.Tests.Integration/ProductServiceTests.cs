@@ -7,12 +7,6 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
-using Respawn;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
@@ -26,7 +20,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductPropertyService productPropertyService,
         IProductStatusesService productStatusesService)
-        : base(Startup.ConnectionString)
+        : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _productService = productService;
         _productImageService = productImageService;
@@ -35,51 +29,22 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         _productStatusesService = productStatusesService;
     }
 
+    private const int _useRequiredValue = -100;
+
     private readonly IProductService _productService;
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
+
+#pragma warning disable IDE0052 // Remove unread private members
     private readonly IProductPropertyService _productPropertyService;
+#pragma warning restore IDE0052 // Remove unread private members
+
     private readonly IProductStatusesService _productStatusesService;
-    private const int _useRequiredValue = -100;
 
-    private static readonly ProductCreateRequest _validCreateRequest = new()
+    public override async Task DisposeAsync()
     {
-        Name = "Nameee",
-        AdditionalWarrantyPrice = 0.00M,
-        AdditionalWarrantyTermMonths = 0,
-        StandardWarrantyPrice = "3.00",
-        StandardWarrantyTermMonths = 36,
-        DisplayOrder = 13123,
-        Status = ProductStatusEnum.Call,
-        PlShow = 0,
-        Price1 = 125.65M,
-        DisplayPrice = 126.79M,
-        Price3 = 128.99M,
-        Currency = CurrencyEnum.EUR,
-        RowGuid = Guid.NewGuid(),
-        Promotionid = null,
-        PromRid = null,
-        PromotionPictureId = null,
-        PromotionExpireDate = null,
-        AlertPictureId = null,
-        AlertExpireDate = null,
-        PriceListDescription = null,
-        PartNumber1 = "dsadasdasd",
-        PartNumber2 = "12123",
-        SearchString = "DC CDKC 33567",
-
-        Properties = new()
-        {
-            new() { ProductCharacteristicId = 127, DisplayOrder = 12312, Value = "asdaddrer", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new() { ProductCharacteristicId = 129, DisplayOrder = 12332, Value = "asdaddrer", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-        },
-        Images = new(),
-        ImageFileNames = new(),
-
-        CategoryID = 7,
-        ManifacturerId = 12,
-        SubCategoryId = null,
-    };
+        await ResetDatabaseAsync();
+    }
 
     [Fact]
     public void GetAllWithoutImagesAndProps_ShouldSucceed_WhenInsertsAreValid()
@@ -88,21 +53,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId2 = insertResult2.AsT0;
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
         IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
 
@@ -114,9 +79,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -126,21 +88,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId2 = insertResult2.AsT0;
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereSearchStringMatches(validCreateRequest.SearchString!);
 
@@ -152,9 +114,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -164,21 +123,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId2 = insertResult2.AsT0;
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereNameMatches(validCreateRequest.Name!);
 
@@ -190,9 +149,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -202,23 +158,18 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
         invalidCreateRequest.Name = "  ";
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
-
-        Assert.True(insertResult2.Match(
-            _ => false,
-            _ => true,
-            _ => false));
 
         IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
 
@@ -229,9 +180,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.DoesNotContain(allProducts, x =>
             CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1);
     }
 
     [Fact]
@@ -241,12 +189,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
@@ -255,9 +203,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
         Assert.True(insertResult2.Match(
-            _ => false,
-            _ => true,
-            _ => false));
+            id => false,
+            validationResult => true,
+            unexpectedFailureResult => false));
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereSearchStringMatches(validCreateRequest.SearchString!);
 
@@ -268,9 +216,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.DoesNotContain(allProducts, x =>
             CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1);
     }
 
     [Fact]
@@ -280,12 +225,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
@@ -294,9 +239,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
         Assert.True(insertResult2.Match(
-            _ => false,
-            _ => true,
-            _ => false));
+            id => false,
+            validationResult => true,
+            unexpectedFailureResult => false));
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereNameMatches(validCreateRequest.Name!);
 
@@ -307,9 +252,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.DoesNotContain(allProducts, x =>
             CompareProductAndRequestWithoutPropsOrImages(x, invalidCreateRequest));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1);
     }
 
     [Fact]
@@ -319,23 +261,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
 
@@ -349,9 +291,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -361,23 +300,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2, 0 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
 
@@ -391,9 +330,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -403,23 +339,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
 
@@ -437,9 +373,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
         Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product2.Images));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -449,23 +382,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2, 0 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
 
@@ -483,9 +416,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
         Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, product2.Images));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -495,23 +425,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
 
@@ -527,9 +457,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
         Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product2.Properties));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -539,23 +466,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
-
-        uint productId1 = insertResult1.AsT0;
+        uint? productId1 = insertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult2.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId2 = insertResult2.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
+        
+        Assert.NotNull(productId2);
 
-        uint productId2 = insertResult2.AsT0;
-
-        List<uint> productIds = new() { productId1, productId2, 0 };
+        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
 
@@ -571,9 +498,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId2, product2.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(product2, validCreateRequest);
         Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, product2.Properties));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId1, productId2);
     }
 
     [Fact]
@@ -590,14 +514,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            Assert.True(insertResult.Match(
-                _ => true,
-                _ => false,
-                _ => false));
+            uint? productId = insertResult.Match<uint?>(
+                id => id,
+                validationResult => null,
+                unexpectedFailureResult => null);
 
-            uint productId = insertResult.AsT0;
+            Assert.NotNull(productId);
 
-            productIds.Add(productId);
+            productIds.Add(productId.Value);
         }
 
         List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
@@ -605,7 +529,10 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             .Take(10)
             .ToList();
 
-        List<Product> productsInRange = _productService.GetFirstItemsBetweenStartAndEnd(new() { Start = 10, Length = 10 }).ToList();
+        ProductRangeSearchRequest rangeSearchRequest = new() { Start = 10, Length = 10 };
+
+        List<Product> productsInRange = _productService.GetFirstItemsBetweenStartAndEnd(rangeSearchRequest)
+            .ToList();
 
         Assert.True(productsInRange.Count >= 2);
 
@@ -618,9 +545,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productIds.ToArray());
     }
 
     [Fact]
@@ -639,14 +563,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            Assert.True(insertResult.Match(
-                _ => true,
-                _ => false,
-                _ => false));
+            uint? productId = insertResult.Match<uint?>(
+                id => id,
+                validationResult => null,
+                unexpectedFailureResult => null);
 
-            uint productId = insertResult.AsT0;
+            Assert.NotNull(productId);
 
-            productIds.Add(productId);
+            productIds.Add(productId.Value);
         }
 
         List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
@@ -669,9 +593,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productIds.ToArray());
     }
 
     [Fact]
@@ -690,14 +611,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            Assert.True(insertResult.Match(
-                _ => true,
-                _ => false,
-                _ => false));
+            uint? productId = insertResult.Match<uint?>(
+                id => id,
+                validationResult => null,
+                unexpectedFailureResult => null);
 
-            uint productId = insertResult.AsT0;
+            Assert.NotNull(productId);
 
-            productIds.Add(productId);
+            productIds.Add(productId.Value);
         }
 
         List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
@@ -719,9 +640,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productIds.ToArray());
     }
 
     [Fact]
@@ -746,14 +664,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            Assert.True(insertResult.Match(
-                _ => true,
-                _ => false,
-                _ => false));
+            uint? productId = insertResult.Match<uint?>(
+                id => id,
+                validationResult => null,
+                unexpectedFailureResult => null);
 
-            uint productId = insertResult.AsT0;
+            Assert.NotNull(productId);
 
-            productIds.Add(productId);
+            productIds.Add(productId.Value);
         }
 
         ProductCreateRequest validCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
@@ -763,14 +681,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
 
-        Assert.True(insertResultForProductThatDoesntMatchConditions.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.AsT0;
+        Assert.NotNull(productIdForProductThatDoesntMatchConditions);
 
-        productIds.Add(productIdForProductThatDoesntMatchConditions);
+        productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
         List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
             .Where(x =>
@@ -804,9 +722,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productIds.ToArray());
     }
 
     [Fact]
@@ -832,12 +747,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            Assert.True(insertResult.Match(
-                _ => true,
-                _ => false,
-                _ => false));
+            uint? productId = insertResult.Match<uint?>(
+                id => id,
+                validationResult => null,
+                unexpectedFailureResult => null);
 
-            uint productId = insertResult.AsT0;
+            Assert.NotNull(productId);
 
             ProductStatusesCreateRequest productStatusesCreateRequest = new()
             {
@@ -849,10 +764,10 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             OneOf<Success, ValidationResult> productStatusesInsertResult = _productStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
 
             Assert.True(productStatusesInsertResult.Match(
-                _ => true,
-                _ => false));
+                success => true,
+                unexpectedFailureResult => false));
 
-            productIds.Add(productId);
+            productIds.Add(productId.Value);
         }
 
         ProductCreateRequest validCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
@@ -862,14 +777,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
 
-        Assert.True(insertResultForProductThatDoesntMatchConditions.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.AsT0;
+        Assert.NotNull(productIdForProductThatDoesntMatchConditions);
 
-        productIds.Add(productIdForProductThatDoesntMatchConditions);
+        productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
         List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
             .Where(x =>
@@ -905,10 +820,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             AssertProductIsEqualToProductWithoutPropsOrImages(productInRange, productInAll);
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productIds.ToArray());
-        _productStatusesService.DeleteRangeProductStatusesByProductIds(productIds.ToArray());
     }
 
     [Fact]
@@ -918,14 +829,14 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
-        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId.Value);
 
         Assert.NotNull(insertedProduct);
 
@@ -934,9 +845,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal((int)productId, insertedProduct.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
         Assert.True(CompareImagesInRequestAndProduct(firstImageInRequest, insertedProduct.Images));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -946,19 +854,16 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
         Product? insertedProduct = _productService.GetByIdWithFirstImage(0);
 
         Assert.Null(insertedProduct);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -968,23 +873,20 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
-        Product? insertedProduct = _productService.GetByIdWithProps(productId);
+        Product? insertedProduct = _productService.GetByIdWithProps(productId.Value);
 
         Assert.NotNull(insertedProduct);
 
         Assert.Equal((int)productId, insertedProduct.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
         Assert.True(ComparePropertiesInRequestAndProduct(validCreateRequest.Properties, insertedProduct.Properties));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -994,19 +896,16 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
         Product? insertedProduct = _productService.GetByIdWithProps(0);
 
         Assert.Null(insertedProduct);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -1016,23 +915,20 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
-        Product? insertedProduct = _productService.GetByIdWithImages(productId);
+        Product? insertedProduct = _productService.GetByIdWithImages(productId.Value);
 
         Assert.NotNull(insertedProduct);
 
         Assert.Equal((int)productId, insertedProduct.Id);
         AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, validCreateRequest);
         Assert.True(CompareImagesInRequestAndProduct(validCreateRequest.Images, insertedProduct.Images));
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -1042,19 +938,16 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
         Product? insertedProduct = _productService.GetByIdWithImages(0);
 
         Assert.Null(insertedProduct);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     [Theory]
@@ -1063,19 +956,22 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
 
-        Assert.Equal(expected, insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
         if (expected)
         {
-            uint productId = insertResult.AsT0;
+            Assert.True(productId is not null);
 
-            Product? insertedProduct = _productService.GetByIdWithProps(productId);
+            Product? insertedProduct = _productService.GetByIdWithProps(productId.Value);
 
-            List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId).ToList();
-            List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
+            List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId.Value)
+                .ToList();
+
+            List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
+                .ToList();
 
             Assert.NotNull(insertedProduct);
 
@@ -1084,9 +980,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, insertedProduct.Properties));
             Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
             Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
-
-            // Deterministic delete
-            _productService.DeleteProducts(productId);
         }
     }
 
@@ -1324,12 +1217,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
         if (updateRequest.Id == _useRequiredValue)
         {
@@ -1339,14 +1232,17 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productService.Update(updateRequest);
 
         Assert.Equal(expected, updateResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+            id => true,
+            validationResult => false,
+            unexpectedFailureResult => false));
 
-        Product? updatedProduct = _productService.GetByIdWithProps(productId);
+        Product? updatedProduct = _productService.GetByIdWithProps(productId.Value);
 
-        List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId).ToList();
-        List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllForProduct(productId).ToList();
+        List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId.Value)
+            .ToList();
+
+        List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
+            .ToList();
 
         Assert.NotNull(updatedProduct);
 
@@ -1366,9 +1262,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
             Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
         }
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
 #pragma warning disable CA2211 // Non-constant fields should not be visible
@@ -1391,21 +1284,18 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
-        bool? success = _productService.Delete(productId);
+        bool? success = _productService.Delete(productId.Value);
 
-        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId.Value);
 
         Assert.Null(insertedProduct);
-
-        // Deterministic delete (in case delete in test fails)
-        _productService.DeleteProducts(productId);
     }
 
     [Fact]
@@ -1415,21 +1305,18 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        Assert.True(insertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = insertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = insertResult.AsT0;
+        Assert.NotNull(productId);
 
         bool? success = _productService.Delete(0);
 
-        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId);
+        Product? insertedProduct = _productService.GetByIdWithFirstImage(productId.Value);
 
         Assert.NotNull(insertedProduct);
-
-        // Deterministic delete
-        _productService.DeleteProducts(productId);
     }
 
     private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductCreateRequest createRequest)
@@ -1548,6 +1435,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             && createRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
+#pragma warning disable IDE0051 // Remove unused private members
     private static bool CompareProductAndRequestWithoutPropsOrImages(Product insertedProduct, ProductUpdateRequest updateRequest)
     {
         return (updateRequest.Name == insertedProduct.Name
@@ -1606,6 +1494,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         && product.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
+#pragma warning restore IDE0051 // Remove unused private members
     private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyCreateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
     {
         if (propsInRequest is null && propsInObject is null) return true;
