@@ -12,7 +12,7 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductImageFileNameInfoService
 {
     IEnumerable<ProductImageFileNameInfo> GetAll();
-    IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId);
+    IEnumerable<ProductImageFileNameInfo> GetAllInProduct(uint productId);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest, IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoUpdateRequest>? validator = null);
     bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);

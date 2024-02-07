@@ -37,7 +37,7 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.GetAll();
     }
 
-    public IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId)
+    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(uint productId)
     {
         return _imageFileNameInfoRepository.GetAllForProduct(productId);
     }
