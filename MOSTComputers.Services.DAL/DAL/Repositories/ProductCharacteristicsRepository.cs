@@ -111,11 +111,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         const string getByCategoryIdAndNameQuery =
             $"""
             SELECT * FROM {_tableName}
-            WHERE ProductKeywordID = id;
+            WHERE ProductKeywordID = @id;
             """;
 
         return _relationalDataAccess.GetDataFirstOrDefault<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
-            new { id });
+            new { id = (int)id });
     }
 
     public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
