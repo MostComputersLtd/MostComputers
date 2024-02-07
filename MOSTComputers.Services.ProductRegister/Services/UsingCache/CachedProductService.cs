@@ -10,15 +10,13 @@ using OneOf.Types;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Product;
 using System.Collections.Concurrent;
-using System.Threading;
-using System.Linq;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
 internal sealed class CachedProductService : IProductService
 {
     public CachedProductService(
-        IProductService productService,
+        ProductService productService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductPropertyService productPropertyService,
         ICache<string> cache)
@@ -29,14 +27,16 @@ internal sealed class CachedProductService : IProductService
         _cache = cache;
     }
 
-    private readonly IProductService _productService;
+    private readonly ProductService _productService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductPropertyService _productPropertyService;
     private readonly ICache<string> _cache;
 
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSourcesForSearchStrings = new();
+    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSourcesForSearchStrings = new();
 
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSourcesForNames = new();
+    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSourcesForNames = new();
+
+    private static CancellationTokenSource _cancellationTokenSourceForOrderSaves = new();
 
     public IEnumerable<Product> GetAllWithoutImagesAndProps()
     {
@@ -59,6 +59,8 @@ internal sealed class CachedProductService : IProductService
 
     public IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
     {
+        if (productRangeSearchRequest.Length == 0) return Enumerable.Empty<Product>();
+
         IEnumerable<Product>? allProductsWithThatSearchString = _cache.GetValueOrDefault<IEnumerable<Product>>(GetBySearchStringKey(subString));
 
         if (allProductsWithThatSearchString is not null)
@@ -67,8 +69,6 @@ internal sealed class CachedProductService : IProductService
                 .Skip((int)productRangeSearchRequest.Start)
                 .Take((int)productRangeSearchRequest.Length);
         }
-
-        if (productRangeSearchRequest.Length == 0) return Enumerable.Empty<Product>();
 
         int emptyRegions = 0;
 
@@ -106,6 +106,11 @@ internal sealed class CachedProductService : IProductService
             }
 
             wasLastEmpty = true;
+        }
+
+        if (endInnerRegion == 0)
+        {
+            endInnerRegion = productRangeSearchRequest.Length;
         }
 
         if (emptyRegions == 1)
@@ -208,6 +213,11 @@ internal sealed class CachedProductService : IProductService
             wasLastEmpty = true;
         }
 
+        if (endInnerRegion == 0)
+        {
+            endInnerRegion = productRangeSearchRequest.Length;
+        }
+
         if (emptyRegions == 1)
         {
             ProductRangeSearchRequest innerRangeSearchRequest = new() { Start = startInnerRegion, Length = endInnerRegion };
@@ -249,7 +259,7 @@ internal sealed class CachedProductService : IProductService
         foreach (Product product in products)
         {
             _cache.Add(GetByIdKey(product.Id), product);
-            _cache.Add(GetByNameAndOrderKey(subString, order), product);
+            _cache.Add(GetByNameAndOrderKey(subString, order), product, cancellationTokenSource.Token);
 
             order++;
         }
@@ -437,7 +447,7 @@ internal sealed class CachedProductService : IProductService
         Dictionary<int, Product>? orderedProducts = null;
         Dictionary<int, int> rangesThatArentCached = new();
 
-        for (int i = (int)rangeSearchRequest.Start; i < rangeSearchRequest.Length; i++)
+        for (int i = (int)rangeSearchRequest.Start; i < rangeSearchRequest.Start + rangeSearchRequest.Length; i++)
         {
             Product? cachedProduct = _cache.GetValueOrDefault<Product>(GetByOrderKey(i));
 
@@ -463,79 +473,50 @@ internal sealed class CachedProductService : IProductService
         if (rangesThatArentCached.Count == 0
             && orderedProducts is not null) return orderedProducts.Values;
 
-        if (rangesThatArentCached.Count > 2)
+        if (rangesThatArentCached.Count > 1)
         {
             IEnumerable<Product> products = _productService.GetFirstItemsBetweenStartAndEnd(rangeSearchRequest);
 
-            int i = 0;
+            int j = 0;
 
             foreach (Product product in products)
             {
-                if (orderedProducts?.ContainsKey(i) ?? false) continue;
+                if (orderedProducts?.ContainsKey(j) ?? false) continue;
 
-                _cache.Add(GetByOrderKey((int)(i + rangeSearchRequest.Start)), product);
+                _cache.Add(GetByOrderKey((int)(j + rangeSearchRequest.Start)), product, _cancellationTokenSourceForOrderSaves.Token);
                 _cache.Add(GetByIdKey(product.Id), product);
 
-                i++;
+                j++;
             }
 
             return products;
         }
-        else if (rangesThatArentCached.Count == 1)
-        {
-            KeyValuePair<int, int> kvp = rangesThatArentCached.First();
 
-            ProductRangeSearchRequest newRangeSearchRequest = new() { Start = (uint)kvp.Key, Length = (uint)kvp.Value };
+        KeyValuePair<int, int> kvp = rangesThatArentCached.First();
 
-            IEnumerable<Product> missingProducts = _productService.GetFirstItemsBetweenStartAndEnd(newRangeSearchRequest);
+        ProductRangeSearchRequest newRangeSearchRequest = new() { Start = (uint)kvp.Key, Length = (uint)kvp.Value };
 
-            int i = 0;
+        IEnumerable<Product> missingProducts = _productService.GetFirstItemsBetweenStartAndEnd(newRangeSearchRequest);
 
-            orderedProducts = new();
-
-            foreach (Product product in missingProducts)
-            {
-                int order = (int)(i + rangeSearchRequest.Start);
-
-                _cache.Add(GetByOrderKey(order), product);
-                _cache.Add(GetByIdKey(product.Id), product);
-
-                orderedProducts.Add(order, product);
-
-                i++;
-            }
-
-            return orderedProducts
-                .OrderBy(kvp => kvp.Key)
-                .Select(x => x.Value);
-        }
+        int k = 0;
 
         orderedProducts = new();
 
-        foreach (KeyValuePair<int, int> kvp in rangesThatArentCached)
+        foreach (Product product in missingProducts)
         {
-            ProductRangeSearchRequest newRangeSearchRequest = new() { Start = (uint)kvp.Key, Length = (uint)kvp.Value };
+            int order = (int)(k + rangeSearchRequest.Start);
 
-            IEnumerable<Product> missingProducts = _productService.GetFirstItemsBetweenStartAndEnd(newRangeSearchRequest);
+            _cache.Add(GetByOrderKey(order), product, _cancellationTokenSourceForOrderSaves.Token);
+            _cache.Add(GetByIdKey(product.Id), product);
 
-            int i = 0;
+            orderedProducts.Add(order, product);
 
-            foreach (Product product in missingProducts)
-            {
-                int order = (int)(i + rangeSearchRequest.Start);
-
-                _cache.Add(GetByOrderKey(order), product);
-                _cache.Add(GetByIdKey(product.Id), product);
-
-                i++;
-
-                orderedProducts.Add(order, product);
-            }
+            k++;
         }
 
-        return orderedProducts!
-                .OrderBy(kvp => kvp.Key)
-                .Select(x => x.Value);
+        return orderedProducts
+            .OrderBy(kvp => kvp.Key)
+            .Select(x => x.Value);
     }
 
     public Product? GetByIdWithFirstImage(uint id)
@@ -569,7 +550,8 @@ internal sealed class CachedProductService : IProductService
 
         if (product is null) return null;
 
-        if (product.Images is not null)
+        if (product.Images is not null
+            && product.Images.Count > 0)
         {
             _cache.Add(productFirstImageKey, product.Images[0]);
         }
@@ -577,6 +559,14 @@ internal sealed class CachedProductService : IProductService
         if (cached is null)
         {
             _cache.Add(productKey, product);
+
+            return product;
+        }
+
+        if (product.Images is not null
+            && product.Images.Count > 0)
+        {
+            cached.Images = new() { product.Images[0] };
         }
 
         return product;
@@ -622,6 +612,13 @@ internal sealed class CachedProductService : IProductService
         if (cached is null)
         {
             _cache.Add(productKey, product);
+
+            return product;
+        }
+
+        if (product.Properties is not null)
+        {
+            cached.Properties = product.Properties;
         }
 
         return product;
@@ -666,6 +663,13 @@ internal sealed class CachedProductService : IProductService
         if (cached is null)
         {
             _cache.Add(productKey, product);
+
+            return product;
+        }
+
+        if (product.Images is not null)
+        {
+            cached.Images = product.Images;
         }
 
         return product;
@@ -684,10 +688,19 @@ internal sealed class CachedProductService : IProductService
         if (idFromResult is not null)
         {
             _cache.Evict(GetByIdKey(idFromResult.Value));
+            _cancellationTokenSourceForOrderSaves.Cancel();
+
+            if (_cancellationTokenSourceForOrderSaves.IsCancellationRequested)
+            {
+                _cancellationTokenSourceForOrderSaves.Dispose();
+                _cancellationTokenSourceForOrderSaves = new();
+            }
+
             _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(idFromResult.Value));
             _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(idFromResult.Value));
             _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(idFromResult.Value));
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(idFromResult.Value));
+            _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(idFromResult.Value));
 
             if (createRequest.SearchString is not null)
             {
@@ -696,6 +709,15 @@ internal sealed class CachedProductService : IProductService
                     if (!SearchStringSearchUtils.SearchStringContainsParts(createRequest.SearchString, kvp.Key)) continue;
 
                     kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForSearchStrings[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetBySearchStringKey(kvp.Key));
                 }
             }
 
@@ -706,6 +728,15 @@ internal sealed class CachedProductService : IProductService
                     if (!createRequest.Name.Contains(kvp.Key)) continue;
 
                     kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForNames[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetByNameKey(kvp.Key));
                 }
             }
         }
@@ -731,7 +762,7 @@ internal sealed class CachedProductService : IProductService
         productBeforeUpdate.Properties ??= _productPropertyService.GetAllInProduct(productId)
             .ToList();
 
-        productBeforeUpdate.ImageFileNames ??= _productImageFileNameInfoService.GetAllForProduct(productId)
+        productBeforeUpdate.ImageFileNames ??= _productImageFileNameInfoService.GetAllInProduct(productId)
             .ToList();
 
         string updatedProductKey = GetUpdatedByIdKey(updateRequest.Id);
@@ -753,7 +784,17 @@ internal sealed class CachedProductService : IProductService
 
             return result;
         }
+
         _cache.Evict(GetByIdKey(id));
+        _cancellationTokenSourceForOrderSaves.Cancel();
+
+        if (_cancellationTokenSourceForOrderSaves.IsCancellationRequested)
+        {
+            _cancellationTokenSourceForOrderSaves.Dispose();
+            _cancellationTokenSourceForOrderSaves = new();
+        }
+
+        _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(id));
 
         if (updateRequest.Images is not null
             && updateRequest.Images.Count > 0)
@@ -761,6 +802,14 @@ internal sealed class CachedProductService : IProductService
             _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(id));
 
             _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(id));
+
+            if (productBeforeUpdate.Images is not null)
+            {
+                foreach (ProductImage image in productBeforeUpdate.Images)
+                {
+                    _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
+                }
+            }
         }
 
         if (updateRequest.Properties is not null
@@ -773,6 +822,7 @@ internal sealed class CachedProductService : IProductService
             && updateRequest.ImageFileNames.Count > 0)
         {
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(id));
+            _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
         }
 
         if (updateRequest.SearchString is not null)
@@ -782,6 +832,15 @@ internal sealed class CachedProductService : IProductService
                 if (!SearchStringSearchUtils.SearchStringContainsParts(updateRequest.SearchString, kvp.Key)) continue;
 
                 kvp.Value.Cancel();
+
+                if (kvp.Value.IsCancellationRequested)
+                {
+                    kvp.Value.Dispose();
+
+                    _cancellationTokenSourcesForSearchStrings[kvp.Key] = new CancellationTokenSource();
+                }
+
+                _cache.Evict(GetBySearchStringKey(kvp.Key));
             }
         }
 
@@ -792,6 +851,15 @@ internal sealed class CachedProductService : IProductService
                 if (!updateRequest.Name.Contains(kvp.Key)) continue;
 
                 kvp.Value.Cancel();
+
+                if (kvp.Value.IsCancellationRequested)
+                {
+                    kvp.Value.Dispose();
+
+                    _cancellationTokenSourcesForNames[kvp.Key] = new CancellationTokenSource();
+                }
+
+                _cache.Evict(GetByNameKey(kvp.Key));
             }
         }
         
@@ -800,9 +868,15 @@ internal sealed class CachedProductService : IProductService
 
     public bool Delete(uint id)
     {
-        Product? product = GetByIdWithFirstImage(id);
+        Product? productBeforeUpdate = GetByIdWithFirstImage(id);
 
-        if (product is null) return true;
+        if (productBeforeUpdate is null) return true;
+
+        productBeforeUpdate.Properties ??= _productPropertyService.GetAllInProduct(id)
+            .ToList();
+
+        productBeforeUpdate.ImageFileNames ??= _productImageFileNameInfoService.GetAllInProduct(id)
+            .ToList();
 
         bool success = _productService.Delete(id);
 
@@ -811,28 +885,64 @@ internal sealed class CachedProductService : IProductService
             int idInt = (int)id;
 
             _cache.Evict(GetByIdKey(idInt));
+            _cancellationTokenSourceForOrderSaves.Cancel();
+
+            if (_cancellationTokenSourceForOrderSaves.IsCancellationRequested)
+            {
+                _cancellationTokenSourceForOrderSaves.Dispose();
+                _cancellationTokenSourceForOrderSaves = new();
+            }
+
             _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(idInt));
             _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(idInt));
             _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(idInt));
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(idInt));
+            _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
+            _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(idInt));
 
-            if (product.SearchString is not null)
+            if (productBeforeUpdate.Images is not null)
             {
-                foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForSearchStrings)
+                foreach (ProductImage image in productBeforeUpdate.Images)
                 {
-                    if (!SearchStringSearchUtils.SearchStringContainsParts(product.SearchString, kvp.Key)) continue;
-
-                    kvp.Value.Cancel();
+                    _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
                 }
             }
 
-            if (product.Name is not null)
+            if (productBeforeUpdate.SearchString is not null)
+            {
+                foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForSearchStrings)
+                {
+                    if (!SearchStringSearchUtils.SearchStringContainsParts(productBeforeUpdate.SearchString, kvp.Key)) continue;
+
+                    kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForSearchStrings[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetBySearchStringKey(kvp.Key));
+                }
+            }
+
+            if (productBeforeUpdate.Name is not null)
             {
                 foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForNames)
                 {
-                    if (!product.Name.Contains(kvp.Key)) continue;
+                    if (!productBeforeUpdate.Name.Contains(kvp.Key)) continue;
 
                     kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForNames[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetByNameKey(kvp.Key));
                 }
             }
         }
