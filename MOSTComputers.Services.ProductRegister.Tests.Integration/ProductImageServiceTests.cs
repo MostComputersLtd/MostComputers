@@ -24,7 +24,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductService productService)
-        : base(Startup.ConnectionString)
+        : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _productImageService = productImageService;
         _productImageFileNameInfoService = productImageFileNameInfoService;
@@ -36,6 +36,11 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductService _productService;
+
+    public override async Task DisposeAsync()
+    {
+        await ResetDatabaseAsync();
+    }
 
     private static ServiceProductFirstImageCreateRequest GetInvalidFirstImageCreateRequest(int productId) => new()
     {
@@ -91,10 +96,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
         && x.ImageFileExtension == createRequest1.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1, productId2);
-        DeleteFirstImagesInProduct(productId1, productId2);
     }
 
     [Fact]
@@ -133,10 +134,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, invalidCreateRequest.ImageData)
         && x.ImageFileExtension == invalidCreateRequest.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1, productId2);
-        DeleteFirstImagesInProduct(productId1, productId2);
     }
 
     [Fact]
@@ -177,10 +174,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
         && x.ImageFileExtension == createRequest1.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1, productId2);
-        DeleteFirstImagesInProduct(productId1, productId2);
     }
 
     [Fact]
@@ -215,10 +208,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(new List<uint> { productId1, productId2 });
 
         Assert.Empty(productFirstImages);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1, productId2);
-        DeleteFirstImagesInProduct(productId1, productId2);
     }
 
     [Fact]
@@ -254,10 +243,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(new List<uint> { 0, productId2 });
 
         Assert.Empty(productFirstImages);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1, productId2);
-        DeleteFirstImagesInProduct(productId1, productId2);
     }
 
     [Fact]
@@ -302,10 +287,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         x.ProductId == productId
         && CompareDataInByteArrays(x.ImageData, createRequest2.ImageData)
         && x.ImageFileExtension == createRequest2.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -340,10 +321,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
 
         Assert.Empty(productImages);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -376,10 +353,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Equal((int)productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
         Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -405,13 +378,9 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         uint id = insertResult.AsT0;
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(0);
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(999999999);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -442,10 +411,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Equal((int)productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
         Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -472,10 +437,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetFirstImageForProduct(productId);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Theory]
@@ -516,10 +477,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
             Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
         }
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     public static List<object[]> InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -592,7 +549,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     };
 
     [Theory]
-    [MemberData(nameof(InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    [MemberData(nameof(InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner(
         ServiceProductImageCreateRequest createRequest,
         uint? displayOrder,
@@ -600,12 +557,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
-        Assert.True(productInsertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId1 = productInsertResult1.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId1 = productInsertResult1.AsT0;
+        Assert.NotNull(productId1);
 
         if (createRequest.ProductId == _useRequiredValue)
         {
@@ -632,10 +589,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
             Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
         }
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
@@ -665,14 +618,14 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         new object[3]
         {
             GetCreateRequestWithImageData(_useRequiredValue),
-            1000,
-            false
+            (uint?)1000,
+            true
         },
 
         new object[3]
         {
             GetCreateRequestWithImageData(_useRequiredValue),
-            0,
+            (uint?)0,
             false
         },
 
@@ -767,10 +720,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
             Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
         }
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     public static List<object[]> InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -894,10 +843,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
             Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
         }
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     public static List<object[]> UpdateInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -1026,10 +971,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
             Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
         }
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     public static List<object[]> UpdateInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
@@ -1137,10 +1078,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     [Fact]
@@ -1148,35 +1085,31 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
-        Assert.True(productInsertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId1 = productInsertResult1.Match<uint?>(
+             id => id,
+             validationResult => null,
+             unexpectedFailureResult => null);
 
-        uint productId1 = productInsertResult1.AsT0;
+        Assert.NotNull(productId1);
 
         ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId1);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? id = insertResult1.Match<uint?>(
+             id => id,
+             validationResult => null,
+             unexpectedFailureResult => null);
 
-        uint id = insertResult1.AsT0;
+        Assert.NotNull(id);
 
-        bool success = _productImageService.DeleteInAllImagesById(0);
+        bool success = _productImageService.DeleteInAllImagesById(999999999);
 
         Assert.False(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(id.Value);
 
         Assert.NotNull(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     [Fact]
@@ -1209,10 +1142,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId1);
-        DeleteFirstImagesInProduct(productId1);
     }
 
     [Fact]
@@ -1220,37 +1149,33 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
-        Assert.True(productInsertResult.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? productId = productInsertResult.Match<uint?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null);
 
-        uint productId = productInsertResult.AsT0;
+        Assert.NotNull(productId);
 
         ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId);
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
 
-        Assert.True(insertResult1.Match(
-            _ => true,
-            _ => false,
-            _ => false));
+        uint? id = insertResult1.Match<uint?>(
+             id => id,
+             validationResult => null,
+             unexpectedFailureResult => null);
 
-        uint id = insertResult1.AsT0;
+        Assert.NotNull(id);
 
-        bool success = _productImageService.DeleteInAllImagesById(0);
+        bool success = _productImageService.DeleteInAllImagesById(999999999);
 
         Assert.False(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
-        ProductImageFileNameInfo? productImageFileNameInfo = _productImageFileNameInfoService.GetAllForProduct(productId)
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(id.Value);
+        ProductImageFileNameInfo? productImageFileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
             .FirstOrDefault(x => x.FileName?[x.FileName.IndexOf('.')..] == id.ToString());
 
         Assert.NotNull(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -1292,10 +1217,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
 
         Assert.Empty(productImages);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -1333,10 +1254,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
 
         Assert.Empty(productImages);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -1367,10 +1284,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetFirstImageForProduct(productId);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -1401,10 +1314,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetFirstImageForProduct(productId);
 
         Assert.Null(productImage);
-
-        // Deterministic Delete (In case delete in test fails)
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
     }
 
     [Fact]
@@ -1435,22 +1344,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ProductImage? productImage = _productImageService.GetFirstImageForProduct(productId);
 
         Assert.NotNull(productImage);
-
-        // Deterministic Delete
-        _productService.DeleteProducts(productId);
-        DeleteFirstImagesInProduct(productId);
-    }
-
-    private bool DeleteFirstImagesInProduct(params uint[] productIds)
-    {
-        foreach (var productId in productIds)
-        {
-            bool success = _productImageService.DeleteInFirstImagesByProductId(productId);
-
-            if (!success) return false;
-        }
-
-        return true;
     }
 
 #pragma warning disable IDE0051 // Remove unused private members
