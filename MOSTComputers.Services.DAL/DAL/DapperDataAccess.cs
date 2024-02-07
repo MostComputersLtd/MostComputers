@@ -12,12 +12,12 @@ public interface IRelationalDataAccess
 {
     bool AddCustomEntityMap<T>(EntityMap<T> entityMap) where T : class;
     IEnumerable<T> GetData<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
-    IEnumerable<T1> GetData<T1, T2, U>(string sqlStatement, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetData<T1, T2, T3, U>(string sqlStatement, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetData<T1, T2, T3, T4, U>(string sqlStatement, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
+    IEnumerable<T1> GetData<T1, T2, U>(string sqlStatement, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetData<T1, T2, T3, U>(string sqlStatement, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetData<T1, T2, T3, T4, U>(string sqlStatement, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
     T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
     T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, IDbConnection dbConnection, IDbTransaction transaction);
     T GetDataFirst<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
@@ -28,12 +28,12 @@ public interface IRelationalDataAccess
     void SaveDataInTransactionUsingAction<T, U>(Action<IDbConnection, IDbTransaction, U> actionInTransaction, U parameters);
     TReturn SaveDataInTransactionUsingAction<T, U, TReturn>(Func<IDbConnection, IDbTransaction, U, TReturn> actionInTransaction, U parameters);
     IEnumerable<T> GetDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, U>(string storedProcedureName, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, U>(string storedProcedureName, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, U>(string storedProcedureName, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
-    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, U>(string storedProcedureName, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, U>(string storedProcedureName, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, U>(string storedProcedureName, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
+    IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null, bool doInTransaction = false);
     int SaveDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
     T? SaveDataAndReturnValue<T, U>(string sqlStatement, U parameters, bool doInTransaction = false);
     T? SaveDataAndReturnValueStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false);
@@ -70,10 +70,10 @@ internal class DapperDataAccess : IRelationalDataAccess
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
+        connection.Open();
+
         if (doInTransaction)
         {
-            connection.Open();
-
             using IDbTransaction transaction = connection.BeginTransaction();
 
             return connection.Query<T>(sqlStatement, parameters, transaction, commandType: CommandType.Text);
@@ -92,70 +92,166 @@ internal class DapperDataAccess : IRelationalDataAccess
     }
 
 
-    public IEnumerable<T1> GetData<T1, T2, U>(string sqlStatement, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, U>(
+        string sqlStatement,
+        Func<T1, T2, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public IEnumerable<T1> GetData<T1, T2, T3, U>(string sqlStatement, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, T3, U>(
+        string sqlStatement,
+        Func<T1, T2, T3, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public IEnumerable<T1> GetData<T1, T2, T3, T4, U>(string sqlStatement, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, T3, T4, U>(
+        string sqlStatement,
+        Func<T1, T2, T3, T4, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, U>(
+        string sqlStatement,
+        Func<T1, T2, T3, T4, T5, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, U>(
+        string sqlStatement,
+        Func<T1, T2, T3, T4, T5, T6, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
-    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(string sqlStatement, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetData<T1, T2, T3, T4, T5, T6, T7, U>(
+        string sqlStatement,
+        Func<T1, T2, T3, T4, T5, T6, T7, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+            IEnumerable<T1> data = connection.Query(sqlStatement, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(sqlStatement, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.Text);
     }
 
     public T? GetDataFirstOrDefault<T, U>(string sqlStatement, U parameters, bool doInTransaction = false)
@@ -394,70 +490,166 @@ internal class DapperDataAccess : IRelationalDataAccess
         return connection.Query<T>(storedProcedureName, parameters, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, U>(string storedProcedureName, Func<T1, T2, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, U>(
+        string storedProcedureName,
+        Func<T1, T2, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, U>(string storedProcedureName, Func<T1, T2, T3, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, U>(
+        string storedProcedureName,
+        Func<T1, T2, T3, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, U>(string storedProcedureName, Func<T1, T2, T3, T4, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, U>(
+        string storedProcedureName,
+        Func<T1, T2, T3, T4, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, U>(
+        string storedProcedureName,
+        Func<T1, T2, T3, T4, T5, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, U>(
+        string storedProcedureName,
+        Func<T1, T2, T3, T4, T5, T6, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true,
+        int? commandTimeout = null,
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
-    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(string storedProcedureName, Func<T1, T2, T3, T4, T5, T6, T7, T1> map, string splitOn, U parameters, bool buffered = true, int? commandTimeout = null)
+    public IEnumerable<T1> GetDataStoredProcedure<T1, T2, T3, T4, T5, T6, T7, U>(
+        string storedProcedureName,
+        Func<T1, T2, T3, T4, T5, T6, T7, T1> map,
+        string splitOn,
+        U parameters,
+        bool buffered = true, 
+        int? commandTimeout = null, 
+        bool doInTransaction = false)
     {
         using IDbConnection connection = new SqlConnection(_connectionString);
 
         connection.Open();
 
-        using IDbTransaction transaction = connection.BeginTransaction();
+        if (doInTransaction)
+        {
+            using IDbTransaction transaction = connection.BeginTransaction();
 
-        return connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+            IEnumerable<T1> data = connection.Query(storedProcedureName, map, parameters, transaction, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
+
+            transaction.Commit();
+
+            return data;
+        }
+
+        return connection.Query(storedProcedureName, map, parameters, null, buffered, splitOn, commandTimeout, commandType: CommandType.StoredProcedure);
     }
 
     public int SaveDataStoredProcedure<T, U>(string storedProcedureName, U parameters, bool doInTransaction = false)
