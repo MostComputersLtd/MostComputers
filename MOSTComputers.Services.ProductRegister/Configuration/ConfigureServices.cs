@@ -51,11 +51,49 @@ public static class ConfigureServices
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductStatusesService, ProductStatusesService>();
+
         services.AddScoped<ILocalChangesService, LocalChangesService>();
         services.AddScoped<IExternalChangesService, ExternalChangesService>();
 
         services.AddScoped<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
         services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddCachedProductServices(this IServiceCollection services, string connectionString)
+    {
+        services.AddDataAccess(connectionString)
+            .AddAllRepositories();
+
+        services.AddScoped<ProductMapper>();
+
+        AddValidation(services);
+
+        services.AddScoped<CategoryService>();
+        services.AddScoped<ManifacturerService>();
+        services.AddScoped<ProductImageService>();
+        services.AddScoped<ProductImageFileNameInfoService>();
+        services.AddScoped<ProductCharacteristicService>();
+        services.AddScoped<ProductPropertyService>();
+        services.AddScoped<ProductService>();
+        services.AddScoped<ProductStatusesService>();
+
+        services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<ILocalChangesService, LocalChangesService>();
+        services.AddScoped<IExternalChangesService, ExternalChangesService>();
+        services.AddScoped<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
+        services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
+
+        services.AddScoped<ICategoryService, CachedCategoryService>();
+        services.AddScoped<IManifacturerService, CachedManifacturerService>();
+        services.AddScoped<IProductImageService, CachedProductImageService>();
+        services.AddScoped<IProductImageFileNameInfoService, CachedProductImageFileNameInfoService>();
+        services.AddScoped<IProductCharacteristicService, CachedProductCharacteristicService>();
+        services.AddScoped<IProductPropertyService, CachedProductPropertyService>();
+        services.AddScoped<IProductService, CachedProductService>();
+        services.AddScoped<IProductStatusesService, CachedProductStatusesService>();
+
 
         return services;
     }
