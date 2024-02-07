@@ -1,12 +1,13 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
+using MOSTComputers.Services.LocalChangesHandling.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using OneOf;
@@ -27,7 +28,7 @@ public sealed class ProductChangesService : IProductChangesService
         IProductStatusesService productStatusesService,
         IProductDeserializeService productDeserializeService,
         ILocalChangesService localChangesService,
-        ICache<string> cache)
+        IGetProductDataFromBeforeUpdateService getProductDataFromBeforeUpdateService)
     {
         _transactionExecuteService = transactionExecuteService;
         _productService = productService;
@@ -37,8 +38,10 @@ public sealed class ProductChangesService : IProductChangesService
         _productStatusesService = productStatusesService;
         _productDeserializeService = productDeserializeService;
         _localChangesService = localChangesService;
-        _cache = cache;
+        _getProductDataFromBeforeUpdateService = getProductDataFromBeforeUpdateService;
     }
+
+    private const string _tableChangeNameOfProductsTable = "MOSTPRices";
 
     private readonly ITransactionExecuteService _transactionExecuteService;
     private readonly IProductService _productService;
@@ -48,22 +51,67 @@ public sealed class ProductChangesService : IProductChangesService
     private readonly IProductStatusesService _productStatusesService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly ILocalChangesService _localChangesService;
-    private readonly ICache<string> _cache;
+    private readonly IGetProductDataFromBeforeUpdateService _getProductDataFromBeforeUpdateService;
 
-    public OneOf<Success, UnexpectedFailureResult> HandleInsert(LocalChangeData localChangeData)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleAnyOperation(LocalChangeData localChangeData)
     {
-        if (localChangeData.TableElementId < 0) return new UnexpectedFailureResult();
+        if (localChangeData.TableName != _tableChangeNameOfProductsTable)
+        {
+            List<ValidationFailure> failures = new()
+            {
+                new (nameof(localChangeData.TableName), "Argument must equal the name of the product table")
+            };
 
-        return _transactionExecuteService.ExecuteActionInTransaction(
-            HandleInsertInternal,
-            localChangeData);
+            return new ValidationResult(failures);
+        }
+
+        if (localChangeData.OperationType == ChangeOperationTypeEnum.Create)
+        {
+            return HandleInsert(localChangeData);
+        }
+        else if (localChangeData.OperationType == ChangeOperationTypeEnum.Update)
+        {
+            return HandleUpdate(localChangeData);
+        }
+        else if (localChangeData.OperationType == ChangeOperationTypeEnum.Delete)
+        {
+            return HandleDelete(localChangeData);
+        }
+
+        return new UnexpectedFailureResult();
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleInsert(LocalChangeData localChangeData)
+    {
+        LocalChangeDataValidatorForGivenTableAndOperationType validator = new(_tableChangeNameOfProductsTable, ChangeOperationTypeEnum.Create);
+
+        ValidationResult validationResult = validator.Validate(localChangeData);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        try
+        {
+            OneOf<Success, UnexpectedFailureResult> handleInsertResult = _transactionExecuteService.ExecuteActionInTransaction(
+                HandleInsertInternal,
+                localChangeData);
+
+            return handleInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                success => success,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+        catch (TransactionException)
+        {
+            return new UnexpectedFailureResult();
+        }
+        catch (ValidationException validationException)
+        {
+            return new ValidationResult(validationException.Errors);
+        }
     }
 
     private OneOf<Success, UnexpectedFailureResult> HandleInsertInternal(LocalChangeData localChangeData)
     {
         int productId = localChangeData.TableElementId;
-
-        if (productId < 0) return new UnexpectedFailureResult();
 
         Product? product = GetProductFull((uint)productId);
 
@@ -111,31 +159,61 @@ public sealed class ProductChangesService : IProductChangesService
             _ => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
     }
 
-    public OneOf<Success, UnexpectedFailureResult> HandleUpdate(LocalChangeData localChangeData)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleUpdate(LocalChangeData localChangeData)
     {
-        if (localChangeData.TableElementId < 0) return new UnexpectedFailureResult();
+        LocalChangeDataValidatorForGivenTableAndOperationType validator = new(_tableChangeNameOfProductsTable, ChangeOperationTypeEnum.Update);
 
-        return _transactionExecuteService.ExecuteActionInTransaction(
-            HandleUpdateInternal,
-            localChangeData);
+        ValidationResult validationResult = validator.Validate(localChangeData);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        try
+        {
+            OneOf<Success, UnexpectedFailureResult> handleUpdateResult = _transactionExecuteService.ExecuteActionInTransaction(
+                HandleUpdateInternal,
+                localChangeData);
+
+            return handleUpdateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                success => success,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+        catch (TransactionException)
+        {
+            return new UnexpectedFailureResult();
+        }
+        catch (ValidationException validationException)
+        {
+            return new ValidationResult(validationException.Errors);
+        }
     }
 
     private OneOf<Success, UnexpectedFailureResult> HandleUpdateInternal(LocalChangeData localChangeData)
     {
         int productId = localChangeData.TableElementId;
 
-        if (productId < 0) return new UnexpectedFailureResult();
-
         string productBeforeUpdateCacheKey = GetUpdatedByIdKey(productId);
 
-        Product? productBeforeUpdate = _cache.GetValueOrDefault<Product>(productBeforeUpdateCacheKey);
+        Product? productBeforeUpdate = _getProductDataFromBeforeUpdateService.GetProductBeforeUpdate((uint)productId);
 
-        Product? product = GetProductFull((uint)productId);
+        (Product? product,
+        IEnumerable<ProductImage> productImages,
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames,
+        IEnumerable<ProductProperty> productProperties)
+            = GetProductInParts((uint)productId);
 
         if (product is null)
         {
             return new UnexpectedFailureResult();
         }
+
+        product.Images = productImages
+            .ToList();
+
+        product.ImageFileNames = productImageFileNames
+            .ToList();
+
+        product.Properties = productProperties
+            .ToList();
 
         bool isProcessed = DetermineWhetherProductIsProcessedOrNot(product);
 
@@ -160,9 +238,9 @@ public sealed class ProductChangesService : IProductChangesService
                     OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult = _productImageService.UpdateInAllImages(productImageUpdateRequest);
 
                     imageUpdateResult.Switch(
-                        _ => { },
+                        success => { },
                         validationResult => throw new ValidationException(validationResult.Errors),
-                        _ => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
+                        unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
                 }
             }
 
@@ -189,24 +267,135 @@ public sealed class ProductChangesService : IProductChangesService
                     },
                     validationResult => throw new ValidationException(validationResult.Errors));
             }
+            else
+            {
+                ProductStatusesCreateRequest productStatusesCreateRequest = new()
+                {
+                    ProductId = productId,
+                    IsProcessed = isProcessed,
+                    NeedsToBeUpdated = needsToBeUpdated,
+                };
+
+                OneOf<Success, ValidationResult> productStatusesCreateResult = _productStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+
+                productStatusesCreateResult.Switch(
+                    success => { },
+                    validationResult => throw new ValidationException(validationResult.Errors));
+            }
         }
 
-        _cache.Evict(productBeforeUpdateCacheKey);
+        _getProductDataFromBeforeUpdateService.HandleAfterUpdate((uint)productId);
 
         _localChangesService.DeleteById((uint)localChangeData.Id);
 
         return new Success();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> HandleDelete(LocalChangeData localChangeData)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleDelete(LocalChangeData localChangeData)
     {
-        int productId = localChangeData.TableElementId;
+        LocalChangeDataValidatorForGivenTableAndOperationType validator = new(_tableChangeNameOfProductsTable, ChangeOperationTypeEnum.Delete);
 
-        if (productId < 0) return new UnexpectedFailureResult();
+        ValidationResult validationResult = validator.Validate(localChangeData);
 
-        bool success = _productStatusesService.DeleteByProductId((uint)productId);
+        if (!validationResult.IsValid) return validationResult;
 
-        return success ? new Success() : new UnexpectedFailureResult();
+        try
+        {
+            OneOf<Success, UnexpectedFailureResult> handleDeleteResult = _transactionExecuteService.ExecuteActionInTransaction(
+                HandleDeleteInternal,
+                localChangeData);
+
+            return handleDeleteResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                success => success,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+        catch (TransactionException)
+        {
+            return new UnexpectedFailureResult();
+        }
+        catch (ValidationException validationException)
+        {
+            return new ValidationResult(validationException.Errors);
+        }
+    }
+
+    private OneOf<Success, UnexpectedFailureResult> HandleDeleteInternal(LocalChangeData localChangeData)
+    {
+        uint productId = (uint)localChangeData.TableElementId;
+
+        (Product? product,
+        IEnumerable<ProductImage> productImages,
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames,
+        IEnumerable<ProductProperty> productProperties)
+            = GetProductInParts(productId);
+
+        if (product is not null)
+        {
+            IEnumerable<LocalChangeData> changesForProductAfterDelete = GetLocalChangeDataAfterGivenTime(localChangeData.TimeStamp)
+                .Where(localChangeDataLocal =>
+                    localChangeDataLocal.TableName == _tableChangeNameOfProductsTable
+                        && localChangeDataLocal.TableElementId == productId);
+
+            if (changesForProductAfterDelete.Any())
+            {
+                LocalChangeData localChangeDataForProductFirst = changesForProductAfterDelete.First();
+
+                if (localChangeDataForProductFirst.OperationType == ChangeOperationTypeEnum.Create)
+                {
+                    _localChangesService.DeleteById((uint)localChangeData.Id);
+
+                    return new Success();
+                }
+            }
+
+            throw new TransactionInDoubtException("Operation failed for unknown reasons");
+        }
+
+        ProductStatuses? productStatuses = _productStatusesService.GetByProductId(productId);
+
+        if (productStatuses is not null)
+        {
+            bool isProductStatusDelete = _productStatusesService.DeleteByProductId(productId);
+
+            if (!isProductStatusDelete)
+            {
+                throw new TransactionInDoubtException("Operation failed for unknown reasons");
+            }
+        }
+
+        if (productImages.Any())
+        { 
+            bool areProductImagesDeleted = _productImageService.DeleteAllImagesForProduct(productId);
+
+            if (!areProductImagesDeleted)
+            {
+                throw new TransactionInDoubtException("Operation failed for unknown reasons");
+            }
+        }
+
+        if (productImageFileNames.Any())
+        {
+            bool areProductImageFileNameInfosDeleted = _productImageFileNameInfoService.DeleteAllForProductId(productId);
+
+            if (!areProductImageFileNameInfosDeleted)
+            {
+                throw new TransactionInDoubtException("Operation failed for unknown reasons");
+            }
+        }
+
+        if (productProperties.Any())
+        {
+            bool areProductPropertiesDeleted = _productPropertyService.DeleteAllForProduct(productId);
+
+            if (!areProductPropertiesDeleted)
+            {
+                throw new TransactionInDoubtException("Operation failed for unknown reasons");
+            }
+        }
+
+        _localChangesService.DeleteById((uint)localChangeData.Id);
+
+        return new Success();
     }
 
     private static bool DetermineWhetherProductIsProcessedOrNot(Product productFull)
@@ -247,21 +436,68 @@ public sealed class ProductChangesService : IProductChangesService
         if (product.ImageFileNames is null
             || !product.ImageFileNames.Any())
         {
-            product.ImageFileNames = _productImageFileNameInfoService.GetAllForProduct(productId)
+            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId)
+                .ToList();
+        }
+
+        if (product.Properties is null
+            || !product.Properties.Any())
+        {
+            product.Properties = _productPropertyService.GetAllInProduct(productId)
                 .ToList();
         }
 
         return product;
     }
 
-    private bool DetermineWhetherUpdateIsImportant(Product productBeforeUpdate, Product product)
+    private (Product? product, IEnumerable<ProductImage> productImages,
+        IEnumerable<ProductImageFileNameInfo> productImageFileNames, IEnumerable<ProductProperty> productProperties)
+        GetProductInParts(uint productId)
     {
-        if (productBeforeUpdate.SearchString != product.SearchString
-            || productBeforeUpdate.Status != product.Status
-            || productBeforeUpdate.CategoryID != product.CategoryID
-            || productBeforeUpdate.ManifacturerId != product.ManifacturerId
-            || productBeforeUpdate.Promotionid != product.Promotionid
-            || productBeforeUpdate.PromotionPictureId != product.PromotionPictureId)
+        Product? product = _productService.GetByIdWithProps(productId);
+
+        IEnumerable<ProductImage>? productImages = null;
+        IEnumerable<ProductImageFileNameInfo>? productImageFileNames = null;
+        IEnumerable<ProductProperty>? productProperties = null;
+
+        if (product is null
+            || product.Images is null
+            || !product.Images.Any())
+        {
+            productImages = _productImageService.GetAllInProduct(productId);
+        }
+
+        if (product is null
+            || product.ImageFileNames is null
+            || !product.ImageFileNames.Any())
+        {
+            productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        }
+
+        if (product is null
+            || product.Properties is null
+            || !product.Properties.Any())
+        {
+            productProperties = _productPropertyService.GetAllInProduct(productId);
+        }
+
+        return (product, productImages ?? product!.Images!, productImageFileNames ?? product!.ImageFileNames!, productProperties ?? product!.Properties!);
+    }
+
+    private IEnumerable<LocalChangeData> GetLocalChangeDataAfterGivenTime(DateTime dateTime)
+    {
+        return _localChangesService.GetAll()
+            .Where(localChangeData => localChangeData.TimeStamp > dateTime);
+    }
+
+    private bool DetermineWhetherUpdateIsImportant(Product productBeforeUpdate, Product productAfterUpdate)
+    {
+        if (productBeforeUpdate.SearchString != productAfterUpdate.SearchString
+            || productBeforeUpdate.Status != productAfterUpdate.Status
+            || productBeforeUpdate.CategoryID != productAfterUpdate.CategoryID
+            || productBeforeUpdate.ManifacturerId != productAfterUpdate.ManifacturerId
+            || productBeforeUpdate.Promotionid != productAfterUpdate.Promotionid
+            || productBeforeUpdate.PromotionPictureId != productAfterUpdate.PromotionPictureId)
         {
             return true;
         }
@@ -273,14 +509,14 @@ public sealed class ProductChangesService : IProductChangesService
                 .ToList();
         }
 
-        if (product.Properties is null
-            || product.Properties.Count <= 0)
+        if (productAfterUpdate.Properties is null
+            || productAfterUpdate.Properties.Count <= 0)
         {
-            product.Properties = _productPropertyService.GetAllInProduct((uint)product.Id)
+            productAfterUpdate.Properties = _productPropertyService.GetAllInProduct((uint)productAfterUpdate.Id)
                 .ToList();
         }
 
-        if (!CompareDataInPropertyCollections(productBeforeUpdate.Properties, product.Properties))
+        if (!CompareDataInPropertyCollections(productBeforeUpdate.Properties, productAfterUpdate.Properties))
         {
             return true;
         }
