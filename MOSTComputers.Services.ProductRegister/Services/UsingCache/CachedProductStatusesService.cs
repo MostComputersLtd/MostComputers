@@ -12,14 +12,14 @@ namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 internal sealed class CachedProductStatusesService : IProductStatusesService
 {
     public CachedProductStatusesService(
-        IProductStatusesService productStatusesService,
+        ProductStatusesService productStatusesService,
         ICache<string> cache)
     {
         _productStatusesService = productStatusesService;
         _cache = cache;
     }
 
-    private readonly IProductStatusesService _productStatusesService;
+    private readonly ProductStatusesService _productStatusesService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<ProductStatuses> GetAll()
