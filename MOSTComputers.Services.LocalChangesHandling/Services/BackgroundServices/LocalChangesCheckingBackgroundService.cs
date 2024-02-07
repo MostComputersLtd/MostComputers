@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -9,9 +8,7 @@ namespace MOSTComputers.Services.LocalChangesHandling.Services.BackgroundService
 
 public sealed class LocalChangesCheckingBackgroundService : BackgroundService
 {
-    private const string _tableNameOfProductsTable = "MOSTPrices";
-    private const string _tableNameOfFirstImagesTable = "Images";
-    private const string _tableNameOfAllImagesTable = "ImagesAll";
+    private const string _tableChangeNameOfProductsTable = "MOSTPRices";
 
     public LocalChangesCheckingBackgroundService(IServiceScopeFactory scopeFactory)
     {
@@ -35,24 +32,11 @@ public sealed class LocalChangesCheckingBackgroundService : BackgroundService
 
             if (!localChanges.Any()) break;
 
-            foreach (LocalChangeData change in localChanges)
+            foreach (LocalChangeData localChange in localChanges)
             {
-                if (change.TableName == _tableNameOfProductsTable)
+                if (localChange.TableName == _tableChangeNameOfProductsTable)
                 {
-                    if (change.OperationType == ChangeOperationTypeEnum.Create)
-                    {
-                        productChangesService.HandleInsert(change);
-                    }
-
-                    else if (change.OperationType == ChangeOperationTypeEnum.Update)
-                    {
-                        productChangesService.HandleUpdate(change);
-                    }
-
-                    else if (change.OperationType == ChangeOperationTypeEnum.Delete)
-                    {
-                        productChangesService.HandleDelete(change);
-                    }
+                    productChangesService.HandleAnyOperation(localChange);
                 }
             }
         }
