@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using MOSTComputers.Services.ProductRegister.Configuration;
 using System.Configuration;
 using MOSTComputers.Services.LocalChangesHandling.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Respawn;
+using Respawn.Graph;
+using static MOSTComputers.Services.LocalChangesHandling.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Tests.Integration;
 
@@ -16,6 +17,19 @@ public class Startup
     }
 
     internal static string ConnectionString { get; } = GetConnectionString();
+
+    internal static readonly RespawnerOptions RespawnerOptionsToIgnoreTablesThatShouldntBeWiped = new()
+    {
+        DbAdapter = DbAdapter.SqlServer,
+        CheckTemporalTables = false,
+        TablesToIgnore = new Table[]
+        {
+            tableNameOfCategoriesTable,
+            tableNameOfManifacturersTable,
+            tableNameOfProductCharacteristicsTable,
+            tableNameOfPromotionsTable,
+        }
+    };
 
     private static string GetConnectionString()
     {
