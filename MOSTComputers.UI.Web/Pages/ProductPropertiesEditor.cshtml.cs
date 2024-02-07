@@ -119,7 +119,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (product == null) return BadRequest();
 
-        product.ImageFileNames = _productImageFileNameInfoService.GetAllForProduct((uint)product.Id)
+        product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct((uint)product.Id)
             .ToList();
 
         Product = product;
@@ -220,7 +220,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         InitializeCharacteristicsForProductCategory((uint?)product.CategoryID);
 
-        return Partial("_ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartial",
+        return Partial("ProductProperties/_ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartial",
             new ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartialModel()
             {
                 ProductProperty = new ProductProperty() { ProductCharacteristicId = null, ProductId = ProductId },
