@@ -11,11 +11,18 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using System.Numerics;
+using Respawn.Graph;
+using Respawn;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 internal static class CommonTestElements
 {
+    internal static string GetFullTableName(string tableName)
+    {
+        return "dbo." + tableName;
+    }
+
     internal static readonly ProductCreateRequest ValidProductCreateRequest = new()
     {
         Name = "Product name",
