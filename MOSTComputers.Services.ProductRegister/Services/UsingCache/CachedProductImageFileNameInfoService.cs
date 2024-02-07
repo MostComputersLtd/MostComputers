@@ -9,20 +9,21 @@ using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.StaticUtilities;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class CachedProductImageFileNameInfoService : IProductImageFileNameInfoService
 {
     public CachedProductImageFileNameInfoService(
-        IProductImageFileNameInfoService imageFileNameInfoService,
+        ProductImageFileNameInfoService imageFileNameInfoService,
         ICache<string> cache)
     {
         _imageFileNameInfoService = imageFileNameInfoService;
         _cache = cache;
     }
 
-    private readonly IProductImageFileNameInfoService _imageFileNameInfoService;
+    private readonly ProductImageFileNameInfoService _imageFileNameInfoService;
     private readonly ICache<string> _cache;
 
     public IEnumerable<ProductImageFileNameInfo> GetAll()
@@ -30,10 +31,10 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
         return _cache.GetOrAdd(GetAllKey, _imageFileNameInfoService.GetAll);
     }
 
-    public IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId)
+    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(uint productId)
     {
         return _cache.GetOrAdd(GetByProductIdKey((int)productId),
-            () => _imageFileNameInfoService.GetAllForProduct(productId));
+            () => _imageFileNameInfoService.GetAllInProduct(productId));
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
@@ -51,6 +52,8 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
             _cache.Evict(GetByProductIdKey(createRequest.ProductId));
 
             _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
         }
 
         return insertResult;
@@ -71,6 +74,8 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
             _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
 
             _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
         }
 
         return updateResult;
@@ -85,6 +90,8 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
             _cache.Evict(GetByProductIdKey((int)productId));
 
             _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
         }
 
         return success;
@@ -99,6 +106,8 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
             _cache.Evict(GetByProductIdKey((int)productId));
 
             _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
         }
 
         return success;
