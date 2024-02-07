@@ -46,7 +46,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             $"""
             IF @parentId IS NULL
             OR EXISTS (
-                SELECT 1 FROM {_tableName}
+                SELECT TOP 1 CategoryID FROM {_tableName}
                 WHERE CategoryID = @parentId
             )
             INSERT INTO {_tableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
