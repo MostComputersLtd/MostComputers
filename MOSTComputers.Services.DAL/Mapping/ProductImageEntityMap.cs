@@ -7,7 +7,7 @@ internal sealed class ProductImageEntityMap : EntityMap<ProductImage>
 {
     public ProductImageEntityMap()
     {
-        Map(x => x.Id).ToColumn("ID");
+        Map(x => x.Id).ToColumn("ImagePrime", caseSensitive: false);
         Map(x => x.ProductId).ToColumn("ImageProductId");
         Map(x => x.XML).ToColumn("XMLData");
         Map(x => x.ImageData).ToColumn("Image");
