@@ -23,7 +23,9 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getAllQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp 
+        FROM {_tableName}
         ORDER BY TimeStamp;
         """;
 
@@ -34,7 +36,9 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getAllForTableQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
         WHERE TableName = @tableName
         ORDER BY TimeStamp;
         """;
@@ -51,7 +55,9 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getAllForOperationTypeQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
         WHERE Operation = @changeOperationType
         ORDER BY TimeStamp;
         """;
@@ -68,7 +74,9 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getByIdQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
         WHERE PK = @id;
         """;
 
@@ -84,7 +92,9 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string getByTableNameAndElementIdQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
         WHERE TableName = @tableName
         AND ID = @elementId
         AND Operation = @changeOperationType;
