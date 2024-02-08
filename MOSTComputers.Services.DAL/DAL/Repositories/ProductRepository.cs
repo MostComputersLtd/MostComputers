@@ -715,9 +715,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             $"""
             SELECT products.CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
-                CategoryID, ParentId, cat.Description, IsLeaf,
+                CategoryID, ParentId, cat.Description, IsLeaf, cat.S AS CategoryDisplayOrder, cat.rowguid AS CategoryRowGuid, ProductsUpdateCounter,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID, images.CSTID AS ImageProductId, images.Description AS XMLData, Image, ImageFileExt, DateModified
+                images.CSTID AS ImageProductId, images.ID AS ImagePrime, images.Description AS XMLData, Image, ImageFileExt, DateModified
             
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
