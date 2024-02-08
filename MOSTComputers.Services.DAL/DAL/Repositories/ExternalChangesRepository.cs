@@ -18,7 +18,8 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string getAllQuery =
         $"""
-        SELECT * FROM {_tableName};
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName};
         """;
 
         return _relationalDataAccess.GetData<ExternalChangeData, dynamic>(getAllQuery, new { });
@@ -28,7 +29,8 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string getAllForTableQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName}
         WHERE TableName = @tableName;
         """;
 
@@ -44,7 +46,8 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string getAllForOperationTypeQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName}
         WHERE Operation = @changeOperationType;
         """;
 
@@ -60,7 +63,8 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string getByIdQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName}
         WHERE PK = @id;
         """;
 
@@ -76,7 +80,8 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string getByTableNameAndElementIdQuery =
         $"""
-        SELECT * FROM {_tableName}
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName}
         WHERE TableName = @tableName
         AND ID = @elementId;
         """;
