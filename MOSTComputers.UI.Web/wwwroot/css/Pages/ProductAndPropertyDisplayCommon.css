@@ -1,0 +1,14 @@
+﻿.imagePopupButton_imagePopupButtonImage {
+    max-width: 60px;
+    max-height: 60px;
+}
+
+.searchStringPartOrigin_li_copyButtonContainer {
+    display: inline-flex;
+}
+
+.searchStringPartOrigin_li_copyButton {
+    position: relative;
+    left: 0px;
+    top: 0px;
+}
