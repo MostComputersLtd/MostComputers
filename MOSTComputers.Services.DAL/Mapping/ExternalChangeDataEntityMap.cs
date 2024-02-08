@@ -12,9 +12,9 @@ internal sealed class ExternalChangeDataEntityMap : EntityMap<ExternalChangeData
 {
     public ExternalChangeDataEntityMap()
     {
-        Map(x => x.Id).ToColumn("PK");
-        Map(x => x.TableElementId).ToColumn("ID");
-        Map(x => x.OperationType).ToColumn("Operation");
-        Map(x => x.TableName).ToColumn("TableName");
+        Map(x => x.Id).ToColumn("ExternalChangePK");
+        Map(x => x.TableElementId).ToColumn("ExternalChangeID");
+        Map(x => x.OperationType).ToColumn("ExternalChangeOperation");
+        Map(x => x.TableName).ToColumn("ExternalChangeTableName");
     }
 }
