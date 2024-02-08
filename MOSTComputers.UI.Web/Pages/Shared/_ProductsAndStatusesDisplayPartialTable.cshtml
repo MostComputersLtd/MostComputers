@@ -18,14 +18,14 @@
             <label>@product.Status</label>
         </td>
 
-        <td style="padding-left:10px" class="full-parent-height">
+        <td class="product-name-td full-parent-height">
             <a class="btn full-parent-width" asp-page="/ProductPropertiesEditor" asp-route-ProductId="@product.Id" name="Name_label">@product.Name</a>
         </td>
 
         <td>
 
-            <div style="position: relative; padding: 0px; margin: 0px; border-width: 0px;">
-                <ul id="searchStringPartAndOriginPopupDisplay_ul" style="display: flex; list-style: none; flex-wrap: wrap; justify-content: center; align-items: center; padding: 0px; margin: 0px; position: absolute">
+            <div class="searchStringPartAndOriginPopupDisplay_container_div">
+                <ul class="searchStringPartAndOriginPopupDisplay_ul">
 
                     @{
                         int j = 0;
@@ -43,34 +43,34 @@
                                 <table onmouseleave="removeSearchStringOriginDataSmallPopup(@i, @j, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
                                     <tr>
                                         <td id="searchStringPart_h2#@j" name="searchStringPart_h2"
+                                            class="searchStringPart_td"
                                             onmouseover="showSearchStringOriginDataSmallPopup(@i, @j, '@searchStringPart')"
-                                            onclick="displayPopupAndTransportToSearchStringOriginDisplay(@product.Id, @j)"
-                                            style="display: flex; margin: 0px; padding: 0px;">
+                                            onclick="displayPopupAndTransportToSearchStringOriginDisplay(@product.Id, @j)">
 
-                                            <h7 class="productSearchString-popup-searchStringPart-label" style="opacity: 0">@searchStringPart</h7>
+                                            <h7 class="productSearchString-popup-searchStringPart-label">@searchStringPart</h7>
                                         </td>
                                     </tr>
 
                                     <tr style="position: relative; z-index: 9999;">
                                         <td id="searchStringPartOrigin_li#@i#@j" name="searchStringPartOrigin_li"
-                                            style="display: inline; min-width: 100px; width: max-content; max-width: 400px; border: 1px solid #ed9e79; border-radius: 5%; position: absolute; visibility: hidden; background-color: #fffaed;">
+                                            class="searchStringPartOrigin_li" style="visibility:hidden;">
 
                                             @if (kvp.Item2?.Count == 1)
                                             {
                                                 SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[0];
 
-                                                <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; margin-bottom: 8px;">
-                                                    <li style="display: inline-flex">
-                                                        <button style="position: relative; left: 0px; top: 0px;" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                <ul class="searchStringPartOrigin_li_singleItemContainerList">
+                                                    <li class="searchStringPartOrigin_li_copyButtonContainer">
+                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
                                                             +
                                                         </button>
                                                     </li>
                                                     <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                        style="display: inline-flex; flex-grow: 1; justify-content: center;">
-                                                        <h4 style="margin: 0px;">@searchStringPart</h4>
+                                                        class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
+                                                        <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
                                                     </li>
-                                                    <li style="display: inline;">
-                                                        <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                                    <li class="searchStringPartOrigin_li_displayInline">
+                                                        <h6 class="searchStringPartOrigin_li_singleItemContainer_characteristicId_h6">
                                                             ID: @searchStringPartOriginData.Characteristic.Id
                                                         </h6>
                                                     </li>
@@ -80,23 +80,23 @@
                                             }
                                             else if (kvp.Item2?.Count > 1)
                                             {
-                                                <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
-                                                    <li style="display: inline-flex">
-                                                        <button style="position: relative; left: 0px; top: 0px;" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                <ul class="searchStringPartOrigin_li_multipleItemContainerList">
+                                                    <li class="searchStringPartOrigin_li_copyButtonContainer">
+                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
                                                             +
                                                         </button>
                                                     </li>
 
                                                     <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                        style="display: inline;">
+                                                        class="searchStringPartOrigin_li_displayInline">
                                                         <h4 style="margin: 0px;">@searchStringPart</h4>
                                                     </li>
 
-                                                    <li style="display: inline;">
-                                                        <p style="margin: 2px 5px 8px 5px;">@kvp.Item2.Count possibilities</p>
+                                                    <li class="searchStringPartOrigin_li_displayInline">
+                                                        <p class="searchStringPartOrigin_li_multipleItemContainerList_possibilitiesText">@kvp.Item2.Count possibilities</p>
 
                                                         <ul id="searchStringPartOrigin_multipleOriginsDisplayList#@i#@j"
-                                                            style="display: flex; flex-direction: column; list-style: none; position: absolute; left: 0px; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px; width: max-content; max-width: 400px;">
+                                                            class="searchStringPartOrigin_multipleOriginsDisplayList">
 
                                                             @for (int k = 0; k < kvp.Item2.Count; k++)
                                                             {
@@ -104,12 +104,13 @@
 
                                                                 <li style="border-bottom: 1.5px solid darkgray;">
 
-                                                                    <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
-                                                                        <li style="display: inline;">
-                                                                            <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@i#@j" style="margin: 0px;">@searchStringPartOriginData.Characteristic.Name</h4>
+                                                                    <ul class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_li">
+                                                                        <li class="searchStringPartOrigin_li_displayInline">
+                                                                            <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@i#@j"
+                                                                                class="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel">@searchStringPartOriginData.Characteristic.Name</h4>
                                                                         </li>
-                                                                        <li style="display: inline;">
-                                                                            <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
+                                                                        <li class="searchStringPartOrigin_li_displayInline">
+                                                                            <h6 class="searchStringPartOrigin_li_multipleItemContainer_characteristicId_h6">
                                                                                 ID: @searchStringPartOriginData.Characteristic.Id
                                                                             </h6>
                                                                         </li>
@@ -125,7 +126,7 @@
                                             else
                                             {
                                                 <h4 id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                    style="text-align: center;">
+                                                    class="searchStringPartOrigin_noItems_searchStringPartDisplay">
                                                     @searchStringPart
                                                 </h4>
 
@@ -145,34 +146,35 @@
                     }
                 </ul>
 
-                <label name="SearchString_label" style="text-align: center;">@product.SearchString</label>
+                <label name="SearchString_label" class="productDisplay_table_displayLabel">@product.SearchString</label>
             </div>
 
         </td>
 
-        <td style="text-align:center">
+        <td class="productDisplay_table_displayLabel">
             <label>@product.Id</label>
         </td>
 
-        <td style="text-align:center">
+        <td class="productDisplay_table_displayLabel">
             <label>@product.Category?.Description</label>
         </td>
 
-        <td style="text-align:center">
+        <td class="productDisplay_table_displayLabel">
             <label>@product.Price</label>
         </td>
 
-        <td style="text-align:center">
+        <td class="productDisplay_table_displayLabel">
             <label>@productStatuses.NeedsToBeUpdated</label>
         </td>
 
-        <td style="text-align:center">
+        <td class="productDisplay_table_displayLabel">
             <label>@productStatuses.IsProcessed</label>
         </td>
 
         <td>
             <button class="btn" onclick="showImagePopupData(@product.Id)">
-                <img src="img/show_Images_ProductDisplay_icon.png" alt="Images" style="max-width:60px;max-height:60px;" />
+                <img src="img/show_Images_ProductDisplay_icon.png" alt="Images"
+                     class="imagePopupButton_imagePopupButtonImage"/>
             </button>
         </td>
 
