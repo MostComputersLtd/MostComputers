@@ -1,10 +1,5 @@
-using FluentValidation.Results;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -15,13 +10,13 @@ using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Pages.Shared.ProductProperties;
-using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using static MOSTComputers.UI.Web.Mapping.XmlPlacementEnumMapping;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -124,7 +119,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         Product = product;
 
-        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupModel(Product));
+        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(Product));
     }
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint imageIndex)
@@ -345,6 +340,7 @@ public class ProductPropertiesEditorModel : PageModel
             SearchString = product.SearchString,
             Properties = propertyUpdateRequests.Select(Map)
                 .ToList(),
+
             Images = null,
             ImageFileNames = null,
             CategoryID = product.CategoryID,

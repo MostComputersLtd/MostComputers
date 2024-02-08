@@ -6,9 +6,9 @@ using System.Diagnostics;
 
 namespace MOSTComputers.UI.Web.Pages.Shared;
 
-public class ProductImagesDisplayPopupModel
+public class ProductImagesDisplayPopupPartialModel
 {
-    public ProductImagesDisplayPopupModel(Product product)
+    public ProductImagesDisplayPopupPartialModel(Product product)
     {
         Product = product;
 
