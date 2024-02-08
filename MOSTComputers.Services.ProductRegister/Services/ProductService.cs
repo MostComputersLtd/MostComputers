@@ -45,9 +45,11 @@ internal sealed class ProductService : IProductService
 
     public IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
     {
-        uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+        //uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
 
-        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(productRangeSearchRequest.Start, end, subString, ProductSearchByTextEnum.SearchBySearchString);
+        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(subString)
+            .Skip((int)productRangeSearchRequest.Start)
+            .Take((int)productRangeSearchRequest.Length);
     }
 
     public IEnumerable<Product> GetFirstInRangeWhereNameMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
