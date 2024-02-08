@@ -24,12 +24,12 @@ public sealed class Product
     public string? PartNumber1 { get; set; }
     public string? PartNumber2 { get; set; }
     public string? SearchString { get; set; }
-    public List<ProductProperty> Properties { get; set; }
-    public List<ProductImage>? Images { get; set; }
-    public List<ProductImageFileNameInfo>? ImageFileNames { get; set; }
     public int? CategoryID { get; set; }
     public Category? Category { get; set; }
     public short? ManifacturerId { get; set; }
     public Manifacturer? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
+    public List<ProductProperty> Properties { get; set; }
+    public List<ProductImage>? Images { get; set; }
+    public List<ProductImageFileNameInfo>? ImageFileNames { get; set; }
 }
