@@ -27,7 +27,6 @@ public static class ConfigureServices
 
     public static IServiceCollection AddAllRepositories(this IServiceCollection services)
     {
-
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IManifacturerRepository, ManifacturerRepository>();
         services.AddScoped<IProductImageRepository, ProductImageRepository>();
