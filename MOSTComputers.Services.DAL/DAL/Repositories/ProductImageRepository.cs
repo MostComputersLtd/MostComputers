@@ -23,7 +23,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string getAllInProductQuery =
             $"""
-            SELECT ID, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
             FROM {_allImagesTableName}
             WHERE CSTID = @productId;
             """;
@@ -62,7 +62,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string getByIdInAllImagesQuery =
             $"""
-            SELECT ID, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
             FROM {_allImagesTableName}
             WHERE ID = @id;
             """;
