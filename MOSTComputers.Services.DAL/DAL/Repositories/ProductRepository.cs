@@ -335,16 +335,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             paramters);
     }
 
-    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(uint start, uint end, string subString, ProductSearchByTextEnum productSearchByTextEnum)
+    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereNameContainsSubstring(uint start, uint end, string subString)
     {
-        string fieldToSearchBy = productSearchByTextEnum switch
-        {
-            ProductSearchByTextEnum.SearchBySearchString => "SPLMODEL2",
-            ProductSearchByTextEnum.SearchByName => "CFGSUBTYPE",
-            _ => throw new InvalidOperationException()
-        };
-
-        string getAllWithManifacturerAndCategoryQuery =
+        const string getAllWithManifacturerAndCategoryQuery =
             $"""
             SELECT * FROM
             (
@@ -360,14 +353,14 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                         PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                         CategoryID, ParentId, Description, IsLeaf,
                         man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                        CHARINDEX(@subString, products.{fieldToSearchBy}) AS SubPosition
+                        CHARINDEX(@subString, products.CFGSUBTYPE) AS SubPosition
 
                     FROM {_tableName} products
                     LEFT JOIN {_categoriesTableName} cat
                     ON cat.CategoryID = products.TID
                     LEFT JOIN {_manifacturersTableName} man
                     ON man.MfrID = products.MfrID
-                    WHERE CHARINDEX(@subString, products.{fieldToSearchBy}) > 0
+                    WHERE CHARINDEX(@subString, products.CFGSUBTYPE) > 0
                 )
                     AS Data
             ) AS TopData
@@ -396,6 +389,92 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             parameters);
 #pragma warning restore IDE0037 // Use inferred member name
+    }
+
+    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(
+        uint start,
+        uint end,
+        string searchStringParts)
+    {
+        const string getFistInRangeWhereSearchStringMatchesAllSearchStringPartsQuery =
+            $"""
+            DECLARE @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES TABLE
+            (
+                SearchStringPart VARCHAR(50)
+            );
+            
+            DECLARE @StartIndex INT = 1;
+
+            SET @searchStringParts = TRIM(@searchStringParts);
+
+            WHILE (@StartIndex != 0)
+            BEGIN
+                SET @StartIndex = CHARINDEX(' ', @searchStringParts);
+
+                INSERT INTO @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
+                VALUES (
+                    CASE
+                        WHEN @StartIndex != 0 THEN SUBSTRING(@searchStringParts, 0, @StartIndex - 1)
+                        ELSE @searchStringParts
+                    END);
+
+                SET @searchStringParts = RIGHT(@searchStringParts, LEN(@searchStringParts) - @StartIndex)
+
+                IF (LEN(@searchStringParts) = 0) BREAK;
+            END
+
+            SELECT * FROM
+            (
+                SELECT TOP (@start + @end) CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
+                    PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                    CategoryID, ParentId, Description, IsLeaf,
+                    PersonalManifacturerId, BGName, Name, ManifacturerDisplayOrder, Active, SubPosition,
+                    ROW_NUMBER() OVER (ORDER BY SubPosition, S) AS RN FROM
+                (
+                    SELECT CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                        PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                        CategoryID, ParentId, Description, IsLeaf,
+                        man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
+                            (SELECT SUM(LocalPosition) FROM
+                                (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
+                                    FROM @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
+
+                    FROM {_tableName} products
+                    LEFT JOIN {_categoriesTableName} cat
+                    ON cat.CategoryID = products.TID
+                    LEFT JOIN {_manifacturersTableName} man
+                    ON man.MfrID = products.MfrID
+                    WHERE 0 < ISNULL(
+                        (SELECT SUM(LocalPos) FROM
+                            (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPos
+                                FROM @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES) AS SearchStringSubPos
+                                    HAVING MIN(LocalPos) > 0), 0)
+                )
+                    AS Data
+            ) AS TopData
+            WHERE RN BETWEEN @start + 1 AND @end;
+            """;
+
+#pragma warning disable IDE0037 // Use inferred member name
+        var parameters = new
+        {
+            searchStringParts = searchStringParts,
+            start = (int)start,
+            end = (int)end,
+        };
+#pragma warning restore IDE0037 // Use inferred member name
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFistInRangeWhereSearchStringMatchesAllSearchStringPartsQuery,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            parameters);
     }
 
     public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategoryAndStatuses_WhereAllConditionsAreMet(
@@ -953,7 +1032,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             AND ImgNo = @NewDisplayOrder;
             """;
 
-
         //DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
 
         //SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_imageFileNamesTable}
@@ -1285,10 +1363,4 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         public string? ImageFileExtension { get; set; }
         public DateTime? DateModified { get; set; }
     }
-}
-
-public enum ProductSearchByTextEnum
-{
-    SearchBySearchString = 0,
-    SearchByName = 1,
 }
