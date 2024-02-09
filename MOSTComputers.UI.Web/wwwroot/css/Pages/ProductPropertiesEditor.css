@@ -108,6 +108,19 @@
     max-width: 400px;
 }
 
+.searchStringPartOrigin_multipleOriginsDisplayList_li {
+    border-bottom: 1.5px solid darkgray;
+}
+
+.searchStringPartOrigin_multipleOriginsDisplayList_topItems_li {
+    display: inline-flex;
+    text-align: center;
+    padding: 0px;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
 .searchStringPartOrigin_multipleOriginsDisplayList_nameLabel {
     margin: 0px;
 }

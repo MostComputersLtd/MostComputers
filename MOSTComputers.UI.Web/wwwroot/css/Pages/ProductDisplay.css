@@ -40,6 +40,11 @@
     opacity: 0;
 }
 
+.searchStringPartOrigin_li_container_row {
+    position: relative;
+    z-index: 9999;
+}
+
 .searchStringPartOrigin_li {
     display: inline;
     min-width: 100px;
@@ -83,6 +88,10 @@
     display: inline;
 }
 
+.searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4 {
+    margin: 0px;
+}
+
 .searchStringPartOrigin_li_multipleItemContainerList {
     display: inline-flex;
     text-align: center;
@@ -111,6 +120,10 @@
 }
 
 .searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_li {
+    border-bottom: 1.5px solid darkgray;
+}
+
+.searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_ul {
     display: inline-flex;
     text-align: center;
     padding: 0px;
