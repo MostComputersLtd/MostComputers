@@ -45,18 +45,19 @@ internal sealed class ProductService : IProductService
 
     public IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
     {
-        //uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+        if (productRangeSearchRequest.Length == 0
+            || string.IsNullOrWhiteSpace(subString)) return Enumerable.Empty<Product>();
 
-        return _productRepository.GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(subString)
-            .Skip((int)productRangeSearchRequest.Start)
-            .Take((int)productRangeSearchRequest.Length);
+        uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
+
+        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(productRangeSearchRequest.Start, end, subString);
     }
 
     public IEnumerable<Product> GetFirstInRangeWhereNameMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString)
     {
         uint end = productRangeSearchRequest.Start + productRangeSearchRequest.Length;
 
-        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringOrNameContainsSubstring(productRangeSearchRequest.Start, end, subString, ProductSearchByTextEnum.SearchByName);
+        return _productRepository.GetFirstInRange_WithManifacturerAndCategory_WhereNameContainsSubstring(productRangeSearchRequest.Start, end, subString);
     }
 
     public IEnumerable<Product> GetFirstInRangeWhereAllConditionsAreMet(ProductRangeSearchRequest productRangeSearchRequest, ProductConditionalSearchRequest productConditionalSearchRequest)
