@@ -1,0 +1,62 @@
+﻿@using MOSTComputers.UI.Web.Mapping;
+@model ProductPropertyInCompareEditorWithoutCharacteristicPartialModel
+@{
+    Layout = null;
+}
+
+<tr id="@(Model.ElementIdPrefix)propertytr#@Model.PropertyIndex"
+    name="@(Model.ElementIdPrefix)propertytr">
+    <td class="property-td-alignedOnTop propertyWithoutCharacteristicId-characteristic-select-td">
+        <select id="@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex"
+            name="@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select"
+            asp-items="Model.ProductCharacteristicsForSelect"
+            onchange="PropertyWithoutCharacteristicLocal_select_onchange(this.value,
+                '@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex',
+                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex')"></select>
+    </td>
+
+    <td class="property-value-td">
+        <div id="@(Model.ElementIdPrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div#@Model.PropertyIndex"
+            class="full-parent-width full-parent-height">
+            <div id="@(Model.ElementIdPrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex"
+                name="@(Model.ElementIdPrefix)productPropertyDisplay_Value_div"
+                class="element-collection-dataItem property-value-div full-parent-width full-parent-height"
+                contenteditable="true" spellcheck="false"
+                onfocusout="updatePropertyInTable(
+                    @Model.ProductFirstOrSecond,
+                    '@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex',
+                    '@(Model.ElementIdPrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex',
+                    '@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select#@Model.PropertyIndex',
+                    '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex')">
+                @Model.ProductProperty?.Value
+            </div>
+        </div>
+    </td>
+
+    <td class="property-characterisricId-td property-td-alignedOnTop">
+        <label id="@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex"
+            name="@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+    </td>
+
+    <td class="property-xmlPlacement-td property-td-alignedOnTop">
+        <select id="@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select#@Model.PropertyIndex"
+            name="@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select"
+            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(Model.ProductProperty?.XmlPlacement)"></select>
+    </td>
+
+    <td class="property-delete-button-td property-td-alignedOnTop">
+        <button id="@(Model.ElementIdPrefix)productPropertyDisplay_Delete_button#@Model.PropertyIndex"
+            name="@(Model.ElementIdPrefix)productPropertyDisplay_Delete_button"
+            class="btn btn-danger btn-close"
+            onclick="deletePropertyInTable(
+                @Model.ProductFirstOrSecond,
+                getCurrentId('@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex'),
+                '@(Model.ElementIdPrefix)propertytr#@Model.PropertyIndex',
+                '@(Model.ElementIdPrefix)propertyDisplay_table_tbody',
+                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex',
+                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                true)">
+        </button>
+    </td>
+</tr>

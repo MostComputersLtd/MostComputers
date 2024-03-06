@@ -1,0 +1,246 @@
+﻿@using MOSTComputers.Models.Product.MappingUtils;
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Mapping;
+@model MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor.ProductFullEditorPartialModel
+
+<div class="container product-full-editor-container full-parent-width full-parent-height">
+
+    @if (Model.Product is null)
+    {
+        <h1>Product is empty, or information about it is missing.</h1>
+
+        return;
+    }
+    else
+    {
+        string searchStringSearchItemId = $"{Model.ElementIdAndNamePrefix}productFullEditor_WholeSearchStringSearch";
+
+        <h1 class="create-request-name">@Model.Product.Name</h1>
+
+        <div id="@Model.ImagesContainerId">
+            <partial name="ProductCompareEditor/_ProductFullEditorImageDisplayPartial"
+                model="Model" />
+        </div>
+
+        <h3 class="create-request-origins-text">Origins and identification</h3>
+
+        <div class="element-collection">
+
+            <strong class="create-request-important-characteristic">Category:</strong>
+
+            <label class="element-collection-dataItem">@Model.Product.Category?.Description</label>
+
+        </div>
+
+        <div class="element-collection">
+
+            <strong class="create-request-important-characteristic">Manifacturer:</strong>
+
+            <label class="element-collection-dataItem">@Model.Product.Manifacturer?.RealCompanyName</label>
+
+        </div>
+        
+        <div class="element-collection">
+
+            <strong class="create-request-important-characteristic">Part No. 1:</strong>
+
+            <label class="element-collection-dataItem">@Model.Product.PartNumber1</label>
+
+        </div>
+
+        <div class="element-collection">
+
+            <strong class="create-request-important-characteristic">Part No. 2:</strong>
+
+            <label class="element-collection-dataItem">@Model.Product.PartNumber2</label>
+
+        </div>
+
+        <div class="element-collection searchString-list-container-element-collection">
+
+            <strong class="create-request-important-characteristic">Search string:&nbsp;</strong>
+
+            <ul class="product-full-editor-searchString-list">
+
+                <partial name="_SearchStringOriginSmallPopupsDisplayPartial"
+                         model="@new SearchStringOriginSmallPopupsDisplayPartialModel(
+                        Model.Product.Id,
+                        searchStringSearchItemId,
+                        Model.ProductSearchStringPartsAndDataAboutTheirOrigin,
+                        true)" />
+            </ul>
+
+            <input id="@searchStringSearchItemId" type="button" class="product-full-editor-searchString-searchItem full-parent-height bg-white"
+                onclick="copySearchStringSearchDataToClipboard(this.value)" />
+        </div>
+
+        <div class="element-collection">
+
+            <strong class="create-request-important-characteristic">Status:</strong>
+
+            <label class="element-collection-dataItem">@ProductStatusMapping.GetBGStatusStringFromStatusEnum(Model.Product.Status)</label>
+
+        </div>
+
+        List<ProductProperty> properties = Model.Product.Properties;
+
+        @if (properties is not null)
+        {
+            <h3 class="create-request-characteristics-text">Characteristics</h3>
+
+            <div id="@(Model.ElementIdAndNamePrefix)propertiesDataContainer">
+
+                <table id="@(Model.ElementIdAndNamePrefix)propertyDisplay_table"
+                    class="full-parent-width">
+
+                    <tbody id="@(Model.ElementIdAndNamePrefix)propertyDisplay_table_tbody">
+
+                        @for (int i = 0; i < properties.Count; i++)
+                        {
+                            ProductProperty productProperty = properties[i];
+
+                            if (productProperty.ProductCharacteristicId is null
+                            || productProperty.ProductCharacteristicId == 0)
+                            {
+                                <tr id="@(Model.ElementIdAndNamePrefix)propertytr#@i"
+                                    name="@(Model.ElementIdAndNamePrefix)propertytr">
+                                    <td class="property-td-alignedOnTop propertyWithoutCharacteristicId-characteristic-select-td">
+                                        <select id="@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select"
+                                            asp-items="ProductCompareEditorModel.GetRemainingCharacteristicsForProduct(Model.Product, Model.CharacteristicsRelatedToProduct)"
+                                            onchange="PropertyWithoutCharacteristicLocal_select_onchange(this.value,
+                                                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i')">
+                                        </select>
+                                    </td>
+
+                                    <td class="property-value-td">
+                                        <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div#@i"
+                                             class="full-parent-width full-parent-height">
+                                            <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@i"
+                                                 name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div"
+                                                 class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
+                                                 contenteditable="true" spellcheck="false"
+                                                 onfocusout="updatePropertyInTable(
+                                                    @Model.ProductIndex,
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i',
+                                                    '@productProperty.Characteristic')">
+                                                @productProperty.Value
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="property-td-alignedOnTop property-characterisricId-td">
+                                        <label id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+                                    </td>
+
+                                    <td class="property-td-alignedOnTop property-xmlPlacement-td">
+                                        <select id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select"
+                                            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)">
+                                        </select>
+                                    </td>
+                                    
+                                    <td class="property-td-alignedOnTop property-delete-button-td">
+                                        <button id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button"
+                                            class="btn btn-danger btn-close"
+                                            onclick="deletePropertyInTableByLabelId(
+                                                @Model.ProductIndex,
+                                                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i',
+                                                '@(Model.ElementIdAndNamePrefix)propertytr#@i',
+                                                '@(Model.ElementIdAndNamePrefix)propertyDisplay_table_tbody',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                                                true,
+                                                '@(Model.ElementIdAndNamePrefix)invalidCharacteristicText_row#@i')">
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr id="@(Model.ElementIdAndNamePrefix)invalidCharacteristicText_row#@i">
+                                    <td colspan="4">
+                                        <p class="invalid-characteristic-name-text">The product characteristic "@productProperty.Characteristic" does not exist, please select a characteristic from the ones above</p>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr id="@(Model.ElementIdAndNamePrefix)propertytr#@i"
+                                        name="@(Model.ElementIdAndNamePrefix)propertytr">
+                                    <td class="property-td-alignedOnTop property-characteristic-td">
+                                        <label>@productProperty.Characteristic</label>
+                                    </td>
+
+                                    <td class="property-value-td property-td-alignedOnTop">
+                                        <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div#@i"
+                                             class="full-parent-width full-parent-height">
+                                            <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@i"
+                                                name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div"
+                                                class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
+                                                contenteditable="true" spellcheck="false"
+                                                onfocusout="updatePropertyInTable(
+                                                    @Model.ProductIndex,
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select#@i',
+                                                    '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i')">
+                                                @productProperty.Value
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="property-td-alignedOnTop property-characterisricId-td">
+                                        <label id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
+                                    </td>
+
+                                    <td class="property-td-alignedOnTop property-xmlPlacement-td">
+                                        <select id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_select"
+                                            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)">
+                                        </select>
+                                    </td>
+
+                                    <td class="property-td-alignedOnTop property-delete-button-td">
+                                        <button id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button#@i"
+                                            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button"
+                                            class="btn btn-danger btn-close"
+                                            onclick="deletePropertyInTableByLabelId(
+                                                @Model.ProductIndex,
+                                                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label#@i',
+                                                '@(Model.ElementIdAndNamePrefix)propertytr#@i',
+                                                '@(Model.ElementIdAndNamePrefix)propertyDisplay_table_tbody',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select#@i',
+                                                '@(Model.ElementIdAndNamePrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                                                false)">
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+                
+                <button class="product-full-editor-property-add-button btn btn-primary full-parent-width"
+                    onclick="addPropertyToTable(
+                        @Model.ProductIndex,
+                        '@(Model.ElementIdAndNamePrefix)propertyDisplay_table_tbody',
+                        '@(Model.ElementIdAndNamePrefix)propertytr',
+                        '@(Model.ElementIdAndNamePrefix)')">
+                    Add
+                </button>
+
+            </div>
+        }
+    }
+    
+    <input id="@(Model.ElementIdAndNamePrefix)_productIdDisplay"
+        type="hidden"
+        value="@Model.Product.Id" />
+</div>

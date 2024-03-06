@@ -1,0 +1,142 @@
+﻿.product-full-editor-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-full-editor-image-list {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.product-full-editor-image-list-item {
+    margin: 10px;
+}
+
+.product-full-editor-image-active-button-container {
+    display: inline;
+    position: relative;
+    top: 10px;
+    bottom: 0px;
+}
+
+.product-full-editor-image-active-button {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    padding: 0px;
+}
+
+.product-full-editor-image {
+    max-width: 120px;
+}
+
+.product-full-editor-image-delete-button-container {
+    display: inline;
+    position: relative;
+    top: 10px;
+    bottom: 0px;
+    right: 10px;
+}
+
+.product-full-editor-image-delete-button {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    padding: 0px;
+}
+
+.product-full-editor-image-add-button-list-item {
+    position: relative;
+    border: 1px solid black;
+    border-radius: 4px;
+}
+
+.product-full-editor-image-add-input {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    visibility: visible;
+    opacity: 0;
+    width: 150px;
+}
+
+.product-full-editor-image-add-label-container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    width: 150px;
+}
+
+.product-full-editor-image-add-label {
+    font-size: 50px;
+    text-align: center;
+    margin: 0px;
+}
+
+.searchString-list-container-element-collection {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.product-full-editor-searchString-list {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    flex-wrap: wrap;
+    padding: 0px;
+    margin: 0px;
+}
+
+.product-full-editor-searchString-searchItem {
+    white-space: normal;
+    border: 1px solid;
+    border-color: lightgrey;
+    border-radius: 5%;
+    visibility: hidden;
+}
+
+
+.property-td-alignedOnTop {
+    vertical-align: top;
+    padding-top: 8.5px;
+}
+
+.propertyWithoutCharacteristicId-characteristic-select-td {
+    width: 20%;
+}
+
+.property-value-td {
+    padding: 5px 5% 5px 0px;
+}
+
+.property-value-div {
+    word-break: break-all;
+    padding: 4px 5px;
+    outline-style: inset;
+    outline-width: thin;
+}
+
+.property-characterisricId-td {
+    width: 8%;
+}
+
+.property-xmlPlacement-td {
+    width: 10%;
+    margin-right: 20px;
+}
+
+.property-characteristic-td {
+    width: 20%;
+}
+
+.property-delete-button-td {
+    width: 6%;
+    direction: rtl;
+}
+
+.product-full-editor-property-add-button {
+    margin-top: 7px;
+}

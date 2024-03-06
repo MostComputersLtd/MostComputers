@@ -1,0 +1,110 @@
+﻿@using MOSTComputers.Models.Product.Models;
+@model MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor.ProductFullEditorPartialModel
+@{
+    Layout = null;
+}
+
+@if (Model.Product is null) return;
+
+<ul id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul"
+    class="product-full-editor-image-list full-parent-width bg-white"
+    ondragover="productImageDisplay_ul_ondragover(event,
+        '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul',
+        '@(Model.ElementIdAndNamePrefix)addButtonLi')">
+
+    @if (Model.Product.Images is not null)
+    {
+        for (int i = 0; i < Model.Product.Images.Count; i++)
+        {
+            ProductImage image = Model.Product.Images[i];
+            ProductImageFileNameInfo? imageFileNameInfo = Model.Product.ImageFileNames?.ElementAtOrDefault(i);
+
+            if (image.ImageData is null) continue;
+
+            string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
+
+            bool isImageFileNameInfoActive = (imageFileNameInfo?.Active ?? true);
+
+            string imageFileNameInfoName = imageFileNameInfo?.FileName ?? string.Empty;
+
+            int imageFileNameInfoDisplayOrder = imageFileNameInfo?.DisplayOrder ?? -1;
+
+            float opacityOfLi = isImageFileNameInfoActive ? 1.0F : 0.35F;
+
+            <li id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@(i)"
+                name="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li"
+                class="product-full-editor-image-list-item"
+                draggable="true"
+                ondragstart="productImageDisplay_ul_li_ondragstart(event,
+                    '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul')"
+                ondragend="productImageDisplay_ul_li_ondragend(
+                    event,
+                    @Model.ProductIndex,
+                    '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul',
+                    '@(Model.OtherElementIdAndNamePrefix)productImageDisplay_ul',
+                    '@Model.ImagesContainerId',
+                    '@Model.OtherImagesContainerId')"
+                style="opacity: @(opacityOfLi);">
+
+                @if (isImageFileNameInfoActive)
+                {
+                    <div class="product-full-editor-image-active-button-container">
+                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                            type="checkbox" aria-label="Close" checked
+                            class="product-full-editor-image-active-button"
+                            onchange="update_productImageDisplay_ul_li_activeState(
+                                @Model.ProductIndex,
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                @imageFileNameInfoDisplayOrder)"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="product-full-editor-image-active-button-container">
+                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                            type="checkbox" aria-label="Close"
+                            class="product-full-editor-image-active-button"
+                            onchange="update_productImageDisplay_ul_li_activeState(
+                                @Model.ProductIndex,
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                @imageFileNameInfoDisplayOrder)"/>
+                    </div>
+                }
+                
+                <button class="btn bg-white" name="Image #@i">
+                    <img src="@imageSrc" title="Image #@i" draggable="false"
+                        class="product-full-editor-image" />
+                </button>
+
+                <div class="product-full-editor-image-delete-button-container">
+                    <button type="button"
+                        aria-label="Close"
+                        class="btn-close product-full-editor-image-delete-button"
+                        onclick="delete_productImageDisplay_ul_li(
+                            @Model.ProductIndex,
+                            '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
+                            @image.Id,
+                            '@image.ImageFileExtension',
+                            '@imageFileNameInfoName',
+                            '@Model.ImagesContainerId')"/>
+                </div>
+            </li>
+        }
+
+        <li id="@(Model.ElementIdAndNamePrefix)addButtonLi"
+            class="product-full-editor-image-add-button-list-item">
+
+            <input name="@(Model.ElementIdAndNamePrefix)addImageInput"
+                type="file" accept="image/*"
+                class="btn bg-white product-full-editor-image-add-input"
+                onchange="addNewImage(@Model.ProductIndex, this, '@Model.ImagesContainerId')"/>
+
+            <div class="full-parent-width full-parent-height product-full-editor-image-add-label-container">
+                <label class="product-full-editor-image-add-label">+</label>
+            </div>
+
+        </li>
+    }
+</ul>
