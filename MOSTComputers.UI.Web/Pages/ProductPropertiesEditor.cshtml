@@ -43,6 +43,7 @@
         </td>
 
         <td id="propertyDisplayMainContainer_table_spaceBetween_td">
+            <h6 id="searchStringPartsCopyDisplay" onclick="copyWholeSearchStringCopiedData('searchStringPartsCopyDisplay')"></h6>
         </td>
 
         <td>
@@ -99,7 +100,7 @@
 
                                             <ul class="searchStringPartAndOriginPopupDisplay_ul_singleItemDisplayContainer_ul">
                                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
                                                         +
                                                     </button>
                                                     
@@ -121,7 +122,7 @@
                                         {
                                             <ul class="searchStringPartOrigin_li_multipleOriginsDisplay_container_li">
                                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
                                                         +
                                                     </button>
                                                 </li>
@@ -166,10 +167,21 @@
                                         }
                                         else
                                         {
-                                            <h4 id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                class="searchStringPartOrigin_searchStringPartDisplay_noItemsDisplay_searchStringPartDisplay_h4">
-                                                @searchStringPart
-                                            </h4>
+                                            <ul class="searchStringPartAndOriginPopupDisplay_ul_singleItemDisplayContainer_ul">
+                                                <li class="searchStringPartOrigin_li_copyButtonContainer">
+                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
+                                                        +
+                                                    </button>
+                                                </li>
+
+                                                <li class="searchStringPartOrigin_searchStringPartDisplay_forSingleItem">
+                                                    <h4 id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                        class="searchStringPartOrigin_searchStringPartDisplay_noItemsDisplay_searchStringPartDisplay_h4">
+                                                        @searchStringPart
+                                                    </h4>
+                                                </li>
+                                            </ul>
+
                                             <h4>No information could be found.</h4>
                                         }
                                     </td>
@@ -248,8 +260,10 @@
                     </td>
 
                     <td class="property-td-alignedOnTop property-delete-button-td">
-                        <button id="productPropertyDisplay_Delete_button#@i" name="productPropertyDisplay_Delete_button"
-                                class="btn btn-danger" onclick="deletePropertyInTable(@Model.ProductId, @productProperty.ProductCharacteristicId, @i, false)">
+                        <button id="productPropertyDisplay_Delete_button#@i"
+                                name="productPropertyDisplay_Delete_button"
+                                class="btn btn-danger"
+                                onclick="deletePropertyInTable(@Model.ProductId, @productProperty.ProductCharacteristicId, 'propertytr#@i', 'propertyDisplay_table_tbody', false)">
                             X
                         </button>
                     </td>
