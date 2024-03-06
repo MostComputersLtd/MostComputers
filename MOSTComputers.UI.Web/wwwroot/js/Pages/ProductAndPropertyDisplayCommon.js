@@ -75,3 +75,54 @@ function searchStringPartOrigin_multipleOriginsRemoveHighlight(nameLabelName, me
 
     removeHighlightAllElementsTextsWhereValueIsPresent(allLabels, substringToHighlight)
 }
+
+var searchStringPartCopyString = "";
+
+function addCopiedPartToTotalCopy(part, elementId = null)
+{
+    if (searchStringPartCopyString == "")
+    {
+        searchStringPartCopyString += part;
+    }
+    else
+    {
+        searchStringPartCopyString += (" " + part);
+    }
+
+    navigator.clipboard.writeText(searchStringPartCopyString);
+
+    if (!document.hasFocus()) return;
+
+    if (elementId !== null)
+    {
+        var item = document.getElementById(elementId);
+
+        if (item.tagName === "INPUT")
+        {
+            item.value = searchStringPartCopyString;
+
+            return;
+        }
+
+        item.innerHTML = searchStringPartCopyString;
+    }
+}
+
+function copyWholeSearchStringCopiedData(elementId)
+{
+    var data = document.getElementById(elementId).innerText;
+
+    navigator.clipboard.writeText(data);
+}
+
+function changeValueOfTotalCopy(value)
+{
+    searchStringPartCopyString = value;
+
+    //navigator.clipboard.writeText(searchStringPartCopyString);
+}
+
+function clearTotalCopy()
+{
+    searchStringPartCopyString = "";
+}
