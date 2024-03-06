@@ -179,6 +179,8 @@ function addNewImage(fileInputElement)
 
 function update_productImageDisplay_ul_li_activeState(elementId, elementCheckBoxId, productId, displayOrder, fileName)
 {
+    if (displayOrder < 0) return;
+
     var elementCheckbox = document.getElementById(elementCheckBoxId);
 
     var checkboxIsChecked = elementCheckbox.checked;
