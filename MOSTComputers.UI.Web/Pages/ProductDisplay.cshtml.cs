@@ -124,7 +124,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (productXml is null) return BadRequest();
 
-        return Partial("_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel() { XmlData = productXml, Product = product });
+        return Partial("ProductPopups/_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel() { XmlData = productXml, Product = product });
     }
 
     public IActionResult OnGetPartialViewImagesForProduct(uint productId)
@@ -133,7 +133,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (product is null) return BadRequest();
 
-        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(product));
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(product));
     }
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint productId, uint imageIndex)
@@ -468,7 +468,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (product is null) return BadRequest();
 
-        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(product));
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(product));
     }
 
     private OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertImageWithData(uint productId, byte[] imageBytes, string contentType)

@@ -105,7 +105,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (productXml is null) return BadRequest();
 
-        return Partial("_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel() { XmlData = productXml, Product = Product });
+        return Partial("ProductPopups/_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel() { XmlData = productXml, Product = Product });
     }
 
     public IActionResult OnGetPartialViewImagesForProduct()
@@ -119,7 +119,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         Product = product;
 
-        return Partial("_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(Product));
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(Product));
     }
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint imageIndex)
@@ -179,7 +179,7 @@ public class ProductPropertiesEditorModel : PageModel
             characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((int)product.CategoryID);
         }
 
-        return base.Partial("_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
+        return Partial("ProductPopups/_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
         {
             Product = product,
             CharacteristicsAndSearchStringAbbreviationsForProduct = characteristicAndSearchStringAbbreviations ?? Array.Empty<ProductCharacteristic>(),
