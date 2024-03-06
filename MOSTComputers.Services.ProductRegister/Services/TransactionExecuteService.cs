@@ -31,4 +31,14 @@ internal sealed class TransactionExecuteService : ITransactionExecuteService
     {
         return _relationalDataAccess.SaveDataInTransactionScopeUsingAction(action, parameter);
     }
+
+    public TReturn ExecuteActionInTransactionAndCommitWithCondition<TReturn>(Func<TReturn> action, Predicate<TReturn> shouldCommit)
+    {
+        return _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition(action, shouldCommit);
+    }
+
+    public TReturn ExecuteActionInTransactionAndCommitWithCondition<T, TReturn>(Func<T, TReturn> action, Predicate<TReturn> shouldCommit, T parameter)
+    {
+        return _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition(action, shouldCommit, parameter);
+    }
 }
