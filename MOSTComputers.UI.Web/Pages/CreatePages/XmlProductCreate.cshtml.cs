@@ -173,7 +173,7 @@ public class XmlProductCreateModel : PageModel
 
     public IActionResult OnGetAlterFailedRequest(int requestIndex, string propertyName, int newCharacteristicId)
     {
-        string newChatacteristicIdString = newCharacteristicId.ToString();
+        string newCharacteristicIdString = newCharacteristicId.ToString();
 
         XmlProductCreateDisplay displayAtIndex = DisplayCreateRequests[requestIndex];
 
@@ -192,7 +192,7 @@ public class XmlProductCreateModel : PageModel
         {
             SelectListItem characteristicData = characteristicDataList[i];
 
-            if (characteristicData.Value == newChatacteristicIdString)
+            if (characteristicData.Value == newCharacteristicIdString)
             {
                 newCharacteristicForProperty = characteristicData;
                 newCharacteristicForPropertyIndex = i;
