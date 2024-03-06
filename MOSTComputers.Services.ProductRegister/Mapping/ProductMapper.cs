@@ -50,12 +50,17 @@ public sealed partial class ProductMapper
 
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable RMG020 // Source member is not mapped to any target member
+
     [MapperIgnoreTarget(nameof(ProductImageFileNameInfoCreateRequest.Active))]
     internal partial ProductImageFileNameInfoCreateRequest Map(ServiceProductImageFileNameInfoCreateRequest serviceCategoryUpdateRequest);
 
 
     [MapperIgnoreTarget(nameof(ProductImageFileNameInfoUpdateRequest.Active))]
     internal partial ProductImageFileNameInfoUpdateRequest Map(ServiceProductImageFileNameInfoUpdateRequest serviceCategoryUpdateRequest);
+
+    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoByFileNameUpdateRequest.Active))]
+    internal partial ProductImageFileNameInfoByFileNameUpdateRequest Map(ServiceProductImageFileNameInfoByFileNameUpdateRequest serviceCategoryUpdateRequest);
+
 #pragma warning restore RMG020 // Source member is not mapped to any target member
 #pragma warning restore IDE0079 // Remove unnecessary suppression
 }
