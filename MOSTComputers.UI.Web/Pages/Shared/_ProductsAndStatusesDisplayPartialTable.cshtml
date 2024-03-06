@@ -13,7 +13,7 @@
     Product product = Model.ProductsAndStatuses[i].Product;
     ProductStatuses productStatuses = Model.ProductsAndStatuses[i].ProductStatuses;
 
-    <tr>
+    <tr id="productDisplayRow#@i" name="productDisplayRow">
         <td>
             <label>@product.Status</label>
         </td>
@@ -23,7 +23,6 @@
         </td>
 
         <td>
-
             <div class="searchStringPartAndOriginPopupDisplay_container_div">
                 <ul class="searchStringPartAndOriginPopupDisplay_ul">
 
@@ -37,8 +36,6 @@
                         {
                             string searchStringPart = kvp.Item1;
 
-                            string searchStringPartPlusSpace = $"{searchStringPart} ";
-
                             <li>
                                 <table onmouseleave="removeSearchStringOriginDataSmallPopup(@i, @j, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
                                     <tr>
@@ -47,7 +44,7 @@
                                             onmouseover="showSearchStringOriginDataSmallPopup(@i, @j, '@searchStringPart')"
                                             onclick="displayPopupAndTransportToSearchStringOriginDisplay(@product.Id, @j)">
 
-                                            <h7 class="productSearchString-popup-searchStringPart-label">@searchStringPart</h7>
+                                            <h7 class="productSearchString-popup-searchStringPart-label" name="searchStringPartDisplayText#@i">@searchStringPart</h7>
                                         </td>
                                     </tr>
 
@@ -59,15 +56,22 @@
                                             {
                                                 SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[0];
 
+                                                string? searchStringMeaning = searchStringPartOriginData.Characteristic.Meaning;
+
+                                                if (string.IsNullOrWhiteSpace(searchStringMeaning))
+                                                {
+                                                    searchStringMeaning = "Characteristic contains no further info";
+                                                }
+
                                                 <ul class="searchStringPartOrigin_li_singleItemContainerList">
                                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
                                                             +
                                                         </button>
                                                     </li>
                                                     <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
                                                         class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
-                                                        <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
+                                                        <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPartOriginData.Characteristic.Name</h4>
                                                     </li>
                                                     <li class="searchStringPartOrigin_li_displayInline">
                                                         <h6 class="searchStringPartOrigin_li_singleItemContainer_characteristicId_h6">
@@ -76,13 +80,13 @@
                                                     </li>
                                                 </ul>
 
-                                                <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                                <h5>@searchStringMeaning</h5>
                                             }
                                             else if (kvp.Item2?.Count > 1)
                                             {
                                                 <ul class="searchStringPartOrigin_li_multipleItemContainerList">
                                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="copySearchStringPartToClipboard('@searchStringPart')">
+                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
                                                             +
                                                         </button>
                                                     </li>
@@ -102,6 +106,13 @@
                                                             {
                                                                 SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[k];
 
+                                                                string? searchStringMeaning = searchStringPartOriginData.Characteristic.Meaning;
+
+                                                                if (string.IsNullOrWhiteSpace(searchStringMeaning))
+                                                                {
+                                                                    searchStringMeaning = "Characteristic contains no further info";
+                                                                }
+
                                                                 <li class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_li">
 
                                                                     <ul class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_ul">
@@ -116,7 +127,7 @@
                                                                         </li>
                                                                     </ul>
 
-                                                                    <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@i#@j">@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                                                    <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@i#@j">@searchStringMeaning</h5>
                                                                 </li>
                                                             }
                                                         </ul>
@@ -125,10 +136,17 @@
                                             }
                                             else
                                             {
-                                                <h4 id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
-                                                    class="searchStringPartOrigin_noItems_searchStringPartDisplay">
-                                                    @searchStringPart
-                                                </h4>
+                                               <ul class="searchStringPartOrigin_li_singleItemContainerList">
+                                                    <li class="searchStringPartOrigin_li_copyButtonContainer">
+                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
+                                                            +
+                                                        </button>
+                                                    </li>
+                                                    <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                        class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
+                                                        <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
+                                                    </li>
+                                                </ul>
 
                                                 <h4>No information could be found.</h4>
                                             }
@@ -145,14 +163,14 @@
                         }
                     }
                 </ul>
-
-                <label name="SearchString_label" class="productDisplay_table_displayLabel">@product.SearchString</label>
+                <!--<label name="SearchString_label" class="productDisplay_table_displayLabel">@product.SearchString</label>-->
             </div>
 
         </td>
 
         <td class="productDisplay_table_displayLabel">
-            <label>@product.Id</label>
+            <a asp-page="/ProductCompareEditor" asp-route-firstProductId="@product.Id"
+               class="productDisplay_table_productIdDisplayLabel">@product.Id</a>
         </td>
 
         <td class="productDisplay_table_displayLabel">
