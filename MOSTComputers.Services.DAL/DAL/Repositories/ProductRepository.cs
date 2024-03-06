@@ -1329,6 +1329,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             DisplayOrder = request.DisplayOrder,
             NewDisplayOrder = request.NewDisplayOrder,
             FileName = request.FileName,
+            Active = request.Active,
         };
     }
 
