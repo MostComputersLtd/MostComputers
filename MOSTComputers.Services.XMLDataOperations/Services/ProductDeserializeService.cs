@@ -88,7 +88,15 @@ public sealed class ProductDeserializeService : IProductDeserializeService
     {
         using StringWriter writer = new();
 
-        _xmlSerializer.Serialize(writer, _productToXmlProductMappingService.MapToXmlProduct(product));
+        XmlObjectData xmlObjectData = new()
+        {
+            Products = new()
+            {
+                _productToXmlProductMappingService.MapToXmlProduct(product)
+            }
+        };
+
+        _xmlSerializer.Serialize(writer, xmlObjectData);
 
         string xml = writer.ToString();
 
