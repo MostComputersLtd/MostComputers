@@ -124,7 +124,41 @@
 
 <script>
 
-    document.getElementById("SearchStringSearch_input").oninput = function () { throttleCust(MultiSearch, 120).call(); }
+    function debounce(func, delay)
+    {
+        let debounceTimer;
+
+        return function ()
+        {
+            const context = this;
+            const args = arguments;
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => func.apply(context, args), delay);
+        }
+    }
+
+    document.getElementById("SearchStringSearch_input").onkeydown = function (event)
+    {
+        if (event.key === "Enter")
+        {
+            let debounceFunction = debounce(MultiSearch, 100);
+
+            debounceFunction();
+        }
+    }
+
+    document.getElementById("SearchStringSearch_input").oninput = function ()
+    {
+        var searchStringInput = document.getElementById("SearchStringSearch_input");
+
+        changeValueOfTotalCopy(searchStringInput.value);
+
+        let debounceFunction = debounce(MultiSearch, 250);
+
+        debounceFunction();
+    }
+
     document.getElementById("NameSearch_input").oninput = function () { throttleCust(MultiSearch, 120).call(); }
     document.getElementById("CategorySearch_select").onchange = function () { throttleCust(MultiSearch, 120).call(); }
     document.getElementById("StatusSearch_select").onchange = function () { throttleCust(MultiSearch, 120).call(); }
