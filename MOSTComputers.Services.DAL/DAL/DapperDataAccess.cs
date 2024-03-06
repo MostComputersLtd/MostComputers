@@ -47,6 +47,8 @@ public interface IRelationalDataAccess
     TReturn SaveDataInTransactionScopeUsingAction<U, TReturn>(Func<IDbConnection, U, TReturn> actionInTransaction, U parameters);
     TReturn SaveDataInTransactionScopeUsingAction<U, TReturn>(Func<U, TReturn> actionInTransaction, U parameters);
     TReturn SaveDataInTransactionScopeUsingAction<TReturn>(Func<TReturn> actionInTransaction);
+    TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<TReturn>(Func<TReturn> actionInTransaction, Predicate<TReturn> shouldCommit);
+    TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<U, TReturn>(Func<U, TReturn> actionInTransaction, Predicate<TReturn> shouldCommit, U parameters);
 }
 
 internal class DapperDataAccess : IRelationalDataAccess
@@ -470,6 +472,39 @@ internal class DapperDataAccess : IRelationalDataAccess
         TReturn data = actionInTransaction(connection, parameters);
 
         scope.Complete();
+
+        return data;
+    }
+
+    public TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<TReturn>(
+        Func<TReturn> actionInTransaction,
+        Predicate<TReturn> shouldCommit)
+    {
+        using TransactionScope scope = new(TransactionScopeOption.Required, new TransactionOptions() { Timeout = TimeSpan.FromDays(100.0) });
+
+        TReturn data = actionInTransaction();
+
+        if (shouldCommit(data))
+        {
+            scope.Complete();
+        }
+
+        return data;
+    }
+
+    public TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<U, TReturn>(
+        Func<U, TReturn> actionInTransaction,
+        Predicate<TReturn> shouldCommit,
+        U parameters)
+    {
+        using TransactionScope scope = new();
+
+        TReturn data = actionInTransaction(parameters);
+
+        if (shouldCommit(data))
+        {
+            scope.Complete();
+        }
 
         return data;
     }
