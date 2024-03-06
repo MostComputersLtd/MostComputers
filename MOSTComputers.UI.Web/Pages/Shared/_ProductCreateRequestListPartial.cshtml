@@ -19,7 +19,7 @@
 
                 <li>
                     <img src="data:@imageCreateRequest.ImageFileExtension;base64,@Convert.ToBase64String(imageCreateRequest.ImageData)"
-                    style="width:300px;" />
+                        style="width:300px;" />
                 </li>
             }
         }
@@ -93,7 +93,8 @@
                                 @if (propertyCreateRequest.ProductCharacteristicId == null)
                                 {
                                      // <select asp-items="@Model[i].Characteristics" onselect="Failed_Characteristic_Name_Select_onSelect(@i,@propertyCreateRequest.Name,this.value)"></select>
-                                    <select name="InvalidPropertySelect,@i.ToString(),@j.ToString()" asp-items="@Model[i].Characteristics" onchange="Failed_Characteristic_Name_Select_onSelect(@i,'@propertyCreateRequest.Name',this.value)"></select>
+                                    <select name="InvalidPropertySelect,@i.ToString(),@j.ToString()" asp-items="@Model[i].Characteristics"
+                                        onchange="Failed_Characteristic_Name_Select_onSelect(@i,'@propertyCreateRequest.Name',this.value)"></select>
                                 }
                                 else
                                 {  
@@ -115,7 +116,9 @@
                         {
                             <tr>
                                 <td colspan="3">
-                                    <p class="invalid-characteristic-name-text">The product characteristic "@propertyCreateRequest.Name" does not exist, please select a characteristic from the ones above</p>
+                                    <p class="invalid-characteristic-name-text">
+                                        The product characteristic "@propertyCreateRequest.Name" does not exist, please select a characteristic from the ones above
+                                    </p>
                                 </td>
                             </tr>
                         }
