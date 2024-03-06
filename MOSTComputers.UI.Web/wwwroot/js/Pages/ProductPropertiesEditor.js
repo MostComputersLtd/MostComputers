@@ -374,7 +374,7 @@ function updateAllPropertiesInTable(productId)
         });
 }
 
-function deletePropertyInTable(productId, productCharacteristicId, index, deleteEvenOnFail)
+function deletePropertyInTable(productId, productCharacteristicId, propertytrId, tBodyContainerId, deleteEvenOnFail)
 {
     if (productCharacteristicId === null
         || isNaN(productCharacteristicId)
@@ -384,9 +384,9 @@ function deletePropertyInTable(productId, productCharacteristicId, index, delete
     {
         if (deleteEvenOnFail)
         {
-            var childProperty = document.getElementById("propertytr#" + index);
+            var childProperty = document.getElementById(propertytrId);
 
-            document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+            document.getElementById(tBodyContainerId).removeChild(childProperty);
 
             return;
         }
@@ -410,17 +410,17 @@ function deletePropertyInTable(productId, productCharacteristicId, index, delete
     })
         .done(function (result)
         {
-            var childProperty = document.getElementById("propertytr#" + index);
+            var childProperty = document.getElementById(propertytrId);
 
-            document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+            document.getElementById(tBodyContainerId).removeChild(childProperty);
         })
         .fail(function (jqXHR, textStatus)
         {
             if (deleteEvenOnFail)
             {
-                var childProperty = document.getElementById("propertytr#" + index);
+                var childProperty = document.getElementById(propertytrId);
 
-                document.getElementById("propertyDisplay_table_tbody").removeChild(childProperty);
+                document.getElementById(tBodyContainerId).removeChild(childProperty);
             }
         });
 }
