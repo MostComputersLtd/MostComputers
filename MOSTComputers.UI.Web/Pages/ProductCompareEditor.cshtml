@@ -1,0 +1,171 @@
+﻿@page
+@model MOSTComputers.UI.Web.Pages.ProductCompareEditorModel
+@{
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Pages/ProductCompareEditor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductFullEditor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductCreateRequestListPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/SearchStringOriginSmallPopupsDisplayPartial.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
+    <script src="~/js/NotificationBox.js"></script>
+    <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
+    <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
+    <script src="~/js/Pages/ProductCompareEditor.js"></script>
+    <script src="~/js/Pages/Shared/ProductFullEditor.js"></script>
+}
+
+<div style="display:flex; flex-direction: row;" class="full-parent-height">
+    <div id="productCompareEditor_LocalProductEditorContainer" class="full-parent-height"
+        style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
+        <header>
+            <ul class="full-parent-width" 
+                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0px 0px 10px 0px;">
+                <li style="width: 10%">
+                    <h6 style="margin: 0px; color: dimgray;">Local:</h6>
+                </li>
+                
+                <li style="display: flex; align-items: center;">
+                    <h7 style="margin: 0px;">XML</h7>
+                </li>
+
+                <li style="margin: 0px 10px">
+                    <label class="switch">
+                        <input type="checkbox"
+                               onchange="toggleVisibilityBetweenFirstXmlAndProductViews(
+                                   'productCompareEditor_LocalProductEditorContainer_XmlDisplay',
+                                   'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                                   'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
+                                   'productCompareEditor_LocalProductEditorContainer_ProductIdInput',
+                                   'productCompareEditor_LocalProductEditor_addImageInput',
+                                   'productCompareEditor_LocalProductEditor_imageContainer_div')">
+                        <span class="slider round"></span>
+                    </label>
+                </li>
+
+                <li style="display: flex; align-items: center;">
+                    <h7 style="margin: 0px;">Product</h7>
+                </li>
+
+                @{int? productId = Model.FirstProductId;}
+
+                <li style="margin: 0px 10px; max-width: 25%;">
+                    <input type="number" id="productCompareEditor_LocalProductEditorContainer_ProductIdInput"
+                        style="max-width: 100%;" value="@(productId.ToString() ?? "")"/>
+                </li>
+
+                <li style="flex-grow: 1;"></li>
+
+                <li style="margin: 0px 9px;">
+                    <button class="btn btn-primary"
+                        onclick="saveFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
+                        Save
+                    </button>
+                </li>
+
+                <li>
+                    <button class="btn"
+                        onclick="toggleEditorToFullScreen(
+                            'productCompareEditor_LocalProductEditorContainer',
+                            'productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image',
+                            '/img/FullScreenImage_transparentBackground.png',
+                            '/img/NormalScreenImage_transparentBackground.png')">
+                        <img id="productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image"
+                            alt="Fullscreen" src="/img/FullScreenImage_transparentBackground.png"
+                            style="max-height: 30px;"/>
+                    </button>
+                </li>
+            </ul>
+        </header>
+
+        <div class="full-parent-width full-parent-height">
+            <div id="productCompareEditor_LocalProductEditorContainer_XmlDisplay" class="full-parent-height"
+                style="visibility: visible; display: flex; flex-direction: row;">
+
+                <pre id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_SideBar" style="width: 19px; margin: 0px;"></pre>
+
+                <textarea id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text"
+                    style="width:100%; height:100%;" cols="200" spellcheck="false"></textarea>
+            </div>
+
+            <div id="productCompareEditor_LocalProductEditorContainer_ProductDisplay" style="display: none;">
+            </div>
+        </div>
+    </div>
+    
+    <div style="width: 2px; background-color: #CCCCCC; margin: 0px 10px;">
+    </div>
+
+    <div id="productCompareEditor_OutsideProductEditorContainer" class="full-parent-height"
+         style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
+        <header>
+            <ul class="full-parent-width"
+                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0px 0px 10px 0px;">
+                <li style="width: 20%">
+                    <h6 style="margin: 0px; color: dimgray;">External:</h6>
+                </li>
+
+                <li style="display: flex; align-items: center;">
+                    <h7 style="margin: 0px;">XML</h7>
+                </li>
+
+                <li style="margin: 0px 10px">
+                    <label class="switch">
+                        <input type="checkbox"
+                            onchange="toggleVisibilityBetweenSecondXmlAndProductViews(
+                                'productCompareEditor_OutsideProductEditorContainer_XmlDisplay',
+                                'productCompareEditor_OutsideProductEditorContainer_ProductDisplay',
+                                'productCompareEditor_OutsideProductEditorContainer_XmlTextArea',
+                                'productCompareEditor_OutsideProductEditor_addImageInput',
+                                'productCompareEditor_OutsideProductEditor_imageContainer_div',
+                                'productCompareEditor_OutsideProductEditor__productIdDisplay',
+                                'productCompareEditor_LocalProductEditorContainer_ProductIdInput')">
+                        <span class="slider round"></span>
+                    </label>
+
+                </li>
+
+                <li style="display: flex; align-items: center;">
+                    <h7 style="margin: 0px;">Product</h7>
+                </li>
+
+                <li style="flex-grow: 1;"></li>
+
+                <li>
+                    <button class="btn"
+                        onclick="toggleEditorToFullScreen(
+                            'productCompareEditor_OutsideProductEditorContainer',
+                            'productCompareEditor_OutsideProductEditorContainer_fullscreenButton_Image',
+                            '/img/FullScreenImage_transparentBackground.png',
+                            '/img/NormalScreenImage_transparentBackground.png')">
+                        <img id="productCompareEditor_OutsideProductEditorContainer_fullscreenButton_Image"
+                            alt="Fullscreen" src="/img/FullScreenImage_transparentBackground.png"
+                            style="max-height: 30px;"/>
+                    </button>
+                </li>
+            </ul>
+        </header>
+        
+        <div class="full-parent-width full-parent-height">
+            <div id="productCompareEditor_OutsideProductEditorContainer_XmlDisplay" class="full-parent-height">
+                <textarea id="productCompareEditor_OutsideProductEditorContainer_XmlTextArea"
+                    style="width:100%; height:100%;" cols="200" spellcheck="false"></textarea>
+            </div>
+
+            <div id="productCompareEditor_OutsideProductEditorContainer_ProductDisplay" style="display: none;"></div>
+        </div>
+    </div>
+
+    <ul id="copiedNotificationBox" class="copied-xml-notification-box"></ul>
+
+    @Html.AntiForgeryToken()
+</div>
+
+<script>
+
+</script>

@@ -10,7 +10,7 @@
             asp-items="Model.ProductCharacteristicsForSelect" onchange="PropertyWithoutCharacteristic_select_onchange(this.value, @Model.PropertyIndex)"></select>
     </td>
 
-    <td style="padding:5px 60px 5px 0px;">
+    <td style="padding:5px 5% 5px 0px;">
         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@Model.PropertyIndex" class="full-parent-width full-parent-height">
             <div id="productPropertyDisplay_Value_div#@Model.PropertyIndex" name="productPropertyDisplay_Value_div" class="element-collection-dataItem full-parent-width full-parent-height" contenteditable="true" spellcheck="false"
             style="word-break:break-all; padding: 4px 5px; outline-style: inset; outline-width:thin" onfocusout="updatePropertyInTable(@Model.ProductProperty.ProductId, @Model.PropertyIndex)">@Model.ProductProperty?.Value</div>
@@ -27,7 +27,7 @@
 
     <td style="width: 10%;vertical-align: top; padding-top: 8.5px; direction: rtl;">
         <button id="productPropertyDisplay_Delete_button#@Model.PropertyIndex" name="productPropertyDisplay_Delete_button"
-                class="btn btn-danger" onclick="deletePropertyInTable(@Model.ProductProperty?.ProductId, getCurrentId(@Model.PropertyIndex), @Model.PropertyIndex, true)">
+                class="btn btn-danger" onclick="deletePropertyInTable(@Model.ProductProperty?.ProductId, getCurrentId(@Model.PropertyIndex), 'propertytr#@Model.PropertyIndex', 'propertyDisplay_table_tbody', true)">
             X
         </button>
     </td>
