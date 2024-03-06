@@ -19,18 +19,21 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         IProductImageFileNameInfoRepository imageFileNameInfoRepository,
         ProductMapper mapper,
         IValidator<ServiceProductImageFileNameInfoCreateRequest>? createRequestValidator = null,
-        IValidator<ServiceProductImageFileNameInfoUpdateRequest>? updateRequestValidator = null)
+        IValidator<ServiceProductImageFileNameInfoUpdateRequest>? updateRequestValidator = null,
+        IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? updateRequestByFileNameValidator = null)
     {
         _imageFileNameInfoRepository = imageFileNameInfoRepository;
         _mapper = mapper;
         _createRequestValidator = createRequestValidator;
         _updateRequestValidator = updateRequestValidator;
+        _updateRequestByFileNameValidator = updateRequestByFileNameValidator;
     }
 
     private readonly IProductImageFileNameInfoRepository _imageFileNameInfoRepository;
     private readonly ProductMapper _mapper;
     private readonly IValidator<ServiceProductImageFileNameInfoCreateRequest>? _createRequestValidator;
     private readonly IValidator<ServiceProductImageFileNameInfoUpdateRequest>? _updateRequestValidator;
+    private readonly IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? _updateRequestByFileNameValidator;
 
     public IEnumerable<ProductImageFileNameInfo> GetAll()
     {
@@ -68,6 +71,21 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         updateRequestInternal.Active = updateRequest.Active ?? false;
 
         return _imageFileNameInfoRepository.Update(updateRequestInternal);
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(
+        ServiceProductImageFileNameInfoByFileNameUpdateRequest updateRequest,
+        IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? validator = null)
+    {
+        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestByFileNameValidator);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        ProductImageFileNameInfoByFileNameUpdateRequest updateRequestInternal = _mapper.Map(updateRequest);
+
+        updateRequestInternal.Active = updateRequest.Active ?? false;
+
+        return _imageFileNameInfoRepository.UpdateByFileName(updateRequestInternal);
     }
 
     public bool DeleteAllForProductId(uint productId)

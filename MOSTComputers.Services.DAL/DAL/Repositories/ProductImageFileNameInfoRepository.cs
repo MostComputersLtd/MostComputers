@@ -156,6 +156,61 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ProductImageFileNameInfoByFileNameUpdateRequest updateRequest)
+    {
+        const string updateByFileNameQuery =
+            $"""
+            DECLARE @DisplayOrder INT;
+
+            SELECT TOP 1 @DisplayOrder = ImgNo
+            FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImgFileName = @FileName;
+
+            SET @NewDisplayOrder = 
+            CASE 
+                WHEN @NewDisplayOrder < 1 THEN 1
+                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                    THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                ELSE @NewDisplayOrder
+            END;
+            
+            UPDATE {_tableName}
+            SET ImgNo = 
+                CASE
+                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
+                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
+                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
+                    ELSE ImgNo
+                END
+            WHERE CSTID = @productId;
+            
+            UPDATE {_tableName}
+            SET ImgFileName = ISNULL(@NewFileName, ImgFileName),
+                Active = @Active
+
+            WHERE CSTID = @productId
+            AND ImgNo = @NewDisplayOrder;
+            """;
+
+        ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
+
+        if (!internalValidationResult.IsValid) return internalValidationResult;
+
+        var parameters = new
+        {
+            productId = updateRequest.ProductId,
+            updateRequest.FileName,
+            updateRequest.NewDisplayOrder,
+            updateRequest.NewFileName,
+            updateRequest.Active,
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(updateByFileNameQuery, parameters, doInTransaction: true);
+
+        return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
+    }
+
     private ValidationResult ValidateWhetherProductWithGivenIdExists(uint productId, string propertyName = "ProductId")
     {
         const string checkWhetherProductsTableHasTheIdInTheRequest =

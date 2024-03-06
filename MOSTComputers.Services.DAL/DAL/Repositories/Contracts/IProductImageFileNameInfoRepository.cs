@@ -15,4 +15,5 @@ public interface IProductImageFileNameInfoRepository
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest);
     bool DeleteAllForProductId(uint productId);
     bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ProductImageFileNameInfoByFileNameUpdateRequest updateRequest);
 }

@@ -81,6 +81,29 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
         return updateResult;
     }
 
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(
+        ServiceProductImageFileNameInfoByFileNameUpdateRequest updateRequest,
+        IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? validator = null)
+    {
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _imageFileNameInfoService.UpdateByFileName(updateRequest, validator);
+
+        bool successFromResult = updateResult.Match(
+            success => true,
+            _ => false,
+            _ => false);
+
+        if (successFromResult)
+        {
+            _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
+
+            _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
+        }
+
+        return updateResult;
+    }
+
     public bool DeleteAllForProductId(uint productId)
     {
         bool success = _imageFileNameInfoService.DeleteAllForProductId(productId);

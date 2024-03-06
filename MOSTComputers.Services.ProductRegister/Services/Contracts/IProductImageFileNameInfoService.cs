@@ -17,4 +17,5 @@ public interface IProductImageFileNameInfoService
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoUpdateRequest>? validator = null);
     bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);
     bool DeleteAllForProductId(uint productId);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ServiceProductImageFileNameInfoByFileNameUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? validator = null);
 }
