@@ -1,11 +1,8 @@
 using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.SearchStringOrigin.Configuration;
 using MOSTComputers.Services.XMLDataOperations.Configuration;
-using MOSTComputers.Services.XMLDataOperations.Services;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
-using System.Xml.Serialization;
 using MOSTComputers.Services.Caching.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +17,7 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddXmlDeserializeService();
 
+builder.Services.AddScoped<IProductXmlToProductMappingService, ProductXmlToProductMappingService>();
 builder.Services.AddScoped<IProductXmlToCreateRequestMappingService, ProductXmlToCreateRequestMappingService>();
 builder.Services.AddScoped<IProductXmlToProductDisplayMappingService, ProductXmlToProductDisplayMappingService>();
 
