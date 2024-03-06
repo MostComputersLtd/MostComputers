@@ -204,7 +204,8 @@ function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(wholeSea
     {
         var searchString = searchStrings[i];
 
-        if (searchString === null || searchString === undefined
+        if (searchString === null
+            || searchString === undefined
             || searchStrings === "") break;
 
         var substrings = searchString.trim().split(' ');
@@ -257,12 +258,177 @@ function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(wholeSea
     }
 }
 
+function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearchInParts(wholeSearchStringText, partElementsName, nameOfProductRows, length, customSpanName)
+{
+    var spanStart = "<span name='" + customSpanName + "' style='background-color:#FAF2B1'>";
+    const spanEnd = "</span>";
+
+    var productRows = Array.from(document.getElementsByName(nameOfProductRows));
+
+    if (productRows.length > length)
+    {
+        var excessLength = productRows.length - length;
+
+        $("#tableDataHolder").children().slice(0, excessLength).remove();
+
+        [].slice.call(productRows, excessLength);
+    }
+
+    var searchStrings = splitSearchStringIntoTwoSearchStrings(wholeSearchStringText);
+
+    for (let i = 0; i < searchStrings.length; i++)
+    {
+        var searchString = searchStrings[i];
+
+        if (searchString === null
+            || searchString === undefined
+            || searchStrings === "") break;
+
+        var substrings = searchString.trim().split(' ');
+
+        for (let j = 0; j < productRows.length; j++)
+        {
+            var originatesFromThisSearchString = true;
+
+            var searchStringPartElementsNameIndex = getIndexFromElementId(productRows[j].id);
+
+            var currentSearchStringPartElementsName = partElementsName + "#" + searchStringPartElementsNameIndex;
+
+            var searchStringPartElements = Array.from(document.getElementsByName(currentSearchStringPartElementsName));
+
+            var searchStringPartElementsTexts = [];
+
+            for (var z = 0; z < searchStringPartElements.length; z++)
+            {
+                searchStringPartElementsTexts.push(searchStringPartElements[z].innerText);
+            }
+
+            var searchStringText = searchStringPartElementsTexts.join(" ");
+
+            var text = searchStringText;
+
+            var localText = searchStringText;
+
+            for (let k1 = 0; k1 < substrings.length; k1++)
+            {
+                var substring = substrings[k1];
+
+                var textToUpperCase = text.toUpperCase();
+
+                var substringIndex = textToUpperCase.indexOf(substring.toUpperCase());
+
+                if (substringIndex === -1)
+                {
+                    originatesFromThisSearchString = false;
+
+                    break;
+                }
+            }
+
+            if (!originatesFromThisSearchString) continue;
+
+            for (let k = 0; k < substrings.length; k++)
+            {
+                var substring = substrings[k];
+
+                var localTextWithNewSpans = getAllTextWithSpansWithData(localText, substring);
+
+                localText = localTextWithNewSpans;
+            }
+
+            splitAllTextWithSpansIntoParts(localText, currentSearchStringPartElementsName, spanStart, spanEnd);
+
+            productRows.splice(j, 1);
+
+            j--;
+        }
+    }
+}
+
+function splitAllTextWithSpansIntoParts(textWithSpans, partElementsName, spanStart, spanEnd)
+{
+    var partElements = Array.from(document.getElementsByName(partElementsName));
+
+    partElements.sort((a, b) => indexOfThatSkipsCharacters(textWithSpans.toUpperCase(), a.innerText.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder]) >
+        indexOfThatSkipsCharacters(textWithSpans.toUpperCase(), b.innerText.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder]));
+
+    for (var i = 0; i < partElements.length; i++)
+    {
+        var partElement = partElements[i];
+
+        var partElementIndexesInText = indexOfThatSkipsCharacters(textWithSpans.toUpperCase(), partElement.innerText.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder])
+
+        var partElementStartIndexInText = partElementIndexesInText[0];
+        var partElementEndIndexInText = partElementIndexesInText[1];
+
+        var partElementInText = textWithSpans.substring(partElementStartIndexInText, partElementEndIndexInText);
+
+        var substringFromDirectlyAroundItem = textWithSpans.substring(
+            partElementStartIndexInText - spanStartPlaceholder.length,
+            partElementEndIndexInText + spanEndPlaceholder.length);
+
+        if (substringFromDirectlyAroundItem.startsWith(spanStartPlaceholder))
+        {
+            partElementInText = spanStartPlaceholder + partElementInText;
+        }
+
+        if (substringFromDirectlyAroundItem.endsWith(spanEndPlaceholder))
+        {
+            partElementInText += spanEndPlaceholder;
+        }
+
+        if (partElementInText.startsWith(spanEndPlaceholder))
+        {
+            partElementInText = partElementInText
+                .replace(spanEndPlaceholder, "");
+        }
+
+        if (partElementInText.endsWith(spanStartPlaceholder))
+        {
+            partElementInText = partElementInText
+                .slice(0, -spanStartPlaceholder.length);
+        }
+        
+        var lastSpanStartIndex = partElementInText.lastIndexOf(spanStartPlaceholder);
+
+        if (lastSpanStartIndex != -1)
+        {
+            var nextSpanEndIndex = partElementInText.indexOf(spanEndPlaceholder, lastSpanStartIndex + 1);
+
+            if (nextSpanEndIndex == -1)
+            {
+                partElementInText += spanEndPlaceholder;
+            }
+        }
+
+        var firstSpanEndIndex = partElementInText.indexOf(spanEndPlaceholder);
+
+        if (firstSpanEndIndex != -1)
+        {
+            var substringBeforeFirstSpanEnd = partElementInText.substring(0, firstSpanEndIndex);
+
+            var spanStartBeforeFirstEndIndex = substringBeforeFirstSpanEnd.indexOf(spanStartPlaceholder);
+
+            if (spanStartBeforeFirstEndIndex == -1)
+            {
+                partElementInText = spanStartPlaceholder + partElementInText
+            }
+        }
+
+        partElement.innerHTML = partElementInText
+            .replaceAll(spanStartPlaceholder, spanStart)
+            .replaceAll(spanEndPlaceholder, spanEnd);
+    }
+}
+
 function getAllTextWithSpansWithData(textWithSpans, substring)
 {
-    var indexesOfSubstringInTextWithSpansWithSkips = indexOfThatSkipsCharacters(textWithSpans, substring.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder]);
+    var indexesOfSubstringInTextWithSpansWithSkips = indexOfThatSkipsCharacters(textWithSpans.toUpperCase(), substring.toUpperCase(), [spanStartPlaceholder, spanEndPlaceholder]);
 
     var startRealIndex = indexesOfSubstringInTextWithSpansWithSkips[0];
     var endRealIndex = indexesOfSubstringInTextWithSpansWithSkips[1];
+
+    var originalString = textWithSpans.substring(startRealIndex, endRealIndex);
 
     var indexOfEndOfPreviousSpan = textWithSpans.lastIndexOf(spanEndPlaceholder, startRealIndex);
     var indexOfStartOfNextSpan = textWithSpans.indexOf(spanStartPlaceholder, endRealIndex);
@@ -288,18 +454,24 @@ function getAllTextWithSpansWithData(textWithSpans, substring)
 
     if (indexOfStartOfThisSpan === -1)
     {
+        originalString = originalString.replace(spanStartPlaceholder, "");
+
         if (indexOfEndOfThisSpan === -1)
         {
-            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring.toUpperCase() + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+            originalString = originalString.replace(spanEndPlaceholder, "");
+
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + originalString + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
         }
         else
         {
-            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + substring.toUpperCase() + textWithSpans.substring(endRealIndex);
+            textWithSpans = textWithSpans.substring(0, startRealIndex) + spanStartPlaceholder + originalString + textWithSpans.substring(endRealIndex);
         }
     }
     else if (indexOfEndOfThisSpan === -1)
     {
-        textWithSpans = textWithSpans.substring(0, startRealIndex) + substring.toUpperCase() + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
+        originalString = originalString.replace(spanEndPlaceholder, "");
+
+        textWithSpans = textWithSpans.substring(0, startRealIndex) + originalString + spanEndPlaceholder + textWithSpans.substring(endRealIndex);
     }
 
     return textWithSpans;
@@ -337,9 +509,11 @@ function indexOfThatSkipsCharacters(string, substring, stringsToSkip, fromIndex 
         {
             let found = true;
 
-            for (let j = 1; j < substring.length; j++)
+            var substringLengthExtension = 0;
+
+            for (let j = 1; j < substring.length + substringLengthExtension; j++)
             {
-                if (string[i + j] !== substring[j])
+                if (string[i + j] !== substring[j - substringLengthExtension])
                 {
                     let skipped = false;
 
@@ -353,7 +527,9 @@ function indexOfThatSkipsCharacters(string, substring, stringsToSkip, fromIndex 
                         {
                             skipped = true;
 
-                            j += stringToSkip.length;
+                            j += stringToSkip.length - 1;
+
+                            substringLengthExtension += stringToSkip.length;
 
                             endIndex += stringToSkip.length;
 
@@ -409,6 +585,19 @@ function splitSearchStringIntoTwoSearchStrings(searchStringData)
     var secondSearchString = secondSearchData + " " + endString;
 
     return [firstSearchString, secondSearchString];
+}
+
+function getIndexFromElementId(elementId)
+{
+    if (elementId === null
+        || elementId === undefined
+        || elementId === "") return null;
+
+    var indexOfTag = elementId.lastIndexOf("#");
+
+    if (indexOfTag == -1) return null;
+
+    return elementId.substring(indexOfTag + 1);
 }
 
 function SearchStringSearch_input_oninput_search()
@@ -540,20 +729,13 @@ function MultiSearch()
 
                 if (searchStringSubstring != null)
                 {
-                    DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearch(searchStringSubstring, "SearchString_label", result.length, "customSpanForSearchString");
+                    DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearchInParts(searchStringSubstring, "searchStringPartDisplayText", "productDisplayRow", result.length, "customSpanForSearchString");
                 }
             });
         })
         .fail(function (jqXHR, textStatus)
         {
         });
-}
-
-function copySearchStringPartToClipboard(data)
-{
-    navigator.clipboard.writeText(data);
-
-    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
 }
 
 function showSearchStringOriginDataSmallPopup(productIndex, index, searchStringPart)
