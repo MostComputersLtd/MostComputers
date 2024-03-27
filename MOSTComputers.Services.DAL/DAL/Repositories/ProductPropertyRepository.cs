@@ -26,7 +26,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         SELECT CASE WHEN EXISTS(
             SELECT * FROM {_tableName}
             WHERE CSTID = @productId
-            AND Keyword = @Name
+            AND Keyword COLLATE SQL_Latin1_General_CP1_CS_AS = @Name
         ) THEN 1 ELSE 0 END;
     
         """;
@@ -291,7 +291,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId = (int)productId, characteristicId = (int)characteristicId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId,
+                new { productId = (int)productId, characteristicId = (int)characteristicId });
 
             if (rowsAffected == 0) return false;
 
