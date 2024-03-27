@@ -1,9 +1,8 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.XMLDataOperations.Models;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Services.Mapping;
+using MOSTComputers.Services.XMLDataOperations.StaticUtils;
 using OneOf;
-using System.Threading.Tasks.Dataflow;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -24,7 +23,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
 
     public XmlObjectData? DeserializeProductsXml(string xml)
     {
-        string transformedXml = TransformInputToWorkingXml(xml);
+        string transformedXml = ProductDeserializeXmlTransformUtils.TransformInputToWorkingXml(xml);
 
         using StringReader reader = new(transformedXml);
 
@@ -34,7 +33,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
 
         XmlObjectData data = (XmlObjectData)dataAsObject;
 
-        TransformXmlDataBackToNormal(data);
+        ProductDeserializeXmlTransformUtils.TransformXmlDataBackToNormal(data);
 
         return data;
     }
@@ -43,7 +42,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
     {
         try
         {
-            string transformedXml = TransformInputToWorkingXml(xml);
+            string transformedXml = ProductDeserializeXmlTransformUtils.TransformInputToWorkingXml(xml);
 
             using StringReader reader = new(transformedXml);
 
@@ -53,7 +52,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
 
             XmlObjectData data = (XmlObjectData)dataAsObject;
 
-            TransformXmlDataBackToNormal(data);
+            ProductDeserializeXmlTransformUtils.TransformXmlDataBackToNormal(data);
 
             return data;
         }
@@ -69,22 +68,33 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         }
     }
 
-    public string SerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes)
+    public string SerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes, bool disableXsiAndXsdNamespaces = false)
     {
         using StringWriter writer = new();
 
-        _xmlSerializer.Serialize(writer, xmlObjectData);
+        if (disableXsiAndXsdNamespaces)
+        {
+            XmlSerializerNamespaces xmlSerializerNamespaces = new();
+
+            xmlSerializerNamespaces.Add("", null);
+
+            _xmlSerializer.Serialize(writer, xmlObjectData, xmlSerializerNamespaces);
+        }
+        else
+        {
+            _xmlSerializer.Serialize(writer, xmlObjectData);
+        }
 
         string xml = writer.ToString();
 
         if (!shouldRemoveXmlSerializeEscapes) return xml;
 
-        string unescapedXml = TransformToOriginalAfterSerialization(xml);
+        string unescapedXml = ProductDeserializeXmlTransformUtils.TransformToOriginalAfterSerialization(xml);
 
         return unescapedXml;
     }
 
-    public string SerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes)
+    public string SerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes, bool disableXsiAndXsdNamespaces = false)
     {
         using StringWriter writer = new();
 
@@ -96,18 +106,32 @@ public sealed class ProductDeserializeService : IProductDeserializeService
             }
         };
 
-        _xmlSerializer.Serialize(writer, xmlObjectData);
+        if (disableXsiAndXsdNamespaces)
+        {
+            XmlSerializerNamespaces xmlSerializerNamespaces = new();
+
+            xmlSerializerNamespaces.Add("", null);
+
+            _xmlSerializer.Serialize(writer, xmlObjectData, xmlSerializerNamespaces);
+        }
+        else
+        {
+            _xmlSerializer.Serialize(writer, xmlObjectData);
+        }
 
         string xml = writer.ToString();
 
         if (!shouldRemoveXmlSerializeEscapes) return xml;
 
-        string unescapedXml = TransformToOriginalAfterSerialization(xml);
+        string unescapedXml = ProductDeserializeXmlTransformUtils.TransformToOriginalAfterSerialization(xml);
 
         return unescapedXml;
     }
 
-    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(XmlObjectData xmlObjectData, bool shouldRemoveXmlSerializeEscapes)
+    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(
+        XmlObjectData xmlObjectData,
+        bool shouldRemoveXmlSerializeEscapes,
+        bool disableXsiAndXsdNamespaces = false)
     {
         try
         {
@@ -125,7 +149,10 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         }
     }
 
-    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes)
+    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(
+        Product product,
+        bool shouldRemoveXmlSerializeEscapes,
+        bool disableXsiAndXsdNamespaces = false)
     {
         try
         {
@@ -141,49 +168,5 @@ public sealed class ProductDeserializeService : IProductDeserializeService
 
             return new InvalidXmlResult() { Text = invalidOperationEx.InnerException?.Message };
         }
-    }
-
-    private static string TransformInputToWorkingXml(string xml)
-    {
-        int currentIndex = 0;
-
-        while (currentIndex != -1)
-        {
-            int startIndexRaw = xml.IndexOf("<searchstring>", currentIndex);
-            int endIndexRaw = xml.IndexOf("</searchstring>", currentIndex);
-
-            if (startIndexRaw == -1 || endIndexRaw == -1) break;
-
-            int searchStringStartIndex = startIndexRaw + 14;
-            int searchStringEndIndex = endIndexRaw - 1;
-
-            for (int i = searchStringStartIndex; i < searchStringEndIndex; i++)
-            {
-                if (xml[i] == '<') xml = xml[..(i)] + "|smallerSign|" + xml[(i + 1)..];
-            }
-
-            currentIndex = searchStringEndIndex + 19;
-        }
-
-        return xml;
-    }
-
-    private static bool TransformXmlDataBackToNormal(XmlObjectData xmlData)
-    {
-        foreach (XmlProduct item in xmlData.Products)
-        {
-            item.SearchString = item.SearchString.Replace("|smallerSign|", "<");
-        }
-
-        return true;
-    }
-
-    private static string TransformToOriginalAfterSerialization(string xml)
-    {
-        return xml.Replace("&lt;", "<")
-            .Replace("&gt;", ">")
-            .Replace("&apos;", "'")
-            .Replace("&quot;", "\"")
-            .Replace("&amp;", "&");
     }
 }
