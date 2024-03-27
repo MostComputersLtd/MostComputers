@@ -116,14 +116,14 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         {
             string key = GetByProductIdKey((int)productId);
 
+            _cache.Evict(key);
+
+            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+
             IEnumerable<ProductProperty>? cachedProductProperties
                 = _cache.GetValueOrDefault<IEnumerable<ProductProperty>>(key);
 
             if (cachedProductProperties is null) return success;
-
-            _cache.Evict(key);
-
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
 
             _cache.Add(key, cachedProductProperties.Where(x => x.ProductCharacteristicId != (int)characteristicId));
         }
