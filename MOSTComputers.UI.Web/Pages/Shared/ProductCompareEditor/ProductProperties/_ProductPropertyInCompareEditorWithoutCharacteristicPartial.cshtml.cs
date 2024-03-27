@@ -9,7 +9,7 @@ public class ProductPropertyInCompareEditorWithoutCharacteristicPartialModel
     public required ProductProperty ProductProperty { get; set; }
     public required IEnumerable<SelectListItem> ProductCharacteristicsForSelect { get; set; }
     public required uint PropertyIndex { get; set; }
-    public required string ElementIdPrefix { get; set; }
+    public required string ElementIdAndNamePrefix { get; set; }
 
 
     private int _productFirstOrSecond;
