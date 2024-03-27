@@ -1,4 +1,6 @@
 ﻿@page
+@using MOSTComputers.Models.Product.Models;
+@using static MOSTComputers.UI.Web.Pages.ProductCompareEditorModel;
 @model MOSTComputers.UI.Web.Pages.ProductCompareEditorModel
 @{
 }
@@ -25,7 +27,7 @@
         style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
         <header>
             <ul class="full-parent-width" 
-                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0px 0px 10px 0px;">
+                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center; padding: 0px 15px 0px 2rem; margin: 0px 0px 10px 0px;">
                 <li style="width: 10%">
                     <h6 style="margin: 0px; color: dimgray;">Local:</h6>
                 </li>
@@ -36,14 +38,15 @@
 
                 <li style="margin: 0px 10px">
                     <label class="switch">
-                        <input type="checkbox"
+                        <input id="productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox" type="checkbox"
                                onchange="toggleVisibilityBetweenFirstXmlAndProductViews(
                                    'productCompareEditor_LocalProductEditorContainer_XmlDisplay',
                                    'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
                                    'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
                                    'productCompareEditor_LocalProductEditorContainer_ProductIdInput',
                                    'productCompareEditor_LocalProductEditor_addImageInput',
-                                   'productCompareEditor_LocalProductEditor_imageContainer_div')">
+                                   'productCompareEditor_LocalProductEditor_imageContainer_div',
+                                    'productCompareEditor_LocalProductEditor__productIdDisplay')">
                         <span class="slider round"></span>
                     </label>
                 </li>
@@ -53,22 +56,41 @@
                 </li>
 
                 @{int? productId = Model.FirstProductId;}
-
+                
                 <li style="margin: 0px 10px; max-width: 25%;">
                     <input type="number" id="productCompareEditor_LocalProductEditorContainer_ProductIdInput"
-                        style="max-width: 100%;" value="@(productId.ToString() ?? "")"/>
+                        style="max-width: 100%;" value="@(productId?.ToString() ?? "")"
+                        onkeydown="productIdInput_onkeydown(
+                            event,
+                            this.value,
+                            'productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox',
+                            'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
+                            'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                            'productCompareEditor_LocalProductEditor__productIdDisplay')"
+                        onkeyup="productIdInput_onkeyup(
+                            event,
+                            this.value,
+                            'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                            'productCompareEditor_LocalProductEditor__productIdDisplay')" />
+                </li>
+                
+                <li style="flex-grow: 1;"></li>
+                
+                <li style="margin: 0px 9px;">
+                    <button class="btn btn-secondary"
+                        onclick="refreshProductDataForFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
+                        Reload
+                    </button>
                 </li>
 
-                <li style="flex-grow: 1;"></li>
-
-                <li style="margin: 0px 9px;">
+                <li>
                     <button class="btn btn-primary"
                         onclick="saveFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
                         Save
                     </button>
                 </li>
 
-                <li>
+                <li style="display: flex; flex-grow: 1; justify-content: flex-end;">
                     <button class="btn"
                         onclick="toggleEditorToFullScreen(
                             'productCompareEditor_LocalProductEditorContainer',
@@ -98,11 +120,25 @@
         </div>
     </div>
     
-    <div style="width: 2px; background-color: #CCCCCC; margin: 0px 10px;">
+    <div style="position: relative; width: 2px; background-color: #CCCCCC; margin: 0px 10px;">
+        <button style="position: absolute; right: -15px; border-width: 0px; background-color: transparent; padding: 0px;"
+            onclick="copyOtherProductToSearchedProduct(@((int)FirstOrSecondProductEnum.First),
+                'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                'productCompareEditor_LocalProductEditor__productIdDisplay',
+                'productCompareEditor_OutsideProductEditor__productIdDisplay')">
+            &lt;==
+        </button>
+        <button style="position: absolute; margin: 0px; top: 25px; left: -15px; border-width: 0px; background-color: transparent; padding: 0px;"
+            onclick="copyOtherProductToSearchedProduct(@((int)FirstOrSecondProductEnum.Second),
+                'productCompareEditor_OutsideProductEditorContainer_ProductDisplay',
+                'productCompareEditor_OutsideProductEditor__productIdDisplay',
+                'productCompareEditor_LocalProductEditor__productIdDisplay')">
+            ==>
+        </button>
     </div>
 
     <div id="productCompareEditor_OutsideProductEditorContainer" class="full-parent-height"
-         style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
+        style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
         <header>
             <ul class="full-parent-width"
                 style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0px 0px 10px 0px;">
@@ -137,6 +173,22 @@
                 <li style="flex-grow: 1;"></li>
 
                 <li>
+                    <input id="productCompareEditor_OutsideProductEditorContainer_ExternalLinkInput"
+                        onkeydown="externalLinkInput_onkeydown_displayExternalLinkInput(event,
+                            this.value,
+                            'productCompareEditor_OutsideProductEditorContainer_ProductDisplay')" />
+                </li>
+
+                <li>
+                    <button class="btn btn-secondary"
+                        onclick="clearSecondProductData(
+                            'productCompareEditor_OutsideProductEditorContainer_XmlTextArea',
+                            'productCompareEditor_OutsideProductEditorContainer_ProductDisplay')">
+                        Clear
+                    </button>
+                </li>
+
+                <li>
                     <button class="btn"
                         onclick="toggleEditorToFullScreen(
                             'productCompareEditor_OutsideProductEditorContainer',
@@ -162,6 +214,28 @@
     </div>
 
     <ul id="copiedNotificationBox" class="copied-xml-notification-box"></ul>
+
+    <!-- <div id="productCompareEditor_OutsideItemCopiedCharacteristics_modal" class="modal full-parent-height"
+        tabindex="-1" role="dialog">
+        <div class="modal-dialog" style="max-width: 200px; margin: 0px;">
+            <div class="modal-content">
+                <div class="row">
+                    <p id="productCompareEditor_OutsideItemCopiedCharacteristics_text"
+                        style="word-wrap: break-word;">
+                        dsfsdf
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <div id="productCompareEditor_OutsideItemCopiedCharacteristics_modal"
+        style="position: fixed; z-index: 99999; display: none; background-color: whitesmoke; border-radius: 5%; min-width: 90px; max-width: 200px; margin: 0px;">
+        <p id="productCompareEditor_OutsideItemCopiedCharacteristics_text"
+            style="word-wrap: break-word; margin: 0px 3px;">
+            dsfsdf
+        </p>
+    </div>
 
     @Html.AntiForgeryToken()
 </div>

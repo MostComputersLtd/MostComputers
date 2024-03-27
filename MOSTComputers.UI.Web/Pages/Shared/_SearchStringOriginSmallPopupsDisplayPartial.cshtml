@@ -15,21 +15,30 @@
 
         string makeSearchStringSearchItemVisibleAfterAddingData =
             Model.MakeSearchStringSearchItemVisibleAfterAddingData ? "true" : "false";
-
+        
         <li>
-            <table onmouseleave="removeSearchStringOriginDataSmallPopup(@Model.ProductId, @j, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
+            <table onmouseleave="removeSearchStringOriginDataSmallPopup(
+                @Model.ProductId,
+                @j,
+                '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)',
+                '@Model.ElementIdAndNamePrefix')">
                 <tr>
-                    <td id="searchStringPart_h2#@j" name="searchStringPart_h2"
+                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPart_h2#@Model.ProductId#@j"
+                        name="@(Model.ElementIdAndNamePrefix)searchStringPart_h2#@Model.ProductId"
                         class="searchStringPart_td"
-                        onmouseover="showSearchStringOriginDataSmallPopup(@Model.ProductId, @j, '@searchStringPart')">
+                        onmouseover="showSearchStringOriginDataSmallPopup(
+                            @Model.ProductId, @j, '@searchStringPart', '@Model.ElementIdAndNamePrefix')">
 
-                        <h7 class="productSearchString-popup-searchStringPart-label" name="searchStringPartDisplayText#@Model.ProductId">@searchStringPart</h7>
+                        <h7 class="productSearchString-popup-searchStringPart-label"
+                            name="@(Model.ElementIdAndNamePrefix)searchStringPartDisplayText#@Model.ProductId">@searchStringPart</h7>
                     </td>
                 </tr>
 
                 <tr class="searchStringPartOrigin_li_container_row">
-                    <td id="searchStringPartOrigin_li#@Model.ProductId#@j" name="searchStringPartOrigin_li"
-                        class="searchStringPartOrigin_li" style="visibility:hidden;">
+                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li#@Model.ProductId#@j"
+                        name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li#@Model.ProductId"
+                        class="searchStringPartOrigin_li"
+                        style="visibility:hidden;">
 
                         @if (kvp.Item2?.Count == 1)
                         {
@@ -45,14 +54,15 @@
                             <ul class="searchStringPartOrigin_li_singleItemContainerList">
                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
                                     <button class="searchStringPartOrigin_li_copyButton"
-                                        onclick="addCopiedPartToTotalCopyAndMakeElementVisible(
-                                            '@searchStringPart',
-                                            '@Model.SearchStringDataTotalCopyId',
-                                            @makeSearchStringSearchItemVisibleAfterAddingData)">
+                                        onclick='addCopiedPartToTotalCopyAndMakeElementVisible(
+                                            "@searchStringPart",
+                                            @Json.Serialize(Model.SearchStringDataTotalCopyIds),
+                                            @makeSearchStringSearchItemVisibleAfterAddingData)'>
                                         +
                                     </button>
                                 </li>
-                                <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
                                     class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
                                     <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPartOriginData.Characteristic.Name</h4>
                                 </li>
@@ -72,13 +82,14 @@
                                     <button class="searchStringPartOrigin_li_copyButton"
                                         onclick="addCopiedPartToTotalCopyAndMakeElementVisible(
                                         '@searchStringPart',
-                                        '@Model.SearchStringDataTotalCopyId',
+                                        @Json.Serialize(Model.SearchStringDataTotalCopyIds),
                                         @makeSearchStringSearchItemVisibleAfterAddingData)">
                                         +
                                     </button>
                                 </li>
 
-                                <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
                                     class="searchStringPartOrigin_li_displayInline">
                                     <h4 class="searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4">@searchStringPart</h4>
                                 </li>
@@ -86,7 +97,7 @@
                                 <li class="searchStringPartOrigin_li_displayInline">
                                     <p class="searchStringPartOrigin_li_multipleItemContainerList_possibilitiesText">@kvp.Item2.Count possibilities</p>
 
-                                    <ul id="searchStringPartOrigin_multipleOriginsDisplayList#@Model.ProductId#@j"
+                                    <ul id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList#@Model.ProductId#@j"
                                         class="searchStringPartOrigin_multipleOriginsDisplayList">
 
                                         @for (int k = 0; k < kvp.Item2.Count; k++)
@@ -104,7 +115,7 @@
 
                                                 <ul class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_ul">
                                                     <li class="searchStringPartOrigin_li_displayInline">
-                                                        <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@Model.ProductId#@j"
+                                                        <h4 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@Model.ProductId#@j"
                                                             class="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel">
                                                             @searchStringPartOriginData.Characteristic.Name
                                                         </h4>
@@ -116,7 +127,7 @@
                                                     </li>
                                                 </ul>
 
-                                                <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@Model.ProductId#@j">@searchStringMeaning</h5>
+                                                <h5 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@Model.ProductId#@j">@searchStringMeaning</h5>
                                             </li>
                                         }
                                     </ul>
@@ -130,12 +141,13 @@
                                     <button class="searchStringPartOrigin_li_copyButton"
                                         onclick="addCopiedPartToTotalCopyAndMakeElementVisible(
                                         '@searchStringPart',
-                                        '@Model.SearchStringDataTotalCopyId',
+                                        @Json.Serialize(Model.SearchStringDataTotalCopyIds),
                                         @makeSearchStringSearchItemVisibleAfterAddingData)">
                                         +
                                     </button>
                                 </li>
-                                <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
                                     class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
                                     <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
                                 </li>
@@ -151,7 +163,5 @@
         <li>
             &nbsp
         </li>
-
-        j++;
     }
 }

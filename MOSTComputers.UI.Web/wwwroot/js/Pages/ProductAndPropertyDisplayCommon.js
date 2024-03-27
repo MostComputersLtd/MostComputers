@@ -91,6 +91,11 @@ function addCopiedPartToTotalCopy(part, elementId = null)
 
     navigator.clipboard.writeText(searchStringPartCopyString);
 
+    changeValueOfSearchStringValue(elementId);
+}
+
+function changeValueOfSearchStringValue(elementId)
+{
     if (!document.hasFocus()) return;
 
     if (elementId !== null)

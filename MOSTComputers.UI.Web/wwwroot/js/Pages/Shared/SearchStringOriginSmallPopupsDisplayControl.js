@@ -1,4 +1,4 @@
-function showSearchStringOriginDataSmallPopup(productId, index, searchStringPart)
+function showSearchStringOriginDataSmallPopup(productId, index, searchStringPart, elementIdAndNamePrefix)
 {
     if (productId === null
         || productId === undefined
@@ -8,14 +8,14 @@ function showSearchStringOriginDataSmallPopup(productId, index, searchStringPart
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
     showSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + productId + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + productId + "#" + index,
+        elementIdAndNamePrefix + "searchStringPartOrigin_li#" + productId + "#" + index,
+        elementIdAndNamePrefix + "searchStringPartOrigin_multipleOriginsDisplayList#" + productId + "#" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productId + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productId + "#" + index);
+        elementIdAndNamePrefix + "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productId + "#" + index,
+        elementIdAndNamePrefix + "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productId + "#" + index);
 }
 
-function removeSearchStringOriginDataSmallPopup(productId, index, searchStringPart)
+function removeSearchStringOriginDataSmallPopup(productId, index, searchStringPart, elementIdAndNamePrefix)
 {
     if (productId === null
         || productId === undefined
@@ -27,22 +27,28 @@ function removeSearchStringOriginDataSmallPopup(productId, index, searchStringPa
     searchStringPart = decodeHtmlString(searchStringPart);
 
     removeSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + productId + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + productId + "#" + index,
+        elementIdAndNamePrefix + "searchStringPartOrigin_li#" + productId + "#" + index,
+        elementIdAndNamePrefix + "searchStringPartOrigin_multipleOriginsDisplayList#" + productId + "#" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productId + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productId + "#" + index);
+        elementIdAndNamePrefix + "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productId + "#" + index,
+        elementIdAndNamePrefix +"searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productId + "#" + index);
 }
 
-function addCopiedPartToTotalCopyAndMakeElementVisible(part, elementId = null, makeElementVisible = false)
+function addCopiedPartToTotalCopyAndMakeElementVisible(part, elementIds = null, makeElementVisible = false)
 {
-    addCopiedPartToTotalCopy(part, elementId);
+    addCopiedPartToTotalCopy(part);
 
-    if (elementId === null
-        || elementId === undefined
+    if (elementIds === null
+        || elementIds === undefined
         || makeElementVisible === false) return;
 
-    var element = document.getElementById(elementId);
+    for (var i = 0; i < elementIds.length; i++)
+    {
+        changeValueOfSearchStringValue(elementIds[i]);
 
-    element.style.visibility = "visible";
+        var element = document.getElementById(elementIds[i]);
+
+        element.style.visibility = "visible";
+    }
+
 }

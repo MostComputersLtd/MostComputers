@@ -6,18 +6,21 @@ public class SearchStringOriginSmallPopupsDisplayPartialModel
 {
     public SearchStringOriginSmallPopupsDisplayPartialModel(
         int productId,
-        string searchStringDataTotalCopyId,
+        IEnumerable<string> searchStringDataTotalCopyIds,
         List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringPartOriginDataList,
-        bool makeSearchStringSearchItemVisibleAfterAddingData = false)
+        bool makeSearchStringSearchItemVisibleAfterAddingData = false,
+        string elementIdAndNamePrefix = "")
     {
         ProductId = productId;
-        SearchStringDataTotalCopyId = searchStringDataTotalCopyId;
+        SearchStringDataTotalCopyIds = searchStringDataTotalCopyIds;
         SearchStringPartOriginDataList = searchStringPartOriginDataList;
         MakeSearchStringSearchItemVisibleAfterAddingData = makeSearchStringSearchItemVisibleAfterAddingData;
+        ElementIdAndNamePrefix = elementIdAndNamePrefix;
     }
 
     public int ProductId { get; }
-    public string SearchStringDataTotalCopyId { get; }
+    public IEnumerable<string> SearchStringDataTotalCopyIds { get; }
     public IReadOnlyList<Tuple<string, List<SearchStringPartOriginData>?>>? SearchStringPartOriginDataList { get; }
     public bool MakeSearchStringSearchItemVisibleAfterAddingData { get; }
+    public string ElementIdAndNamePrefix { get; }
 }

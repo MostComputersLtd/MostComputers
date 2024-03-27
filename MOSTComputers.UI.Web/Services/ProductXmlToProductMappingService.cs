@@ -21,14 +21,15 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<OneOf<Product, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xml)
+    public async Task<OneOf<Product, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xmlForImages)
     {
         uint productId = (uint)product.Id;
 
         OneOf<List<ProductProperty>, ValidationResult> resultOfPropsMapping
-            = GetPropertiesFromXmlData(product.XmlProductProperties, (uint)product.Category.Id);
+            = GetPropertiesFromXmlData(product.XmlProductProperties, productId, (uint)product.Category.Id);
 
-        List<ProductImage> images = await GetImagesFromXmlDataAsync(product.ShopItemImages, xml, productId);
+        List<Tuple<ProductImage, ProductImageFileNameInfo>> imagesAndImageFileNames
+            = await GetImagesAndImageFileNameInfosFromXmlDataAsync(product.ShopItemImages, xmlForImages, productId);
 
         int? standardWarrantyTermMonths = GetWarrantyData(product.XmlProductProperties);
 
@@ -45,8 +46,10 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             Price = product.Price,
             Currency = CurrencyEnumMapping.GetCurrencyEnumFromString(product.CurrencyCode),
             Properties = resultOfPropsMapping.AsT0,
-            ImageFileNames = GetImageFileInfosFromXmlData(product.ShopItemImages, productId),
-            Images = images,
+            Images = imagesAndImageFileNames.Select(x => x.Item1)
+                .ToList(),
+            ImageFileNames = imagesAndImageFileNames.Select(x => x.Item2)
+                .ToList(),
             CategoryID = (short?)product.Category.Id,
             Category = Map(product.Category),
             ManifacturerId = (short?)product.Manifacturer.Id,
@@ -88,8 +91,11 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
     private OneOf<List<ProductProperty>, ValidationResult> GetPropertiesFromXmlData(
         List<XmlProductProperty> properties,
+        uint productId,
         uint categoryId)
     {
+        int productIdInt = (int)productId;
+
         List<ProductProperty> output = new();
 
         for (int i = 0; i < properties.Count; i++)
@@ -97,7 +103,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             XmlProductProperty property = properties[i];
 
             ProductCharacteristic? productCharacteristic
-                = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, property.Name);
+                = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType((int)categoryId, property.Name, ProductCharacteristicTypeEnum.ProductCharacteristic);
 
             // RETURN AFTER TESTS ================================================================================================================
 
@@ -106,13 +112,16 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             //    new(nameof(XmlProductProperty.Name), "Name is not a valid name for a characteristic")
             //});
 
+            bool orderParseSuccess = int.TryParse(property.Order, out int order);
+
             ProductProperty request = new()
             {
                 ProductCharacteristicId = productCharacteristic?.Id, // REMOVE "?? 0" after tests
                 Characteristic = property.Name,
-                DisplayOrder = int.Parse(property.Order),
+                DisplayOrder = orderParseSuccess ? order : null,
                 Value = property.Value,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+                ProductId = productIdInt,
             };
 
             output.Add(request);
@@ -143,27 +152,50 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         return output;
     }
 
-    private async Task<List<ProductImage>> GetImagesFromXmlDataAsync(List<XmlShopItemImage> images, string xml, uint productId)
+    private async Task<List<Tuple<ProductImage, ProductImageFileNameInfo>>> GetImagesAndImageFileNameInfosFromXmlDataAsync(
+        List<XmlShopItemImage> images,
+        string xml,
+        uint productId)
     {
-        List<ProductImage> output = new();
+        List<Tuple<ProductImage, ProductImageFileNameInfo>> output = new();
 
-        HttpClient httpClient = _httpClientFactory.CreateClient();
+        using HttpClient httpClient = _httpClientFactory.CreateClient();
 
         for (int i = 0; i < images.Count; i++)
         {
             XmlShopItemImage item = images[i];
 
-            byte[] imageData = await httpClient.GetByteArrayAsync(item.PictureUrl);
-
-            ProductImage image = new()
+            ProductImageFileNameInfo imageFileNameInfo = new()
             {
-                ImageData = imageData,
-                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
-                XML = xml,
+                FileName = item.PictureUrl[(item.PictureUrl.LastIndexOf('/') + 1)..],
+                DisplayOrder = i + 1,
+                Active = true,
                 ProductId = (int)productId
             };
 
-            output.Add(image);
+            byte[]? imageData = null;
+
+            HttpResponseMessage imageDataResponse = await httpClient.GetAsync(item.PictureUrl);
+
+            if (imageDataResponse.IsSuccessStatusCode)
+            {
+                imageData = await imageDataResponse.Content.ReadAsByteArrayAsync();
+            }
+
+            string imageIdAsString = imageFileNameInfo.FileName[..(imageFileNameInfo.FileName.IndexOf("."))];
+
+            bool isImageIdParseSuccessful = int.TryParse(imageIdAsString, out int imageId);
+
+            ProductImage image = new()
+            {
+                Id = isImageIdParseSuccessful ? imageId : 0,
+                ImageData = imageData,
+                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
+                XML = xml,
+                ProductId = (int)productId,
+            };
+
+            output.Add(new(image, imageFileNameInfo));
         }
 
         return output;

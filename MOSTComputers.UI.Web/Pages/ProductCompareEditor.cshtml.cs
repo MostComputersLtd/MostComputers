@@ -1,4 +1,6 @@
+using Dapper;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -20,7 +22,10 @@ using MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor.ProductProperties;
 using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 using OneOf.Types;
+using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using System.Transactions;
+using System.Web;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -68,6 +73,8 @@ public class ProductCompareEditorModel : PageModel
     public int? FirstProductId { get; set; }
 
     private static string? _firstProductXml = null;
+
+    private static XmlObjectData? _firstProductXmlObjectData = null;
 
     private static Product? _firstProduct = null;
     public Product? FirstProduct { get => _firstProduct; set => _firstProduct = value; }
@@ -117,6 +124,16 @@ public class ProductCompareEditorModel : PageModel
             GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
     }
 
+    public IActionResult OnGetGetRefreshedProductPartialViewFirst()
+    {
+        if (_firstProduct is null) return BadRequest();
+
+        GetRefreshedFirstProductAndPopulateItsData((uint)_firstProduct.Id);
+
+        return Partial("ProductCompareEditor/_ProductFullEditorPartial",
+            GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
+    }
+
     public IActionResult OnGetGetProductPartialViewSecond()
     {
         if (_secondProduct is not null)
@@ -132,7 +149,26 @@ public class ProductCompareEditorModel : PageModel
     {
         if (_firstProduct is null) return new OkObjectResult(null);
 
-        _firstProductXml = _productDeserializeService.SerializeProductsXml(_firstProduct, true);
+        if (_firstProductXmlObjectData is not null)
+        {
+            XmlProduct? oldXmlProduct = _firstProductXmlObjectData.Products.FirstOrDefault();
+
+            string? vendorUrl = oldXmlProduct?.VendorUrl;
+
+            _firstProductXmlObjectData.Products.Clear();
+
+            XmlProduct xmlFirstProduct = _productToXmlProductMappingService.MapToXmlProduct(_firstProduct);
+
+            _firstProductXmlObjectData.Products.Add(xmlFirstProduct);
+
+            xmlFirstProduct.VendorUrl ??= vendorUrl;
+
+            _firstProductXml = _productDeserializeService.SerializeProductsXml(_firstProductXmlObjectData, true, true);
+
+            return new OkObjectResult(_firstProductXml);
+        }
+
+        _firstProductXml = _productDeserializeService.SerializeProductsXml(_firstProduct, true, true);
 
         return new OkObjectResult(_firstProductXml);
     }
@@ -143,20 +179,43 @@ public class ProductCompareEditorModel : PageModel
 
         if (_secondProductXmlObjectData is not null)
         {
+            XmlProduct? oldXmlProduct = _secondProductXmlObjectData.Products.FirstOrDefault();
+
+            string? vendorUrl = oldXmlProduct?.VendorUrl;
+
             _secondProductXmlObjectData.Products.Clear();
 
             XmlProduct xmlSecondProduct = _productToXmlProductMappingService.MapToXmlProduct(_secondProduct);
 
             _secondProductXmlObjectData.Products.Add(xmlSecondProduct);
 
-            _secondProductXml = _productDeserializeService.SerializeProductsXml(_secondProductXmlObjectData, true);
+            xmlSecondProduct.VendorUrl ??= vendorUrl;
+
+            _secondProductXml = _productDeserializeService.SerializeProductsXml(_secondProductXmlObjectData, true, true);
 
             return new OkObjectResult(_secondProductXml);
         }
 
-        _secondProductXml = _productDeserializeService.SerializeProductsXml(_secondProduct, true);
+        _secondProductXml = _productDeserializeService.SerializeProductsXml(_secondProduct, true, true);
 
         return new OkObjectResult(_secondProductXml);
+    }
+
+    public IActionResult OnPostGetProductXmlByIdFirst(int productId)
+    {
+        if (productId < 0) return BadRequest();
+
+        if (_firstProduct is not null
+            && _firstProduct.Id == productId)
+        {
+            if (_firstProductXml is not null) return new OkObjectResult(_firstProductXml);
+
+            return OnGetGetXmlFromProductFirst();
+        }
+
+        GetRefreshedFirstProductAndPopulateItsData((uint)productId);
+
+        return OnGetGetXmlFromProductFirst();
     }
 
     public IActionResult OnPostGetProductDataByIdFirst(int productId)
@@ -179,20 +238,52 @@ public class ProductCompareEditorModel : PageModel
 
     private Product? GetFirstProductAndPopulateItsData(uint productIdUint)
     {
-        Product? firstProduct = _firstProduct;
+        return GetFirstProductDataAndPopulateIt(productIdUint, _firstProduct);
+    }
+
+    private Product? GetRefreshedFirstProductAndPopulateItsData(uint productIdUint)
+    {
+        return GetFirstProductDataAndPopulateIt(productIdUint);
+    }
+
+    private Product? GetFirstProductDataAndPopulateIt(uint productIdUint, Product? product = null)
+    {
+        Product? firstProduct = null;
+
+        if (product is not null
+            && productIdUint == product.Id)
+        {
+            firstProduct = product;
+        }
 
         if (firstProduct is null)
         {
             firstProduct = _productService.GetByIdWithImages(productIdUint);
 
-            if (firstProduct is null) return null;
+            if (firstProduct is null)
+            {
+                _firstProduct = null;
+                _firstProductSearchStringPartsAndDataAboutTheirOrigin = null;
+                _characteristicsRelatedToFirstProduct = null;
+
+                return null;
+            }
         }
 
         if ((firstProduct.Images is null || firstProduct.Images.Count <= 0)
-            && _firstProduct is not null
-            && _firstProduct.Images?.Count > 0)
+            && product is not null
+            && product.Images?.Count > 0)
         {
-            firstProduct.Images = _firstProduct.Images;
+            firstProduct.Images = product.Images;
+        }
+
+        if (firstProduct is null)
+        {
+            _firstProduct = null;
+            _firstProductSearchStringPartsAndDataAboutTheirOrigin = null;
+            _characteristicsRelatedToFirstProduct = null;
+
+            return null;
         }
 
         if (firstProduct.Properties is null
@@ -256,6 +347,41 @@ public class ProductCompareEditorModel : PageModel
         return firstProduct;
     }
 
+    //private OneOf<Product?, InvalidXmlResult> ChangeProductToMatchXml(Product product, string xml)
+    //{
+    //    OneOf<XmlObjectData?, InvalidXmlResult> xmlDeserializeResult = _productDeserializeService.TryDeserializeProductsXml(xml);
+
+    //    return xmlDeserializeResult.Match<OneOf<Product?, InvalidXmlResult>>(
+    //        async xmlObjectData =>
+    //        {
+    //            if (xmlObjectData is null) return null;
+
+    //            if (xmlObjectData.Products.Count > 1) return product;
+
+    //            XmlProduct? matchingXmlProduct = GetMatchingProductFromXmlObjectData(product.Id, xmlObjectData);
+
+    //            if (matchingXmlProduct is null) return product;
+
+    //            OneOf<Product, ValidationResult> matchingProductMapResult
+    //                = await _productXmlToProductMappingService.GetProductFromXmlDataAsync(matchingXmlProduct, xml);
+
+    //            if ()
+    //        },
+    //        invalidXmlResult => invalidXmlResult);
+    //}
+
+    //private XmlProduct? GetMatchingProductFromXmlObjectData(int productId, XmlObjectData xmlObjectData)
+    //{
+    //    if (xmlObjectData.Products.Count <= 0) return null;
+
+    //    foreach (XmlProduct xmlProduct in xmlObjectData.Products)
+    //    {
+    //        if (xmlProduct.Id == productId) return xmlProduct;
+    //    }
+
+    //    return null;
+    //}
+
     public async Task<IActionResult> OnPostGetProductDataFromXmlSecondAsync([FromBody] string xmlData)
     {
         if (string.IsNullOrWhiteSpace(xmlData)) return BadRequest();
@@ -308,6 +434,23 @@ public class ProductCompareEditorModel : PageModel
 
                 RelatedImagesAndFileInfosInSecondProduct.Clear();
 
+                if (_secondProduct?.Images is not null
+                    && _secondProduct.Images.Count > 0
+                    && product.Images is not null)
+                {
+                    foreach (ProductImage image in product.Images)
+                    {
+                        if (image.ImageData is not null) continue;
+
+                        ProductImage? matchingImageInOldSecondProduct = _secondProduct.Images.Find(imageInOld =>
+                            imageInOld.Id == image.Id);
+
+                        if (matchingImageInOldSecondProduct is null) continue;
+
+                        image.ImageData = matchingImageInOldSecondProduct?.ImageData;
+                    }
+                }
+
                 if (product.Images is not null)
                 {
                     for (int i = 0; i < product.Images.Count; i++)
@@ -334,6 +477,46 @@ public class ProductCompareEditorModel : PageModel
                     GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.Second));
             },
             invalidXmlResult => Task.FromResult<IActionResult>(BadRequest(invalidXmlResult)));
+    }
+
+    public IActionResult OnPostCopyOtherProductIntoProductFirst()
+    {
+        if (_secondProduct is null) return BadRequest();
+
+        int? firstProductOriginalId = _firstProduct?.Id;
+
+        _firstProduct = CloneProduct(_secondProduct);
+
+        if (firstProductOriginalId is not null
+            && _firstProduct is not null)
+        {
+            _firstProduct.Id = firstProductOriginalId.Value;
+        }
+
+        _firstProductSearchStringPartsAndDataAboutTheirOrigin = _secondProductSearchStringPartsAndDataAboutTheirOrigin;
+
+        _characteristicsRelatedToFirstProduct = _characteristicsRelatedToSecondProduct;
+
+        _firstProductXmlObjectData = _secondProductXmlObjectData;
+
+        return Partial("ProductCompareEditor/_ProductFullEditorPartial",
+            GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
+    }
+
+    public IActionResult OnPostCopyOtherProductIntoProductSecond()
+    {
+        if (_firstProduct is null) return BadRequest();
+
+        _secondProduct = CloneProduct(_firstProduct);
+
+        _secondProductSearchStringPartsAndDataAboutTheirOrigin = _firstProductSearchStringPartsAndDataAboutTheirOrigin;
+
+        _characteristicsRelatedToSecondProduct = _characteristicsRelatedToFirstProduct;
+
+        _secondProductXmlObjectData = _firstProductXmlObjectData;
+
+        return Partial("ProductCompareEditor/_ProductFullEditorPartial",
+            GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.Second));
     }
 
     public IActionResult OnPutSaveFirstProduct()
@@ -784,12 +967,13 @@ public class ProductCompareEditorModel : PageModel
         {
             return new ProductFullEditorPartialModel()
             {
+                Product = _firstProduct,
+                XmlProduct = _firstProductXmlObjectData?.Products.FirstOrDefault(),
                 ElementIdAndNamePrefix = "productCompareEditor_LocalProductEditor_",
                 OtherElementIdAndNamePrefix = "productCompareEditor_OutsideProductEditor_",
                 FirstOrSecondProduct = FirstOrSecondProductEnum.First,
                 CharacteristicsRelatedToProduct = CharacteristicsRelatedToFirstProduct,
                 ProductSearchStringPartsAndDataAboutTheirOrigin = FirstProductSearchStringPartsAndDataAboutTheirOrigin,
-                Product = _firstProduct,
                 ImagesContainerId = "productCompareEditor_LocalProductEditor_imageContainer_div",
                 OtherImagesContainerId = "productCompareEditor_OutsideProductEditor_imageContainer_div"
             };
@@ -797,15 +981,27 @@ public class ProductCompareEditorModel : PageModel
 
         return new ProductFullEditorPartialModel()
         {
+            Product = _secondProduct,
+            XmlProduct = _secondProductXmlObjectData?.Products.FirstOrDefault(),
             ElementIdAndNamePrefix = "productCompareEditor_OutsideProductEditor_",
             OtherElementIdAndNamePrefix = "productCompareEditor_LocalProductEditor_",
             FirstOrSecondProduct = FirstOrSecondProductEnum.Second,
             CharacteristicsRelatedToProduct = CharacteristicsRelatedToSecondProduct,
             ProductSearchStringPartsAndDataAboutTheirOrigin = SecondProductSearchStringPartsAndDataAboutTheirOrigin,
-            Product = _secondProduct,
             ImagesContainerId = "productCompareEditor_OutsideProductEditor_imageContainer_div",
             OtherImagesContainerId = "productCompareEditor_LocalProductEditor_imageContainer_div",
         };
+    }
+
+    public IActionResult OnPutClearSecondProductData()
+    {
+        _secondProduct = null;
+        _secondProductXml = null;
+        _secondProductSearchStringPartsAndDataAboutTheirOrigin = null;
+        _secondProductXmlObjectData = null;
+        _characteristicsRelatedToSecondProduct = null;
+
+        return new OkResult();
     }
 
     public IActionResult OnPostAddNewImageToProductFirst(IFormFile fileInfo)
@@ -853,7 +1049,7 @@ public class ProductCompareEditorModel : PageModel
     private (ProductImage newProductImage, ProductImageFileNameInfo newImageFileNameInfo)
         GetImageAndImageFileNameInfoFromFileAndProductData(Product product, IFormFile fileInfo)
     {
-        MemoryStream stream = new();
+        using MemoryStream stream = new();
 
         fileInfo.CopyTo(stream);
 
@@ -865,7 +1061,7 @@ public class ProductCompareEditorModel : PageModel
 
         XmlObjectData xmlObjectData = _productXmlToCreateRequestMappingService.GetXmlDataFromProducts(products);
 
-        string? productXml = _productDeserializeService.SerializeProductsXml(xmlObjectData, true);
+        string? productXml = _productDeserializeService.SerializeProductsXml(xmlObjectData, true, true);
 
         ProductImage image = new()
         {
@@ -1159,9 +1355,80 @@ public class ProductCompareEditorModel : PageModel
         return new OkResult();
     }
 
+    public IActionResult OnGetGetAllowedCharacteristicIdsFirst()
+    {
+        return GetAllowedCharacteristicIds(FirstOrSecondProductEnum.First);
+    }
+
+    public IActionResult OnGetGetAllowedCharacteristicIdsSecond()
+    {
+        return GetAllowedCharacteristicIds(FirstOrSecondProductEnum.Second);
+    }
+
+    private static IActionResult GetAllowedCharacteristicIds(FirstOrSecondProductEnum firstOrSecondProductEnum)
+    {
+        IEnumerable<int>? allowedIds = firstOrSecondProductEnum switch
+        {
+            FirstOrSecondProductEnum.First => _characteristicsRelatedToFirstProduct?.Select(x => x.Id),
+            FirstOrSecondProductEnum.Second => _characteristicsRelatedToSecondProduct?.Select(x => x.Id),
+            _ => throw new InvalidOperationException("No such case exists")
+        };
+
+        return new JsonResult(new { allowedIds });
+    }
+
+    public IActionResult OnGetGetRemainingCharacteristicsForProductFirst(int? characteristicToAddToSelectId = null)
+    {
+        if (characteristicToAddToSelectId is not null
+            && characteristicToAddToSelectId < 0) return BadRequest();
+
+        IEnumerable<SelectListItem> remainingCharacteristics
+            = GetRemainingCharacteristicsForProduct(_firstProduct, _characteristicsRelatedToFirstProduct, false);
+
+        if (characteristicToAddToSelectId is not null)
+        {
+            ProductCharacteristic? characteristicToAdd = _characteristicsRelatedToFirstProduct?.Find(
+                characteristic => characteristic.Id == characteristicToAddToSelectId);
+
+            if (characteristicToAdd is null) return BadRequest();
+
+            SelectListItem selectListItemForCharacteristic = new(characteristicToAdd.Name, characteristicToAdd.Id.ToString());
+
+            remainingCharacteristics = remainingCharacteristics.Prepend(selectListItemForCharacteristic);
+        }
+
+        return new JsonResult(remainingCharacteristics.Select(
+            selectListItem => new { text = selectListItem.Text, value = selectListItem.Value }));
+    }
+
+    public IActionResult OnGetGetRemainingCharacteristicsForProductSecond(int? characteristicToAddToSelectId = null)
+    {
+        if (characteristicToAddToSelectId is not null
+            && characteristicToAddToSelectId < 0) return BadRequest();
+
+        IEnumerable<SelectListItem> remainingCharacteristics
+            = GetRemainingCharacteristicsForProduct(_secondProduct, _characteristicsRelatedToSecondProduct, false);
+
+        if (characteristicToAddToSelectId is not null)
+        {
+            ProductCharacteristic? characteristicToAdd = _characteristicsRelatedToSecondProduct?.Find(
+                characteristic => characteristic.Id == characteristicToAddToSelectId);
+
+            if (characteristicToAdd is null) return BadRequest();
+
+            SelectListItem selectListItemForCharacteristic = new(characteristicToAdd.Name, characteristicToAdd.Id.ToString());
+
+            remainingCharacteristics = remainingCharacteristics.Prepend(selectListItemForCharacteristic);
+        }
+
+        return new JsonResult(remainingCharacteristics.Select(
+            selectListItem => new { text = selectListItem.Text, value = selectListItem.Value }));
+    }
+
     public static IEnumerable<SelectListItem> GetRemainingCharacteristicsForProduct(
         Product? product,
-        List<ProductCharacteristic>? characteristicsRelatedToProduct)
+        List<ProductCharacteristic>? characteristicsRelatedToProduct,
+        bool addFirstSelectCharacteristic)
     {
         if (product is null) return Enumerable.Empty<SelectListItem>();
 
@@ -1174,7 +1441,7 @@ public class ProductCompareEditorModel : PageModel
             IEnumerable<ProductCharacteristic> relevantCharacteristics = characteristicsRelatedToProduct
                 .Where(characteristic => characteristic.KWPrCh != ProductCharacteristicTypeEnum.SearchStringAbbreviation);
 
-            return ConvertCharacteristicsToSelectListItems(relevantCharacteristics);
+            return ConvertCharacteristicsToSelectListItems(relevantCharacteristics, addFirstSelectCharacteristic);
         }
 
         IEnumerable<ProductCharacteristic> relevantCharacteristicsWithNoMatchesInProduct = characteristicsRelatedToProduct
@@ -1186,14 +1453,54 @@ public class ProductCompareEditorModel : PageModel
                     property => property.ProductCharacteristicId == characteristic.Id) == null;
             });
 
-        return ConvertCharacteristicsToSelectListItems(relevantCharacteristicsWithNoMatchesInProduct);
+        return ConvertCharacteristicsToSelectListItems(
+            relevantCharacteristicsWithNoMatchesInProduct,
+            addFirstSelectCharacteristic);
     }
 
-    private static IEnumerable<SelectListItem> ConvertCharacteristicsToSelectListItems(IEnumerable<ProductCharacteristic> characteristicsToConvert)
+    public IActionResult OnGetGetCharacteristicsForBothProducts()
     {
-        return characteristicsToConvert
-            .Select(characteristic => new SelectListItem(characteristic.Name, characteristic.Id.ToString()))
-            .Prepend(new SelectListItem("--- Select ---", null, true, true));
+        IEnumerable<ProductCharacteristic>? characteristics = _characteristicsRelatedToFirstProduct;
+
+        if (_characteristicsRelatedToSecondProduct is not null)
+        {
+            if (characteristics is not null)
+            {
+                characteristics = characteristics
+                    .Concat(_characteristicsRelatedToSecondProduct);
+            }
+            else
+            {
+                characteristics = _characteristicsRelatedToSecondProduct;
+            }
+        }
+
+        IEnumerable<ProductCharacteristic>? uniqueCharcteristics = characteristics?
+            .DistinctBy(characteristic => characteristic.Id);
+
+        return new JsonResult(new
+        {
+            characteristics = uniqueCharcteristics?
+                .Select(characteristic => new
+                {
+                    text = characteristic.Name,
+                    meaning = characteristic.Meaning,
+                    value = characteristic.Id
+                }
+            )
+        });
+    }
+
+    private static IEnumerable<SelectListItem> ConvertCharacteristicsToSelectListItems(
+        IEnumerable<ProductCharacteristic> characteristicsToConvert,
+        bool addFirstSelectCharacteristic)
+    {
+        IEnumerable<SelectListItem> convertedCharacteristics = characteristicsToConvert
+            .Select(characteristic => new SelectListItem(characteristic.Name, characteristic.Id.ToString()));
+
+        if (!addFirstSelectCharacteristic) return convertedCharacteristics;
+
+        return convertedCharacteristics.Prepend(new SelectListItem("--- Select ---", null, true, true));
     }
 
     public IActionResult OnPostAddNewBlancPropertyToProductFirst(int indexOfItem, string elementIdPrefix)
@@ -1216,35 +1523,144 @@ public class ProductCompareEditorModel : PageModel
         if (product == null
             || indexOfItem < 0) return BadRequest();
 
+        List<SelectListItem> relatedCharacteristics = GetRemainingCharacteristicsForProduct(product, characteristicsRelatedToProduct, false)
+            .ToList();
+
+        SelectListItem? firstCharacteristic = relatedCharacteristics[0];
+
+        int? characteristicId = null;
+
+        if (firstCharacteristic is not null)
+        {
+            bool parseIdSuccess = int.TryParse(firstCharacteristic.Value, out int firstCharacteristicId);
+
+            characteristicId = parseIdSuccess ? firstCharacteristicId : null;
+
+            product.Properties.Add(new()
+            {
+                ProductCharacteristicId = characteristicId,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList
+            });
+        }
+
         return Partial("ProductCompareEditor/ProductProperties/_ProductPropertyInCompareEditorWithoutCharacteristicPartial",
             new ProductPropertyInCompareEditorWithoutCharacteristicPartialModel()
             {
-                ProductProperty = new ProductProperty() { ProductCharacteristicId = null },
-                ProductCharacteristicsForSelect = GetRemainingCharacteristicsForProduct(product, characteristicsRelatedToProduct),
+                ProductProperty = new ProductProperty() { ProductCharacteristicId = characteristicId, XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                ProductCharacteristicsForSelect = relatedCharacteristics,
                 PropertyIndex = (uint)indexOfItem,
-                ElementIdPrefix = elementIdPrefix,
+                ElementIdAndNamePrefix = elementIdPrefix,
                 ProductFirstOrSecondEnum = firstOrSecondProductEnum
             });
     }
 
-    public IActionResult OnPutUpdatePropertyForProductFirst([FromBody] ProductCompareEditorPropertyData data)
+    public IActionResult OnPutAddOrOverwritePropertyFromDataInOtherProductFirst(
+        int characteristicId,
+        int indexToInsertAtOnAdd,
+        XMLPlacementEnum xmlPlacementValue)
     {
-        bool success = UpdatePropertyForProduct(_firstProduct, _characteristicsRelatedToFirstProduct, data);
+        if (_firstProduct is null
+            || _characteristicsRelatedToFirstProduct is null
+            || _secondProduct is null) return BadRequest();
+
+        return AddOrOverwritePropertyFromDataInOtherProduct(
+            _firstProduct,
+            FirstOrSecondProductEnum.First,
+            _characteristicsRelatedToFirstProduct,
+            _secondProduct,
+            characteristicId,
+            indexToInsertAtOnAdd,
+            xmlPlacementValue);
+    }
+
+    public IActionResult OnPutAddOrOverwritePropertyDataInFromOtherProductSecond(
+        int characteristicId,
+        int indexToInsertAtOnAdd,
+        XMLPlacementEnum xmlPlacementValue)
+    {
+        if (_secondProduct is null
+            || _characteristicsRelatedToSecondProduct is null
+            || _firstProduct is null) return BadRequest();
+
+        return AddOrOverwritePropertyFromDataInOtherProduct(
+            _secondProduct,
+            FirstOrSecondProductEnum.Second,
+            _characteristicsRelatedToSecondProduct,
+            _firstProduct,
+            characteristicId,
+            indexToInsertAtOnAdd,
+            xmlPlacementValue);
+    }
+
+    private IActionResult AddOrOverwritePropertyFromDataInOtherProduct(
+        Product product,
+        FirstOrSecondProductEnum firstOrSecondProductEnum,
+        List<ProductCharacteristic> characteristicsRelatedToProduct,
+        Product otherProduct,
+        int characteristicId,
+        int indexToInsertAtOnAdd,
+        XMLPlacementEnum xmlPlacementValue)
+    {
+        if (product is null
+            || characteristicId < 0
+            || indexToInsertAtOnAdd < 0) return BadRequest();
+
+        ProductCharacteristic? productCharacteristic
+            = characteristicsRelatedToProduct.Find(characteristic => characteristic.Id == characteristicId);
+
+        if (productCharacteristic is null) return BadRequest();
+
+        ProductProperty? otherProductProperty = otherProduct.Properties.Find(prop => 
+            prop.ProductCharacteristicId == characteristicId);
+
+        if (otherProductProperty is null) return BadRequest();
+
+        ProductProperty copyOfOtherProductProperty = new()
+        {
+            ProductId = product.Id,
+            ProductCharacteristicId = otherProductProperty.ProductCharacteristicId,
+            Characteristic = otherProductProperty.Characteristic,
+            Value = otherProductProperty.Value,
+            DisplayOrder = otherProductProperty.DisplayOrder,
+            XmlPlacement = xmlPlacementValue,
+        };
+
+        int indexOfPropertyWithSameCharacteristicInProduct = product.Properties.FindIndex(
+            prop => prop.ProductCharacteristicId == characteristicId);
+
+        if (indexOfPropertyWithSameCharacteristicInProduct > -1)
+        {
+            product.Properties[indexOfPropertyWithSameCharacteristicInProduct] = copyOfOtherProductProperty;
+
+            return Partial("ProductCompareEditor/_ProductFullEditorPartial",
+                GetProductFullEditorModelBasedOnProduct(firstOrSecondProductEnum));
+        }
+
+        product.Properties.Insert(indexToInsertAtOnAdd, copyOfOtherProductProperty);
+
+        return Partial("ProductCompareEditor/_ProductFullEditorPartial",
+            GetProductFullEditorModelBasedOnProduct(firstOrSecondProductEnum));
+    }
+
+    public IActionResult OnPutUpdatePropertyForProductFirst([FromBody] ProductCompareEditorPropertyData data, int? productCharacteristicToRemoveId = null)
+    {
+        bool success = UpdatePropertyForProduct(_firstProduct, _characteristicsRelatedToFirstProduct, data, productCharacteristicToRemoveId);
 
         return success ? new OkResult() : BadRequest();
     }
 
-    public IActionResult OnPutUpdatePropertyForProductSecond([FromBody] ProductCompareEditorPropertyData data)
+    public IActionResult OnPutUpdatePropertyForProductSecond([FromBody] ProductCompareEditorPropertyData data, int? productCharacteristicToRemoveId = null)
     {
-        bool success = UpdatePropertyForProduct(_secondProduct, _characteristicsRelatedToSecondProduct, data);
+        bool success = UpdatePropertyForProduct(_secondProduct, _characteristicsRelatedToSecondProduct, data, productCharacteristicToRemoveId);
 
         return success ? new OkResult() : BadRequest();
     }
 
-    public bool UpdatePropertyForProduct(
+    private static bool UpdatePropertyForProduct(
         Product? product,
         List<ProductCharacteristic>? characteristicsRelatedToProduct,
-        ProductCompareEditorPropertyData data)
+        ProductCompareEditorPropertyData data,
+        int? productCharacteristicToRemoveId = null)
     {
         if (data is null
             || product is null
@@ -1252,6 +1668,19 @@ public class ProductCompareEditorModel : PageModel
             || data.ProductCharacteristicId == 0) return false;
 
         product.Properties ??= new();
+
+        if (productCharacteristicToRemoveId is not null)
+        {
+            if (productCharacteristicToRemoveId < 0) return false;
+
+            int indexOfPropToRemove = product.Properties.FindIndex(property =>
+                property.ProductCharacteristicId == productCharacteristicToRemoveId);
+
+            if (indexOfPropToRemove > -1)
+            {
+                product.Properties.RemoveAt(indexOfPropToRemove);
+            }
+        }
 
         int productPropertyForSameCharacteristicInProductIndex = product.Properties
             .FindIndex(property => property.ProductCharacteristicId == data.ProductCharacteristicId);
@@ -1268,6 +1697,7 @@ public class ProductCompareEditorModel : PageModel
 
         ProductProperty productProperty = new()
         {
+            ProductId = product.Id,
             ProductCharacteristicId = data.ProductCharacteristicId,
             XmlPlacement = data.XmlPlacement ?? oldProductPropertyForSameCharacteristic?.XmlPlacement,
             Value = data.Value ?? oldProductPropertyForSameCharacteristic?.Value,
@@ -1277,6 +1707,8 @@ public class ProductCompareEditorModel : PageModel
 
         if (data.NameOfCharacteristicToReplace is not null)
         {
+            data.NameOfCharacteristicToReplace = HttpUtility.HtmlDecode(data.NameOfCharacteristicToReplace);
+
             int indexOfCharacteristicToReplace = product.Properties.FindIndex(property =>
                 property.Characteristic == data.NameOfCharacteristicToReplace);
 
@@ -1305,6 +1737,45 @@ public class ProductCompareEditorModel : PageModel
         product.Properties[productPropertyForSameCharacteristicInProductIndex] = productProperty;
 
         return true;
+    }
+
+    public IActionResult OnPutUpdatePropertyCharacteristicIdFirst(int oldCharacteristicId, int newCharacteristicId)
+    {
+        if (_firstProduct is null) return BadRequest();
+
+        return UpdatePropertyCharacteristicId(_firstProduct, _characteristicsRelatedToFirstProduct, oldCharacteristicId, newCharacteristicId);
+    }
+
+    public IActionResult OnPutUpdatePropertyCharacteristicIdSecond(int oldCharacteristicId, int newCharacteristicId)
+    {
+        if (_secondProduct is null) return BadRequest();
+
+        return UpdatePropertyCharacteristicId(_secondProduct, _characteristicsRelatedToSecondProduct, oldCharacteristicId, newCharacteristicId);
+    }
+
+    public IActionResult UpdatePropertyCharacteristicId(
+        Product product,
+        List<ProductCharacteristic>? characteristicsRelatedToProduct,
+        int oldCharacteristicId,
+        int newCharacteristicId)
+    {
+        if (oldCharacteristicId < 0
+            || newCharacteristicId < 0) return BadRequest();
+
+        ProductProperty? propWithOldCharacteristicId = product.Properties.Find(prop =>
+            prop.ProductCharacteristicId == oldCharacteristicId);
+
+        if (propWithOldCharacteristicId is null) return BadRequest();
+
+        ProductCharacteristic? relatedNewCharacteristic = characteristicsRelatedToProduct?.Find(
+            characteristic => characteristic.Id == newCharacteristicId);
+
+        if (relatedNewCharacteristic is null) return BadRequest();
+
+        propWithOldCharacteristicId.ProductCharacteristicId = newCharacteristicId;
+        propWithOldCharacteristicId.Characteristic = relatedNewCharacteristic.Name;
+
+        return new OkResult();
     }
 
     public IActionResult OnDeleteDeletePropertyForProductFirst(int productCharacteristicId)
