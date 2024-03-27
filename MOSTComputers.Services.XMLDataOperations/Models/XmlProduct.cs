@@ -48,6 +48,9 @@ public class XmlProduct
     [XmlElement(ElementName = "partnum")]
     public string PartNumbers { get; set; }
 
+    [XmlElement(ElementName = "vendor_url", IsNullable = true)]
+    public string? VendorUrl { get; set; }
+
     [XmlArray(ElementName = "gallery")]
     [XmlArrayItem(ElementName = "picture")]
     public List<XmlShopItemImage> ShopItemImages { get; set; }
