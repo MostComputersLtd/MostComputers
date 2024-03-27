@@ -1,10 +1,18 @@
+var firstProductDataIsSetToIdInInput = false;
+
+function setFirstProductDataIsSetToIdInInput(value)
+{
+    firstProductDataIsSetToIdInInput = value;
+}
+
 function toggleVisibilityBetweenFirstXmlAndProductViews(
     xmlElementId,
     productElementId,
     xmlTextElementId,
     productIdLabelId,
     addImageInputName,
-    imagesContainerId)
+    imagesContainerId,
+    productIdHiddenInputId)
 {
     var xmlElement = document.getElementById(xmlElementId);
     var productElement = document.getElementById(productElementId);
@@ -33,11 +41,11 @@ function toggleVisibilityBetweenFirstXmlAndProductViews(
 
         productElement.style.display = "block";
 
-        setProductDataForFirstProductFromProductId(productId, productElementId, addImageInputName, imagesContainerId);
+        setProductDataForFirstProductFromProductId(productId, productElementId, addImageInputName, imagesContainerId, productIdHiddenInputId);
     }
 }
 
-function setProductDataForFirstProductFromProductId(productId, productElementId, addImageInputName, imagesContainerId)
+function setProductDataForFirstProductFromProductId(productId, productElementId, addImageInputName, imagesContainerId, productIdHiddenInputId)
 {
     if (productId == null
         || isNaN(productId)
@@ -61,6 +69,40 @@ function setProductDataForFirstProductFromProductId(productId, productElementId,
             var productElement = document.getElementById(productElementId);
 
             productElement.innerHTML = result;
+
+            var productIdHiddenInput = document.getElementById(productIdHiddenInputId);
+
+            if (productIdHiddenInput != null)
+            {
+                firstProductDataIsSetToIdInInput = true;
+            }
+        })
+        .fail(function (jqXHR, textStatus)
+        {
+        });
+}
+
+function refreshProductDataForFirstProduct(productElementId)
+{
+    const url = "/ProductCompareEditor/" + "?handler=GetRefreshedProductPartialViewFirst";
+
+    $.ajax({
+        type: "GET",
+        url: url,
+        contentType: "application/json",
+        data: null,
+        headers: {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    })
+        .done(function (result)
+        {
+            var productElement = document.getElementById(productElementId);
+
+            productElement.innerHTML = result;
+
+            firstProductDataIsSetToIdInInput = true;
         })
         .fail(function (jqXHR, textStatus)
         {
@@ -154,7 +196,11 @@ function setProductDataForSecondProductFromXml(xmlData, productElementId, addIma
     return deferred.promise();
 }
 
-function toggleEditorToFullScreen(elementId, imageElementId = null, fullScreenButtonImagePath = null, normalScreenButtonImagePath = null)
+function toggleEditorToFullScreen(
+    elementId,
+    imageElementId = null,
+    fullScreenButtonImagePath = null,
+    normalScreenButtonImagePath = null)
 {
     var element = document.getElementById(elementId);
 
@@ -329,6 +375,7 @@ function isSiblingAfter(currentElement, elementToSearch)
 }
 
 function PropertyWithoutCharacteristicLocal_select_onchange(
+    productToSearchForValue,
     value,
     productIdLabelId,
     productCharacteristicSelectName,
@@ -353,7 +400,7 @@ function PropertyWithoutCharacteristicLocal_select_onchange(
 
     var labelWithIdText = document.getElementById(productIdLabelId);
     
-    labelWithIdText.textContent = "ID: " + value;
+    labelWithIdText.textContent = value;
 
     const query = '[name="' + productCharacteristicSelectName + '"]';
 
@@ -400,20 +447,34 @@ function PropertyWithoutCharacteristicLocal_select_onchange(
         }
     }
 
+    var suffixOfHandlerName = getMethodHandlerSuffixFromProductValue(productToSearchForValue);
+
+    const url = "/ProductCompareEditor/" + "?handler=UpdatePropertyCharacteristicId" + suffixOfHandlerName
+        + "&oldCharacteristicId=" + currentSelectElementPreviousValue + "&newCharacteristicId=" + parseInt(value);
+
+    fetch(url,
+    {
+        method: "PUT",
+        headers: {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    });
+
     currentSelectElement.setAttribute("data-previous-value", value);
 }
 
 function getCurrentId(characteristicIdLabelId)
 {
-    var characteristicIdEl = document.getElementById(characteristicIdLabelId);
+    var characteristicIdElement = document.getElementById(characteristicIdLabelId);
 
-    var idText = characteristicIdEl.innerHTML;
+    var idText = characteristicIdElement.innerHTML;
 
-    var idStartIndex = idText.indexOf("ID:") + 4;
+    var id = parseInt(idText);
 
-    var id = idText.substring(idStartIndex);
+    if (isNaN(id)) return null;
 
-    return parseInt(id);
+    return id;
 }
 
 function getMethodHandlerSuffixFromProductValue(productValue)
@@ -477,7 +538,13 @@ function dataURLToBlob(dataURL)
     return new Blob(byteArrays, { type: contentType });
 }
 
-function productImageDisplay_ul_li_ondragend(e, productToSearchForValue, listElementId, otherListElementId, imagesContainerId, otherImagesContainerId)
+function productImageDisplay_ul_li_ondragend(
+    e,
+    productToSearchForValue,
+    listElementId,
+    otherListElementId,
+    imagesContainerId,
+    otherImagesContainerId)
 {
     setTimeout(() =>
     {
@@ -535,4 +602,304 @@ function productImageDisplay_ul_li_ondragend(e, productToSearchForValue, listEle
         .fail(function (jqXHR, textStatus)
         {
         });
+}
+
+const localProductName = "local";
+const externalProductName = "external";
+
+async function copyOtherProductToSearchedProduct(
+    productToSearchForValue,
+    productElementId,
+    productIdHiddenLabelId,
+    otherProductIdHiddenLabelId)
+{
+    var otherProductIdHiddenLabel = document.getElementById(otherProductIdHiddenLabelId);
+
+    if (otherProductIdHiddenLabel == null) return;
+
+    const otherProductIdHiddenLabelValue = otherProductIdHiddenLabel.value;
+
+    var productIdHiddenLabelBefore = document.getElementById(productIdHiddenLabelId);
+
+    var productIdHiddenLabelBeforeValue = (productIdHiddenLabelBefore != null) ? productIdHiddenLabelBefore.value : null;
+
+    const suffixOfHandlerName = getMethodHandlerSuffixFromProductValue(productToSearchForValue);
+
+    if (productIdHiddenLabelBeforeValue != null
+        && otherProductIdHiddenLabelValue != productIdHiddenLabelBeforeValue)
+    {
+        const productToCopyName = (productToSearchForValue == 0) ? externalProductName : localProductName;
+        const productToCopyToName = (productToSearchForValue == 0) ? localProductName : externalProductName;
+
+        var success = confirm("The id of the " + productToCopyName + " product: (" + otherProductIdHiddenLabelValue + ") is different than the id of the "
+            + productToCopyToName + " product: (" + productIdHiddenLabelBeforeValue + "). Are you sure you want to continue.")
+
+        if (!success) return;
+    }
+
+    const url = "/ProductCompareEditor/" + "?handler=CopyOtherProductIntoProduct" + suffixOfHandlerName;
+
+    const result = await fetch(url,
+    {
+        method: "POST",
+        headers:
+        {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    });
+
+    const resultText = await result.text();
+
+    var productElement = document.getElementById(productElementId);
+
+    if (productElement != null)
+    {
+        productElement.innerHTML = resultText;
+
+        if (productToSearchForValue === 0)
+        {
+            firstProductDataIsSetToIdInInput = true;
+        }
+    }
+}
+
+async function productIdInput_onkeydown(e, productId, productOrXmlCheckBoxId, xmlTextAreaElementId, productElementId, productIdHiddenInputId)
+{
+    if (e.key !== "Enter") return;
+
+    e.preventDefault();
+
+    var productOrXmlCheckBox = document.getElementById(productOrXmlCheckBoxId);
+
+    if (productOrXmlCheckBox == null)
+    {
+        return;
+    }
+    
+    if (productOrXmlCheckBox.checked)
+    {
+        setProductDataForFirstProductFromProductId(productId, productElementId, null, null, productIdHiddenInputId)
+    }
+    else
+    {
+        await getProductXmlById(0, productId, xmlTextAreaElementId);
+    }
+}
+
+function productIdInput_onkeyup(e, productId, productElementId, productIdHiddenInputId)
+{
+    if (e.key === "Enter"
+        || e.key === " ") return;
+
+    if (!firstProductDataIsSetToIdInInput) return;
+
+    firstProductDataIsSetToIdInInput = false;
+
+    var shouldInputBeUpdated = confirm("Should we save the changes on this product?");
+
+    if (shouldInputBeUpdated)
+    {
+        saveFirstProduct(productElementId);
+    }
+}
+
+async function getProductXmlById(productToSearchForValue, currentProductId, xmlTextAreaElementId)
+{
+    var suffixOfHandlerName = getMethodHandlerSuffixFromProductValue(productToSearchForValue);
+
+    const url = "/ProductCompareEditor/" + "?handler=GetProductXmlById" + suffixOfHandlerName + "&productId=" + currentProductId;
+
+    await fetch(url,
+    {
+        method: "POST",
+        headers:
+        {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    })
+        .then(async function (response)
+        {
+            const responseText = await response.text();
+
+            var xmlTextAreaElement = document.getElementById(xmlTextAreaElementId);
+
+            if (xmlTextAreaElement != null)
+            {
+                xmlTextAreaElement.value = responseText;
+
+                if (productToSearchForValue === 0)
+                {
+                    firstProductDataIsSetToIdInInput = true;
+                }
+            }
+        })
+        .catch(function (error)
+        {
+            return;
+        })
+}
+
+function externalLinkInput_onkeydown_displayExternalLinkInput(e, value, productElementId)
+{
+    if (e.key !== "Enter") return;
+
+    e.preventDefault();
+
+    var productElement = document.getElementById(productElementId);
+
+    if (productElement == null) return;
+
+    const objectElement = document.createElement("object");
+
+    objectElement.type = "text/html";
+
+    objectElement.data = value
+
+    productElement.innerHTML = "";
+
+    productElement.appendChild(objectElement);
+}
+
+async function clearSecondProductData(xmlTextAreaElementId, productElementId)
+{
+    const url = "/ProductCompareEditor/" + "?handler=ClearSecondProductData";
+
+    await fetch(url,
+    {
+        method: "PUT",
+        headers:
+        {
+            RequestVerificationToken:
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    })
+        .then(function (response)
+        {
+            var xmlTextAreaElement = document.getElementById(xmlTextAreaElementId);
+
+            if (xmlTextAreaElement != null)
+            {
+                xmlTextAreaElement.value = null;
+            }
+
+            var productElement = document.getElementById(productElementId);
+
+            if (productElement != null)
+            {
+                productElement.innerHTML = null;
+            }
+        })
+        .catch(function (error)
+        {
+            return;
+        });
+}
+
+window.addEventListener("focus", function ()
+{
+    productCompareEditor_OutsideItemCopiedCharacteristics_show(
+        "productCompareEditor_OutsideItemCopiedCharacteristics_modal",
+        "productCompareEditor_OutsideItemCopiedCharacteristics_text");
+});
+
+document.addEventListener("mouseenter", function ()
+{
+    if (!document.hasFocus()) return;
+
+    productCompareEditor_OutsideItemCopiedCharacteristics_show(
+        "productCompareEditor_OutsideItemCopiedCharacteristics_modal",
+        "productCompareEditor_OutsideItemCopiedCharacteristics_text");
+});
+
+document.addEventListener("mouseleave", function ()
+{
+    productCompareEditor_OutsideItemCopiedCharacteristics_hide("productCompareEditor_OutsideItemCopiedCharacteristics_modal");
+});
+
+document.addEventListener("mousemove", function (e)
+{
+    productCompareEditor_OutsideItemCopiedCharacteristics_move(e, "productCompareEditor_OutsideItemCopiedCharacteristics_modal");
+});
+
+async function productCompareEditor_OutsideItemCopiedCharacteristics_show(
+    outsideItemCopiedCharacteristicsModalId,
+    outsideItemCopiedCharacteristicsModalTextId)
+{
+    var outsideItemCopiedCharacteristicsModal = document.getElementById(outsideItemCopiedCharacteristicsModalId);
+
+    if (outsideItemCopiedCharacteristicsModal == null) return;
+
+    var outsideItemCopiedCharacteristicsModalText = document.getElementById(outsideItemCopiedCharacteristicsModalTextId);
+
+    if (outsideItemCopiedCharacteristicsModalText == null) return;
+
+    var clipboardData = await navigator.clipboard.readText();
+
+    if (clipboardData == null
+        || clipboardData.length <= 0
+        ) return;
+
+    var allCharacteristicsForBothProducts = await getAllCharacteristicsForBothProducts();
+
+    if (allCharacteristicsForBothProducts != null)
+    {
+        clipboardData = changeTextToBoldCharacteristicNames(clipboardData, allCharacteristicsForBothProducts)
+    }
+
+    outsideItemCopiedCharacteristicsModalText.innerHTML = clipboardData;
+
+    outsideItemCopiedCharacteristicsModal.style.display = "";
+
+    //var id = "#" + outsideItemCopiedCharacteristicsModalId;
+
+    //$(id).modal("show");
+
+    //$('.modal-backdrop').remove();
+}
+
+function changeTextToBoldCharacteristicNames(textToModify, allCharacteristicsForBothProducts)
+{
+    for (var i = 0; i < allCharacteristicsForBothProducts.length; i++)
+    {
+        var characteristic = allCharacteristicsForBothProducts[i];
+
+        if (characteristic.text == null
+            || characteristic.text == "") continue;
+
+        var indexOfCharacteristicNameInText = textToModify.toLowerCase().indexOf(characteristic.text.toLowerCase());
+
+        if (indexOfCharacteristicNameInText <= -1) continue;
+
+        var textOfCharacteristicInText = textToModify.substring(indexOfCharacteristicNameInText, indexOfCharacteristicNameInText + characteristic.text.length)
+
+        textToModify = textToModify.substring(0, indexOfCharacteristicNameInText) + "<strong>" + textOfCharacteristicInText + "</strong>"
+            + textToModify.substring(indexOfCharacteristicNameInText + characteristic.text.length);
+    }
+
+    return textToModify;
+}
+
+function productCompareEditor_OutsideItemCopiedCharacteristics_hide(outsideItemCopiedCharacteristicsModalId)
+{
+    var outsideItemCopiedCharacteristicsModal = document.getElementById(outsideItemCopiedCharacteristicsModalId);
+
+    if (outsideItemCopiedCharacteristicsModal == null) return;
+
+    var id = "#" + outsideItemCopiedCharacteristicsModalId;
+
+    outsideItemCopiedCharacteristicsModal.style.display = "none";
+
+    //$(id).modal("hide");
+}
+
+function productCompareEditor_OutsideItemCopiedCharacteristics_move(e, outsideItemCopiedCharacteristicsModalId)
+{
+    var outsideItemCopiedCharacteristicsModal = document.getElementById(outsideItemCopiedCharacteristicsModalId);
+
+    if (outsideItemCopiedCharacteristicsModal == null) return;
+
+    outsideItemCopiedCharacteristicsModal.style.left = (e.clientX + 20) + "px";
+    outsideItemCopiedCharacteristicsModal.style.top = (e.clientY - outsideItemCopiedCharacteristicsModal.clientHeight - 20) + "px";
 }
