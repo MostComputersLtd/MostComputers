@@ -69,10 +69,18 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
     {
         return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
     }
-
+    
     public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
     {
         return _productCharacteristicsRepository.GetSelectionByCategoryIdAndNames(categoryId, names);
+    }
+
+    public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
+        int categoryId,
+        string name,
+        ProductCharacteristicTypeEnum productCharacteristicType)
+    {
+        return _productCharacteristicsRepository.GetByCategoryIdAndNameAndCharacteristicType(categoryId, name, productCharacteristicType);
     }
 
     public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)

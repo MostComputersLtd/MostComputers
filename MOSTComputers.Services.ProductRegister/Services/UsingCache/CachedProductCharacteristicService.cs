@@ -9,7 +9,6 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Grouping;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductCharacteristic;
-using MOSTComputers.Services.ProductRegister.StaticUtilities;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -282,6 +281,14 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         output.AddRange(characteristicsThatArentCached);
 
         return output;
+    }
+
+    public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
+        int categoryId,
+        string name,
+        ProductCharacteristicTypeEnum productCharacteristicType)
+    {
+        return _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(categoryId, name, productCharacteristicType);
     }
 
     public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)

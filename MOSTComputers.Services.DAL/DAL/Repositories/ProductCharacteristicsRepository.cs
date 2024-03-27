@@ -149,6 +149,29 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, parameters);
     }
 
+    public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
+        int categoryId,
+        string name,
+        ProductCharacteristicTypeEnum productCharacteristicType)
+    {
+        const string getByCategoryIdAndNameQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE TID = @categoryId
+            AND Name = @Name
+            AND KWPrCh = @productCharacteristicType;
+            """;
+
+        var parameters = new
+        {
+            categoryId = categoryId,
+            Name = name,
+            productCharacteristicType = (int)productCharacteristicType
+        };
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, parameters)
+            .FirstOrDefault();
+    }
+
     public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
     {
         const string insertQuery =
