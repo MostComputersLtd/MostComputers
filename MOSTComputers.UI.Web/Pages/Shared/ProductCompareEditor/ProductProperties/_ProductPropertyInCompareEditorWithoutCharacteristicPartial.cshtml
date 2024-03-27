@@ -1,61 +1,88 @@
-﻿@using MOSTComputers.UI.Web.Mapping;
+﻿@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Mapping;
 @model ProductPropertyInCompareEditorWithoutCharacteristicPartialModel
 @{
     Layout = null;
+
+    string siteUrlPropertyClass = "";
+
+    if (Model.ProductProperty.XmlPlacement == XMLPlacementEnum.AsSiteUrl)
+    {
+        siteUrlPropertyClass = "siteUrlProperty";
+    }
+
+    string characteristicIdString = "None";
+
+    if (Model.ProductProperty.ProductCharacteristicId is not null)
+    {
+        characteristicIdString = Model.ProductProperty.ProductCharacteristicId.Value.ToString();
+    }
 }
 
-<tr id="@(Model.ElementIdPrefix)propertytr#@Model.PropertyIndex"
-    name="@(Model.ElementIdPrefix)propertytr">
+<tr id="@(Model.ElementIdAndNamePrefix)propertytr#@Model.PropertyIndex"
+    name="@(Model.ElementIdAndNamePrefix)propertytr"
+    draggable="true"
+    ondragstart="propertyTr_ul_li_ondragstart(event, '@(Model.ElementIdAndNamePrefix)propertytr#@Model.PropertyIndex')">
     <td class="property-td-alignedOnTop propertyWithoutCharacteristicId-characteristic-select-td">
-        <select id="@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex"
-            name="@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select"
+        <select id="@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select#@Model.PropertyIndex"
+            name="@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select"
             asp-items="Model.ProductCharacteristicsForSelect"
-            onchange="PropertyWithoutCharacteristicLocal_select_onchange(this.value,
-                '@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex',
-                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select',
-                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex')"></select>
+            onchange="PropertyWithoutCharacteristicLocal_select_onchange(
+                @Model.ProductFirstOrSecond,
+                this.value,
+                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label__hidden#@Model.PropertyIndex',
+                '@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select',
+                '@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select#@Model.PropertyIndex')"></select>
     </td>
 
     <td class="property-value-td">
-        <div id="@(Model.ElementIdPrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div#@Model.PropertyIndex"
+        <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div#@Model.PropertyIndex"
             class="full-parent-width full-parent-height">
-            <div id="@(Model.ElementIdPrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex"
-                name="@(Model.ElementIdPrefix)productPropertyDisplay_Value_div"
-                class="element-collection-dataItem property-value-div full-parent-width full-parent-height"
+            <div id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex"
+                name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div"
+                class="element-collection-dataItem property-value-div full-parent-width full-parent-height @(siteUrlPropertyClass)"
                 contenteditable="true" spellcheck="false"
+                onclick="productPropertyDisplay_value_div_onclick(event,
+                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_checkbox#@Model.PropertyIndex',
+                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex')"
                 onfocusout="updatePropertyInTable(
                     @Model.ProductFirstOrSecond,
-                    '@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex',
-                    '@(Model.ElementIdPrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex',
-                    '@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select#@Model.PropertyIndex',
-                    '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex')">
+                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label__hidden#@Model.PropertyIndex',
+                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex',
+                    '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_checkbox#@Model.PropertyIndex',
+                    '@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select#@Model.PropertyIndex')">
                 @Model.ProductProperty?.Value
             </div>
         </div>
     </td>
 
-    <td class="property-characterisricId-td property-td-alignedOnTop">
-        <label id="@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex"
-            name="@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+    <td class="property-td-alignedOnTop property-characterisricId-td">
+        <label id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label__hidden#@Model.PropertyIndex"
+            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label__hidden"
+            class="property-characterisricId-label">@characteristicIdString</label>
     </td>
 
     <td class="property-xmlPlacement-td property-td-alignedOnTop">
-        <select id="@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select#@Model.PropertyIndex"
-            name="@(Model.ElementIdPrefix)productPropertyDisplay_XmlPlacement_select"
-            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(Model.ProductProperty?.XmlPlacement)"></select>
+        <input id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_checkbox#@Model.PropertyIndex"
+            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_checkbox"
+            type="checkbox"
+            class="product-xmlPlacement-checkbox"
+            onchange="productPropertyDisplay_XmlPlacement_checkbox_onchange(
+                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_XmlPlacement_checkbox#@Model.PropertyIndex',
+                '@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Value_div#@Model.PropertyIndex')" />
     </td>
 
     <td class="property-delete-button-td property-td-alignedOnTop">
-        <button id="@(Model.ElementIdPrefix)productPropertyDisplay_Delete_button#@Model.PropertyIndex"
-            name="@(Model.ElementIdPrefix)productPropertyDisplay_Delete_button"
+        <button id="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button#@Model.PropertyIndex"
+            name="@(Model.ElementIdAndNamePrefix)productPropertyDisplay_Delete_button"
             class="btn btn-danger btn-close"
             onclick="deletePropertyInTable(
                 @Model.ProductFirstOrSecond,
-                getCurrentId('@(Model.ElementIdPrefix)productPropertyDisplay_CharacteristicId_Data_label#@Model.PropertyIndex'),
-                '@(Model.ElementIdPrefix)propertytr#@Model.PropertyIndex',
-                '@(Model.ElementIdPrefix)propertyDisplay_table_tbody',
-                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select#@Model.PropertyIndex',
-                '@(Model.ElementIdPrefix)PropertyWithoutCharacteristic_Characteristic_select',
+                getCurrentId('@(Model.ElementIdAndNamePrefix)productPropertyDisplay_CharacteristicId_Data_label__hidden#@Model.PropertyIndex'),
+                '@(Model.ElementIdAndNamePrefix)propertytr#@Model.PropertyIndex',
+                '@(Model.ElementIdAndNamePrefix)propertyDisplay_table_tbody',
+                '@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select#@Model.PropertyIndex',
+                '@(Model.ElementIdAndNamePrefix)propertytr_characteristic_select',
                 true)">
         </button>
     </td>
