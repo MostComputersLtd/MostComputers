@@ -36,15 +36,15 @@ internal static class XmlPlacementEnumMapping
 
     public static IEnumerable<SelectListItem> GetSelectListItemsFromXmlPlacementEnumWithOneSelected(XMLPlacementEnum? placementEnum)
     {
-        List<SelectListItem> output = new(_defaultItemsForXmlPlacement);
+        List<SelectListItem> output = CloneDefaultSelectItems();
 
         if (placementEnum is null) return output;
 
-        string xmlPlacementAsString = ((int)placementEnum).ToString();
-
         foreach (SelectListItem selectListItem in output)
         {
-            if (selectListItem.Value == xmlPlacementAsString)
+            int selectListItemValue = int.Parse(selectListItem.Value);
+
+            if (selectListItemValue == (int)placementEnum)
             {
                 selectListItem.Selected = true;
 
@@ -57,15 +57,15 @@ internal static class XmlPlacementEnumMapping
 
     public static IEnumerable<SelectListItem> GetSelectListItemsFromXmlPlacementEnumWithOneSelected(uint? xmlPlacementAsInt)
     {
-        List<SelectListItem> output = new(_defaultItemsForXmlPlacement);
+        List<SelectListItem> output = CloneDefaultSelectItems();
 
         if (xmlPlacementAsInt is null) return output;
 
-        string xmlPlacementAsString = xmlPlacementAsInt.Value.ToString();
-
         foreach (SelectListItem selectListItem in output)
         {
-            if (selectListItem.Value == xmlPlacementAsString)
+            int selectListItemValue = int.Parse(selectListItem.Value);
+
+            if (selectListItemValue == xmlPlacementAsInt)
             {
                 selectListItem.Selected = true;
 
@@ -78,7 +78,32 @@ internal static class XmlPlacementEnumMapping
 
     private static SelectListItem GetSelectListItemFromXmlPlacementEnum(XMLPlacementEnum placementEnum)
     {
-        return new() { Text = GetStringFromXmlPlacementEnum(placementEnum), Value = ((int)placementEnum).ToString() };
+        return new()
+        {
+            Text = GetStringFromXmlPlacementEnum(placementEnum),
+            Value = ((int)placementEnum).ToString(),
+            Selected = false
+        };
     }
 
+    private static List<SelectListItem> CloneDefaultSelectItems()
+    {
+        List<SelectListItem> output = new();
+
+        foreach (SelectListItem defaultItem in _defaultItemsForXmlPlacement)
+        {
+            SelectListItem selectListItem = new()
+            {
+                Text = defaultItem.Text,
+                Value = defaultItem.Value,
+                Selected = defaultItem.Selected,
+                Disabled = defaultItem.Disabled,
+                Group = defaultItem.Group,
+            };
+
+            output.Add(selectListItem);
+        }
+
+        return output;
+    }
 }
