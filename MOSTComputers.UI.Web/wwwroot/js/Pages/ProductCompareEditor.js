@@ -22,6 +22,8 @@ function toggleVisibilityBetweenFirstXmlAndProductViews(
         getProductXml(0)
             .then(xmlOfProduct =>
             {
+                resetCharacteristicsForBothProductsCachedValues();
+
                 var xmlTextElement = document.getElementById(xmlTextElementId);
 
                 xmlTextElement.value = xmlOfProduct;
@@ -66,6 +68,8 @@ function setProductDataForFirstProductFromProductId(productId, productElementId,
     })
         .done(function (result)
         {
+            resetCharacteristicsForBothProductsCachedValues();
+
             var productElement = document.getElementById(productElementId);
 
             productElement.innerHTML = result;
@@ -98,6 +102,8 @@ function refreshProductDataForFirstProduct(productElementId)
     })
         .done(function (result)
         {
+            resetCharacteristicsForBothProductsCachedValues();
+
             var productElement = document.getElementById(productElementId);
 
             productElement.innerHTML = result;
@@ -126,6 +132,8 @@ function toggleVisibilityBetweenSecondXmlAndProductViews(
         getProductXml(1)
             .then(xmlOfProduct =>
             {
+                resetCharacteristicsForBothProductsCachedValues();
+
                 var xmlTextElement = document.getElementById(xmlTextElementId);
 
                 xmlTextElement.value = xmlOfProduct;
@@ -182,6 +190,8 @@ function setProductDataForSecondProductFromXml(xmlData, productElementId, addIma
     })
         .done(function (result)
         {
+            resetCharacteristicsForBothProductsCachedValues();
+
             var productElement = document.getElementById(productElementId);
 
             productElement.innerHTML = result;
@@ -653,6 +663,8 @@ async function copyOtherProductToSearchedProduct(
 
     var productElement = document.getElementById(productElementId);
 
+    resetCharacteristicsForBothProductsCachedValues();
+
     if (productElement != null)
     {
         productElement.innerHTML = resultText;
@@ -721,6 +733,8 @@ async function getProductXmlById(productToSearchForValue, currentProductId, xmlT
     })
         .then(async function (response)
         {
+            resetCharacteristicsForBothProductsCachedValues();
+
             const responseText = await response.text();
 
             var xmlTextAreaElement = document.getElementById(xmlTextAreaElementId);
@@ -760,6 +774,8 @@ function externalLinkInput_onkeydown_displayExternalLinkInput(e, value, productE
     productElement.innerHTML = "";
 
     productElement.appendChild(objectElement);
+
+    resetCharacteristicsForBothProductsCachedValues();
 }
 
 async function clearSecondProductData(xmlTextAreaElementId, productElementId)
@@ -777,6 +793,8 @@ async function clearSecondProductData(xmlTextAreaElementId, productElementId)
     })
         .then(function (response)
         {
+            resetCharacteristicsForBothProductsCachedValues();
+
             var xmlTextAreaElement = document.getElementById(xmlTextAreaElementId);
 
             if (xmlTextAreaElement != null)
