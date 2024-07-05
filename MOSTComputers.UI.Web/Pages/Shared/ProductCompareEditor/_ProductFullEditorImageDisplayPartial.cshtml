@@ -31,7 +31,7 @@
 
             float opacityOfLi = isImageFileNameInfoActive ? 1.0F : 0.35F;
 
-            <li id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@(i)"
+            <li id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li-@(i)"
                 name="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li"
                 class="product-full-editor-image-list-item"
                 draggable="true"
@@ -49,26 +49,26 @@
                 @if (isImageFileNameInfoActive)
                 {
                     <div class="product-full-editor-image-active-button-container">
-                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox-@i"
                             type="checkbox" aria-label="Close" checked
                             class="product-full-editor-image-active-button"
                             onchange="update_productImageDisplay_ul_li_activeState(
                                 @Model.ProductIndex,
-                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
-                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li-@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox-@i',
                                 @imageFileNameInfoDisplayOrder)"/>
                     </div>
                 }
                 else
                 {
                     <div class="product-full-editor-image-active-button-container">
-                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                        <input id="@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox-@i"
                             type="checkbox" aria-label="Close"
                             class="product-full-editor-image-active-button"
                             onchange="update_productImageDisplay_ul_li_activeState(
                                 @Model.ProductIndex,
-                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
-                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li-@i',
+                                '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li_activityStatusCheckbox-@i',
                                 @imageFileNameInfoDisplayOrder)"/>
                     </div>
                 }
@@ -84,7 +84,7 @@
                         class="btn-close product-full-editor-image-delete-button"
                         onclick="delete_productImageDisplay_ul_li(
                             @Model.ProductIndex,
-                            '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li#@i',
+                            '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li-@i',
                             @image.Id,
                             '@image.ImageFileExtension',
                             '@imageFileNameInfoName',
