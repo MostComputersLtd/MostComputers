@@ -123,8 +123,6 @@ function copyWholeSearchStringCopiedData(elementId)
 function changeValueOfTotalCopy(value)
 {
     searchStringPartCopyString = value;
-
-    //navigator.clipboard.writeText(searchStringPartCopyString);
 }
 
 function clearTotalCopy()
