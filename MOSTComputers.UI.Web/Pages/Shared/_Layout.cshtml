@@ -7,10 +7,11 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MOSTComputers.UI.Web.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Layout.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3-not-important">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">MOSTComputers</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -44,14 +45,14 @@
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-3-not-important">
             @RenderBody()
         </main>
     </div>
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            2023 - MOSTComputers - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            2024 - MOSTComputers - <a asp-area="" asp-page="/Privacy">Privacy</a>
         </div>
     </footer>
 
