@@ -209,7 +209,7 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
             {
                 ImageData = imageData,
                 ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
-                XML = xml,
+                HtmlData = xml,
             };
 
             output.Add(imageFileNameInfo);

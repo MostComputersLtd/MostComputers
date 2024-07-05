@@ -460,7 +460,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             {
                 ImageData = imageData,
                 ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(fileExtensionStartIndex)),
-                XML = xml,
+                HtmlData = xml,
             };
 
             output.Add(imageFileNameInfo);
