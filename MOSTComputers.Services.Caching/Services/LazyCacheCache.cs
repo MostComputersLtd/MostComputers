@@ -1,12 +1,9 @@
 ﻿using LazyCache;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
+using MOSTComputers.Services.Caching.Models;
 using MOSTComputers.Services.Caching.Services.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static MOSTComputers.Services.Caching.Mapping.LazyCacheMappingUtils;
 
 namespace MOSTComputers.Services.Caching.Services;
 
@@ -38,9 +35,24 @@ internal sealed class LazyCacheCache : ICache<string>
         return _appCache.GetOrAdd(key, addItemFactory);
     }
 
+    public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    {
+        return _appCache.GetOrAdd(key, addItemFactory, Map(cacheEntryOptions));
+    }
+
     public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CancellationToken cancellationToken)
     {
         MemoryCacheEntryOptions options = new();
+
+        options.AddExpirationToken(new CancellationChangeToken(cancellationToken));
+
+        return _appCache.GetOrAdd(key, addItemFactory, options);
+    }
+
+    public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory,
+        CustomMemoryCacheEntryOptions cacheEntryOptions, CancellationToken cancellationToken)
+    {
+        MemoryCacheEntryOptions options = Map(cacheEntryOptions);
 
         options.AddExpirationToken(new CancellationChangeToken(cancellationToken));
 
@@ -65,9 +77,23 @@ internal sealed class LazyCacheCache : ICache<string>
         return true;
     }
 
+    public bool Add<TValue>(string key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    {
+        _appCache.Add(key, value, Map(cacheEntryOptions));
+
+        return true;
+    }
+
     public bool AddOrUpdate<TValue>(string key, TValue value)
     {
         _appCache.CacheProvider.Set(key, value, _defaultPolicy);
+
+        return true;
+    }
+
+    public bool AddOrUpdate<TValue>(string key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    {
+        _appCache.CacheProvider.Set(key, value, Map(cacheEntryOptions));
 
         return true;
     }

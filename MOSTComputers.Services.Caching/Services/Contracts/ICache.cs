@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MOSTComputers.Services.Caching.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,12 +9,16 @@ namespace MOSTComputers.Services.Caching.Services.Contracts;
 
 public interface ICache<TKey>
 {
-    public TValue? GetValueOrDefault<TValue>(TKey key);
-    public TValue GetOrAdd<TValue>(TKey key, Func<TValue> value);
-    TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CancellationToken cancellationToken);
-    public bool Contains<TValue>(TKey key);
-    public bool Add<TValue>(TKey key, TValue value);
-    bool Add<TValue>(string key, TValue value, CancellationToken cancellationToken);
-    public bool AddOrUpdate<TValue>(TKey key, TValue value);
-    public bool Evict(TKey key);
+    bool Add<TValue>(TKey key, TValue value);
+    bool Add<TValue>(TKey key, TValue value, CancellationToken cancellationToken);
+    bool Add<TValue>(TKey key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions);
+    bool AddOrUpdate<TValue>(TKey key, TValue value);
+    bool AddOrUpdate<TValue>(TKey key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions);
+    bool Contains<TValue>(TKey key);
+    bool Evict(TKey key);
+    TValue GetOrAdd<TValue>(TKey key, Func<TValue> addItemFactory);
+    TValue GetOrAdd<TValue>(TKey key, Func<TValue> addItemFactory, CancellationToken cancellationToken);
+    TValue GetOrAdd<TValue>(TKey key, Func<TValue> addItemFactory, CustomMemoryCacheEntryOptions cacheEntryOptions);
+    TValue GetOrAdd<TValue>(TKey key, Func<TValue> addItemFactory, CustomMemoryCacheEntryOptions cacheEntryOptions, CancellationToken cancellationToken);
+    TValue? GetValueOrDefault<TValue>(TKey key);
 }
