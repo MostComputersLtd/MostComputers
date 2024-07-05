@@ -7,7 +7,7 @@
     <h5 class="modal-title modal-title">Images:</h5>
 
     <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
-    <h4 id="modal-title_productIdShow" class="modal-title modal-product-name">ID: @Model.Product.Id</h4>
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @Model.Product.Id</h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductImages_modal()">
     </button>
@@ -48,7 +48,7 @@
 
                     float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.35F;
 
-                    <li id="productImageDisplay_ul_li#@i" draggable="true"
+                    <li id="productImageDisplay_ul_li-@i" draggable="true"
                         ondragstart="productImageDisplay_ul_li_ondragstart(event)"
                         ondragend="productImageDisplay_ul_li_ondragend(event)"
                         style="opacity: @opacityOfLi">
@@ -56,10 +56,10 @@
                         @if (imageFileNameInfo.Active)
                         {
                             <div class="product-image-popup-image-active-button-container">
-                                <input id="productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                                <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
                                     type="checkbox" aria-label="Close" checked
-                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li#@i',
-                                        'productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li-@i',
+                                        'productImageDisplay_ul_li_activityStatusCheckbox-@i',
                                         @Model.Product.Id,
                                         @imageFileNameInfo.DisplayOrder,
                                         '@imageFileNameInfo.FileName')"
@@ -69,10 +69,10 @@
                         else
                         {
                             <div class="product-image-popup-image-active-button-container">
-                                <input id="productImageDisplay_ul_li_activityStatusCheckbox#@i"
+                                <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
                                     type="checkbox" aria-label="Close"
-                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li#@i',
-                                        'productImageDisplay_ul_li_activityStatusCheckbox#@i',
+                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li-@i',
+                                        'productImageDisplay_ul_li_activityStatusCheckbox-@i',
                                         @Model.Product.Id,
                                         @imageFileNameInfo.DisplayOrder,
                                         '@imageFileNameInfo.FileName')"
@@ -89,7 +89,7 @@
                         <div class="product-image-popup-image-delete-button-container">
                             <button type="button" class="btn-close product-image-popup-image-delete-button"
                                 aria-label="Close" 
-                                onclick="delete_productImageDisplay_ul_li('productImageDisplay_ul_li#@i', @image.Id)" />
+                                onclick="delete_productImageDisplay_ul_li('productImageDisplay_ul_li-@i', @image.Id)" />
                         </div>
                     </li>
                 }
