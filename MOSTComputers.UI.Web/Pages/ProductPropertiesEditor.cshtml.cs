@@ -24,7 +24,6 @@ public class ProductPropertiesEditorModel : PageModel
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public ProductPropertiesEditorModel(
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         IProductService productService,
         IProductPropertyService productPropertyService,
         IProductCharacteristicService productCharacteristicService,
@@ -43,6 +42,7 @@ public class ProductPropertiesEditorModel : PageModel
         _productDeserializeService = productDeserializeService;
         _searchStringOriginService = searchStringOriginService;
     }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     private readonly IProductService _productService;
     private readonly IProductPropertyService _productPropertyService;
