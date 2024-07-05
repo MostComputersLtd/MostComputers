@@ -1,4 +1,4 @@
-function showNotificationWithText(notificationBoxId, text, elementClassList)
+function showNotificationWithText(notificationBoxId, text, elementClassList, timeToRemoveInMilliseconds = 1200)
 {
     let notificationLi = document.createElement("li");
 
@@ -11,5 +11,5 @@ function showNotificationWithText(notificationBoxId, text, elementClassList)
     {
         document.getElementById(notificationBoxId).removeChild(notificationLi);
     },
-    1200);
+    timeToRemoveInMilliseconds);
 }
