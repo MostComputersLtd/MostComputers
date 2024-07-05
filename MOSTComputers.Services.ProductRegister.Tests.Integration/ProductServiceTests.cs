@@ -1543,7 +1543,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
                     && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
-                    && imageInRequest.XML == imageInObject.XML)
+                    && imageInRequest.HtmlData == imageInObject.HtmlData)
                 {
                     isMatched = true;
 
@@ -1632,7 +1632,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
                     && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
-                    && imageInRequest.XML == imageInObject.XML)
+                    && imageInRequest.XML == imageInObject.HtmlData)
                 {
                     isMatched = true;
 

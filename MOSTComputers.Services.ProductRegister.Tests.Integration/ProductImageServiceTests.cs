@@ -55,7 +55,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ImageData = LocalTestImageData,
         ImageFileExtension = null,
         ProductId = productId,
-        XML = "<data></data>",
+        HtmlData = "<data></data>",
     };
 
     [Fact]
@@ -494,7 +494,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = null,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -506,7 +506,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -518,7 +518,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -530,7 +530,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -542,7 +542,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "       ",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -609,7 +609,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = null,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             null,
             true
@@ -636,7 +636,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             null,
             false
@@ -649,7 +649,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             null,
             false
@@ -662,7 +662,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             null,
             false
@@ -675,7 +675,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "       ",
-                XML = null
+                HtmlData = null
             },
             null,
             false
