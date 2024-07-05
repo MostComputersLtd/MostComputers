@@ -10,6 +10,7 @@ public class ProductPropertyInCompareEditorWithoutCharacteristicPartialModel
     public required IEnumerable<SelectListItem> ProductCharacteristicsForSelect { get; set; }
     public required uint PropertyIndex { get; set; }
     public required string ElementIdAndNamePrefix { get; set; }
+    public required string? ValidationFormId { get; set; }
 
 
     private int _productFirstOrSecond;
