@@ -4,7 +4,6 @@ using MOSTComputers.Services.DAL.DAL;
 using MOSTComputers.Services.DAL.DAL.Repositories;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.DAL.Mapping;
-using MOSTComputers.Services.Mapping;
 
 namespace MOSTComputers.Services.DAL.Configuration;
 
@@ -39,7 +38,11 @@ public static class ConfigureServices
         services.AddScoped<ILocalChangesRepository, LocalChangesRepository>();
         services.AddScoped<IExternalChangesRepository, ExternalChangesRepository>();
 
+        services.AddScoped<IToDoLocalChangesRepository, ToDoLocalChangesRepository>();
+
         services.AddScoped<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
+
+        services.AddScoped<IProductWorkStatusesRepository, ProductWorkStatusesRepository>();
 
         return services;
     }
@@ -62,6 +65,8 @@ public static class ConfigureServices
             config.AddMap(new ExternalChangeDataEntityMap());
 
             config.AddMap(new FailedPropertyNameOfProductEntityMap());
+
+            config.AddMap(new ProductWorkStatusesEntityMap());
         });
     }
 }
