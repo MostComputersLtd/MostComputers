@@ -7,6 +7,9 @@ internal static class ProductDeserializeXmlTransformUtils
     private const string _smallerSignEscape = "|smallerSign|";
     private const string _biggerSignEscape = "|biggerSign|";
 
+    private const string _propertyTagStart = "<property";
+    private const string _propertyTagEnd = "</property>";
+
     private static readonly IReadOnlyList<string> _knownXmlEscapeKeywords = new List<string>()
     {
         "&lt;",
@@ -54,42 +57,6 @@ internal static class ProductDeserializeXmlTransformUtils
         return xml;
     }
 
-    private static string EscapeSmallerSignInProperties(string xml)
-    {
-        int currentPropertyIndex = 0;
-
-        const string propertyTagStart = "<property";
-        const string propertyTagEnd = "</property>";
-
-        while (currentPropertyIndex != -1)
-        {
-            int startIndexRaw = xml.IndexOf(propertyTagStart, currentPropertyIndex);
-            int endIndexRaw = xml.IndexOf(propertyTagEnd, currentPropertyIndex);
-
-            if (startIndexRaw == -1 || endIndexRaw == -1) break;
-
-            int propertyStartIndex = startIndexRaw + 9;
-            int propertyEndIndex = endIndexRaw;
-
-            int xmlStringChangeOffset = _smallerSignEscape.Length - 1;
-
-            for (int i = propertyStartIndex; i < propertyEndIndex; i++)
-            {
-                if (xml[i] == '<')
-                {
-                    xml = xml[..i] + _smallerSignEscape + xml[(i + 1)..];
-
-                    i += xmlStringChangeOffset;
-                    propertyEndIndex += xmlStringChangeOffset;
-                }
-            }
-
-            currentPropertyIndex = propertyEndIndex + propertyTagEnd.Length + 1;
-        }
-
-        return xml;
-    }
-
     private static string EscapeSmallerSignInSearchStrings(string xml)
     {
         int currentSearchStringIndex = 0;
@@ -129,6 +96,39 @@ internal static class ProductDeserializeXmlTransformUtils
             }
 
             currentSearchStringIndex = searchStringEndIndex + 19;
+        }
+
+        return xml;
+    }
+
+    private static string EscapeSmallerSignInProperties(string xml)
+    {
+        int currentPropertyIndex = 0;
+
+        while (currentPropertyIndex != -1)
+        {
+            int startIndexRaw = xml.IndexOf(_propertyTagStart, currentPropertyIndex);
+            int endIndexRaw = xml.IndexOf(_propertyTagEnd, currentPropertyIndex);
+
+            if (startIndexRaw == -1 || endIndexRaw == -1) break;
+
+            int propertyStartIndex = startIndexRaw + 9;
+            int propertyEndIndex = endIndexRaw;
+
+            int xmlStringChangeOffset = _smallerSignEscape.Length - 1;
+
+            for (int i = propertyStartIndex; i < propertyEndIndex; i++)
+            {
+                if (xml[i] == '<')
+                {
+                    xml = xml[..i] + _smallerSignEscape + xml[(i + 1)..];
+
+                    i += xmlStringChangeOffset;
+                    propertyEndIndex += xmlStringChangeOffset;
+                }
+            }
+
+            currentPropertyIndex = propertyEndIndex + _propertyTagEnd.Length + 1;
         }
 
         return xml;
