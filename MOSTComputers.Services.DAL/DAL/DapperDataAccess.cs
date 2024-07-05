@@ -49,6 +49,8 @@ public interface IRelationalDataAccess
     TReturn SaveDataInTransactionScopeUsingAction<TReturn>(Func<TReturn> actionInTransaction);
     TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<TReturn>(Func<TReturn> actionInTransaction, Predicate<TReturn> shouldCommit);
     TReturn SaveDataInTransactionScopeUsingActionAndCommitOnCondition<U, TReturn>(Func<U, TReturn> actionInTransaction, Predicate<TReturn> shouldCommit, U parameters);
+    Task<TReturn> SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync<U, TReturn>(Func<U, Task<TReturn>> actionInTransaction, Predicate<TReturn> shouldCommit, U parameters);
+    Task<TReturn> SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync<TReturn>(Func<Task<TReturn>> actionInTransaction, Predicate<TReturn> shouldCommit);
 }
 
 internal class DapperDataAccess : IRelationalDataAccess
@@ -86,7 +88,7 @@ internal class DapperDataAccess : IRelationalDataAccess
 
     public IEnumerable<T> GetData<T, U>(string sqlStatement, U parameters, IDbTransaction? transaction)
     {
-        using IDbConnection connection = new SqlConnection(_connectionString);
+        using SqlConnection connection = new(_connectionString);
 
         connection.Open();
 
@@ -430,7 +432,7 @@ internal class DapperDataAccess : IRelationalDataAccess
     {
         using TransactionScope scope = new();
 
-        using IDbConnection connection = new SqlConnection(_connectionString);
+        using SqlConnection connection = new(_connectionString);
 
         connection.Open();
 
@@ -465,7 +467,7 @@ internal class DapperDataAccess : IRelationalDataAccess
     {
         using TransactionScope scope = new();
 
-        using IDbConnection connection = new SqlConnection(_connectionString);
+        using SqlConnection connection = new(_connectionString);
 
         connection.Open();
 
@@ -500,6 +502,39 @@ internal class DapperDataAccess : IRelationalDataAccess
         using TransactionScope scope = new();
 
         TReturn data = actionInTransaction(parameters);
+
+        if (shouldCommit(data))
+        {
+            scope.Complete();
+        }
+
+        return data;
+    }
+
+    public async Task<TReturn> SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync<TReturn>(
+        Func<Task<TReturn>> actionInTransaction,
+        Predicate<TReturn> shouldCommit)
+    {
+        using TransactionScope scope = new(TransactionScopeOption.Required, new TransactionOptions() { Timeout = TimeSpan.FromDays(100.0) });
+
+        TReturn data = await actionInTransaction();
+
+        if (shouldCommit(data))
+        {
+            scope.Complete();
+        }
+
+        return data;
+    }
+
+    public async Task<TReturn> SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync<U, TReturn>(
+        Func<U, Task<TReturn>> actionInTransaction,
+        Predicate<TReturn> shouldCommit,
+        U parameters)
+    {
+        using TransactionScope scope = new();
+
+        TReturn data = await actionInTransaction(parameters);
 
         if (shouldCommit(data))
         {
