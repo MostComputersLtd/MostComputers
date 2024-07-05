@@ -11,6 +11,7 @@ using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.LocalChangesHandling.Tests.Integration.CommonTestElements;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Tests.Integration;
 
