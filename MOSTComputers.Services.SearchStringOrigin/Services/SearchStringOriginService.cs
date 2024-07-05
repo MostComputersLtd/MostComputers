@@ -104,19 +104,19 @@ internal class SearchStringOriginService : ISearchStringOriginService
     {
         if (product.SearchString == null) return null;
 
+        List<string>? searchStringPartsSimple = GetSearchStringPartsSimple(product);
+
+        if (searchStringPartsSimple == null) return null;
+
         List<Tuple<string, List<SearchStringPartOriginData>?>> output = new();
 
         List<ProductCharacteristic> characteristicsRelatedToProduct = GetCharacteristicsRelatedToProduct(product);
-
-        string[] searchStringPartsSimple = product.SearchString
-            .Trim()
-            .Split(' ');
 
         List<string[]> searchStringCompositePartRegions = new();
 
         int currentRegionStartIndex = 0;
 
-        for (int i = 0; i < searchStringPartsSimple.Length - 1; i++)
+        for (int i = 0; i < searchStringPartsSimple.Count - 1; i++)
         {
             string searchStringSinglePart = searchStringPartsSimple[i];
 
@@ -144,7 +144,7 @@ internal class SearchStringOriginService : ISearchStringOriginService
             }
         }
 
-        int simplePartsLastItemIndex = searchStringPartsSimple.Length - 1;
+        int simplePartsLastItemIndex = searchStringPartsSimple.Count - 1;
 
         string searchStringLastSinglePart = searchStringPartsSimple[simplePartsLastItemIndex];
 
@@ -263,6 +263,30 @@ internal class SearchStringOriginService : ISearchStringOriginService
         return output
             .OrderBy(tuple => product.SearchString.IndexOf(tuple.Item1))
             .ToList();
+    }
+
+    private static List<string>? GetSearchStringPartsSimple(Product product)
+    {
+        if (product.SearchString == null) return null;
+
+        List<string> searchStringPartsSimple = product.SearchString
+            .Trim()
+            .Split(' ')
+            .ToList();
+
+        for (int i = 0; i < searchStringPartsSimple.Count; i++)
+        {
+            string searchStringPart = searchStringPartsSimple[i];
+
+            if (string.IsNullOrWhiteSpace(searchStringPart))
+            {
+                searchStringPartsSimple.RemoveAt(i);
+
+                i--;
+            }
+        }
+
+        return searchStringPartsSimple;
     }
 
     private List<ProductCharacteristic> GetCharacteristicsRelatedToProduct(Product product)
