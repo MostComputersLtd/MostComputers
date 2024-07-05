@@ -203,7 +203,8 @@ function addPropertyToTable(
     trItemsName,
     elementIdPrefix,
     characteristicIdLabelName,
-    characteristicSelectName)
+    characteristicSelectName,
+    validationFormId)
 {
     var tBodyContainer = document.getElementById(tBodyContainerId);
 
@@ -217,7 +218,7 @@ function addPropertyToTable(
     {
         var itemId = trItems[i].id;
 
-        var itemIdIndexOfRowNumber = itemId.indexOf('#') + 1;
+        var itemIdIndexOfRowNumber = itemId.indexOf('-') + 1;
 
         var indexOfRowNumberAsString = itemId.substring(itemIdIndexOfRowNumber);
 
@@ -249,13 +250,13 @@ function addPropertyToTable(
         {
             tBodyContainer.insertAdjacentHTML("beforeend", result);
 
-            var characteristicIdLabelId = characteristicIdLabelName + "#" + indexOfNewItem;
+            var characteristicIdLabelId = characteristicIdLabelName + "-" + indexOfNewItem;
 
             var characteristicId = getCurrentId(characteristicIdLabelId);
 
             if (characteristicId == null) return;
 
-            var characteristicSelectId = characteristicSelectName + "#" + indexOfNewItem;
+            var characteristicSelectId = characteristicSelectName + "-" + indexOfNewItem;
 
             removeOldCharacteristicFromOtherSelects(characteristicId, characteristicSelectName, characteristicSelectId);
 
@@ -264,6 +265,11 @@ function addPropertyToTable(
             if (characteristicSelect == null) return;
 
             characteristicSelect.setAttribute("data-previous-value", characteristicId);
+
+            if (validationFormId != null)
+            {
+                $.validator.unobtrusive.parse("#" + validationFormId);
+            }
 
             //characteristicSelect.setAttribute("data-previous-value-inserted-to-product", characteristicId);
         })
@@ -542,8 +548,18 @@ function saveFirstProduct(productElementId)
     })
         .done(function (result)
         {
-            if (result != null
-                && typeof result === "string"
+            if (result == null)
+            {
+                showNotificationWithText(
+                    "copiedNotificationBox",
+                    "Operation failed for unknown reasons.",
+                    "notificationBox-long-message",
+                    5000);
+
+                return;
+            }
+
+            if (typeof result === "string"
                 && result.length > 0)
             {
                 var productElement = document.getElementById(productElementId);
@@ -552,11 +568,53 @@ function saveFirstProduct(productElementId)
                 {
                     productElement.innerHTML = result;
                 }
+
+                showNotificationWithText(
+                    "copiedNotificationBox",
+                    "Success!",
+                    "notificationBox-long-message");
+
+                return;
             }
         })
         .fail(function (jqXHR, textStatus)
         {
+            if (jqXHR == null
+                || jqXHR.responseJSON.errors == null)
+            {
+                showNotificationWithText(
+                    "copiedNotificationBox",
+                    "Operation failed for unknown reasons.",
+                    "notificationBox-long-message",
+                    5000);
+            }
+
+            var text = concatenateResponseErrors(jqXHR.responseJSON.errors);
+
+            showNotificationWithText(
+                "copiedNotificationBox",
+                text,
+                "notificationBox-long-message",
+                5000);
         });
+}
+
+function concatenateResponseErrors(errorsArray)
+{
+    var output = "";
+
+    for (var i = 0; i < errorsArray.length - 1; i++)
+    {
+        var error = errorsArray[i];
+
+        output += (error.errorMessage + "\n")
+    }
+
+    var finalError = errorsArray[errorsArray.length - 1];
+
+    output += finalError.errorMessage;
+
+    return output;
 }
 
 var propertyDragOverItemWasInserted = false;
@@ -908,6 +966,10 @@ async function togglePropertyCharacteristicAndSelect(
 
         return;
     }
+
+    var charactersiticSelectOptionText = characteristicSelect.options[characteristicSelect.selectedIndex].text;
+
+    characteristicLabel.innerText = charactersiticSelectOptionText;
 
     characteristicSelect.style.display = "none";
 
