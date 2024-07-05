@@ -143,7 +143,7 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
 
@@ -151,7 +151,7 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
             },
@@ -326,7 +326,7 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
 
@@ -334,7 +334,7 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
             },
@@ -453,7 +453,7 @@ internal static class CommonTestElements
             ImageData = LocalTestImageData,
             ImageFileExtension = "image/png",
             ProductId = productId,
-            XML = "<data></data>",
+            HtmlData = "<data></data>",
         };
     }
 
