@@ -1,11 +1,4 @@
-﻿using MOSTComputers.Models.Product.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MOSTComputers.Services.ProductRegister.StaticUtilities;
+﻿namespace MOSTComputers.Services.ProductRegister.StaticUtilities;
 
 public static class CacheKeyUtils
 {
@@ -97,7 +90,7 @@ public static class CacheKeyUtils
         }
     }
 
-    public static class Product
+    public static class ForProduct
     {
         private const string _coreWord = "products";
 
@@ -134,6 +127,15 @@ public static class CacheKeyUtils
         public static string GetUpdatedByIdKey(int id)
         {
             return $"{_coreWord}/updated:{id}";
+        }
+    }
+
+    internal static class ProductImageSaveKeys
+    {
+        private const string _coreWord = "productImageSave";
+        public static string GetProductImagesByProductIdKey(int productId)
+        {
+            return $"{_coreWord}/{productId}";
         }
     }
 }
