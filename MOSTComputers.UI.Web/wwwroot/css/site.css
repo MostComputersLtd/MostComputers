@@ -28,3 +28,13 @@ body {
 .full-parent-height {
     height: 100%
 }
+
+.input-number-remove-spinners::-webkit-outer-spin-button,
+.input-number-remove-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* Firefox */
+.input-number-remove-spinners[type=number] {
+    -moz-appearance: textfield;
+}
