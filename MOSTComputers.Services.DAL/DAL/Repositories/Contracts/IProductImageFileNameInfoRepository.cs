@@ -12,8 +12,9 @@ public interface IProductImageFileNameInfoRepository
     IEnumerable<ProductImageFileNameInfo> GetAll();
     IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ProductImageFileNameInfoByImageNumberUpdateRequest updateRequest);
     bool DeleteAllForProductId(uint productId);
     bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ProductImageFileNameInfoByFileNameUpdateRequest updateRequest);
+    bool DeleteByProductIdAndImageNumber(uint productId, int imageNumber);
 }
