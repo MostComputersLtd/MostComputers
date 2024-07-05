@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
@@ -478,7 +479,7 @@ public sealed class ProductDisplayModel : PageModel
             ImageData = imageBytes,
             ImageFileExtension = contentType,
             ProductId = (int)productId,
-            XML = GetProductXML(productId)
+            HtmlData = GetProductXML(productId)
         };
 
         OneOf<uint, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImagesAndImageFileNameInfos(imageCreateRequest, null);
@@ -497,9 +498,9 @@ public sealed class ProductDisplayModel : PageModel
 
         if (imageFileNameInfoThatWasUpdated is null) return BadRequest();
 
-        ServiceProductImageFileNameInfoUpdateRequest fileNameInfoUpdateRequest = new()
+        ServiceProductImageFileNameInfoByImageNumberUpdateRequest fileNameInfoUpdateRequest = new()
         {
-            DisplayOrder = (int)oldDisplayOrder,
+            ImageNumber = (int)oldDisplayOrder,
             NewDisplayOrder = (int)newDisplayOrder,
             FileName = imageFileNameInfoThatWasUpdated.FileName,
             ProductId = imageFileNameInfoThatWasUpdated.ProductId,
@@ -560,7 +561,7 @@ public sealed class ProductDisplayModel : PageModel
             ProductId = (int)newFirstImage.ProductId!,
             ImageData = newFirstImage.ImageData,
             ImageFileExtension = newFirstImage.ImageFileExtension,
-            XML = newFirstImage.XML,
+            HtmlData = newFirstImage.HtmlData,
         };
     }
 
@@ -579,10 +580,10 @@ public sealed class ProductDisplayModel : PageModel
 
     public IActionResult OnPutUpdateImageActiveStatus(uint productId, uint displayOrder, string fileName, bool active)
     {
-        ServiceProductImageFileNameInfoUpdateRequest updateRequest = new()
+        ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest = new()
         {
             ProductId = (int)productId,
-            DisplayOrder = (int)displayOrder,
+            NewDisplayOrder = (int)displayOrder,
             FileName = fileName,
             Active = active,
         };
