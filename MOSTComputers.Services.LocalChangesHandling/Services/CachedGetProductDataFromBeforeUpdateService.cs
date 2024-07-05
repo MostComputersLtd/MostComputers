@@ -16,14 +16,14 @@ internal sealed class CachedGetProductDataFromBeforeUpdateService : IGetProductD
 
     public Product? GetProductBeforeUpdate(uint productId)
     {
-        string key = CacheKeyUtils.Product.GetUpdatedByIdKey((int)productId);
+        string key = CacheKeyUtils.ForProduct.GetUpdatedByIdKey((int)productId);
 
         return _cache.GetValueOrDefault<Product>(key);
     }
 
     public bool HandleAfterUpdate(uint productId)
     {
-        string key = CacheKeyUtils.Product.GetUpdatedByIdKey((int)productId);
+        string key = CacheKeyUtils.ForProduct.GetUpdatedByIdKey((int)productId);
 
         return _cache.Evict(key);
     }
