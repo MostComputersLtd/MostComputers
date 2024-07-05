@@ -23,20 +23,20 @@
                 '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)',
                 '@Model.ElementIdAndNamePrefix')">
                 <tr>
-                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPart_h2#@Model.ProductId#@j"
-                        name="@(Model.ElementIdAndNamePrefix)searchStringPart_h2#@Model.ProductId"
+                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPart_h2-@Model.ProductId-@j"
+                        name="@(Model.ElementIdAndNamePrefix)searchStringPart_h2-@Model.ProductId"
                         class="searchStringPart_td"
                         onmouseover="showSearchStringOriginDataSmallPopup(
                             @Model.ProductId, @j, '@searchStringPart', '@Model.ElementIdAndNamePrefix')">
 
                         <h7 class="productSearchString-popup-searchStringPart-label"
-                            name="@(Model.ElementIdAndNamePrefix)searchStringPartDisplayText#@Model.ProductId">@searchStringPart</h7>
+                            name="@(Model.ElementIdAndNamePrefix)searchStringPartDisplayText-@Model.ProductId">@searchStringPart</h7>
                     </td>
                 </tr>
 
                 <tr class="searchStringPartOrigin_li_container_row">
-                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li#@Model.ProductId#@j"
-                        name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li#@Model.ProductId"
+                    <td id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId-@j"
+                        name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId"
                         class="searchStringPartOrigin_li"
                         style="visibility:hidden;">
 
@@ -61,10 +61,12 @@
                                         +
                                     </button>
                                 </li>
-                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
-                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId-@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId"
                                     class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
-                                    <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPartOriginData.Characteristic.Name</h4>
+                                    <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">
+                                        @searchStringPartOriginData.Characteristic.Name
+                                    </h4>
                                 </li>
                                 <li class="searchStringPartOrigin_li_displayInline">
                                     <h6 class="searchStringPartOrigin_li_singleItemContainer_characteristicId_h6">
@@ -88,8 +90,8 @@
                                     </button>
                                 </li>
 
-                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
-                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId-@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId"
                                     class="searchStringPartOrigin_li_displayInline">
                                     <h4 class="searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4">@searchStringPart</h4>
                                 </li>
@@ -97,7 +99,7 @@
                                 <li class="searchStringPartOrigin_li_displayInline">
                                     <p class="searchStringPartOrigin_li_multipleItemContainerList_possibilitiesText">@kvp.Item2.Count possibilities</p>
 
-                                    <ul id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList#@Model.ProductId#@j"
+                                    <ul id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList-@Model.ProductId-@j"
                                         class="searchStringPartOrigin_multipleOriginsDisplayList">
 
                                         @for (int k = 0; k < kvp.Item2.Count; k++)
@@ -115,7 +117,7 @@
 
                                                 <ul class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_ul">
                                                     <li class="searchStringPartOrigin_li_displayInline">
-                                                        <h4 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@Model.ProductId#@j"
+                                                        <h4 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-@Model.ProductId-@j"
                                                             class="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel">
                                                             @searchStringPartOriginData.Characteristic.Name
                                                         </h4>
@@ -127,7 +129,7 @@
                                                     </li>
                                                 </ul>
 
-                                                <h5 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@Model.ProductId#@j">@searchStringMeaning</h5>
+                                                <h5 name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-@Model.ProductId-@j">@searchStringMeaning</h5>
                                             </li>
                                         }
                                     </ul>
@@ -146,8 +148,8 @@
                                         +
                                     </button>
                                 </li>
-                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId#@j"
-                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay#@Model.ProductId"
+                                <li id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId-@j"
+                                    name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_searchStringPartDisplay-@Model.ProductId"
                                     class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
                                     <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
                                 </li>
