@@ -53,14 +53,14 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId));
         }
 
         return insertResult;
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoUpdateRequest updateRequest,
-        IValidator<ServiceProductImageFileNameInfoUpdateRequest>? validator = null)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest,
+        IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>? validator = null)
     {
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _imageFileNameInfoService.Update(updateRequest);
 
@@ -75,7 +75,7 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
         }
 
         return updateResult;
@@ -98,7 +98,7 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
         }
 
         return updateResult;
@@ -114,7 +114,7 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
         }
 
         return success;
@@ -130,7 +130,7 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
         }
 
         return success;
