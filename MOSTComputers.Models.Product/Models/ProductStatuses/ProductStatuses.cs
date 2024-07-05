@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MOSTComputers.Models.Product.Models;
+namespace MOSTComputers.Models.Product.Models.ProductStatuses;
 
 public sealed class ProductStatuses
 {
