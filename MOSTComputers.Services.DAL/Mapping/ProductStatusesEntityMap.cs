@@ -1,5 +1,5 @@
 ﻿using Dapper.FluentMap.Mapping;
-using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
