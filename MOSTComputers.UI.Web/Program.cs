@@ -4,6 +4,13 @@ using MOSTComputers.Services.XMLDataOperations.Configuration;
 using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.Services.Caching.Configuration;
+using MOSTComputers.Services.Identity.Confuguration;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
+using MOSTComputers.UI.Web.Authentication;
+using FluentValidation;
+using MOSTComputers.UI.Web.Validation.Authentication;
+using MOSTComputers.UI.Web.Models.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +30,36 @@ builder.Services.AddScoped<IProductXmlToProductDisplayMappingService, ProductXml
 
 builder.Services.AddSearchStringOriginService();
 
+builder.Services.AddScoped<IValidator<SignInRequest>, SignInRequestValidator>();
+builder.Services.AddScoped<IValidator<LogInRequest>, LogInRequestValidator>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+}).AddIdentityCookies();
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 5;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+});
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Accounts/Login";
+});
+
+builder.Services.AddCustomIdentity(builder.Configuration.GetConnectionString("MOSTComputers.Services.Authentication")!)
+    .AddSignInManager();
+
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -39,6 +76,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
