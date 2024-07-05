@@ -1,6 +1,6 @@
 function open_ProductXml_modal()
 {
-    let dialog = document.getElementById("ProductXml-modal-dialog");
+    let dialog = document.getElementById("ProductXml_modal_dialog");
 
     dialog.style.height = window.innerHeight;
 

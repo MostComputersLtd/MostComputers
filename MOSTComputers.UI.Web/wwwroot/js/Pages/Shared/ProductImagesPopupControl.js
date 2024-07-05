@@ -1,6 +1,6 @@
 function open_ProductImages_modal()
 {
-    let dialog = document.getElementById("ProductImages-modal-dialog");
+    let dialog = document.getElementById("ProductImages_modal_dialog");
 
     dialog.style.height = window.innerHeight;
 
@@ -33,7 +33,7 @@ function getSelectedImageIndex()
 
     var nameOfActiveImage = currentSelectedImage.getAttribute("name");
 
-    var indexOfTagInName = nameOfActiveImage.indexOf('#');
+    var indexOfTagInName = nameOfActiveImage.indexOf('-');
 
     var imageIndex = nameOfActiveImage.substring(indexOfTagInName + 1);
 
@@ -51,7 +51,7 @@ function getSelectedImageData()
 
 function getProductId()
 {
-    let productIdInput = document.getElementById("modal-title_productIdShow");
+    let productIdInput = document.getElementById("modal_title_productIdShow");
 
     if (productIdInput === null) return;
 
@@ -124,8 +124,8 @@ function productImageDisplay_ul_li_ondragend(e)
         },
     })
         .done(function (result) {
-
-            //var imagesPopupModalContent = document.getElementById("ProductImages_popup_modal-content");
+            
+            //var imagesPopupModalContent = document.getElementById("ProductImages_popup_modal_content");
 
             //imagesPopupModalContent.innerHTML = result;
         })
@@ -169,7 +169,7 @@ function addNewImage(fileInputElement)
     })
         .done(function (result) {
 
-            var imagesPopupModalContent = document.getElementById("ProductImages_popup_modal-content");
+            var imagesPopupModalContent = document.getElementById("ProductImages_popup_modal_content");
 
             imagesPopupModalContent.innerHTML = result;
         })

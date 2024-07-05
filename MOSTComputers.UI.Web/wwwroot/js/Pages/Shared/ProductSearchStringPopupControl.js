@@ -1,6 +1,6 @@
 function open_ProductSearchString_modal()
 {
-    var dialog = document.getElementById("ProductSearchString-modal-dialog");
+    var dialog = document.getElementById("ProductSearchString_modal_dialog");
 
     dialog.style.height = window.innerHeight;
 
@@ -63,7 +63,7 @@ function getSearchStringData()
 
 //function colorSearchStringOriginDisplay(index, color)
 //{
-//    if (index === null
+//    if (index === null #
 //        || index === undefined
 //        || (isNaN(index) && isNaN(parseInt(index)))) return null;
 
@@ -98,8 +98,8 @@ function transportToSearchStringOriginDisplay(index)
     var searchStringPartOriginDisplayToSelect = findSearchStringPartOriginsDisplayFromSearchStringPart(index);
 
     var searchStringTopDisplayList = document.getElementById("ProductSearchString_popup_searchStringPartDisplay_ul");
-    var modalHeader = document.getElementById("ProductSearchString_modal-header");
-    var modalFooter = document.getElementById("ProductSearchString_modal-footer");
+    var modalHeader = document.getElementById("ProductSearchString_modal_header");
+    var modalFooter = document.getElementById("ProductSearchString_modal_footer");
 
     var searchStringPartOriginDisplayList = document.getElementById("ProductSearchString_popup_searchStringPartsOrigin_ul");
 
@@ -113,7 +113,7 @@ function findSearchStringPartOriginsDisplayFromSearchStringPart(index)
         || index === undefined
         || (isNaN(index) && isNaN(parseInt(index)))) return null;
 
-    var searchStringPartLowerDisplays = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_li#" + index);
+    var searchStringPartLowerDisplays = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_li-" + index);
 
     return searchStringPartLowerDisplays;
 }
@@ -123,7 +123,7 @@ function getIndexOfItemFromId(id)
     if (id === null
         || id === undefined) return null;
 
-    var searchStringPartLowerDisplayIndex = id.indexOf("#") + 1;
+    var searchStringPartLowerDisplayIndex = id.indexOf("-") + 1;
 
     var indexAsString = id.substring(searchStringPartLowerDisplayIndex);
 
@@ -136,10 +136,10 @@ function ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsShow(ind
         || index === undefined
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
-    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#" + index);
+    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-" + index);
 
-    var nameLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index);
-    var meaningLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
+    var nameLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + index);
+    var meaningLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + index);
 
     var allLabels = [];
 
@@ -175,12 +175,12 @@ function searchStringPartOrigin_multipleOriginsRemove(index, substringToHighligh
         || index === undefined
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
-    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#" + index);
+    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-" + index);
 
     if (listOfOptionsToShow.visibility == "hidden") return;
 
-    var nameLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index);
-    var meaningLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
+    var nameLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + index);
+    var meaningLabels = document.getElementsByName("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + index);
 
     var allLabels = [];
 
@@ -205,8 +205,8 @@ function placeFixedListInTheCorrentPosition(index)
         || index === undefined
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
-    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#" + index);
-    var buttonToShowOptions = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton#" + index);
+    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-" + index);
+    var buttonToShowOptions = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton-" + index);
 
     var popupDialog = document.getElementById("ProductSearchString_popup_searchStringPartsOrigin_ul");
 
@@ -256,8 +256,8 @@ function placeFixedListInTheCorrentPosition(index)
 //        || index === undefined
 //        || (isNaN(index) && isNaN(parseInt(index)))) return;
 
-//    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#" + index);
-//    var buttonToShowOptions = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton#" + index);
+//    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-" + index);
+//    var buttonToShowOptions = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton-" + index);
 
 //    var popupDialog = document.getElementById("ProductSearchString_popup_searchStringPartsOrigin_ul");
 

@@ -12,11 +12,11 @@ function showSearchStringOriginDataSmallPopup(index, searchStringPart)
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
     showSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + index,
+        "searchStringPartOrigin_li-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList-" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + index);
 }
 
 function removeSearchStringOriginDataSmallPopup(index, searchStringPart)
@@ -28,11 +28,11 @@ function removeSearchStringOriginDataSmallPopup(index, searchStringPart)
     searchStringPart = decodeHtmlString(searchStringPart);
 
     removeSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + index,
+        "searchStringPartOrigin_li-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList-" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + index);
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + index);
 }
 
 function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
@@ -51,7 +51,7 @@ function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
 
 function showXmlPopupData(productId)
 {
-    $("#ProductXml_popup_modal-content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewXmlForProduct");
+    $("#ProductXml_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewXmlForProduct");
 
     open_ProductXml_modal();
 }
@@ -105,7 +105,7 @@ function copyXmlTextToClipboard()
 
 function showImagePopupData(productId)
 {
-    $("#ProductImages_popup_modal-content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewImagesForProduct");
+    $("#ProductImages_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewImagesForProduct");
 
     open_ProductImages_modal();
 }
@@ -132,7 +132,7 @@ function getImageFileData(productId)
 
 function showSearchStringPopupData(productId)
 {
-    $("#ProductSearchString_popup_modal-content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
+    $("#ProductSearchString_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
     {
         open_ProductSearchString_modal();
     });
@@ -199,7 +199,7 @@ function addPropertyToTable(productId)
 
 function PropertyWithoutCharacteristic_select_onchange(value, index)
 {
-    var labelWithIdText = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
+    var labelWithIdText = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label-" + index);
 
     labelWithIdText.textContent = "ID: " + value;
 }
@@ -208,10 +208,10 @@ function updatePropertyInTable(productId, index)
 {
     var url = "/ProductPropertiesEditor/" + productId + "?handler=UpdateProperty";
 
-    var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
-    var productPropValueInput = document.getElementById("productPropertyDisplay_Value_div#" + index);
-    var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select#" + index);
-    var productPropWithoutCharacteristicSelect = document.getElementById("PropertyWithoutCharacteristic_Characteristic_select#" + index);
+    var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label-" + index);
+    var productPropValueInput = document.getElementById("productPropertyDisplay_Value_div-" + index);
+    var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select-" + index);
+    var productPropWithoutCharacteristicSelect = document.getElementById("PropertyWithoutCharacteristic_Characteristic_select-" + index);
 
     var productPropCharacteristicId;
 
@@ -326,7 +326,7 @@ function updateAllPropertiesInTable(productId)
     {
         var productPropWithoutCharacteristicSelect = productPropWithoutCharacteristicSelects[i]
 
-        var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('#') + 1;
+        var indexOfListIndexStart = productPropWithoutCharacteristicSelect.id.indexOf('-') + 1;
 
         var indexOfSelect = productPropWithoutCharacteristicSelect.id.substring(indexOfListIndexStart);
             
@@ -427,7 +427,7 @@ function deletePropertyInTable(productId, productCharacteristicId, propertytrId,
 
 function getCurrentId(index)
 {
-    var characteristicIdEl = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label#" + index);
+    var characteristicIdEl = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label-" + index);
 
     var idText = characteristicIdEl.innerHTML;
 
