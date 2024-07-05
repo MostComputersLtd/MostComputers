@@ -3,17 +3,20 @@ using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 using MOSTComputers.Services.LocalChangesHandling.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Transactions;
-using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Product;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Services;
 
@@ -25,20 +28,24 @@ public sealed class ProductChangesService : IProductChangesService
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductPropertyService productPropertyService,
-        IProductStatusesService productStatusesService,
+        IProductWorkStatusesService productWorkStatusesService,
         IProductDeserializeService productDeserializeService,
         ILocalChangesService localChangesService,
-        IGetProductDataFromBeforeUpdateService getProductDataFromBeforeUpdateService)
+        IGetProductDataFromBeforeUpdateService getProductDataFromBeforeUpdateService,
+        IToDoLocalChangesService toDoLocalChangesService,
+        IProductImageSaveService productImageSaveService)
     {
         _transactionExecuteService = transactionExecuteService;
         _productService = productService;
         _productImageService = productImageService;
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productPropertyService = productPropertyService;
-        _productStatusesService = productStatusesService;
+        _productWorkStatusesService = productWorkStatusesService;
         _productDeserializeService = productDeserializeService;
         _localChangesService = localChangesService;
         _getProductDataFromBeforeUpdateService = getProductDataFromBeforeUpdateService;
+        _toDoLocalChangesService = toDoLocalChangesService;
+        _productImageSaveService = productImageSaveService;
     }
 
     private const string _tableChangeNameOfProductsTable = "MOSTPRices";
@@ -48,9 +55,11 @@ public sealed class ProductChangesService : IProductChangesService
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductPropertyService _productPropertyService;
-    private readonly IProductStatusesService _productStatusesService;
+    private readonly IProductWorkStatusesService _productWorkStatusesService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly ILocalChangesService _localChangesService;
+    private readonly IToDoLocalChangesService _toDoLocalChangesService;
+    private readonly IProductImageSaveService _productImageSaveService;
     private readonly IGetProductDataFromBeforeUpdateService _getProductDataFromBeforeUpdateService;
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleAnyOperation(LocalChangeData localChangeData)
@@ -91,12 +100,17 @@ public sealed class ProductChangesService : IProductChangesService
 
         try
         {
-            OneOf<Success, UnexpectedFailureResult> handleInsertResult = _transactionExecuteService.ExecuteActionInTransaction(
-                HandleInsertInternal,
-                localChangeData);
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> handleInsertResult
+                = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
+                    () => HandleInsertInternal(localChangeData),
+                    result => result.Match(
+                        success => true,
+                        validationResult => false,
+                        unexpectedFailureResult => false));
 
             return handleInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
                 success => success,
+                validationResult => validationResult,
                 unexpectedFailureResult => unexpectedFailureResult);
         }
         catch (TransactionException)
@@ -109,8 +123,14 @@ public sealed class ProductChangesService : IProductChangesService
         }
     }
 
-    private OneOf<Success, UnexpectedFailureResult> HandleInsertInternal(LocalChangeData localChangeData)
+    private OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleInsertInternal(LocalChangeData localChangeData)
     {
+        LocalChangeDataValidatorForGivenTableAndOperationType validator = new(_tableChangeNameOfProductsTable, ChangeOperationTypeEnum.Create);
+
+        ValidationResult validationResult = validator.Validate(localChangeData);
+
+        if (!validationResult.IsValid) return validationResult;
+
         int productId = localChangeData.TableElementId;
 
         Product? product = GetProductFull((uint)productId);
@@ -120,43 +140,60 @@ public sealed class ProductChangesService : IProductChangesService
             return new UnexpectedFailureResult();
         }
 
-        ProductStatuses? productStatuses = _productStatusesService.GetByProductId((uint)productId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
 
-        bool isProcessed = DetermineWhetherProductIsProcessedOrNot(product);
-
-        if (productStatuses is not null)
+        ToDoLocalChangeCreateRequest toDoChangeCreateRequest = new()
         {
-            ProductStatusesUpdateRequest productStatusesUpdateRequest = new()
-            {
-                ProductId = productId,
-                IsProcessed = isProcessed,
-                NeedsToBeUpdated = false,
-            };
-
-            OneOf<bool, ValidationResult> productStatusUpdateResult = _productStatusesService.Update(productStatusesUpdateRequest);
-
-            return productStatusUpdateResult.Match<OneOf<Success, UnexpectedFailureResult>>(
-                success => success ? new Success() : throw new TransactionInDoubtException("Operation failed for unknown reasons"),
-                validationResult => throw new ValidationException(validationResult.Errors));
-        }
-
-        ProductStatusesCreateRequest productStatusesCreateRequest = new()
-        {
-            ProductId = productId,
-            IsProcessed = isProcessed,
-            NeedsToBeUpdated = false,
+            TableName = localChangeData.TableName,
+            OperationType = localChangeData.OperationType,
+            TableElementId = localChangeData.TableElementId,
+            TimeStamp = localChangeData.TimeStamp,
         };
 
-        OneOf<Success, ValidationResult> productStatusInsertResult = _productStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+        if (productWorkStatuses is not null)
+        {
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertToDoChangeResult
+                = _toDoLocalChangesService.Insert(toDoChangeCreateRequest);
 
-        return productStatusInsertResult.Match<OneOf<Success, UnexpectedFailureResult>>(
-            success =>
+            return insertToDoChangeResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                id =>
+                {
+                    bool deleteChangeSuccess = _localChangesService.DeleteById((uint)localChangeData.Id);
+
+                    return deleteChangeSuccess ? new Success() : new UnexpectedFailureResult();
+                },
+                validationResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"),
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+
+        ProductWorkStatusesCreateRequest productStatusesCreateRequest = new()
+        {
+            ProductId = productId,
+            ProductNewStatus = ProductNewStatusEnum.New,
+            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ReadyForImageInsert = false,
+        };
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productStatusInsertResult
+            = _productWorkStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+
+        productStatusInsertResult.Switch(
+            success => { },
+            validationResult => throw new ValidationException(validationResult.Errors),
+            unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> newInsertToDoChangeResult
+            = _toDoLocalChangesService.Insert(toDoChangeCreateRequest);
+
+        return newInsertToDoChangeResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+            id =>
             {
-                _localChangesService.DeleteById((uint)localChangeData.Id);
+                bool deleteChangeSuccess = _localChangesService.DeleteById((uint)localChangeData.Id);
 
-                return success;
+                return deleteChangeSuccess ? new Success() : new UnexpectedFailureResult();
             },
-            _ => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
+            validationResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"),
+            unexpectedFailureResult => unexpectedFailureResult);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleUpdate(LocalChangeData localChangeData)
@@ -169,9 +206,12 @@ public sealed class ProductChangesService : IProductChangesService
 
         try
         {
-            OneOf<Success, UnexpectedFailureResult> handleUpdateResult = _transactionExecuteService.ExecuteActionInTransaction(
-                HandleUpdateInternal,
-                localChangeData);
+            OneOf<Success, UnexpectedFailureResult> handleUpdateResult
+                = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
+                    () => HandleUpdateInternal(localChangeData),
+                    result => result.Match(
+                        success => true,
+                        unexpectedFailureResult => false));
 
             return handleUpdateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
                 success => success,
@@ -191,7 +231,7 @@ public sealed class ProductChangesService : IProductChangesService
     {
         int productId = localChangeData.TableElementId;
 
-        string productBeforeUpdateCacheKey = GetUpdatedByIdKey(productId);
+        string productBeforeUpdateCacheKey = CacheKeyUtils.ForProduct.GetUpdatedByIdKey(productId);
 
         Product? productBeforeUpdate = _getProductDataFromBeforeUpdateService.GetProductBeforeUpdate((uint)productId);
 
@@ -232,10 +272,11 @@ public sealed class ProductChangesService : IProductChangesService
                         Id = image.Id,
                         ImageData = image.ImageData,
                         ImageFileExtension = image.ImageFileExtension,
-                        XML = xmlOfProduct,
+                        HtmlData = xmlOfProduct,
                     };
 
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult = _productImageService.UpdateInAllImages(productImageUpdateRequest);
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
+                        = _productImageService.UpdateInAllImages(productImageUpdateRequest);
 
                     imageUpdateResult.Switch(
                         success => { },
@@ -244,18 +285,19 @@ public sealed class ProductChangesService : IProductChangesService
                 }
             }
 
-            ProductStatuses? productStatuses = _productStatusesService.GetByProductId((uint)productId);
+            ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
 
-            if (productStatuses is not null)
+            if (productWorkStatuses is not null)
             {
-                ProductStatusesUpdateRequest productStatusesUpdateRequest = new()
+                ProductWorkStatusesUpdateByProductIdRequest productStatusesUpdateRequest = new()
                 {
                     ProductId = productId,
-                    IsProcessed = isProcessed,
-                    NeedsToBeUpdated = needsToBeUpdated,
+                    ProductNewStatus = isProcessed ? ProductNewStatusEnum.WorkInProgress : ProductNewStatusEnum.New,
+                    ProductXmlStatus = productWorkStatuses.ProductXmlStatus,
+                    ReadyForImageInsert = productWorkStatuses.ReadyForImageInsert,
                 };
 
-                OneOf<bool, ValidationResult> productStatusesUpdateResult = _productStatusesService.Update(productStatusesUpdateRequest);
+                OneOf<bool, ValidationResult> productStatusesUpdateResult = _productWorkStatusesService.UpdateByProductId(productStatusesUpdateRequest);
 
                 productStatusesUpdateResult.Switch(
                     success =>
@@ -269,26 +311,29 @@ public sealed class ProductChangesService : IProductChangesService
             }
             else
             {
-                ProductStatusesCreateRequest productStatusesCreateRequest = new()
+                ProductWorkStatusesCreateRequest productStatusesCreateRequest = new()
                 {
                     ProductId = productId,
-                    IsProcessed = isProcessed,
-                    NeedsToBeUpdated = needsToBeUpdated,
+                    ProductNewStatus = isProcessed ? ProductNewStatusEnum.WorkInProgress : ProductNewStatusEnum.New,
+                    ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                    ReadyForImageInsert = false,
                 };
 
-                OneOf<Success, ValidationResult> productStatusesCreateResult = _productStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+                OneOf<int, ValidationResult, UnexpectedFailureResult> productStatusesCreateResult
+                    = _productWorkStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
 
                 productStatusesCreateResult.Switch(
                     success => { },
-                    validationResult => throw new ValidationException(validationResult.Errors));
+                    validationResult => throw new ValidationException(validationResult.Errors),
+                    unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
             }
         }
 
         _getProductDataFromBeforeUpdateService.HandleAfterUpdate((uint)productId);
 
-        _localChangesService.DeleteById((uint)localChangeData.Id);
+        bool localChangeDeleteResult = _localChangesService.DeleteById((uint)localChangeData.Id);
 
-        return new Success();
+        return localChangeDeleteResult ? new Success() : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleDelete(LocalChangeData localChangeData)
@@ -301,9 +346,12 @@ public sealed class ProductChangesService : IProductChangesService
 
         try
         {
-            OneOf<Success, UnexpectedFailureResult> handleDeleteResult = _transactionExecuteService.ExecuteActionInTransaction(
-                HandleDeleteInternal,
-                localChangeData);
+            OneOf<Success, UnexpectedFailureResult> handleDeleteResult
+               = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
+                   () => HandleDeleteInternal(localChangeData),
+                   result => result.Match(
+                       success => true,
+                       unexpectedFailureResult => false));
 
             return handleDeleteResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
                 success => success,
@@ -351,11 +399,11 @@ public sealed class ProductChangesService : IProductChangesService
             throw new TransactionInDoubtException("Operation failed for unknown reasons");
         }
 
-        ProductStatuses? productStatuses = _productStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productStatuses = _productWorkStatusesService.GetByProductId(localChangeData.TableElementId);
 
         if (productStatuses is not null)
         {
-            bool isProductStatusDelete = _productStatusesService.DeleteByProductId(productId);
+            bool isProductStatusDelete = _productWorkStatusesService.DeleteByProductId(localChangeData.TableElementId);
 
             if (!isProductStatusDelete)
             {
@@ -398,6 +446,80 @@ public sealed class ProductChangesService : IProductChangesService
         return new Success();
     }
 
+    private OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertProductImages(int productId)
+    {
+        Dictionary<ProductImage, ProductImageFileNameInfo>? productEditedImageData = _productImageSaveService.GetImagesForProduct(productId);
+
+        if (productEditedImageData == null)
+        {
+            return new Success();
+        }
+
+        KeyValuePair<ProductImage, ProductImageFileNameInfo> firstProductKvp = new();
+
+        foreach (KeyValuePair<ProductImage, ProductImageFileNameInfo> kvp in productEditedImageData)
+        {
+            if (firstProductKvp.Value?.DisplayOrder is null
+                || firstProductKvp.Value.DisplayOrder > kvp.Value.DisplayOrder)
+            {
+                firstProductKvp = kvp;
+            }
+
+            ServiceProductImageCreateRequest serviceProductImageCreateRequest = new()
+            {
+                ProductId = productId,
+                ImageData = kvp.Key.ImageData,
+                ImageFileExtension = kvp.Key.ImageFileExtension,
+            };
+
+            OneOf<uint, ValidationResult, UnexpectedFailureResult> productImageInsertResult
+                = _productImageService.InsertInAllImages(serviceProductImageCreateRequest);
+
+            bool imageInsertSuccess = productImageInsertResult.Match(
+                id => true,
+                validationResult => false,
+                unexpectedFailureResult => false);
+
+            if (!imageInsertSuccess)
+            {
+                return productImageInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                    id => new Success(),
+                    validationResult => validationResult,
+                    unexpectedFailureResult => unexpectedFailureResult);
+            }
+
+            ServiceProductImageFileNameInfoCreateRequest imageFileNameInfoCreateRequest = new()
+            {
+                ProductId = productId,
+                DisplayOrder = kvp.Value.DisplayOrder,
+                Active = kvp.Value.Active,
+                FileName = kvp.Value.FileName,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> productImageFileNameInfoInsertResult
+                = _productImageFileNameInfoService.Insert(imageFileNameInfoCreateRequest);
+
+            bool imageFileNameInsertSuccess = productImageInsertResult.Match(
+                id => true,
+                validationResult => false,
+                unexpectedFailureResult => false);
+
+            if (!imageInsertSuccess) return productImageFileNameInfoInsertResult;
+        }
+
+        ServiceProductFirstImageCreateRequest productFirstImageCreateRequest = new()
+        {
+            ProductId = productId,
+            ImageData = firstProductKvp.Key.ImageData,
+            ImageFileExtension = firstProductKvp.Key.ImageFileExtension,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
+            = _productImageService.InsertInFirstImages(productFirstImageCreateRequest);
+
+        return insertFirstImageResult;
+    }
+
     private static bool DetermineWhetherProductIsProcessedOrNot(Product productFull)
     {
         if (productFull is null)
@@ -427,21 +549,21 @@ public sealed class ProductChangesService : IProductChangesService
         if (product is null) return null;
 
         if (product.Images is null
-            || !product.Images.Any())
+            || product.Images.Count == 0)
         {
             product.Images = _productImageService.GetAllInProduct(productId)
                 .ToList();
         }
 
         if (product.ImageFileNames is null
-            || !product.ImageFileNames.Any())
+            || product.ImageFileNames.Count == 0)
         {
             product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId)
                 .ToList();
         }
 
         if (product.Properties is null
-            || !product.Properties.Any())
+            || product.Properties.Count == 0)
         {
             product.Properties = _productPropertyService.GetAllInProduct(productId)
                 .ToList();
@@ -462,21 +584,21 @@ public sealed class ProductChangesService : IProductChangesService
 
         if (product is null
             || product.Images is null
-            || !product.Images.Any())
+            || product.Images.Count == 0)
         {
             productImages = _productImageService.GetAllInProduct(productId);
         }
 
         if (product is null
             || product.ImageFileNames is null
-            || !product.ImageFileNames.Any())
+            || product.ImageFileNames.Count == 0)
         {
             productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
         }
 
         if (product is null
             || product.Properties is null
-            || !product.Properties.Any())
+            || product.Properties.Count == 0)
         {
             productProperties = _productPropertyService.GetAllInProduct(productId);
         }
