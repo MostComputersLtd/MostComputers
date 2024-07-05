@@ -23,7 +23,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         const string getAllQuery =
             $"""
             SELECT * FROM {_tableName}
-            ORDER BY CSTID, ImgNo;
+            ORDER BY CSTID, S;
             """;
 
         return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllQuery, new { });
@@ -35,7 +35,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             $"""
             SELECT * FROM {_tableName}
             WHERE CSTID = @productId
-            ORDER BY ImgNo;
+            ORDER BY S;
             """;
 
         return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId = (int)productId });
@@ -47,7 +47,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             $"""
             DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
 
-            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_tableName}
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {_tableName}
             WHERE CSTID = @productId;
 
             SELECT TOP 1 @DisplayOrderInRange = ISNULL(
@@ -56,12 +56,13 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                 @DisplayOrder);
 
             UPDATE {_tableName}
-                SET ImgNo = ImgNo + 1
+                SET S = S + 1
             WHERE CSTID = @productId
-            AND ImgNo >= @DisplayOrderInRange;
+            AND S >= @DisplayOrderInRange;
 
-            INSERT INTO {_tableName}(CSTID, ImgNo, ImgFileName, Active)
-            VALUES (@productId, @DisplayOrderInRange, @FileName, @Active)
+            INSERT INTO {_tableName}(CSTID, ImageNumber, S, ImgFileName, Active)
+            VALUES (@productId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {_tableName} WHERE CSTID = @productId), 1),
+            @DisplayOrderInRange, @FileName, @Active)
             """;
 
 
@@ -82,25 +83,31 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductImageFileNameInfoUpdateRequest updateRequest)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ProductImageFileNameInfoByImageNumberUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""
+            @DECLARE @DisplayOrder INT;
+
+            SELECT TOP 1 @DisplayOrder = S FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImageNumber = @ImageNumber;
+
             SET @NewDisplayOrder = 
             CASE 
                 WHEN @NewDisplayOrder < 1 THEN 1
-                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
-                    THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(S) FROM ImageFileName WHERE CSTID = @productId), 1)
+                    THEN ISNULL((SELECT MAX(S) FROM ImageFileName WHERE CSTID = @productId), 1)
                 ELSE @NewDisplayOrder
             END;
             
             UPDATE {_tableName}
-            SET ImgNo = 
+            SET S = 
                 CASE
-                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
-                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
-                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
-                    ELSE ImgNo
+                    WHEN S = @DisplayOrder THEN @NewDisplayOrder
+                    WHEN @DisplayOrder < @NewDisplayOrder AND S > @DisplayOrder AND S <= @NewDisplayOrder THEN S - 1
+                    WHEN @DisplayOrder > @NewDisplayOrder AND S < @DisplayOrder AND S >= @NewDisplayOrder THEN S + 1
+                    ELSE S
                 END
             WHERE CSTID = @productId;
             
@@ -109,30 +116,35 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                 Active = @Active
 
             WHERE CSTID = @productId
-            AND ImgNo = @NewDisplayOrder;
+            AND ImageNumber = @ImageNumber;
             """;
 
         const string updateQueryWithNoDisplayOrderChanges =
             $"""
+            @DECLARE @DisplayOrder INT;
+            
+            SELECT TOP 1 @DisplayOrder = S FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImageNumber = @ImageNumber;
+
             UPDATE {_tableName}
             SET ImgFileName = @FileName,
                 Active = @Active
 
             WHERE CSTID = @productId
-            AND ImgNo = @DisplayOrder;
+            AND S = @DisplayOrder;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
 
         if (!internalValidationResult.IsValid) return internalValidationResult;
 
-        if (updateRequest.NewDisplayOrder is null
-            || updateRequest.NewDisplayOrder == updateRequest.DisplayOrder)
+        if (updateRequest.NewDisplayOrder is null)
         {
             var parametersSimple = new
             {
                 productId = updateRequest.ProductId,
-                updateRequest.DisplayOrder,
+                updateRequest.NewDisplayOrder,
                 updateRequest.FileName,
                 updateRequest.Active,
             };
@@ -145,8 +157,8 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         var parameters = new
         {
             productId = updateRequest.ProductId,
-            updateRequest.DisplayOrder,
             updateRequest.NewDisplayOrder,
+            updateRequest.ImageNumber,
             updateRequest.FileName,
             updateRequest.Active,
         };
@@ -162,7 +174,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             $"""
             DECLARE @DisplayOrder INT;
 
-            SELECT TOP 1 @DisplayOrder = ImgNo
+            SELECT TOP 1 @DisplayOrder = S
             FROM {_tableName}
             WHERE CSTID = @productId
             AND ImgFileName = @FileName;
@@ -170,18 +182,18 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             SET @NewDisplayOrder = 
             CASE 
                 WHEN @NewDisplayOrder < 1 THEN 1
-                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
-                    THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(S) FROM ImageFileName WHERE CSTID = @productId), 1)
+                    THEN ISNULL((SELECT MAX(S) FROM ImageFileName WHERE CSTID = @productId), 1)
                 ELSE @NewDisplayOrder
             END;
             
             UPDATE {_tableName}
-            SET ImgNo = 
+            SET S = 
                 CASE
-                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
-                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
-                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
-                    ELSE ImgNo
+                    WHEN S = @DisplayOrder THEN @NewDisplayOrder
+                    WHEN @DisplayOrder < @NewDisplayOrder AND S > @DisplayOrder AND S <= @NewDisplayOrder THEN S - 1
+                    WHEN @DisplayOrder > @NewDisplayOrder AND S < @DisplayOrder AND S >= @NewDisplayOrder THEN S + 1
+                    ELSE S
                 END
             WHERE CSTID = @productId;
             
@@ -190,7 +202,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                 Active = @Active
 
             WHERE CSTID = @productId
-            AND ImgNo = @NewDisplayOrder;
+            AND S = @NewDisplayOrder;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
@@ -232,8 +244,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         if (!productWithGivenIdExists)
         {
-            result.Errors.Add(
-                new(propertyName, "Id does not correspond to any product Id"));
+            result.Errors.Add(new(propertyName, "Id does not correspond to any product Id"));
 
             return result;
         }
@@ -266,19 +277,61 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         }
     }
 
+    public bool DeleteByProductIdAndImageNumber(uint productId, int imageNumber)
+    {
+        const string deleteQuery =
+            $"""
+            DECLARE @DisplayOrder INT;
+            
+            SELECT TOP 1 @DisplayOrder = S
+            FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImageNumber = @ImageNumber;
+
+            DELETE FROM {_tableName}
+            WHERE CSTID = @productId
+            AND ImageNumber = @ImageNumber;
+
+            UPDATE {_tableName}
+                SET S = S - 1
+            
+            WHERE CSTID = @productId
+            AND S > @DisplayOrder;
+            """;
+
+        var parameters = new
+        {
+            productId = (int)productId,
+            ImageNumber = imageNumber
+        };
+
+        try
+        {
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImageFileNameInfo, dynamic>(deleteQuery, parameters, doInTransaction: true);
+
+            if (rowsAffected == 0) return false;
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     public bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder)
     {
         const string deleteQuery =
             $"""
             DELETE FROM {_tableName}
             WHERE CSTID = @productId
-            AND ImgNo = @DisplayOrder;
+            AND S = @DisplayOrder;
 
             UPDATE {_tableName}
-                SET ImgNo = ImgNo - 1
+                SET S = S - 1
             
             WHERE CSTID = @productId
-            AND ImgNo > @DisplayOrder;
+            AND S > @DisplayOrder;
             """;
 
         var parameters = new
