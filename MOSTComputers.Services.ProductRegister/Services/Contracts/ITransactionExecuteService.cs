@@ -1,4 +1,5 @@
-﻿namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
+﻿
+namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 public interface ITransactionExecuteService
 {
@@ -8,4 +9,6 @@ public interface ITransactionExecuteService
     TReturn ExecuteActionInTransaction<T, TReturn>(Func<T, TReturn> action, T parameter);
     TReturn ExecuteActionInTransactionAndCommitWithCondition<TReturn>(Func<TReturn> action, Predicate<TReturn> shouldCommit);
     TReturn ExecuteActionInTransactionAndCommitWithCondition<T, TReturn>(Func<T, TReturn> action, Predicate<TReturn> shouldCommit, T parameter);
+    Task<TReturn> ExecuteActionInTransactionAndCommitWithConditionAsync<TReturn>(Func<Task<TReturn>> action, Predicate<TReturn> shouldCommit);
+    Task<TReturn> ExecuteActionInTransactionAndCommitWithConditionAsync<T, TReturn>(Func<T, Task<TReturn>> action, Predicate<TReturn> shouldCommit, T parameter);
 }

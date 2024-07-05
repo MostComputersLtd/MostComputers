@@ -41,4 +41,14 @@ internal sealed class TransactionExecuteService : ITransactionExecuteService
     {
         return _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition(action, shouldCommit, parameter);
     }
+
+    public Task<TReturn> ExecuteActionInTransactionAndCommitWithConditionAsync<TReturn>(Func<Task<TReturn>> action, Predicate<TReturn> shouldCommit)
+    {
+        return _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync(action, shouldCommit);
+    }
+
+    public Task<TReturn> ExecuteActionInTransactionAndCommitWithConditionAsync<T, TReturn>(Func<T, Task<TReturn>> action, Predicate<TReturn> shouldCommit, T parameter)
+    {
+        return _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnConditionAsync(action, shouldCommit, parameter);
+    }
 }
