@@ -251,7 +251,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
     [Theory]
     [MemberData(nameof(Update_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageFileNameInfoUpdateRequest updateRequest, bool expected)
+    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest, bool expected)
     {
         OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
@@ -319,7 +319,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     {
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -331,7 +331,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -343,7 +343,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -355,7 +355,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = 0,
@@ -367,7 +367,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = _useRequiredValue,
@@ -379,7 +379,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = _useRequiredValue,
                 DisplayOrder = 3,
@@ -391,7 +391,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         new object[2]
         {
-            new ServiceProductImageFileNameInfoUpdateRequest()
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
             {
                 ProductId = 0,
                 DisplayOrder = 3,
