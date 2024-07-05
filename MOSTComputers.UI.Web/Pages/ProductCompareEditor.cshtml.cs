@@ -1,6 +1,5 @@
-using Dapper;
 using FluentValidation.Results;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -22,13 +21,12 @@ using MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor.ProductProperties;
 using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 using OneOf.Types;
-using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
 using System.Transactions;
 using System.Web;
 
 namespace MOSTComputers.UI.Web.Pages;
 
+[Authorize]
 public class ProductCompareEditorModel : PageModel
 {
     public ProductCompareEditorModel(
@@ -217,7 +215,7 @@ public class ProductCompareEditorModel : PageModel
 
         return OnGetGetXmlFromProductFirst();
     }
-
+    
     public IActionResult OnPostGetProductDataByIdFirst(int productId)
     {
         if (productId < 0) return BadRequest();
@@ -321,20 +319,13 @@ public class ProductCompareEditorModel : PageModel
                 ProductImageFileNameInfo? relatedFileName = firstProduct.ImageFileNames?.Find(
                     x => x.FileName == $"{image.Id}.{GetFileExtensionFromFileType(image.ImageFileExtension ?? "*")}");
 
-                if (relatedFileName is null)
-                {
-                    int? displayOrder = OrdersForImagesInFirstProduct.Find(x =>
-                        x.productImage == image).displayOrder;
+                if (relatedFileName is not null) return relatedFileName.DisplayOrder;
 
-                    if (displayOrder is not null)
-                    {
-                        return displayOrder;
-                    }
+                int imageIndex = firstProduct.Images!.IndexOf(image);
 
-                    return firstProduct.Images!.IndexOf(image);
-                }
+                OrdersForImagesInFirstProduct.Add((image, imageIndex + 1));
 
-                return relatedFileName.DisplayOrder;
+                return imageIndex;
             })
             .ToList();
 
@@ -347,47 +338,12 @@ public class ProductCompareEditorModel : PageModel
         return firstProduct;
     }
 
-    //private OneOf<Product?, InvalidXmlResult> ChangeProductToMatchXml(Product product, string xml)
-    //{
-    //    OneOf<XmlObjectData?, InvalidXmlResult> xmlDeserializeResult = _productDeserializeService.TryDeserializeProductsXml(xml);
-
-    //    return xmlDeserializeResult.Match<OneOf<Product?, InvalidXmlResult>>(
-    //        async xmlObjectData =>
-    //        {
-    //            if (xmlObjectData is null) return null;
-
-    //            if (xmlObjectData.Products.Count > 1) return product;
-
-    //            XmlProduct? matchingXmlProduct = GetMatchingProductFromXmlObjectData(product.Id, xmlObjectData);
-
-    //            if (matchingXmlProduct is null) return product;
-
-    //            OneOf<Product, ValidationResult> matchingProductMapResult
-    //                = await _productXmlToProductMappingService.GetProductFromXmlDataAsync(matchingXmlProduct, xml);
-
-    //            if ()
-    //        },
-    //        invalidXmlResult => invalidXmlResult);
-    //}
-
-    //private XmlProduct? GetMatchingProductFromXmlObjectData(int productId, XmlObjectData xmlObjectData)
-    //{
-    //    if (xmlObjectData.Products.Count <= 0) return null;
-
-    //    foreach (XmlProduct xmlProduct in xmlObjectData.Products)
-    //    {
-    //        if (xmlProduct.Id == productId) return xmlProduct;
-    //    }
-
-    //    return null;
-    //}
-
     public async Task<IActionResult> OnPostGetProductDataFromXmlSecondAsync([FromBody] string xmlData)
     {
         if (string.IsNullOrWhiteSpace(xmlData)) return BadRequest();
 
         OneOf<XmlObjectData?, InvalidXmlResult> productDeserializeResult
-        = _productDeserializeService.TryDeserializeProductsXml(xmlData);
+            = _productDeserializeService.TryDeserializeProductsXml(xmlData);
 
         return await productDeserializeResult.Match<Task<IActionResult>>(
             async xmlObjectData =>
@@ -735,7 +691,7 @@ public class ProductCompareEditorModel : PageModel
                         ProductId = (int)productId,
                         ImageData = image.ImageData,
                         ImageFileExtension = image.ImageFileExtension,
-                        XML = image.XML,
+                        HtmlData = image.HtmlData,
                     };
 
                     OneOf<uint, ValidationResult, UnexpectedFailureResult> imageInsertResult
@@ -774,7 +730,7 @@ public class ProductCompareEditorModel : PageModel
 
                 if (CompareByteArrays(image.ImageData, imageInOldProduct.ImageData)
                     && image.ImageFileExtension == imageInOldProduct.ImageFileExtension
-                    && image.XML == imageInOldProduct.XML)
+                    && image.HtmlData == imageInOldProduct.HtmlData)
                 {
                     oldFirstProduct.Images?.Remove(imageInOldProduct);
 
@@ -785,7 +741,7 @@ public class ProductCompareEditorModel : PageModel
                 {
                     ImageData = image.ImageData,
                     ImageFileExtension = image.ImageFileExtension,
-                    XML = image.XML,
+                    XML = image.HtmlData,
                 };
 
                 productUpdateRequestToAddImagesTo.Images ??= new();
@@ -975,7 +931,8 @@ public class ProductCompareEditorModel : PageModel
                 CharacteristicsRelatedToProduct = CharacteristicsRelatedToFirstProduct,
                 ProductSearchStringPartsAndDataAboutTheirOrigin = FirstProductSearchStringPartsAndDataAboutTheirOrigin,
                 ImagesContainerId = "productCompareEditor_LocalProductEditor_imageContainer_div",
-                OtherImagesContainerId = "productCompareEditor_OutsideProductEditor_imageContainer_div"
+                OtherImagesContainerId = "productCompareEditor_OutsideProductEditor_imageContainer_div",
+                ValidationFormId = "productCompareEditor_LocalProductEditorContainer_validationForm",
             };
         }
 
@@ -990,6 +947,7 @@ public class ProductCompareEditorModel : PageModel
             ProductSearchStringPartsAndDataAboutTheirOrigin = SecondProductSearchStringPartsAndDataAboutTheirOrigin,
             ImagesContainerId = "productCompareEditor_OutsideProductEditor_imageContainer_div",
             OtherImagesContainerId = "productCompareEditor_LocalProductEditor_imageContainer_div",
+            ValidationFormId = null,
         };
     }
 
@@ -1067,7 +1025,7 @@ public class ProductCompareEditorModel : PageModel
         {
             ImageData = imageBytes,
             ImageFileExtension = contentType,
-            XML = productXml,
+            HtmlData = productXml,
         };
 
         ProductImageFileNameInfo imageFileNameInfo = new()
@@ -1120,7 +1078,22 @@ public class ProductCompareEditorModel : PageModel
     {
         if (_firstProduct is null) return BadRequest();
 
-        bool success = UpdateImageDisplayOrder(_firstProduct, oldDisplayOrder, newDisplayOrder);
+        bool success = UpdateImageFileNameInfoDisplayOrder(_firstProduct, oldDisplayOrder, newDisplayOrder);
+
+        if (!success)
+        {
+            (ProductImage? productImage, int? displayOrder)
+                = OrdersForImagesInFirstProduct.Find(x => x.displayOrder == oldDisplayOrder);
+
+            if (productImage is null)
+            {
+                ProductImage? imageToMove = _firstProduct.Images?[(int)oldDisplayOrder - 1];
+
+                if (imageToMove is null) return BadRequest();
+
+                OrdersForImagesInFirstProduct.Add((imageToMove, (int)oldDisplayOrder));
+            }
+        }
 
         OrderImagesInProductByDisplayOrderForLastChange(_firstProduct, (int)oldDisplayOrder - 1, (int)newDisplayOrder - 1);
 
@@ -1128,18 +1101,17 @@ public class ProductCompareEditorModel : PageModel
         {
             (ProductImage productImage, int displayOrder) = OrdersForImagesInFirstProduct[i];
 
-            displayOrder = ChangeDisplayOrderedBasedOnLastChange(oldDisplayOrder, newDisplayOrder, displayOrder);
+            displayOrder = ChangeDisplayOrderBasedOnLastChange(oldDisplayOrder, newDisplayOrder, displayOrder);
 
             OrdersForImagesInFirstProduct[i] = new(productImage, displayOrder);
         }
 
 
-        return success ? Partial("ProductCompareEditor/_ProductFullEditorImageDisplayPartial",
-            GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First))
-            : BadRequest();
+        return Partial("ProductCompareEditor/_ProductFullEditorImageDisplayPartial",
+            GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
     }
 
-    private static int ChangeDisplayOrderedBasedOnLastChange(uint oldDisplayOrder, uint newDisplayOrder, int displayOrder)
+    private static int ChangeDisplayOrderBasedOnLastChange(uint oldDisplayOrder, uint newDisplayOrder, int displayOrder)
     {
         if (displayOrder == oldDisplayOrder)
         {
@@ -1165,7 +1137,7 @@ public class ProductCompareEditorModel : PageModel
     {
         if (_secondProduct is null) return BadRequest();
 
-        bool success = UpdateImageDisplayOrder(_secondProduct, oldDisplayOrder, newDisplayOrder);
+        bool success = UpdateImageFileNameInfoDisplayOrder(_secondProduct, oldDisplayOrder, newDisplayOrder);
 
         OrderImagesInProductByDisplayOrder(_secondProduct, RelatedImagesAndFileInfosInSecondProduct);
 
@@ -1174,7 +1146,7 @@ public class ProductCompareEditorModel : PageModel
             : BadRequest();
     }
 
-    private static bool UpdateImageDisplayOrder(Product? product, uint oldDisplayOrder, uint newDisplayOrder)
+    private static bool UpdateImageFileNameInfoDisplayOrder(Product? product, uint oldDisplayOrder, uint newDisplayOrder)
     {
         if (product is null
             || product.ImageFileNames is null) return false;
@@ -1190,7 +1162,6 @@ public class ProductCompareEditorModel : PageModel
         if (itemToMove is null) return false;
 
         int newDisplayOrderInt = (int)newDisplayOrder;
-
 
         if (newDisplayOrderInt > product.ImageFileNames.Count)
         {
@@ -1219,7 +1190,7 @@ public class ProductCompareEditorModel : PageModel
         int lastNewIndex)
     {
         if (product.Images is null
-            || !product.Images.Any()) return;
+            || product.Images.Count == 0) return;
 
         ProductImage? imageToMove = product.Images.ElementAtOrDefault(lastOldIndex);
 
@@ -1228,8 +1199,6 @@ public class ProductCompareEditorModel : PageModel
         product.Images.RemoveAt(lastOldIndex);
 
         product.Images.Insert(lastNewIndex, imageToMove);
-
-        return;
     }
 
     private static void OrderImagesInProductByDisplayOrder(Product product,
@@ -1365,7 +1334,7 @@ public class ProductCompareEditorModel : PageModel
         return GetAllowedCharacteristicIds(FirstOrSecondProductEnum.Second);
     }
 
-    private static IActionResult GetAllowedCharacteristicIds(FirstOrSecondProductEnum firstOrSecondProductEnum)
+    private static JsonResult GetAllowedCharacteristicIds(FirstOrSecondProductEnum firstOrSecondProductEnum)
     {
         IEnumerable<int>? allowedIds = firstOrSecondProductEnum switch
         {
@@ -1550,7 +1519,8 @@ public class ProductCompareEditorModel : PageModel
                 ProductCharacteristicsForSelect = relatedCharacteristics,
                 PropertyIndex = (uint)indexOfItem,
                 ElementIdAndNamePrefix = elementIdPrefix,
-                ProductFirstOrSecondEnum = firstOrSecondProductEnum
+                ProductFirstOrSecondEnum = firstOrSecondProductEnum,
+                ValidationFormId = (firstOrSecondProductEnum == FirstOrSecondProductEnum.First) ? "productCompareEditor_LocalProductEditorContainer_validationForm" : null
             });
     }
 
@@ -1877,7 +1847,7 @@ public class ProductCompareEditorModel : PageModel
                     ImageData = x.ImageData,
                     ImageFileExtension = x.ImageFileExtension,
                     ProductId = x.ProductId,
-                    XML = x.XML,
+                    HtmlData = x.HtmlData,
                     DateModified = x.DateModified,
                 })
                 .ToList(),
