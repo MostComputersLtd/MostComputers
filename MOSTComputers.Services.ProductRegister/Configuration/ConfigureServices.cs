@@ -1,15 +1,14 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using MOSTComputers.Models.Product.Models.FailureData;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropertyNameOfProduct;
-using MOSTComputers.Models.Product.Models.Requests.Category;
 using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
@@ -26,6 +25,7 @@ using MOSTComputers.Services.ProductRegister.Validation.ProductImage;
 using MOSTComputers.Services.ProductRegister.Validation.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Validation.ProductStatuses;
+using MOSTComputers.Services.ProductRegister.Validation.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Validation.Promotion;
 using static MOSTComputers.Services.DAL.Configuration.ConfigureServices;
 
@@ -52,11 +52,18 @@ public static class ConfigureServices
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductStatusesService, ProductStatusesService>();
 
+        services.AddScoped<IProductWorkStatusesService, ProductWorkStatusesService>();
+
         services.AddScoped<ILocalChangesService, LocalChangesService>();
+        
+        services.AddScoped<IToDoLocalChangesService, ToDoLocalChangesService>();
+
         services.AddScoped<IExternalChangesService, ExternalChangesService>();
 
         services.AddScoped<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
         services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
+
+        services.TryAddSingleton<IProductImageSaveService, ProductImageSaveService>();
 
         return services;
     }
@@ -81,9 +88,14 @@ public static class ConfigureServices
 
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<ILocalChangesService, LocalChangesService>();
+        
+        services.AddScoped<IToDoLocalChangesService, ToDoLocalChangesService>();
+
         services.AddScoped<IExternalChangesService, ExternalChangesService>();
         services.AddScoped<IFailedPropertyNameOfProductService, FailedPropertyNameOfProductService>();
         services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
+
+        services.AddScoped<IProductWorkStatusesService, ProductWorkStatusesService>();
 
         services.AddScoped<ICategoryService, CachedCategoryService>();
         services.AddScoped<IManifacturerService, CachedManifacturerService>();
@@ -94,6 +106,7 @@ public static class ConfigureServices
         services.AddScoped<IProductService, CachedProductService>();
         services.AddScoped<IProductStatusesService, CachedProductStatusesService>();
 
+        services.TryAddScoped<IProductImageSaveService, CachedProductImageSaveService>();
 
         return services;
     }
@@ -114,7 +127,8 @@ public static class ConfigureServices
         services.AddScoped<IValidator<ServiceProductImageUpdateRequest>, ProductImageUpdateRequestValidator>();
         services.AddScoped<IValidator<ServiceProductFirstImageUpdateRequest>, ProductFirstImageUpdateRequestValidator>();
         services.AddScoped<IValidator<ServiceProductImageFileNameInfoCreateRequest>, ProductImageFileNameInfoCreateRequestValidator>();
-        services.AddScoped<IValidator<ServiceProductImageFileNameInfoUpdateRequest>, ProductImageFileNameInfoUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>, ProductImageFileNameInfoByImageNumberUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>, ProductImageFileNameInfoByFileNameUpdateRequestValidator>();
         services.AddScoped<IValidator<ProductPropertyByCharacteristicIdCreateRequest>, ProductPropertyByCharacteristicIdCreateRequestValidator>();
         services.AddScoped<IValidator<ProductPropertyByCharacteristicNameCreateRequest>, ProductPropertyByCharacteristicNameCreateRequestValidator>();
         services.AddScoped<IValidator<ProductPropertyUpdateRequest>, ProductPropertyUpdateRequestValidator>();
@@ -126,5 +140,7 @@ public static class ConfigureServices
         services.AddScoped<IValidator<FailedPropertyNameOfProductCreateRequest>, FailedPropertyNameOfProductCreateRequestValidator>();
         services.AddScoped<IValidator<FailedPropertyNameOfProductMultiCreateRequest>, FailedPropertyNameOfProductMultiCreateRequestValidator>();
         services.AddScoped<IValidator<FailedPropertyNameOfProductUpdateRequest>, FailedPropertyNameOfProductUpdateRequestValidator>();
+
+        services.AddScoped<IValidator<ProductWorkStatusesCreateRequest>, ProductWorkStatusesCreateRequestValidator>();
     }
 }
