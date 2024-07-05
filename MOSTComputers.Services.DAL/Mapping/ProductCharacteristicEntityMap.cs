@@ -1,7 +1,7 @@
 ﻿using Dapper.FluentMap.Mapping;
 using MOSTComputers.Models.Product.Models;
 
-namespace MOSTComputers.Services.Mapping;
+namespace MOSTComputers.Services.DAL.Mapping;
 
 internal sealed class ProductCharacteristicEntityMap : EntityMap<ProductCharacteristic>
 {
