@@ -14,110 +14,119 @@
 }
 
 @section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
     <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
     <script src="~/js/NotificationBox.js"></script>
     <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
     <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
     <script src="~/js/Pages/ProductCompareEditor.js"></script>
     <script src="~/js/Pages/Shared/ProductFullEditor.js"></script>
+    <script src="~/js/Validation/Pages/Shared/ProductFullEditorValidation.js"></script>
 }
-
 <div style="display:flex; flex-direction: row;" class="full-parent-height">
     <div id="productCompareEditor_LocalProductEditorContainer" class="full-parent-height"
         style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
-        <header>
-            <ul class="full-parent-width" 
-                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center; padding: 0px 15px 0px 2rem; margin: 0px 0px 10px 0px;">
-                <li style="width: 10%">
-                    <h6 style="margin: 0px; color: dimgray;">Local:</h6>
-                </li>
-                
-                <li style="display: flex; align-items: center;">
-                    <h7 style="margin: 0px;">XML</h7>
-                </li>
 
-                <li style="margin: 0px 10px">
-                    <label class="switch">
-                        <input id="productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox" type="checkbox"
-                               onchange="toggleVisibilityBetweenFirstXmlAndProductViews(
-                                   'productCompareEditor_LocalProductEditorContainer_XmlDisplay',
-                                   'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
-                                   'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
-                                   'productCompareEditor_LocalProductEditorContainer_ProductIdInput',
-                                   'productCompareEditor_LocalProductEditor_addImageInput',
-                                   'productCompareEditor_LocalProductEditor_imageContainer_div',
+        <form id="productCompareEditor_LocalProductEditorContainer_validationForm"
+            onsubmit="productValidationFormDisableSubmit(event)"
+            style="height: 100%; display: flex; flex-direction: column;">
+
+            <header>
+                <ul class="full-parent-width" 
+                    style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center; padding: 0px 15px 0px 2rem; margin: 0px 0px 10px 0px;">
+                    <li style="width: 10%">
+                        <h6 style="margin: 0px; color: dimgray;">Local:</h6>
+                    </li>
+                
+                    <li style="display: flex; align-items: center;">
+                        <h7 style="margin: 0px;">XML</h7>
+                    </li>
+
+                    <li style="margin: 0px 10px">
+                        <label class="switch">
+                            <input id="productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox" type="checkbox"
+                                onchange="toggleVisibilityBetweenFirstXmlAndProductViews(
+                                    'productCompareEditor_LocalProductEditorContainer_XmlDisplay',
+                                    'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                                    'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
+                                    'productCompareEditor_LocalProductEditorContainer_ProductIdInput',
+                                    'productCompareEditor_LocalProductEditor_addImageInput',
+                                    'productCompareEditor_LocalProductEditor_imageContainer_div',
                                     'productCompareEditor_LocalProductEditor__productIdDisplay')">
-                        <span class="slider round"></span>
-                    </label>
-                </li>
+                            <span class="slider round"></span>
+                        </label>
+                    </li>
 
-                <li style="display: flex; align-items: center;">
-                    <h7 style="margin: 0px;">Product</h7>
-                </li>
-
-                @{int? productId = Model.FirstProductId;}
+                    <li style="display: flex; align-items: center;">
+                        <h7 style="margin: 0px;">Product</h7>
+                    </li>
                 
-                <li style="margin: 0px 10px; max-width: 25%;">
-                    <input type="number" id="productCompareEditor_LocalProductEditorContainer_ProductIdInput"
-                        style="max-width: 100%;" value="@(productId?.ToString() ?? "")"
-                        onkeydown="productIdInput_onkeydown(
-                            event,
-                            this.value,
-                            'productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox',
-                            'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
-                            'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
-                            'productCompareEditor_LocalProductEditor__productIdDisplay')"
-                        onkeyup="productIdInput_onkeyup(
-                            event,
-                            this.value,
-                            'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
-                            'productCompareEditor_LocalProductEditor__productIdDisplay')" />
-                </li>
+                    @{ int? productId = Model.FirstProductId; }
                 
-                <li style="flex-grow: 1;"></li>
+                    <li style="margin: 0px 10px; max-width: 25%;">
+                        <input type="number" id="productCompareEditor_LocalProductEditorContainer_ProductIdInput"
+                            class="input-number-remove-spinners" style="max-width: 100%;" value="@(productId?.ToString() ?? "")"
+                            onkeydown="productIdInput_onkeydown(
+                                event,
+                                this.value,
+                                'productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox',
+                                'productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text',
+                                'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                                'productCompareEditor_LocalProductEditor__productIdDisplay')"
+                            onkeyup="productIdInput_onkeyup(
+                                event,
+                                this.value,
+                                'productCompareEditor_LocalProductEditorContainer_ProductDisplay',
+                                'productCompareEditor_LocalProductEditor__productIdDisplay')" />
+                    </li>
                 
-                <li style="margin: 0px 9px;">
-                    <button class="btn btn-secondary"
-                        onclick="refreshProductDataForFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
-                        Reload
-                    </button>
-                </li>
+                    <li style="flex-grow: 1;"></li>
+                
+                    <li style="margin: 0px 9px;">
+                        <button class="btn btn-secondary"
+                            onclick="refreshProductDataForFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
+                            Reload
+                        </button>
+                    </li>
 
-                <li>
-                    <button class="btn btn-primary"
-                        onclick="saveFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
-                        Save
-                    </button>
-                </li>
+                    <li>
+                        <button class="btn btn-primary"
+                            onclick="saveFirstProduct('productCompareEditor_LocalProductEditorContainer_ProductDisplay')">
+                            Save
+                        </button>
+                    </li>
 
-                <li style="display: flex; flex-grow: 1; justify-content: flex-end;">
-                    <button class="btn"
-                        onclick="toggleEditorToFullScreen(
-                            'productCompareEditor_LocalProductEditorContainer',
-                            'productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image',
-                            '/img/FullScreenImage_transparentBackground.png',
-                            '/img/NormalScreenImage_transparentBackground.png')">
-                        <img id="productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image"
-                            alt="Fullscreen" src="/img/FullScreenImage_transparentBackground.png"
-                            style="max-height: 30px;"/>
-                    </button>
-                </li>
-            </ul>
-        </header>
+                    <li style="display: flex; flex-grow: 1; justify-content: flex-end;">
+                        <button class="btn"
+                            onclick="toggleEditorToFullScreen(
+                                'productCompareEditor_LocalProductEditorContainer',
+                                'productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image',
+                                '/img/FullScreenImage_transparentBackground.png',
+                                '/img/NormalScreenImage_transparentBackground.png')">
+                            <img id="productCompareEditor_LocalProductEditorContainer_fullscreenButton_Image"
+                                alt="Fullscreen" src="/img/FullScreenImage_transparentBackground.png"
+                                style="max-height: 30px;"/>
+                        </button>
+                    </li>
+                </ul>
+            </header>
+        
+            <div class="full-parent-width full-parent-height">
+                <div id="productCompareEditor_LocalProductEditorContainer_XmlDisplay" class="full-parent-height"
+                    style="visibility: visible; display: flex; flex-direction: row;">
 
-        <div class="full-parent-width full-parent-height">
-            <div id="productCompareEditor_LocalProductEditorContainer_XmlDisplay" class="full-parent-height"
-                style="visibility: visible; display: flex; flex-direction: row;">
+                    <pre id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_SideBar"
+                        style="width: 19px; margin: 0px;"></pre>
 
-                <pre id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_SideBar" style="width: 19px; margin: 0px;"></pre>
+                    <textarea id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text"
+                        style="width:100%; height:100%;" cols="200" spellcheck="false"></textarea>
+                </div>
 
-                <textarea id="productCompareEditor_LocalProductEditorContainer_XmlDisplay_Text"
-                    style="width:100%; height:100%;" cols="200" spellcheck="false"></textarea>
+                <div id="productCompareEditor_LocalProductEditorContainer_ProductDisplay" style="display: none;">
+                </div>
             </div>
-
-            <div id="productCompareEditor_LocalProductEditorContainer_ProductDisplay" style="display: none;">
-            </div>
-        </div>
+        </form>
     </div>
     
     <div style="position: relative; width: 2px; background-color: #CCCCCC; margin: 0px 10px;">
@@ -139,9 +148,10 @@
 
     <div id="productCompareEditor_OutsideProductEditorContainer" class="full-parent-height"
         style="width: 50%; display: flex; flex-direction: column; overflow-y: initial;">
+
         <header>
             <ul class="full-parent-width"
-                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; align-items: center; margin: 0px 0px 10px 0px;">
+                style="list-style: none; display: flex; flex-direction: row; justify-content: flex-start; flex-wrap: wrap; align-items: center; margin: 0px 0px 10px 0px;">
                 <li style="width: 20%">
                     <h6 style="margin: 0px; color: dimgray;">External:</h6>
                 </li>
@@ -152,7 +162,7 @@
 
                 <li style="margin: 0px 10px">
                     <label class="switch">
-                        <input type="checkbox"
+                        <input id="productCompareEditor_OutsideProductEditorContainer_ProductOrXmlCheckBox" type="checkbox"
                             onchange="toggleVisibilityBetweenSecondXmlAndProductViews(
                                 'productCompareEditor_OutsideProductEditorContainer_XmlDisplay',
                                 'productCompareEditor_OutsideProductEditorContainer_ProductDisplay',
@@ -215,21 +225,8 @@
 
     <ul id="copiedNotificationBox" class="copied-xml-notification-box"></ul>
 
-    <!-- <div id="productCompareEditor_OutsideItemCopiedCharacteristics_modal" class="modal full-parent-height"
-        tabindex="-1" role="dialog">
-        <div class="modal-dialog" style="max-width: 200px; margin: 0px;">
-            <div class="modal-content">
-                <div class="row">
-                    <p id="productCompareEditor_OutsideItemCopiedCharacteristics_text"
-                        style="word-wrap: break-word;">
-                        dsfsdf
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div> -->
-
     <div id="productCompareEditor_OutsideItemCopiedCharacteristics_modal"
+        data:willBeVisible="false"
         style="position: fixed; z-index: 99999; display: none; background-color: whitesmoke; border-radius: 5%; min-width: 90px; max-width: 200px; margin: 0px;">
         <p id="productCompareEditor_OutsideItemCopiedCharacteristics_text"
             style="word-wrap: break-word; margin: 0px 3px;">
@@ -239,7 +236,3 @@
 
     @Html.AntiForgeryToken()
 </div>
-
-<script>
-
-</script>
