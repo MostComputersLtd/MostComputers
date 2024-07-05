@@ -81,7 +81,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
         if (partNumbers.Length <= 0) return (null, null);
 
-        int mediumLineIndex = partNumbers.IndexOf("/");
+        int mediumLineIndex = partNumbers.IndexOf('/');
 
         string partNumber1 = partNumbers[..(mediumLineIndex - 2)];
         string partNumber2 = partNumbers[(mediumLineIndex + 2)..];
@@ -182,7 +182,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
                 imageData = await imageDataResponse.Content.ReadAsByteArrayAsync();
             }
 
-            string imageIdAsString = imageFileNameInfo.FileName[..(imageFileNameInfo.FileName.IndexOf("."))];
+            string imageIdAsString = imageFileNameInfo.FileName[..(imageFileNameInfo.FileName.IndexOf('.'))];
 
             bool isImageIdParseSuccessful = int.TryParse(imageIdAsString, out int imageId);
 
@@ -191,7 +191,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
                 Id = isImageIdParseSuccessful ? imageId : 0,
                 ImageData = imageData,
                 ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
-                XML = xml,
+                HtmlData = xml,
                 ProductId = (int)productId,
             };
 
