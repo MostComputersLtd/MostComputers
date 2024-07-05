@@ -117,7 +117,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(GetInAllImagesByProductIdKey(createRequest.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -144,7 +144,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(createRequest.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -166,7 +166,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(GetInFirstImagesByIdKey(createRequest.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId.Value));
         }
 
         return result;
@@ -193,7 +193,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(GetInAllImagesByProductIdKey(updatedOrOldProductImage.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updatedOrOldProductImage.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updatedOrOldProductImage.ProductId.Value));
         }
 
         return result;
@@ -213,7 +213,7 @@ internal sealed class CachedProductImageService : IProductImageService
         {
             _cache.Evict(GetInFirstImagesByIdKey(updateRequest.ProductId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
         }
 
         return result;
@@ -235,7 +235,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(GetInAllImagesByProductIdKey(productImage.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(productImage.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productImage.ProductId.Value));
         }
 
         return success;
@@ -259,7 +259,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productImage.ProductId.Value));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(productImage.ProductId.Value));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productImage.ProductId.Value));
         }
 
         return success;
@@ -282,7 +282,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
             _cache.Evict(GetInAllImagesByProductIdKey((int)productId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
         }
 
         return success;
@@ -296,7 +296,7 @@ internal sealed class CachedProductImageService : IProductImageService
         {
             _cache.Evict(GetInFirstImagesByIdKey((int)productId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
         }
 
         return success;

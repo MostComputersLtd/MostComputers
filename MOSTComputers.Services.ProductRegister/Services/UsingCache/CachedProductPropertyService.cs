@@ -62,7 +62,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         {
             _cache.Evict(GetByProductIdKey(createRequest.ProductId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId));
         }
 
         return result;
@@ -82,7 +82,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         {
             _cache.Evict(GetByProductIdKey(createRequest.ProductId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(createRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId));
         }
 
         return result;
@@ -102,7 +102,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         {
             _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey(updateRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
         }
 
         return result;
@@ -118,7 +118,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
 
             _cache.Evict(key);
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
 
             IEnumerable<ProductProperty>? cachedProductProperties
                 = _cache.GetValueOrDefault<IEnumerable<ProductProperty>>(key);
@@ -139,7 +139,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         {
             _cache.Evict(GetByProductIdKey((int)productId));
 
-            _cache.Evict(CacheKeyUtils.Product.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
         }
 
         return success;
