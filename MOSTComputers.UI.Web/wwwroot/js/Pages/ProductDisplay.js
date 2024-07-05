@@ -1,6 +1,6 @@
 function showXmlPopupData(productId)
 {
-    $("#ProductXml_popup_modal-content").load("/ProductDisplay?handler=PartialViewXmlForProduct&productId=" + productId);
+    $("#ProductXml_popup_modal_content").load("/ProductDisplay?handler=PartialViewXmlForProduct&productId=" + productId);
 
     open_ProductXml_modal();
 }
@@ -54,7 +54,7 @@ document.onkeydown = (e) =>
 
 function showImagePopupData(productId)
 {
-    $("#ProductImages_popup_modal-content").load("/ProductDisplay?handler=PartialViewImagesForProduct&productId=" + productId);
+    $("#ProductImages_popup_modal_content").load("/ProductDisplay?handler=PartialViewImagesForProduct&productId=" + productId);
 
     open_ProductImages_modal();
 }
@@ -292,7 +292,7 @@ function DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearchInParts(w
 
             var searchStringPartElementsNameIndex = getIndexFromElementId(productRows[j].id);
 
-            var currentSearchStringPartElementsName = partElementsName + "#" + searchStringPartElementsNameIndex;
+            var currentSearchStringPartElementsName = partElementsName + "-" + searchStringPartElementsNameIndex;
 
             var searchStringPartElements = Array.from(document.getElementsByName(currentSearchStringPartElementsName));
 
@@ -593,7 +593,7 @@ function getIndexFromElementId(elementId)
         || elementId === undefined
         || elementId === "") return null;
 
-    var indexOfTag = elementId.lastIndexOf("#");
+    var indexOfTag = elementId.lastIndexOf("-");
 
     if (indexOfTag == -1) return null;
 
@@ -729,7 +729,8 @@ function MultiSearch()
 
                 if (searchStringSubstring != null)
                 {
-                    DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearchInParts(searchStringSubstring, "searchStringPartDisplayText", "productDisplayRow", result.length, "customSpanForSearchString");
+                    DisplayMultipleInputColoringAndClearExtraOutputAfterTextSearchInParts(searchStringSubstring,
+                        "searchStringPartDisplayText", "productDisplayRow", result.length, "customSpanForSearchString");
                 }
             });
         })
@@ -748,11 +749,11 @@ function showSearchStringOriginDataSmallPopup(productIndex, index, searchStringP
         || (isNaN(index) && isNaN(parseInt(index)))) return;
 
     showSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + productIndex + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + productIndex + "#" + index,
+        "searchStringPartOrigin_li-" + productIndex + "-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList-" + productIndex + "-" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productIndex + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productIndex + "#" + index);
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + productIndex + "-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + productIndex + "-" + index);
 }
 
 function removeSearchStringOriginDataSmallPopup(productIndex, index, searchStringPart)
@@ -767,11 +768,11 @@ function removeSearchStringOriginDataSmallPopup(productIndex, index, searchStrin
     searchStringPart = decodeHtmlString(searchStringPart);
 
     removeSearchStringOriginDataSmallPopupCommon(
-        "searchStringPartOrigin_li#" + productIndex + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList#" + productIndex + "#" + index,
+        "searchStringPartOrigin_li#" + productIndex + "-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList-" + productIndex + "-" + index,
         searchStringPart,
-        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#" + productIndex + "#" + index,
-        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#" + productIndex + "#" + index);
+        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + productIndex + "-" + index,
+        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + productIndex + "-" + index);
 }
 
 function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
@@ -790,7 +791,7 @@ function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
 
 function showSearchStringPopupData(productId)
 {
-    $("#ProductSearchString_popup_modal-content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
+    $("#ProductSearchString_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
     {
         open_ProductSearchString_modal();
     });
