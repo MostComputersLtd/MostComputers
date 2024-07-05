@@ -19,6 +19,7 @@ public interface IProductRepository
     Product? GetById_WithManifacturerAndCategoryAndFirstImage(uint id);
     Product? GetById_WithManifacturerAndCategoryAndImages(uint id);
     Product? GetById_WithManifacturerAndCategoryAndProperties(uint id);
+    Product? GetProductWithHighestId_WithManifacturerAndCategory();
     OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest);
     bool Delete(uint id);
