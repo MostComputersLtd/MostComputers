@@ -8,7 +8,7 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
-using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Product;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ForProduct;
 using System.Collections.Concurrent;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
@@ -673,6 +673,11 @@ internal sealed class CachedProductService : IProductService
         }
 
         return product;
+    }
+
+    public Product? GetProductWithHighestId()
+    {
+        return _productService.GetProductWithHighestId();
     }
 
     public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest,
