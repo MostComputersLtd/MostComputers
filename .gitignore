@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Custom folder for product images
+ProductImages/*
+
+# TEMP folder for product images for testing
+TestImages
