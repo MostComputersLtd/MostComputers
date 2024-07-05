@@ -71,7 +71,7 @@ public class XmlProductCreateModel : PageModel
 
         return requestMappingResult.Match(
             productCreateRequests => CreateProducts(productCreateRequests),
-            validationResult => this.GetResultFromValidationResult(validationResult),
+            validationResult => this.GetBadRequestResultFromValidationResult(validationResult),
             unexpectedFailureResult => StatusCode(500),
             invalidXmlResult => BadRequest(invalidXmlResult.Text ?? "The input is not valid xml"));
     }
