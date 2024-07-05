@@ -6,7 +6,7 @@
     Layout = null;
 }
 
-<div id="ProductSearchString_modal-header" class="modal-header full-parent-width">
+<div id="ProductSearchString_modal_header" class="modal-header full-parent-width">
     <h5 class="modal-title modal-title">Search string info:</h5>
 
     <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
@@ -18,18 +18,24 @@
 
 <div id="ProductSearchString_popup" name="ProductSearchString_popup" class="modal-body full-parent-width" style="display: contents;">
 
-    <p id="__hidden_ProductSearchString_popup_searchString_label" name="__hidden_ProductSearchString_popup_searchString_label" style="text-align: center;" hidden>@Model.Product.SearchString</p>
+    <p id="__hidden_ProductSearchString_popup_searchString_label"
+        name="__hidden_ProductSearchString_popup_searchString_label"
+        style="text-align: center;" hidden>
+        @Model.Product.SearchString
+    </p>
 
     @{var searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();}
 
     @if (searchStringParts is not null)
     {
-        <ul id="ProductSearchString_popup_searchStringPartDisplay_ul" style="display: flex; align-content: center; list-style: none; flex-wrap: wrap; justify-content: center; padding: 0px;">
+        <ul id="ProductSearchString_popup_searchStringPartDisplay_ul"
+            style="display: flex; align-content: center; list-style: none; flex-wrap: wrap; justify-content: center; padding: 0px;">
+
             @for (int i = 0; i < searchStringParts.Count; i++)
             {
                 string searchStringPart = searchStringParts.ElementAt(i).Item1;
-
-                <li id="ProductSearchString_popup_searchStringPart_h2#@i" name="ProductSearchString_popup_searchStringPart_h2"
+                
+                <li id="ProductSearchString_popup_searchStringPart_h2-@i" name="ProductSearchString_popup_searchStringPart_h2"
                     onmouseover="colorSearchStringOriginDisplayAndGiveItABorder(@i, '#fffaed', '1px', '#ed9e79', '5%')"
                     onmouseout="colorSearchStringOriginDisplayAndGiveItABorder(@i, '#FFFFFF', '1px', '#FFFFFF', '0%')"
                     onclick="transportToSearchStringOriginDisplay(@i)" style="display: inline;">
@@ -45,7 +51,8 @@
     }
 
     <ul id="ProductSearchString_popup_searchStringPartsOrigin_ul" name="ProductSearchString_popup_searchStringPartsOrigin_ul"
-        style="list-style: none; display: flex; flex-wrap: wrap; overflow-x: clip; overflow-y: scroll;" class="full-parent-height">
+        style="list-style: none; display: flex; flex-wrap: wrap; overflow-x: clip; overflow-y: scroll;"
+        class="full-parent-height">
             
         @if (searchStringParts is not null)
         {
@@ -55,15 +62,16 @@
             {
                 string searchStringPart = kvp.Item1;
 
-                <li id="ProductSearchStringPopup_searchStringPartOrigin_li#@i" name="ProductSearchStringPopup_searchStringPartOrigin_li"
+                <li id="ProductSearchStringPopup_searchStringPartOrigin_li-@i" name="ProductSearchStringPopup_searchStringPartOrigin_li"
                     style="display: inline; min-width: 100px; padding: 20px 25px; border: 1px solid white;">
-
+                    
                     @if (kvp.Item2?.Count == 1)
                     {
                         SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[0];
 
                         <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
-                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay-@i"
+                                name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
                                 style="display: inline;">
                                 <h4 style="margin: 0px;">@searchStringPart</h4>
                             </li>
@@ -73,27 +81,29 @@
                                 </h6>
                             </li>
                         </ul>
-
+                        
                         <h5>@searchStringPartOriginData.Characteristic.Meaning</h5>
                     }
                     else if (kvp.Item2?.Count > 1)
                     {
                         <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
-                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                            <li id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay-@i"
+                                name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
                                 style="display: inline;">
                                 <h4 style="margin: 0px;">@searchStringPart</h4>
                             </li>
                             <li style="display: inline;">
-                                <button id="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton#@i"
+                                <button id="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton-@i"
                                         onclick="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsShow(@i, '@searchStringPart')">
                                     @kvp.Item2.Count possibilities >
                                 </button>
 
                                 <div style="position: relative;">
 
-                                    <ul id="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList#@i"
+                                    <ul id="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-@i"
                                         name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList"
                                         style="display: flex; flex-direction: column; width: max-content; list-style: none; visibility: hidden; position: fixed; background-color: lightgreen; border: 2px solid black; border-radius: 4%; padding: 0px; z-index:2100000000">
+
                                         @for (int j = 0; j < kvp.Item2.Count; j++)
                                         {
                                             SearchStringPartOriginData searchStringPartOriginData = kvp.Item2[j];
@@ -102,7 +112,8 @@
 
                                                 <ul style="display:inline-flex; text-align:center; padding: 0px; width: 100%; justify-content: center; margin-bottom: 8px;">
                                                     <li style="display: inline;">
-                                                        <h4 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@i" style="margin: 0px;">@searchStringPartOriginData.Characteristic.Name</h4>
+                                                        <h4 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-@i"
+                                                            style="margin: 0px;">@searchStringPartOriginData.Characteristic.Name</h4>
                                                     </li>
                                                     <li style="display: inline;">
                                                         <h6 style="color:dimgray; height: 100%; margin: 0px 0px 0px 9px; padding-bottom: 1px; display: inline-flex; flex-direction: column; justify-content: flex-end;">
@@ -111,7 +122,7 @@
                                                     </li>
                                                 </ul>
 
-                                                <h5 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@i">@searchStringPartOriginData.Characteristic.Meaning</h5>
+                                                <h5 name="ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-@i">@searchStringPartOriginData.Characteristic.Meaning</h5>
                                             </li>
                                         }
                                     </ul>
@@ -121,8 +132,10 @@
                     }
                     else
                     {
-                        <h4 id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay#@i" name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
+                        <h4 id="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay-@i"
+                            name="ProductSearchStringPopup_searchStringPartOrigin_searchStringPartDisplay"
                             style="text-align: center;">@searchStringPart</h4>
+
                         <h4>No information could be found.</h4>
                     }
                 </li>
@@ -133,7 +146,7 @@
     </ul>
 </div>
 
-<div id="ProductSearchString_modal-footer" class="modal-footer full-parent-width">
+<div id="ProductSearchString_modal_footer" class="modal-footer full-parent-width">
     <button id="copySearchStringButton" class="full-parent-width footer-button btn btn-primary" onclick="copySearchStringTextToClipboard()">
         <h7 class="footer-button-main-text">Copy to clipboard</h7>
         <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
