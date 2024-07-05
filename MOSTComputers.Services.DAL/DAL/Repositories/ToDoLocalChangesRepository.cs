@@ -1,0 +1,214 @@
+﻿using MOSTComputers.Models.Product.Models.Changes.Local;
+using MOSTComputers.Models.Product.Models.Changes;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
+using MOSTComputers.Models.Product.Models.Validation;
+using OneOf;
+
+namespace MOSTComputers.Services.DAL.DAL.Repositories;
+
+internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalChangesRepository
+{
+    private const string _tableName = "dbo.TodoChanges4Web";
+
+    public ToDoLocalChangesRepository(IRelationalDataAccess relationalDataAccess)
+        : base(relationalDataAccess)
+    {
+    }
+
+#pragma warning disable IDE0037 // Use inferred member name
+    public IEnumerable<LocalChangeData> GetAll()
+    {
+        const string getAllQuery =
+        $"""
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp 
+        FROM {_tableName}
+        ORDER BY TimeStamp;
+        """;
+
+        return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllQuery, new { });
+    }
+
+    public IEnumerable<LocalChangeData> GetAllForTable(string tableName)
+    {
+        const string getAllForTableQuery =
+        $"""
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
+        WHERE TableName = @tableName
+        ORDER BY TimeStamp;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName
+        };
+
+        return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllForTableQuery, parameters);
+    }
+
+    public IEnumerable<LocalChangeData> GetAllForOperationType(ChangeOperationTypeEnum changeOperationType)
+    {
+        const string getAllForOperationTypeQuery =
+        $"""
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
+        WHERE Operation = @changeOperationType
+        ORDER BY TimeStamp;
+        """;
+
+        var parameters = new
+        {
+            changeOperationType = (int)changeOperationType
+        };
+
+        return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllForOperationTypeQuery, parameters);
+    }
+
+    public LocalChangeData? GetById(uint id)
+    {
+        const string getByIdQuery =
+        $"""
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
+        WHERE PK = @id;
+        """;
+
+        var parameters = new
+        {
+            id = (int)id
+        };
+
+        return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByIdQuery, parameters);
+    }
+
+    public LocalChangeData? GetByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum changeOperationType)
+    {
+        const string getByTableNameAndElementIdQuery =
+        $"""
+        SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
+            TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
+        FROM {_tableName}
+        WHERE TableName = @tableName
+        AND ID = @elementId
+        AND Operation = @changeOperationType;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName,
+            elementId = elementId,
+            changeOperationType = (int)changeOperationType
+        };
+
+        return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
+    }
+
+    public OneOf<int, UnexpectedFailureResult> Insert(ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest)
+    {
+        const string insertQuery =
+            $"""
+            DECLARE @TEMP_ProductWorkStatuses_InsertIdSavingTable TABLE (ID INT)
+
+            INSERT INTO {_tableName} (ID, Operation, TableName, TimeStamp)
+            OUTPUT INSERTED.PK INTO @TEMP_ProductWorkStatuses_InsertIdSavingTable
+            VALUES(@TableElementId, @OperationType, @TableName, @TimeStamp)
+
+            SELECT TOP 1 ID FROM @TEMP_ProductWorkStatuses_InsertIdSavingTable
+            """;
+
+        var parameters = new
+        {
+            toDoLocalChangeCreateRequest.TableElementId,
+            toDoLocalChangeCreateRequest.OperationType,
+            toDoLocalChangeCreateRequest.TableName,
+            toDoLocalChangeCreateRequest.TimeStamp,
+        };
+
+        int? toDoLocalChangeId = _relationalDataAccess.SaveDataAndReturnValue<int, dynamic>(insertQuery, parameters);
+
+        return (toDoLocalChangeId is not null
+            && toDoLocalChangeId > 0) ? toDoLocalChangeId.Value : new UnexpectedFailureResult();
+    }
+
+    public bool DeleteById(uint id)
+    {
+        const string deleteByIdQuery =
+        $"""
+        DELETE FROM {_tableName}
+        WHERE PK = @id;
+        """;
+
+        var parameters = new
+        {
+            id = (int)id
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+
+        return (rowsAffected > 0);
+    }
+
+    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    {
+        const string deleteByIdQuery =
+        $"""
+        DELETE FROM {_tableName}
+        WHERE PK IN @ids;
+        """;
+
+        var parameters = new
+        {
+            ids = ids.Select(id => (int)id)
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+
+        return (rowsAffected > 0);
+    }
+
+    public bool DeleteByTableNameAndElementId(string tableName, int elementId)
+    {
+        const string deleteByTableNameAndElementIdQuery =
+        $"""
+        DELETE FROM {_tableName}
+        WHERE TableName = @tableName
+        AND ID = @elementId;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName,
+            elementId = elementId
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdQuery, parameters);
+
+        return (rowsAffected > 0);
+    }
+
+    public bool DeleteRangeByTableNameAndElementIds(string tableName, IEnumerable<int> elementIds)
+    {
+        const string deleteByTableNameAndElementIdsQuery =
+        $"""
+        DELETE FROM {_tableName}
+        WHERE TableName = @tableName
+        AND ID IN @elementIds;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName,
+            elementIds = elementIds
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
+
+        return (rowsAffected > 0);
+    }
+}
+#pragma warning restore IDE0037 // Use inferred member name
