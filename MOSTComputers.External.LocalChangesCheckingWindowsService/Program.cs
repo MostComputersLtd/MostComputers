@@ -6,7 +6,7 @@ using static MOSTComputers.Services.LocalChangesHandling.Configuration.Configure
 const string _windowsServiceName = "MOSTComputers.External.LocalChangesHandlingService";
 
 const string _appsettingsFileName = "appsettings.json";
-const string _connectionStringNameInConfigFile = "MostDBNew";
+//const string _connectionStringNameInConfigFile = "MostDBNew";
 
 ConfigurationBuilder configurationBuilder = new();
 
@@ -23,7 +23,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices(services =>
     {
-        services.AddLocalChangesHandlingBackgroundService(configuration.GetConnectionString(_connectionStringNameInConfigFile)!);
+        services.AddLocalChangesHandlingBackgroundService();
     })
     .Build();
 
