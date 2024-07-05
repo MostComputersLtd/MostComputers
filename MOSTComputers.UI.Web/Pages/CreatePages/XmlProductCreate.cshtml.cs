@@ -107,7 +107,7 @@ public class XmlProductCreateModel : PageModel
 
                 return new OkResult();
             },
-            validationResult => this.GetResultFromValidationResult(validationResult));
+            validationResult => this.GetBadRequestResultFromValidationResult(validationResult));
     }
 
     private IActionResult CreateProducts(List<XmlProductCreateDisplay> productDisplays)
@@ -127,7 +127,7 @@ public class XmlProductCreateModel : PageModel
 
                     return Page();
                 },
-                validationResult => this.GetResultFromValidationResult(validationResult),
+                validationResult => this.GetBadRequestResultFromValidationResult(validationResult),
                 unexpectedFailureResult => StatusCode(500));
 
             if (!isSuccessResult)
@@ -154,7 +154,7 @@ public class XmlProductCreateModel : PageModel
 
                     return Page();
                 },
-                validationResult => this.GetResultFromValidationResult(validationResult),
+                validationResult => this.GetBadRequestResultFromValidationResult(validationResult),
                 unexpectedFailureResult => StatusCode(500));
 
             if (!isSuccessResult)
