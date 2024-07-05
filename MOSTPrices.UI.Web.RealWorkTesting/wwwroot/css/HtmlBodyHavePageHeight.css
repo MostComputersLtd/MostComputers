@@ -1,0 +1,28 @@
+﻿html, body {
+    height: 100%;
+    margin-bottom: 0px !important;
+    overflow-y: auto !important;
+}
+
+body {
+    display: flex;
+    min-height: 100vh;
+    margin: 0;
+    flex-direction: column;
+}
+
+    body > div {
+        flex: 1 0 auto;
+    }
+
+        body > div > main {
+            height: 100%;
+        }
+
+header, footer {
+    flex-shrink: 0;
+}
+
+footer {
+    position: relative !important;
+}

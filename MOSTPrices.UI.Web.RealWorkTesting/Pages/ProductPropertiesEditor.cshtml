@@ -1,0 +1,168 @@
+﻿@page "{ProductId}"
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Services.SearchStringOrigin.Models;
+@using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups
+@using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductProperties
+@using MOSTComputers.UI.Web.RealWorkTesting.Utils;
+@using MOSTComputers.UI.Web.RealWorkTesting.Pages;
+
+@model ProductPropertiesEditorModel
+@{
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayXmlPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayImagesPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductSearchStringPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/SearchStringOriginSmallPopupsDisplayPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/CustomTextSelection.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/ProductAndPropertyDisplayCommon.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/ProductPropertiesEditor.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/TextSelection.js"></script>
+    <script src="~/js/TextHighlight.js"></script>
+    <script src="~/js/Pages/Shared/ProductXmlPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductSearchStringPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
+    <script src="~/js/NotificationBox.js"></script>
+    <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
+    <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
+    <script src="~/js/Pages/ProductPropertiesEditor.js"></script>
+}
+
+<table id="propertyDisplayMainContainer_table" class="full-parent-width">
+    <tr>
+        <td>
+            <h4 class="modal-title modal-product-name-xml-modal">@Model.ProductDisplayData?.Name</h4>
+        </td>
+        <td>
+            <h4 id="modal_title_productIdShow" class="modal-title modal-product-name-xml-modal product-properties-editor-product-id-label">
+                ID: @Model.ProductDisplayData?.Id
+            </h4>
+        </td>
+        
+        <td id="propertyDisplayMainContainer_table_spaceBetween_td">
+            <h6 id="searchStringPartsCopyDisplay" onclick="copyWholeSearchStringCopiedData('searchStringPartsCopyDisplay')"></h6>
+        </td>
+
+        <td>
+            <ul class="full-parent-width buttons-for-popups-list">
+                <li class="button-for-popup-li">
+                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId)">
+                        <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images"
+                             class="imagePopupButton_imagePopupButtonImage"/>
+                    </button>
+                </li>
+                <li id="propertyDisplayMainContainer_table_xmlPopupButton_li" class="button-for-popup-li">
+                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId)">View XML</button>
+                </li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
+        @{
+            var searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();
+        }
+
+        @if (searchStringParts is not null)
+        {
+            <td colspan="5">
+                
+                <partial name="ProductPopups/_SearchStringOriginSmallPopupsDisplayPartial"
+                    model='@new SearchStringOriginSmallPopupsDisplayPartialModel(
+                        Model.ProductId, new List<string> (), Model.GetSearchStringOriginData(Model.ProductId), true, "productProperties")' />
+                
+            </td>
+        }
+        
+    </tr>
+</table>
+
+<table id="propertyDisplay_table" class="full-parent-width">
+
+    <tbody id="propertyDisplay_table_tbody">
+
+        @for (int i = 0; i < (Model.ProductProperties?.Count ?? 0); i++)
+        {
+            ProductProperty productProperty = Model.ProductProperties![i];
+
+            <partial name="ProductProperties/_ProductSinglePropertyDisplayPartial"
+                model="@new _ProductSinglePropertyDisplayPartialModel(
+                    Model.ProductId, productProperty, i, false, Model.GetRemainingCharacteristics())" />
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable(@Model.ProductId)">Add</button>
+
+<div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductXml-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductXml_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductImages-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductImages_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="ProductSearchString_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductSearchString-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductSearchString_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
+
+@Html.AntiForgeryToken()
+
+<script>
+
+    document.onkeydown = (e) =>
+    {
+        if (e.ctrlKey && e.key === 's')
+        {
+            let xmlTextArea = document.getElementById("Xml_textarea");
+
+            if (xmlTextArea != null)
+            {
+                if (xmlTextArea.value != null)
+                {
+                    e.preventDefault();
+
+                    copyXmlTextToClipboard();
+
+                    return;
+                }
+            }
+
+            let productImagesPopup = document.getElementById("ProductImages_popup");
+
+            if (productImagesPopup === null) return;
+
+            e.preventDefault();
+
+            copyImageDataToClipboard();
+        }
+        else if (e.ctrlKey && e.key === 'a')
+        {
+            e.preventDefault();
+
+            var productId = getProductId();
+
+            getImageFileData(productId);
+        }
+    }
+
+</script>

@@ -1,0 +1,138 @@
+﻿@using MOSTComputers.Models.Product.Models
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups._ProductFullDisplayWithXmlPopupPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+    <table>
+        <tbody>
+            <tr>
+                <td>
+                    <ul style="list-style: none;">
+                        <li style="display: flex; flex-direction: row; width: max-content;">
+                            <h4>@Model.Product.Name</h4>
+                            <h4> / </h4>
+                            <h4>Part #: @Model.Product.PartNumber1 / @Model.Product.PartNumber2</h4>
+                        </li>
+
+                        <li>
+                            <label>
+                                @Model.Product.SearchString
+                            </label>
+                        </li>
+
+                        <li>
+                            <h4>
+                                PRODUCT ID: @Model.Product.Id
+                            </h4>
+                        </li>
+
+                        <li>
+                            <label>@Model.Product.Manifacturer?.RealCompanyName</label>
+                            <label> / </label>
+                            <label>@Model.Product.Category?.Description</label>
+                        </li>
+                    </ul>
+                </td>
+
+                <td>
+                    <ul style="display: flex; flex-direction: row;">
+                        <li>
+                            <button class="btn btn-secondary">
+                                XML
+                            </button>
+
+                            <button class="btn btn-secondary">
+                                Copy link
+                            </button>
+                        </li>
+                    </ul>
+                </td>
+
+                <td>
+                    <div style="color: white; background-color: red;">
+                        <h2>@Model.Product.Price @Model.Product.Currency с</h2>
+                        <h4>ДДС</h4>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <img />
+                    
+                    <ul>
+                        @for (int i = 0; i < Model.Product.Images?.Count; i++)
+                        {
+                            ProductImage image = Model.Product.Images[i];
+                            ProductImageFileNameInfo? imageFileNameInfo = Model.Product.ImageFileNames?[i];
+
+                            if (image.ImageData is null) continue;
+
+                            string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
+
+                            float opacityOfLi = (imageFileNameInfo?.Active ?? false) ? 1.0F : 0.35F;
+
+                            <li id="productImageDisplay_ul_li-@i" draggable="true"
+                                ondragstart="productImageDisplay_ul_li_ondragstart(event)"
+                                ondragend="productImageDisplay_ul_li_ondragend(event)"
+                                style="opacity: @opacityOfLi">
+
+                                @if (imageFileNameInfo?.Active ?? false)
+                                {
+                                    <div class="product-image-popup-image-active-button-container">
+                                        <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
+                                            type="checkbox" aria-label="Close" checked
+                                            class="product-image-popup-image-active-button" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="product-image-popup-image-active-button-container">
+                                        <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
+                                            type="checkbox" aria-label="Close"
+                                            class="product-image-popup-image-active-button" />
+                                    </div>
+                                }
+
+                                <button name="Image #@i"
+                                    class="btn bg-white"
+                                    onclick="displayImage('@imageSrc', 'Image #@i')">
+
+                                    <img src="@imageSrc" title="Image #@i" draggable="false" />
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </td>
+
+                <td>
+                    <h3 style="margin-bottom: 20px;">Информация за услугата</h3>
+
+                    <a href="@Model.ProductManifacturerSiteLink">Сайт на производителя</a>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <div class="full-parent-width">
+        <section style="column-count: 3;">
+            @foreach (ProductProperty property in Model.Product.Properties)
+            {
+                <div>
+                    <b>@property.Characteristic:</b>
+                    <label>@property.Value</label>
+                </div>
+            }
+        </section>
+    </div>
+</div>
+<div id="ProductFullDisplayWithXml_popup" class="modal-body full-parent-width bg-white">
+    <div class="container border-2 full-parent-width full-parent-height">
+        
+    </div>
+</div>
+
+<div class="modal-footer full-parent-width">
+    
+</div>
