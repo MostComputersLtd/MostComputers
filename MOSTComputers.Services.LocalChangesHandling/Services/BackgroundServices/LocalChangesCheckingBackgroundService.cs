@@ -18,11 +18,27 @@ public sealed class LocalChangesCheckingBackgroundService : BackgroundService
     private readonly PeriodicTimer _periodicTimer = new(TimeSpan.FromMinutes(5));
     private readonly IServiceScopeFactory _scopeFactory;
 
+    private CancellationTokenSource _immediateExecutionTokenSource = new();
+
     protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (await _periodicTimer.WaitForNextTickAsync(stoppingToken)
-            && !stoppingToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
+            CancellationTokenSource timerLinkedTokenSource
+                = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _immediateExecutionTokenSource.Token);
+
+            try
+            {
+                await _periodicTimer.WaitForNextTickAsync(timerLinkedTokenSource.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+
             using IServiceScope scope = _scopeFactory.CreateScope();
 
             IProductChangesService productChangesService = scope.ServiceProvider.GetRequiredService<IProductChangesService>();
@@ -39,6 +55,17 @@ public sealed class LocalChangesCheckingBackgroundService : BackgroundService
                     productChangesService.HandleAnyOperation(localChange);
                 }
             }
+
+            if (_immediateExecutionTokenSource.Token.IsCancellationRequested)
+            {
+                _immediateExecutionTokenSource.Dispose();
+                _immediateExecutionTokenSource = new();
+            }
         }
+    }
+
+    internal void ExecuteImmediately()
+    {
+        _immediateExecutionTokenSource.Cancel();
     }
 }
