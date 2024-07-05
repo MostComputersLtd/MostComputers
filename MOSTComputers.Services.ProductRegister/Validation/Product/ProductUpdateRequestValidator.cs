@@ -42,7 +42,6 @@ internal sealed class ProductUpdateRequestValidator : AbstractValidator<ProductU
         RuleFor(x => x.CategoryID).Must(NullOrGreaterThanZero);  // not seen null
         RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
         RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);
-
     }
 }
 
@@ -71,7 +70,7 @@ internal sealed class CurrentProductImageFileNameInfoUpdateRequestValidator : Ab
     public CurrentProductImageFileNameInfoUpdateRequestValidator()
     {
         RuleFor(x => x.FileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.ImageNumber).GreaterThan(0);
         RuleFor(x => x.NewDisplayOrder).Must(NullOrGreaterThanZero);
     }
 }

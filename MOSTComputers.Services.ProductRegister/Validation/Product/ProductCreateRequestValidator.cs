@@ -61,7 +61,7 @@ internal sealed class CurrentProductImageCreateRequestValidator : AbstractValida
 {
     public CurrentProductImageCreateRequestValidator()
     {
-        RuleFor(x => x.XML).Must(IsNotEmptyOrWhiteSpace);
+        RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
         RuleFor(x => x.ImageData);
         RuleFor(x => x.ImageFileExtension).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
