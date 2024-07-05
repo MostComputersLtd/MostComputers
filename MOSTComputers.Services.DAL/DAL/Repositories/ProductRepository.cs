@@ -10,8 +10,6 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using System.Data.SqlTypes;
-using System.Runtime.CompilerServices;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -839,6 +837,39 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         return output;
     }
 
+    public Product? GetProductWithHighestId_WithManifacturerAndCategory()
+    {
+        const string getByIdWithManifacturerAndCategoryAndFirstImageQuery =
+            $"""
+            SELECT TOP 1 products.CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                CategoryID, ParentId, cat.Description, IsLeaf,
+                man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
+            
+            FROM {_tableName} products
+            LEFT JOIN {_categoriesTableName} cat
+            ON cat.CategoryID = products.TID
+            LEFT JOIN {_manifacturersTableName} man
+            ON man.MfrID = products.MfrID
+            ORDER BY products.CSTID DESC;
+            """;
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(
+            getByIdWithManifacturerAndCategoryAndFirstImageQuery,
+
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            new { })
+            .FirstOrDefault();
+    }
+
     public OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
         const string insertProductQuery =
@@ -1275,7 +1306,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 ProductId = productId,
                 ImageData = item.ImageData,
                 ImageFileExtension = item.ImageFileExtension,
-                XML = item.XML,
+                XML = item.HtmlData,
                 DateModified = item.DateModified,
             };
 
@@ -1304,7 +1335,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ProductId = productId,
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
-            XML = request.XML,
+            HtmlData = request.HtmlData,
             DateModified = request.DateModified,
         };
     }
@@ -1321,13 +1352,13 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         };
     }
 
-    private static ProductImageFileNameInfoUpdateRequest Map(CurrentProductImageFileNameInfoUpdateRequest request, int productId)
+    private static ProductImageFileNameInfoByImageNumberUpdateRequest Map(CurrentProductImageFileNameInfoUpdateRequest request, int productId)
     {
         return new()
         {
             ProductId = productId,
-            DisplayOrder = request.DisplayOrder,
             NewDisplayOrder = request.NewDisplayOrder,
+            ImageNumber = request.ImageNumber,
             FileName = request.FileName,
             Active = request.Active,
         };
@@ -1340,7 +1371,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             Id = productId,
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
-            XML = request.XML,
+            HtmlData = request.XML,
         };
     }
 
@@ -1351,7 +1382,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ProductId = productId,
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
-            XML = request.XML,
+            HtmlData = request.XML,
         };
     }
 
