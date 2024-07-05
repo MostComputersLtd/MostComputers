@@ -5,13 +5,16 @@
 
     <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
 
-    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductXml_modal()">
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"
+        onclick="close_ProductXml_modal()">
     </button>
 </div>
 
 <div id="ProductXml_popup" class="modal-body full-parent-width">
     <div class="container border-2 full-parent-width full-parent-height">
-        <textarea id="Xml_textarea" class="full-parent-width full-parent-height" contenteditable="false" spellcheck="false">@Model.XmlData</textarea>
+        <textarea id="Xml_textarea" class="full-parent-width full-parent-height" contenteditable="false" spellcheck="false">
+            @Model.XmlData
+        </textarea>
     </div>
 </div>
 
