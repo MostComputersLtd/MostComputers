@@ -97,7 +97,11 @@
         <tbody id="tableDataHolder">
 
             <partial name="_ProductsAndStatusesDisplayPartialTable"
-                model="new ProductsAndStatusesDisplayPartialTableModel() { ProductsAndStatuses = ProductDisplayModel.ProductsAndStatuses, AllCategoriesSelectItems = Model.AllCategoriesSelectItems }" />
+                model="new ProductsAndStatusesDisplayPartialTableModel()
+                    {
+                        ProductsAndStatuses = ProductDisplayModel.ProductsAndStatuses,
+                        AllCategoriesSelectItems = Model.AllCategoriesSelectItems
+                    }" />
 
         </tbody>
     </table>
@@ -105,11 +109,10 @@
     <div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
         <div id="ProductXml-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
             <div id="ProductXml_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
-                
             </div>
         </div>
     </div>
-
+    
     <div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
         <div id="ProductImages-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
             <div id="ProductImages_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
