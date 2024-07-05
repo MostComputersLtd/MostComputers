@@ -39,9 +39,11 @@
             <h4 class="modal-title modal-product-name-xml-modal">@Model.Product.Name</h4>
         </td>
         <td>
-            <h4 id="modal-title_productIdShow" class="modal-title modal-product-name-xml-modal product-properties-editor-product-id-label">ID: @Model.Product.Id</h4>
+            <h4 id="modal_title_productIdShow" class="modal-title modal-product-name-xml-modal product-properties-editor-product-id-label">
+                ID: @Model.Product.Id
+            </h4>
         </td>
-
+        
         <td id="propertyDisplayMainContainer_table_spaceBetween_td">
             <h6 id="searchStringPartsCopyDisplay" onclick="copyWholeSearchStringCopiedData('searchStringPartsCopyDisplay')"></h6>
         </td>
@@ -100,12 +102,14 @@
 
                                             <ul class="searchStringPartAndOriginPopupDisplay_ul_singleItemDisplayContainer_ul">
                                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
+                                                    <button class="searchStringPartOrigin_li_copyButton"
+                                                        onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
                                                         +
                                                     </button>
                                                     
                                                 </li>
-                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i"
+                                                    name="searchStringPartOrigin_searchStringPartDisplay"
                                                     class="searchStringPartOrigin_searchStringPartDisplay_forSingleItem">
                                                     <h4 class="searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4">@searchStringPart</h4>
                                                 </li>
@@ -122,12 +126,14 @@
                                         {
                                             <ul class="searchStringPartOrigin_li_multipleOriginsDisplay_container_li">
                                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
+                                                    <button class="searchStringPartOrigin_li_copyButton"
+                                                        onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
                                                         +
                                                     </button>
                                                 </li>
 
-                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                <li id="searchStringPartOrigin_searchStringPartDisplay#@i"
+                                                    name="searchStringPartOrigin_searchStringPartDisplay"
                                                     class="searchStringPartOrigin_searchStringPartDisplay_li">
                                                     <h4 class="searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4">@searchStringPart</h4>
                                                 </li>
@@ -169,13 +175,15 @@
                                         {
                                             <ul class="searchStringPartAndOriginPopupDisplay_ul_singleItemDisplayContainer_ul">
                                                 <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                    <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
+                                                    <button class="searchStringPartOrigin_li_copyButton"
+                                                        onclick="addCopiedPartToTotalCopy('@searchStringPart', 'searchStringPartsCopyDisplay')">
                                                         +
                                                     </button>
                                                 </li>
 
                                                 <li class="searchStringPartOrigin_searchStringPartDisplay_forSingleItem">
-                                                    <h4 id="searchStringPartOrigin_searchStringPartDisplay#@i" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                    <h4 id="searchStringPartOrigin_searchStringPartDisplay#@i"
+                                                        name="searchStringPartOrigin_searchStringPartDisplay"
                                                         class="searchStringPartOrigin_searchStringPartDisplay_noItemsDisplay_searchStringPartDisplay_h4">
                                                         @searchStringPart
                                                     </h4>
@@ -217,16 +225,22 @@
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
                             <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
                                 class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
-                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
+                                contenteditable="true" spellcheck="false"
+                                onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
                         </div>
                     </td>
 
                     <td class="property-td-alignedOnTop property-characterisricId-td">
-                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: None</label>
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i"
+                            name="productPropertyDisplay_CharacteristicId_Data_label">
+                            ID: None
+                        </label>
                     </td>
 
                     <td class="property-td-alignedOnTop property-xmlPlacement-td">
-                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
+                        <select id="productPropertyDisplay_XmlPlacement_select#@i"
+                            name="productPropertyDisplay_XmlPlacement_select"
+                            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
                     </td>
                 </tr>
 
@@ -247,23 +261,31 @@
                         <div id="productPropertyDisplay_AutoExpandTextareaWrapper_div#@i" class="full-parent-width full-parent-height">
                             <div id="productPropertyDisplay_Value_div#@i" name="productPropertyDisplay_Value_div"
                                 class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
-                                contenteditable="true" spellcheck="false" onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
+                                contenteditable="true" spellcheck="false"
+                                onfocusout="updatePropertyInTable(@Model.ProductId, @i)">@productProperty.Value</div>
                         </div>
                     </td>
 
                     <td class="property-td-alignedOnTop property-characterisricId-td">
-                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i" name="productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
+                        <label id="productPropertyDisplay_CharacteristicId_Data_label#@i"
+                        name="productPropertyDisplay_CharacteristicId_Data_label">ID: @productProperty.ProductCharacteristicId</label>
                     </td>
 
                     <td class="property-td-alignedOnTop property-xmlPlacement-td">
-                        <select id="productPropertyDisplay_XmlPlacement_select#@i" name="productPropertyDisplay_XmlPlacement_select" asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
+                        <select id="productPropertyDisplay_XmlPlacement_select#@i"
+                            name="productPropertyDisplay_XmlPlacement_select"
+                            asp-items="@XmlPlacementEnumMapping.GetSelectListItemsFromXmlPlacementEnumWithOneSelected(productProperty.XmlPlacement)"></select>
                     </td>
 
                     <td class="property-td-alignedOnTop property-delete-button-td">
                         <button id="productPropertyDisplay_Delete_button#@i"
                                 name="productPropertyDisplay_Delete_button"
                                 class="btn btn-danger"
-                                onclick="deletePropertyInTable(@Model.ProductId, @productProperty.ProductCharacteristicId, 'propertytr#@i', 'propertyDisplay_table_tbody', false)">
+                                onclick="deletePropertyInTable(@Model.ProductId,
+                                @productProperty.ProductCharacteristicId,
+                                'propertytr#@i',
+                                'propertyDisplay_table_tbody',
+                                false)">
                             X
                         </button>
                     </td>
@@ -276,22 +298,22 @@
 <button class="btn btn-primary full-parent-width" onclick="addPropertyToTable(@Model.ProductId)">Add</button>
 
 <div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductXml-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
-        <div id="ProductXml_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+    <div id="ProductXml-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductXml_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
 
 <div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductImages-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
-        <div id="ProductImages_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+    <div id="ProductImages-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductImages_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
 
 <div id="ProductSearchString_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductSearchString-modal-dialog" class="modal-dialog modal-dialog-full-parent-width">
-        <div id="ProductSearchString_popup_modal-content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+    <div id="ProductSearchString-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductSearchString_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
