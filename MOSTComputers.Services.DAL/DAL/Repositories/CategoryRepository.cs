@@ -103,6 +103,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             DELETE FROM {_tableName}
             WHERE CategoryID = @id;
             """;
+
         try
         {
             int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = (int)id });
