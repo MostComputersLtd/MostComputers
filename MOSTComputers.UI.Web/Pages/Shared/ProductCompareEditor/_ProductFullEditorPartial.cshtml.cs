@@ -18,6 +18,8 @@ public class ProductFullEditorPartialModel
     public required string ImagesContainerId { get; init; }
     public required string OtherImagesContainerId { get; init; }
 
+    public required string? ValidationFormId { get; init; }
+
     private int _firstOrSecondProduct { get; set; }
     public required FirstOrSecondProductEnum FirstOrSecondProduct
     { init => _firstOrSecondProduct = (int)value; }
