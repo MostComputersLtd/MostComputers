@@ -8,7 +8,7 @@
 @for (int i = 0; i < Model.Count; i++)
 {
     <h1 class="create-request-name">@Model[i].Name</h1>
-
+    
     <ul class="create-request-image-list">
 
         @if (Model[i].Images is not null)
@@ -81,7 +81,7 @@
     {
         <h3 class="create-request-characteristics-text">Characteristics</h3>
 
-        <div id="propertiesDataContainer,@i">
+        <div id="propertiesDataContainer-@i">
 
             <table class="full-parent-width" style="margin:20px 25px">
                 <tbody>
@@ -93,7 +93,7 @@
                                 @if (propertyCreateRequest.ProductCharacteristicId == null)
                                 {
                                      // <select asp-items="@Model[i].Characteristics" onselect="Failed_Characteristic_Name_Select_onSelect(@i,@propertyCreateRequest.Name,this.value)"></select>
-                                    <select name="InvalidPropertySelect,@i.ToString(),@j.ToString()" asp-items="@Model[i].Characteristics"
+                                    <select name="InvalidPropertySelect-@i.ToString()-@j.ToString()" asp-items="@Model[i].Characteristics"
                                         onchange="Failed_Characteristic_Name_Select_onSelect(@i,'@propertyCreateRequest.Name',this.value)"></select>
                                 }
                                 else
@@ -108,7 +108,7 @@
                             </td>
 
                             <td style="width:10%;">
-                                <label name="PropertyIdText,@i.ToString(),@j.ToString()">ID: @propertyCreateRequest.ProductCharacteristicId</label>
+                                <label name="PropertyIdText-@i.ToString()-@j.ToString()">ID: @propertyCreateRequest.ProductCharacteristicId</label>
                             </td>
                         </tr>
 

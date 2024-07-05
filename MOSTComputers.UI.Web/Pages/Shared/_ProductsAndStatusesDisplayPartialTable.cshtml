@@ -3,6 +3,7 @@
 @using MOSTComputers.Services.SearchStringOrigin.Models;
 @using MOSTComputers.UI.Web.Pages;
 @using MOSTComputers.UI.Web.StaticUtilities;
+@using MOSTComputers.Models.Product.Models.ProductStatuses;
 
 @model ProductsAndStatusesDisplayPartialTableModel;
 @{
@@ -13,7 +14,7 @@
     Product product = Model.ProductsAndStatuses[i].Product;
     ProductStatuses productStatuses = Model.ProductsAndStatuses[i].ProductStatuses;
 
-    <tr id="productDisplayRow#@i" name="productDisplayRow">
+    <tr id="productDisplayRow-@i" name="productDisplayRow">
         <td>
             <label>@product.Status</label>
         </td>
@@ -39,17 +40,17 @@
                             <li>
                                 <table onmouseleave="removeSearchStringOriginDataSmallPopup(@i, @j, '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)')">
                                     <tr>
-                                        <td id="searchStringPart_h2#@j" name="searchStringPart_h2"
+                                        <td id="searchStringPart_h2-@j" name="searchStringPart_h2"
                                             class="searchStringPart_td"
                                             onmouseover="showSearchStringOriginDataSmallPopup(@i, @j, '@searchStringPart')"
                                             onclick="displayPopupAndTransportToSearchStringOriginDisplay(@product.Id, @j)">
 
-                                            <h7 class="productSearchString-popup-searchStringPart-label" name="searchStringPartDisplayText#@i">@searchStringPart</h7>
+                                            <h7 class="productSearchString-popup-searchStringPart-label" name="searchStringPartDisplayText-@i">@searchStringPart</h7>
                                         </td>
                                     </tr>
 
                                     <tr class="searchStringPartOrigin_li_container_row">
-                                        <td id="searchStringPartOrigin_li#@i#@j" name="searchStringPartOrigin_li"
+                                        <td id="searchStringPartOrigin_li-@i-@j" name="searchStringPartOrigin_li"
                                             class="searchStringPartOrigin_li" style="visibility:hidden;">
 
                                             @if (kvp.Item2?.Count == 1)
@@ -65,11 +66,13 @@
 
                                                 <ul class="searchStringPartOrigin_li_singleItemContainerList">
                                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
+                                                        <button class="searchStringPartOrigin_li_copyButton"
+                                                            onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
                                                             +
                                                         </button>
                                                     </li>
-                                                    <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                    <li id="searchStringPartOrigin_searchStringPartDisplay-@j"
+                                                        name="searchStringPartOrigin_searchStringPartDisplay"
                                                         class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
                                                         <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPartOriginData.Characteristic.Name</h4>
                                                     </li>
@@ -86,12 +89,14 @@
                                             {
                                                 <ul class="searchStringPartOrigin_li_multipleItemContainerList">
                                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
+                                                        <button class="searchStringPartOrigin_li_copyButton"
+                                                            onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
                                                             +
                                                         </button>
                                                     </li>
 
-                                                    <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                    <li id="searchStringPartOrigin_searchStringPartDisplay-@j"
+                                                        name="searchStringPartOrigin_searchStringPartDisplay"
                                                         class="searchStringPartOrigin_li_displayInline">
                                                         <h4 class="searchStringPartOrigin_searchStringPartDisplay_searchStringPart_h4">@searchStringPart</h4>
                                                     </li>
@@ -99,7 +104,7 @@
                                                     <li class="searchStringPartOrigin_li_displayInline">
                                                         <p class="searchStringPartOrigin_li_multipleItemContainerList_possibilitiesText">@kvp.Item2.Count possibilities</p>
 
-                                                        <ul id="searchStringPartOrigin_multipleOriginsDisplayList#@i#@j"
+                                                        <ul id="searchStringPartOrigin_multipleOriginsDisplayList-@i-@j"
                                                             class="searchStringPartOrigin_multipleOriginsDisplayList">
 
                                                             @for (int k = 0; k < kvp.Item2.Count; k++)
@@ -117,8 +122,10 @@
 
                                                                     <ul class="searchStringPartOrigin_multipleOriginsDisplayList_containerOfLabels_ul">
                                                                         <li class="searchStringPartOrigin_li_displayInline">
-                                                                            <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel#@i#@j"
-                                                                                class="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel">@searchStringPartOriginData.Characteristic.Name</h4>
+                                                                            <h4 name="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-@i-@j"
+                                                                                class="searchStringPartOrigin_multipleOriginsDisplayList_nameLabel">
+                                                                                @searchStringPartOriginData.Characteristic.Name
+                                                                            </h4>
                                                                         </li>
                                                                         <li class="searchStringPartOrigin_li_displayInline">
                                                                             <h6 class="searchStringPartOrigin_li_multipleItemContainer_characteristicId_h6">
@@ -127,7 +134,7 @@
                                                                         </li>
                                                                     </ul>
 
-                                                                    <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel#@i#@j">@searchStringMeaning</h5>
+                                                                    <h5 name="searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-@i-@j">@searchStringMeaning</h5>
                                                                 </li>
                                                             }
                                                         </ul>
@@ -138,11 +145,13 @@
                                             {
                                                <ul class="searchStringPartOrigin_li_singleItemContainerList">
                                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
-                                                        <button class="searchStringPartOrigin_li_copyButton" onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
+                                                        <button class="searchStringPartOrigin_li_copyButton"
+                                                            onclick="addCopiedPartToTotalCopy('@searchStringPart', 'SearchStringSearch_input')">
                                                             +
                                                         </button>
                                                     </li>
-                                                    <li id="searchStringPartOrigin_searchStringPartDisplay#@j" name="searchStringPartOrigin_searchStringPartDisplay"
+                                                    <li id="searchStringPartOrigin_searchStringPartDisplay-@j"
+                                                        name="searchStringPartOrigin_searchStringPartDisplay"
                                                         class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_li">
                                                         <h4 class="searchStringPartOrigin_li_singleItemContainer_SearchStringPart_h4">@searchStringPart</h4>
                                                     </li>
