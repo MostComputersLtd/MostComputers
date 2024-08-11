@@ -10,33 +10,33 @@
 }
 
 @section Scripts {
+    <script src="~/js/Pages/Accounts/SignIn.js"></script>
 }
 
 <form method="post" asp-page-handler="SignIn" class="parent-fullscreen-form children-limit-space-with-padding">
 
-    <div class="container mb-2 bg-white"
-         style="width: 75%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="container login-or-signIn-container mb-2 bg-white">
 
-        <div class="row full-parent-width mb-2" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-2">
 
-            <div class="col-3" style="height: 40px; display: flex; align-items: center;">
+            <div class="col-3 login-or-signIn-label-column">
                 <label asp-for="@Model.Username">Username</label>
             </div>
 
-            <div class="col-7" style="height: 40px;">
+            <div class="col-7 login-or-signIn-input-column">
                 <input asp-for="@Model.Username" type="text" class="full-parent-width full-parent-height" />
             </div>
 
             <span asp-validation-for="@Model.Username" class="text-danger validation-span"></span>
         </div>
 
-        <div class="row full-parent-width mb-2" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-2">
 
-            <div class="col-3" style="height: 40px; display: flex; align-items: center;">
+            <div class="col-3 login-or-signIn-label-column">
                 <label asp-for="@Model.Password">Password</label>
             </div>
 
-            <div class="col-7" style="height: 40px;">
+            <div class="col-7 login-or-signIn-input-column">
                 <input asp-for="@Model.Password" type="password" class="full-parent-width full-parent-height" />
             </div>
 
@@ -51,9 +51,9 @@
             }
         </div>
 
-        <div class="row full-parent-width mb-3" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-3">
 
-            <div class="col-3" style="height: 40px; display: flex; align-items: center;">
+            <div class="col-3 login-or-signIn-label-column">
                 <label asp-for="@Model.ConfirmPassword">Confirm Password</label>
             </div>
 
@@ -64,19 +64,22 @@
             <span asp-validation-for="@Model.ConfirmPassword" class="text-danger validation-span"></span>
         </div>
 
-        <div class="row full-parent-width mb-2" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-2">
             <div class="col-4">
                 <button type="submit" class="btn btn-primary full-parent-width">Sign In</button>
             </div>
         </div>
 
-        <div class="row full-parent-width mb-3" style="display: flex; justify-content: center;">
-            <div class="col-5" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-3">
+            <div class="col-5 login-or-signIn-other-page-redirect-container">
                 <label>Already have an account:</label>
-                <a href="/Accounts/SignIn" class="btn btn-secondary" style="margin-left: 1rem;">Log In</a>
+                <button type="button" class="btn btn-secondary login-or-signIn-other-page-redirect-button"
+                    onclick="redirectToLogInPage('_hidden_returnUrl_input')">
+                    Log In
+                </button>
             </div>
         </div>
     </div>
 
-    <input id="returnUrl" type="hidden" asp-for="ReturnUrl" />
+    <input id="_hidden_returnUrl_input" type="hidden" asp-for="ReturnUrl" />
 </form>
