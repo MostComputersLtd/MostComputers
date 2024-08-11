@@ -4,7 +4,7 @@
 
 <div class="modal-header full-parent-width">
     <h5 class="modal-title modal-title">XML:</h5>
-
+    
     <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"
@@ -21,7 +21,7 @@
 </div>
 
 <div class="modal-footer full-parent-width">
-    <button id="copyXmlButton" class="full-parent-width footer-button btn btn-primary" onclick="copyXmlTextToClipboard()">
+    <button id="copyXmlButton" class="full-parent-width footer-button btn btn-primary" onclick="copyXmlTextToClipboard('@Model.NotificationBoxId')">
         <h7 class="footer-button-main-text">Copy to clipboard</h7>
         <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
     </button>
