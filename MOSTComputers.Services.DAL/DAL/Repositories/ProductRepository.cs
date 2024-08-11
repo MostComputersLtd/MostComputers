@@ -29,6 +29,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
     public IEnumerable<Product> GetAll_WithManifacturerAndCategory()
     {
         const string getAllWithManifacturerAndCategoryQuery =
@@ -82,7 +83,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ORDER BY SubPosition, S;
             """;
 
-#pragma warning disable IDE0037 // Use inferred member name
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereNameMatchesWithManifacturerAndCategoryQuery,
             (product, category, manifacturer) =>
             {
@@ -94,7 +94,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             new { subString = subString });
-#pragma warning restore IDE0037 // Use inferred member name
     }
 
     public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(string searchStringParts)
@@ -144,7 +143,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ORDER BY SubPosition, S;
             """;
 
-#pragma warning disable IDE0037 // Use inferred member name
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWhereSearchStringMatchesAllSearchStringPartsQuery,
             (product, category, manifacturer) =>
             {
@@ -156,10 +154,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             new { searchStringParts = searchStringParts });
-#pragma warning restore IDE0037 // Use inferred member name
     }
 
-    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_ByIds(List<uint> ids)
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategory_ByIds(List<int> ids)
     {
         const string getAllWithManifacturerAndCategoryByIdsQuery =
             $"""
@@ -195,7 +192,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             new { ids });
     }
 
-    public IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndFirstImage_ByIds(List<uint> ids)
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndFirstImage_ByIds(List<int> ids)
     {
         const string getAllWithManifacturerAndCategoryAndFirstImageByIdsQuery =
             $"""
@@ -203,7 +200,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID AS ImageProductId, firstImages.Description AS XMLData, Image, ImageFileExt, DateModified
+                ID AS ImageProductId, firstImages.Description AS HtmlData, Image, ImageFileExt, DateModified
 
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -238,7 +235,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             new { });
     }
 
-    public IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndProperties_ByIds(List<uint> ids)
+    public IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndProperties_ByIds(List<int> ids)
     {
         const string getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery =
             $"""
@@ -286,12 +283,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { productIds = ids.Select(x => (int)x) } );
+            new { productIds = ids } );
 
         return productsAndIdsDict.Values;
     }
 
-    public IEnumerable<Product> GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(uint start, uint end)
+    public IEnumerable<Product> GetFirstBetweenStartAndEnd_WithCategoryAndManifacturer(int start, uint end)
     {
         const string getFirstBetweenStartAndEnd =
             $"""
@@ -316,7 +313,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var paramters = new
         {
-            SelectStart = (int)start,
+            SelectStart = start,
             SelectEnd = (int)end,
         };
 
@@ -333,7 +330,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             paramters);
     }
 
-    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereNameContainsSubstring(uint start, uint end, string subString)
+    public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereNameContainsSubstring(int start, uint end, string subString)
     {
         const string getAllWithManifacturerAndCategoryQuery =
             $"""
@@ -366,11 +363,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE RN BETWEEN @start + 1 AND @end;
             """;
 
-#pragma warning disable IDE0037 // Use inferred member name
 
         var parameters = new
         {
-            start = (int)start,
+            start = start,
             end = (int)end,
             subString = subString
         };
@@ -386,11 +382,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             parameters);
-#pragma warning restore IDE0037 // Use inferred member name
     }
 
     public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(
-        uint start,
+        int start,
         uint end,
         string searchStringParts)
     {
@@ -453,14 +448,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE RN BETWEEN @start + 1 AND @end;
             """;
 
-#pragma warning disable IDE0037 // Use inferred member name
         var parameters = new
         {
             searchStringParts = searchStringParts,
-            start = (int)start,
+            start = start,
             end = (int)end,
         };
-#pragma warning restore IDE0037 // Use inferred member name
 
         return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getFistInRangeWhereSearchStringMatchesAllSearchStringPartsQuery,
             (product, category, manifacturer) =>
@@ -476,7 +469,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     }
 
     public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategoryAndStatuses_WhereAllConditionsAreMet(
-        uint start,
+        int start,
         uint end,
         ProductConditionalSearchRequest productConditionalSearchRequest)
     {
@@ -485,11 +478,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         string getFirstInRangeWhenConditionsAreMet = GetQueryFromRequest(productConditionalSearchRequest);
 
-#pragma warning disable IDE0037 // Use inferred member name
-
         var parameters = new
         {
-            start = (int)start,
+            start = start,
             end = (int)end,
             searchStringParts = productConditionalSearchRequest.SearchStringSubstring,
             NameSubstring = productConditionalSearchRequest.NameSubstring,
@@ -510,7 +501,6 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             parameters);
-#pragma warning restore IDE0037 // Use inferred member name
 
         string GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(bool isWhereAlreadyWritten)
         {
@@ -694,7 +684,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         }
     }
 
-    public Product? GetById_WithManifacturerAndCategoryAndFirstImage(uint id)
+    public Product? GetById_WithManifacturerAndCategoryAndFirstImage(int id)
     {
         const string getByIdWithManifacturerAndCategoryAndFirstImageQuery =
             $"""
@@ -702,7 +692,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                ID AS ImageProductId, firstImages.Description AS XMLData, Image, ImageFileExt, DateModified
+                ID AS ImageProductId, firstImages.Description AS HtmlData, Image, ImageFileExt, DateModified
             
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -733,11 +723,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,ImageProductId",
 
-            new { id = (int)id })
+            new { id = id })
             .FirstOrDefault();
     }
 
-    public Product? GetById_WithManifacturerAndCategoryAndProperties(uint id)
+    public Product? GetById_WithManifacturerAndCategoryAndProperties(int id)
     {
         const string getByIdWithManifacturerAndCategoryAndPropertiesQuery =
             $"""
@@ -781,12 +771,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,PropertyProductId",
 
-            new { id = (int)id });
+            new { id = id });
 
         return output;
     }
 
-    public Product? GetById_WithManifacturerAndCategoryAndImages(uint id)
+    public Product? GetById_WithManifacturerAndCategoryAndImages(int id)
     {
         const string getByIdWithManifacturerAndCategoryAndImagesQuery =
             $"""
@@ -794,7 +784,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
                 CategoryID, ParentId, cat.Description, IsLeaf, cat.S AS CategoryDisplayOrder, cat.rowguid AS CategoryRowGuid, ProductsUpdateCounter,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
-                images.CSTID AS ImageProductId, images.ID AS ImagePrime, images.Description AS XMLData, Image, ImageFileExt, DateModified
+                images.CSTID AS ImageProductId, images.ID AS ImagePrime, images.Description AS HtmlData, Image, ImageFileExt, DateModified
             
             FROM {_tableName} products
             LEFT JOIN {_categoriesTableName} cat
@@ -832,7 +822,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId,ImageProductId",
 
-            new { id = (int)id });
+            new { id = id });
 
         return output;
     }
@@ -861,7 +851,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             {
                 product.Category = category;
                 product.Manifacturer = manifacturer;
-
+                
                 return product;
             },
             splitOn: "CategoryID,PersonalManifacturerId",
@@ -870,7 +860,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             .FirstOrDefault();
     }
 
-    public OneOf<uint, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
+    public OneOf<int, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
         const string insertProductQuery =
             $"""
@@ -901,18 +891,18 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         const string insertInAllImagesQuery =
            $"""
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@Id, @ProductId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (@Id, @ProductId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
         const string insertInFirstImagesQuery =
             $"""
             INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@ProductId, @XML, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (@ProductId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
             """;
 
         var parameters = new
         {
-            CategoryId = createRequest.CategoryID,
+            CategoryId = createRequest.CategoryId,
             CfgSubType = createRequest.Name,
             ADDWRR = createRequest.AdditionalWarrantyPrice,
             ADDWRRTERM = createRequest.AdditionalWarrantyTermMonths,
@@ -926,7 +916,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             PRICE3 = createRequest.Price3,
             CurrencyId = createRequest.Currency,
             createRequest.RowGuid,
-            PromPID = createRequest.Promotionid,
+            PromPID = createRequest.PromotionId,
             PromRID = createRequest.PromRid,
             PromPictureId = createRequest.PromotionPictureId,
             PromExpDate = createRequest.PromotionExpireDate,
@@ -940,11 +930,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             SPLMODEL2 = createRequest.SearchString,
         };
 
-        OneOf<uint, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<uint, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
+        OneOf<int, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<int, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
 
         return result;
 
-        OneOf<uint, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
+        OneOf<int, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
         {
             int id = connection.ExecuteScalar<int>(insertProductQuery, parametersLocal, transaction, commandType: CommandType.Text);
 
@@ -986,7 +976,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images[0], id), transaction, commandType: CommandType.Text);
             }
 
-            return (uint)id;
+            return id;
         }
     }
 
@@ -1101,7 +1091,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         const string updateInAllImagesQuery =
             $"""
             UPDATE {_allImagesTableName}
-            SET Description = @XML,
+            SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageFileExtension,
                 DateModified = @DateModified
@@ -1112,7 +1102,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         const string updateInFirstImagesQuery =
             $"""
             UPDATE {_firstImagesTableName}
-            SET Description = @XML,
+            SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageFileExtension,
                 DateModified = @DateModified
@@ -1189,8 +1179,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         }
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         const string deleteProductAndRelatedItemsQuery =
             $"""
             DELETE FROM {_tableName}
@@ -1241,7 +1233,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         OneOf<Success, UnexpectedFailureResult> result =
@@ -1266,6 +1258,8 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             //connection.Execute(deleteFirstForProductImage, new { productId = id }, transaction, commandType: CommandType.Text);
         }
     }
+
+#pragma warning restore IDE0037 // Use inferred member name
 
     private static ProductPropertyByCharacteristicIdCreateRequest Map(CurrentProductPropertyCreateRequest request, int productId)
     {
@@ -1306,7 +1300,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 ProductId = productId,
                 ImageData = item.ImageData,
                 ImageFileExtension = item.ImageFileExtension,
-                XML = item.HtmlData,
+                HtmlData = item.HtmlData,
                 DateModified = item.DateModified,
             };
 
@@ -1371,7 +1365,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             Id = productId,
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
-            HtmlData = request.XML,
+            HtmlData = request.HtmlData,
         };
     }
 
@@ -1382,7 +1376,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             ProductId = productId,
             ImageData = request.ImageData,
             ImageFileExtension = request.ImageFileExtension,
-            HtmlData = request.XML,
+            HtmlData = request.HtmlData,
         };
     }
 
@@ -1390,7 +1384,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         public int? Id { get; set; }
         public int? ProductId { get; set; }
-        public string? XML { get; set; }
+        public string? HtmlData { get; set; }
         public byte[]? ImageData { get; set; }
         public string? ImageFileExtension { get; set; }
         public DateTime? DateModified { get; set; }
