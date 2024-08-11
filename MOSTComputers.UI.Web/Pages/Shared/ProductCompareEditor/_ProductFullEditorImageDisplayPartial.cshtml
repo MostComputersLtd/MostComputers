@@ -21,7 +21,7 @@
 
             if (image.ImageData is null) continue;
 
-            string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
+            string imageSrc = $"data:{image.ImageContentType};base64,{Convert.ToBase64String(image.ImageData)}";
 
             bool isImageFileNameInfoActive = (imageFileNameInfo?.Active ?? true);
 
@@ -86,7 +86,7 @@
                             @Model.ProductIndex,
                             '@(Model.ElementIdAndNamePrefix)productImageDisplay_ul_li-@i',
                             @image.Id,
-                            '@image.ImageFileExtension',
+                            '@image.ImageContentType',
                             '@imageFileNameInfoName',
                             '@Model.ImagesContainerId')"/>
                 </div>
