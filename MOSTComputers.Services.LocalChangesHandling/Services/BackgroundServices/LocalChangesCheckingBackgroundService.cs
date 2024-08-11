@@ -46,7 +46,16 @@ public sealed class LocalChangesCheckingBackgroundService : BackgroundService
 
             IEnumerable<LocalChangeData> localChanges = localChangesService.GetAll();
 
-            if (!localChanges.Any()) break;
+            if (!localChanges.Any())
+            {
+                if (_immediateExecutionTokenSource.Token.IsCancellationRequested)
+                {
+                    _immediateExecutionTokenSource.Dispose();
+                    _immediateExecutionTokenSource = new();
+                }
+
+                continue;
+            }
 
             foreach (LocalChangeData localChange in localChanges)
             {
