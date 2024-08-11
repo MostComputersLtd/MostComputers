@@ -51,23 +51,25 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
 
@@ -86,23 +88,25 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereSearchStringMatches(validCreateRequest.SearchString!);
 
@@ -121,23 +125,25 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<Product> allProducts = _productService.GetAllWhereNameMatches(validCreateRequest.Name!);
 
@@ -156,20 +162,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
         invalidCreateRequest.Name = "  ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
         IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
 
@@ -187,20 +194,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
         invalidCreateRequest.Name = "  ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
         Assert.True(insertResult2.Match(
             id => false,
@@ -223,20 +231,21 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         ProductCreateRequest invalidCreateRequest = GetValidProductCreateRequest();
 
         invalidCreateRequest.Name = "  ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
         Assert.True(insertResult2.Match(
             id => false,
@@ -259,29 +268,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -298,29 +309,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
+        List<int> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -337,29 +350,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -380,29 +395,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
+        List<int> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithFirstImage(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -423,29 +440,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -464,29 +483,31 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productService.Insert(validCreateRequest);
 
-        uint? productId1 = insertResult1.Match<uint?>(
+        int? productId1 = insertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(validCreateRequest);
 
-        uint? productId2 = insertResult2.Match<uint?>(
+        int? productId2 = insertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
         
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value, 0 };
+        List<int> productIds = new() { productId1.Value, productId2.Value, 0 };
 
         IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
 
-        Assert.True(insertedProducts.Count() == 2);
+        Assert.Equal(2, insertedProducts.Count());
 
         Product product1 = insertedProducts.Single(x => x.Id == productId1);
         Product product2 = insertedProducts.Single(x => x.Id == productId2);
@@ -503,7 +524,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     [Fact]
     public void GetFirstItemsBetweenStartAndEnd_ShouldSucceed_WhenInsertsAreValid()
     {
-        List<uint> productIds = new();
+        List<int> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
@@ -512,14 +533,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             // Updating display order so that everything is ordered
             validCreateRequest.DisplayOrder = i + 1;
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            uint? productId = insertResult.Match<uint?>(
+            int? productId = insertResult.Match<int?>(
                 id => id,
                 validationResult => null,
                 unexpectedFailureResult => null);
 
             Assert.NotNull(productId);
+            Assert.True(productId > 0);
 
             productIds.Add(productId.Value);
         }
@@ -552,7 +574,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         const string searchStringOfData = "hic opriwopirvoprjvopi og otioiok/df3243";
 
-        List<uint> productIds = new();
+        List<int> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
@@ -561,14 +583,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             // Updating display order so that everything is ordered
             validCreateRequest.SearchString = searchStringOfData;
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            uint? productId = insertResult.Match<uint?>(
+            int? productId = insertResult.Match<int?>(
                 id => id,
                 validationResult => null,
                 unexpectedFailureResult => null);
 
             Assert.NotNull(productId);
+            Assert.True(productId > 0);
 
             productIds.Add(productId.Value);
         }
@@ -600,7 +623,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         const string nameOfData = "hic opriwopirvoppi og /df3243";
 
-        List<uint> productIds = new();
+        List<int> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
@@ -609,14 +632,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             // Updating display order so that everything is ordered
             validCreateRequest.Name = nameOfData;
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            uint? productId = insertResult.Match<uint?>(
+            int? productId = insertResult.Match<int?>(
                 id => id,
                 validationResult => null,
                 unexpectedFailureResult => null);
 
             Assert.NotNull(productId);
+            Assert.True(productId > 0);
 
             productIds.Add(productId.Value);
         }
@@ -651,7 +675,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         const string nameOfProductThatDoesntFollowCondition = "not the name in the condition";
 
-        List<uint> productIds = new();
+        List<int> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
@@ -662,9 +686,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             validCreateRequest.SearchString = searchStringOfData;
             validCreateRequest.Status = statusOfData;
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            uint? productId = insertResult.Match<uint?>(
+            int? productId = insertResult.Match<int?>(
                 id => id,
                 validationResult => null,
                 unexpectedFailureResult => null);
@@ -679,14 +703,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         validCreateRequest2.Name = nameOfProductThatDoesntFollowCondition;
         validCreateRequest2.Status = statusOfData;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
 
-        uint? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<uint?>(
+        int? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdForProductThatDoesntMatchConditions);
+        Assert.True(productIdForProductThatDoesntMatchConditions > 0);
 
         productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
@@ -711,7 +736,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         List<Product> productsInRange = _productService.GetFirstInRangeWhereAllConditionsAreMet(new() { Start = 10, Length = 10 }, productConditionalSearchRequest)
             .ToList();
 
-        Assert.True(productsInRange.Count == 10);
+        Assert.Equal(10, productsInRange.Count);
 
         Assert.Equal(allProductsRanged.Count, productsInRange.Count);
 
@@ -734,7 +759,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         const bool isProcessedForData = false;
         const bool needsToBeUpdatedForData = true;
 
-        List<uint> productIds = new();
+        List<int> productIds = new();
 
         for (int i = 0; i < 20; i++)
         {
@@ -745,14 +770,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             validCreateRequest.SearchString = searchStringOfData;
             validCreateRequest.Status = statusOfData;
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-            uint? productId = insertResult.Match<uint?>(
+            int? productId = insertResult.Match<int?>(
                 id => id,
                 validationResult => null,
                 unexpectedFailureResult => null);
 
             Assert.NotNull(productId);
+            Assert.True(productId > 0);
 
             ProductStatusesCreateRequest productStatusesCreateRequest = new()
             {
@@ -775,14 +801,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         validCreateRequest2.Name = nameOfProductThatDoesntFollowCondition;
         validCreateRequest2.Status = statusOfData;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResultForProductThatDoesntMatchConditions = _productService.Insert(validCreateRequest2);
 
-        uint? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<uint?>(
+        int? productIdForProductThatDoesntMatchConditions = insertResultForProductThatDoesntMatchConditions.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdForProductThatDoesntMatchConditions);
+        Assert.True(productIdForProductThatDoesntMatchConditions > 0);
 
         productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
@@ -809,7 +836,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         List<Product> productsInRange = _productService.GetFirstInRangeWhereAllConditionsAreMet(new() { Start = 10, Length = 10 }, productConditionalSearchRequest)
             .ToList();
 
-        Assert.True(productsInRange.Count == 10);
+        Assert.Equal(10, productsInRange.Count);
 
         Assert.Equal(allProductsRanged.Count, productsInRange.Count);
 
@@ -827,14 +854,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithFirstImage(productId.Value);
 
@@ -852,14 +880,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithFirstImage(0);
 
@@ -871,14 +900,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithProps(productId.Value);
 
@@ -894,14 +924,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithProps(0);
 
@@ -913,14 +944,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithImages(productId.Value);
 
@@ -936,14 +968,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         Product? insertedProduct = _productService.GetByIdWithImages(0);
 
@@ -954,9 +987,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductCreateRequest createRequest, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
@@ -1015,7 +1048,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 Price3 = 122.5M,
                 Currency = CurrencyEnum.EUR,
                 RowGuid = Guid.NewGuid(),
-                Promotionid = null,
+                PromotionId = null,
                 PromRid = null,
                 PromotionPictureId = null,
                 PromotionExpireDate = null,
@@ -1041,7 +1074,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                     new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
-                CategoryID = 7,
+                CategoryId = 7,
                 ManifacturerId = 12,
                 SubCategoryId = null,
             },
@@ -1066,7 +1099,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 Price3 = 122.5M,
                 Currency = CurrencyEnum.EUR,
                 RowGuid = Guid.NewGuid(),
-                Promotionid = null,
+                PromotionId = null,
                 PromRid = null,
                 PromotionPictureId = null,
                 PromotionExpireDate = null,
@@ -1094,7 +1127,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                     new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
-                CategoryID = 7,
+                CategoryId = 7,
                 ManifacturerId = 12,
                 SubCategoryId = null,
             },
@@ -1119,7 +1152,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 Price3 = 122.5M,
                 Currency = CurrencyEnum.EUR,
                 RowGuid = Guid.NewGuid(),
-                Promotionid = null,
+                PromotionId = null,
                 PromRid = null,
                 PromotionPictureId = null,
                 PromotionExpireDate = null,
@@ -1147,7 +1180,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                     new() { FileName = "20144.png", DisplayOrder = 2, Active = false }
                 },
 
-                CategoryID = 7,
+                CategoryId = 7,
                 ManifacturerId = 12,
                 SubCategoryId = null,
             },
@@ -1172,7 +1205,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 Price3 = 122.5M,
                 Currency = CurrencyEnum.EUR,
                 RowGuid = Guid.NewGuid(),
-                Promotionid = null,
+                PromotionId = null,
                 PromRid = null,
                 PromotionPictureId = null,
                 PromotionExpireDate = null,
@@ -1198,7 +1231,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                     new() { FileName = "20144.png", DisplayOrder = 2, Active = true }
                 },
 
-                CategoryID = 7,
+                CategoryId = 7,
                 ManifacturerId = 12,
                 SubCategoryId = null,
             },
@@ -1215,14 +1248,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest createRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(createRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         if (updateRequest.Id == _useRequiredValue)
         {
@@ -1282,14 +1316,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         bool? success = _productService.Delete(productId.Value);
 
@@ -1303,14 +1338,15 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validCreateRequest = GetValidProductCreateRequest();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(validCreateRequest);
 
-        uint? productId = insertResult.Match<uint?>(
+        int? productId = insertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         bool? success = _productService.Delete(0);
 
@@ -1332,7 +1368,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(createRequest.Currency, insertedProduct.Currency);
         Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(createRequest.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(createRequest.PromotionId, insertedProduct.Promotionid);
         Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
         Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
@@ -1343,7 +1379,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(createRequest.PartNumber2, insertedProduct.PartNumber2);
         Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
 
-        Assert.Equal(createRequest.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryID);
         Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
         Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
@@ -1419,7 +1455,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             && createRequest.DisplayPrice == insertedProduct.Price
             && createRequest.Currency == insertedProduct.Currency
             && createRequest.RowGuid == insertedProduct.RowGuid
-            && createRequest.Promotionid == insertedProduct.Promotionid
+            && createRequest.PromotionId == insertedProduct.Promotionid
             && createRequest.PromRid == insertedProduct.PromRid
             && createRequest.PromotionPictureId == insertedProduct.PromotionPictureId
             && createRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
@@ -1430,7 +1466,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             && createRequest.PartNumber2 == insertedProduct.PartNumber2
             && createRequest.SearchString == insertedProduct.SearchString
 
-            && createRequest.CategoryID == insertedProduct.CategoryID
+            && createRequest.CategoryId == insertedProduct.CategoryID
             && createRequest.ManifacturerId == insertedProduct.ManifacturerId
             && createRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
@@ -1542,7 +1578,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 ProductImage imageInObject = imagesInObject[j];
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
-                    && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
+                    && imageInRequest.ImageFileExtension == imageInObject.ImageContentType
                     && imageInRequest.HtmlData == imageInObject.HtmlData)
                 {
                     isMatched = true;
@@ -1631,8 +1667,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 ProductImage imageInObject = imagesInObject[j];
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
-                    && imageInRequest.ImageFileExtension == imageInObject.ImageFileExtension
-                    && imageInRequest.XML == imageInObject.HtmlData)
+                    && imageInRequest.ImageFileExtension == imageInObject.ImageContentType
+                    && imageInRequest.HtmlData == imageInObject.HtmlData)
                 {
                     isMatched = true;
 
@@ -1646,7 +1682,10 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         return true;
     }
 
-    private static bool CompareUpdateRequestDataWithActualUpdatedData(List<CurrentProductImageFileNameInfoCreateRequest>? createRequestData, List<CurrentProductImageFileNameInfoUpdateRequest>? updateRequests, List<ProductImageFileNameInfo> imageFileNamesInObject)
+    private static bool CompareUpdateRequestDataWithActualUpdatedData(
+        List<CurrentProductImageFileNameInfoCreateRequest>? createRequestData,
+        List<CurrentProductImageFileNameInfoUpdateRequest>? updateRequests,
+        List<ProductImageFileNameInfo> imageFileNamesInObject)
     {
         if (updateRequests is null)
         {
@@ -1673,23 +1712,23 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             foreach (CurrentProductImageFileNameInfoCreateRequest createRequestInner in createRequestData)
             {
-                if (createRequestInner.DisplayOrder == updateRequest.DisplayOrder)
-                {
-                    createRequestInner.DisplayOrder = updateRequest.NewDisplayOrder;
-                    createRequestInner.FileName = updateRequest.FileName;
-                }
-                else if (updateRequest.DisplayOrder < updateRequest.NewDisplayOrder
-                    && createRequestInner.DisplayOrder > updateRequest.DisplayOrder
-                    && createRequestInner.DisplayOrder <= updateRequest.NewDisplayOrder)
-                {
-                    createRequestInner.DisplayOrder--;
-                }
-                else if (updateRequest.DisplayOrder > updateRequest.NewDisplayOrder
-                    && createRequestInner.DisplayOrder < updateRequest.DisplayOrder
-                    && createRequestInner.DisplayOrder >= updateRequest.NewDisplayOrder)
-                {
-                    createRequestInner.DisplayOrder++;
-                }
+                //if (createRequestInner.DisplayOrder == updateRequest.DisplayOrder)
+                //{
+                //    createRequestInner.DisplayOrder = updateRequest.NewDisplayOrder;
+                //    createRequestInner.FileName = updateRequest.FileName;
+                //}
+                //else if (updateRequest.DisplayOrder < updateRequest.NewDisplayOrder
+                //    && createRequestInner.DisplayOrder > updateRequest.DisplayOrder
+                //    && createRequestInner.DisplayOrder <= updateRequest.NewDisplayOrder)
+                //{
+                //    createRequestInner.DisplayOrder--;
+                //}
+                //else if (updateRequest.DisplayOrder > updateRequest.NewDisplayOrder
+                //    && createRequestInner.DisplayOrder < updateRequest.DisplayOrder
+                //    && createRequestInner.DisplayOrder >= updateRequest.NewDisplayOrder)
+                //{
+                //    createRequestInner.DisplayOrder++;
+                //}
             }
         }
 
