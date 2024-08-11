@@ -1,18 +1,21 @@
 ﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.RealWorkTesting.Models.Product
 
 @model IndexProductTableRowPartialModel
 
 <tr id="@Model.HtmlElementId">
     <td>
-        @Model.ProductDisplayData.Id
+        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullWithXmlPopupData(@Model.ProductDisplayData.Id, '@Model.ProductFullWithXmlPopupContentId')">
+            @Model.ProductDisplayData.Id
+        </p>
     </td>
-
+    
     <td class="hide-on-button-press">
         <input id="@(Model.HtmlElementId)_NameInput" type="text"
             asp-for="ProductDisplayData.Name" value="@Model.ProductDisplayData.Name"
                data-for-product-property="@nameof(Model.ProductDisplayData.Name)" placeholder="-" />
     </td>
-
+    
     <td class="hide-on-button-press">
         <input id="@(Model.HtmlElementId)_AdditionalWarrantyPriceInput" type="number"
             asp-for="ProductDisplayData.AdditionalWarrantyPrice" value="@Model.ProductDisplayData.AdditionalWarrantyPrice"
@@ -163,14 +166,26 @@
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showFirstImagePopupData(@Model.ProductDisplayData.Id)">
+        <button class="btn btn-secondary" onclick="showFirstImagePopupData(@Model.ProductDisplayData.Id, '@Model.ProductFirstImagePopupContentId')">
             Images
         </button>
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id)">
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInDatabase), '@Model.ProductImagesPopupContentId')">
             Images All
+        </button>
+    </td>
+
+    <td>
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInFiles), '@Model.ProductImagesPopupContentId')">
+            Image Files
+        </button>
+    </td>
+
+    <td>
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.DisplayData), '@Model.ProductImagesPopupContentId')">
+            Edit Images
         </button>
     </td>
     
@@ -207,7 +222,8 @@
                 '@(Model.HtmlElementId)_ProductNewStatusSelect',
                 '@(Model.HtmlElementId)_ProductXmlStatusSelect',
                 '@(Model.HtmlElementId)__hiddenProductStatusIdInput',
-                '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'])">
+                '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'],
+                '@Model.ProductChangesPopupContentId')">
             Save
         </button>
     </td>
@@ -220,19 +236,19 @@
 
     <td>
         <select id="@(Model.HtmlElementId)_ProductNewStatusSelect" asp-items="Model.ProductNewStatusSelectListItems"
-            onchange="updateProductNewStatus(@Model.ProductDisplayData.Id, this.value)"
+            onchange="updateProductNewStatus(@Model.ProductDisplayData.Id, this.value, '@Model.HtmlElementId', @Model.TableIndex, '@Model.HtmlElementId')"
             data-for-product-property="@nameof(Model.ProductDisplayData.ProductNewStatus)"></select>
     </td>
 
     <td>
         <select id="@(Model.HtmlElementId)_ProductXmlStatusSelect" asp-items="Model.ProductXmlStatusSelectListItems"
-            onchange="updateProductXmlStatus(@Model.ProductDisplayData.Id, this.value)"
+            onchange="updateProductXmlStatus(@Model.ProductDisplayData.Id, this.value, '@Model.HtmlElementId', @Model.TableIndex, '@Model.HtmlElementId')"
             data-for-product-property="@nameof(Model.ProductDisplayData.ProductXmlStatus)"></select>
     </td>
 
     <td>
         <button id="@(Model.HtmlElementId)_ReadyForImageInsertButton" class="btn btn-outline-success"
-            onclick="toggleReadyForImageInsertStatus(@Model.ProductDisplayData.Id, '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput')">
+            onclick="toggleReadyForImageInsertStatus(@Model.ProductDisplayData.Id, '@Model.HtmlElementId', @Model.TableIndex, '@Model.HtmlElementId')">
             Ready
         </button>
     </td>
@@ -270,7 +286,8 @@
                 '@(Model.HtmlElementId)_ProductNewStatusSelect',
                 '@(Model.HtmlElementId)_ProductXmlStatusSelect',
                 '@(Model.HtmlElementId)__hiddenProductStatusIdInput',
-                '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'])">
+                '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'],
+                '@Model.ProductChangesPopupContentId')">
             Save
         </button>
     </td>
@@ -281,11 +298,10 @@
 
 </tr>
 
-<input id="@(Model.HtmlElementId)__hiddenProductIdInput" type="number" value="@Model.ProductDisplayData.Id"
-    style="display: none;" />
+<input id="@(Model.HtmlElementId)__hiddenProductIdInput" type="number" value="@Model.ProductDisplayData.Id" class="display-none" />
 
 <input id="@(Model.HtmlElementId)__hiddenProductStatusIdInput" type="number" value="@Model.ProductDisplayData.ProductWorkStatusesId"
-       style="display: none;" data-for-product-property="@nameof(Model.ProductDisplayData.ProductWorkStatusesId)" />
+    class="display-none" data-for-product-property="@nameof(Model.ProductDisplayData.ProductWorkStatusesId)" />
 
 @{
     string? valueOfReadyForImageInsertInput = null;
@@ -297,4 +313,4 @@
 }
 
 <input id="@(Model.HtmlElementId)__hiddenReadyForImageInsertInput" type="number" value="@valueOfReadyForImageInsertInput"
-    style="display: none;" data-for-product-property="@nameof(Model.ProductDisplayData.ReadyForImageInsert)" />
+    class="display-none" data-for-product-property="@nameof(Model.ProductDisplayData.ReadyForImageInsert)" />
