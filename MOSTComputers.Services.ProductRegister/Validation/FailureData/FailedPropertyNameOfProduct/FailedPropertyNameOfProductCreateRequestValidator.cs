@@ -13,7 +13,7 @@ internal sealed class FailedPropertyNameOfProductCreateRequestValidator : Abstra
 {
     public FailedPropertyNameOfProductCreateRequestValidator()
     {
-        RuleFor(x => (int)x.ProductId).NotEqual(0);
+        RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.PropertyName).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
     }
 }

@@ -13,7 +13,7 @@ internal sealed class FailedPropertyNameOfProductMultiCreateRequestValidator : A
 {
     public FailedPropertyNameOfProductMultiCreateRequestValidator()
     {
-        RuleFor(x => (int)x.ProductId).NotEqual(0);
+        RuleFor(x => x.ProductId).GreaterThan(0);
         RuleForEach(x => x.PropertyNames).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
