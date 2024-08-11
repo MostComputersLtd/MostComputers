@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayXmlPopup.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayImagesPopup.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/Pages/Shared/ProductSearchStringPopup.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Shared/SearchStringOriginSmallPopupsDisplayPartial.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/CustomTextSelection.css" asp-append-version="true" />
@@ -28,7 +27,6 @@
     <script src="~/js/TextHighlight.js"></script>
     <script src="~/js/Pages/Shared/ProductXmlPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
-    <script src="~/js/Pages/Shared/ProductSearchStringPopupControl.js"></script>
     <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
     <script src="~/js/NotificationBox.js"></script>
     <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
@@ -50,25 +48,27 @@
         <td id="propertyDisplayMainContainer_table_spaceBetween_td">
             <h6 id="searchStringPartsCopyDisplay" onclick="copyWholeSearchStringCopiedData('searchStringPartsCopyDisplay')"></h6>
         </td>
-
+        
         <td>
             <ul class="full-parent-width buttons-for-popups-list">
                 <li class="button-for-popup-li">
-                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId)">
+                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId, 'ProductImages_popup_modal_content')">
                         <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images"
-                             class="imagePopupButton_imagePopupButtonImage"/>
+                            class="imagePopupButton_imagePopupButtonImage"/>
                     </button>
                 </li>
                 <li id="propertyDisplayMainContainer_table_xmlPopupButton_li" class="button-for-popup-li">
-                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId)">View XML</button>
+                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId, 'ProductXml_popup_modal_content')">
+                        View XML
+                    </button>
                 </li>
             </ul>
         </td>
     </tr>
-
+    
     <tr>
         @{
-            var searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();
+            List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringParts = Model.GetSearchStringPartsAndDataAboutTheirOrigin();
         }
 
         @if (searchStringParts is not null)
@@ -94,36 +94,36 @@
             ProductProperty productProperty = Model.ProductProperties![i];
 
             <partial name="ProductProperties/_ProductSinglePropertyDisplayPartial"
-                model="@new _ProductSinglePropertyDisplayPartialModel(
-                    Model.ProductId, productProperty, i, false, Model.GetRemainingCharacteristics())" />
+                model='@new ProductSinglePropertyDisplayPartialModel(
+                    Model.ProductId, productProperty, i, false, Model.GetRemainingCharacteristics(), "topNotificationBox")' />
         }
     </tbody>
 </table>
 
-<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable(@Model.ProductId)">Add</button>
+<button class="btn btn-primary full-parent-width" onclick="addPropertyToTable(@Model.ProductId, 'propertyDisplay_table_tbody')">Add</button>
 
 <div id="ProductXml_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductXml-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+    <div id="ProductXml_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
         <div id="ProductXml_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
 
 <div id="ProductImages_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductImages-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+    <div id="ProductImages_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
         <div id="ProductImages_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
 
 <div id="ProductSearchString_modal" class="modal fade" tabindex="-1" role="dialog">
-    <div id="ProductSearchString-modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+    <div id="ProductSearchString_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
         <div id="ProductSearchString_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
 
-<ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
+<ul id="topNotificationBox" class="top-notification-box"></ul>
 
 @Html.AntiForgeryToken()
 
@@ -141,19 +141,19 @@
                 {
                     e.preventDefault();
 
-                    copyXmlTextToClipboard();
+                    copyXmlTextToClipboard("topNotificationBox");
 
                     return;
                 }
             }
-
+            
             let productImagesPopup = document.getElementById("ProductImages_popup");
 
             if (productImagesPopup === null) return;
 
             e.preventDefault();
 
-            copyImageDataToClipboard();
+            copyImageDataToClipboard("topNotificationBox");
         }
         else if (e.ctrlKey && e.key === 'a')
         {
@@ -161,7 +161,7 @@
 
             var productId = getProductId();
 
-            getImageFileData(productId);
+            getImageFileData(productId, "topNotificationBox");
         }
     }
 
