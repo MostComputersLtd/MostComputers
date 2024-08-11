@@ -1,12 +1,18 @@
-function redirectToSignInPage(returnUrlInputId)
+function redirectToSignInPage(returnUrlInputElementId)
 {
-    var returnUrlInput = document.getElementById(returnUrlInputId);
+    var returnUrlInputElement = document.getElementById(returnUrlInputElementId);
 
-    if (returnUrlInput == null) return;
+    if (returnUrlInputElement == null) return;
 
-    var returnUrl = returnUrlInput.value;
+    var returnUrl = returnUrlInputElement.value;
 
-    const url = "/Accounts/Login" + "?handler=RedirectToSignInPage" + "&returnUrl=" + returnUrl;
+    var url = "/Accounts/Login" + "?handler=RedirectToSignInPage";
+
+    if (returnUrl != null
+        && returnUrl.length > 0)
+    {
+        url += "&returnUrl=" + returnUrl;
+    }
 
     $.ajax({
         type: "GET",
