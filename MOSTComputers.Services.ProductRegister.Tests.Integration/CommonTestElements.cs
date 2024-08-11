@@ -27,7 +27,7 @@ internal static class CommonTestElements
         Price3 = 122.5M,
         Currency = CurrencyEnum.EUR,
         RowGuid = Guid.NewGuid(),
-        Promotionid = null,
+        PromotionId = null,
         PromRid = null,
         PromotionPictureId = null,
         PromotionExpireDate = null,
@@ -53,7 +53,7 @@ internal static class CommonTestElements
             new() { FileName = "20144.png", DisplayOrder = 2 }
         },
 
-        CategoryID = 7,
+        CategoryId = 7,
         ManifacturerId = 12,
         SubCategoryId = null,
     };
@@ -73,7 +73,7 @@ internal static class CommonTestElements
         Price3 = 122.5M,
         Currency = CurrencyEnum.EUR,
         RowGuid = Guid.NewGuid(),
-        Promotionid = null,
+        PromotionId = null,
         PromRid = null,
         PromotionPictureId = null,
         PromotionExpireDate = null,
@@ -98,7 +98,7 @@ internal static class CommonTestElements
             
         },
 
-        CategoryID = 7,
+        CategoryId = 7,
         ManifacturerId = 12,
         SubCategoryId = null,
     };
@@ -120,7 +120,7 @@ internal static class CommonTestElements
             Price3 = 122.5M,
             Currency = CurrencyEnum.EUR,
             RowGuid = Guid.NewGuid(),
-            Promotionid = null,
+            PromotionId = null,
             PromRid = null,
             PromotionPictureId = null,
             PromotionExpireDate = null,
@@ -163,7 +163,7 @@ internal static class CommonTestElements
                 new() { FileName = "4.png", DisplayOrder = 4 }
             },
 
-            CategoryID = categoryId,
+            CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
@@ -210,7 +210,7 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
 
@@ -218,16 +218,16 @@ internal static class CommonTestElements
                 {
                     ImageData = LocalTestImageData,
                     ImageFileExtension = "image/png",
-                    XML = "<data></data>",
+                    HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
             },
             ImageFileNames = new List<CurrentProductImageFileNameInfoUpdateRequest>()
             {
-                new() { FileName = "1 - 2", DisplayOrder = 1, NewDisplayOrder = 2 },
-                new() { FileName = "2 - 1", DisplayOrder = 2, NewDisplayOrder = 1 },
-                new() { FileName = "2 - 3", DisplayOrder = 2, NewDisplayOrder = 3 },
-                new() { FileName = "1 - 3", DisplayOrder = 1, NewDisplayOrder = 3 },
+                new() { FileName = "1 - 2", ImageNumber = 1, NewDisplayOrder = 2 },
+                new() { FileName = "2 - 1", ImageNumber = 2, NewDisplayOrder = 1 },
+                new() { FileName = "2 - 3", ImageNumber = 2, NewDisplayOrder = 3 },
+                new() { FileName = "1 - 3", ImageNumber = 1, NewDisplayOrder = 3 },
             },
 
             CategoryID = categoryId,
@@ -303,7 +303,7 @@ internal static class CommonTestElements
             Price3 = Random.Shared.NextInt64(100, 900_000) / 100,
             Currency = _randomCurrencies[Random.Shared.Next(0, _randomCurrencies.Count - 1)],
             RowGuid = Guid.NewGuid(),
-            Promotionid = null,
+            PromotionId = null,
             PromRid = null,
             PromotionPictureId = null,
             PromotionExpireDate = null,
@@ -344,7 +344,7 @@ internal static class CommonTestElements
                 new() { FileName = "20144.png", DisplayOrder = 2 }
             },
 
-            CategoryID = categoryId,
+            CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
@@ -391,7 +391,7 @@ internal static class CommonTestElements
             Price3 = 122.5M,
             Currency = CurrencyEnum.EUR,
             RowGuid = Guid.NewGuid(),
-            Promotionid = null,
+            PromotionId = null,
             PromRid = null,
             PromotionPictureId = null,
             PromotionExpireDate = null,
@@ -415,7 +415,7 @@ internal static class CommonTestElements
             {
             },
 
-            CategoryID = categoryId,
+            CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
@@ -464,7 +464,7 @@ internal static class CommonTestElements
             ImageData = LocalTestImageData,
             ImageFileExtension = "image/png",
             ProductId = productId,
-            XML = "<data></data>",
+            HtmlData = "<data></data>",
         };
     }
 
@@ -527,9 +527,9 @@ internal static class CommonTestElements
         return true;
     }
 
-    internal static bool DeleteProducts(this IProductService productService, params uint[] productIds)
+    internal static bool DeleteProducts(this IProductService productService, params int[] productIds)
     {
-        foreach (var productId in productIds)
+        foreach (int productId in productIds)
         {
             bool success = productService.Delete(productId);
 
@@ -539,9 +539,9 @@ internal static class CommonTestElements
         return true;
     }
 
-    internal static bool DeleteRangeCategories(this ICategoryService categoryService, params uint[] ids)
+    internal static bool DeleteRangeCategories(this ICategoryService categoryService, params int[] ids)
     {
-        foreach (uint id in ids)
+        foreach (int id in ids)
         {
             bool success = categoryService.Delete(id);
 
@@ -551,9 +551,9 @@ internal static class CommonTestElements
         return true;
     }
 
-    internal static bool DeleteRangeCharacteristics(this IProductCharacteristicService productCharacteristicService, params uint[] ids)
+    internal static bool DeleteRangeCharacteristics(this IProductCharacteristicService productCharacteristicService, params int[] ids)
     {
-        foreach (uint id in ids)
+        foreach (int id in ids)
         {
             bool success = productCharacteristicService.Delete(id);
 
@@ -567,7 +567,7 @@ internal static class CommonTestElements
     {
         foreach (var productId in productIds)
         {
-            bool success = productStatusesService.DeleteByProductId(productId);
+            bool success = productStatusesService.DeleteByProductId((int)productId);
 
             if (!success) return false;
         }
