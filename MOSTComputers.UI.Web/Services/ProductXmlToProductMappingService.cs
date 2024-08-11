@@ -2,7 +2,7 @@
 using MOSTComputers.Models.Product.MappingUtils;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
 
@@ -190,7 +190,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             {
                 Id = isImageIdParseSuccessful ? imageId : 0,
                 ImageData = imageData,
-                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
+                ImageContentType = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
                 HtmlData = xml,
                 ProductId = (int)productId,
             };
