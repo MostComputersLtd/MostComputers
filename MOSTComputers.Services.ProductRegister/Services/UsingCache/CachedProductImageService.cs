@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf.Types;
 using OneOf;
 using FluentValidation.Results;
@@ -7,10 +6,12 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImage;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class CachedProductImageService : IProductImageService
@@ -26,10 +27,14 @@ internal sealed class CachedProductImageService : IProductImageService
     private readonly ProductImageService _productImageService;
     private readonly ICache<string> _cache;
 
-    public IEnumerable<ProductImage> GetAllInProduct(uint productId)
+    public IEnumerable<ProductImage> GetAllInProduct(int productId)
     {
-        return _cache.GetOrAdd(GetInAllImagesByProductIdKey((int)productId),
+        if (productId <= 0) return Enumerable.Empty<ProductImage>();
+
+        IEnumerable<ProductImage> productImages = _cache.GetOrAdd(GetInAllImagesByProductIdKey(productId),
             () => _productImageService.GetAllInProduct(productId));
+
+        return CloneAll(productImages);
     }
 
     public IEnumerable<ProductImage> GetAllFirstImagesForAllProducts()
@@ -37,22 +42,26 @@ internal sealed class CachedProductImageService : IProductImageService
         return _productImageService.GetAllFirstImagesForAllProducts();
     }
 
-    public IEnumerable<ProductImage> GetAllFirstImagesForSelectionOfProducts(List<uint> productIds)
+    public IEnumerable<ProductImage> GetAllFirstImagesForSelectionOfProducts(List<int> productIds)
     {
+        productIds = RemoveValuesSmallerThanOne(productIds);
+
         List<ProductImage>? cachedImages = null;
 
         for (int i = 0; i < productIds.Count; i++)
         {
-            uint productId = productIds[i];
+            int productId = productIds[i];
 
             ProductImage? cachedproductFirstImage
-                = _cache.GetValueOrDefault<ProductImage>(GetInFirstImagesByIdKey((int)productId));
+                = _cache.GetValueOrDefault<ProductImage>(GetInFirstImagesByIdKey(productId));
 
             if (cachedproductFirstImage is not null)
             {
                 cachedImages ??= new();
 
-                cachedImages.Add(cachedproductFirstImage);
+                ProductImage firstImageClone = Clone(cachedproductFirstImage);
+
+                cachedImages.Add(firstImageClone);
 
                 productIds.RemoveAt(i);
 
@@ -74,7 +83,8 @@ internal sealed class CachedProductImageService : IProductImageService
 
         foreach (ProductImage image in firstImages)
         {
-            _cache.Add(GetInFirstImagesByIdKey(image.Id), image);
+            ProductImage imageCloneForCache = Clone(image);
+            _cache.Add(GetInFirstImagesByIdKey(image.Id), imageCloneForCache);
         }
 
         if (cachedImages is not null)
@@ -87,31 +97,43 @@ internal sealed class CachedProductImageService : IProductImageService
         return firstImages;
     }
 
-    public ProductImage? GetByIdInAllImages(uint id)
+    public ProductImage? GetByIdInAllImages(int id)
     {
-        return _cache.GetOrAdd(GetInAllImagesByIdKey((int)id),
+        if (id <= 0) return null;
+
+        ProductImage? productImageWithId = _cache.GetOrAdd(GetInAllImagesByIdKey(id),
             () => _productImageService.GetByIdInAllImages(id));
+
+        if (productImageWithId is null) return null;
+
+        return Clone(productImageWithId);
     }
 
-    public ProductImage? GetFirstImageForProduct(uint productId)
+    public ProductImage? GetFirstImageForProduct(int productId)
     {
-        return _cache.GetOrAdd(GetInFirstImagesByIdKey((int)productId),
+        if (productId <= 0) return null;
+
+        ProductImage? productFirstImage = _cache.GetOrAdd(GetInFirstImagesByIdKey(productId),
             () => _productImageService.GetFirstImageForProduct(productId));
+
+        if (productFirstImage is null) return null;
+
+        return Clone(productFirstImage);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> InsertInAllImages(ServiceProductImageCreateRequest createRequest,
         IValidator<ServiceProductImageCreateRequest>? validator = null)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _productImageService.InsertInAllImages(createRequest, validator);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _productImageService.InsertInAllImages(createRequest, validator);
 
-        uint? imageIdFromResult = result.Match<uint?>(
+        int? imageIdFromResult = result.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         if (imageIdFromResult is not null)
         {
-            _cache.Evict(GetInAllImagesByIdKey((int)imageIdFromResult));
+            _cache.Evict(GetInAllImagesByIdKey(imageIdFromResult.Value));
 
             if (createRequest.ProductId is null) return result;
 
@@ -123,20 +145,21 @@ internal sealed class CachedProductImageService : IProductImageService
         return result;
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ServiceProductImageCreateRequest createRequest,
-        uint? displayOrder = null,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(
+        ServiceProductImageCreateRequest createRequest,
+        int? displayOrder = null,
         IValidator<ServiceProductImageCreateRequest>? validator = null)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest, displayOrder, validator);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest, displayOrder, validator);
 
-        uint? imageIdFromResult = result.Match<uint?>(
+        int? imageIdFromResult = result.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         if (imageIdFromResult is not null)
         {
-            _cache.Evict(GetInAllImagesByIdKey((int)imageIdFromResult));
+            _cache.Evict(GetInAllImagesByIdKey(imageIdFromResult.Value));
 
             if (createRequest.ProductId is null) return result;
 
@@ -184,7 +207,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
         if (successFromResult)
         {
-            ProductImage? updatedOrOldProductImage = GetByIdInAllImages((uint)updateRequest.Id);
+            ProductImage? updatedOrOldProductImage = GetByIdInAllImages(updateRequest.Id);
 
             _cache.Evict(GetInAllImagesByIdKey(updateRequest.Id));
 
@@ -219,8 +242,90 @@ internal sealed class CachedProductImageService : IProductImageService
         return result;
     }
 
-    public bool DeleteInAllImagesById(uint id)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData)
     {
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateHtmlDataInAllImagesResult
+            = _productImageService.UpdateHtmlDataInAllImagesById(imageId, htmlData);
+
+        bool successFromResult = updateHtmlDataInAllImagesResult.Match(
+            success => true,
+            _ => false,
+            _ => false);
+
+        if (successFromResult)
+        {
+            _cache.Evict(GetInAllImagesByIdKey(imageId));
+
+            ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+
+            if (productImage?.ProductId is null) return updateHtmlDataInAllImagesResult;
+
+            _cache.Evict(GetInAllImagesByProductIdKey(productImage.ProductId.Value));
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productImage.ProductId.Value));
+        }
+
+        return updateHtmlDataInAllImagesResult;
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData)
+    {
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateHtmlDataInFirstImagesResult
+            = _productImageService.UpdateHtmlDataInFirstImagesByProductId(productId, htmlData);
+
+        bool successFromResult = updateHtmlDataInFirstImagesResult.Match(
+            success => true,
+            _ => false,
+            _ => false);
+
+        if (successFromResult)
+        {
+            _cache.Evict(GetInFirstImagesByIdKey(productId));
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
+        }
+
+        return updateHtmlDataInFirstImagesResult;
+    }
+
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData)
+    {
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateHtmlDataInFirstAndAllImagesResult
+            = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(productId, htmlData);
+
+        bool successFromResult = updateHtmlDataInFirstAndAllImagesResult.Match(
+            success => true,
+            _ => false,
+            _ => false);
+
+        if (successFromResult)
+        {
+            string getInAllImagesByProductIdKey = GetInAllImagesByProductIdKey(productId);
+
+            IEnumerable<ProductImage>? cachedProductImages = _cache.GetValueOrDefault<IEnumerable<ProductImage>>(getInAllImagesByProductIdKey);
+
+            if (cachedProductImages is not null)
+            {
+                foreach (ProductImage productImage in cachedProductImages)
+                {
+                    _cache.Evict(GetInAllImagesByIdKey(productImage.Id));
+                }
+            }
+
+            _cache.Evict(getInAllImagesByProductIdKey);
+
+            _cache.Evict(GetInFirstImagesByIdKey(productId));
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
+        }
+
+        return updateHtmlDataInFirstAndAllImagesResult;
+    }
+
+    public bool DeleteInAllImagesById(int id)
+    {
+        if (id <= 0) return false;
+
         ProductImage? productImage = GetByIdInAllImages(id);
 
         if (productImage is null) return false;
@@ -229,7 +334,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
         if (success)
         {
-            _cache.Evict(GetInAllImagesByIdKey((int)id));
+            _cache.Evict(GetInAllImagesByIdKey(id));
 
             if (productImage.ProductId is null) return success;
 
@@ -241,8 +346,10 @@ internal sealed class CachedProductImageService : IProductImageService
         return success;
     }
 
-    public bool DeleteInAllImagesAndImageFilePathInfosById(uint id)
+    public bool DeleteInAllImagesAndImageFilePathInfosById(int id)
     {
+        if (id <= 0) return false;
+
         ProductImage? productImage = GetByIdInAllImages(id);
 
         if (productImage is null) return false;
@@ -251,7 +358,7 @@ internal sealed class CachedProductImageService : IProductImageService
 
         if (success)
         {
-            _cache.Evict(GetInAllImagesByIdKey((int)id));
+            _cache.Evict(GetInAllImagesByIdKey(id));
 
             if (productImage.ProductId is null) return success;
 
@@ -265,8 +372,10 @@ internal sealed class CachedProductImageService : IProductImageService
         return success;
     }
 
-    public bool DeleteAllImagesForProduct(uint productId)
+    public bool DeleteAllImagesForProduct(int productId)
     {
+        if (productId <= 0) return false;
+
         IEnumerable<ProductImage> imagesForProduct = GetAllInProduct(productId);
 
         if (!imagesForProduct.Any()) return false;
@@ -280,23 +389,25 @@ internal sealed class CachedProductImageService : IProductImageService
                 _cache.Evict(GetInAllImagesByIdKey(image.Id));
             }
 
-            _cache.Evict(GetInAllImagesByProductIdKey((int)productId));
+            _cache.Evict(GetInAllImagesByProductIdKey(productId));
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
     }
 
-    public bool DeleteInFirstImagesByProductId(uint productId)
+    public bool DeleteInFirstImagesByProductId(int productId)
     {
+        if (productId <= 0) return false;
+
         bool success = _productImageService.DeleteInFirstImagesByProductId(productId);
 
         if (success)
         {
-            _cache.Evict(GetInFirstImagesByIdKey((int)productId));
+            _cache.Evict(GetInFirstImagesByIdKey(productId));
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
