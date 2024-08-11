@@ -15,24 +15,32 @@
     <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayImagesPopup.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Shared/SearchStringOriginSmallPopupsDisplayPartial.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Shared/ProductChangesPopup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductFullDisplayWithXmlPopup.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/NotificationBox.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Index.css" asp-append-version="true" />
 }
 
 @section Scripts {
     <script src="~/js/Index.js"></script>
+    <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
     <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductFirstImagePopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductFullWithXmlPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductChangesPopupControl.js"></script>
     <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
+    <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
     <script src="~/js/NotificationBox.js"></script>
 }
 
 <div>
-    <div style="display: flex; flex-direction: row;">
+    <div class="product-display-topbar">
 
-        <input id="_productTableSelectByElementId_input_hidden" type="number" style="display: none;" />
-        <input id="_productTableSelectByElementId_tableIndex_input_hidden" type="number" style="display: none;" />
+        @{
+            int? productHighestId = Model.GetProductHighestId();
+        }
+        
+        <input id="_productTableSelectByElementId_input_hidden" class="display-none" type="number" value="@productHighestId" />
+        <input id="_productTableSelectByElementId_tableIndex_input_hidden" class="display-none" type="number" value="0" />
                 
         <input id="productTableIdInput" type="number" placeholder="-" />
 
@@ -46,12 +54,11 @@
             Search
         </button>
 
-        <div style="display: flex; flex-direction: column; align-items: center; margin: 0px 1%;">
+        <div class="product-display-highest-id-container">
 
-            <p style="margin-bottom: 0px; font-size: 12px;">Max ID + 1</p>
+            <p class="product-display-highest-id-top-paragraph">Max ID + 1</p>
 
-            <label id="productTableHighestIdLabel" class="link-info" 
-                style="font-size: 14px"
+            <label id="productTableHighestIdLabel" class="link-info product-display-highest-id-display-label"
                 onclick="getOnlyProductWithHighestId(
                     'productTableTbody',
                     'productTable_item-@Model.Products.Count.ToString()',
@@ -59,7 +66,7 @@
                     '_productTableSelectByElementId_input_hidden',
                     'productTable_item-@Model.Products.Count.ToString()__hiddenProductIdInput',
                     '_productTableSelectByElementId_tableIndex_input_hidden')">
-                    @(Model.SingleEditedProduct?.Id + 1)
+                @(productHighestId is not null ? productHighestId + 1 : null)
             </label>
         </div>
 
@@ -104,8 +111,8 @@
             Add product from existing data
         </button>
 
-        <input id="productTableHideFirstRowsCheckboxInput" type="checkbox" onchange="toggleFirstRows(this.checked)"
-            style="margin: 0px 7px;" />
+        <input id="productTableHideFirstRowsCheckboxInput" type="checkbox" class="product-display-hide-first-rows-checkbox"
+            onchange="toggleFirstRows(this.checked)"/>
     </div>
     
     <table id="productTable" class="table table-responsive hover">
@@ -134,10 +141,12 @@
                 <th class="hide-on-button-press">Price List Description</th>
                 <th class="hide-on-button-press">Part No. 1</th>
                 <th class="hide-on-button-press">Part No. 2</th>
-                <th class="hide-on-button-press" style="min-width: 200px;">Search String</th>
+                <th class="hide-on-button-press product-display-table-searchstring-column">Search String</th>
                 <th class="hide-on-button-press">Category</th>
                 <th class="hide-on-button-press">Manifacturer</th>
                 <th class="hide-on-button-press">Sub Category ID</th>
+                <th></th>
+                <th></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -162,17 +171,24 @@
         </tbody>
     </table>
 
-    <button id="addProductButton" class="btn btn-primary" style="width: 100%"
+    <button id="addProductButton" class="btn btn-primary full-parent-width"
         onclick="addNewProduct('productTableTbody', 'productTable_item-@Model.Products.Count.ToString()', @Model.Products.Count, 'productTableHighestIdLabel')">
         +
     </button>
 
-    <button id="triggerChangesCheckButton" class="btn btn-primary" style="width: 100px"
-        onclick="triggerChangesCheck()">
-        +
+    <button id="triggerChangesCheckButton" class="btn btn-primary product-display-trigger-changes-button"
+        onclick="triggerChangesCheck('topNotificationBox')">
+        Check for changes
     </button>
-
+    
         @Html.AntiForgeryToken()
+</div>
+
+<div id="ProductFullWithXml_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductFullWithXml_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductFullWithXml_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
 </div>
 
 <div id="ProductChanges_modal" class="modal fade" tabindex="-1" role="dialog">
@@ -196,4 +212,4 @@
     </div>
 </div>
 
-<ul id="copiedXmlNotificationBox" class="copied-xml-notification-box"></ul>
+<ul id="topNotificationBox" class="top-notification-box"></ul>
