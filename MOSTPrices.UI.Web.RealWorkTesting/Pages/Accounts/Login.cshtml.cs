@@ -9,9 +9,14 @@ using static MOSTComputers.UI.Web.RealWorkTesting.Utils.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Pages.Accounts;
 
-public sealed class LoginModel(IAuthenticationService authenticationService) : PageModel
+public sealed class LoginModel : PageModel
 {
-    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly IAuthenticationService _authenticationService;
+
+    public LoginModel(IAuthenticationService authenticationService)
+    {
+        _authenticationService = authenticationService;
+    }
 
     [BindProperty]
     public string Username { get; set; } = string.Empty;
