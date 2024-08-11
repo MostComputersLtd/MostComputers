@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Services.XMLDataOperations\MOSTComputers.Services.XMLDataOperations.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,9 +16,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Services.Authentication\MOSTComputers.Services.Identity.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Services.XMLDataOperations\MOSTComputers.Services.XMLDataOperations.csproj" />
   </ItemGroup>
 
   <ItemGroup>
