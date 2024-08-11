@@ -30,6 +30,7 @@
     <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.ProductImageFileNameUtils\MOSTComputers.Utils.ProductImageFileNameUtils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
