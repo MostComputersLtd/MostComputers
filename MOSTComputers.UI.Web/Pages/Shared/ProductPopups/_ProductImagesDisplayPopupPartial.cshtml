@@ -23,7 +23,7 @@
 
                 <img id="productCurrentImageDisplay"
                     name="Image #0"
-                    src="data:@firstImage.ImageFileExtension;base64,@Convert.ToBase64String(firstImage.ImageData!)"
+                    src="data:@firstImage.ImageContentType;base64,@Convert.ToBase64String(firstImage.ImageData!)"
                     class="product-image-popup-current-image-display" />
             }
 
@@ -44,7 +44,7 @@
 
                     if (image.ImageData is null) continue;
 
-                    string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
+                    string imageSrc = $"data:{image.ImageContentType};base64,{Convert.ToBase64String(image.ImageData)}";
 
                     float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.35F;
 
