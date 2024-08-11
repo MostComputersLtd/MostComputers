@@ -19,23 +19,25 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
     }
 
-    public IEnumerable<ProductImage> GetAllInProduct(uint productId)
+#pragma warning disable IDE0037 // Use inferred member name
+
+    public IEnumerable<ProductImage> GetAllInProduct(int productId)
     {
         const string getAllInProductQuery =
             $"""
-            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
             FROM {_allImagesTableName}
             WHERE CSTID = @productId;
             """;
 
-        return _relationalDataAccess.GetData<ProductImage, dynamic>(getAllInProductQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetData<ProductImage, dynamic>(getAllInProductQuery, new { productId = productId });
     }
 
     public IEnumerable<ProductImage> GetAllFirstImagesForAllProducts()
     {
         const string getAllFirstImagesForAllProductsQuery =
             $"""
-            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
             FROM {_firstImagesTableName}
             """;
 
@@ -44,50 +46,51 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return images.Select(image => Map(image));
     }
 
-    public IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<uint> productIds)
+    public IEnumerable<ProductImage> GetFirstImagesForSelectionOfProducts(List<int> productIds)
     {
         const string getByIdInFirstImagesQuery =
             $"""
-            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
             FROM {_firstImagesTableName}
             WHERE ID IN @productIds
             """;
 
-        IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery, new { productIds = productIds.Select(x => (int)x) });
+        IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery,
+            new { productIds = productIds });
 
         return images.Select(x => Map(x));
     }
 
-    public ProductImage? GetByIdInAllImages(uint id)
+    public ProductImage? GetByIdInAllImages(int id)
     {
         const string getByIdInAllImagesQuery =
             $"""
-            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
             FROM {_allImagesTableName}
             WHERE ID = @id;
             """;
 
-        return _relationalDataAccess.GetData<ProductImage, dynamic>(getByIdInAllImagesQuery, new { id = (int)id }).FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<ProductImage, dynamic>(getByIdInAllImagesQuery, new { id = id });
     }
 
-    public ProductImage? GetByProductIdInFirstImages(uint productId)
+    public ProductImage? GetByProductIdInFirstImages(int productId)
     {
         const string getByIdInFirstImagesQuery =
             $"""
-            SELECT ID AS ImageProductId, Description AS XMLData, Image, ImageFileExt, DateModified
+            SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
             FROM {_firstImagesTableName}
             WHERE ID = @productId;
             """;
 
-        ProductFirstImage? image = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery, new { productId = (int)productId })
-            .FirstOrDefault();
+        ProductFirstImage? image = _relationalDataAccess.GetDataFirstOrDefault<ProductFirstImage, dynamic>(getByIdInFirstImagesQuery,
+            new { productId = productId });
 
         if (image is null) return null;
 
         return Map(image);
     }
 
-    public OneOf<uint, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest)
+    public OneOf<int, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest)
     {
         const string insertInAllImagesQuery =
             $"""
@@ -111,10 +114,10 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertInAllImagesQuery, parameters);
 
-        return (id is not null && id >= 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id >= 0) ? id.Value : new UnexpectedFailureResult();
     }
 
-    public OneOf<uint, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, uint? displayOrder = null)
+    public OneOf<int, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, int? displayOrder = null)
     {
         const string insertInAllImagesAndImageFileNameInfosQuery =
             $"""
@@ -154,7 +157,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         var parameters = new
         {
             productId = createRequest.ProductId,
-            displayOrder = (int?)displayOrder,
+            displayOrder = displayOrder,
             createRequest.HtmlData,
             createRequest.ImageData,
             createRequest.ImageFileExtension,
@@ -164,7 +167,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(
             insertInAllImagesAndImageFileNameInfosQuery, parameters, doInTransaction: true);
 
-        return (id is not null && id >= 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id >= 0) ? id.Value : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest)
@@ -189,7 +192,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest)
+    public OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest updateRequest)
     {
         const string updateInAllImagesQuery =
             $"""
@@ -204,11 +207,11 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         var parameters = new
         {
-            id = createRequest.Id,
-            createRequest.HtmlData,
-            createRequest.ImageData,
-            createRequest.ImageFileExtension,
-            createRequest.DateModified,
+            id = updateRequest.Id,
+            updateRequest.HtmlData,
+            updateRequest.ImageData,
+            updateRequest.ImageFileExtension,
+            updateRequest.DateModified,
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(updateInAllImagesQuery, parameters);
@@ -243,7 +246,74 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public bool DeleteInAllImagesById(uint id)
+    public OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData)
+    {
+        const string updateHtmlDataInAllImagesByIdQuery =
+            $"""
+            UPDATE {_allImagesTableName}
+            SET Description = @HtmlData
+
+            WHERE ID = @imageId;
+            """;
+
+        var parameters = new
+        {
+            imageId = imageId,
+            HtmlData = htmlData
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateHtmlDataInAllImagesByIdQuery, parameters);
+
+        return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
+    }
+
+    public OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData)
+    {
+        const string updateHtmlDataInFirstImagesByProductIdQuery =
+            $"""
+            UPDATE {_firstImagesTableName}
+            SET Description = @HtmlData
+
+            WHERE ID = @productId;
+            """;
+
+        var parameters = new
+        {
+            productId = productId,
+            HtmlData = htmlData
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateHtmlDataInFirstImagesByProductIdQuery, parameters);
+
+        return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
+    }
+
+    public OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData)
+    {
+        const string updateHtmlDataInFirstAndAllImagesByProductIdQuery =
+            $"""
+            UPDATE {_allImagesTableName}
+            SET Description = @HtmlData
+            
+            WHERE CSTID = @productId;
+
+            UPDATE {_firstImagesTableName}
+            SET Description = @HtmlData
+
+            WHERE ID = @productId;
+            """;
+
+        var parameters = new
+        {
+            productId = productId,
+            HtmlData = htmlData
+        };
+        int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(updateHtmlDataInFirstAndAllImagesByProductIdQuery, parameters, true);
+
+        return (rowsAffected >= 0) ? new Success() : new UnexpectedFailureResult();
+    }
+
+    public bool DeleteInAllImagesById(int id)
     {
         const string deleteQuery =
             $"""
@@ -253,7 +323,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected <= 0) return false;
 
@@ -265,7 +335,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         }
     }
 
-    public bool DeleteInAllImagesAndImageFilePathInfosById(uint id)
+    public bool DeleteInAllImagesAndImageFilePathInfosById(int id)
     {
         const string deleteInAllImagesAndImageFilePathInfosByIdQuery =
             $"""
@@ -291,7 +361,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteInAllImagesAndImageFilePathInfosByIdQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteInAllImagesAndImageFilePathInfosByIdQuery, new { id = id });
 
             if (rowsAffected <= 0) return false;
 
@@ -303,7 +373,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         }
     }
 
-    public bool DeleteInFirstImagesByProductId(uint id)
+    public bool DeleteInFirstImagesByProductId(int id)
     {
         const string deleteQuery =
             $"""
@@ -313,7 +383,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductFirstImage, dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected <= 0) return false;
 
@@ -325,7 +395,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         }
     }
 
-    public bool DeleteAllWithSameProductIdInAllImages(uint productId)
+    public bool DeleteAllWithSameProductIdInAllImages(int productId)
     {
         const string deleteQuery =
             $"""
@@ -335,7 +405,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId = (int)productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductImage, dynamic>(deleteQuery, new { productId = productId });
 
             if (rowsAffected <= 0) return false;
 
@@ -347,6 +417,8 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         }
     }
 
+#pragma warning restore IDE0037 // Use inferred member name
+
     private static ProductImage Map(ProductFirstImage image)
     {
         return new ProductImage()
@@ -355,7 +427,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             ProductId = image.Id,
             HtmlData = image.HtmlData,
             ImageData = image.ImageData,
-            ImageFileExtension = image.ImageFileExtension,
+            ImageContentType = image.ImageFileExtension,
             DateModified = image.DateModified,
         };
     }
