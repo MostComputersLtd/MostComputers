@@ -9,9 +9,9 @@ internal sealed class ProductImageFileNameInfoByImageNumberUpdateRequestValidato
 {
     public ProductImageFileNameInfoByImageNumberUpdateRequestValidator()
     {
+        RuleFor(x => x.ImageNumber).GreaterThan(0);
         RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.FileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.NewDisplayOrder).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.ImageNumber).GreaterThan(0);
     }
 }
