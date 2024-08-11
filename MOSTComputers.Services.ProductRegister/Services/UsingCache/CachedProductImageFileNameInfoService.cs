@@ -5,11 +5,11 @@ using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.Caching.Services.Contracts;
-using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImageFileNameInfo;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -28,13 +28,19 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
     public IEnumerable<ProductImageFileNameInfo> GetAll()
     {
-        return _cache.GetOrAdd(GetAllKey, _imageFileNameInfoService.GetAll);
+        IEnumerable<ProductImageFileNameInfo> productImageFileNameInfos = _cache.GetOrAdd(GetAllKey, _imageFileNameInfoService.GetAll);
+
+        return CloneAll(productImageFileNameInfos);
     }
 
-    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(uint productId)
+    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(int productId)
     {
-        return _cache.GetOrAdd(GetByProductIdKey((int)productId),
+        if (productId <= 0) return Enumerable.Empty<ProductImageFileNameInfo>();
+
+        IEnumerable<ProductImageFileNameInfo> productImageFileNameInfos = _cache.GetOrAdd(GetByProductIdKey(productId),
             () => _imageFileNameInfoService.GetAllInProduct(productId));
+
+        return CloneAll(productImageFileNameInfos);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
@@ -104,33 +110,55 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
         return updateResult;
     }
 
-    public bool DeleteAllForProductId(uint productId)
+    public bool DeleteAllForProductId(int productId)
     {
+        if (productId <= 0) return false;
+
         bool success = _imageFileNameInfoService.DeleteAllForProductId(productId);
 
         if (success)
         {
-            _cache.Evict(GetByProductIdKey((int)productId));
+            _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
     }
 
-    public bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder)
+    public bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder)
     {
+        if (productId <= 0 || displayOrder <= 0) return false;
+
         bool success = _imageFileNameInfoService.DeleteByProductIdAndDisplayOrder(productId, displayOrder);
 
         if (success)
         {
-            _cache.Evict(GetByProductIdKey((int)productId));
+            _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
+        }
+
+        return success;
+    }
+
+    public bool DeleteByProductIdAndImageNumber(int productId, int imageNumber)
+    {
+        if (productId <= 0 || imageNumber <= 0) return false;
+
+        bool success = _imageFileNameInfoService.DeleteByProductIdAndImageNumber(productId, imageNumber);
+
+        if (success)
+        {
+            _cache.Evict(GetByProductIdKey(productId));
+
+            _cache.Evict(GetAllKey);
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
