@@ -13,8 +13,8 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNam
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.UI.Web.StaticUtilities;
@@ -70,11 +70,11 @@ public sealed class ProductDisplayModel : PageModel
 
     private void PopulateProductsFromStartToEnd(uint start, uint length)
     {
-        List<Product> products = _productService.GetFirstItemsBetweenStartAndEnd(new() { Start = start, Length = length })
+        List<Product> products = _productService.GetFirstItemsBetweenStartAndEnd(new() { Start = (int)start, Length = length })
             .ToList();
 
         IEnumerable<ProductStatuses> productStatuses = _productStatusesService.GetSelectionByProductIds(
-            products.Select(product => (uint)product.Id));
+            products.Select(product => product.Id));
 
         ProductsAndStatuses = new();
 
@@ -148,13 +148,13 @@ public sealed class ProductDisplayModel : PageModel
         ProductImage image = product.Images[(int)imageIndex];
 
         if (image.ImageData is null
-            || image.ImageFileExtension is null) return StatusCode(500);
+            || image.ImageContentType is null) return StatusCode(500);
 
-        int slashIndex = image.ImageFileExtension.IndexOf('/');
+        int slashIndex = image.ImageContentType.IndexOf('/');
 
-        string fileExtension = image.ImageFileExtension[(slashIndex + 1)..];
+        string fileExtension = image.ImageContentType[(slashIndex + 1)..];
 
-        return File(image.ImageData, image.ImageFileExtension, $"{productId}_{imageIndex}.{fileExtension}");
+        return File(image.ImageData, image.ImageContentType, $"{productId}_{imageIndex}.{fileExtension}");
     }
 
     public IActionResult OnGetSearchProductById(uint? productId)
@@ -168,11 +168,11 @@ public sealed class ProductDisplayModel : PageModel
         }
         ProductsAndStatuses = new();
 
-        Product? product = _productService.GetByIdWithFirstImage(productId.Value);
+        Product? product = _productService.GetByIdWithFirstImage((int)productId.Value);
 
         if (product is null) return BadRequest();
 
-        ProductStatuses? productStatuses = _productStatusesService.GetByProductId(productId.Value);
+        ProductStatuses? productStatuses = _productStatusesService.GetByProductId((int)productId.Value);
 
         ProductAndStatuses item = new()
         {
@@ -208,7 +208,7 @@ public sealed class ProductDisplayModel : PageModel
             return new JsonResult(new { length = 12 });
         }
 
-        IEnumerable<uint> productIds = products.Select(product => (uint)product.Id);
+        IEnumerable<int> productIds = products.Select(product => product.Id);
 
         IEnumerable<ProductStatuses> productStatuses = _productStatusesService.GetSelectionByProductIds(productIds);
 
@@ -251,7 +251,7 @@ public sealed class ProductDisplayModel : PageModel
             return new JsonResult(new { length = 12 });
         }
 
-        IEnumerable<uint> productIds = products.Select(product => (uint)product.Id);
+        IEnumerable<int> productIds = products.Select(product => product.Id);
 
         IEnumerable<ProductStatuses> productStatuses = _productStatusesService.GetSelectionByProductIds(productIds);
 
@@ -329,7 +329,7 @@ public sealed class ProductDisplayModel : PageModel
             return new JsonResult(new { length = 12 });
         }
 
-        IEnumerable<uint> productIds = products!.Select(product => (uint)product.Id);
+        IEnumerable<int> productIds = products!.Select(product => product.Id);
 
         IEnumerable<ProductStatuses> productStatuses = _productStatusesService.GetSelectionByProductIds(productIds);
 
@@ -454,10 +454,10 @@ public sealed class ProductDisplayModel : PageModel
 
         string contentType = fileInfo.ContentType;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertImageResult = InsertImageWithData(productId, imageBytes, contentType);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertImageResult = InsertImageWithData(productId, imageBytes, contentType);
 
         OneOf<int, IActionResult> getIdOfInsertedImageResult = insertImageResult.Match<OneOf<int, IActionResult>>(
-            id => (int)id,
+            id => id,
             _ => StatusCode(500),
             _ => BadRequest());
 
@@ -472,7 +472,7 @@ public sealed class ProductDisplayModel : PageModel
         return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(product));
     }
 
-    private OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertImageWithData(uint productId, byte[] imageBytes, string contentType)
+    private OneOf<int, ValidationResult, UnexpectedFailureResult> InsertImageWithData(uint productId, byte[] imageBytes, string contentType)
     {
         ServiceProductImageCreateRequest imageCreateRequest = new()
         {
@@ -482,7 +482,8 @@ public sealed class ProductDisplayModel : PageModel
             HtmlData = GetProductXML(productId)
         };
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImagesAndImageFileNameInfos(imageCreateRequest, null);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertImageResult
+            = _productImageService.InsertInAllImagesAndImageFileNameInfos(imageCreateRequest, null);
 
         return insertImageResult;
     }
@@ -492,7 +493,7 @@ public sealed class ProductDisplayModel : PageModel
         if (oldDisplayOrder == newDisplayOrder) return new OkResult();
 
         IEnumerable<ProductImageFileNameInfo> imageFileNameInfosForProduct
-            = _productImageFileNameInfoService.GetAllInProduct(productId);
+            = _productImageFileNameInfoService.GetAllInProduct((int)productId);
 
         ProductImageFileNameInfo? imageFileNameInfoThatWasUpdated = imageFileNameInfosForProduct.FirstOrDefault(x => x.DisplayOrder == oldDisplayOrder);
 
@@ -540,7 +541,7 @@ public sealed class ProductDisplayModel : PageModel
 
             ServiceProductFirstImageCreateRequest imageCreateRequest = GetFirstImageCreateRequestFromImage(newFirstImage);
 
-            bool removeFirstImageResult = _productImageService.DeleteInFirstImagesByProductId(productId);
+            bool removeFirstImageResult = _productImageService.DeleteInFirstImagesByProductId((int)productId);
 
             if (!removeFirstImageResult) return StatusCode(500);
 
@@ -560,7 +561,7 @@ public sealed class ProductDisplayModel : PageModel
         {
             ProductId = (int)newFirstImage.ProductId!,
             ImageData = newFirstImage.ImageData,
-            ImageFileExtension = newFirstImage.ImageFileExtension,
+            ImageFileExtension = newFirstImage.ImageContentType,
             HtmlData = newFirstImage.HtmlData,
         };
     }
@@ -573,7 +574,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (idOfImage is null) return null;
 
-        ProductImage? newFirstImage = _productImageService.GetByIdInAllImages((uint)idOfImage);
+        ProductImage? newFirstImage = _productImageService.GetByIdInAllImages(idOfImage.Value);
 
         return newFirstImage;
     }
@@ -598,7 +599,7 @@ public sealed class ProductDisplayModel : PageModel
 
     public IActionResult OnDeleteDeleteImageFromProduct(uint imageId)
     {
-        bool deleteImageResult = _productImageService.DeleteInAllImagesAndImageFilePathInfosById(imageId);
+        bool deleteImageResult = _productImageService.DeleteInAllImagesAndImageFilePathInfosById((int)imageId);
 
         return deleteImageResult ? new OkResult() : BadRequest();
     }
@@ -613,9 +614,9 @@ public sealed class ProductDisplayModel : PageModel
 
         XmlObjectData xmlDataFromProduct = _mapperService.GetXmlDataFromProducts(_singleProductList);
 
-        OneOf<string?, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
+        OneOf<string, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
 
-        return serializationResult.Match(
+        return serializationResult.Match<string?>(
             data => data,
             invalidXmlResult => null);
     }
@@ -626,9 +627,9 @@ public sealed class ProductDisplayModel : PageModel
 
         XmlObjectData xmlDataFromProduct = _mapperService.GetXmlDataFromProducts(_singleProductList);
 
-        OneOf<string?, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
+        OneOf<string, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
 
-        return serializationResult.Match(
+        return serializationResult.Match<string?>(
             data => data,
             invalidXmlResult => null);
     }
@@ -645,7 +646,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (addProps)
         {
-            List<ProductProperty> propsOfProduct = _productPropertyService.GetAllInProduct(productId)
+            List<ProductProperty> propsOfProduct = _productPropertyService.GetAllInProduct((int)productId)
                 .ToList();
 
             if (propsOfProduct.Count > 0)
@@ -656,7 +657,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (addImages)
         {
-            List<ProductImage> imagesOfProduct = _productImageService.GetAllInProduct(productId)
+            List<ProductImage> imagesOfProduct = _productImageService.GetAllInProduct((int)productId)
             .ToList();
 
             if (imagesOfProduct.Count > 0)
@@ -667,7 +668,7 @@ public sealed class ProductDisplayModel : PageModel
 
         if (addImageFilePaths)
         {
-            List<ProductImageFileNameInfo> imageFileNamesOfProduct = _productImageFileNameInfoService.GetAllInProduct(productId)
+            List<ProductImageFileNameInfo> imageFileNamesOfProduct = _productImageFileNameInfoService.GetAllInProduct((int)productId)
             .ToList();
 
             if (imageFileNamesOfProduct.Count > 0)
