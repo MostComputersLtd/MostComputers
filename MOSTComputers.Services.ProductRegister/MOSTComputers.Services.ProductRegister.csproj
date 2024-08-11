@@ -9,6 +9,9 @@
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.DAL\MOSTComputers.Services.DAL.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.OneOf\MOSTComputers.Utils.OneOf.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.ProductImageFileNameUtils\MOSTComputers.Utils.ProductImageFileNameUtils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
