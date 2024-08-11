@@ -1,61 +1,18 @@
-function copySearchStringPartToClipboard(data)
+function copySearchStringPartToClipboard(data, notificationBoxId = null)
 {
     navigator.clipboard.writeText(data);
 
-    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
+    showNotificationWithText(notificationBoxId, "Copied!", "notificationBox-short-message");
 }
 
-//function showSearchStringOriginDataSmallPopup(index, searchStringPart)
-//{
-//    if (index === null
-//        || index === undefined
-//        || (isNaN(index) && isNaN(parseInt(index)))) return;
-
-//    showSearchStringOriginDataSmallPopupCommon(
-//        "searchStringPartOrigin_li-" + index,
-//        "searchStringPartOrigin_multipleOriginsDisplayList-" + index,
-//        searchStringPart,
-//        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + index,
-//        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + index);
-//}
-
-//function showSearchStringOriginDataSmallPopup(productIndex, index, searchStringPart)
-//{
-//    if (productIndex == null
-//        || (isNaN(productIndex) && isNaN(parseInt(productIndex)))
-//        || index == null
-//        || (isNaN(index) && isNaN(parseInt(index)))) return;
-
-//    showSearchStringOriginDataSmallPopupCommon(
-//        "searchStringPartOrigin_li-" + productIndex + "-" + index,
-//        "searchStringPartOrigin_multipleOriginsDisplayList-" + productIndex + "-" + index,
-//        searchStringPart,
-//        "searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-" + productIndex + "-" + index,
-//        "searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-" + productIndex + "-" + index);
-//}
-
-function displayPopupAndTransportToSearchStringOriginDisplay(productId, index)
+function showXmlPopupData(productId, productXmlPopupContentId)
 {
-    if (index === null
-        || index === undefined
-        || (isNaN(index) && isNaN(parseInt(index)))) return;
-
-    $("#ProductSearchString_modal").one("shown.bs.modal", function()
-    {
-        transportToSearchStringOriginDisplay(index);
-    });
-
-    showSearchStringPopupData(productId);
-}
-
-function showXmlPopupData(productId)
-{
-    $("#ProductXml_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewXmlForProduct");
+    $("#" + productXmlPopupContentId).load("/ProductPropertiesEditor/" + productId + "?handler=GetPartialViewXmlForProduct");
 
     open_ProductXml_modal();
 }
 
-function copyXmlTextToClipboard()
+function copyXmlTextToClipboard(notificationBoxId = null)
 {
     var xmlTextAreaValue = getXmlValue();
 
@@ -63,7 +20,7 @@ function copyXmlTextToClipboard()
 
     navigator.clipboard.writeText(xmlTextAreaValue);
 
-    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
+    showNotificationWithText(notificationBoxId, "Copied!", "notificationBox-short-message");
 }
 
 //document.onkeydown = (e) =>
@@ -102,23 +59,14 @@ function copyXmlTextToClipboard()
 //    }
 //}
 
-function showImagePopupData(productId)
+function showImagePopupData(productId, productImagePopupContentId)
 {
-    $("#ProductImages_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=PartialViewImagesForProduct");
+    $("#" + productImagePopupContentId).load("/ProductPropertiesEditor/" + productId + "?handler=GetPartialViewImagesForProduct");
 
     open_ProductImages_modal();
 }
 
-function copyImageDataToClipboard()
-{
-    let selectedImageData = getSelectedImageData();
-
-    navigator.clipboard.writeText(selectedImageData);
-
-    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-}
-
-function getImageFileData(productId)
+function getImageFileData(productId, notificationBoxId = null)
 {
     var imageIndex = getSelectedImageIndex(productId);
 
@@ -126,29 +74,28 @@ function getImageFileData(productId)
 
     window.location.href = urlFileResult;
 
-    showNotificationWithText("copiedXmlNotificationBox", "Saved!", "copy-to-xml-success-message");
+    showNotificationWithText(notificationBoxId, "Saved!", "notificationBox-short-message");
 }
 
-function showSearchStringPopupData(productId)
-{
-    $("#ProductSearchString_popup_modal_content").load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
-    {
-        open_ProductSearchString_modal();
-    });
+//function showSearchStringPopupData(productId, productSearchStringPopupContentId)
+//{
+//    $("#" + productSearchStringPopupContentId).load("/ProductPropertiesEditor/" + productId + "?handler=GetSearchStringPartialView", function()
+//    {
+//        open_ProductSearchString_modal();
+//    });
+//}
 
-}
+//function copySearchStringDataToClipboard(notificationBoxId = null)
+//{
+//    let searchStringData = getSearchStringData();
 
-function copySearchStringDataToClipboard()
-{
-    let searchStringData = getSearchStringData();
+//    if (searchStringData === null
+//    || searchStringData === undefined) return;
 
-    if (searchStringData === null
-    || searchStringData === undefined) return;
+//    navigator.clipboard.writeText(searchStringData);
 
-    navigator.clipboard.writeText(searchStringData);
-
-    showNotificationWithText("copiedXmlNotificationBox", "Copied!", "copy-to-xml-success-message");
-}
+//    showNotificationWithText(notificationBoxId, "Copied!", "notificationBox-short-message");
+//}
 
 function RemoveSpanFromSelectedText(text)
 {
@@ -171,7 +118,7 @@ function RemoveSpanFromSelectedText(text)
     return text;
 }
 
-function addPropertyToTable(productId)
+function addPropertyToTable(productId, propertyTableBodyId)
 {
     var url = "/ProductPropertiesEditor/" + productId + "?handler=AddNewItem";
 
@@ -187,29 +134,40 @@ function addPropertyToTable(productId)
     })
         .done(function (result)
         {
-            document.getElementById("propertyDisplay_table_tbody").innerHTML += result;
+            var propertyTableBody = document.getElementById(propertyTableBodyId)
+
+            if (propertyTableBody == null) return;
+
+            propertyTableBody.innerHTML += result;
         })
         .fail(function (jqXHR, textStatus)
         {
         });
 }
 
-function PropertyWithoutCharacteristic_select_onchange(value, index)
+function PropertyWithoutCharacteristic_select_onchange(value, propertyCharacteristicDataLabelId)
 {
-    var labelWithIdText = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label-" + index);
+    var labelWithIdText = document.getElementById(propertyCharacteristicDataLabelId);
 
     labelWithIdText.textContent = "ID: " + value;
 }
 
-function updatePropertyInTable(productId, index)
+function updatePropertyInTable(
+    productId,
+    propertyCharacteristicDataLabelId,
+    propertyValueDivId,
+    propertyXmlPlacementSelectId,
+    propertyCharacteristicSelectId,
+    hiddenPropertyIsNewCheckboxId,
+    notificationBoxId = null)
 {
     var url = "/ProductPropertiesEditor/" + productId + "?handler=UpdateProperty";
 
-    var productPropCharacteristicIdInput = document.getElementById("productPropertyDisplay_CharacteristicId_Data_label-" + index);
-    var productPropValueInput = document.getElementById("productPropertyDisplay_Value_div-" + index);
-    var productPropXmlPlacementSelect = document.getElementById("productPropertyDisplay_XmlPlacement_select-" + index);
-    var productPropCharacteristicSelect = document.getElementById("productPropertyDisplay_Characteristic_select-" + index);
-    var productPropHiddenIsNewCheckbox = document.getElementById("_hidden_productPropertyDisplay_IsNew_Checkbox-" + index);
+    var productPropCharacteristicIdInput = document.getElementById(propertyCharacteristicDataLabelId);
+    var productPropValueInput = document.getElementById(propertyValueDivId);
+    var productPropXmlPlacementSelect = document.getElementById(propertyXmlPlacementSelectId);
+    var productPropCharacteristicSelect = document.getElementById(propertyCharacteristicSelectId);
+    var productPropHiddenIsNewCheckbox = document.getElementById(hiddenPropertyIsNewCheckboxId);
 
     var productPropCharacteristicId;
 
@@ -255,8 +213,6 @@ function updatePropertyInTable(productId, index)
         IsNew: productPropIsNew
     };
 
-    // console.log(data);
-
     $.ajax({
         type: "PUT",
         url: url,
@@ -267,21 +223,31 @@ function updatePropertyInTable(productId, index)
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
     })
-        .done(function (result) {
-            // document.getElementById("propertyDisplay_table").innerHTML += result;
+        .done(function (result)
+        {
         })
-        .fail(function (jqXHR, textStatus) {
+        .fail(function (jqXHR, textStatus)
+        {
+            showNotificationWithText(notificationBoxId, "Failed to update property", "notificationBox-long-message");
         });
 }
 
-function updateAllPropertiesInTable(productId)
+function updateAllPropertiesInTable(
+    productId,
+    propertyCharacteristicDataLabelName,
+    propertyValueDivName,
+    propertyXmlPlacementSelectName,
+    propertyCharacteristicSelectName,
+    hiddenPropertyIsNewCheckboxName,
+    notificationBoxId = null)
 {
     var url = "/ProductPropertiesEditor/" + productId + "?handler=UpdateAndInsertProperties";
 
-    var productPropCharacteristicIdInputs = document.getElementsByName("productPropertyDisplay_CharacteristicId_Data_label");
-    var productPropValueInputs = document.getElementsByName("productPropertyDisplay_Value_div");
-    var productPropXmlPlacementSelects = document.getElementsByName("productPropertyDisplay_XmlPlacement_select");
-    var productPropWithoutCharacteristicSelects = document.getElementsByName("PropertyWithoutCharacteristic_Characteristic_select");
+    var productPropCharacteristicIdInputs = document.getElementsByName(propertyCharacteristicDataLabelName);
+    var productPropValueInputs = document.getElementsByName(propertyValueDivName);
+    var productPropXmlPlacementSelects = document.getElementsByName(propertyXmlPlacementSelectName);
+    var productPropWithoutCharacteristicSelects = document.getElementsByName(propertyCharacteristicSelectName);
+    var hiddenPropertyIsNewCheckboxes = document.getElementsByName(hiddenPropertyIsNewCheckboxName);
 
     var productPropCharacteristicIds = [];
 
@@ -296,8 +262,6 @@ function updateAllPropertiesInTable(productId)
         var id = idText.substring(idStartIndex);
 
         productPropCharacteristicIds.push(parseInt(id));
-
-        productPropIsNew.push(false);
     }
 
     var productPropValues = [];
@@ -329,7 +293,13 @@ function updateAllPropertiesInTable(productId)
         var productPropWithoutCharacteristicValue = productPropWithoutCharacteristicSelect.value;
 
         productPropCharacteristicIds.splice(parseInt(indexOfSelect), 0, parseInt(productPropWithoutCharacteristicValue));
-        productPropIsNew.splice(parseInt(indexOfSelect), 0, true);
+    }
+
+    for (var i = 0; i < hiddenPropertyIsNewCheckboxes.length; i++)
+    {
+        var hiddenPropertyIsNewCheckbox = hiddenPropertyIsNewCheckboxes[i];
+
+        productPropIsNew.push(hiddenPropertyIsNewCheckbox.checked);
     }
 
     // console.log(productPropIsNew);
@@ -363,10 +333,10 @@ function updateAllPropertiesInTable(productId)
     })
         .done(function (result)
         {
-            // document.getElementById("propertyDisplay_table").innerHTML += result;
         })
         .fail(function (jqXHR, textStatus)
         {
+            showNotificationWithText(notificationBoxId, "Failed to update property", "notificationBox-long-message");
         });
 }
 
@@ -626,17 +596,21 @@ function deletePropertyInTable(productId, productCharacteristicId, propertytrId,
     })
         .done(function (result)
         {
+            const propertyTableBody = document.getElementById(tBodyContainerId);
+
             var childProperty = document.getElementById(propertytrId);
 
-            document.getElementById(tBodyContainerId).removeChild(childProperty);
+            propertyTableBody.removeChild(childProperty);
         })
         .fail(function (jqXHR, textStatus)
         {
             if (deleteEvenOnFail)
             {
+                const propertyTableBody = document.getElementById(tBodyContainerId);
+
                 var childProperty = document.getElementById(propertytrId);
 
-                document.getElementById(tBodyContainerId).removeChild(childProperty);
+                propertyTableBody.removeChild(childProperty);
             }
         });
 }
