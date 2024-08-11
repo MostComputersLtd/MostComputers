@@ -20,6 +20,8 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
+
     public IEnumerable<FailedPropertyNameOfProduct> GetAll()
     {
         const string getAllQuery =
@@ -30,7 +32,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
         return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllQuery, new { });
     }
 
-    public IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(uint productId)
+    public IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(int productId)
     {
         const string getAllForProductQuery =
             $"""
@@ -38,10 +40,11 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID = @productId;
             """;
 
-        return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllForProductQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllForProductQuery,
+            new { productId = productId });
     }
 
-    public IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<uint> productIds)
+    public IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<int> productIds)
     {
         const string getAllQuery =
             $"""
@@ -49,7 +52,8 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID IN @productIds;
             """;
 
-        return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllQuery, new { productIds = productIds.Select(productId => (int)productId) });
+        return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllQuery,
+            new { productIds = productIds });
     }
 
     public bool Insert(FailedPropertyNameOfProductCreateRequest createRequest)
@@ -67,7 +71,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
 
         var parameters = new
         {
-            productId = (int)createRequest.ProductId,
+            productId = createRequest.ProductId,
             createRequest.PropertyName
         };
 
@@ -91,7 +95,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
 
         var parameters = new
         {
-            productId = (int)createRequest.ProductId,
+            productId = createRequest.ProductId,
             PropertyNames = createRequest.PropertyNames.AsEnumerable()
         };
 
@@ -113,7 +117,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
 
         var parameters = new
         {
-            productId = (int)updateRequest.ProductId,
+            productId = updateRequest.ProductId,
             updateRequest.OldPropertyName,
             updateRequest.NewPropertyName,
         };
@@ -123,7 +127,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
         return (rowsAffected > 0);
     }
 
-    public bool Delete(uint productId, string propertyName)
+    public bool Delete(int productId, string propertyName)
     {
         const string deleteQuery =
             $"""
@@ -134,7 +138,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
 
         var parameters = new
         {
-            productId = (int)productId,
+            productId = productId,
             PropertyName = propertyName
         };
 
@@ -143,7 +147,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
         return (rowsAffected > 0);
     }
 
-    public bool DeleteAllForProduct(uint productId)
+    public bool DeleteAllForProduct(int productId)
     {
         const string deleteQuery =
             $"""
@@ -151,12 +155,13 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID = @productId;
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(deleteQuery, new { productId = (int)productId });
+        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(deleteQuery,
+            new { productId = productId });
 
         return (rowsAffected > 0);
     }
 
-    public bool DeleteAllForSelectionOfProducts(IEnumerable<uint> productIds)
+    public bool DeleteAllForSelectionOfProducts(IEnumerable<int> productIds)
     {
         const string getAllQuery =
             $"""
@@ -164,8 +169,10 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID IN @productIds;
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(getAllQuery, new { productIds = productIds.Select(productId => (int)productId) });
+        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(getAllQuery,
+            new { productIds = productIds });
 
         return (rowsAffected > 0);
     }
+#pragma warning restore IDE0037 // Use inferred member name
 }

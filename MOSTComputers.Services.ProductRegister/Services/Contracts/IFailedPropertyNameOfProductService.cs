@@ -6,12 +6,12 @@ using OneOf;
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IFailedPropertyNameOfProductService
 {
-    bool Delete(uint productId, string propertyName);
-    bool DeleteAllForProduct(uint productId);
-    bool DeleteAllForSelectionOfProducts(IEnumerable<uint> productIds);
+    bool Delete(int productId, string propertyName);
+    bool DeleteAllForProduct(int productId);
+    bool DeleteAllForSelectionOfProducts(IEnumerable<int> productIds);
     IEnumerable<FailedPropertyNameOfProduct> GetAll();
-    IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(uint productId);
-    IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<uint> productIds);
+    IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(int productId);
+    IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<int> productIds);
     OneOf<bool, ValidationResult> Insert(FailedPropertyNameOfProductCreateRequest createRequest);
     OneOf<bool, ValidationResult> MultiInsert(FailedPropertyNameOfProductMultiCreateRequest createRequest);
     OneOf<bool, ValidationResult> Update(FailedPropertyNameOfProductUpdateRequest updateRequest);

@@ -8,9 +8,9 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
 public interface ICategoryRepository
 {
-    bool Delete(uint id);
+    bool Delete(int id);
     IEnumerable<Category> GetAll();
-    Category? GetById(uint id);
-    OneOf<uint, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest);
+    Category? GetById(int id);
+    OneOf<int, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest);
 }

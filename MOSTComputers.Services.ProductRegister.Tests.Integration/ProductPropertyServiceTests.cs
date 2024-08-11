@@ -38,12 +38,12 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
     private readonly IProductService _productService;
     private readonly ICategoryService _categoryService;
 
-    private readonly List<uint> _categoriesToDeleteIds = new();
-    private readonly List<uint> _productCharacteristicsToDeleteIds = new();
+    private readonly List<int> _categoriesToDeleteIds = new();
+    private readonly List<int> _productCharacteristicsToDeleteIds = new();
 
-    private OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertCategoryAndAddIdToDelete(ServiceCategoryCreateRequest categoryCreateRequest)
+    private OneOf<int, ValidationResult, UnexpectedFailureResult> InsertCategoryAndAddIdToDelete(ServiceCategoryCreateRequest categoryCreateRequest)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _categoryService.Insert(categoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _categoryService.Insert(categoryCreateRequest);
 
         result.Switch(
             id =>
@@ -56,9 +56,9 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         return result;
     }
 
-    private OneOf<uint, ValidationResult, UnexpectedFailureResult> InsertProductCharacteristicAndAddIdToDelete(ProductCharacteristicCreateRequest characteristicCreateRequest)
+    private OneOf<int, ValidationResult, UnexpectedFailureResult> InsertProductCharacteristicAndAddIdToDelete(ProductCharacteristicCreateRequest characteristicCreateRequest)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _productCharacteristicService.Insert(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _productCharacteristicService.Insert(characteristicCreateRequest);
 
         result.Switch(
             id =>
@@ -108,42 +108,47 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue1 = "VAL1";
         const string propertyValue2 = "VAL2";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest(categoryId.Value));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
-        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
-        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest(categoryId.Value, characteristicName1);
+        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest(categoryId.Value, characteristicName2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
 
-        uint? characteristicId1 = characteristicInsertResult1.Match<uint?>(
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
-        uint? characteristicId2 = characteristicInsertResult2.Match<uint?>(
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
         Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, propertyValue1);
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById((int)productId, (int)characteristicId2, propertyValue2);
@@ -151,7 +156,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
         var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
 
         Assert.True(propsInProduct.Count() >= 2);
 
@@ -180,42 +185,45 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue1 = "VAL1";
         const string propertyValue2 = "VAL2";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest(categoryId.Value));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
-        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest(categoryId.Value, characteristicName1);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
-        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId, propertyValue1);
-        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById((int)productId, 0, propertyValue2);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById(productId.Value, characteristicId.Value, propertyValue1);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById(productId.Value, 0, propertyValue2);
 
-        var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
-        var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
 
         Assert.NotEmpty(propsInProduct);
 
@@ -245,39 +253,43 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue2 = "VAL2";
         const int invalidProductId = 0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
-        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
+        ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest(categoryId.Value, characteristicName1);
+        ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest(categoryId.Value, characteristicName2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
 
-        uint? characteristicId1 = characteristicInsertResult1.Match<uint?>(
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
-        uint? characteristicId2 = characteristicInsertResult2.Match<uint?>(
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
         Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
 
-        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById(invalidProductId, (int)characteristicId1, propertyValue1);
-        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById(invalidProductId, (int)characteristicId2, propertyValue2);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById(invalidProductId, characteristicId1.Value, propertyValue1);
+        ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById(invalidProductId, characteristicId2.Value, propertyValue2);
 
-        var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
-        var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
         IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(invalidProductId);
 
@@ -292,44 +304,49 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string invalidPropertyValue1 = " ";
         const string invalidPropertyValue2 = "";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        ProductCreateRequest productCreateRequest = GetValidProductCreateRequest((int)categoryId);
+        ProductCreateRequest productCreateRequest = GetValidProductCreateRequest(categoryId.Value);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
         ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
 
-        uint? characteristicId1 = characteristicInsertResult1.Match<uint?>(
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
-        uint? characteristicId2 = characteristicInsertResult2.Match<uint?>(
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
         Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, invalidPropertyValue1);
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest2 = GetValidCreateRequestById((int)productId, (int)characteristicId2, invalidPropertyValue2);
@@ -337,7 +354,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest1);
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
 
         if (productCreateRequest.Properties is not null)
         {
@@ -367,34 +384,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1";
         const string propertyValue = "VAL1";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, propertyValue);
 
@@ -405,7 +425,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.NotNull(property);
 
@@ -423,18 +443,19 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1";
         const string propertyValue = "VAL1";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
@@ -462,25 +483,27 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue = "VAL1";
         const int invalidProductId = 0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById(invalidProductId, (int)characteristicId, propertyValue);
 
@@ -502,34 +525,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1";
         const string invalidPropertyValue = "";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, invalidPropertyValue);
 
@@ -551,34 +577,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
     {
         const string characteristicName = "NAMEOFCHAR1";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         if (createRequest.ProductId == _useRequiredValue)
         {
@@ -597,7 +626,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.Equal(expected, property is not null);
 
@@ -685,34 +714,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
     {
         const string characteristicName = "NAMEOFCHAR1";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         if (createRequest.ProductId == _useRequiredValue)
         {
@@ -731,7 +763,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.Equal(expected, property is not null);
 
@@ -862,34 +894,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1";
         const string propertyValue = "VAL_INSERTED";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest createRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, propertyValue);
 
@@ -917,7 +952,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.NotNull(property);
 
@@ -1018,34 +1053,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1_DELETED";
         const string propertyValue = "VAL1";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, propertyValue);
 
@@ -1056,11 +1094,11 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        bool success = _productPropertyService.Delete(productId.Value, characteristicId.Value);
+        bool success = _productPropertyService.Delete((int)productId.Value, characteristicId.Value);
 
         Assert.True(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1072,25 +1110,27 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue = "VAL1";
         const int invalidProductId = 0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById(invalidProductId, (int)characteristicId, propertyValue);
 
@@ -1117,23 +1157,25 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue = "VAL1";
         const int invalidCharacteristicId = 0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
@@ -1146,11 +1188,11 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => true,
             unexpectedFailureResult => false));
 
-        bool success = _productPropertyService.Delete(productId.Value, invalidCharacteristicId);
+        bool success = _productPropertyService.Delete((int)productId.Value, invalidCharacteristicId);
 
         Assert.False(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1161,34 +1203,37 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string characteristicName = "NAMEOFCHAR1_DELETED";
         const string invalidPropertyValue = "";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest);
 
-        uint? characteristicId = characteristicInsertResult.Match<uint?>(
+        int? characteristicId = characteristicInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest invalidPropertyCreateRequest = GetValidCreateRequestById((int)productId, (int)characteristicId, invalidPropertyValue);
 
@@ -1199,11 +1244,11 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => true,
             unexpectedFailureResult => false));
 
-        bool success = _productPropertyService.Delete(productId.Value, characteristicId.Value);
+        bool success = _productPropertyService.Delete((int)productId.Value, characteristicId.Value);
 
         Assert.False(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1216,42 +1261,47 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue1 = "VAL1";
         const string propertyValue2 = "VAL2";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
         ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
 
-        uint? characteristicId1 = characteristicInsertResult1.Match<uint?>(
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
-        uint? characteristicId2 = characteristicInsertResult2.Match<uint?>(
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
         Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, propertyValue1);
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById((int)productId, (int)characteristicId2, propertyValue2);
@@ -1274,52 +1324,57 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         const string propertyValue1 = "VAL1";
         const string propertyValue2 = "VAL2";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = InsertCategoryAndAddIdToDelete(ValidCategoryCreateRequest);
 
-        uint? categoryId = categoryInsertResult.Match<uint?>(
+        int? categoryId = categoryInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(GetValidProductCreateRequest((int)categoryId));
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ProductCharacteristicCreateRequest characteristicCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName1);
         ProductCharacteristicCreateRequest characteristicCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, characteristicName2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = InsertProductCharacteristicAndAddIdToDelete(characteristicCreateRequest2);
 
-        uint? characteristicId1 = characteristicInsertResult1.Match<uint?>(
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
-        uint? characteristicId2 = characteristicInsertResult2.Match<uint?>(
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
         Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
 
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest1 = GetValidCreateRequestById((int)productId, (int)characteristicId1, propertyValue1);
         ProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest2 = GetValidCreateRequestById((int)productId, (int)characteristicId2, propertyValue2);
 
-        var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
-        var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
         bool success = _productPropertyService.DeleteAllForCharacteristic(characteristicId1.Value);
 
-        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProduct(productId.Value);
+        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProduct((int)productId.Value);
 
 
         Assert.NotEmpty(characteristicsInCategory);

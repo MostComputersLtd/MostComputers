@@ -68,8 +68,10 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllForOperationTypeQuery, parameters);
     }
 
-    public LocalChangeData? GetById(uint id)
+    public LocalChangeData? GetById(int id)
     {
+        if (id <= 0) return null;
+
         const string getByIdQuery =
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
@@ -80,7 +82,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByIdQuery, parameters);
@@ -135,8 +137,10 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
             && toDoLocalChangeId > 0) ? toDoLocalChangeId.Value : new UnexpectedFailureResult();
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
+        if (id <= 0) return false;
+
         const string deleteByIdQuery =
         $"""
         DELETE FROM {_tableName}
@@ -153,7 +157,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         return (rowsAffected > 0);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
         const string deleteByIdQuery =
         $"""
@@ -163,7 +167,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
 
         var parameters = new
         {
-            ids = ids.Select(id => (int)id)
+            ids = ids
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);

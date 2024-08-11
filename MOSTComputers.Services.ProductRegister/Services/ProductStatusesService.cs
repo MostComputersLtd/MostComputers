@@ -6,11 +6,6 @@ using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
@@ -36,13 +31,17 @@ internal sealed class ProductStatusesService : IProductStatusesService
         return _productStatusesRepository.GetAll();
     }
 
-    public ProductStatuses? GetByProductId(uint productId)
+    public ProductStatuses? GetByProductId(int productId)
     {
+        if (productId <= 0) return null;
+
         return _productStatusesRepository.GetByProductId(productId);
     }
 
-    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<uint> productIds)
+    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<int> productIds)
     {
+        productIds = RemoveValuesSmallerThanOne(productIds);
+
         return _productStatusesRepository.GetSelectionByProductIds(productIds);
     }
 
@@ -63,8 +62,10 @@ internal sealed class ProductStatusesService : IProductStatusesService
 
         return _productStatusesRepository.Update(updateRequest);
     }
-    public bool DeleteByProductId(uint productId)
+    public bool DeleteByProductId(int productId)
     {
+        if (productId <= 0) return false;
+
         return _productStatusesRepository.DeleteByProductId(productId);
     }
 }

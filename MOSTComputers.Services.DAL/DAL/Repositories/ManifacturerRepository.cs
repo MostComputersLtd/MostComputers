@@ -16,6 +16,8 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
+
     public IEnumerable<Manifacturer> GetAll()
     {
         const string getAllQuery = 
@@ -28,7 +30,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         return _relationalDataAccess.GetData<Manifacturer, dynamic>(getAllQuery, new { });
     }
 
-    public Manifacturer? GetById(uint id)
+    public Manifacturer? GetById(int id)
     {
         const string getByIdQuery =
             $"""
@@ -37,10 +39,10 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             WHERE MfrID = @id;
             """;
 
-        return _relationalDataAccess.GetData<Manifacturer, dynamic>(getByIdQuery, new { id = (int)id }).FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<Manifacturer, dynamic>(getByIdQuery, new { id = id });
     }
 
-    public OneOf<uint, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
+    public OneOf<int, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest)
     {
         const string insertQuery =
             $"""
@@ -59,7 +61,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
 
         double? id = _relationalDataAccess.SaveDataAndReturnValue<double?, dynamic>(insertQuery, parameters);
 
-        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? (int)id : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest)
@@ -88,7 +90,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
         const string deleteQuery =
             $"""
@@ -98,7 +100,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id = id });
 
             return rowsAffected > 0;
         }
@@ -107,4 +109,6 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
             return false;
         }
     }
+
+#pragma warning restore IDE0037 // Use inferred member name
 }

@@ -59,7 +59,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         return _relationalDataAccess.GetData<ExternalChangeData, dynamic>(getAllForOperationTypeQuery, parameters);
     }
 
-    public ExternalChangeData? GetById(uint id)
+    public ExternalChangeData? GetById(int id)
     {
         const string getByIdQuery =
         $"""
@@ -70,7 +70,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         return _relationalDataAccess.GetDataFirstOrDefault<ExternalChangeData, dynamic>(getByIdQuery, parameters);
@@ -79,12 +79,12 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     public ExternalChangeData? GetByTableNameAndElementId(string tableName, int elementId)
     {
         const string getByTableNameAndElementIdQuery =
-        $"""
-        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName}
-        WHERE TableName = @tableName
-        AND ID = @elementId;
-        """;
+            $"""
+            SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+            FROM {_tableName}
+            WHERE TableName = @tableName
+            AND ID = @elementId;
+            """;
 
         var parameters = new
         {
@@ -95,7 +95,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         return _relationalDataAccess.GetDataFirstOrDefault<ExternalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
         const string deleteByIdQuery =
         $"""
@@ -105,7 +105,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByIdQuery, parameters);
@@ -113,7 +113,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         return (rowsAffected > 0);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
         const string deleteByIdQuery =
         $"""
@@ -123,7 +123,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
 
         var parameters = new
         {
-            ids = ids.Select(id => (int)id)
+            ids = ids
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByIdQuery, parameters);
@@ -170,5 +170,6 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
 
         return (rowsAffected > 0);
     }
-}
+
 #pragma warning restore IDE0037 // Use inferred member name
+}

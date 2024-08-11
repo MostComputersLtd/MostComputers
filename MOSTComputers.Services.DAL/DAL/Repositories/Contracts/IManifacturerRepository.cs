@@ -9,8 +9,8 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IManifacturerRepository
 {
     IEnumerable<Manifacturer> GetAll();
-    Manifacturer? GetById(uint id);
-    OneOf<uint, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest);
+    Manifacturer? GetById(int id);
+    OneOf<int, UnexpectedFailureResult> Insert(ManifacturerCreateRequest insertRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest);
-    bool Delete(uint id);
+    bool Delete(int id);
 }

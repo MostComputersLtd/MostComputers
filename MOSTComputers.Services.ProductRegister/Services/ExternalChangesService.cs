@@ -2,6 +2,7 @@
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Models.Product.Models.Changes.External;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -29,8 +30,10 @@ internal sealed class ExternalChangesService : IExternalChangesService
         return _externalChangesRepository.GetAllForOperationType(operationType);
     }
 
-    public ExternalChangeData? GetById(uint id)
+    public ExternalChangeData? GetById(int id)
     {
+        if (id <= 0) return null;
+
         return _externalChangesRepository.GetById(id);
     }
 
@@ -39,13 +42,17 @@ internal sealed class ExternalChangesService : IExternalChangesService
         return _externalChangesRepository.GetByTableNameAndElementId(tableName, elementId);
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
+        if (id <= 0) return false;
+
         return _externalChangesRepository.DeleteById(id);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
+        ids = RemoveValuesSmallerThanOne(ids);
+
         return _externalChangesRepository.DeleteRangeByIds(ids);
     }
 
@@ -56,6 +63,8 @@ internal sealed class ExternalChangesService : IExternalChangesService
 
     public bool DeleteRangeByTableNameAndElementIds(string tableName, IEnumerable<int> elementIds)
     {
+        elementIds = RemoveValuesSmallerThanOne(elementIds);
+
         return _externalChangesRepository.DeleteRangeByTableNameAndElementIds(tableName, elementIds);
     }
 }

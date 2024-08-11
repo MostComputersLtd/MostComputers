@@ -55,14 +55,15 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleInsert_ShouldSucceed_WhenConnectionToDBIsSuccessful_AndDataIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         LocalChangeData? changeDataForProduct =
             _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
@@ -89,7 +90,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
             && productStatuses.NeedsToBeUpdated == false);
 
         LocalChangeData? changeDataForProductHandleInsert
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Create);
 
         Assert.Null(changeDataForProductHandleInsert);
     }
@@ -98,14 +100,15 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [MemberData(nameof(HandleInsert_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsNotValid_Data))]
     public void HandleInsert_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsNotValid(LocalChangeData invalidChangeDataForProduct)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> handleInsertResult = _productChangesService.HandleInsert(invalidChangeDataForProduct);
 
@@ -158,21 +161,23 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleInsert_ShouldFail_WhenConnectionToDBIsSuccessful_ButProductIsAlreadyDeleted()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         bool isProductDeleted = _productService.Delete(productIdFromInsertResult.Value);
 
         Assert.True(isProductDeleted);
 
         LocalChangeData? changeDataForProduct
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Create);
 
         Assert.Null(changeDataForProduct);
 
@@ -215,17 +220,19 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleInsert_ShouldFailAndRollBack_WhenConnectionToDBIsSuccessful_ButTransactionTimesOut()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         LocalChangeData? changeDataForProduct
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(changeDataForProduct);
 
@@ -261,16 +268,17 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleUpdate_ShouldSucceed_WhenConnectionToDBIsSuccessful_AndDataIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages((int)productIdFromInsertResult);
+        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
 
@@ -280,7 +288,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
             unexpectedFailureResult => false));
 
         LocalChangeData? changeDataForProduct
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Update);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Update);
 
         Assert.NotNull(changeDataForProduct);
 
@@ -307,7 +316,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         Assert.NotNull(productStatusAfterUpdate);
 
-        Assert.Equal((int)productIdFromInsertResult, productStatusAfterUpdate.ProductId);
+        Assert.Equal(productIdFromInsertResult.Value, productStatusAfterUpdate.ProductId);
         Assert.Equal(DetermineWhetherProductIsProcessedOrNot(productAfterUpdate), productStatusAfterUpdate.IsProcessed);
         Assert.Equal(DetermineWhetherUpdateIsImportant(productBeforeUpdate, productAfterUpdate), productStatusAfterUpdate.NeedsToBeUpdated);
     }
@@ -316,16 +325,17 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [MemberData(nameof(HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid_Data))]
     public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid(LocalChangeData invalidChangeData)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages((int)productIdFromInsertResult);
+        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
 
@@ -350,7 +360,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         Assert.NotNull(productAfterUpdate);
 
-        ProductStatuses? productStatusAfterUpdate = _productStatusesService.GetByProductId(productIdFromInsertResult.Value);
+        ProductStatuses? productStatusAfterUpdate = _productStatusesService.GetByProductId((int)productIdFromInsertResult.Value);
 
         if (productStatusAfterUpdate is not null)
         {
@@ -401,16 +411,17 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButProductIsAlreadyDeleted()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages((int)productIdFromInsertResult);
+        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
 
@@ -424,7 +435,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.True(productDeleteSuccess);
 
         LocalChangeData? changeDataForProduct
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Update);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Update);
 
         Assert.Null(changeDataForProduct);
 
@@ -450,16 +462,17 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButTransactionTimesOut()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages((int)productIdFromInsertResult);
+        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
 
@@ -469,7 +482,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
             unexpectedFailureResult => false));
 
         LocalChangeData? changeDataForProduct
-             = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Update);
+             = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                 tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Update);
 
         Assert.NotNull(changeDataForProduct);
 
@@ -499,21 +513,23 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleDelete_ShouldSucceed_WhenConnectionToDBIsSuccessful_AndDataIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         bool isProductDeleted = _productService.Delete(productIdFromInsertResult.Value);
 
         Assert.True(isProductDeleted);
 
         LocalChangeData? changeDataForProduct =
-            _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Delete);
+            _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Delete);
 
         Assert.NotNull(changeDataForProduct);
 
@@ -531,7 +547,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.True(AreAllPartsOfAProductDeleted(productIdFromInsertResult.Value));
 
         LocalChangeData? changeDataForProductHandleDelete
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
 
         Assert.Null(changeDataForProductHandleDelete);
     }
@@ -540,14 +557,15 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [MemberData(nameof(HandleDelete_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid_Data))]
     public void HandleDelete_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid(LocalChangeData invalidChangeDataForProduct)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         bool isProductDeleted = _productService.Delete(productIdFromInsertResult.Value);
 
@@ -563,7 +581,8 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.True(AreAllPartsOfAProductDeleted(productIdFromInsertResult.Value));
 
         LocalChangeData? changeDataForProductHandleDelete
-            = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Create);
+            = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Create);
 
         Assert.Null(changeDataForProductHandleDelete);
     }
@@ -609,21 +628,23 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     [Fact]
     public void HandleDelete_ShouldFail_WhenConnectionToDBIsSuccessful_ButTransactionTimesOut()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productIdFromInsertResult = productInsertResult.Match<uint?>(
+        int? productIdFromInsertResult = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productIdFromInsertResult);
+        Assert.True(productIdFromInsertResult > 0);
 
         bool productUpdateResult = _productService.Delete(productIdFromInsertResult.Value);
 
         Assert.True(productUpdateResult);
 
         LocalChangeData? changeDataForProduct
-             = _localChangesService.GetByTableNameAndElementIdAndOperationType(tableChangeNameOfProductsTable, (int)productIdFromInsertResult, ChangeOperationTypeEnum.Delete);
+             = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+                 tableChangeNameOfProductsTable, productIdFromInsertResult.Value, ChangeOperationTypeEnum.Delete);
 
         Assert.NotNull(changeDataForProduct);
 
@@ -650,7 +671,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.True(AreAllPartsOfAProductDeleted(productIdFromInsertResult.Value));
     }
 
-    private bool AreAllPartsOfAProductDeleted(uint productId)
+    private bool AreAllPartsOfAProductDeleted(int productId)
     {
         Product? product = _productService.GetByIdWithImages(productId);
 
@@ -701,23 +722,23 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         return false;
     }
 
-    private Product? GetProductFull(uint productId)
+    private Product? GetProductFull(int productId)
     {
         Product? product = _productService.GetByIdWithProps(productId);
 
         if (product is null) return null;
 
         if (product.Images is null
-            || !product.Images.Any())
+            || product.Images.Count == 0)
         {
-            product.Images = _productImageService.GetAllInProduct(productId)
+            product.Images = _productImageService.GetAllInProduct((int)productId)
                 .ToList();
         }
 
         if (product.ImageFileNames is null
-            || !product.ImageFileNames.Any())
+            || product.ImageFileNames.Count == 0)
         {
-            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId)
+            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct((int)productId)
                 .ToList();
         }
 
@@ -739,14 +760,14 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         if (productBeforeUpdate.Properties is null
             || productBeforeUpdate.Properties.Count <= 0)
         {
-            productBeforeUpdate.Properties = _productPropertyService.GetAllInProduct((uint)productBeforeUpdate.Id)
+            productBeforeUpdate.Properties = _productPropertyService.GetAllInProduct(productBeforeUpdate.Id)
                 .ToList();
         }
 
         if (productAfterUpdate.Properties is null
             || productAfterUpdate.Properties.Count <= 0)
         {
-            productAfterUpdate.Properties = _productPropertyService.GetAllInProduct((uint)productAfterUpdate.Id)
+            productAfterUpdate.Properties = _productPropertyService.GetAllInProduct(productAfterUpdate.Id)
                 .ToList();
         }
 

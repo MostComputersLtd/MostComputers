@@ -10,12 +10,12 @@ public interface IPromotionRepository
 {
     IEnumerable<Promotion> GetAll();
     IEnumerable<Promotion> GetAllActive();
-    IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<uint> productIds);
-    IEnumerable<Promotion> GetAllForProduct(uint productId);
-    IEnumerable<Promotion> GetAllForSelectionOfProducts(List<uint> productIds);
-    Promotion? GetActiveForProduct(uint productId);
-    OneOf<uint, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest);
+    IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<int> productIds);
+    IEnumerable<Promotion> GetAllForProduct(int productId);
+    IEnumerable<Promotion> GetAllForSelectionOfProducts(List<int> productIds);
+    Promotion? GetActiveForProduct(int productId);
+    OneOf<int, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest);
-    bool Delete(uint id);
-    bool DeleteAllByProductId(uint productId);
+    bool Delete(int id);
+    bool DeleteAllByProductId(int productId);
 }

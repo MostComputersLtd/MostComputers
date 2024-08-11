@@ -30,13 +30,17 @@ internal sealed class ProductPropertyService : IProductPropertyService
     private readonly IValidator<ProductPropertyByCharacteristicNameCreateRequest>? _createRequestByNameValidator;
     private readonly IValidator<ProductPropertyUpdateRequest>? _updateRequestValidator;
 
-    public IEnumerable<ProductProperty> GetAllInProduct(uint productId)
+    public IEnumerable<ProductProperty> GetAllInProduct(int productId)
     {
+        if (productId <= 0) return Enumerable.Empty<ProductProperty>();
+
         return _productPropertyRepository.GetAllInProduct(productId);
     }
 
-    public ProductProperty? GetByNameAndProductId(string name, uint productId)
+    public ProductProperty? GetByNameAndProductId(string name, int productId)
     {
+        if (productId <= 0) return null;
+
         return _productPropertyRepository.GetByNameAndProductId(name, productId);
     }
 
@@ -79,18 +83,24 @@ internal sealed class ProductPropertyService : IProductPropertyService
             success => success, validationResult => validationResult, unexpectedResult => unexpectedResult);
     }
 
-    public bool Delete(uint productId, uint characteristicId)
+    public bool Delete(int productId, int characteristicId)
     {
+        if (productId <= 0 || characteristicId <= 0) return false;
+
         return _productPropertyRepository.Delete(productId, characteristicId);
     }
 
-    public bool DeleteAllForProduct(uint productId)
+    public bool DeleteAllForProduct(int productId)
     {
+        if (productId <= 0) return false;
+
         return _productPropertyRepository.DeleteAllForProduct(productId);
     }
 
-    public bool DeleteAllForCharacteristic(uint characteristicId)
+    public bool DeleteAllForCharacteristic(int characteristicId)
     {
+        if (characteristicId <= 0) return false;
+
         return _productPropertyRepository.DeleteAllForCharacteristic(characteristicId);
     }
 }

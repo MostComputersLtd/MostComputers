@@ -106,7 +106,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return data.GroupBy(x => (int)x.CategoryId!);
     }
 
-    public ProductCharacteristic? GetById(uint id)
+    public ProductCharacteristic? GetById(int id)
     {
         const string getByCategoryIdAndNameQuery =
             $"""
@@ -115,7 +115,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         return _relationalDataAccess.GetDataFirstOrDefault<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
-            new { id = (int)id });
+            new { id = id });
     }
 
     public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
@@ -172,7 +172,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             .FirstOrDefault();
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
@@ -181,7 +181,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             VALUES (@CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh)
             """;
 
-        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForCreate(createRequest.Name, (uint)createRequest.CategoryId!);
+        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForCreate(createRequest.Name, createRequest.CategoryId!.Value);
 
         if (!resultInternal.IsValid) return resultInternal;
 
@@ -199,7 +199,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? id.Value : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest)
@@ -256,7 +256,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             AND Name = @OldName;
             """;
 
-        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(updateRequest.NewName, (uint)updateRequest.CategoryId);
+        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(updateRequest.NewName, updateRequest.CategoryId);
 
         if (!resultInternal.IsValid) return resultInternal;
 
@@ -278,7 +278,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForCreate(string? name, uint categoryId)
+    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForCreate(string? name, int categoryId)
     {
         ValidationResult output = new();
 
@@ -292,7 +292,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             """;
 
         bool duplicateCharacteristicExists = _relationalDataAccess.GetData<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery, 
-            new { categoryId = (int)categoryId, Name = name })
+            new { categoryId = categoryId, Name = name })
             .FirstOrDefault();
 
         if (!duplicateCharacteristicExists) return output;
@@ -337,7 +337,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return output;
     }
 
-    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(string? newName, uint categoryId)
+    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(string? newName, int categoryId)
     {
         ValidationResult output = new();
 
@@ -350,9 +350,8 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             ) THEN 1 ELSE 0 END
             """;
 
-        bool duplicateCharacteristicExists = _relationalDataAccess.GetData<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
-            new { categoryId = (int)categoryId, NewName = newName })
-            .FirstOrDefault();
+        bool duplicateCharacteristicExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
+            new { categoryId = categoryId, NewName = newName });
 
         if (!duplicateCharacteristicExists) return output;
 
@@ -364,7 +363,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         return output;
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
         const string deleteQuery =
             $"""
@@ -374,7 +373,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected <= 0) return false;
 
@@ -407,6 +406,6 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             return false;
         }
     }
-}
 
 #pragma warning restore IDE0037 // Use inferred member name
+}

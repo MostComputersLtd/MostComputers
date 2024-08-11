@@ -9,12 +9,12 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
 public interface IProductPropertyRepository
 {
-    IEnumerable<ProductProperty> GetAllInProduct(uint productId);
-    ProductProperty? GetByNameAndProductId(string name, uint productId);
+    IEnumerable<ProductProperty> GetAllInProduct(int productId);
+    ProductProperty? GetByNameAndProductId(string name, int productId);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicId(ProductPropertyByCharacteristicIdCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertWithCharacteristicName(ProductPropertyByCharacteristicNameCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductPropertyUpdateRequest updateRequest);
-    bool Delete(uint productId, uint characteristicId);
-    bool DeleteAllForProduct(uint productId);
-    bool DeleteAllForCharacteristic(uint characteristicId);
+    bool Delete(int productId, int characteristicId);
+    bool DeleteAllForProduct(int productId);
+    bool DeleteAllForCharacteristic(int characteristicId);
 }

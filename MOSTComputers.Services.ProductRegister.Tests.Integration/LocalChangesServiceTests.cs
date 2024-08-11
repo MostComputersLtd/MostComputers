@@ -31,7 +31,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     private readonly ILocalChangesService _localChangesService;
     private readonly IProductService _productService;
     private readonly IProductImageService _productImageService;
-    private readonly ProductCreateRequest _invalidProductCreateRequest = new() { CategoryID = -100 };
+    private readonly ProductCreateRequest _invalidProductCreateRequest = new() { CategoryId = -100 };
 
     public override async Task DisposeAsync()
     {
@@ -41,15 +41,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAll_ShouldGetAll_WhenAllInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -72,16 +72,16 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAll_ShouldGetOnlySuccessfullyInserted_WhenSomeInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId3 = productInsertResult3.Match<uint?>(
+        int? productId3 = productInsertResult3.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -90,7 +90,6 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             id => false,
             validationResult => true,
             unexpectedFailureResult => false));
-
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAll();
 
@@ -110,15 +109,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForTable_ShouldGetAll_WhenAllInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -141,16 +140,16 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForTable_ShouldGetOnlySuccessfullyInserted_WhenSomeInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId3 = productInsertResult3.Match<uint?>(
+        int? productId3 = productInsertResult3.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -178,16 +177,16 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForTable_ShouldGetOnlyDataForItsGivenTable()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId3 = productInsertResult3.Match<uint?>(
+        int? productId3 = productInsertResult3.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -200,9 +199,9 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.NotNull(productId3);
 
-        ServiceProductImageCreateRequest imageCreateRequest = GetCreateRequestWithImageData((int)productId1);
+        ServiceProductImageCreateRequest imageCreateRequest = GetCreateRequestWithImageData(productId1.Value);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productImageInsertResult = _productImageService.InsertInAllImages(imageCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productImageInsertResult = _productImageService.InsertInAllImages(imageCreateRequest);
 
         Assert.True(productImageInsertResult.Match(
             _ => true,
@@ -227,21 +226,24 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForOperationType_ShouldGetAll_WhenAllInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -261,16 +263,16 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForOperationType_ShouldGetOnlySuccessfullyInserted_WhenSomeInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId3 = productInsertResult3.Match<uint?>(
+        int? productId3 = productInsertResult3.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -281,7 +283,10 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             unexpectedFailureResult => false));
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId3);
+        Assert.True(productId3 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -303,16 +308,16 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForOperationType_ShouldGetOnlyDataForItsGivenOperationType()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult3 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId3 = productInsertResult3.Match<uint?>(
+        int? productId3 = productInsertResult3.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -323,9 +328,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             unexpectedFailureResult => false));
 
         Assert.NotNull(productId1);
-        Assert.NotNull(productId3);
+        Assert.True(productId1 > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages((int)productId1);
+        Assert.NotNull(productId3);
+        Assert.True(productId3 > 0);
+
+        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productId1.Value);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
 
@@ -354,14 +362,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetById_ShouldGetItem_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -373,7 +382,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
             && dataFromGetAll.TableElementId == productId1);
 
-        LocalChangeData? dataFromGetById = _localChangesService.GetById((uint)dataFromGetAll.Id);
+        LocalChangeData? dataFromGetById = _localChangesService.GetById(dataFromGetAll.Id);
 
         Assert.NotNull(dataFromGetById);
 
@@ -390,14 +399,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetById_ShouldFailToGetItem_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -417,16 +427,18 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetByTableNameAndElementIdAndOperationType_ShouldGetItem_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, (int)productId1, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, productId1.Value, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(dataFromGetById);
 
@@ -442,16 +454,18 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     {
         const string incorrectTableName = "asdalffsd;lff";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(incorrectTableName, (int)productId1, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            incorrectTableName, productId1.Value, ChangeOperationTypeEnum.Create);
 
         Assert.Null(dataFromGetById);
     }
@@ -459,16 +473,18 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetByTableNameAndElementIdAndOperationType_ShoulFailToGetItem_WhenElementIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, 0, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, 0, ChangeOperationTypeEnum.Create);
 
         Assert.Null(dataFromGetById);
     }
@@ -476,14 +492,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteById_ShouldDeleteItem_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -495,11 +512,11 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
             && dataFromGetAll.TableElementId == productId1);
 
-        bool deleteSuccess = _localChangesService.DeleteById((uint)dataFromGetAll.Id);
+        bool deleteSuccess = _localChangesService.DeleteById(dataFromGetAll.Id);
 
         Assert.True(deleteSuccess);
 
-        LocalChangeData? dataAfterDelete = _localChangesService.GetById((uint)dataFromGetAll.Id);
+        LocalChangeData? dataAfterDelete = _localChangesService.GetById(dataFromGetAll.Id);
 
         Assert.Null(dataAfterDelete);
     }
@@ -507,14 +524,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteById_ShouldFailToDeleteItem_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -530,7 +548,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(deleteSuccess);
 
-        LocalChangeData? dataAfterDelete = _localChangesService.GetById((uint)dataFromGetAll.Id);
+        LocalChangeData? dataAfterDelete = _localChangesService.GetById(dataFromGetAll.Id);
 
         Assert.NotNull(dataAfterDelete);
     }
@@ -538,21 +556,24 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteRangeByIds_ShouldDeleteAllItems_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
 
@@ -568,7 +589,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId2);
 
-        IEnumerable<uint> changeDataIds = data.Select(x => (uint)x.Id);
+        IEnumerable<int> changeDataIds = data.Select(x => x.Id);
 
         bool deleteSuccess = _localChangesService.DeleteRangeByIds(changeDataIds);
 
@@ -582,16 +603,17 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteByTableNameAndElementId_ShouldDeleteItem_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        int elementId = (int)productId1;
+        int elementId = productId1.Value;
 
         LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
 
@@ -615,18 +637,20 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     {
         const string invalidTableName = "afproeworii;><sd";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        int elementId = (int)productId1;
+        int elementId = productId1.Value;
 
-        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(data);
 
@@ -638,7 +662,8 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(deleteSuccess);
 
-        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(dataAfterDelete);
     }
@@ -646,18 +671,19 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteByTableNameAndElementId_ShouldFailToDeleteItem_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
 
-        int elementId = (int)productId1;
+        int elementId = productId1.Value;
 
-        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(data);
 
@@ -669,7 +695,8 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(deleteSuccess);
 
-        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(
+            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
 
         Assert.NotNull(dataAfterDelete);
     }
@@ -677,21 +704,25 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteRangeByTableNameAndElementIds_ShouldDeleteAllItems_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
+        
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForTable(_productsTableChangeName);
 
@@ -705,7 +736,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId2);
 
-        List<int> elementIds = new() { (int)productId1.Value, (int)productId2.Value };
+        List<int> elementIds = new() { productId1.Value, productId2.Value };
 
         bool deleteSuccess = _localChangesService.DeleteRangeByTableNameAndElementIds(_productsTableChangeName, elementIds);
 
@@ -721,21 +752,24 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     {
         const string incorrectTableName = "adklfalkjkajkajkdsf";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForTable(_productsTableChangeName);
 
@@ -749,7 +783,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId2);
 
-        List<int> elementIds = new() { (int)productId1.Value, (int)productId2.Value };
+        List<int> elementIds = new() { productId1.Value, productId2.Value };
 
         bool deleteSuccess = _localChangesService.DeleteRangeByTableNameAndElementIds(incorrectTableName, elementIds);
 
@@ -763,21 +797,24 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteRangeByTableNameAndElementIds_ShouldOnlyDeleteItemsWithValidIds_WhenSomeIdsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         IEnumerable<LocalChangeData> data = _localChangesService.GetAllForTable(_productsTableChangeName);
 
@@ -793,7 +830,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             && x.OperationType == ChangeOperationTypeEnum.Create
             && x.TableElementId == productId2);
 
-        List<int> elementIds = new() { (int)productId1.Value, 0 };
+        List<int> elementIds = new() { productId1.Value, 0 };
 
         bool deleteSuccess = _localChangesService.DeleteRangeByTableNameAndElementIds(_productsTableChangeName, elementIds);
 

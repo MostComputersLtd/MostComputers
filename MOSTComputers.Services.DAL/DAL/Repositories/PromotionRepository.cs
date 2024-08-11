@@ -17,6 +17,8 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
+
     public IEnumerable<Promotion> GetAll()
     {
         const string getAllQuery =
@@ -38,7 +40,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         return _relationalDataAccess.GetData<Promotion, dynamic>(getAllActiveQuery, new { });
     }
 
-    public IEnumerable<Promotion> GetAllForProduct(uint productId)
+    public IEnumerable<Promotion> GetAllForProduct(int productId)
     {
         const string getAllForProductQuery =
             $"""
@@ -46,10 +48,10 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             WHERE CSTID = @productId;
             """;
 
-        return _relationalDataAccess.GetData<Promotion, dynamic>(getAllForProductQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetData<Promotion, dynamic>(getAllForProductQuery, new { productId = productId });
     }
 
-    public IEnumerable<Promotion> GetAllForSelectionOfProducts(List<uint> productIds)
+    public IEnumerable<Promotion> GetAllForSelectionOfProducts(List<int> productIds)
     {
         const string getAllForSelectionOfProductsQuery =
             $"""
@@ -62,7 +64,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         return _relationalDataAccess.GetData<Promotion, dynamic>(queryWithIds, new { });
     }
 
-    public IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<uint> productIds)
+    public IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<int> productIds)
     {
         const string getAllActiveForSelectionOfProductsQuery =
             $"""
@@ -76,7 +78,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         return _relationalDataAccess.GetData<Promotion, dynamic>(queryWithIds, new { });
     }
 
-    public Promotion? GetActiveForProduct(uint productId)
+    public Promotion? GetActiveForProduct(int productId)
     {
         const string getActiveForProductQuery =
             $"""
@@ -85,11 +87,11 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             AND Active = 1;
             """;
 
-        return _relationalDataAccess.GetData<Promotion, dynamic>(getActiveForProductQuery, new { productId = (int)productId })
+        return _relationalDataAccess.GetData<Promotion, dynamic>(getActiveForProductQuery, new { productId = productId })
             .FirstOrDefault();
     }
 
-    public OneOf<uint, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
+    public OneOf<int, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
@@ -132,7 +134,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (id is not null && id > 0) ? (uint)id : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? id.Value : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(PromotionUpdateRequest updateRequest)
@@ -202,7 +204,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
         const string deleteQuery =
             $"""
@@ -212,7 +214,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected == 0) return false;
 
@@ -224,7 +226,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         }
     }
 
-    public bool DeleteAllByProductId(uint productId)
+    public bool DeleteAllByProductId(int productId)
     {
         const string deleteAllByProductIdQuery =
             $"""
@@ -234,7 +236,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteAllByProductIdQuery, new { productId = (int)productId });
+            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteAllByProductIdQuery, new { productId = productId });
 
             if (rowsAffected == 0) return false;
 
@@ -246,7 +248,9 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         }
     }
 
-    private static string GetRequiredProductIdsStringFromList(List<uint>? requiredProductIds)
+#pragma warning restore IDE0037 // Use inferred member name
+
+    private static string GetRequiredProductIdsStringFromList(List<int>? requiredProductIds)
     {
         if (requiredProductIds is null || requiredProductIds.Count == 0) return string.Empty;
 

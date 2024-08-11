@@ -20,7 +20,7 @@ public sealed class Promotion
     public int? MaximumQuantity { get; set; }
     public int? QuantityIncrement { get; set; }
 
-    public List<uint>? RequiredProductIds { get; set; }
+    public List<int>? RequiredProductIds { get; set; }
     public string? RequiredProductIdsString
     {
         get => RequiredProductIds is not null ? string.Join(',', RequiredProductIds) : null;
@@ -36,7 +36,7 @@ public sealed class Promotion
             try
             {
                 RequiredProductIds = value?.Split(',')
-                .Select(productId => uint.Parse(productId))
+                .Select(productId => int.Parse(productId))
                 .ToList();
             }
             catch (FormatException)

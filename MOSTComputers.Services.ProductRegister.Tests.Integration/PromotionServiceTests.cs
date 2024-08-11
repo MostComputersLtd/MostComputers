@@ -7,12 +7,6 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
@@ -34,9 +28,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
     private const int _useRequiredValue = -100;
 
-    private readonly List<uint> _promotionsToRemoveProductIds = new();
+    private readonly List<int> _promotionsToRemoveProductIds = new();
 
-    private void SchedulePromotionsForDeleteByProductIdAfterTest(params uint[] ids)
+    private void SchedulePromotionsForDeleteByProductIdAfterTest(params int[] ids)
     {
         _promotionsToRemoveProductIds.AddRange(ids);
     }
@@ -53,9 +47,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -66,10 +60,11 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
         IEnumerable<Promotion> promotions = _promotionService.GetAll();
 
@@ -84,9 +79,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -97,12 +92,13 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         invalidCreateRequest.Name = "    ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
 
         Assert.True(result.Match(
             id => false,
@@ -120,9 +116,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -133,15 +129,16 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         validCreateRequest.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
         Assert.True(result.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
@@ -158,9 +155,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -171,13 +168,14 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
 
         Assert.True(result.Match(
             id => false,
@@ -195,9 +193,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -208,19 +206,20 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
         Assert.True(result.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId.Value);
 
-        Assert.True(promotions.Count() == 1);
+        Assert.Single(promotions);
 
         Assert.Contains(promotions, x =>
             ComparePromotionAndCreateRequest(validCreateRequest, x));
@@ -231,9 +230,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -244,19 +243,20 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         invalidCreateRequest.Name = "   ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
 
         Assert.True(result.Match(
             id => false,
             validationResult => true, 
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId.Value);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct((int)productId.Value);
 
         Assert.Empty(promotions);
     }
@@ -266,9 +266,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -280,9 +280,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -293,32 +293,35 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         ServicePromotionCreateRequest validCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
         ServicePromotionCreateRequest validCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
         ServicePromotionCreateRequest validCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(validCreateRequest2);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(validCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
 
         Assert.True(result1.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
         Assert.True(result2.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
         Assert.True(result3.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(productIds);
 
@@ -339,9 +342,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -353,9 +356,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -366,7 +369,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         ServicePromotionCreateRequest validCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
         ServicePromotionCreateRequest invalidCreateRequest2 = GetValidPromotionCreateRequest((int)productId1);
@@ -375,12 +381,12 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest3 = GetValidPromotionCreateRequest((int)productId2);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
 
         Assert.True(result1.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
@@ -390,15 +396,15 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => false));
 
         Assert.True(result3.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(productIds);
 
-        Assert.True(promotions.Count() == 2);
+        Assert.Equal(2, promotions.Count());
 
         Assert.Contains(promotions, x =>
             ComparePromotionAndCreateRequest(validCreateRequest1, x));
@@ -415,9 +421,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -429,9 +435,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -442,7 +448,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         ServicePromotionCreateRequest validCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
 
@@ -453,30 +462,30 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         validCreateRequest3.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(validCreateRequest2);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(validCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(validCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(validCreateRequest3);
 
         Assert.True(result1.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
         Assert.True(result2.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
         Assert.True(result3.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProducts(productIds);
 
-        Assert.True(promotions.Count() == 2);
+        Assert.Equal(2, promotions.Count());
 
         Assert.Contains(promotions, x =>
             ComparePromotionAndCreateRequest(validCreateRequest1, x));
@@ -490,9 +499,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest1 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(validProductCreateRequest1);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -504,9 +513,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ProductCreateRequest validProductCreateRequest2 = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(validProductCreateRequest2);
 
-        uint? productId2 = productInsertResult2.Match<uint?>(
+        int? productId2 = productInsertResult2.Match<int?>(
              id =>
              {
                  SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -517,7 +526,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
              unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
+
         Assert.NotNull(productId2);
+        Assert.True(productId2 > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest1 = GetValidPromotionCreateRequest((int)productId1);
 
@@ -533,9 +545,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         invalidCreateRequest3.Active = true;
         invalidCreateRequest3.Name = "   ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(invalidCreateRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(invalidCreateRequest3);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result1 = _promotionService.Insert(invalidCreateRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result2 = _promotionService.Insert(invalidCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result3 = _promotionService.Insert(invalidCreateRequest3);
 
         Assert.True(result1.Match(
             id => false,
@@ -552,7 +564,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => true,
             unexpectedFailureResult => false));
 
-        List<uint> productIds = new() { productId1.Value, productId2.Value };
+        List<int> productIds = new() { productId1.Value, productId2.Value };
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProducts(productIds);
 
@@ -564,9 +576,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -577,15 +589,16 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         validCreateRequest.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
         Assert.True(result.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
@@ -601,9 +614,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -614,13 +627,14 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
 
         Assert.True(result.Match(
             id => false,
@@ -638,9 +652,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -651,16 +665,17 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         if (createRequest.ProductId == _useRequiredValue)
         {
             createRequest.ProductId = (int)productId;
         }
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(createRequest);
 
         Assert.Equal(expected, result.Match(
-            _ => true,
+            id => id > 0,
             _ => false,
             _ => false));
 
@@ -761,9 +776,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -774,6 +789,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         if (updateRequest.ProductId == _useRequiredValue)
         {
@@ -782,18 +798,18 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _promotionService.Insert(validCreateRequest);
 
         Assert.True(insertResult.Match(
-            id => true,
+            id => id > 0,
             validationResult => false,
             unexpectedFailureResult => false));
 
-        uint promotionId = insertResult.AsT0;
+        int promotionId = insertResult.AsT0;
 
         if (updateRequest.Id == _useRequiredValue)
         {
-            updateRequest.Id = (int)promotionId;
+            updateRequest.Id = promotionId;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _promotionService.Update(updateRequest);
@@ -933,9 +949,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -946,14 +962,15 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         validCreateRequest.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
-        uint? promotionId = result.Match<uint?>(
+        int? promotionId = result.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -964,10 +981,11 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(promotionId);
+        Assert.True(promotionId > 0);
 
         bool success = _promotionService.Delete(promotionId.Value);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetActiveForProduct((int)productId.Value);
 
         Assert.Null(promotion);
     }
@@ -977,9 +995,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -990,14 +1008,15 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         validCreateRequest.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
-        uint? promotionId = result.Match<uint?>(
+        int? promotionId = result.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -1008,10 +1027,11 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(promotionId);
+        Assert.True(promotionId > 0);
 
         bool success = _promotionService.Delete(0);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetActiveForProduct((int)productId.Value);
 
         Assert.NotNull(promotion);
     }
@@ -1021,9 +1041,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -1034,14 +1054,15 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest validCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         validCreateRequest.Active = true;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
-        uint? promotionId = result.Match<uint?>(
+        int? promotionId = result.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -1063,9 +1084,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     {
         ProductCreateRequest validProductCreateRequest = GetValidProductCreateRequestUsingRandomData();
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(validProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id =>
             {
                 SchedulePromotionsForDeleteByProductIdAfterTest(id);
@@ -1076,13 +1097,14 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
         ServicePromotionCreateRequest invalidCreateRequest = GetValidPromotionCreateRequest((int)productId);
 
         invalidCreateRequest.Active = true;
         invalidCreateRequest.Name = "   ";
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(invalidCreateRequest);
 
         Assert.True(result.Match(
             id => false,
@@ -1157,9 +1179,9 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         && updateRequest.PromotionVisualizationId == promotion.PromotionVisualizationId);
     }
 
-    private bool DeleteRangeByProductIds(params uint[] productIds)
+    private bool DeleteRangeByProductIds(params int[] productIds)
     {
-        foreach (uint productId in productIds)
+        foreach (int productId in productIds)
         {
             bool success = _promotionService.DeleteAllByProductId(productId);
 

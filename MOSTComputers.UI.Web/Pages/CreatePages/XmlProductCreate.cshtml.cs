@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.UI.Web.Validation;
@@ -116,7 +116,7 @@ public class XmlProductCreateModel : PageModel
         {
             ProductCreateRequest productCreateRequest = _displayMappingService.GetProductCreateRequestFromProductXmlDisplay(productDisplay);
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
 
             bool isSuccessResult = false;
 
@@ -143,7 +143,7 @@ public class XmlProductCreateModel : PageModel
     {
         foreach (var productCreateRequest in productCreateRequests)
         {
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
+            OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productService.Insert(productCreateRequest);
 
             bool isSuccessResult = false;
 

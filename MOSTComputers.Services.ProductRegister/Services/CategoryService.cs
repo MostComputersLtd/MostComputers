@@ -38,12 +38,12 @@ internal sealed class CategoryService : ICategoryService
         return _categoryRepository.GetAll();
     }
 
-    public Category? GetById(uint id)
+    public Category? GetById(int id)
     {
         return _categoryRepository.GetById(id);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
         IValidator<ServiceCategoryCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
@@ -55,9 +55,9 @@ internal sealed class CategoryService : ICategoryService
         createRequestInternal.RowGuid = Guid.NewGuid();
         createRequestInternal.IsLeaf = (createRequestInternal.ParentCategoryId is not null);
 
-        OneOf<uint, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequestInternal);
+        OneOf<int, UnexpectedFailureResult> result = _categoryRepository.Insert(createRequestInternal);
 
-        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
+        return result.Match<OneOf<int, ValidationResult, UnexpectedFailureResult>>(
             id => id, unexpectedFailure => unexpectedFailure);
     }
 
@@ -78,7 +78,7 @@ internal sealed class CategoryService : ICategoryService
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
         return _categoryRepository.Delete(id);
     }

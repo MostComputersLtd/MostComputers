@@ -60,8 +60,10 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.GetSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
     }
 
-    public ProductCharacteristic? GetById(uint id)
+    public ProductCharacteristic? GetById(int id)
     {
+        if (id <= 0) return null;
+
         return _productCharacteristicsRepository.GetById(id);
     }
 
@@ -83,7 +85,7 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.GetByCategoryIdAndNameAndCharacteristicType(categoryId, name, productCharacteristicType);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
@@ -111,8 +113,10 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
         return _productCharacteristicsRepository.UpdateByNameAndCategoryId(updateRequest);
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         return _productCharacteristicsRepository.Delete(id);
     }
 

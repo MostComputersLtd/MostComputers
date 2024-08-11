@@ -1,7 +1,10 @@
-﻿using MOSTComputers.Models.Product.Models.Changes;
+﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -29,8 +32,10 @@ internal sealed class LocalChangesService : ILocalChangesService
         return _localChangesRepository.GetAllForOperationType(operationType);
     }
 
-    public LocalChangeData? GetById(uint id)
+    public LocalChangeData? GetById(int id)
     {
+        if (id <= 0) return null;
+
         return _localChangesRepository.GetById(id);
     }
 
@@ -39,13 +44,17 @@ internal sealed class LocalChangesService : ILocalChangesService
         return _localChangesRepository.GetByTableNameAndElementIdAndOperationType(tableName, elementId, changeOperationType);
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
+        if (id <= 0) return false;
+
         return _localChangesRepository.DeleteById(id);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
+        ids = RemoveValuesSmallerThanOne(ids);
+
         return _localChangesRepository.DeleteRangeByIds(ids);
     }
 

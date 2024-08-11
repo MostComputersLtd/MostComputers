@@ -4,11 +4,6 @@ using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -17,11 +12,12 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     const string _tableName = "dbo.ProductStatuses";
     const string _productTableName = "dbo.MOSTPrices";
 
-
     public ProductStatusesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
     }
+
+#pragma warning disable IDE0037 // Use inferred member name
 
     public IEnumerable<ProductStatuses> GetAll()
     {
@@ -33,7 +29,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
         return _relationalDataAccess.GetData<ProductStatuses, dynamic>(getAllQuery, new { });
     }
 
-    public ProductStatuses? GetByProductId(uint productId)
+    public ProductStatuses? GetByProductId(int productId)
     {
         const string getByProductIdQuery =
             $"""
@@ -41,10 +37,10 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
             WHERE CSTID = @productId
             """;
 
-        return _relationalDataAccess.GetDataFirstOrDefault<ProductStatuses, dynamic>(getByProductIdQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetDataFirstOrDefault<ProductStatuses, dynamic>(getByProductIdQuery, new { productId = productId });
     }
 
-    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<uint> productIds)
+    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<int> productIds)
     {
         const string getByProductIdQuery =
             $"""
@@ -52,7 +48,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
             WHERE CSTID IN @productIds
             """;
 
-        return _relationalDataAccess.GetData<ProductStatuses, dynamic>(getByProductIdQuery, new { productIds = productIds.Select(productId => (int)productId) });
+        return _relationalDataAccess.GetData<ProductStatuses, dynamic>(getByProductIdQuery, new { productIds = productIds });
     }
 
     public OneOf<Success, ValidationResult> InsertIfItDoesntExist(ProductStatusesCreateRequest createRequest)
@@ -129,7 +125,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
         return (rowsAffected > 0);
     }
 
-    public bool DeleteByProductId(uint productId)
+    public bool DeleteByProductId(int productId)
     {
         const string deleteByProductId =
             $"""
@@ -139,11 +135,13 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
 
         var parameters = new
         {
-            productId = (int)productId,
+            productId = productId,
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<ProductStatuses, dynamic>(deleteByProductId, parameters);
 
         return (rowsAffected > 0);
     }
+
+#pragma warning restore IDE0037 // Use inferred member name
 }

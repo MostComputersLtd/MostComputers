@@ -13,6 +13,8 @@ using FluentValidation.Results;
 using OneOf;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+
 namespace MOSTComputers.Services.ProductRegister.Services;
 
 internal sealed class FailedPropertyNameOfProductService : IFailedPropertyNameOfProductService
@@ -39,13 +41,17 @@ internal sealed class FailedPropertyNameOfProductService : IFailedPropertyNameOf
         return _failedPropertyNameOfProductRepository.GetAll();
     }
 
-    public IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(uint productId)
+    public IEnumerable<FailedPropertyNameOfProduct> GetAllForProduct(int productId)
     {
+        if (productId <= 0) return Enumerable.Empty<FailedPropertyNameOfProduct>();
+
         return _failedPropertyNameOfProductRepository.GetAllForProduct(productId);
     }
 
-    public IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<uint> productIds)
+    public IEnumerable<FailedPropertyNameOfProduct> GetAllForSelectionOfProducts(IEnumerable<int> productIds)
     {
+        productIds = RemoveValuesSmallerThanOne(productIds);
+
         return _failedPropertyNameOfProductRepository.GetAllForSelectionOfProducts(productIds);
     }
 
@@ -76,18 +82,24 @@ internal sealed class FailedPropertyNameOfProductService : IFailedPropertyNameOf
         return _failedPropertyNameOfProductRepository.Update(updateRequest);
     }
 
-    public bool Delete(uint productId, string propertyName)
+    public bool Delete(int productId, string propertyName)
     {
-        return _failedPropertyNameOfProductRepository.Delete(productId, propertyName);
+        if (productId <= 0) return false;
 
+        return _failedPropertyNameOfProductRepository.Delete(productId, propertyName);
     }
-    public bool DeleteAllForProduct(uint productId)
+
+    public bool DeleteAllForProduct(int productId)
     {
+        if (productId <= 0) return false;
+
         return _failedPropertyNameOfProductRepository.DeleteAllForProduct(productId);
     }
 
-    public bool DeleteAllForSelectionOfProducts(IEnumerable<uint> productIds)
+    public bool DeleteAllForSelectionOfProducts(IEnumerable<int> productIds)
     {
+        productIds = RemoveValuesSmallerThanOne(productIds);
+
         return _failedPropertyNameOfProductRepository.DeleteAllForSelectionOfProducts(productIds);
     }
 }

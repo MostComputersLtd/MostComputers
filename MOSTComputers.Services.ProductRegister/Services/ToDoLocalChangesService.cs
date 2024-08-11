@@ -39,8 +39,10 @@ internal sealed class ToDoLocalChangesService : IToDoLocalChangesService
         return _toDoLocalChangesRepository.GetAllForOperationType(operationType);
     }
 
-    public LocalChangeData? GetById(uint id)
+    public LocalChangeData? GetById(int id)
     {
+        if (id <= 0) return null;
+
         return _toDoLocalChangesRepository.GetById(id);
     }
 
@@ -63,13 +65,17 @@ internal sealed class ToDoLocalChangesService : IToDoLocalChangesService
             unexpectedFailureResult => unexpectedFailureResult);
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
+        if (id <= 0) return false;
+
         return _toDoLocalChangesRepository.DeleteById(id);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
+        ids = RemoveValuesSmallerThanOne(ids);
+
         return _toDoLocalChangesRepository.DeleteRangeByIds(ids);
     }
 

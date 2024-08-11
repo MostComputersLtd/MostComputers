@@ -5,7 +5,6 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
-using System.Reflection.PortableExecutable;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -15,13 +14,13 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     private const string _productCharacteristicTableName = "dbo.ProductKeyword";
     private const string _productsTableName = "dbo.MOSTPrices";
 
-    const string _getCharacteristicNameQuery =
+    private const string _getCharacteristicNameQuery =
         $"""
         SELECT TOP 1 Name FROM {_productCharacteristicTableName}
         WHERE ProductKeywordID = @ProductCharacteristicId
         """;
 
-    const string _checkIfPropertyWithSameNameExistsByNameQuery =
+    private const string _checkIfPropertyWithSameNameExistsByNameQuery =
         $"""
         SELECT CASE WHEN EXISTS(
             SELECT * FROM {_tableName}
@@ -31,7 +30,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     
         """;
 
-    const string _checkIfPropertyWithSameNameExistsByIdQuery =
+    private const string _checkIfPropertyWithSameNameExistsByIdQuery =
         $"""
         SELECT CASE WHEN EXISTS(
             SELECT * FROM {_tableName}
@@ -41,13 +40,14 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     
         """;
 
-
     public ProductPropertyRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
     }
 
-    public IEnumerable<ProductProperty> GetAllInProduct(uint productId)
+#pragma warning disable IDE0037 // Use inferred member name
+
+    public IEnumerable<ProductProperty> GetAllInProduct(int productId)
     {
         const string getAllInProductQuery =
             $"""
@@ -57,10 +57,10 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getAllInProductQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getAllInProductQuery, new { productId = productId });
     }
 
-    public ProductProperty? GetByNameAndProductId(string name, uint productId)
+    public ProductProperty? GetByNameAndProductId(string name, int productId)
     {
         const string getByNameAndProductIdQuery =
             $"""
@@ -70,7 +70,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             AND Keyword = @Name;
             """;
 
-        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getByNameAndProductIdQuery, new { Name = name, productId = (int)productId })
+        return _relationalDataAccess.GetData<ProductProperty, dynamic>(getByNameAndProductIdQuery, new { Name = name, productId = productId })
             .FirstOrDefault();
     }
 
@@ -248,8 +248,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
     string? GetNameOfCharacteristic(int productCharacteristicId)
     {
-        return _relationalDataAccess.GetData<string, dynamic>(_getCharacteristicNameQuery, new { ProductCharacteristicId = productCharacteristicId })
-            .FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<string, dynamic>(_getCharacteristicNameQuery,
+            new { ProductCharacteristicId = productCharacteristicId });
     }
 
     bool DoesDuplicatePropertyExist(int productId, string? characteristicName)
@@ -260,8 +260,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             Name = characteristicName
         };
 
-        bool duplicatePropertyExists = _relationalDataAccess.GetData<bool, dynamic>(_checkIfPropertyWithSameNameExistsByNameQuery, parametersForDuplicateQuery)
-            .FirstOrDefault();
+        bool duplicatePropertyExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(_checkIfPropertyWithSameNameExistsByNameQuery,
+            parametersForDuplicateQuery);
 
         return duplicatePropertyExists;
     }
@@ -274,13 +274,13 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             characteristicId
         };
 
-        bool duplicatePropertyExists = _relationalDataAccess.GetData<bool, dynamic>(_checkIfPropertyWithSameNameExistsByIdQuery, parametersForDuplicateQuery)
-            .FirstOrDefault();
+        bool duplicatePropertyExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(_checkIfPropertyWithSameNameExistsByIdQuery,
+            parametersForDuplicateQuery);
 
         return duplicatePropertyExists;
     }
 
-    public bool Delete(uint productId, uint characteristicId)
+    public bool Delete(int productId, int characteristicId)
     {
         const string deleteByProductAndCharacteristicId =
             $"""
@@ -292,7 +292,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         try
         {
             int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId,
-                new { productId = (int)productId, characteristicId = (int)characteristicId });
+                new { productId = productId, characteristicId = characteristicId });
 
             if (rowsAffected == 0) return false;
 
@@ -304,7 +304,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         }
     }
 
-    public bool DeleteAllForProduct(uint productId)
+    public bool DeleteAllForProduct(int productId)
     {
         const string deleteByProductAndCharacteristicId =
             $"""
@@ -314,7 +314,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { productId = (int)productId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId,
+                new { productId = productId });
 
             if (rowsAffected == 0) return false;
 
@@ -326,7 +327,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         }
     }
 
-    public bool DeleteAllForCharacteristic(uint characteristicId)
+    public bool DeleteAllForCharacteristic(int characteristicId)
     {
         const string deleteByProductAndCharacteristicId =
             $"""
@@ -336,7 +337,8 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId, new { characteristicId = (int)characteristicId });
+            int rowsAffected = _relationalDataAccess.SaveData<ProductProperty, dynamic>(deleteByProductAndCharacteristicId,
+                new { characteristicId = characteristicId });
 
             if (rowsAffected == 0) return false;
 
@@ -347,4 +349,5 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             return false;
         }
     }
+#pragma warning restore IDE0037 // Use inferred member name
 }

@@ -8,6 +8,6 @@ namespace MOSTComputers.Models.Product.Models.Requests.Product;
 
 public sealed class ProductRangeSearchRequest
 {
-    public uint Start { get; set; }
+    public int Start { get; set; }
     public uint Length { get; set; }
 }

@@ -18,7 +18,7 @@ public class IndexModel : PageModel
 
     public void OnGet()
     {
-        IEnumerable<Product> products = _productService.GetSelectionWithoutImagesAndProps(new List<uint> { 67210, 67219, 68445, 54332 });
+        IEnumerable<Product> products = _productService.GetSelectionWithoutImagesAndProps(new List<int> { 67210, 67219, 68445, 54332 });
 
         Products = products;
     }

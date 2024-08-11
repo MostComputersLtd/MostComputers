@@ -18,6 +18,8 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
+
     public IEnumerable<Category> GetAll()
     {
         const string getAllQuery =
@@ -29,7 +31,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         return _relationalDataAccess.GetData<Category, dynamic>(getAllQuery, new { });
     }
 
-    public Category? GetById(uint id)
+    public Category? GetById(int id)
     {
         const string getByIdQuery =
             $"""
@@ -37,10 +39,10 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             WHERE CategoryID = @id;
             """;
 
-        return _relationalDataAccess.GetDataFirstOrDefault<Category, dynamic>(getByIdQuery, new { id = (int)id });
+        return _relationalDataAccess.GetDataFirstOrDefault<Category, dynamic>(getByIdQuery, new { id = id });
     }
 
-    public OneOf<uint, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
+    public OneOf<int, UnexpectedFailureResult> Insert(CategoryCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
@@ -66,7 +68,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (id is not null && id > 0) ? (uint)id.Value : new UnexpectedFailureResult();
+        return (id is not null && id > 0) ? id.Value : new UnexpectedFailureResult();
     }
 
     public OneOf<Success, UnexpectedFailureResult> Update(CategoryUpdateRequest updateRequest)
@@ -84,7 +86,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         var parameters = new
         {
-            id = (int)updateRequest.Id,
+            id = updateRequest.Id,
             updateRequest.Description,
             updateRequest.DisplayOrder,
             updateRequest.RowGuid,
@@ -96,7 +98,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
         return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
         const string deleteQuery =
             $"""
@@ -106,7 +108,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = (int)id });
+            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = id });
 
             return (rowsAffected > 0);
         }
@@ -119,4 +121,6 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             return false;
         }
     }
+
+#pragma warning restore IDE0037 // Use inferred member name
 }

@@ -24,7 +24,7 @@ public sealed class PromotionUpdateRequest
     public int? MaximumQuantity { get; set; }
     public int? QuantityIncrement { get; set; }
 
-    public List<uint>? RequiredProductIds { get; set; }
+    public List<int>? RequiredProductIds { get; set; }
 
     public int? ExpQuantity { get; set; }
     public int? SoldQuantity { get; set; }

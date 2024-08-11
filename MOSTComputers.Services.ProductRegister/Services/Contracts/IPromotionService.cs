@@ -10,14 +10,14 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 public interface IPromotionService
 {
-    Promotion? GetActiveForProduct(uint productId);
+    Promotion? GetActiveForProduct(int productId);
     IEnumerable<Promotion> GetAll();
     IEnumerable<Promotion> GetAllActive();
-    IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<uint> productIds);
-    IEnumerable<Promotion> GetAllForProduct(uint productId);
-    IEnumerable<Promotion> GetAllForSelectionOfProducts(List<uint> productIds);
-    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServicePromotionCreateRequest createRequest, IValidator<ServicePromotionCreateRequest>? validator = null);
+    IEnumerable<Promotion> GetAllActiveForSelectionOfProducts(List<int> productIds);
+    IEnumerable<Promotion> GetAllForProduct(int productId);
+    IEnumerable<Promotion> GetAllForSelectionOfProducts(List<int> productIds);
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServicePromotionCreateRequest createRequest, IValidator<ServicePromotionCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServicePromotionUpdateRequest updateRequest, IValidator<ServicePromotionUpdateRequest>? validator = null);
-    bool Delete(uint id);
-    bool DeleteAllByProductId(uint productId);
+    bool Delete(int id);
+    bool DeleteAllByProductId(int productId);
 }

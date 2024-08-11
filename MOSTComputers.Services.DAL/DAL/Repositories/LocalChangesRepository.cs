@@ -1,11 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -70,7 +65,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         return _relationalDataAccess.GetData<LocalChangeData, dynamic>(getAllForOperationTypeQuery, parameters);
     }
 
-    public LocalChangeData? GetById(uint id)
+    public LocalChangeData? GetById(int id)
     {
         const string getByIdQuery =
         $"""
@@ -82,7 +77,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByIdQuery, parameters);
@@ -110,7 +105,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         return _relationalDataAccess.GetDataFirstOrDefault<LocalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
     }
 
-    public bool DeleteById(uint id)
+    public bool DeleteById(int id)
     {
         const string deleteByIdQuery =
         $"""
@@ -120,7 +115,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
@@ -128,7 +123,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         return (rowsAffected > 0);
     }
 
-    public bool DeleteRangeByIds(IEnumerable<uint> ids)
+    public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
         const string deleteByIdQuery =
         $"""
@@ -138,7 +133,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
 
         var parameters = new
         {
-            ids = ids.Select(id => (int)id)
+            ids = ids
         };
 
         int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
@@ -185,5 +180,6 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
 
         return (rowsAffected > 0);
     }
-}
+
 #pragma warning restore IDE0037 // Use inferred member name
+}

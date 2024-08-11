@@ -15,13 +15,13 @@ public interface IProductCharacteristicsRepository
     IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
     IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
     IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
-    ProductCharacteristic? GetById(uint id);
+    ProductCharacteristic? GetById(int id);
     ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name);
     ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(int categoryId, string name, ProductCharacteristicTypeEnum productCharacteristicType);
     IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names);
-    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest);
-    bool Delete(uint id);
+    bool Delete(int id);
     bool DeleteAllForCategory(int categoryId);
 }

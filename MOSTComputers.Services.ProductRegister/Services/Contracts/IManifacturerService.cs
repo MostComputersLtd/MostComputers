@@ -11,8 +11,8 @@ namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IManifacturerService
 {
     IEnumerable<Manifacturer> GetAll();
-    Manifacturer? GetById(uint id);
-    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest, IValidator<ManifacturerCreateRequest>? validator = null);
+    Manifacturer? GetById(int id);
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest, IValidator<ManifacturerCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest, IValidator<ManifacturerUpdateRequest>? validator = null);
-    bool Delete(uint id);
+    bool Delete(int id);
 }

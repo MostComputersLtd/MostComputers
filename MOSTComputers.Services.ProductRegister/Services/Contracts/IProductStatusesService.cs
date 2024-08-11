@@ -7,10 +7,10 @@ using OneOf.Types;
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductStatusesService
 {
-    bool DeleteByProductId(uint productId);
+    bool DeleteByProductId(int productId);
     IEnumerable<ProductStatuses> GetAll();
-    ProductStatuses? GetByProductId(uint productId);
-    IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<uint> productIds);
+    ProductStatuses? GetByProductId(int productId);
+    IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<int> productIds);
     OneOf<Success, ValidationResult> InsertIfItDoesntExist(ProductStatusesCreateRequest createRequest);
     OneOf<bool, ValidationResult> Update(ProductStatusesUpdateRequest updateRequest);
 }

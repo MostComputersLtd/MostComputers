@@ -32,22 +32,24 @@ internal sealed class ManifacturerService : IManifacturerService
         return _manifacturerRepository.GetAll();
     }
 
-    public Manifacturer? GetById(uint id)
+    public Manifacturer? GetById(int id)
     {
+        if (id <= 0) return null;
+
         return _manifacturerRepository.GetById(id);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
         IValidator<ManifacturerCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<uint, UnexpectedFailureResult> result = _manifacturerRepository.Insert(createRequest);
+        OneOf<int, UnexpectedFailureResult> result = _manifacturerRepository.Insert(createRequest);
 
-        return result.Match<OneOf<uint, ValidationResult, UnexpectedFailureResult>>(
-            success => success, unexpectedFailure => unexpectedFailure);
+        return result.Match<OneOf<int, ValidationResult, UnexpectedFailureResult>>(
+            id => id, unexpectedFailure => unexpectedFailure);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ManifacturerUpdateRequest updateRequest,
@@ -63,8 +65,10 @@ internal sealed class ManifacturerService : IManifacturerService
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         return _manifacturerRepository.Delete(id);
     }
 }

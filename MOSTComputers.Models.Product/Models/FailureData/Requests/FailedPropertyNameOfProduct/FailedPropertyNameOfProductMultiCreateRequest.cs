@@ -8,6 +8,6 @@ namespace MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropert
 
 public sealed class FailedPropertyNameOfProductMultiCreateRequest
 {
-    public uint ProductId { get; set; }
+    public int ProductId { get; set; }
     public required HashSet<string> PropertyNames { get; init; }
 }
