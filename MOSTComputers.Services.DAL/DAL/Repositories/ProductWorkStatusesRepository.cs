@@ -146,19 +146,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
 
         if (data.Item2 == 0) return data.Item1;
 
-        ValidationResult validationResult = new();
-
-        if (data.Item2 == 1)
-        {
-            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
-        }
-
-        else if (data.Item2 == 2)
-        {
-            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
-        }
-
-        return validationResult;
+        return GetValidationResultFromStatus(data.Item2);
 
         (int, int) InsertAndExtractData(string insertQuery, dynamic paramsLocal)
         {
@@ -167,6 +155,13 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             if (data is null) return (-1, -1);
 
             int indexOfSlash = data.IndexOf('/');
+
+            if (indexOfSlash < 0)
+            {
+                bool parseStatusOnlySuccess = int.TryParse(data, out int statusCodeOnlyResult);
+
+                return (-1, statusCodeOnlyResult);
+            }
 
             string productWorkStatusIdAsString = data[..indexOfSlash];
             string statusCodeAsString = data[(indexOfSlash + 1)..];
@@ -181,6 +176,23 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
 
             return (-1, -1);
         }
+    }
+
+    private static OneOf<int, ValidationResult, UnexpectedFailureResult> GetValidationResultFromStatus(int status)
+    {
+        ValidationResult validationResult = new();
+
+        if (status == 1)
+        {
+            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
+        }
+
+        else if (status == 2)
+        {
+            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
+        }
+
+        return validationResult;
     }
 
     public bool UpdateById(ProductWorkStatusesUpdateByIdRequest updateRequest)
