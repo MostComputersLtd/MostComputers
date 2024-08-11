@@ -155,17 +155,18 @@ function displayImageHtmlData(htmlDataViewId, htmlDataInputId)
     htmlDataView.innerHTML = htmlDataInput.value;
 }
 
-function addNewImage(fileInputElement)
+function addNewImage(fileInputElement, imagePopupUsage)
 {
     var productId = getProductId();
 
-    if (productId === null) return;
+    if (productId == null
+        || imagePopupUsage == null) return;
 
     var formBody = new FormData();
 
     formBody.append("fileInfo", fileInputElement.files[0])
 
-    var url = "/Index" + "?handler=AddNewImageToProduct" + "&productId=" + productId;
+    var url = "/Index" + "?handler=AddNewImageToProduct" + "&productId=" + productId + "&productImagePopupUsage=" + imagePopupUsage;
 
     $.ajax({
         type: "POST",
@@ -219,9 +220,13 @@ function update_productImageDisplay_ul_li_activeState(elementId, elementCheckBox
         });
 }
 
-function delete_productImageDisplay_ul_li(productId, imageIndex, elementId)
+function delete_productImageDisplay_ul_li(productId, imageIndex, imagePopupUsage, elementId)
 {
-    const url = "/Index" + "?handler=DeleteImageFromProduct" + "&productId=" + productId + "&imageIndex=" + imageIndex;
+    if (productId == null
+        || imageIndex == null
+        || imagePopupUsage == null) return;
+
+    const url = "/Index" + "?handler=DeleteImageFromProduct" + "&productId=" + productId + "&imageIndex=" + imageIndex + "&productImagePopupUsage=" + imagePopupUsage;
 
     fetch(url, {
         method: "DELETE",
