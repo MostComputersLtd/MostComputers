@@ -13,8 +13,8 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNam
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor;
 using MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor.ProductProperties;
@@ -126,7 +126,7 @@ public class ProductCompareEditorModel : PageModel
     {
         if (_firstProduct is null) return BadRequest();
 
-        GetRefreshedFirstProductAndPopulateItsData((uint)_firstProduct.Id);
+        GetRefreshedFirstProductAndPopulateItsData(_firstProduct.Id);
 
         return Partial("ProductCompareEditor/_ProductFullEditorPartial",
             GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
@@ -166,7 +166,7 @@ public class ProductCompareEditorModel : PageModel
             return new OkObjectResult(_firstProductXml);
         }
 
-        _firstProductXml = _productDeserializeService.SerializeProductsXml(_firstProduct, true, true);
+        _firstProductXml = _productDeserializeService.SerializeProductXml(_firstProduct, true, true);
 
         return new OkObjectResult(_firstProductXml);
     }
@@ -194,7 +194,7 @@ public class ProductCompareEditorModel : PageModel
             return new OkObjectResult(_secondProductXml);
         }
 
-        _secondProductXml = _productDeserializeService.SerializeProductsXml(_secondProduct, true, true);
+        _secondProductXml = _productDeserializeService.SerializeProductXml(_secondProduct, true, true);
 
         return new OkObjectResult(_secondProductXml);
     }
@@ -211,7 +211,7 @@ public class ProductCompareEditorModel : PageModel
             return OnGetGetXmlFromProductFirst();
         }
 
-        GetRefreshedFirstProductAndPopulateItsData((uint)productId);
+        GetRefreshedFirstProductAndPopulateItsData(productId);
 
         return OnGetGetXmlFromProductFirst();
     }
@@ -220,43 +220,43 @@ public class ProductCompareEditorModel : PageModel
     {
         if (productId < 0) return BadRequest();
 
-        uint productIdUint = (uint)productId;
-
         if (_firstProduct is not null
             && productId != _firstProduct.Id)
         {
             _firstProduct = null;
         }
         
-        GetFirstProductAndPopulateItsData(productIdUint);
+        GetFirstProductAndPopulateItsData(productId);
 
         return Partial("ProductCompareEditor/_ProductFullEditorPartial",
             GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.First));
     }
 
-    private Product? GetFirstProductAndPopulateItsData(uint productIdUint)
+    private Product? GetFirstProductAndPopulateItsData(int productId)
     {
-        return GetFirstProductDataAndPopulateIt(productIdUint, _firstProduct);
+        return GetFirstProductDataAndPopulateIt(productId, _firstProduct);
     }
 
-    private Product? GetRefreshedFirstProductAndPopulateItsData(uint productIdUint)
+    private Product? GetRefreshedFirstProductAndPopulateItsData(int productId)
     {
-        return GetFirstProductDataAndPopulateIt(productIdUint);
+        return GetFirstProductDataAndPopulateIt(productId);
     }
 
-    private Product? GetFirstProductDataAndPopulateIt(uint productIdUint, Product? product = null)
+    private Product? GetFirstProductDataAndPopulateIt(int productId, Product? product = null)
     {
+        if (productId <= 0) return null;
+
         Product? firstProduct = null;
 
         if (product is not null
-            && productIdUint == product.Id)
+            && productId == product.Id)
         {
             firstProduct = product;
         }
 
         if (firstProduct is null)
         {
-            firstProduct = _productService.GetByIdWithImages(productIdUint);
+            firstProduct = _productService.GetByIdWithImages(productId);
 
             if (firstProduct is null)
             {
@@ -287,14 +287,14 @@ public class ProductCompareEditorModel : PageModel
         if (firstProduct.Properties is null
             || firstProduct.Properties.Count <= 0)
         {
-            firstProduct.Properties = _productPropertyService.GetAllInProduct(productIdUint)
+            firstProduct.Properties = _productPropertyService.GetAllInProduct(productId)
                 .ToList();
         }
 
         if (firstProduct.ImageFileNames is null
             || firstProduct.ImageFileNames.Count <= 0)
         {
-            firstProduct.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productIdUint)
+            firstProduct.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId)
                 .ToList();
         }
 
@@ -317,7 +317,7 @@ public class ProductCompareEditorModel : PageModel
             image =>
             {
                 ProductImageFileNameInfo? relatedFileName = firstProduct.ImageFileNames?.Find(
-                    x => x.FileName == $"{image.Id}.{GetFileExtensionFromFileType(image.ImageFileExtension ?? "*")}");
+                    x => x.FileName == $"{image.Id}.{GetFileExtensionFromFileType(image.ImageContentType ?? "*")}");
 
                 if (relatedFileName is not null) return relatedFileName.DisplayOrder;
 
@@ -481,7 +481,7 @@ public class ProductCompareEditorModel : PageModel
 
         try
         {
-            uint firstProductId = (uint)_firstProduct.Id;
+            int firstProductId = _firstProduct.Id;
 
             IStatusCodeActionResult result = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
                 SaveFirstProductInternal,
@@ -508,7 +508,7 @@ public class ProductCompareEditorModel : PageModel
     {
         if (_firstProduct is null) return BadRequest();
 
-        uint productId = (uint)_firstProduct.Id;
+        int productId = _firstProduct.Id;
 
         Product? oldFirstProduct = _productService.GetByIdWithImages(productId);
 
@@ -599,7 +599,7 @@ public class ProductCompareEditorModel : PageModel
 
     private IStatusCodeActionResult UpdatePropertiesForFirstProduct(
         Product oldFirstProduct,
-        uint productId,
+        int productId,
         ProductUpdateRequest productUpdateRequestToAddPropsTo)
     {
         if (_firstProduct is null) return BadRequest();
@@ -614,7 +614,7 @@ public class ProductCompareEditorModel : PageModel
                 ProductPropertyByCharacteristicIdCreateRequest propCreateRequest = new()
                 {
                     ProductCharacteristicId = newProductProp.ProductCharacteristicId,
-                    ProductId = (int)productId,
+                    ProductId = productId,
                     DisplayOrder = newProductProp.DisplayOrder,
                     Value = newProductProp.Value,
                     XmlPlacement = newProductProp.XmlPlacement,
@@ -662,7 +662,7 @@ public class ProductCompareEditorModel : PageModel
             if (oldPropertyToDelete.ProductCharacteristicId is null) return StatusCode(500);
 
             bool imageFileNameDeleteSuccess = _productPropertyService.Delete(
-                productId, (uint)oldPropertyToDelete.ProductCharacteristicId.Value);
+                productId, oldPropertyToDelete.ProductCharacteristicId.Value);
 
             if (!imageFileNameDeleteSuccess) return StatusCode(500);
         }
@@ -672,7 +672,7 @@ public class ProductCompareEditorModel : PageModel
 
     private IStatusCodeActionResult UpdateImagesInFirstProduct(
         Product oldFirstProduct,
-        uint productId,
+        int productId,
         ProductUpdateRequest productUpdateRequestToAddImagesTo)
     {
         if (_firstProduct is null) return BadRequest();
@@ -688,13 +688,13 @@ public class ProductCompareEditorModel : PageModel
                 {
                     ServiceProductImageCreateRequest productImageCreateRequest = new()
                     {
-                        ProductId = (int)productId,
+                        ProductId = productId,
                         ImageData = image.ImageData,
-                        ImageFileExtension = image.ImageFileExtension,
+                        ImageFileExtension = image.ImageContentType,
                         HtmlData = image.HtmlData,
                     };
 
-                    OneOf<uint, ValidationResult, UnexpectedFailureResult> imageInsertResult
+                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageInsertResult
                         = _productImageService.InsertInAllImages(productImageCreateRequest);
 
                     int imageId = -1;
@@ -702,7 +702,7 @@ public class ProductCompareEditorModel : PageModel
                     IStatusCodeActionResult actionResultFromImageInsert = imageInsertResult.Match<IStatusCodeActionResult>(
                         id =>
                         {
-                            imageId = (int)id;
+                            imageId = id;
 
                             return new OkResult();
                         },
@@ -729,7 +729,7 @@ public class ProductCompareEditorModel : PageModel
                 }
 
                 if (CompareByteArrays(image.ImageData, imageInOldProduct.ImageData)
-                    && image.ImageFileExtension == imageInOldProduct.ImageFileExtension
+                    && image.ImageContentType == imageInOldProduct.ImageContentType
                     && image.HtmlData == imageInOldProduct.HtmlData)
                 {
                     oldFirstProduct.Images?.Remove(imageInOldProduct);
@@ -740,8 +740,8 @@ public class ProductCompareEditorModel : PageModel
                 CurrentProductImageUpdateRequest productImageUpdateRequest = new()
                 {
                     ImageData = image.ImageData,
-                    ImageFileExtension = image.ImageFileExtension,
-                    XML = image.HtmlData,
+                    ImageFileExtension = image.ImageContentType,
+                    HtmlData = image.HtmlData,
                 };
 
                 productUpdateRequestToAddImagesTo.Images ??= new();
@@ -757,7 +757,7 @@ public class ProductCompareEditorModel : PageModel
         {
             foreach (ProductImage oldImageToBeRemoved in oldFirstProduct.Images)
             {
-                bool imageDeleteResult = _productImageService.DeleteInAllImagesById((uint)oldImageToBeRemoved.Id);
+                bool imageDeleteResult = _productImageService.DeleteInAllImagesById(oldImageToBeRemoved.Id);
 
                 if (!imageDeleteResult) return StatusCode(500);
             }
@@ -768,7 +768,7 @@ public class ProductCompareEditorModel : PageModel
 
     private IStatusCodeActionResult UpdateImageFileNamesInFirstProduct(
         Product oldFirstProduct,
-        uint productId)
+        int productId)
     {
         if (_firstProduct is null) return BadRequest();
 
@@ -851,7 +851,7 @@ public class ProductCompareEditorModel : PageModel
                         ProductId = _firstProduct.Id,
                         DisplayOrder = imageFileNameInfo.DisplayOrder,
                         Active = imageFileNameInfo.Active,
-                        FileName = $"{imageRelatedToThatFileNameInfo.Id}.{GetFileExtensionFromFileType(imageRelatedToThatFileNameInfo.ImageFileExtension ?? "*")}",
+                        FileName = $"{imageRelatedToThatFileNameInfo.Id}.{GetFileExtensionFromFileType(imageRelatedToThatFileNameInfo.ImageContentType ?? "*")}",
                     };
 
                     imageFileNameInfoCreateRequests.Add(imageFileNameCreateRequest);
@@ -873,7 +873,7 @@ public class ProductCompareEditorModel : PageModel
 
                 ServiceProductImageFileNameInfoByFileNameUpdateRequest imageFileNameUpdateRequest = new()
                 {
-                    ProductId = (int)productId,
+                    ProductId = productId,
                     NewDisplayOrder = displayOrder,
                     Active = imageFileNameInfo.Active,
                     FileName = imageFileNameInfo.FileName,
@@ -1024,7 +1024,7 @@ public class ProductCompareEditorModel : PageModel
         ProductImage image = new()
         {
             ImageData = imageBytes,
-            ImageFileExtension = contentType,
+            ImageContentType = contentType,
             HtmlData = productXml,
         };
 
@@ -1845,7 +1845,7 @@ public class ProductCompareEditorModel : PageModel
                 {
                     Id = x.Id,
                     ImageData = x.ImageData,
-                    ImageFileExtension = x.ImageFileExtension,
+                    ImageContentType = x.ImageContentType,
                     ProductId = x.ProductId,
                     HtmlData = x.HtmlData,
                     DateModified = x.DateModified,
