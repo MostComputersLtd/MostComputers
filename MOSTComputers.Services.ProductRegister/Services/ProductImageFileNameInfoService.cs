@@ -41,9 +41,11 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.GetAll();
     }
 
-    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(uint productId)
+    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(int productId)
     {
-        return _imageFileNameInfoRepository.GetAllForProduct(productId);
+        if (productId <= 0) return Enumerable.Empty<ProductImageFileNameInfo>();
+
+        return _imageFileNameInfoRepository.GetAllInProduct(productId);
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
@@ -89,13 +91,24 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.UpdateByFileName(updateRequestInternal);
     }
 
-    public bool DeleteAllForProductId(uint productId)
+    public bool DeleteAllForProductId(int productId)
     {
+        if (productId <= 0) return false;
+
         return _imageFileNameInfoRepository.DeleteAllForProductId(productId);
     }
 
-    public bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder)
+    public bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder)
     {
+        if (productId <= 0 || displayOrder <= 0) return false;
+
         return _imageFileNameInfoRepository.DeleteByProductIdAndDisplayOrder(productId, displayOrder);
+    }
+
+    public bool DeleteByProductIdAndImageNumber(int productId, int imageNumber)
+    {
+        if (productId <= 0 || imageNumber <= 0) return false;
+
+        return _imageFileNameInfoRepository.DeleteByProductIdAndImageNumber(productId, imageNumber);
     }
 }
