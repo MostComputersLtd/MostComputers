@@ -8,4 +8,5 @@ public class ProductGeneratedXmlPopupPartialModel
 {
     public required string XmlData { get; set; }
     public required Product Product { get; set; }
+    public string? NotificationBoxId { get; set; } = null;
 }
