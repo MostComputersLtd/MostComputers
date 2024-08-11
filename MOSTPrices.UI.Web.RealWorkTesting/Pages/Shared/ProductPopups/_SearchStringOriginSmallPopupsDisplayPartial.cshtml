@@ -19,19 +19,24 @@
 
             string makeSearchStringSearchItemVisibleAfterAddingData =
                 Model.MakeSearchStringSearchItemVisibleAfterAddingData ? "true" : "false";
-        
+            
             <li>
-                <table onmouseleave="removeSearchStringOriginDataSmallPopup(
-                    @Model.ProductId,
-                    @j,
-                    '@JsEscapeStringUtils.JavascriptEncode(searchStringPart)',
-                    '@Model.ElementIdAndNamePrefix')">
+                <table onmouseleave="removeSearchStringOriginDataSmallPopupCommon(
+                    '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId-@j',
+                    '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList-@Model.ProductId-@j',
+                    '@searchStringPart',
+                    '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-@Model.ProductId-@j',
+                    '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-@Model.ProductId-@j')">
                     <tr>
                         <td id="@(Model.ElementIdAndNamePrefix)searchStringPart_h2-@Model.ProductId-@j"
                             name="@(Model.ElementIdAndNamePrefix)searchStringPart_h2-@Model.ProductId"
                             class="searchStringPart_td"
-                            onmouseover="showSearchStringOriginDataSmallPopup(
-                                @Model.ProductId, @j, '@searchStringPart', '@Model.ElementIdAndNamePrefix')">
+                            onmouseover="showSearchStringOriginDataSmallPopupCommon(
+                                '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId-@j',
+                                '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList-@Model.ProductId-@j',
+                                '@searchStringPart',
+                                '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_nameLabel-@Model.ProductId-@j',
+                                '@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_multipleOriginsDisplayList_meaningLabel-@Model.ProductId-@j')">
 
                             <h7 class="productSearchString-popup-searchStringPart-label"
                                 name="@(Model.ElementIdAndNamePrefix)searchStringPartDisplayText-@Model.ProductId">@searchStringPart</h7>
@@ -42,7 +47,7 @@
                         <td id="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId-@j"
                             name="@(Model.ElementIdAndNamePrefix)searchStringPartOrigin_li-@Model.ProductId"
                             class="searchStringPartOrigin_li"
-                            style="visibility:hidden;">
+                            style="visibility: hidden;">
 
                             @if (kvp.Item2?.Count == 1)
                             {
@@ -54,7 +59,7 @@
                                 {
                                     searchStringMeaning = "Characteristic contains no further info";
                                 }
-
+                                
                                 <ul class="searchStringPartOrigin_li_singleItemContainerList">
                                     <li class="searchStringPartOrigin_li_copyButtonContainer">
                                         <button class="searchStringPartOrigin_li_copyButton"
