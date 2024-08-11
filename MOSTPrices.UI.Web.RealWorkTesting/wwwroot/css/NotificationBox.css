@@ -1,4 +1,4 @@
-﻿.copied-xml-notification-box {
+﻿.top-notification-box {
     position: fixed;
     top: 100px;
     left: 100px;
@@ -11,7 +11,7 @@
     padding: 0px;
 }
 
-.copy-to-xml-success-message {
+.notificationBox-short-message {
     z-index: 9999;
     text-align: center;
     line-height: 50px;
