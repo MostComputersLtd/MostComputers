@@ -9,9 +9,7 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using OneOf;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using OneOf.Types;
-using MOSTComputers.UI.Web.RealWorkTesting.Utils;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups;
 using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
@@ -20,17 +18,21 @@ using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared;
 using Microsoft.AspNetCore.Authorization;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
-using System.Transactions;
 using MOSTComputers.Services.ProductImageFileManagement.Models;
+
+using MOSTComputers.Services.ProductImageFileManagement.Services;
+using MOSTComputers.Utils.ProductImageFileNameUtils;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductToDisplayDataMappingUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductMappingUtils;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
-using MOSTComputers.Services.ProductImageFileManagement.Utils;
+using static MOSTComputers.Services.ProductImageFileManagement.Utils.ProductImageFileManagementUtils;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageAndFileNameRelationsUtils;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
 
@@ -53,7 +55,10 @@ public class IndexModel : PageModel
         IProductPropertyService productPropertyService,
         IProductImageSaveService productImageSaveService,
         IProductWorkStatusesService productWorkStatusesService,
+        IProductManipulateService productManipulateService,
         ISearchStringOriginService searchStringOriginService,
+        IProductDeserializeService productDeserializeService,
+        IProductHtmlService productHtmlService,
         ILocalChangesCheckingImmediateExecutionService localChangesCheckingImmediateExecutionService,
         IProductImageFileManagementService productImageFileManagementService,
         ITransactionExecuteService transactionExecuteService)
@@ -67,21 +72,17 @@ public class IndexModel : PageModel
         _productPropertyService = productPropertyService;
         _productImageSaveService = productImageSaveService;
         _productWorkStatusesService = productWorkStatusesService;
+        _productManipulateService = productManipulateService;
         _searchStringOriginService = searchStringOriginService;
+        _productDeserializeService = productDeserializeService;
+        _productHtmlService = productHtmlService;
         _localChangesCheckingImmediateExecutionService = localChangesCheckingImmediateExecutionService;
         _productImageFileManagementService = productImageFileManagementService;
         _transactionExecuteService = transactionExecuteService;
 
-        Products = productTableDataService.PopulateIfEmptyAndGet(PopulateProductDisplayData);
+        _productTableDataService.PopulateIfEmptyAndGet(() => PopulateProductData(productTableDataService));
 
-        ProductsToDisplay = Products;
-
-        Product? productWithHighestId = _productService.GetProductWithHighestId();
-
-        if (productWithHighestId is not null)
-        {
-            SingleEditedProduct = MapToProductDisplayData(productWithHighestId);
-        }
+        Products = _productTableDataService.GetProductDataToDisplay();
     }
 
     private readonly IProductService _productService;
@@ -93,48 +94,64 @@ public class IndexModel : PageModel
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductImageSaveService _productImageSaveService;
     private readonly IProductWorkStatusesService _productWorkStatusesService;
+    private readonly IProductManipulateService _productManipulateService;
     private readonly ISearchStringOriginService _searchStringOriginService;
+    private readonly IProductDeserializeService _productDeserializeService;
+    private readonly IProductHtmlService _productHtmlService;
     private readonly ILocalChangesCheckingImmediateExecutionService _localChangesCheckingImmediateExecutionService;
     private readonly IProductImageFileManagementService _productImageFileManagementService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
     public IReadOnlyList<ProductDisplayData> Products { get; set; }
-    public IReadOnlyList<ProductDisplayData> ProductsToDisplay { get; set; }
-    public ProductDisplayData? SingleEditedProduct { get; set; }
 
-    private List<ProductDisplayData> PopulateProductDisplayData()
+    private ProductDisplayData GetFullProductAndMapToDisplayData(Product product)
+    {
+        product.Images = _productImageService.GetAllInProduct(product.Id)
+            .ToList();
+
+        product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(product.Id)
+            .ToList();
+
+        product.Properties = _productPropertyService.GetAllInProduct(product.Id)
+            .ToList();
+
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(product.Id);
+
+        ProductDisplayData productDisplayData = MapToProductDisplayData(product, productWorkStatuses);
+
+        OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> addImagesFromFilesResult
+            = AddImagesFromFilesToProductData(productDisplayData);
+
+        return productDisplayData;
+    }
+
+    private List<ProductDisplayData> PopulateProductData(IProductTableDataService productTableDataService)
     {
         List<ProductDisplayData> output = new();
 
-        IEnumerable<Product> firstProducts = _productService.GetFirstItemsBetweenStartAndEnd(new() { Start = 0, Length = 12 });
+        Product? productWithHighestId = _productService.GetProductWithHighestId();
 
-        foreach (Product product in firstProducts)
+        if (productWithHighestId is not null)
         {
-            product.Images = _productImageService.GetAllInProduct((uint)product.Id)
-                .ToList();
-
-            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct((uint)product.Id)
-                .ToList();
-
-            product.Properties = _productPropertyService.GetAllInProduct((uint)product.Id)
-                .ToList();
-
-            ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(product.Id);
-
-            ProductDisplayData productDisplayData = MapToProductDisplayData(product, productWorkStatuses);
-
-            OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> addImagesFromFilesResult
-                = AddImagesFromFilesToProductData(productDisplayData);
+            ProductDisplayData productDisplayData = GetFullProductAndMapToDisplayData(productWithHighestId);
 
             output.Add(productDisplayData);
+
+            productTableDataService.AddProductDataOrMakeExistingOneDisplayable(productDisplayData);
         }
 
         return output;
     }
 
+    public int? GetProductHighestId()
+    {
+        Product? productWithHighestId = _productService.GetProductWithHighestId();
+
+        return productWithHighestId?.Id;
+    }
+
     public void OnGet()
     {
-
     }
     
     public IActionResult OnGetGetProductFirstImagePopupPartialViewForProduct(int productId)
@@ -151,24 +168,36 @@ public class IndexModel : PageModel
             return NotFound();
         }
 
-        return Partial("ProductPopups/_ProductFirstImageDisplayPopupPartial", new ProductFirstImageDisplayPopupPartialModel(productDataToDisplay));
+        return Partial("ProductPopups/_ProductFirstImageDisplayPopupPartial", new ProductFirstImageDisplayPopupPartialModel(
+            ProductImagePopupUsageEnum.ImagesInDatabase,
+            productDataToDisplay,
+            _productImageService,
+            _productImageFileNameInfoService,
+            _productImageFileManagementService,
+            "topNotificationBox"));
     }
 
-    public IActionResult OnGetGetPartialViewImagesForProduct(int productId)
+    public IActionResult OnGetGetPartialViewImagesForProduct(int productId, ProductImagePopupUsageEnum productImagePopupUsage = ProductImagePopupUsageEnum.DisplayData)
     {
         if (productId < 0)
         {
             return BadRequest("Id cannot be negative");
         }
 
-        ProductDisplayData? productDataToDisplay = _productTableDataService.ProductData.FirstOrDefault(product => product.Id == productId);
+        ProductDisplayData? productDataToDisplay = _productTableDataService.GetProductById(productId);
 
         if (productDataToDisplay is null)
         {
             return NotFound();
         }
 
-        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(productDataToDisplay));
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(
+            productImagePopupUsage,
+            productDataToDisplay,
+            _productImageService,
+            _productImageFileNameInfoService,
+            _productImageFileManagementService,
+            "topNotificationBox"));
     }
 
     public IActionResult OnGetGetProductChangesPopupPartialViewForProduct(int productId, bool getEvenIfProductDoesntExist = false)
@@ -178,7 +207,7 @@ public class IndexModel : PageModel
             return BadRequest("Id cannot be negative");
         }
 
-        Product? productToDisplay = _productService.GetByIdWithImages((uint)productId);
+        Product? productToDisplay = _productService.GetProductFull(productId);
 
         if (productToDisplay is null)
         {
@@ -197,6 +226,37 @@ public class IndexModel : PageModel
         return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(productToDisplay, searchStringOriginData));
     }
 
+    public IActionResult OnGetGetProductFullPopupPartialViewForProduct(int productId)
+    {
+        Product? productToDisplay = _productService.GetProductFull(productId);
+
+        if (productToDisplay is null) return NotFound();
+
+        OneOf<string, InvalidXmlResult> productXmlResult = _productDeserializeService.TrySerializeProductXml(productToDisplay, true, true);
+
+        string productXml = productXmlResult.Match(
+            xml => xml ?? string.Empty,
+            invalidXmlResult => string.Empty);
+
+        string productManufacturerSiteLink = string.Empty;
+
+        return Partial("ProductPopups/_ProductFullDisplayWithXmlPopupPartial",
+            new ProductFullDisplayWithXmlPopupPartialModel(productToDisplay, productXml, productManufacturerSiteLink));
+    }
+
+    public IActionResult OnGetXml(int productId)
+    {
+        Product? productToDisplay = _productService.GetProductFull(productId);
+
+        if (productToDisplay is null) return NotFound();
+
+        OneOf<string, InvalidXmlResult> productXmlResult = _productDeserializeService.TrySerializeProductXml(productToDisplay, true, true);
+
+        return productXmlResult.Match<IStatusCodeActionResult>(
+            productXml => new OkObjectResult(productXml),
+            invalidXmlResult => BadRequest(invalidXmlResult));
+    }
+
     public IActionResult OnPostAddNewProduct(string htmlElementId, int tableIndex)
     {
         ProductCreateRequest productCreateRequest = new()
@@ -213,14 +273,14 @@ public class IndexModel : PageModel
             }
         }
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
 
         int newProductId = -1;
 
         IStatusCodeActionResult productInsertActionResult = productInsertResult.Match(
             id =>
             {
-                newProductId = (int)id;
+                newProductId = id;
 
                 return new OkResult();
             },
@@ -272,7 +332,7 @@ public class IndexModel : PageModel
 
         ProductDisplayData productDisplayData = MapToProductDisplayData(productToDisplay, productWorkStatuses);
 
-        _productTableDataService.AddProductData(productDisplayData, true);
+        _productTableDataService.AddProductDataOrMakeExistingOneDisplayable(productDisplayData, true);
 
         return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productToDisplay);
     }
@@ -294,24 +354,27 @@ public class IndexModel : PageModel
         {
             for (int i = 0; i < productDisplayDataOfProduct.ImagesAndImageFileInfos.Count; i++)
             {
-                Tuple<ProductImage?, ProductImageFileNameInfo?> tuple = productDisplayDataOfProduct.ImagesAndImageFileInfos[i];
+                ImageAndImageFileNameRelation tuple = productDisplayDataOfProduct.ImagesAndImageFileInfos[i];
 
-                if (tuple.Item1?.ImageFileExtension is null
-                    || tuple.Item1.ImageData is null
-                    || tuple.Item2 is null
-                    || tuple.Item2.ProductId <= 0) continue;
+                ProductImage? image = tuple.ProductImage;
+                ProductImageFileNameInfo? fileNameInfo = tuple.ProductImageFileNameInfo;
 
-                tuple.Item2.ProductId = newProductId;
+                if (image?.ImageContentType is null
+                    || image.ImageData is null
+                    || fileNameInfo is null
+                    || fileNameInfo.ProductId <= 0) continue;
+
+                fileNameInfo.ProductId = newProductId;
 
                 ProductImage newProductImageFromExistingData = new()
                 {
                     Id = 0,
                     ProductId = newProductId,
-                    ImageData = tuple.Item1.ImageData,
-                    ImageFileExtension = tuple.Item1.ImageFileExtension,
+                    ImageData = image.ImageData,
+                    ImageContentType = image.ImageContentType,
                 };
 
-                if (tuple.Item2 is null)
+                if (fileNameInfo is null)
                 {
                     ProductImageFileNameInfo newFileNameInfo = new()
                     {
@@ -320,21 +383,23 @@ public class IndexModel : PageModel
                         DisplayOrder = GetLowestUnpopulatedDisplayOrder(productDisplayDataOfProduct),
                     };
 
-                    newFileNameInfo.FileName = GetTemporaryIdFromFileNameInfoAndContentType(newFileNameInfo, tuple.Item1.ImageFileExtension);
+                    newFileNameInfo.FileName = GetTemporaryIdFromFileNameInfoAndContentType(newFileNameInfo, image.ImageContentType);
 
                     productDisplayDataOfProduct.ImagesAndImageFileInfos[i] = new(newProductImageFromExistingData, newFileNameInfo);
 
                     continue;
                 }
 
-                tuple.Item2.FileName = GetTemporaryIdFromFileNameInfoAndContentType(tuple.Item2, tuple.Item1.ImageFileExtension);
+                fileNameInfo.FileName = GetTemporaryIdFromFileNameInfoAndContentType(fileNameInfo, image.ImageContentType);
 
-                productDisplayDataOfProduct.ImagesAndImageFileInfos[i] = new(newProductImageFromExistingData, tuple.Item2);
+                productDisplayDataOfProduct.ImagesAndImageFileInfos[i] = new(newProductImageFromExistingData, fileNameInfo);
             }
         }
 
+        ProductCreateWithoutImagesInDatabaseRequest productCreateRequestWithoutImagesInDB = MapToProductCreateRequestWithoutImagesInDB(productDisplayDataOfProduct);
+
         OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> insertFullWithImagesOnlyInDirectoryResult
-            = await InsertProductFullWithImagesOnlyInDirectoryAsync(productDisplayDataOfProduct);
+            = await _productManipulateService.InsertProductWithImagesOnlyInDirectoryAsync(productCreateRequestWithoutImagesInDB);
 
         IStatusCodeActionResult insertFullWithImagesOnlyInDirectoryActionResult = insertFullWithImagesOnlyInDirectoryResult.Match(
             id =>
@@ -350,15 +415,15 @@ public class IndexModel : PageModel
 
         if (insertFullWithImagesOnlyInDirectoryActionResult.StatusCode != 200) return insertFullWithImagesOnlyInDirectoryActionResult;
 
-        Product? newProduct = GetProductFull(newProductId)!;
+        Product? newProduct = _productService.GetProductFull(newProductId)!;
 
-        ProductDisplayData? productDisplayDataInEditor = _productTableDataService.ProductData.FirstOrDefault(x => x.Id == newProductId);
+        ProductDisplayData? productDisplayDataInEditor = _productTableDataService.GetProductById(newProductId);
 
         if (productDisplayDataInEditor == null)
         {
             productDisplayDataInEditor = MapToProductDisplayData(newProduct!);
 
-            _productTableDataService.AddProductData(productDisplayDataInEditor, true);
+            _productTableDataService.AddProductDataOrMakeExistingOneDisplayable(productDisplayDataInEditor, true);
         }
 
         productDisplayDataInEditor.ImagesAndImageFileInfos = productDisplayDataOfProduct.ImagesAndImageFileInfos;
@@ -372,7 +437,7 @@ public class IndexModel : PageModel
 
     private ProductDisplayData? GetMostRecentProductDisplayData(int productToCopyFromId, ProductDisplayData? productDisplayData)
     {
-        Product? product = GetProductFull(productToCopyFromId);
+        Product? product = _productService.GetProductFull(productToCopyFromId);
 
         if (product is null) return null;
 
@@ -390,94 +455,6 @@ public class IndexModel : PageModel
         return CloneProductDisplayData(productDisplayDataOfProduct);
     }
 
-    private async Task<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
-        InsertProductFullWithImagesOnlyInDirectoryAsync(ProductDisplayData productDataToAdd)
-    {
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => InsertProductFullWithImagesOnlyInDirectoryInternalAsync(productDataToAdd),
-            result => result.Match(
-                success => true,
-                validationResult => false,
-                unexpectedFailureResult => false,
-                directoryNotFoundResult => false,
-                fileDoesntExistResult => false));
-    }
-
-    private async Task<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
-        InsertProductFullWithImagesOnlyInDirectoryInternalAsync(ProductDisplayData productDataToAdd)
-    {
-        List<Tuple<ProductImage?, ProductImageFileNameInfo?>>? productImages = productDataToAdd.ImagesAndImageFileInfos?.ToList();
-
-        productDataToAdd.ImagesAndImageFileInfos = null;
-
-        Product productToAdd = MapToProduct(productDataToAdd);
-
-        ProductCreateRequest productCreateRequest = MapProductToCreateRequest(productToAdd);
-
-        productDataToAdd.ImagesAndImageFileInfos = productImages;
-
-        productDataToAdd = CloneProductDisplayData(productDataToAdd);
-
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(productCreateRequest);
-
-        int productId = -1;
-
-        bool isProductInsertSuccessful = productInsertResult.Match(
-            id =>
-            {
-                productId = (int)id;
-
-                return true;
-            },
-            validationResult => false,
-            unexpectedFailureResult => false);
-
-        if (!isProductInsertSuccessful
-            || productImages is null)
-        {
-            return productInsertResult.Match<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
-                id => (int)id,
-                validationResult => validationResult,
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
-
-        productDataToAdd.Id = productId;
-
-        foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in productImages)
-        {
-            if (tuple.Item2?.FileName is null
-                || tuple.Item1?.ImageData is null) continue;
-
-            string fileExtension = ProductImageFileManagementUtils.GetFileExtensionWithoutDot(tuple.Item2.FileName);
-
-            AllowedImageFileType? allowedImageFileType = ProductImageFileManagementUtils.GetAllowedImageFileTypeFromFileExtension(fileExtension);
-
-            if (allowedImageFileType is null) continue;
-
-            OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> imageInsertInDirectoryResult
-                = await SaveImageInDirectoryBasedOnDataAsync(productDataToAdd, tuple.Item1, tuple.Item2);
-
-            bool isImageInsertInDirectorySuccessful = imageInsertInDirectoryResult.Match(
-                success => true,
-                validationResult => false,
-                unexpectedFailureResult => false,
-                directoryNotFoundResult => false,
-                fileDoesntExistResult => false);
-
-            if (!isImageInsertInDirectorySuccessful)
-            {
-                return imageInsertInDirectoryResult.Match<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
-                    success => productId,
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult,
-                    directoryNotFoundResult => directoryNotFoundResult,
-                    fileDoesntExistResult => fileDoesntExistResult);
-            }
-        }
-
-        return productId;
-    }
-
     private static int GetLowestUnpopulatedDisplayOrder(ProductDisplayData productDisplayData)
     {
         if (productDisplayData.ImagesAndImageFileInfos is null) return 1;
@@ -490,9 +467,9 @@ public class IndexModel : PageModel
         {
             foundCurrentDisplayOrder = false;
 
-            foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in productDisplayData.ImagesAndImageFileInfos)
+            foreach (ImageAndImageFileNameRelation imageAndFileNameInfoRelation in productDisplayData.ImagesAndImageFileInfos)
             {
-                if (tuple.Item2?.DisplayOrder == currentDisplayOrder)
+                if (imageAndFileNameInfoRelation.ProductImageFileNameInfo?.DisplayOrder == currentDisplayOrder)
                 {
                     foundCurrentDisplayOrder = true;
 
@@ -512,38 +489,55 @@ public class IndexModel : PageModel
 
         if (product is null) return NotFound();
 
-        product = GetProductFull(product.Id)!;
+        product = _productService.GetProductFull(product.Id)!;
 
-        SingleEditedProduct = MapToProductDisplayData(product);
-
-        _productTableDataService.AddProductDataIfProductDataWithSameIdDoesntExist(SingleEditedProduct);
+        ProductDisplayData productData = MapToProductDisplayData(product);
 
         OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> addImageFilesResult
-            = await AddImagesFromFilesToProductDataAsync(SingleEditedProduct);
+            = await AddImagesFromFilesToProductDataAsync(productData);
 
         return addImageFilesResult.Match<IStatusCodeActionResult>(
             isSuccessful =>
             {
-                return GetPartialTableRowFromProduct(htmlElementId, tableIndex, MapToProduct(SingleEditedProduct));
+                if (!isSuccessful) return BadRequest();
+
+                _productTableDataService.RemoveAllIdsFromIdsToDisplay();
+
+                _productTableDataService.AddProductDataOrMakeExistingOneDisplayable(productData);
+
+                return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productData);
             },
             fileDoesntExistResult => NotFound(fileDoesntExistResult),
             notSupportedFileTypeResult => BadRequest());
 
     }
 
-    public IActionResult OnPostGetOnlyProductWithId(int productId, string htmlElementId, int tableIndex)
+    public async Task<IActionResult> OnPostGetOnlyProductWithIdAsync(int productId, string htmlElementId, int tableIndex)
     {
         if (productId < 0) return BadRequest();
 
-        Product? product = _productService.GetByIdWithProps((uint)productId);
+        Product? product = _productService.GetProductFull(productId);
 
         if (product is null) return NotFound();
 
         ProductDisplayData productDisplayData = MapToProductDisplayData(product);
 
-        _productTableDataService.AddProductDataIfProductDataWithSameIdDoesntExist(productDisplayData);
+        OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> addImagesFromFilesResult
+            = await AddImagesFromFilesToProductDataAsync(productDisplayData);
 
-        return GetPartialTableRowFromProduct(htmlElementId, tableIndex, product);
+        return addImagesFromFilesResult.Match<IStatusCodeActionResult>(
+            isSuccessful =>
+            {
+                if (!isSuccessful) return BadRequest();
+
+                _productTableDataService.RemoveAllIdsFromIdsToDisplay();
+
+                _productTableDataService.AddProductDataOrMakeExistingOneDisplayable(productDisplayData);
+
+                return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productDisplayData);
+            },
+            fileDoesntExistResult => NotFound(fileDoesntExistResult),
+            notSupportedFileTypeResult => BadRequest());
     }
 
     private PartialViewResult GetPartialTableRowFromProduct(
@@ -556,23 +550,16 @@ public class IndexModel : PageModel
         IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
         IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
 
-        IEnumerable<SelectListItem> categoryelectListItems = ProductSelectListItemUtils.GetCategorySelectListItems(productToDisplay, allPossibleCategories);
-        IEnumerable<SelectListItem> manifacturerSelectListItems = ProductSelectListItemUtils.GetManifacturerSelectListItems(productToDisplay, allPossibleManifacturers);
-        IEnumerable<SelectListItem> statusSelectListItems = ProductSelectListItemUtils.GetStatusSelectListItems(productToDisplay);
-        IEnumerable<SelectListItem> currencySelectListItems = ProductSelectListItemUtils.GetCurrencySelectListItems(productToDisplay);
-        IEnumerable<SelectListItem> productNewStatusSelectListItems = ProductSelectListItemUtils.GetProductNewStatusSelectListItems(productDisplayData);
-        IEnumerable<SelectListItem> productXmlStatusSelectListItems = ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productDisplayData);
-
         IndexProductTableRowPartialModel productPartialModel = new(
             productDisplayData,
             htmlElementId,
             tableIndex,
-            categoryelectListItems,
-            manifacturerSelectListItems,
-            statusSelectListItems,
-            currencySelectListItems,
-            productNewStatusSelectListItems,
-            productXmlStatusSelectListItems);
+            allPossibleCategories,
+            allPossibleManifacturers,
+            "ProductFullWithXml_popup_modal_content",
+            "ProductChanges_popup_modal_content",
+            "ProductImages_popup_modal_content",
+            "ProductFirstImage_popup_modal_content");
 
         return base.Partial("_IndexProductTableRowPartial", productPartialModel);
     }
@@ -583,33 +570,80 @@ public class IndexModel : PageModel
         IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
         IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
 
-        IEnumerable<SelectListItem> categoryelectListItems = ProductSelectListItemUtils.GetCategorySelectListItems(productDisplayData, allPossibleCategories);
-        IEnumerable<SelectListItem> manifacturerSelectListItems = ProductSelectListItemUtils.GetManifacturerSelectListItems(productDisplayData, allPossibleManifacturers);
-        IEnumerable<SelectListItem> statusSelectListItems = ProductSelectListItemUtils.GetStatusSelectListItems(productDisplayData);
-        IEnumerable<SelectListItem> currencySelectListItems = ProductSelectListItemUtils.GetCurrencySelectListItems(productDisplayData);
-        IEnumerable<SelectListItem> productNewStatusSelectListItems = ProductSelectListItemUtils.GetProductNewStatusSelectListItems(productDisplayData);
-        IEnumerable<SelectListItem> productXmlStatusSelectListItems = ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productDisplayData);
-
         IndexProductTableRowPartialModel productPartialModel = new(
             productDisplayData,
             htmlElementId,
             tableIndex,
-            categoryelectListItems,
-            manifacturerSelectListItems,
-            statusSelectListItems,
-            currencySelectListItems,
-            productNewStatusSelectListItems,
-            productXmlStatusSelectListItems);
+            allPossibleCategories,
+            allPossibleManifacturers,
+            "ProductFullWithXml_popup_modal_content",
+            "ProductChanges_popup_modal_content",
+            "ProductImages_popup_modal_content",
+            "ProductFirstImage_popup_modal_content");
 
         return base.Partial("_IndexProductTableRowPartial", productPartialModel);
     }
 
-    public IActionResult OnPostAddNewImageToProduct(int productId, IFormFile fileInfo)
+    public IndexProductTableRowPartialModel GetTableRowModel(Product product, int tableIndex, string htmlElementId)
     {
-        if (productId <= 0) return BadRequest();
+        IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
+        IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
 
-        ProductDisplayData? productDataToAddImageTo = _productTableDataService.ProductData.FirstOrDefault(
-            product => product.Id == productId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(product.Id);
+
+        return new IndexProductTableRowPartialModel(
+            MapToProductDisplayData(product, productWorkStatuses),
+            htmlElementId,
+            tableIndex,
+            allPossibleCategories,
+            allPossibleManifacturers,
+            "ProductFullWithXml_popup_modal_content",
+            "ProductChanges_popup_modal_content",
+            "ProductImages_popup_modal_content",
+            "ProductFirstImage_popup_modal_content");
+    }
+
+    public IndexProductTableRowPartialModel GetTableRowModel(ProductDisplayData productData, int tableIndex, string htmlElementId)
+    {
+        IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
+        IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
+
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productData.Id);
+
+        if (productWorkStatuses is not null)
+        {
+            productData.ProductWorkStatusesId = productWorkStatuses.Id;
+            productData.ProductNewStatus = productWorkStatuses.ProductNewStatus;
+            productData.ProductXmlStatus = productWorkStatuses.ProductXmlStatus;
+            productData.ReadyForImageInsert = productWorkStatuses.ReadyForImageInsert;
+        }
+
+        return new IndexProductTableRowPartialModel(
+            productData,
+            htmlElementId,
+            tableIndex,
+            allPossibleCategories,
+            allPossibleManifacturers,
+            "ProductFullWithXml_popup_modal_content",
+            "ProductChanges_popup_modal_content",
+            "ProductImages_popup_modal_content",
+            "ProductFirstImage_popup_modal_content");
+    }
+
+    public async Task<IActionResult> OnPostAddNewImageToProductAsync(int productId, ProductImagePopupUsageEnum productImagePopupUsage, IFormFile fileInfo)
+    {
+        if (productId <= 0
+            || productImagePopupUsage == ProductImagePopupUsageEnum.ImagesInDatabase) return BadRequest();
+
+        string? extensionFronContentType = GetImageFileExtensionFromContentType(fileInfo.ContentType);
+
+        if (extensionFronContentType is null) return BadRequest();
+
+        AllowedImageFileType? allowedImageFileType = GetAllowedImageFileTypeFromFileExtension(extensionFronContentType);
+
+        if (allowedImageFileType is null) return BadRequest();
+
+        ProductDisplayData? productDataToAddImageTo = _productTableDataService.GetProductById(productId);
 
         if (productDataToAddImageTo is null) return BadRequest();
 
@@ -619,30 +653,55 @@ public class IndexModel : PageModel
 
         byte[] imageBytes = stream.ToArray();
 
-        string contentType = fileInfo.ContentType;
+        string contentType = fileInfo.ContentType.ToLower();
+
+        string productHtml = _productHtmlService.GetHtmlFromProduct(MapToProduct(productDataToAddImageTo));
 
         ProductImage productImage = new()
         {
             ProductId = productId,
             ImageData = imageBytes,
-            ImageFileExtension = contentType.ToLower(),
+            ImageContentType = contentType,
+            HtmlData = productHtml,
         };
 
         ProductImageFileNameInfo productImageFileNameInfo = new()
         {
             ProductId = productId,
+            ImageNumber = (productDataToAddImageTo.ImagesAndImageFileInfos?.Count ?? 0) + 1,
             Active = false,
-            DisplayOrder = (productDataToAddImageTo.ImagesAndImageFileInfos?.Count ?? 0) + 1
+            DisplayOrder = (productDataToAddImageTo.ImagesAndImageFileInfos?.Count ?? 0) + 1,
         };
 
-        ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
+        productImageFileNameInfo.FileName = GetTemporaryIdFromFileNameInfoAndContentType(productImageFileNameInfo, contentType);
 
-        if (productDisplayData is null) return BadRequest();
+        if (productImagePopupUsage == ProductImagePopupUsageEnum.ImagesInFiles)
+        {
+            OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult> saveImageResult
+                = await AddOrUpdateFileNameInfoAndImageFileAsync(
+                    productDataToAddImageTo,
+                    productImage,
+                    productImageFileNameInfo,
+                    Path.GetFileNameWithoutExtension(productImageFileNameInfo.FileName)!,
+                    allowedImageFileType);
 
-        productDisplayData.ImagesAndImageFileInfos ??= new();
-        productDisplayData.ImagesAndImageFileInfos.Add(new(productImage, productImageFileNameInfo));
+            return saveImageResult.Match(
+                success =>
+                {
+                    productDataToAddImageTo.ImagesAndImageFileInfos ??= new();
+                    productDataToAddImageTo.ImagesAndImageFileInfos.Add(new(productImage, productImageFileNameInfo));
 
-        return OnGetGetPartialViewImagesForProduct(productId);
+                    return OnGetGetPartialViewImagesForProduct(productId, productImagePopupUsage);
+                },
+                validationResult => GetBadRequestResultFromValidationResult(validationResult),
+                unexpectedFailureResult => StatusCode(500),
+                directoryNotFoundResult => StatusCode(500));
+        }
+
+        productDataToAddImageTo.ImagesAndImageFileInfos ??= new();
+        productDataToAddImageTo.ImagesAndImageFileInfos.Add(new(productImage, productImageFileNameInfo));
+
+        return OnGetGetPartialViewImagesForProduct(productId, productImagePopupUsage);
     }
 
     private Product? GetProductBasedOnTestData(int newProductId)
@@ -658,7 +717,7 @@ public class IndexModel : PageModel
         }
         else
         {
-            productToDisplay = _productService.GetByIdWithProps((uint)newProductId);
+            productToDisplay = _productService.GetByIdWithProps(newProductId);
         }
 
         return productToDisplay;
@@ -673,7 +732,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPutSaveProductWithoutSavingImagesInDBAsync(int productId, [FromBody] ProductDisplayData productDisplayData)
     {
-        Product? oldProductData = GetProductFull(productId);
+        Product? oldProductData = _productService.GetProductFull(productId);
 
         if (oldProductData is null
             || productDisplayData is null
@@ -695,215 +754,20 @@ public class IndexModel : PageModel
 
         ProductUpdateRequest productUpdateRequest = MapToUpdateRequestWithoutImagesAndProps(productToUpdate);
 
-        IStatusCodeActionResult saveProductResult = await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => SaveProductWithoutSavingImagesInDBInternalAsync(productDisplayData, productUpdateRequest, productToUpdate, oldProductData),
-            result => result.StatusCode == 200);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> updateProductWithoutImagesInDBResult
+            = await _productManipulateService.UpdateProductWithoutSavingImagesInDBAsync(MapToProductUpdateRequestWithoutImagesInDB(productDisplayData));
+
+        IStatusCodeActionResult saveProductResult = updateProductWithoutImagesInDBResult.Match(
+            success => new OkResult(),
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            unexpectedFailureResult => StatusCode(500),
+            directoryNotFoundResult => StatusCode(500),
+            fileDoesntExistResult => NotFound(fileDoesntExistResult));
 
         return saveProductResult;
     }
 
-    private async Task<IStatusCodeActionResult> SaveProductWithoutSavingImagesInDBInternalAsync(
-        ProductDisplayData productDisplayData, ProductUpdateRequest productUpdateRequest, Product productFull, Product oldProduct)
-    {
-        IStatusCodeActionResult propertyUpdateActionResult = UpdateProperties(productFull, oldProduct, (uint)oldProduct.Id, productUpdateRequest);
-
-        if (propertyUpdateActionResult.StatusCode != 200) return propertyUpdateActionResult;
-
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
-
-        IStatusCodeActionResult productUpdateActionResult = productUpdateResult.Match(
-            success => new OkResult(),
-            validationResult => GetBadRequestResultFromValidationResult(validationResult),
-            unexpectedFailureResult => StatusCode(500));
-
-        if (productUpdateActionResult.StatusCode != 200) return productUpdateActionResult;
-
-        if  (productDisplayData.ImagesAndImageFileInfos is null) return BadRequest();
-
-        foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in productDisplayData.ImagesAndImageFileInfos)
-        {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> saveImageResult
-                = await SaveImageInDirectoryBasedOnDataAsync(productDisplayData, tuple.Item1, tuple.Item2);
-
-            IStatusCodeActionResult saveImageActionResult = saveImageResult.Match(
-                success => new OkResult(),
-                validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                unexpectedFailureResult => StatusCode(500),
-                directoryNotFoundResult => StatusCode(500),
-                fileDoesntExistResult => BadRequest(fileDoesntExistResult));
-
-            if (saveImageActionResult.StatusCode != 200) return saveImageActionResult;
-        }
-
-        return new OkResult();
-    }
-
-    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> SaveImageInDirectoryBasedOnDataAsync(
-        ProductDisplayData productDisplayData,
-        ProductImage? image,
-        ProductImageFileNameInfo? fileNameInfo)
-    {
-        if (image is null
-            && fileNameInfo is null) return new UnexpectedFailureResult();
-
-        if (fileNameInfo is null)
-        {
-            if (image!.Id > 0
-                && image!.ImageData is not null
-                && !string.IsNullOrWhiteSpace(image.ImageFileExtension))
-            {
-                return await HandleImageFileNameNullValidCaseAsync(productDisplayData, image);
-            }
-
-            List<ValidationFailure> validationFailures = new();
-
-            if (image!.Id <= 0)
-            {
-                validationFailures.Add(new(nameof(ProductImage.Id), "Cannot be less than 0"));
-            }
-
-            if (image!.ImageData is null)
-            {
-                validationFailures.Add(new(nameof(ProductImage.ImageData), "Cannot be null"));
-            }
-
-            if (string.IsNullOrWhiteSpace(image.ImageFileExtension))
-            {
-                validationFailures.Add(new(nameof(ProductImage.ImageFileExtension), "Cannot be null, empty, or whitespace"));
-            }
-
-            return new ValidationResult(validationFailures);
-        }
-        else if (image is null)
-        {
-            if (string.IsNullOrWhiteSpace(fileNameInfo.FileName)) return new UnexpectedFailureResult();
-
-            bool doesFileExist = _productImageFileManagementService.CheckIfImageFileExists(fileNameInfo.FileName);
-
-            return doesFileExist ? new Success() : new FileDoesntExistResult() { FileName = fileNameInfo.FileName };
-        }
-
-        return await HandleImageAndFileNameInfoNotNullCaseAsync(image, fileNameInfo);
-
-        async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> HandleImageFileNameNullValidCaseAsync(
-            ProductDisplayData productDisplayData, ProductImage image)
-        {
-            string? imageFileName = GetImageFileNameFromImageData(image.Id, image.ImageFileExtension!);
-
-            if (imageFileName is null) return new UnexpectedFailureResult();
-
-            ServiceProductImageFileNameInfoCreateRequest imageFileNameInfoCreateRequest = new()
-            {
-                ProductId = productDisplayData.Id,
-                FileName = imageFileName,
-                Active = false,
-                DisplayOrder = GetLowestUnpopulatedDisplayOrder(productDisplayData)
-            };
-
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult
-                = _productImageFileNameInfoService.Insert(imageFileNameInfoCreateRequest);
-
-            bool isimageFileNameInfoInsertSuccessful = imageFileNameInfoInsertResult.Match(
-                success => true,
-                validationResult => false,
-                unexpectedFailureResult => false);
-
-            if (!isimageFileNameInfoInsertSuccessful)
-            {
-                return imageFileNameInfoInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
-                    success => success,
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-
-            string localFileExtension = ProductImageFileManagementUtils.GetFileExtensionWithoutDot(imageFileName);
-
-            AllowedImageFileType? localAllowedImageFileType = ProductImageFileManagementUtils.GetAllowedImageFileTypeFromFileExtension(localFileExtension);
-
-            if (localAllowedImageFileType is null)
-            {
-                List<ValidationFailure> validationFailuresLocal = new()
-                    {
-                        new(nameof(ProductImageFileNameInfo.FileName), "Unsupported file type")
-                    };
-
-                return new ValidationResult(validationFailuresLocal);
-            }
-
-            OneOf<Success, DirectoryNotFoundResult> imageFileCreateResult
-                = await _productImageFileManagementService.AddOrUpdateImageAsync(image.Id.ToString(), image.ImageData!, localAllowedImageFileType);
-
-            return imageFileCreateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
-                success => success,
-                directoryNotFoundResult => directoryNotFoundResult);
-        }
-
-        async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> HandleImageAndFileNameInfoNotNullCaseAsync(
-            ProductImage image, ProductImageFileNameInfo fileNameInfo)
-        {
-            List<ValidationFailure> finalValidationFailures = new();
-
-            if (image!.ImageData is null)
-            {
-                finalValidationFailures.Add(new(nameof(ProductImage.ImageData), "Cannot be null"));
-            }
-
-            if (string.IsNullOrWhiteSpace(image.ImageFileExtension))
-            {
-                finalValidationFailures.Add(new(nameof(ProductImage.ImageFileExtension), "Cannot be null, empty, or whitespace"));
-            }
-
-            if (finalValidationFailures.Count > 0)
-            {
-                return new ValidationResult(finalValidationFailures);
-            }
-
-            if (image.Id <= 0)
-            {
-                fileNameInfo.FileName ??= GetTemporaryIdFromFileNameInfoAndContentType(fileNameInfo, image.ImageFileExtension!);
-            }
-
-            if (fileNameInfo.FileName is null) return new UnexpectedFailureResult();
-
-            string fileName = fileNameInfo.FileName;
-
-            string fileExtension = ProductImageFileManagementUtils.GetFileExtensionWithoutDot(fileName);
-
-            AllowedImageFileType? allowedImageFileType = ProductImageFileManagementUtils.GetAllowedImageFileTypeFromFileExtension(fileExtension);
-
-            if (allowedImageFileType is null)
-            {
-                List<ValidationFailure> validationFailuresLocal = new()
-                {
-                    new(nameof(ProductImageFileNameInfo.FileName), "Unsupported file type")
-                };
-
-                return new ValidationResult(validationFailuresLocal);
-            }
-
-            OneOf<int, (int, int), False> idOrTemporaryId = GetImageIdOrTempIdFromImageFileName(fileName);
-
-            OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> imageInsertResult
-                = await idOrTemporaryId.Match<Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>>(
-                async imageId =>
-                {
-                    return await AddOrUpdateFileNameInfoAndImageFileAsync(
-                        productDisplayData, image, fileNameInfo, imageId.ToString(), allowedImageFileType);
-                },
-                async temporaryIdParts =>
-                {
-                    string temporaryFileNameToUseWithoutExtension = $"{temporaryIdParts.Item1}-{temporaryIdParts.Item2}";
-
-                    return await AddOrUpdateFileNameInfoAndImageFileAsync(
-                        productDisplayData, image, fileNameInfo, temporaryFileNameToUseWithoutExtension, allowedImageFileType);
-                },
-                async falseResult => await Task.Run(() => new UnexpectedFailureResult()));
-
-            return imageInsertResult;
-        }
-    }
-
-    private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
+    private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult>>
         AddOrUpdateFileNameInfoAndImageFileAsync(
         ProductDisplayData productDisplayData,
         ProductImage image,
@@ -923,7 +787,7 @@ public class IndexModel : PageModel
 
         if (!isimageFileNameInfoInsertSuccessful)
         {
-            return addOrUpdateFileNameInfoResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
+            return addOrUpdateFileNameInfoResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult>>(
                 success => success,
                 validationResult => validationResult,
                 unexpectedFailureResult => unexpectedFailureResult);
@@ -932,7 +796,7 @@ public class IndexModel : PageModel
         OneOf<Success, DirectoryNotFoundResult> imageAddOrUpdateResult
             = await _productImageFileManagementService.AddOrUpdateImageAsync(fileNameToUseWithoutExtension, image.ImageData!, allowedImageFileType);
 
-        return imageAddOrUpdateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>(
+        return imageAddOrUpdateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult>>(
             success => success,
             directoryNotFoundResult => directoryNotFoundResult);
     }
@@ -941,7 +805,7 @@ public class IndexModel : PageModel
         ProductDisplayData productDisplayData,
         ProductImageFileNameInfo fileNameInfo)
     {
-        ProductImageFileNameInfo? savedImageFileInfo = _productImageFileNameInfoService.GetAllInProduct((uint)productDisplayData.Id)
+        ProductImageFileNameInfo? savedImageFileInfo = _productImageFileNameInfoService.GetAllInProduct(productDisplayData.Id)
             .FirstOrDefault(x => x.FileName == fileNameInfo.FileName);
 
         if (savedImageFileInfo is null)
@@ -987,7 +851,7 @@ public class IndexModel : PageModel
     {
         if (productId <= 0) return BadRequest();
 
-        Product? oldProductData = GetProductFull(productId);
+        Product? oldProductData = _productService.GetProductFull(productId);
 
         if (oldProductData is null
             || productDisplayData is null) return BadRequest();
@@ -1006,15 +870,36 @@ public class IndexModel : PageModel
         OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> addNewImagesResult
             = await AddImagesFromFilesToProductDataAsync(productDisplayData);
 
-        Product productToUpdate = MapToProduct(productDisplayData);
+        ProductFullUpdateRequest productFullUpdateRequest = MapToProductFullUpdateRequest(productDisplayData);
 
-        IStatusCodeActionResult productFullUpdateActionResult = SaveProductFull(productToUpdate);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult, NotSupportedFileTypeResult> productFullUpdateResult
+            = _productManipulateService.UpdateProductFull(productFullUpdateRequest);
 
-        if (productFullUpdateActionResult.StatusCode != 200
-            || productDisplayData.ProductWorkStatusesId is null
-            || productDisplayData.ProductWorkStatusesId <= 0)
+        IStatusCodeActionResult productFullUpdateActionResult = productFullUpdateResult.Match(
+            success => new OkResult(),
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            unexpectedFailureResult => StatusCode(500),
+            notSupportedFileTypeResult => BadRequest(notSupportedFileTypeResult));
+
+        if (productFullUpdateActionResult.StatusCode != 200)
         {
             return productFullUpdateActionResult;
+        }
+
+        if (productDisplayData.ProductWorkStatusesId is null
+            || productDisplayData.ProductWorkStatusesId <= 0)
+        {
+            Product? updatedProduct = _productService.GetProductFull(productId);
+
+            if (updatedProduct is null)
+            {
+                return StatusCode(500);
+            }
+
+            List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringOriginData
+                = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(updatedProduct);
+
+            return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(updatedProduct, searchStringOriginData));
         }
 
         ProductWorkStatusesUpdateByProductIdRequest productWorkStatusesUpdateRequest = new()
@@ -1035,32 +920,19 @@ public class IndexModel : PageModel
                     return NotFound();
                 }
 
-                return new OkResult();
+                Product? updatedProduct = _productService.GetProductFull(productId);
+
+                if (updatedProduct is null)
+                {
+                    return StatusCode(500);
+                }
+
+                List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringOriginData
+                    = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(updatedProduct);
+
+                return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(updatedProduct, searchStringOriginData));
             },
             validationResult => GetBadRequestResultFromValidationResult(validationResult));
-    }
-
-    private static void CorrectImageFileNameData(ProductDisplayData? localProductDisplayData, int newProductId)
-    {
-        if (localProductDisplayData?.ImagesAndImageFileInfos is null) return;
-
-        foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in localProductDisplayData.ImagesAndImageFileInfos)
-        {
-            if (tuple.Item2?.FileName is null
-                || tuple.Item1?.ImageFileExtension is null) continue;
-
-            tuple.Item2.ProductId = newProductId;
-
-            OneOf<int, (int, int), False> idOrTempId = GetImageIdOrTempIdFromImageFileName(tuple.Item2.FileName);
-
-            idOrTempId.Switch(
-                id => { },
-                tempIdParts =>
-                {
-                    tuple.Item2.FileName = GetTemporaryIdFromFileNameInfoAndContentType(tuple.Item2, tuple.Item1.ImageFileExtension);
-                },
-                falseResult => { });
-        }
     }
 
     private OneOf<bool, FileDoesntExistResult, NotSupportedFileTypeResult> AddImagesFromFilesToProductData(ProductDisplayData productDisplayData)
@@ -1070,7 +942,10 @@ public class IndexModel : PageModel
 
         for (int i = 0; i < productDisplayData.ImagesAndImageFileInfos.Count; i++)
         {
-            (ProductImage? image, ProductImageFileNameInfo? fileNameInfo) = productDisplayData.ImagesAndImageFileInfos[i];
+            ImageAndImageFileNameRelation imageAndImageFileNameRelation = productDisplayData.ImagesAndImageFileInfos[i];
+
+            ProductImage? image = imageAndImageFileNameRelation.ProductImage;
+            ProductImageFileNameInfo? fileNameInfo = imageAndImageFileNameRelation.ProductImageFileNameInfo;
 
             if (image is not null
                 || fileNameInfo is null
@@ -1087,7 +962,7 @@ public class IndexModel : PageModel
                         Id = -1,
                         ProductId = productDisplayData.Id,
                         ImageData = imageData,
-                        ImageFileExtension = $"image/{ProductImageFileManagementUtils.GetFileExtensionWithoutDot(fileNameInfo.FileName)}",
+                        ImageContentType = $"image/{GetFileExtensionWithoutDot(fileNameInfo.FileName)}",
                     };
 
                     productDisplayData.ImagesAndImageFileInfos[i] = new(productImageFromData, fileNameInfo);
@@ -1110,7 +985,10 @@ public class IndexModel : PageModel
 
         for (int i = 0; i < productDisplayData.ImagesAndImageFileInfos.Count; i++)
         {
-            (ProductImage? image, ProductImageFileNameInfo? fileNameInfo) = productDisplayData.ImagesAndImageFileInfos[i];
+            ImageAndImageFileNameRelation imageAndImageFileNameRelation = productDisplayData.ImagesAndImageFileInfos[i];
+
+            ProductImage? image = imageAndImageFileNameRelation.ProductImage;
+            ProductImageFileNameInfo? fileNameInfo = imageAndImageFileNameRelation.ProductImageFileNameInfo;
 
             if (image is not null
                 || fileNameInfo is null
@@ -1127,7 +1005,7 @@ public class IndexModel : PageModel
                         Id = -1,
                         ProductId = productDisplayData.Id,
                         ImageData = imageData,
-                        ImageFileExtension = $"image/{ProductImageFileManagementUtils.GetFileExtensionWithoutDot(fileNameInfo.FileName)}",
+                        ImageContentType = $"image/{GetFileExtensionWithoutDot(fileNameInfo.FileName)}",
                     };
 
                     productDisplayData.ImagesAndImageFileInfos[i] = new(productImageFromData, fileNameInfo);
@@ -1142,45 +1020,151 @@ public class IndexModel : PageModel
 
         return true;
     }
-
-    public IActionResult OnPutUpdateProductNewStatus(int productId, ProductNewStatusEnum productNewStatus)
+    
+    public IActionResult OnPutUpdateProductNewStatus(int productId, ProductNewStatusEnum productNewStatus, string htmlElementId, int tableIndex)
     {
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
 
         if (productDisplayData == null) return BadRequest();
 
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> addOrUpdateProductWorkStatusesResult
+            = AddOrUpdateProductWorkStatuses(productDisplayData, newProductNewStatus: productNewStatus);
+
+        int productWorkStatusesId = -1;
+
+        IStatusCodeActionResult addOrUpdateProductWorkStatusesActionResult = addOrUpdateProductWorkStatusesResult.Match(
+            id =>
+            {
+                productWorkStatusesId = id;
+
+                return new OkResult();
+            },
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            unexpectedFailureResult => StatusCode(500));
+
+        if (addOrUpdateProductWorkStatusesActionResult.StatusCode != 200) return addOrUpdateProductWorkStatusesActionResult;
+
+        productDisplayData.ProductWorkStatusesId = productWorkStatusesId;
         productDisplayData.ProductNewStatus = productNewStatus;
+        productDisplayData.ProductXmlStatus = productWorkStatuses?.ProductXmlStatus ?? ProductXmlStatusEnum.NotReady;
+        productDisplayData.ReadyForImageInsert = productWorkStatuses?.ReadyForImageInsert ?? false;
 
-        return new OkResult();
+        return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productDisplayData);
     }
 
-    public IActionResult OnPutUpdateProductXmlStatus(int productId, ProductXmlStatusEnum productXmlStatus)
+    public IActionResult OnPutUpdateProductXmlStatus(int productId, ProductXmlStatusEnum productXmlStatus, string htmlElementId, int tableIndex)
     {
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
 
         if (productDisplayData == null) return BadRequest();
 
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> addOrUpdateProductWorkStatusesResult
+            = AddOrUpdateProductWorkStatuses(productDisplayData, newProductXmlStatus: productXmlStatus);
+
+        int productWorkStatusesId = -1;
+
+        IStatusCodeActionResult addOrUpdateProductWorkStatusesActionResult = addOrUpdateProductWorkStatusesResult.Match(
+            id =>
+            {
+                productWorkStatusesId = id;
+
+                return new OkResult();
+            },
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            unexpectedFailureResult => StatusCode(500));
+
+        if (addOrUpdateProductWorkStatusesActionResult.StatusCode != 200) return addOrUpdateProductWorkStatusesActionResult;
+
+        productDisplayData.ProductWorkStatusesId = productWorkStatusesId;
+        productDisplayData.ProductNewStatus = productWorkStatuses?.ProductNewStatus ?? ProductNewStatusEnum.New;
         productDisplayData.ProductXmlStatus = productXmlStatus;
+        productDisplayData.ReadyForImageInsert = productWorkStatuses?.ReadyForImageInsert ?? false;
 
-        return new OkResult();
+        return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productDisplayData);
     }
 
-    public IActionResult OnPutToggleReadyForImageInsertStatus(int productId)
+    public IActionResult OnPutToggleReadyForImageInsertStatus(int productId, string htmlElementId, int tableIndex)
     {
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
 
-        if (productDisplayData == null) return BadRequest();
+        if (productDisplayData is null) return BadRequest();
 
-        productDisplayData.ReadyForImageInsert = !productDisplayData.ReadyForImageInsert;
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
 
-        return new JsonResult(new { updatedReadyForImageInsertValue = productDisplayData.ReadyForImageInsert });
+        bool readyForImageInsert = !productDisplayData.ReadyForImageInsert ?? !productWorkStatuses?.ReadyForImageInsert ?? true;
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> addOrUpdateProductWorkStatusesResult
+            = AddOrUpdateProductWorkStatuses(productDisplayData, newReadyForImageInsertStatus: readyForImageInsert);
+
+        int productWorkStatusesId = -1;
+
+        IStatusCodeActionResult addOrUpdateProductWorkStatusesActionResult = addOrUpdateProductWorkStatusesResult.Match(
+            id =>
+            {
+                productWorkStatusesId = id;
+
+                return new OkResult();
+            },
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            unexpectedFailureResult => StatusCode(500));
+
+        if (addOrUpdateProductWorkStatusesActionResult.StatusCode != 200) return addOrUpdateProductWorkStatusesActionResult;
+
+        productDisplayData.ProductWorkStatusesId = productWorkStatusesId;
+        productDisplayData.ProductNewStatus = productWorkStatuses?.ProductNewStatus ?? ProductNewStatusEnum.New;
+        productDisplayData.ProductXmlStatus = productWorkStatuses?.ProductXmlStatus ?? ProductXmlStatusEnum.WorkInProgress;
+        productDisplayData.ReadyForImageInsert = readyForImageInsert;
+
+        return GetPartialTableRowFromProduct(htmlElementId, tableIndex, productDisplayData);
     }
 
-    public IActionResult OnPutUpdateImageDisplayOrder(int productId, int oldDisplayOrder, int newDisplayOrder)
+    private OneOf<int, ValidationResult, UnexpectedFailureResult> AddOrUpdateProductWorkStatuses(
+        ProductDisplayData productDisplayData,
+        ProductNewStatusEnum? newProductNewStatus = null,
+        ProductXmlStatusEnum? newProductXmlStatus = null,
+        bool? newReadyForImageInsertStatus = null)
+    {
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productDisplayData.Id);
+
+        if (productWorkStatuses is null)
+        {
+            OneOf<int, ValidationResult, UnexpectedFailureResult> productStatusesInsertResult = _productWorkStatusesService.InsertIfItDoesntExist(new()
+            {
+                ProductId = productDisplayData.Id,
+                ProductNewStatus = newProductNewStatus ?? ProductNewStatusEnum.New,
+                ProductXmlStatus = newProductXmlStatus ?? ProductXmlStatusEnum.NotReady,
+                ReadyForImageInsert = newReadyForImageInsertStatus ?? false,
+            });
+
+            return productStatusesInsertResult.Match<OneOf<int, ValidationResult, UnexpectedFailureResult>>(
+                id => id,
+                validationResult => validationResult,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+
+        OneOf<bool, ValidationResult> productStatusesUpdateResult = _productWorkStatusesService.UpdateByProductId(new()
+        {
+            ProductId = productDisplayData.Id,
+            ProductNewStatus = newProductNewStatus ?? productWorkStatuses.ProductNewStatus,
+            ProductXmlStatus = newProductXmlStatus ?? productWorkStatuses.ProductXmlStatus,
+            ReadyForImageInsert = newReadyForImageInsertStatus ?? productWorkStatuses.ReadyForImageInsert,
+        });
+
+        return productStatusesUpdateResult.Match<OneOf<int, ValidationResult, UnexpectedFailureResult>>(
+            id => productWorkStatuses.Id,
+            validationResult => validationResult);
+    }
+
+    public IActionResult OnPutUpdateImageDisplayOrder(int productId, int oldDisplayOrder, int newDisplayOrder, ProductImagePopupUsageEnum productImagePopupUsage)
     {
         if (productId <= 0
             || oldDisplayOrder <= 0
-            || newDisplayOrder <= 0) return BadRequest();
+            || newDisplayOrder <= 0
+            || productImagePopupUsage != ProductImagePopupUsageEnum.DisplayData) return BadRequest();
 
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
 
@@ -1188,14 +1172,23 @@ public class IndexModel : PageModel
             || productDisplayData.ImagesAndImageFileInfos is null
             || productDisplayData.ImagesAndImageFileInfos.Count <= 0) return NotFound();
 
-        foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in productDisplayData.ImagesAndImageFileInfos)
+        foreach (ImageAndImageFileNameRelation imageAndFileNameInfoRelation in productDisplayData.ImagesAndImageFileInfos)
         {
-            if (tuple.Item2?.DisplayOrder is null) continue;
+            ProductImageFileNameInfo? productImageFileNameInfo = imageAndFileNameInfoRelation.ProductImageFileNameInfo;
 
-            tuple.Item2.DisplayOrder = ChangeDisplayOrderBasedOnLastChange(oldDisplayOrder, newDisplayOrder, tuple.Item2.DisplayOrder.Value);
+            if (productImageFileNameInfo?.DisplayOrder is null) continue;
+
+            productImageFileNameInfo.DisplayOrder = ChangeDisplayOrderBasedOnLastChange(
+                oldDisplayOrder, newDisplayOrder, productImageFileNameInfo.DisplayOrder.Value);
         }
 
-        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(productDisplayData));
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(
+            ProductImagePopupUsageEnum.DisplayData,
+            productDisplayData,
+            _productImageService,
+            _productImageFileNameInfoService,
+            _productImageFileManagementService,
+            "topNotificationBox"));
     }
 
     private static int? ChangeDisplayOrderBasedOnLastChange(int oldDisplayOrder, int newDisplayOrder, int displayOrder)
@@ -1234,7 +1227,9 @@ public class IndexModel : PageModel
             || productDisplayData.ImagesAndImageFileInfos is null
             || productDisplayData.ImagesAndImageFileInfos.Count <= 0) return BadRequest();
 
-        ProductImageFileNameInfo? item = productDisplayData.ImagesAndImageFileInfos.Find(x => x.Item2?.DisplayOrder == displayOrder)?.Item2;
+        ProductImageFileNameInfo? item = productDisplayData.ImagesAndImageFileInfos.Find(
+            x => x.ProductImageFileNameInfo?.DisplayOrder == displayOrder)?
+            .ProductImageFileNameInfo;
 
         if (item is null) return BadRequest();
 
@@ -1259,7 +1254,7 @@ public class IndexModel : PageModel
             return BadRequest();
         }
 
-        bool isDeleteOfProductSuccessful = _productService.Delete((uint)productDataAtIndex.Id);
+        bool isDeleteOfProductSuccessful = _productService.Delete(productDataAtIndex.Id);
 
         if (!isDeleteOfProductSuccessful)
         {
@@ -1276,10 +1271,11 @@ public class IndexModel : PageModel
         return new OkResult();
     }
 
-    public IActionResult OnDeleteDeleteImageFromProduct(int productId, int imageIndex)
+    public IActionResult OnDeleteDeleteImageFromProduct(int productId, int imageIndex, ProductImagePopupUsageEnum productImagePopupUsage)
     {
         if (productId <= 0
-            || imageIndex < 0) return BadRequest();
+            || imageIndex < 0
+            || productImagePopupUsage == ProductImagePopupUsageEnum.ImagesInDatabase) return BadRequest();
 
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(productId);
 
@@ -1288,652 +1284,35 @@ public class IndexModel : PageModel
 
         if (imageIndex >= productDisplayData.ImagesAndImageFileInfos.Count) return BadRequest();
 
-        Tuple<ProductImage?, ProductImageFileNameInfo?> imageTuple = productDisplayData.ImagesAndImageFileInfos[imageIndex];
+        ImageAndImageFileNameRelation imageAndFileNameRelation = productDisplayData.ImagesAndImageFileInfos[imageIndex];
 
-        int? displayOrderOfImage = imageTuple.Item2?.DisplayOrder;
+        int? displayOrderOfImage = imageAndFileNameRelation.ProductImageFileNameInfo?.DisplayOrder;
 
         productDisplayData.ImagesAndImageFileInfos.RemoveAt(imageIndex);
 
         if (displayOrderOfImage is null) return new OkResult();
 
-        foreach (Tuple<ProductImage?, ProductImageFileNameInfo?> tuple in productDisplayData.ImagesAndImageFileInfos)
+        foreach (ImageAndImageFileNameRelation relation in productDisplayData.ImagesAndImageFileInfos)
         {
-            if (tuple.Item2 is null
-                || tuple.Item2.DisplayOrder <= displayOrderOfImage) continue;
+            if (relation.ProductImageFileNameInfo is null
+                || relation.ProductImageFileNameInfo.DisplayOrder <= displayOrderOfImage) continue;
 
-            tuple.Item2.DisplayOrder--;
+            relation.ProductImageFileNameInfo.DisplayOrder--;
         }
 
-        return new OkResult();
-    }
-
-    public IndexProductTableRowPartialModel GetTableRowModel(Product product, int tableIndex, string htmlElementId)
-    {
-        IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
-        IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
-
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(product.Id);
-
-        return new IndexProductTableRowPartialModel(
-            MapToProductDisplayData(product),
-            htmlElementId,
-            tableIndex,
-            ProductSelectListItemUtils.GetCategorySelectListItems(product, allPossibleCategories),
-            ProductSelectListItemUtils.GetManifacturerSelectListItems(product, allPossibleManifacturers),
-            ProductSelectListItemUtils.GetStatusSelectListItems(product),
-            ProductSelectListItemUtils.GetCurrencySelectListItems(product),
-            ProductSelectListItemUtils.GetProductNewStatusSelectListItems(productWorkStatuses),
-            ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productWorkStatuses));
-    }
-
-    public IndexProductTableRowPartialModel GetTableRowModel(ProductDisplayData productData, int tableIndex, string htmlElementId)
-    {
-        IEnumerable<Category> allPossibleCategories = _categoryService.GetAll();
-        IEnumerable<Manifacturer> allPossibleManifacturers = _manifacturerService.GetAll();
-
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productData.Id);
-
-        return new IndexProductTableRowPartialModel(
-            productData,
-            htmlElementId,
-            tableIndex,
-            ProductSelectListItemUtils.GetCategorySelectListItems(productData, allPossibleCategories),
-            ProductSelectListItemUtils.GetManifacturerSelectListItems(productData, allPossibleManifacturers),
-            ProductSelectListItemUtils.GetStatusSelectListItems(productData),
-            ProductSelectListItemUtils.GetCurrencySelectListItems(productData),
-            ProductSelectListItemUtils.GetProductNewStatusSelectListItems(productWorkStatuses),
-            ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productWorkStatuses));
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private Product? GetProductFull(int productId)
-    {
-        if (productId <= 0) return null;
-
-        Product? product = _productService.GetByIdWithImages((uint)productId);
-
-        if (product is null) return null;
-
-        if (product.Properties is null
-            || product.Properties.Count <= 0)
+        if (productImagePopupUsage == ProductImagePopupUsageEnum.ImagesInFiles
+            && imageAndFileNameRelation.ProductImageFileNameInfo?.FileName is not null)
         {
-            product.Properties = _productPropertyService.GetAllInProduct((uint)productId)
-                .ToList();
-        }
+            bool isProductImageFileNameDeleted = _productImageFileNameInfoService.DeleteByProductIdAndImageNumber(
+                productId, imageAndFileNameRelation.ProductImageFileNameInfo.ImageNumber);
 
-        if (product.ImageFileNames is null
-            || product.ImageFileNames.Count <= 0)
-        {
-            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct((uint)productId)
-                .ToList();
-        }
+            if (!isProductImageFileNameDeleted) return BadRequest();
 
-        return product;
-    }
-
-    public IStatusCodeActionResult SaveProductFull(Product productToUpdate)
-    {
-        if (productToUpdate is null) return BadRequest();
-
-        try
-        {
-            IStatusCodeActionResult result = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
-                () => SaveProductInternal(productToUpdate),
-                actionResult => actionResult.StatusCode == 200);
-
-            if (result.StatusCode != 200)
-            {
-                return result;
-            }
+            _productImageFileManagementService.DeleteFile(imageAndFileNameRelation.ProductImageFileNameInfo.FileName);
 
             return new OkResult();
         }
-        catch (TransactionException)
-        {
-            return StatusCode(500);
-        }
-    }
-
-    private IStatusCodeActionResult SaveProductInternal(Product productToUpdate)
-    {
-        if (productToUpdate is null) return BadRequest();
-
-        uint productId = (uint)productToUpdate.Id;
-
-        Product? oldProduct = GetProductFull(productToUpdate.Id);
-
-        if (oldProduct is null) return BadRequest();
-        ProductUpdateRequest productUpdateRequest = MapToUpdateRequestWithoutImagesAndProps(productToUpdate);
-
-        List<(ProductImage productImage, int displayOrder)> ordersForImagesInProduct = new();
-
-        productToUpdate.Images = productToUpdate.Images?.OrderBy(
-            image =>
-            {
-                ProductImageFileNameInfo? relatedFileName = productToUpdate.ImageFileNames?.Find(
-                    x => x.FileName == $"{image.Id}.{GetImageFileExtensionFromContentType(image.ImageFileExtension ?? "*")}");
-
-                if (relatedFileName is not null) return relatedFileName.DisplayOrder;
-
-                int imageIndex = productToUpdate.Images!.IndexOf(image);
-
-                ordersForImagesInProduct.Add((image, imageIndex + 1));
-
-                return imageIndex;
-            })
-            .ToList();
-
-        IStatusCodeActionResult propertiesUpdateActionResult = UpdateProperties(
-            productToUpdate, oldProduct, productId, productUpdateRequest);
-
-        if (propertiesUpdateActionResult.StatusCode != 200)
-        {
-            return propertiesUpdateActionResult;
-        }
-
-        IStatusCodeActionResult imagesUpdateActionResult = UpdateImages(
-            productToUpdate, oldProduct, productId, productUpdateRequest, ordersForImagesInProduct);
-
-        if (imagesUpdateActionResult.StatusCode != 200)
-        {
-            return imagesUpdateActionResult;
-        }
-
-        IStatusCodeActionResult imageFileNamesUpdateActionResult = UpdateImageFileNames(
-            productToUpdate, oldProduct, productId, ordersForImagesInProduct);
-
-        if (imageFileNamesUpdateActionResult.StatusCode != 200)
-        {
-            return imageFileNamesUpdateActionResult;
-        }
-
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
-
-        IStatusCodeActionResult actionResultFromUpdate = productUpdateResult.Match<IStatusCodeActionResult>(
-            success => new OkResult(),
-            validationResult => BadRequest(validationResult),
-            unexpectedFailureResult => StatusCode(500));
-
-        if (actionResultFromUpdate.StatusCode != 200)
-        {
-            return actionResultFromUpdate;
-        }
 
         return new OkResult();
-    }
-
-    private static ProductUpdateRequest MapToUpdateRequestWithoutImagesAndProps(Product productToUpdate)
-    {
-        return new()
-        {
-            Id = productToUpdate.Id,
-            Name = productToUpdate.Name,
-            AdditionalWarrantyPrice = productToUpdate.AdditionalWarrantyPrice,
-            AdditionalWarrantyTermMonths = productToUpdate.AdditionalWarrantyTermMonths,
-            StandardWarrantyPrice = productToUpdate.StandardWarrantyPrice,
-            StandardWarrantyTermMonths = productToUpdate.StandardWarrantyTermMonths,
-            DisplayOrder = productToUpdate.DisplayOrder,
-            Status = productToUpdate.Status,
-            PlShow = productToUpdate.PlShow,
-            DisplayPrice = productToUpdate.Price,
-            Currency = productToUpdate.Currency,
-            RowGuid = productToUpdate.RowGuid,
-            Promotionid = productToUpdate.Promotionid,
-            PromRid = productToUpdate.PromRid,
-            PromotionPictureId = productToUpdate.PromotionPictureId,
-            PromotionExpireDate = productToUpdate.PromotionExpireDate,
-            AlertPictureId = productToUpdate.AlertPictureId,
-            AlertExpireDate = productToUpdate.AlertExpireDate,
-            PriceListDescription = productToUpdate.PriceListDescription,
-            PartNumber1 = productToUpdate.PartNumber1,
-            PartNumber2 = productToUpdate.PartNumber2,
-            SearchString = productToUpdate.SearchString,
-
-            Properties = new(),
-            Images = new(),
-            ImageFileNames = new(),
-
-            CategoryID = productToUpdate.CategoryID,
-            ManifacturerId = productToUpdate.ManifacturerId,
-            SubCategoryId = productToUpdate.SubCategoryId,
-        };
-    }
-
-    private IStatusCodeActionResult UpdateProperties(
-        Product productToUpdate,
-        Product oldFirstProduct,
-        uint productId,
-        ProductUpdateRequest productUpdateRequestToAddPropsTo)
-    {
-        if (productToUpdate is null) return BadRequest();
-
-        foreach (ProductProperty newProductProp in productToUpdate.Properties)
-        {
-            ProductProperty? oldProductPropForSameCharacteristic = oldFirstProduct.Properties
-                .Find(prop => prop.ProductCharacteristicId == newProductProp.ProductCharacteristicId);
-
-            if (oldProductPropForSameCharacteristic is null)
-            {
-                ProductPropertyByCharacteristicIdCreateRequest propCreateRequest = new()
-                {
-                    ProductCharacteristicId = newProductProp.ProductCharacteristicId,
-                    ProductId = (int)productId,
-                    DisplayOrder = newProductProp.DisplayOrder,
-                    Value = newProductProp.Value,
-                    XmlPlacement = newProductProp.XmlPlacement,
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult
-                    = _productPropertyService.InsertWithCharacteristicId(propCreateRequest);
-
-                IStatusCodeActionResult actionResultFromPropertyInsert = propertyInsertResult.Match<IStatusCodeActionResult>(
-                    success => new OkResult(),
-                    validationResult => BadRequest(validationResult),
-                    unexpectedFailureResult => StatusCode(500));
-
-                if (actionResultFromPropertyInsert.StatusCode != 200)
-                {
-                    return actionResultFromPropertyInsert;
-                }
-
-                continue;
-            }
-
-            if (oldProductPropForSameCharacteristic.Value == newProductProp.Value
-                && oldProductPropForSameCharacteristic.XmlPlacement == newProductProp.XmlPlacement)
-            {
-                oldFirstProduct.Properties.Remove(oldProductPropForSameCharacteristic);
-
-                continue;
-            }
-
-            CurrentProductPropertyUpdateRequest propUpdateRequest = new()
-            {
-                ProductCharacteristicId = newProductProp.ProductCharacteristicId,
-                DisplayOrder = newProductProp.DisplayOrder,
-                Value = newProductProp.Value,
-                XmlPlacement = newProductProp.XmlPlacement,
-            };
-
-            productUpdateRequestToAddPropsTo.Properties.Add(propUpdateRequest);
-
-            oldFirstProduct.Properties.Remove(oldProductPropForSameCharacteristic);
-        }
-
-        foreach (ProductProperty oldPropertyToDelete in oldFirstProduct.Properties)
-        {
-            if (oldPropertyToDelete.ProductCharacteristicId is null) return StatusCode(500);
-
-            bool imageFileNameDeleteSuccess = _productPropertyService.Delete(
-                productId, (uint)oldPropertyToDelete.ProductCharacteristicId.Value);
-
-            if (!imageFileNameDeleteSuccess) return StatusCode(500);
-        }
-
-        return new OkResult();
-    }
-
-    private IStatusCodeActionResult UpdateImages(
-        Product productToUpdate,
-        Product oldProduct,
-        uint productId,
-        ProductUpdateRequest productUpdateRequestToAddImagesTo,
-        List<(ProductImage productImage, int displayOrder)> ordersForImagesInProduct)
-    {
-        if (productToUpdate is null) return BadRequest();
-
-        if (productToUpdate.Images is not null)
-        {
-            ProductImage? productFirstImage = null;
-
-            foreach (ProductImage image in productToUpdate.Images)
-            {
-                ProductImage? imageInOldProduct = oldProduct.Images?.Find(
-                    img => img.Id == image.Id);
-
-                if (imageInOldProduct is null)
-                {
-                    ServiceProductImageCreateRequest productImageCreateRequest = new()
-                    {
-                        ProductId = (int)productId,
-                        ImageData = image.ImageData,
-                        ImageFileExtension = image.ImageFileExtension,
-                        HtmlData = image.HtmlData,
-                    };
-
-                    OneOf<uint, ValidationResult, UnexpectedFailureResult> imageInsertResult
-                        = _productImageService.InsertInAllImages(productImageCreateRequest);
-
-                    int imageId = -1;
-
-                    IStatusCodeActionResult actionResultFromImageInsert = imageInsertResult.Match<IStatusCodeActionResult>(
-                        id =>
-                        {
-                            imageId = (int)id;
-
-                            return new OkResult();
-                        },
-                        validationResult => BadRequest(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-
-                    if (actionResultFromImageInsert.StatusCode != 200)
-                    {
-                        return actionResultFromImageInsert;
-                    }
-
-                    int imageInOrderedListIndex = ordersForImagesInProduct.FindIndex(
-                        x => x.productImage == image);
-
-                    if (imageInOrderedListIndex < 0) return StatusCode(500);
-
-                    if (ordersForImagesInProduct[imageInOrderedListIndex].displayOrder == 1)
-                    {
-                        productFirstImage = image;
-                    }
-
-                    (ProductImage productImage, int displayOrder) = ordersForImagesInProduct[imageInOrderedListIndex];
-
-                    productImage.Id = imageId;
-
-                    ordersForImagesInProduct[imageInOrderedListIndex] = new(productImage, displayOrder);
-
-                    continue;
-                }
-
-                int imageIndexInOrderedList = ordersForImagesInProduct.FindIndex(x => x.productImage == image);
-
-                if (imageIndexInOrderedList >= 0)
-                {
-                    int imageDisplayOrderInOrderedList = ordersForImagesInProduct[imageIndexInOrderedList].displayOrder;
-
-                    if (imageDisplayOrderInOrderedList == 1)
-                    {
-                        productFirstImage = image;
-                    }
-                }
-
-                if (CompareByteArrays(image.ImageData, imageInOldProduct.ImageData)
-                    && image.ImageFileExtension == imageInOldProduct.ImageFileExtension
-                    && image.HtmlData == imageInOldProduct.HtmlData)
-                {
-                    oldProduct.Images?.Remove(imageInOldProduct);
-
-                    continue;
-                }
-
-                CurrentProductImageUpdateRequest productImageUpdateRequest = new()
-                {
-                    ImageData = image.ImageData,
-                    ImageFileExtension = image.ImageFileExtension,
-                    XML = image.HtmlData,
-                };
-
-                productUpdateRequestToAddImagesTo.Images ??= new();
-
-                productUpdateRequestToAddImagesTo.Images.Add(productImageUpdateRequest);
-
-                oldProduct.Images?.Remove(imageInOldProduct);
-            }
-
-            if (productFirstImage is not null)
-            {
-                ProductImage? oldProductFirstImage = _productImageService.GetFirstImageForProduct(productId);
-
-                if (oldProductFirstImage is null)
-                {
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult = _productImageService.InsertInFirstImages(new()
-                    {
-                        ProductId = (int)productId,
-                        ImageData = productFirstImage.ImageData,
-                        ImageFileExtension = productFirstImage.ImageFileExtension,
-                        HtmlData = productFirstImage.HtmlData,
-                    });
-
-                    IStatusCodeActionResult actionResultFromFirstImageInsert = insertFirstImageResult.Match<IStatusCodeActionResult>(
-                        success => new OkResult(),
-                        validationResult => BadRequest(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-
-                    if (actionResultFromFirstImageInsert.StatusCode != 200) return actionResultFromFirstImageInsert;
-                }
-                else
-                {
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> updateFirstImageResult = _productImageService.UpdateInFirstImages(new()
-                    {
-                        ProductId = (int)productId,
-                        ImageData = productFirstImage.ImageData,
-                        ImageFileExtension = productFirstImage.ImageFileExtension,
-                        HtmlData = productFirstImage.HtmlData,
-                    });
-
-                    IStatusCodeActionResult actionResultFromFirstImageInsert = updateFirstImageResult.Match<IStatusCodeActionResult>(
-                       success => new OkResult(),
-                       validationResult => BadRequest(validationResult),
-                       unexpectedFailureResult => StatusCode(500));
-
-                    if (actionResultFromFirstImageInsert.StatusCode != 200) return actionResultFromFirstImageInsert;
-                }
-            }
-        }
-
-        if (oldProduct.Images is not null
-            && oldProduct.Images.Count > 0)
-        {
-            foreach (ProductImage oldImageToBeRemoved in oldProduct.Images)
-            {
-                bool imageDeleteResult = _productImageService.DeleteInAllImagesById((uint)oldImageToBeRemoved.Id);
-
-                if (!imageDeleteResult) return StatusCode(500);
-            }
-        }
-
-        return new OkResult();
-    }
-
-    private IStatusCodeActionResult UpdateImageFileNames(
-        Product productToUpdate,
-        Product oldProduct,
-        uint productId,
-        List<(ProductImage productImage, int displayOrder)> ordersForImagesInProduct)
-    {
-        if (productToUpdate is null) return BadRequest();
-
-        List<ServiceProductImageFileNameInfoCreateRequest> imageFileNameInfoCreateRequests = new();
-
-        if (oldProduct.ImageFileNames is not null
-            && oldProduct.ImageFileNames.Count > 0)
-        {
-            if (productToUpdate.ImageFileNames is null
-                || productToUpdate.ImageFileNames.Count <= 0)
-            {
-                foreach (ProductImageFileNameInfo oldProductImageFileName in oldProduct.ImageFileNames)
-                {
-                    if (oldProductImageFileName.DisplayOrder is null) return StatusCode(500);
-
-                    bool imageFileNameDeleteResult = _productImageFileNameInfoService.DeleteByProductIdAndDisplayOrder(
-                        productId, oldProductImageFileName.DisplayOrder.Value);
-
-                    if (!imageFileNameDeleteResult) return StatusCode(500);
-
-                    for (int k = 0; k < oldProduct.ImageFileNames.Count; k++)
-                    {
-                        ProductImageFileNameInfo oldImageFileName = oldProduct.ImageFileNames[k];
-
-                        oldImageFileName.DisplayOrder = k + 1;
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < oldProduct.ImageFileNames.Count; i++)
-                {
-                    ProductImageFileNameInfo oldProductImageFileName = oldProduct.ImageFileNames[i];
-
-                    if (oldProductImageFileName.DisplayOrder is null) return StatusCode(500);
-
-                    ProductImageFileNameInfo? oldImageFileNameInCurrentProduct = productToUpdate.ImageFileNames.Find(
-                        imgFileNameInfo => imgFileNameInfo.FileName == oldProductImageFileName.FileName);
-
-                    if (oldImageFileNameInCurrentProduct is not null) continue;
-
-                    bool imageFileNameDeleteResult = _productImageFileNameInfoService.DeleteByProductIdAndDisplayOrder(
-                        productId, oldProductImageFileName.DisplayOrder.Value);
-
-                    if (!imageFileNameDeleteResult) return StatusCode(500);
-
-                    oldProduct.ImageFileNames.RemoveAt(i);
-
-                    i--;
-
-                    for (int k = 0; k < oldProduct.ImageFileNames.Count; k++)
-                    {
-                        ProductImageFileNameInfo oldImageFileName = oldProduct.ImageFileNames[k];
-
-                        oldImageFileName.DisplayOrder = k + 1;
-                    }
-                }
-            }
-        }
-
-        if (productToUpdate.ImageFileNames is not null)
-        {
-            int newImageFileNamesCount = 0;
-
-            foreach (ProductImageFileNameInfo imageFileNameInfo in productToUpdate.ImageFileNames)
-            {
-                ProductImageFileNameInfo? imageFileNameOfOldProduct = oldProduct.ImageFileNames?.Find(
-                    imgFileNameInfo => imgFileNameInfo.FileName == imageFileNameInfo.FileName);
-
-                if (imageFileNameOfOldProduct is null)
-                {
-                    ProductImage? imageRelatedToThatFileNameInfoLocal = ordersForImagesInProduct.Find(
-                        x => imageFileNameInfo.DisplayOrder == x.displayOrder)
-                        .productImage;
-
-                    if (imageRelatedToThatFileNameInfoLocal.Id <= 0
-                        || string.IsNullOrWhiteSpace(imageRelatedToThatFileNameInfoLocal.ImageFileExtension)) return StatusCode(500);
-
-                    if (imageRelatedToThatFileNameInfoLocal is null) return StatusCode(500);
-
-                    ServiceProductImageFileNameInfoCreateRequest imageFileNameCreateRequest = new()
-                    {
-                        ProductId = productToUpdate.Id,
-                        DisplayOrder = imageFileNameInfo.DisplayOrder,
-                        Active = imageFileNameInfo.Active,
-                        FileName = $"{imageRelatedToThatFileNameInfoLocal.Id}.{GetImageFileExtensionFromContentType(imageRelatedToThatFileNameInfoLocal.ImageFileExtension ?? "*")}",
-                    };
-
-                    imageFileNameInfoCreateRequests.Add(imageFileNameCreateRequest);
-
-                    newImageFileNamesCount++;
-
-                    continue;
-                }
-
-                if (imageFileNameInfo.FileName is null
-                    || imageFileNameInfo.DisplayOrder is null) continue;
-
-                ProductImage? imageRelatedToThatFileNameInfo = ordersForImagesInProduct.Find(
-                    x => imageFileNameInfo.DisplayOrder == x.displayOrder)
-                    .productImage;
-
-                if (imageRelatedToThatFileNameInfo.Id <= 0
-                    || string.IsNullOrWhiteSpace(imageRelatedToThatFileNameInfo.ImageFileExtension)) return StatusCode(500);
-
-                string? temporaryId = GetTemporaryIdFromFileNameInfoAndContentType(imageFileNameInfo, imageRelatedToThatFileNameInfo.ImageFileExtension);
-
-                if (temporaryId is not null)
-                {
-                    string? fullFileNameFromImageData = GetImageFileNameFromImageData(
-                        imageRelatedToThatFileNameInfo.Id, imageRelatedToThatFileNameInfo.ImageFileExtension);
-
-                    if (fullFileNameFromImageData is null) return StatusCode(500);
-
-                    imageFileNameInfo.FileName = fullFileNameFromImageData;
-                }
-
-                int displayOrder = imageFileNameInfo.DisplayOrder.Value - newImageFileNamesCount;
-
-                bool isFileNameInfoSameAsOldOne = imageFileNameInfo.FileName == imageFileNameOfOldProduct.FileName
-                    && displayOrder == imageFileNameOfOldProduct.DisplayOrder
-                    && imageFileNameInfo.Active == imageFileNameOfOldProduct.Active;
-
-                if (isFileNameInfoSameAsOldOne) continue;
-
-                ServiceProductImageFileNameInfoByFileNameUpdateRequest imageFileNameUpdateRequest = new()
-                {
-                    ProductId = (int)productId,
-                    NewDisplayOrder = displayOrder,
-                    Active = imageFileNameInfo.Active,
-                    FileName = imageFileNameOfOldProduct.FileName!,
-                    NewFileName = imageFileNameInfo.FileName,
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> productImageFileNameUpdateResult
-                    = _productImageFileNameInfoService.UpdateByFileName(imageFileNameUpdateRequest);
-
-                IStatusCodeActionResult actionResultFromImageFileNameUpdate = productImageFileNameUpdateResult.Match<IStatusCodeActionResult>(
-                    id => new OkResult(),
-                    validationResult => BadRequest(validationResult),
-                    unexpectedFailureResult => StatusCode(500));
-
-                if (actionResultFromImageFileNameUpdate.StatusCode != 200)
-                {
-                    return actionResultFromImageFileNameUpdate;
-                }
-            }
-        }
-
-        IEnumerable<ServiceProductImageFileNameInfoCreateRequest> orderedImageFileNameInfoCreateRequests = imageFileNameInfoCreateRequests
-            .OrderBy(imageFileName => imageFileName.DisplayOrder);
-
-        foreach (ServiceProductImageFileNameInfoCreateRequest fileNameInfoCreateRequest in orderedImageFileNameInfoCreateRequests)
-        {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> fileNameInfoInsertResult
-                = _productImageFileNameInfoService.Insert(fileNameInfoCreateRequest);
-
-            IStatusCodeActionResult actionResultFromImageFileNameInsert = fileNameInfoInsertResult.Match<IStatusCodeActionResult>(
-                success => new OkResult(),
-                validationResult => BadRequest(validationResult),
-                unexpectedFailureResult => StatusCode(500));
-
-            if (actionResultFromImageFileNameInsert.StatusCode != 200)
-            {
-                return actionResultFromImageFileNameInsert;
-            }
-        }
-
-        return new OkResult();
-    }
-
-    private static bool CompareByteArrays(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
-    {
-        return a.SequenceEqual(b);
     }
 }
