@@ -2,7 +2,7 @@
 using MOSTComputers.Services.LocalChangesHandling.Services;
 using MOSTComputers.Services.LocalChangesHandling.Services.BackgroundServices;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
-using static MOSTComputers.Services.XMLDataOperations.Configuration.ConfigureServices;
+using static MOSTComputers.Services.HTMLAndXMLDataOperations.Configuration.ConfigureServices;
 using static MOSTComputers.Services.Caching.Configuration.ConfigureServices;
 using Microsoft.Extensions.Hosting;
 
@@ -14,7 +14,7 @@ public static class ConfigureServices
     {
         services.AddMemoryCachingServices();
 
-        services.AddXmlDeserializeService();
+        services.AddXmlDeserializer();
 
         services.AddScoped<IGetProductDataFromBeforeUpdateService, CachedGetProductDataFromBeforeUpdateService>();
 
@@ -38,7 +38,7 @@ public static class ConfigureServices
     {
         services.AddMemoryCachingServices();
 
-        services.AddXmlDeserializeService();
+        services.AddXmlDeserializer();
 
         services.AddScoped<IGetProductDataFromBeforeUpdateService, CachedGetProductDataFromBeforeUpdateService>();
 
