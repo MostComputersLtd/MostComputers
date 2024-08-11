@@ -1,5 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Utils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 
@@ -35,7 +36,7 @@ public class ProductDisplayData
     public Manifacturer? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
 
-    public List<Tuple<ProductImage?, ProductImageFileNameInfo?>>? ImagesAndImageFileInfos { get; set; }
+    public List<ImageAndImageFileNameRelation>? ImagesAndImageFileInfos { get; set; }
     
     public List<ProductProperty>? Properties { get; set; }
 
