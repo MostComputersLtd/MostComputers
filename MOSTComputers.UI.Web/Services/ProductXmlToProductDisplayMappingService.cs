@@ -3,12 +3,12 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.UI.Web.Models;
 using OneOf;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.MappingUtils;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services.Contracts;
 
 namespace MOSTComputers.UI.Web.Services;
@@ -72,7 +72,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             Price3 = createRequest.Price3,
             Currency = createRequest.Currency,
             RowGuid = createRequest.RowGuid,
-            Promotionid = createRequest.Promotionid,
+            Promotionid = createRequest.PromotionId,
             PromRid = createRequest.PromRid,
             PromotionPictureId = createRequest.PromotionPictureId,
             PromotionExpireDate = createRequest.PromotionExpireDate,
@@ -128,7 +128,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             Price3 = display.Price3,
             Currency = display.Currency,
             RowGuid = display.RowGuid,
-            Promotionid = display.Promotionid,
+            PromotionId = display.Promotionid,
             PromRid = display.PromRid,
             PromotionPictureId = display.PromotionPictureId,
             PromotionExpireDate = display.PromotionExpireDate,
@@ -143,7 +143,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             Images = display.Images,
             ImageFileNames = display.ImageFileNames,
 
-            CategoryID = display.Category?.Id,
+            CategoryId = display.Category?.Id,
             ManifacturerId = (short?)display.Manifacturer?.Id,
             SubCategoryId = display.SubCategoryId
         };
@@ -190,7 +190,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
                 Price3 = createRequest.Price3,
                 Currency = createRequest.Currency,
                 RowGuid = createRequest.RowGuid,
-                Promotionid = createRequest.Promotionid,
+                Promotionid = createRequest.PromotionId,
                 PromRid = createRequest.PromRid,
                 PromotionPictureId = createRequest.PromotionPictureId,
                 PromotionExpireDate = createRequest.PromotionExpireDate,
@@ -229,25 +229,27 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
 
                 if (prop.ProductCharacteristicId == 0)
                 {
-                    _failedPropertyNameOfProductService.Insert(new() { ProductId = (uint)item.Id, PropertyName = xmlProp.Name });
+                    _failedPropertyNameOfProductService.Insert(new() { ProductId = item.Id, PropertyName = xmlProp.Name });
 
                     shouldGatherAdditionalCharacteristicsData = true;
                 }
             }
 
             if (!shouldGatherAdditionalCharacteristicsData
-                || createRequest.CategoryID is null
-                || createRequest.CategoryID <= 0) continue;
+                || createRequest.CategoryId is null
+                || createRequest.CategoryId <= 0) continue;
 
-            uint value = (uint)createRequest.CategoryID.Value;
+            uint categoryId = (uint)createRequest.CategoryId.Value;
 
-            if (!neededCategoriesAndRequestsToBeUpdatedForThem.ContainsKey(value))
+            if (!neededCategoriesAndRequestsToBeUpdatedForThem.TryGetValue(categoryId, out List<XmlProductCreateDisplay>? value))
             {
-                neededCategoriesAndRequestsToBeUpdatedForThem.Add(value, new() { item });
+                value = new() { item };
+                neededCategoriesAndRequestsToBeUpdatedForThem.Add(categoryId, value);
+
                 continue;
             }
 
-            neededCategoriesAndRequestsToBeUpdatedForThem[value].Add(item);
+            value.Add(item);
         }
 
         IEnumerable<int> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
@@ -320,16 +322,17 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             if (!needsToGetCharacteristics
                 || item.Category.Id <= 0) continue;
 
-            uint value = (uint)item.Category.Id;
+            uint categoryId = (uint)item.Category.Id;
 
-            if (!neededCategoriesAndRequestsToBeUpdatedForThem.ContainsKey(value))
+            if (!neededCategoriesAndRequestsToBeUpdatedForThem.TryGetValue(categoryId, out List<XmlProductCreateDisplay>? value))
             {
-                neededCategoriesAndRequestsToBeUpdatedForThem.Add(value, new() { item });
+                value = new() { item };
+                neededCategoriesAndRequestsToBeUpdatedForThem.Add(categoryId, value);
 
                 continue;
             }
 
-            neededCategoriesAndRequestsToBeUpdatedForThem[value].Add(item);
+            value.Add(item);
         }
 
         IEnumerable<int> categoryIds = neededCategoriesAndRequestsToBeUpdatedForThem
@@ -410,7 +413,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
         if (failedPropertyNames is not null
             && failedPropertyNames.Count > 0)
         {
-            _failedPropertyNameOfProductService.MultiInsert(new() { ProductId = productId, PropertyNames = failedPropertyNames });
+            _failedPropertyNameOfProductService.MultiInsert(new() { ProductId = (int)productId, PropertyNames = failedPropertyNames });
         }
 
         return output;
@@ -502,7 +505,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
 
         if (partNumbers.Length <= 0) return (null, null);
 
-        int mediumLineIndex = partNumbers.IndexOf("/");
+        int mediumLineIndex = partNumbers.IndexOf('/');
 
         string partNumber1 = partNumbers[..(mediumLineIndex - 2)];
         string partNumber2 = partNumbers[(mediumLineIndex + 2)..];
