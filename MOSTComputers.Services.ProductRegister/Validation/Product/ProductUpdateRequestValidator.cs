@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
 using MOSTComputers.Models.Product.Models.Requests.Product;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.Product;
@@ -35,6 +30,9 @@ internal sealed class ProductUpdateRequestValidator : AbstractValidator<ProductU
         RuleFor(x => x.PartNumber2).Must(IsNotEmptyOrWhiteSpace);   // seen empty
         RuleFor(x => x.SearchString).Must(IsNotEmptyOrWhiteSpace);  // seen empty
 
+        RuleFor(x => x.Properties).Must(DoesNotHavePropertiesWithDuplicateCharacteristics)
+            .WithMessage("Must not have more than one property corresponding to one characteristic");
+
         RuleForEach(x => x.Properties).SetValidator(x => new CurrentProductPropertyUpdateRequestValidator());
         RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageCreateUpdateValidator());
         RuleForEach(x => x.ImageFileNames).SetValidator(x => new CurrentProductImageFileNameInfoUpdateRequestValidator());
@@ -59,7 +57,7 @@ internal sealed class CurrentProductImageCreateUpdateValidator : AbstractValidat
 {
     public CurrentProductImageCreateUpdateValidator()
     {
-        RuleFor(x => x.XML).Must(IsNotEmptyOrWhiteSpace);
+        RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
         RuleFor(x => x.ImageData);
         RuleFor(x => x.ImageFileExtension).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
