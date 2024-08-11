@@ -2,7 +2,7 @@
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.XMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.UI.Web.Models;
 using OneOf;
 
