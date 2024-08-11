@@ -18,6 +18,8 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
+
     public IEnumerable<ProductImageFileNameInfo> GetAll()
     {
         const string getAllQuery =
@@ -29,7 +31,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllQuery, new { });
     }
 
-    public IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId)
+    public IEnumerable<ProductImageFileNameInfo> GetAllInProduct(int productId)
     {
         const string getAllForProductQuery =
             $"""
@@ -38,7 +40,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             ORDER BY S;
             """;
 
-        return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId = (int)productId });
+        return _relationalDataAccess.GetData<ProductImageFileNameInfo, dynamic>(getAllForProductQuery, new { productId = productId });
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest)
@@ -121,18 +123,12 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         const string updateQueryWithNoDisplayOrderChanges =
             $"""
-            @DECLARE @DisplayOrder INT;
-            
-            SELECT TOP 1 @DisplayOrder = S FROM {_tableName}
-            WHERE CSTID = @productId
-            AND ImageNumber = @ImageNumber;
-
             UPDATE {_tableName}
             SET ImgFileName = @FileName,
                 Active = @Active
 
             WHERE CSTID = @productId
-            AND S = @DisplayOrder;
+            AND ImageNumber = @ImageNumber;
             """;
 
         ValidationResult internalValidationResult = ValidateWhetherProductWithGivenIdExists((uint)updateRequest.ProductId);
@@ -144,7 +140,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             var parametersSimple = new
             {
                 productId = updateRequest.ProductId,
-                updateRequest.NewDisplayOrder,
+                updateRequest.ImageNumber,
                 updateRequest.FileName,
                 updateRequest.Active,
             };
@@ -252,7 +248,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         return result;
     }
 
-    public bool DeleteAllForProductId(uint productId)
+    public bool DeleteAllForProductId(int productId)
     {
         const string deleteQuery =
             $"""
@@ -262,7 +258,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parameters = new
         {
-            productId = (int)productId
+            productId = productId
         };
 
         try
@@ -277,7 +273,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         }
     }
 
-    public bool DeleteByProductIdAndImageNumber(uint productId, int imageNumber)
+    public bool DeleteByProductIdAndImageNumber(int productId, int imageNumber)
     {
         const string deleteQuery =
             $"""
@@ -301,7 +297,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parameters = new
         {
-            productId = (int)productId,
+            productId = productId,
             ImageNumber = imageNumber
         };
 
@@ -319,7 +315,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
         }
     }
 
-    public bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder)
+    public bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder)
     {
         const string deleteQuery =
             $"""
@@ -336,7 +332,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         var parameters = new
         {
-            productId = (int)productId,
+            productId = productId,
             DisplayOrder = displayOrder
         };
 
@@ -353,4 +349,6 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             return false;
         }
     }
+
+#pragma warning restore IDE0037 // Use inferred member name
 }
