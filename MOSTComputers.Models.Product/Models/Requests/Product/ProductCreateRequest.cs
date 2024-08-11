@@ -15,7 +15,7 @@ public sealed class ProductCreateRequest
     public decimal? Price3 { get; set; }
     public CurrencyEnum? Currency { get; set; }
     public Guid? RowGuid { get; set; }
-    public int? Promotionid { get; set; }
+    public int? PromotionId { get; set; }
     public int? PromRid { get; set; }
     public short? PromotionPictureId { get; set; }
     public DateTime? PromotionExpireDate { get; set; }
@@ -30,7 +30,7 @@ public sealed class ProductCreateRequest
     public List<CurrentProductImageCreateRequest>? Images { get; set; }
     public List<CurrentProductImageFileNameInfoCreateRequest>? ImageFileNames { get; set; }
 
-    public int? CategoryID { get; set; }
+    public int? CategoryId { get; set; }
     public short? ManifacturerId { get; set; }
     public int? SubCategoryId { get; set; }
 }
