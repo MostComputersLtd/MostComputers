@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.SearchStringOrigin.Models;
-using MOSTComputers.Services.XMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using static MOSTComputers.UI.Web.Pages.ProductCompareEditorModel;
 
 namespace MOSTComputers.UI.Web.Pages.Shared.ProductCompareEditor;
