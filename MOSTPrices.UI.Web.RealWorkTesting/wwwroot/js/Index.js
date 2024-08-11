@@ -1,4 +1,50 @@
-﻿function toggleFirstRows(shouldHide)
+﻿const showProductMainDataKey = "index_showProductMainData";
+
+const productTableHideFirstRowsCheckboxId = "productTableHideFirstRowsCheckboxInput";
+window.addEventListener("DOMContentLoaded", function ()
+{
+    var showProductMainData = this.sessionStorage.getItem(showProductMainDataKey);
+
+    if (showProductMainData == null)
+    {
+        showProductMainData = true;
+    }
+
+    var shouldHide = (showProductMainData === "false");
+
+    toggleFirstRows(shouldHide);
+
+    var productTableHideFirstRowsCheckboxInput = document.getElementById(productTableHideFirstRowsCheckboxId);
+
+    if (productTableHideFirstRowsCheckboxInput == null) return;
+
+    productTableHideFirstRowsCheckboxInput.checked = shouldHide;
+});
+
+window.addEventListener("beforeunload", function ()
+{
+    var productTableHideFirstRowsCheckboxInput = document.getElementById(productTableHideFirstRowsCheckboxId);
+
+    if (productTableHideFirstRowsCheckboxInput == null) return;
+
+    this.sessionStorage.setItem(showProductMainDataKey, !productTableHideFirstRowsCheckboxInput.checked);
+})
+
+function toggleFirstRowsBasedOnCachedData()
+{
+    var showMainProductDataString = sessionStorage.getItem(showProductMainDataKey);
+
+    if (showMainProductDataString == null)
+    {
+        showMainProductDataString = "true";
+    }
+
+    var shouldHide = (showMainProductDataString === "false");
+
+    toggleFirstRows(shouldHide);
+}
+
+function toggleFirstRows(shouldHide)
 {
     var elementsToHide = document.getElementsByClassName("hide-on-button-press");
 
@@ -6,6 +52,8 @@
     {
         elementsToHide[i].style.display = shouldHide ? "none" : "";
     }
+
+    this.sessionStorage.setItem(showProductMainDataKey, !shouldHide);
 }
 
 function addNewProduct(productTableBodyId, htmlElementId, tableIndex, productHighestIdPlusOneLabelId)
@@ -32,13 +80,13 @@ function addNewProduct(productTableBodyId, htmlElementId, tableIndex, productHig
 
             productTableBody.innerHTML = result + productTableBody.innerHTML;
 
+            toggleFirstRowsBasedOnCachedData();
+
             var productHighestIdPlusOneLabel = document.getElementById(productHighestIdPlusOneLabelId);
 
-            if (productHighestIdPlusOneLabel == null
-                || productHighestIdPlusOneLabel.value == null
-                || isNaN(parseInt(productHighestIdPlusOneLabel))) return;
+            if (productHighestIdPlusOneLabel == null) return;
 
-            productHighestIdPlusOneLabel.value = parseInt(productHighestIdPlusOneLabel) + 1;
+            productHighestIdPlusOneLabel.textContent = parseInt(productHighestIdPlusOneLabel) + 1;
         })
         .fail(function (jqXHR, textStatus)
         {
@@ -101,17 +149,21 @@ function addNewProductWithExistingProductData(
     })
         .then(async function (response)
         {
+            if (!response.ok) return;
+
             var result = await response.text();
 
             if (productTableBodyId == null || result == null) return;
-
-            productHighestIdLabel.value = highestId + 2;
 
             var productTableBody = document.getElementById(productTableBodyId);
 
             if (productTableBody == null) return;
 
             productTableBody.innerHTML = result + productTableBody.innerHTML;
+
+            toggleFirstRowsBasedOnCachedData();
+
+            productHighestIdLabel.textContent = highestId + 2;
         });
 }
 
@@ -143,6 +195,8 @@ function getOnlyProductWithHighestId(
             if (productTableBody == null) return;
 
             productTableBody.innerHTML = result;
+
+            toggleFirstRowsBasedOnCachedData();
 
             if (productAddWithExistingIdHiddenInputId == null
                 || productIdHiddenInputId == null) return;
@@ -206,6 +260,8 @@ function getOnlyProductWithId(
 
             productTableBody.innerHTML = result;
 
+            toggleFirstRowsBasedOnCachedData();
+
             if (productAddWithExistingIdHiddenInputId == null) return;
 
             var productAddWithExistingIdHiddenInput = document.getElementById(productAddWithExistingIdHiddenInputId);
@@ -224,11 +280,45 @@ function getOnlyProductWithId(
         {
         });
 }
-async function saveProductWithoutSavingImagesInDAL(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds)
+
+function showProductXml(productId)
+{
+    fetch("/Index" + "?handler=Xml&productId=" + productId, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken':
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+    })
+        .then(async function (response)
+        {
+            if (response.status !== 200) return;
+
+            var responseText = await response.text();
+
+            open_product_xml(responseText);
+        });
+}
+
+function open_product_xml(xml)
+{
+    const blob = new Blob([xml], { type: "text/xml" });
+
+    const url = URL.createObjectURL(blob);
+
+    window.open(url);
+
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 1000);
+}
+
+async function saveProductWithoutSavingImagesInDAL(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds, changesPopupContentId)
 {
     if (productChangesModalAcceptButtonId == null) return;
 
-    await showChangesPopupData(productId);
+    await showChangesPopupData(productId, changesPopupContentId);
 
     var productChangesModalAcceptButton = document.getElementById(productChangesModalAcceptButtonId);
 
@@ -248,15 +338,27 @@ async function saveProductWithoutSavingImagesInDAL(productId, productChangesModa
                     $('input:hidden[name="__RequestVerificationToken"]').val()
             },
             body: JSON.stringify(productDisplayData)
-        });
+        })
+            .then(async function (response)
+            {
+                if (response.status !== 200) return;
+
+                var responseText = await response.text();
+
+                var changesPopupContentElement = document.getElementById(changesPopupContentId);
+
+                if (changesPopupContentElement == null) return;
+
+                changesPopupContentElement.innerHTML = responseText;
+            });
     });
 }
 
-async function saveProduct(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds)
+async function saveProduct(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds, changesPopupContentId)
 {
     if (productChangesModalAcceptButtonId == null) return;
 
-    await showChangesPopupData(productId);
+    await showChangesPopupData(productId, changesPopupContentId);
 
     var productChangesModalAcceptButton = document.getElementById(productChangesModalAcceptButtonId);
 
@@ -276,8 +378,20 @@ async function saveProduct(productId, productChangesModalAcceptButtonId, product
                     $('input:hidden[name="__RequestVerificationToken"]').val()
             },
             body: JSON.stringify(productDisplayData)
-        });
-    })
+        })
+            .then(async function (response)
+            {
+                if (response.status !== 200) return;
+
+                var responseText = await response.text();
+
+                var changesPopupContentElement = document.getElementById(changesPopupContentId);
+
+                if (changesPopupContentElement == null) return;
+
+                changesPopupContentElement.innerHTML = responseText;
+            });
+    });
 }
 
 function fetchProductLatestData(productId, productDataInputsAndSelectsIds)
@@ -358,7 +472,7 @@ function fetchProductLatestData(productId, productDataInputsAndSelectsIds)
     return values;
 }
 
-function updateProductNewStatus(productId, productNewStatus)
+function updateProductNewStatus(productId, productNewStatus, htmlElementId, tableIndex, productRowId)
 {
     if (typeof productNewStatus !== 'number')
     {
@@ -367,17 +481,36 @@ function updateProductNewStatus(productId, productNewStatus)
         if (isNaN(productNewStatus)) return;
     }
 
-    fetch("/Index" + "?handler=UpdateProductNewStatus&productId=" + productId + "&productNewStatus=" + productNewStatus, {
+    fetch("/Index" + "?handler=UpdateProductNewStatus&productId=" + productId
+        + "&productNewStatus=" + productNewStatus
+        + "&htmlElementId=" + htmlElementId
+        + "&tableIndex=" + tableIndex, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'RequestVerificationToken':
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         }
-    });
+    })
+        .then(async function (response)
+        {
+            if (response.status !== 200) return;
+
+            var data = await response.text();
+
+            var productRow = document.getElementById(productRowId);
+
+            if (productRow == null) return;
+
+            productRow.insertAdjacentHTML("afterend", data);
+
+            productRow.remove();
+
+            toggleFirstRowsBasedOnCachedData();
+        });
 }
 
-function updateProductXmlStatus(productId, productXmlStatus)
+function updateProductXmlStatus(productId, productXmlStatus, htmlElementId, tableIndex, productRowId)
 {
     if (typeof productXmlStatus !== 'number')
     {
@@ -386,19 +519,10 @@ function updateProductXmlStatus(productId, productXmlStatus)
         if (isNaN(productXmlStatus)) return;
     }
 
-    fetch("/Index" + "?handler=UpdateProductXmlStatus&productId=" + productId + "&productXmlStatus=" + productXmlStatus, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken':
-                $('input:hidden[name="__RequestVerificationToken"]').val()
-        }
-    });
-}
-
-function toggleReadyForImageInsertStatus(productId, readyForImageInsertValueInputId)
-{
-    fetch("/Index" + "?handler=ToggleReadyForImageInsertStatus&productId=" + productId, {
+    fetch("/Index" + "?handler=UpdateProductXmlStatus&productId=" + productId
+        + "&productXmlStatus=" + productXmlStatus
+        + "&htmlElementId=" + htmlElementId
+        + "&tableIndex=" + tableIndex, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -406,18 +530,51 @@ function toggleReadyForImageInsertStatus(productId, readyForImageInsertValueInpu
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         }
     })
-        .then(async response =>
+        .then(async function (response)
         {
-            var readyForImageInsertValueInput = document.getElementById(readyForImageInsertValueInputId);
+            if (response.status !== 200) return;
 
-            if (readyForImageInsertValueInput == null) return;
+            var data = await response.text();
 
-            var json = await response.json();
+            var productRow = document.getElementById(productRowId);
 
-            if (json == null
-                || json.updatedReadyForImageInsertValue == null) return;
+            if (productRow == null) return;
 
-            readyForImageInsertValueInput.value = json.updatedReadyForImageInsertValue ? 1 : 0;
+            productRow.insertAdjacentHTML("afterend", data);
+
+            productRow.remove();
+
+            toggleFirstRowsBasedOnCachedData();
+        });
+}
+
+function toggleReadyForImageInsertStatus(productId, htmlElementId, tableIndex, productRowId)
+{
+    fetch("/Index" + "?handler=ToggleReadyForImageInsertStatus&productId=" + productId
+        + "&htmlElementId=" + htmlElementId
+        + "&tableIndex=" + tableIndex, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken':
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        }
+    })
+        .then(async function (response)
+        {
+            if (response.status !== 200) return;
+
+            var data = await response.text();
+
+            var productRow = document.getElementById(productRowId);
+
+            if (productRow == null) return;
+
+            productRow.insertAdjacentHTML("afterend", data);
+
+            productRow.remove();
+
+            toggleFirstRowsBasedOnCachedData();
         });
 }
 
@@ -443,11 +600,11 @@ function deleteProduct(productId, productTableRowId)
         });
 }
 
-function showFirstImagePopupData(productId)
+function showFirstImagePopupData(productId, firstImagePopupContentId)
 {
     return new Promise((resolve, reject) =>
     {
-        $("#ProductFirstImage_popup_modal_content").load("/Index?handler=GetProductFirstImagePopupPartialViewForProduct&productId=" + productId,
+        $("#" + firstImagePopupContentId).load("/Index?handler=GetProductFirstImagePopupPartialViewForProduct&productId=" + productId,
             function (response, status, xhr)
             {
                 if (status == "error")
@@ -465,18 +622,60 @@ function showFirstImagePopupData(productId)
     });
 }
 
-function showImagesPopupData(productId)
+function showImagesPopupData(productId, imagePopupUsage, imagesPopupContentId)
 {
-    $("#ProductImages_popup_modal_content").load("/Index?handler=GetPartialViewImagesForProduct&productId=" + productId);
+    if (imagePopupUsage == null) return;
 
-    open_ProductImages_modal();
+    return new Promise((resolve, reject) =>
+    {
+        $("#" + imagesPopupContentId).load("/Index?handler=GetPartialViewImagesForProduct&productId=" + productId
+            + "&productImagePopupUsage=" + imagePopupUsage,
+            function (response, status, xhr)
+            {
+                if (status == "error")
+                {
+                    reject(xhr.statusText);
+                }
+                else
+                {
+                    resolve(response);
+
+                    open_ProductImages_modal();
+                }
+            }
+        );
+    });
 }
 
-function showChangesPopupData(productId, getEvenIfProductDoesntExist = false)
+function showProductFullWithXmlPopupData(productId, fullWithXmlpopupContentId)
 {
     return new Promise((resolve, reject) =>
     {
-        $("#ProductChanges_popup_modal_content").load("/Index?handler=GetProductChangesPopupPartialViewForProduct&productId=" + productId
+        $("#" + fullWithXmlpopupContentId).load("/Index?handler=GetProductFullPopupPartialViewForProduct&productId=" + productId,
+            function (response, status, xhr)
+            {
+                if (status == "error")
+                {
+                    reject(xhr.statusText);
+                }
+                else
+                {
+                    resolve(response);
+
+                    $('#product_full_popup_carousel').carousel();
+
+                    open_ProductFullWithXml_modal();
+                }
+            }
+        );
+    });
+}
+
+function showChangesPopupData(productId, changesPopupContentId, getEvenIfProductDoesntExist = false)
+{
+    return new Promise((resolve, reject) =>
+    {
+        $("#" + changesPopupContentId).load("/Index?handler=GetProductChangesPopupPartialViewForProduct&productId=" + productId
             + "&getEvenIfProductDoesntExist=" + getEvenIfProductDoesntExist,
             function (response, status, xhr)
             {
@@ -495,7 +694,7 @@ function showChangesPopupData(productId, getEvenIfProductDoesntExist = false)
     });
 }
 
-function triggerChangesCheck()
+function triggerChangesCheck(notificationBoxId)
 {
     fetch("/Index/" + "?handler=TriggerChangeCheck", {
         method: 'POST',
@@ -505,14 +704,16 @@ function triggerChangesCheck()
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         }
     })
-        .then(response => {
-            if (!response.ok) return;
+        .then(response =>
+        {
+            if (!response.ok)
+            {
+                showNotificationWithText(notificationBoxId, "A failure occured", "notificationBox-long-message");
 
-            var productTableRow = document.getElementById(productTableRowId);
+                return;
+            }
 
-            if (productTableRow == null) return;
-
-            productTableRow.remove();
+            showNotificationWithText(notificationBoxId, "Success", "notificationBox-short-message");
         });
 }
 
