@@ -1,9 +1,7 @@
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.IdentityModel.Tokens;
 using MOSTComputers.UI.Web.RealWorkTesting.Authentication;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
 using OneOf;
@@ -13,9 +11,14 @@ using static MOSTComputers.UI.Web.RealWorkTesting.Utils.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Pages.Accounts;
 
-public sealed class SignInModel(IAuthenticationService authenticationService) : PageModel
+public sealed class SignInModel : PageModel
 {
-    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly IAuthenticationService _authenticationService;
+
+    public SignInModel(IAuthenticationService authenticationService)
+    {
+        _authenticationService = authenticationService;
+    }
 
     [BindProperty]
     public string Username { get; set; } = string.Empty;
@@ -68,5 +71,10 @@ public sealed class SignInModel(IAuthenticationService authenticationService) : 
             {
                 return RedirectToPage("", new { ReturnUrl = RemoveSlashAtTheStart(ReturnUrl) });
             });
+    }
+
+    public JsonResult OnGetRedirectToLogInPage([FromQuery] string? returnUrl = null)
+    {
+        return new JsonResult(new { redirectUrl = $"/Accounts/Login?ReturnUrl={returnUrl}" });
     }
 }
