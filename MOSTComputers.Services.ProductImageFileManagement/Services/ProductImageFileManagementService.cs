@@ -87,6 +87,28 @@ internal sealed class ProductImageFileManagementService : IProductImageFileManag
         return File.Exists(filePath);
     }
 
+    public OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> RenameImageFile(
+        string fileNameWithoutExtension,
+        string newFileNameWithoutExtension,
+        AllowedImageFileType allowedImageFileType)
+    {
+        string fullFileName = $"{fileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
+
+        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+
+        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
+
+        string newFullFileName = $"{newFileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
+
+        string newFilePath = Path.Combine(_imageDirectoryPath, newFullFileName);
+
+        if (File.Exists(newFilePath)) return new FileAlreadyExistsResult() { FileName = newFullFileName };
+
+        File.Move(filePath, newFilePath);
+
+        return new Success();
+    }
+
     public async Task<OneOf<Success, DirectoryNotFoundResult, FileAlreadyExistsResult>> AddImageAsync(
         string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType)
     {

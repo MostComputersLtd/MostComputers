@@ -14,4 +14,5 @@ public interface IProductImageFileManagementService
     Task<OneOf<byte[], FileDoesntExistResult, NotSupportedFileTypeResult>> GetImageAsync(string fullFileName);
     OneOf<byte[], FileDoesntExistResult, NotSupportedFileTypeResult> GetImage(string fullFileName);
     Task<OneOf<Success, DirectoryNotFoundResult, FileDoesntExistResult>> UpdateImageAsync(string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType);
+    OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> RenameImageFile(string fileNameWithoutExtension, string newFileNameWithoutExtension, AllowedImageFileType allowedImageFileType);
 }
