@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
   </ItemGroup>
 
