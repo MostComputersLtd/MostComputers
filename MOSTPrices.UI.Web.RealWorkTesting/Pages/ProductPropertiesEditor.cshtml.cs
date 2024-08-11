@@ -19,6 +19,12 @@ using OneOf;
 using OneOf.Types;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductToDisplayDataMappingUtils;
+using System.Collections.Generic;
+using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using MOSTComputers.Services.ProductImageFileManagement.Services;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
 
@@ -31,13 +37,21 @@ public class ProductPropertiesEditorModel : PageModel
         IProductCharacteristicService productCharacteristicService,
         ISearchStringOriginService searchStringOriginService,
         IProductTableDataService productTableDataService,
-        IProductWorkStatusesService productWorkStatusesService)
+        IProductWorkStatusesService productWorkStatusesService,
+        IProductDeserializeService productDeserializeService,
+        IProductImageService productImageService,
+        IProductImageFileNameInfoService productImageFileNameInfoService,
+        IProductImageFileManagementService productImageFileManagementService)
     {
         _productService = productService;
         _productCharacteristicService = productCharacteristicService;
         _searchStringOriginService = searchStringOriginService;
         _productTableDataService = productTableDataService;
         _productWorkStatusesService = productWorkStatusesService;
+        _productDeserializeService = productDeserializeService;
+        _productImageService = productImageService;
+        _productImageFileNameInfoService = productImageFileNameInfoService;
+        _productImageFileManagementService = productImageFileManagementService;
 
         ProductDisplayData = _productTableDataService.GetProductById(ProductId);
     }
@@ -48,6 +62,10 @@ public class ProductPropertiesEditorModel : PageModel
     private readonly ISearchStringOriginService _searchStringOriginService;
     private readonly IProductTableDataService _productTableDataService;
     private readonly IProductWorkStatusesService _productWorkStatusesService;
+    private readonly IProductDeserializeService _productDeserializeService;
+    private readonly IProductImageService _productImageService;
+    private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
+    private readonly IProductImageFileManagementService _productImageFileManagementService;
 
     [BindProperty(SupportsGet = true)]
     public int ProductId { get; set; }
@@ -69,6 +87,43 @@ public class ProductPropertiesEditorModel : PageModel
         ProductProperties = productDisplayData.Properties;
 
         CharacteristicsForProductCategory = GetCharacteristicsForProductCategory((uint?)productDisplayData.CategoryId);
+    }
+
+    public IActionResult OnGetGetPartialViewXmlForProduct()
+    {
+        ProductDisplayData? productData = _productTableDataService.GetProductById(ProductId);
+
+        if (productData == null) return BadRequest();
+
+        Product product = MapToProduct(productData);
+
+        OneOf<string, InvalidXmlResult> productXmlResult = _productDeserializeService.TrySerializeProductXml(product, true);
+
+        return productXmlResult.Match<IStatusCodeActionResult>(
+            xml =>
+            {
+                return Partial("ProductPopups/_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel()
+                {
+                    Product = product,
+                    XmlData = xml,
+                    NotificationBoxId = "topNotificationBox"
+                });
+            },
+            invalidXmlResult => BadRequest(invalidXmlResult));
+    }
+
+    public IActionResult OnGetGetPartialViewImagesForProduct()
+    {
+        ProductDisplayData? productData = _productTableDataService.GetProductById(ProductId);
+
+        if (productData == null) return BadRequest();
+
+        return Partial("ProductPopups/_ProductImagesDisplayPopupPartial", new ProductImagesDisplayPopupPartialModel(
+            ProductImagePopupUsageEnum.DisplayData,
+            productData,
+            _productImageService,
+            _productImageFileNameInfoService,
+            _productImageFileManagementService));
     }
 
     public IActionResult OnGetGetRemainingCharacteristicsForProduct(int? characteristicToAddToSelectId = null)
@@ -100,7 +155,7 @@ public class ProductPropertiesEditorModel : PageModel
         return new JsonResult(remainingCharacteristics.Select(
             selectListItem => new { text = selectListItem.Text, value = selectListItem.Value }));
     }
-
+    
     private IEnumerable<SelectListItem>? GetCharacteristicsForProductCategory(uint? categoryId)
     {
         if (categoryId == null) return null;
@@ -185,7 +240,7 @@ public class ProductPropertiesEditorModel : PageModel
     {
         if (productId <= 0) return null;
 
-        Product? product = _productService.GetByIdWithProps((uint)productId);
+        Product? product = _productService.GetByIdWithProps(productId);
 
         if (product == null) return null;
 
@@ -204,13 +259,13 @@ public class ProductPropertiesEditorModel : PageModel
 
         SelectListItem? firstCharacteristic = remainingCharacteristics?.First();
 
-        string? firstCharacteristicAsString = firstCharacteristic?.Value;
+        string? firstCharacteristicIdAsString = firstCharacteristic?.Value;
 
         int? characteristicId = null;
 
-        if (firstCharacteristicAsString is not null)
+        if (firstCharacteristicIdAsString is not null)
         {
-            bool success = int.TryParse(firstCharacteristicAsString, out int firstCharacteristicIdParsed);
+            bool success = int.TryParse(firstCharacteristicIdAsString, out int firstCharacteristicIdParsed);
 
             if (success)
             {
@@ -218,18 +273,25 @@ public class ProductPropertiesEditorModel : PageModel
             }
         }
 
+        ProductProperty productProperty = new()
+        {
+            ProductId = ProductId,
+            ProductCharacteristicId = characteristicId,
+            Characteristic = firstCharacteristic?.Text
+        };
+
+        productDisplayData.Properties ??= new();
+
+        productDisplayData.Properties.Add(productProperty);
+        
         return base.Partial("ProductProperties/_ProductSinglePropertyDisplayPartial",
-            new _ProductSinglePropertyDisplayPartialModel(
+            new ProductSinglePropertyDisplayPartialModel(
                 ProductId,
-                new ProductProperty()
-                {
-                    ProductId = ProductId,
-                    ProductCharacteristicId = characteristicId,
-                    Characteristic = firstCharacteristic?.Text
-                },
+                productProperty,
                 productDisplayData.Properties?.Count ?? 0,
                 true,
-                remainingCharacteristics));
+                remainingCharacteristics,
+                "topNotificationBox"));
     }
 
     public IActionResult OnPutUpdateProperty([FromBody] ProductPropertyEditorData data)
@@ -239,7 +301,14 @@ public class ProductPropertiesEditorModel : PageModel
 
         ProductDisplayData? productDisplayData = _productTableDataService.GetProductById(ProductId);
 
-        if (productDisplayData is null) return BadRequest();
+        if (productDisplayData is null
+            || productDisplayData.CategoryId is null) return BadRequest();
+
+        ProductCharacteristic? propCharacteristic
+            = _productCharacteristicService.GetCharacteristicsOnlyByCategoryId((int)productDisplayData.CategoryId)
+            .FirstOrDefault(characteristic => characteristic.Id == data.ProductCharacteristicId);
+
+        if (propCharacteristic is null) return BadRequest();
 
         ProductProperty? propertyToUpdate = productDisplayData.Properties?.Find(prop => prop.ProductCharacteristicId == data.ProductCharacteristicId);
 
@@ -253,6 +322,7 @@ public class ProductPropertiesEditorModel : PageModel
                 ProductCharacteristicId = data.ProductCharacteristicId,
                 XmlPlacement = data.XmlPlacement,
                 Value = data.Value,
+                Characteristic = propCharacteristic.Name,
                 DisplayOrder = null,
             });
 
@@ -281,7 +351,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         return setProductDataResult.Match(
             success => new OkResult(),
-            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            validationResult => new OkResult(),
             unexpectedFailureResult => StatusCode(500),
             notFound => NotFound());
     }
@@ -381,9 +451,6 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (productDisplayData is null) return new NotFound();
 
-        productDisplayData.ProductNewStatus = ProductNewStatusEnum.WorkInProgress;
-        productDisplayData.ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress;
-
         if (productDisplayData.ProductWorkStatusesId is null
             || productDisplayData.ProductWorkStatusesId <= 0)
         {
@@ -403,6 +470,9 @@ public class ProductPropertiesEditorModel : PageModel
                 {
                     productDisplayData.ProductWorkStatusesId = id;
 
+                    productDisplayData.ProductNewStatus = ProductNewStatusEnum.WorkInProgress;
+                    productDisplayData.ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress;
+
                     return new Success();
                 },
                 validationResult => validationResult,
@@ -411,7 +481,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         ProductWorkStatusesUpdateByIdRequest productWorkStatusesUpdateRequest = new()
         {
-            Id = (int)productDisplayData.ProductWorkStatusesId,
+            Id = productDisplayData.ProductWorkStatusesId.Value,
             ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
             ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
             ReadyForImageInsert = productDisplayData.ReadyForImageInsert ?? false,
@@ -422,9 +492,12 @@ public class ProductPropertiesEditorModel : PageModel
         return productWorkStatusesUpdateResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult, NotFound>>(
             isSuccessful =>
             {
-                if (isSuccessful) return new Success();
+                if (!isSuccessful) return new UnexpectedFailureResult();
 
-                return new UnexpectedFailureResult();
+                productDisplayData.ProductNewStatus = ProductNewStatusEnum.WorkInProgress;
+                productDisplayData.ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress;
+
+                return new Success();
             },
             validationResult => validationResult);
     }
