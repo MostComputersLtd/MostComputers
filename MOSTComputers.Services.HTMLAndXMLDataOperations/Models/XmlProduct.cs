@@ -2,7 +2,7 @@
 using System.Xml.Serialization;
 using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
 
-namespace MOSTComputers.Services.XMLDataOperations.Models;
+namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 
 [Serializable]
 public class XmlProduct

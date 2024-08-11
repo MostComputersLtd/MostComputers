@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.Services.XMLDataOperations.Models;
+﻿namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 
 public struct InvalidXmlResult
 {

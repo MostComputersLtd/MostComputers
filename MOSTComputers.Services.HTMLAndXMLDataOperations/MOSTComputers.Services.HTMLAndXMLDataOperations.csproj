@@ -15,4 +15,8 @@
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="XSL\" />
+  </ItemGroup>
+
 </Project>

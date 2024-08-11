@@ -1,12 +1,12 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.StaticUtils;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.StaticUtils;
 using OneOf;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace MOSTComputers.Services.XMLDataOperations.Services;
+namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Services;
 
 public sealed class ProductDeserializeService : IProductDeserializeService
 {
@@ -94,7 +94,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         return unescapedXml;
     }
 
-    public string SerializeProductsXml(Product product, bool shouldRemoveXmlSerializeEscapes, bool disableXsiAndXsdNamespaces = false)
+    public string SerializeProductXml(Product product, bool shouldRemoveXmlSerializeEscapes, bool disableXsiAndXsdNamespaces = false)
     {
         using StringWriter writer = new();
 
@@ -128,7 +128,7 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         return unescapedXml;
     }
 
-    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(
+    public OneOf<string, InvalidXmlResult> TrySerializeProductsXml(
         XmlObjectData xmlObjectData,
         bool shouldRemoveXmlSerializeEscapes,
         bool disableXsiAndXsdNamespaces = false)
@@ -149,14 +149,14 @@ public sealed class ProductDeserializeService : IProductDeserializeService
         }
     }
 
-    public OneOf<string?, InvalidXmlResult> TrySerializeProductsXml(
+    public OneOf<string, InvalidXmlResult> TrySerializeProductXml(
         Product product,
         bool shouldRemoveXmlSerializeEscapes,
         bool disableXsiAndXsdNamespaces = false)
     {
         try
         {
-            return SerializeProductsXml(product, shouldRemoveXmlSerializeEscapes);
+            return SerializeProductXml(product, shouldRemoveXmlSerializeEscapes, disableXsiAndXsdNamespaces);
         }
         catch (InvalidOperationException invalidOperationEx)
         {

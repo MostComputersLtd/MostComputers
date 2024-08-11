@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace MOSTComputers.Services.XMLDataOperations.Models;
+namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 
 [Serializable]
 public class XmlShopItemCategory

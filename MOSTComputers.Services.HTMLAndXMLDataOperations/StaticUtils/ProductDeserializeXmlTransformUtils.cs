@@ -1,6 +1,6 @@
-﻿using MOSTComputers.Services.XMLDataOperations.Models;
+﻿using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 
-namespace MOSTComputers.Services.XMLDataOperations.StaticUtils;
+namespace MOSTComputers.Services.HTMLAndXMLDataOperations.StaticUtils;
 
 internal static class ProductDeserializeXmlTransformUtils
 {

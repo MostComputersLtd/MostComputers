@@ -1,10 +1,10 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using static MOSTComputers.Models.Product.MappingUtils.CurrencyEnumMapping;
 using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
 
-namespace MOSTComputers.Services.XMLDataOperations.Services.Mapping;
+namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Mapping;
 
 internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMappingService
 {
@@ -97,16 +97,16 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
 
                 string? fileName = null;
 
-                if (productImage.ImageFileExtension is not null)
+                if (productImage.ImageContentType is not null)
                 {
-                    int indexOfSlashInFileType = productImage.ImageFileExtension.IndexOf('/');
+                    int indexOfSlashInFileType = productImage.ImageContentType.IndexOf('/');
 
                     if (indexOfSlashInFileType == -1)
                     {
                         fileName = $"{productImage.Id}";
                     }
 
-                    string fileExtensionFromImageFileType = productImage.ImageFileExtension[(indexOfSlashInFileType + 1)..];
+                    string fileExtensionFromImageFileType = productImage.ImageContentType[(indexOfSlashInFileType + 1)..];
 
                     fileName = $"{productImage.Id}.{fileExtensionFromImageFileType}";
                 }
@@ -128,11 +128,11 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
         {
             ProductImage productImage = productImages[i];
 
-            if (productImage.ImageFileExtension is not null)
+            if (productImage.ImageContentType is not null)
             {
-                int indexOfSlashInFileType = productImage.ImageFileExtension.IndexOf('/');
+                int indexOfSlashInFileType = productImage.ImageContentType.IndexOf('/');
 
-                string fileExtensionFromImageFileType = productImage.ImageFileExtension[(indexOfSlashInFileType + 1)..];
+                string fileExtensionFromImageFileType = productImage.ImageContentType[(indexOfSlashInFileType + 1)..];
 
                 string fileName = $"{productImage.Id}.{fileExtensionFromImageFileType}";
 
