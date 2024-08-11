@@ -66,7 +66,7 @@ internal static class ProductMappingUtils
         productCreateRequest.DisplayPrice = otherProductData.Price;
         productCreateRequest.Currency = otherProductData.Currency;
         productCreateRequest.RowGuid = otherProductData.RowGuid;
-        productCreateRequest.Promotionid = otherProductData.Promotionid;
+        productCreateRequest.PromotionId = otherProductData.Promotionid;
         productCreateRequest.PromRid = otherProductData.PromRid;
         productCreateRequest.PromotionPictureId = otherProductData.PromotionPictureId;
         productCreateRequest.PromotionExpireDate = otherProductData.PromotionExpireDate;
@@ -77,7 +77,7 @@ internal static class ProductMappingUtils
         productCreateRequest.PartNumber2 = otherProductData.PartNumber2;
         productCreateRequest.SearchString = otherProductData.SearchString;
 
-        productCreateRequest.CategoryID = otherProductData.CategoryID;
+        productCreateRequest.CategoryId = otherProductData.CategoryID;
         productCreateRequest.ManifacturerId = otherProductData.ManifacturerId;
         productCreateRequest.SubCategoryId = otherProductData.SubCategoryId;
     }
@@ -97,7 +97,7 @@ internal static class ProductMappingUtils
             DisplayPrice = otherProductData.Price,
             Currency = otherProductData.Currency,
             RowGuid = otherProductData.RowGuid,
-            Promotionid = otherProductData.Promotionid,
+            PromotionId = otherProductData.Promotionid,
             PromRid = otherProductData.PromRid,
             PromotionPictureId = otherProductData.PromotionPictureId,
             PromotionExpireDate = otherProductData.PromotionExpireDate,
@@ -108,7 +108,7 @@ internal static class ProductMappingUtils
             PartNumber2 = otherProductData.PartNumber2,
             SearchString = otherProductData.SearchString,
 
-            CategoryID = otherProductData.CategoryID,
+            CategoryId = otherProductData.CategoryID,
             ManifacturerId = otherProductData.ManifacturerId,
             SubCategoryId = otherProductData.SubCategoryId,
         };
@@ -129,7 +129,7 @@ internal static class ProductMappingUtils
             DisplayPrice = product.Price,
             Currency = product.Currency,
             RowGuid = product.RowGuid,
-            Promotionid = product.Promotionid,
+            PromotionId = product.Promotionid,
             PromRid = product.PromRid,
             PromotionPictureId = product.PromotionPictureId,
             PromotionExpireDate = product.PromotionExpireDate,
@@ -143,7 +143,7 @@ internal static class ProductMappingUtils
             Images = product.Images?.ConvertAll(x => new CurrentProductImageCreateRequest()
             {
                 ImageData = x.ImageData,
-                ImageFileExtension = x.ImageFileExtension,
+                ImageFileExtension = x.ImageContentType,
                 DateModified = x.DateModified,
                 HtmlData = x.HtmlData,
             }),
@@ -163,9 +163,46 @@ internal static class ProductMappingUtils
                 XmlPlacement = x.XmlPlacement,
             }),
 
-            CategoryID = product.CategoryID,
+            CategoryId = product.CategoryID,
             ManifacturerId = product.ManifacturerId,
             SubCategoryId = product.SubCategoryId,
+        };
+    }
+
+    internal static ProductUpdateRequest MapToUpdateRequestWithoutImagesAndProps(Product productToUpdate)
+    {
+        return new()
+        {
+            Id = productToUpdate.Id,
+            Name = productToUpdate.Name,
+            AdditionalWarrantyPrice = productToUpdate.AdditionalWarrantyPrice,
+            AdditionalWarrantyTermMonths = productToUpdate.AdditionalWarrantyTermMonths,
+            StandardWarrantyPrice = productToUpdate.StandardWarrantyPrice,
+            StandardWarrantyTermMonths = productToUpdate.StandardWarrantyTermMonths,
+            DisplayOrder = productToUpdate.DisplayOrder,
+            Status = productToUpdate.Status,
+            PlShow = productToUpdate.PlShow,
+            DisplayPrice = productToUpdate.Price,
+            Currency = productToUpdate.Currency,
+            RowGuid = productToUpdate.RowGuid,
+            Promotionid = productToUpdate.Promotionid,
+            PromRid = productToUpdate.PromRid,
+            PromotionPictureId = productToUpdate.PromotionPictureId,
+            PromotionExpireDate = productToUpdate.PromotionExpireDate,
+            AlertPictureId = productToUpdate.AlertPictureId,
+            AlertExpireDate = productToUpdate.AlertExpireDate,
+            PriceListDescription = productToUpdate.PriceListDescription,
+            PartNumber1 = productToUpdate.PartNumber1,
+            PartNumber2 = productToUpdate.PartNumber2,
+            SearchString = productToUpdate.SearchString,
+
+            Properties = new(),
+            Images = new(),
+            ImageFileNames = new(),
+
+            CategoryID = productToUpdate.CategoryID,
+            ManifacturerId = productToUpdate.ManifacturerId,
+            SubCategoryId = productToUpdate.SubCategoryId,
         };
     }
 }
