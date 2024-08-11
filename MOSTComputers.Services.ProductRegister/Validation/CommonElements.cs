@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 using System.Numerics;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
@@ -170,5 +171,72 @@ internal static class CommonElements
         if (x is null) return true;
 
         return x.Length != 0;
+    }
+
+    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<CurrentProductPropertyCreateRequest>? propertyCreateRequests)
+    {
+        if (propertyCreateRequests is null
+            || propertyCreateRequests.Count <= 0) return true;
+
+        List<int> productCharacteristicIds = new();
+
+        foreach (CurrentProductPropertyCreateRequest propertyCreateRequest in propertyCreateRequests)
+        {
+            int? productCharacteristicId = propertyCreateRequest.ProductCharacteristicId;
+
+            if (productCharacteristicId is null) continue;
+
+            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            {
+                return false;
+            }
+
+            productCharacteristicIds.Add(productCharacteristicId.Value);
+        }
+
+        return true;
+    }
+
+    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<CurrentProductPropertyUpdateRequest>? propertyCreateRequests)
+    {
+        if (propertyCreateRequests is null
+            || propertyCreateRequests.Count <= 0) return true;
+
+        List<int> productCharacteristicIds = new();
+
+        foreach (CurrentProductPropertyUpdateRequest propertyUpdateRequest in propertyCreateRequests)
+        {
+            int? productCharacteristicId = propertyUpdateRequest.ProductCharacteristicId;
+
+            if (productCharacteristicId is null) continue;
+
+            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            {
+                return false;
+            }
+
+            productCharacteristicIds.Add(productCharacteristicId.Value);
+        }
+
+        return true;
+    }
+
+    public static List<int> RemoveValuesSmallerThanNumber(IEnumerable<int> intList, int value)
+    {
+        List<int> output = new();
+
+        foreach (int item in intList)
+        {
+            if (item <= value) continue;
+
+            output.Add(item);
+        }
+
+        return output;
+    }
+
+    public static List<int> RemoveValuesSmallerThanOne(IEnumerable<int> intList)
+    {
+        return RemoveValuesSmallerThanNumber(intList, 0);
     }
 }
