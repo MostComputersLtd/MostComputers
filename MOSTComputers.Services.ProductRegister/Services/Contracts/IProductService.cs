@@ -17,14 +17,15 @@ public interface IProductService
     IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString);
     IEnumerable<Product> GetFirstInRangeWhereNameMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString);
     IEnumerable<Product> GetFirstInRangeWhereAllConditionsAreMet(ProductRangeSearchRequest productRangeSearchRequest, ProductConditionalSearchRequest productConditionalSearchRequest);
-    IEnumerable<Product> GetSelectionWithFirstImage(List<uint> ids);
-    IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<uint> ids);
-    IEnumerable<Product> GetSelectionWithProps(List<uint> ids);
-    Product? GetByIdWithFirstImage(uint id);
-    Product? GetByIdWithProps(uint id);
-    Product? GetByIdWithImages(uint id);
-    OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
+    IEnumerable<Product> GetSelectionWithFirstImage(List<int> ids);
+    IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<int> ids);
+    IEnumerable<Product> GetSelectionWithProps(List<int> ids);
+    Product? GetByIdWithFirstImage(int id);
+    Product? GetByIdWithProps(int id);
+    Product? GetByIdWithImages(int id);
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null);
-    bool Delete(uint id);
+    bool Delete(int id);
     Product? GetProductWithHighestId();
+    Product? GetProductFull(int productId);
 }
