@@ -49,10 +49,13 @@ public static class ConfigureServices
         services.AddScoped<IProductCharacteristicService, ProductCharacteristicService>();
         services.AddScoped<IProductPropertyService, ProductPropertyService>();
         services.AddScoped<IPromotionService, PromotionService>();
-        services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductStatusesService, ProductStatusesService>();
 
         services.AddScoped<IProductWorkStatusesService, ProductWorkStatusesService>();
+
+        services.AddScoped<IProductService, ProductService>();
+
+        services.AddScoped<IProductManipulateService, ProductManipulateService>();
 
         services.AddScoped<ILocalChangesService, LocalChangesService>();
         
@@ -83,10 +86,13 @@ public static class ConfigureServices
         services.AddScoped<ProductImageFileNameInfoService>();
         services.AddScoped<ProductCharacteristicService>();
         services.AddScoped<ProductPropertyService>();
-        services.AddScoped<ProductService>();
         services.AddScoped<ProductStatusesService>();
-
         services.AddScoped<IPromotionService, PromotionService>();
+
+        services.AddScoped<ProductService>();
+
+        services.AddScoped<IProductManipulateService, ProductManipulateService>();
+
         services.AddScoped<ILocalChangesService, LocalChangesService>();
         
         services.AddScoped<IToDoLocalChangesService, ToDoLocalChangesService>();
@@ -142,5 +148,7 @@ public static class ConfigureServices
         services.AddScoped<IValidator<FailedPropertyNameOfProductUpdateRequest>, FailedPropertyNameOfProductUpdateRequestValidator>();
 
         services.AddScoped<IValidator<ProductWorkStatusesCreateRequest>, ProductWorkStatusesCreateRequestValidator>();
+        services.AddScoped<IValidator<ProductWorkStatusesUpdateByIdRequest>, ProductWorkStatusesUpdateByIdRequestValidator>();
+        services.AddScoped<IValidator<ProductWorkStatusesUpdateByProductIdRequest>, ProductWorkStatusesUpdateByProductIdRequestValidator>();
     }
 }
