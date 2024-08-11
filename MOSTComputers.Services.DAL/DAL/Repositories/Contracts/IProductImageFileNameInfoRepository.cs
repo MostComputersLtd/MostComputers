@@ -10,11 +10,11 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IProductImageFileNameInfoRepository
 {
     IEnumerable<ProductImageFileNameInfo> GetAll();
-    IEnumerable<ProductImageFileNameInfo> GetAllForProduct(uint productId);
+    IEnumerable<ProductImageFileNameInfo> GetAllInProduct(int productId);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ProductImageFileNameInfoCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ProductImageFileNameInfoByImageNumberUpdateRequest updateRequest);
-    bool DeleteAllForProductId(uint productId);
-    bool DeleteByProductIdAndDisplayOrder(uint productId, int displayOrder);
+    bool DeleteAllForProductId(int productId);
+    bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ProductImageFileNameInfoByFileNameUpdateRequest updateRequest);
-    bool DeleteByProductIdAndImageNumber(uint productId, int imageNumber);
+    bool DeleteByProductIdAndImageNumber(int productId, int imageNumber);
 }
