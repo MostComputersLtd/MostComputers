@@ -13,7 +13,7 @@ using MOSTComputers.Services.LocalChangesHandling.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Transactions;
@@ -30,6 +30,7 @@ public sealed class ProductChangesService : IProductChangesService
         IProductPropertyService productPropertyService,
         IProductWorkStatusesService productWorkStatusesService,
         IProductDeserializeService productDeserializeService,
+        IProductHtmlService productHtmlService,
         ILocalChangesService localChangesService,
         IGetProductDataFromBeforeUpdateService getProductDataFromBeforeUpdateService,
         IToDoLocalChangesService toDoLocalChangesService,
@@ -42,6 +43,7 @@ public sealed class ProductChangesService : IProductChangesService
         _productPropertyService = productPropertyService;
         _productWorkStatusesService = productWorkStatusesService;
         _productDeserializeService = productDeserializeService;
+        _productHtmlService = productHtmlService;
         _localChangesService = localChangesService;
         _getProductDataFromBeforeUpdateService = getProductDataFromBeforeUpdateService;
         _toDoLocalChangesService = toDoLocalChangesService;
@@ -57,6 +59,7 @@ public sealed class ProductChangesService : IProductChangesService
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductWorkStatusesService _productWorkStatusesService;
     private readonly IProductDeserializeService _productDeserializeService;
+    private readonly IProductHtmlService _productHtmlService;
     private readonly ILocalChangesService _localChangesService;
     private readonly IToDoLocalChangesService _toDoLocalChangesService;
     private readonly IProductImageSaveService _productImageSaveService;
@@ -133,7 +136,7 @@ public sealed class ProductChangesService : IProductChangesService
 
         int productId = localChangeData.TableElementId;
 
-        Product? product = GetProductFull((uint)productId);
+        Product? product = GetProductFull(productId);
 
         if (product is null)
         {
@@ -158,7 +161,7 @@ public sealed class ProductChangesService : IProductChangesService
             return insertToDoChangeResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
                 id =>
                 {
-                    bool deleteChangeSuccess = _localChangesService.DeleteById((uint)localChangeData.Id);
+                    bool deleteChangeSuccess = _localChangesService.DeleteById(localChangeData.Id);
 
                     return deleteChangeSuccess ? new Success() : new UnexpectedFailureResult();
                 },
@@ -188,7 +191,7 @@ public sealed class ProductChangesService : IProductChangesService
         return newInsertToDoChangeResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             id =>
             {
-                bool deleteChangeSuccess = _localChangesService.DeleteById((uint)localChangeData.Id);
+                bool deleteChangeSuccess = _localChangesService.DeleteById(localChangeData.Id);
 
                 return deleteChangeSuccess ? new Success() : new UnexpectedFailureResult();
             },
@@ -239,7 +242,7 @@ public sealed class ProductChangesService : IProductChangesService
         IEnumerable<ProductImage> productImages,
         IEnumerable<ProductImageFileNameInfo> productImageFileNames,
         IEnumerable<ProductProperty> productProperties)
-            = GetProductInParts((uint)productId);
+            = GetProductInParts(productId);
 
         if (product is null)
         {
@@ -263,26 +266,15 @@ public sealed class ProductChangesService : IProductChangesService
 
             if (needsToBeUpdated)
             {
-                string xmlOfProduct = _productDeserializeService.SerializeProductsXml(product, true);
+                string htmlOfProduct = _productHtmlService.GetHtmlFromProduct(product);
 
-                foreach (ProductImage image in product.Images!)
-                {
-                    ServiceProductImageUpdateRequest productImageUpdateRequest = new()
-                    {
-                        Id = image.Id,
-                        ImageData = image.ImageData,
-                        ImageFileExtension = image.ImageFileExtension,
-                        HtmlData = xmlOfProduct,
-                    };
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> imagesHtmlUpdateResult
+                    = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(productId, htmlOfProduct);
 
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
-                        = _productImageService.UpdateInAllImages(productImageUpdateRequest);
-
-                    imageUpdateResult.Switch(
-                        success => { },
-                        validationResult => throw new ValidationException(validationResult.Errors),
-                        unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
-                }
+                imagesHtmlUpdateResult.Switch(
+                    success => { },
+                    validationResult => throw new ValidationException(validationResult.Errors),
+                    unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
             }
 
             ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
@@ -331,7 +323,7 @@ public sealed class ProductChangesService : IProductChangesService
 
         _getProductDataFromBeforeUpdateService.HandleAfterUpdate((uint)productId);
 
-        bool localChangeDeleteResult = _localChangesService.DeleteById((uint)localChangeData.Id);
+        bool localChangeDeleteResult = _localChangesService.DeleteById(localChangeData.Id);
 
         return localChangeDeleteResult ? new Success() : new UnexpectedFailureResult();
     }
@@ -369,7 +361,7 @@ public sealed class ProductChangesService : IProductChangesService
 
     private OneOf<Success, UnexpectedFailureResult> HandleDeleteInternal(LocalChangeData localChangeData)
     {
-        uint productId = (uint)localChangeData.TableElementId;
+        int productId = localChangeData.TableElementId;
 
         (Product? product,
         IEnumerable<ProductImage> productImages,
@@ -390,7 +382,7 @@ public sealed class ProductChangesService : IProductChangesService
 
                 if (localChangeDataForProductFirst.OperationType == ChangeOperationTypeEnum.Create)
                 {
-                    _localChangesService.DeleteById((uint)localChangeData.Id);
+                    _localChangesService.DeleteById(localChangeData.Id);
 
                     return new Success();
                 }
@@ -399,11 +391,11 @@ public sealed class ProductChangesService : IProductChangesService
             throw new TransactionInDoubtException("Operation failed for unknown reasons");
         }
 
-        ProductWorkStatuses? productStatuses = _productWorkStatusesService.GetByProductId(localChangeData.TableElementId);
+        ProductWorkStatuses? productStatuses = _productWorkStatusesService.GetByProductId(productId);
 
         if (productStatuses is not null)
         {
-            bool isProductStatusDelete = _productWorkStatusesService.DeleteByProductId(localChangeData.TableElementId);
+            bool isProductStatusDelete = _productWorkStatusesService.DeleteByProductId(productId);
 
             if (!isProductStatusDelete)
             {
@@ -441,7 +433,7 @@ public sealed class ProductChangesService : IProductChangesService
             }
         }
 
-        _localChangesService.DeleteById((uint)localChangeData.Id);
+        _localChangesService.DeleteById(localChangeData.Id);
 
         return new Success();
     }
@@ -469,10 +461,10 @@ public sealed class ProductChangesService : IProductChangesService
             {
                 ProductId = productId,
                 ImageData = kvp.Key.ImageData,
-                ImageFileExtension = kvp.Key.ImageFileExtension,
+                ImageFileExtension = kvp.Key.ImageContentType,
             };
 
-            OneOf<uint, ValidationResult, UnexpectedFailureResult> productImageInsertResult
+            OneOf<int, ValidationResult, UnexpectedFailureResult> productImageInsertResult
                 = _productImageService.InsertInAllImages(serviceProductImageCreateRequest);
 
             bool imageInsertSuccess = productImageInsertResult.Match(
@@ -511,7 +503,7 @@ public sealed class ProductChangesService : IProductChangesService
         {
             ProductId = productId,
             ImageData = firstProductKvp.Key.ImageData,
-            ImageFileExtension = firstProductKvp.Key.ImageFileExtension,
+            ImageFileExtension = firstProductKvp.Key.ImageContentType,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
@@ -542,7 +534,7 @@ public sealed class ProductChangesService : IProductChangesService
         return false;
     }
 
-    private Product? GetProductFull(uint productId)
+    private Product? GetProductFull(int productId)
     {
         Product? product = _productService.GetByIdWithProps(productId);
 
@@ -574,7 +566,7 @@ public sealed class ProductChangesService : IProductChangesService
 
     private (Product? product, IEnumerable<ProductImage> productImages,
         IEnumerable<ProductImageFileNameInfo> productImageFileNames, IEnumerable<ProductProperty> productProperties)
-        GetProductInParts(uint productId)
+        GetProductInParts(int productId)
     {
         Product? product = _productService.GetByIdWithProps(productId);
 
@@ -627,14 +619,14 @@ public sealed class ProductChangesService : IProductChangesService
         if (productBeforeUpdate.Properties is null
             || productBeforeUpdate.Properties.Count <= 0)
         {
-            productBeforeUpdate.Properties = _productPropertyService.GetAllInProduct((uint)productBeforeUpdate.Id)
+            productBeforeUpdate.Properties = _productPropertyService.GetAllInProduct(productBeforeUpdate.Id)
                 .ToList();
         }
 
         if (productAfterUpdate.Properties is null
             || productAfterUpdate.Properties.Count <= 0)
         {
-            productAfterUpdate.Properties = _productPropertyService.GetAllInProduct((uint)productAfterUpdate.Id)
+            productAfterUpdate.Properties = _productPropertyService.GetAllInProduct(productAfterUpdate.Id)
                 .ToList();
         }
 
