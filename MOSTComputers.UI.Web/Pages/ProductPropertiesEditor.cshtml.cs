@@ -5,8 +5,8 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Pages.Shared.ProductProperties;
@@ -64,7 +64,7 @@ public class ProductPropertiesEditorModel : PageModel
     {
         if (ProductId <= 0) return;
 
-        Product? product = _productService.GetByIdWithProps((uint)ProductId);
+        Product? product = _productService.GetByIdWithProps(ProductId);
 
         if (product == null) return;
 
@@ -92,11 +92,11 @@ public class ProductPropertiesEditorModel : PageModel
 
     public IActionResult OnGetPartialViewXmlForProduct()
     {
-        Product? product = _productService.GetByIdWithProps((uint)ProductId);
+        Product? product = _productService.GetByIdWithProps(ProductId);
 
         if (product == null) return BadRequest();
 
-        product.Images = _productImageService.GetAllInProduct((uint)ProductId)
+        product.Images = _productImageService.GetAllInProduct(ProductId)
             .ToList();
 
         Product = product;
@@ -110,11 +110,11 @@ public class ProductPropertiesEditorModel : PageModel
 
     public IActionResult OnGetPartialViewImagesForProduct()
     {
-        Product? product = _productService.GetByIdWithImages((uint)ProductId);
+        Product? product = _productService.GetByIdWithImages(ProductId);
 
         if (product == null) return BadRequest();
 
-        product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct((uint)product.Id)
+        product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(product.Id)
             .ToList();
 
         Product = product;
@@ -124,7 +124,7 @@ public class ProductPropertiesEditorModel : PageModel
 
     public IActionResult OnGetCurrentImageFileResultSingle(uint imageIndex)
     {
-        Product? product = _productService.GetByIdWithImages((uint)ProductId);
+        Product? product = _productService.GetByIdWithImages(ProductId);
 
         if (product == null) return BadRequest();
 
@@ -137,22 +137,22 @@ public class ProductPropertiesEditorModel : PageModel
         ProductImage image = Product.Images[(int)imageIndex];
 
         if (image.ImageData is null
-            || image.ImageFileExtension is null) return StatusCode(500);
+            || image.ImageContentType is null) return StatusCode(500);
 
-        int slashIndex = image.ImageFileExtension.IndexOf('/');
+        int slashIndex = image.ImageContentType.IndexOf('/');
 
-        string fileExtension = image.ImageFileExtension[(slashIndex + 1)..];
+        string fileExtension = image.ImageContentType[(slashIndex + 1)..];
 
-        return base.File(image.ImageData, image.ImageFileExtension, $"{Product.Id}_{imageIndex}.{fileExtension}");
+        return base.File(image.ImageData, image.ImageContentType, $"{Product.Id}_{imageIndex}.{fileExtension}");
     }
 
     private string? GetProductXML(Product product)
     {
         XmlObjectData xmlDataFromProduct = _mapperService.GetXmlDataFromProducts(new List<Product>() { product });
 
-        OneOf<string?, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
+        OneOf<string, InvalidXmlResult> serializationResult = _productDeserializeService.TrySerializeProductsXml(xmlDataFromProduct, true);
 
-        return serializationResult.Match(
+        return serializationResult.Match<string?>(
             data => data,
             invalidXmlResult => null);
     }
@@ -164,7 +164,7 @@ public class ProductPropertiesEditorModel : PageModel
 
     public IActionResult OnGetGetSearchStringPartialView()
     {
-        Product? product = _productService.GetByIdWithFirstImage((uint)ProductId);
+        Product? product = _productService.GetByIdWithFirstImage(ProductId);
 
         if (product == null) return BadRequest();
 
@@ -207,7 +207,7 @@ public class ProductPropertiesEditorModel : PageModel
 
     public IActionResult OnPostAddNewItem()
     {
-        Product? product = _productService.GetByIdWithProps((uint)ProductId);
+        Product? product = _productService.GetByIdWithProps(ProductId);
 
         if (product == null) return BadRequest();
 
@@ -269,7 +269,7 @@ public class ProductPropertiesEditorModel : PageModel
     {
         if (data is null) return BadRequest();
 
-        Product? product = _productService.GetByIdWithProps((uint)ProductId);
+        Product? product = _productService.GetByIdWithProps(ProductId);
 
         if (product == null) return BadRequest();
 
@@ -383,7 +383,7 @@ public class ProductPropertiesEditorModel : PageModel
         if (ProductId <= 0
             || productCharacteristicId == 0) return BadRequest();
 
-        bool deleteResult = _productPropertyService.Delete((uint)ProductId, productCharacteristicId);
+        bool deleteResult = _productPropertyService.Delete(ProductId, (int)productCharacteristicId);
 
         if (!deleteResult)
         {
