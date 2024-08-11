@@ -4,8 +4,8 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.XMLDataOperations.Models;
-using MOSTComputers.Services.XMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
 using MOSTComputers.UI.Web.Services.Contracts;
 using OneOf;
@@ -107,7 +107,7 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
             Properties = resultOfPropsMapping.AsT0,
             ImageFileNames = GetImageFileInfoCreateRequestsFromXmlData(product.ShopItemImages),
             Images = images,
-            CategoryID = (short?)product.Category.Id,
+            CategoryId = (short?)product.Category.Id,
             ManifacturerId = (short?)product.Manifacturer.Id,
             SearchString = product.SearchString,
             PartNumber1 = partNumber1,
@@ -134,7 +134,7 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
 
         if (partNumbers.Length <= 0) return (null, null);
 
-        int mediumLineIndex = partNumbers.IndexOf("/");
+        int mediumLineIndex = partNumbers.IndexOf('/');
 
         string partNumber1 = partNumbers[..(mediumLineIndex - 2)];
         string partNumber2 = partNumbers[(mediumLineIndex + 2)..];
