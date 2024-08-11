@@ -8,28 +8,28 @@
 <div class="modal-header full-parent-width">
     <h5 class="modal-title modal-title">First Image:</h5>
 
-    <h4 class="modal-title modal-product-name">@Model.ProductData.Name</h4>
-    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @Model.ProductData.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.ProductDisplayData.Name</h4>
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @Model.ProductDisplayData.Id</h4>
 
     <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductFirstImage_modal()">
     </button>
 </div>
-<div id="ProductFirstImage_popup" class="modal-body full-parent-width bg-white" style="overflow-y: auto;">
+
+<div id="ProductFirstImage_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
     <div class="container border-2 full-parent-width full-parent-height">
 
-        @if (Model.ProductData.ImagesAndImageFileInfos is not null
-        && Model.ProductData.ImagesAndImageFileInfos.Count > 0)
+        @if (Model.ImageToDisplay is not null)
         {
-            ProductImage? firstImage = Model.ProductData.ImagesAndImageFileInfos[0].Item1;
+            ProductImage? firstImage = Model.ImageToDisplay;
 
             string imgData = (firstImage?.ImageData is not null) ? Convert.ToBase64String(firstImage.ImageData) : string.Empty;
 
             string? imgSource = null;
 
             if (firstImage?.ImageData is not null
-            && firstImage.ImageFileExtension is not null)
+            && firstImage.ImageContentType is not null)
             {
-                imgSource = $"data:{firstImage?.ImageFileExtension};base64,{imgData}";
+                imgSource = $"data:{firstImage?.ImageContentType};base64,{imgData}";
             }
 
             <div id="ProductFirstImage_popup_main_img_display">
@@ -37,25 +37,26 @@
                 <img id="productCurrentImageDisplay"
                      name="Image #0"
                      src="@imgSource"
-                     class="product-image-popup-current-image-display"
-                     style="width: 100%;" />
+                     class="full-parent-width product-image-popup-current-image-display" />
             </div>
 
             <div>
                 @if (firstImage?.DateModified is not null)
                 {
-                    <h3 style="text-align: center;">
+                    <h3 class="align-text-center">
                         @firstImage.DateModified.Value.ToString("dd.MM.yyyy")
                     </h3>
                 }
                 else
                 {
-                    <h3 style="text-align: center;">
+                    <h3 class="align-text-center">
                         No date provided
                     </h3>
                 }
 
-                @Html.Raw(firstImage?.HtmlData)
+                <div id="product-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3">
+                    @Html.Raw(firstImage?.HtmlData)
+                </div>
             </div>
         }
 
@@ -64,12 +65,12 @@
 
 <div class="modal-footer full-parent-width product-image-popup-footer_buttons-container">
     <table id="ProductFirstImage_modal_footer_buttons_table"
-           class="full-parent-width full-parent-height">
+        class="full-parent-width full-parent-height product-image_modal_footer_buttons_table">
         <tr class="full-parent-width full-parent-height">
             <td>
                 <button id="copyImageButton"
                         class="full-parent-width footer-button btn btn-primary"
-                        onclick="copyImageDataToClipboard()">
+                        onclick="copyImageDataToClipboard('@Model.NotificationBoxId')">
                     <h7 class="footer-button-main-text">Copy to clipboard</h7>
                     <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
                 </button>
@@ -78,7 +79,7 @@
             <td>
                 <button id="copyImageButton"
                         class="full-parent-width footer-button btn btn-primary"
-                        onclick="getImageFileData(@Model.ProductData.Id)">
+                        onclick="getImageFileData(@Model.ProductDisplayData.Id, '@Model.NotificationBoxId')">
                     <h7 class="footer-button-main-text">Save</h7>
                     <p class="footer-button-small-text">(Or just press Ctrl + A)</p>
                 </button>
