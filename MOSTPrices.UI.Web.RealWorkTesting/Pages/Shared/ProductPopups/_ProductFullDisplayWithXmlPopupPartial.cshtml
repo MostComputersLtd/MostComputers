@@ -1,18 +1,34 @@
 ﻿@using MOSTComputers.Models.Product.Models
-@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups._ProductFullDisplayWithXmlPopupPartialModel
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups.ProductFullDisplayWithXmlPopupPartialModel
 @{
 }
 
-<div class="modal-header full-parent-width">
-    <table>
-        <tbody>
-            <tr>
-                <td>
-                    <ul style="list-style: none;">
-                        <li style="display: flex; flex-direction: row; width: max-content;">
+@if (Model.Product is null)
+{
+    <h2>Product was not found.</h2>
+
+    return;
+}
+
+<div class="modal-header full-parent-width red-and-white-theme">
+
+    <h4 class="modal-title modal-product-name">@(Model.Product.Name ?? "-")</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductFullWithXml_modal()">
+    </button>
+</div>
+
+<div id="ProductFullDisplayWithXml_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container-fluid border-2 full-parent-width full-parent-height">
+        <div class="full-parent-width">
+            <div class="row d-flex mb-5">
+                <div class="col-lg-6 align-content-start">
+                    <ul class="list-style-none">
+                        <li class="product-full-popup-name-and-partnumber-li">
                             <h4>@Model.Product.Name</h4>
-                            <h4> / </h4>
-                            <h4>Part #: @Model.Product.PartNumber1 / @Model.Product.PartNumber2</h4>
+                            <h4>&nbsp;/&nbsp;</h4>
+                            <h4>Part №:&nbsp;</h4>
+                            <h4>@Model.Product.PartNumber1 / @Model.Product.PartNumber2</h4>
                         </li>
 
                         <li>
@@ -33,12 +49,12 @@
                             <label>@Model.Product.Category?.Description</label>
                         </li>
                     </ul>
-                </td>
+                </div>
 
-                <td>
-                    <ul style="display: flex; flex-direction: row;">
+                <div class="col-lg-4 align-content-start">
+                    <ul class="product-full-popup-xml-and-link-buttons-list">
                         <li>
-                            <button class="btn btn-secondary">
+                            <button class="btn btn-secondary" onclick='open_product_xml(@Html.Raw(Json.Serialize(Model.ProductXml)))'>
                                 XML
                             </button>
 
@@ -47,89 +63,106 @@
                             </button>
                         </li>
                     </ul>
-                </td>
-
-                <td>
-                    <div style="color: white; background-color: red;">
-                        <h2>@Model.Product.Price @Model.Product.Currency с</h2>
-                        <h4>ДДС</h4>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <img />
-                    
-                    <ul>
-                        @for (int i = 0; i < Model.Product.Images?.Count; i++)
-                        {
-                            ProductImage image = Model.Product.Images[i];
-                            ProductImageFileNameInfo? imageFileNameInfo = Model.Product.ImageFileNames?[i];
-
-                            if (image.ImageData is null) continue;
-
-                            string imageSrc = $"data:{image.ImageFileExtension};base64,{Convert.ToBase64String(image.ImageData)}";
-
-                            float opacityOfLi = (imageFileNameInfo?.Active ?? false) ? 1.0F : 0.35F;
-
-                            <li id="productImageDisplay_ul_li-@i" draggable="true"
-                                ondragstart="productImageDisplay_ul_li_ondragstart(event)"
-                                ondragend="productImageDisplay_ul_li_ondragend(event)"
-                                style="opacity: @opacityOfLi">
-
-                                @if (imageFileNameInfo?.Active ?? false)
-                                {
-                                    <div class="product-image-popup-image-active-button-container">
-                                        <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
-                                            type="checkbox" aria-label="Close" checked
-                                            class="product-image-popup-image-active-button" />
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="product-image-popup-image-active-button-container">
-                                        <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
-                                            type="checkbox" aria-label="Close"
-                                            class="product-image-popup-image-active-button" />
-                                    </div>
-                                }
-
-                                <button name="Image #@i"
-                                    class="btn bg-white"
-                                    onclick="displayImage('@imageSrc', 'Image #@i')">
-
-                                    <img src="@imageSrc" title="Image #@i" draggable="false" />
-                                </button>
-                            </li>
-                        }
-                    </ul>
-                </td>
-
-                <td>
-                    <h3 style="margin-bottom: 20px;">Информация за услугата</h3>
-
-                    <a href="@Model.ProductManifacturerSiteLink">Сайт на производителя</a>
-                </td>
-            </tr>
-
-        </tbody>
-    </table>
-
-    <div class="full-parent-width">
-        <section style="column-count: 3;">
-            @foreach (ProductProperty property in Model.Product.Properties)
-            {
-                <div>
-                    <b>@property.Characteristic:</b>
-                    <label>@property.Value</label>
                 </div>
-            }
-        </section>
-    </div>
-</div>
-<div id="ProductFullDisplayWithXml_popup" class="modal-body full-parent-width bg-white">
-    <div class="container border-2 full-parent-width full-parent-height">
-        
+
+                <div class="col-lg-2 align-content-start">
+                    <div class="full-parent-width full-parent-height product-full-popup-price-wrapper">
+                        <div class="product-full-popup-price red-and-white-theme">
+                            <b class="fw-bold">ЦЕНА:</b>
+                            <span class="product-full-popup-price-display-span">
+                                @Model.Product.Price @Model.Product.Currency с ДДС
+                                <br/>
+                                <span class="product-full-popup-usd-price-display-span">(@Model.Product.Price USD)</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row d-flex">
+                <div class="col-lg-6 product-full-popup-carousel-container">
+                    <div id="product_full_popup_carousel" class="carousel slide product-full-popup-carousel" data-bs-ride="carousel" data-bs-interval="2400">
+
+                        <div class="carousel-inner product-full-popup-carousel-inner" role="listbox">
+
+                            @if (Model.Product.Images is not null)
+                            {
+                                for (int i = 0; i < Model.Product.Images.Count; i++)
+                                {
+                                    ProductImage? productImage = Model.Product.Images[i];
+
+                                    string imageSrc = $"data:{productImage.ImageContentType};base64,{Convert.ToBase64String(productImage.ImageData ?? new byte[0])}";
+
+                                    string imageActiveString = (i == 0) ? "active" : "";
+ 
+                                    <div class="carousel-item full-parent-height @imageActiveString" id="slide-content-@i">
+                                        <div class="full-parent-width full-parent-height d-flex justify-content-center">
+                                            <img src="@imageSrc" class="product-full-popup-carousel-item-img" alt="Image @i">
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Left and right controls -->
+                        <a class="left carousel-control text-decoration-none" data-bs-target="#product_full_popup_carousel" role="button" data-bs-slide="prev">
+                            <span class="fw-bolder product-full-popup-carousel-control-text-span" aria-hidden="true">
+                                &lt;
+                            </span>
+                        </a>
+                        <a class="right carousel-control text-decoration-none product-full-popup-right-carousel-control"
+                            data-bs-target="#product_full_popup_carousel" role="button" data-bs-slide="next">
+                            <span class="fw-bolder product-full-popup-carousel-control-text-span" aria-hidden="true">
+                                &gt;
+                            </span>
+                        </a>
+
+                        <div id="slider-thumbs" class="row hidden-xs product-full-popup-carousel-image-navbar-container">
+
+                            <ul class="product-full-popup-carousel-image-navbar-list">
+
+                                @if (Model.Product.Images is not null)
+                                {
+                                    for (int i = 0; i < Model.Product.Images.Count; i++)
+                                    {
+                                        ProductImage? productImage = Model.Product.Images[i];
+
+                                        string imageSrc = $"data:{productImage.ImageContentType};base64,{Convert.ToBase64String(productImage.ImageData ?? new byte[0])}";
+
+                                        <li class="col-sm-2 product-full-popup-carousel-image-navbar-list-item">
+                                            <a id="carousel-selector-@i" class="thumbnail" data-bs-target="#product_full_popup_carousel" data-bs-slide-to="@i">
+                                                <img src="@imageSrc" class="full-parent-width" alt="Navigate to image @i">
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="full-parent-width full-parent-height product-full-popup-manifacturer-site-link-display-container">
+                        <h3 class="product-full-popup-manifacturer-site-link-top-label">Информация за услугата</h3>
+
+                        <a href="@Model.ProductManifacturerSiteLink">Сайт на производителя</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="full-parent-width pt-4 pb-5">
+            <section class="product-full-popup-props-section">
+                @foreach (ProductProperty property in Model.Product.Properties)
+                {
+                    <div class="product-full-popup-props-section-item">
+                        <strong>@property.Characteristic:</strong><br /><p class="product-full-popup-props-section-item-value-text">@property.Value</p>
+                    </div>
+                }
+            </section>
+        </div>
     </div>
 </div>
 
