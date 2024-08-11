@@ -1,1 +1,32 @@
-﻿
+﻿.product-display-topbar {
+    display: flex;
+    flex-direction: row;
+}
+
+.product-display-highest-id-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0px 1%;
+}
+
+.product-display-highest-id-top-paragraph {
+    margin-bottom: 0px;
+    font-size: 12px;
+}
+
+.product-display-highest-id-display-label {
+    font-size: 14px;
+}
+
+.product-display-hide-first-rows-checkbox {
+    margin: 0px 7px;
+}
+
+.product-display-table-searchstring-column {
+    min-width: 200px;
+}
+
+.product-display-trigger-changes-button {
+    width: 200px;
+}

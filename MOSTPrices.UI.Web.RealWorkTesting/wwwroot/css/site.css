@@ -38,3 +38,28 @@ body {
 .input-number-remove-spinners[type=number] {
     -moz-appearance: textfield;
 }
+
+.display-none {
+    display: none;
+}
+
+.align-text-center {
+    text-align: center;
+}
+
+.list-style-none {
+    list-style: none;
+}
+
+.red-and-white-theme {
+    color: #FFFFFF;
+    background-color: #BD1105;
+}
+
+    .red-and-white-theme > .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+.white-btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
