@@ -129,3 +129,14 @@ function clearTotalCopy()
 {
     searchStringPartCopyString = "";
 }
+
+function copyImageDataToClipboard(notificationBoxId)
+{
+    let selectedImageData = getSelectedImageData();
+
+    navigator.clipboard.writeText(selectedImageData);
+
+    if (notificationBoxId == null) return;
+
+    showNotificationWithText(notificationBoxId, "Copied!", "notificationBox-short-message");
+}
