@@ -1,6 +1,6 @@
 using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.SearchStringOrigin.Configuration;
-using MOSTComputers.Services.XMLDataOperations.Configuration;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Configuration;
 using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.Services.Caching.Configuration;
@@ -22,7 +22,7 @@ builder.Services.AddCachedProductServices(builder.Configuration.GetConnectionStr
 
 builder.Services.AddHttpClient();
 
-builder.Services.AddXmlDeserializeService();
+builder.Services.AddXmlDeserializer();
 
 builder.Services.AddScoped<IProductXmlToProductMappingService, ProductXmlToProductMappingService>();
 builder.Services.AddScoped<IProductXmlToCreateRequestMappingService, ProductXmlToCreateRequestMappingService>();
