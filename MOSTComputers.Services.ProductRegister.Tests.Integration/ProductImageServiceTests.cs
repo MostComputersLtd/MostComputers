@@ -6,13 +6,6 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
@@ -47,7 +40,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         ImageData = LocalTestImageData,
         ImageFileExtension = null,
         ProductId = productId,
-        XML = "<data></data>",
+        HtmlData = "<data></data>",
     };
 
     private static ServiceProductImageCreateRequest GetInvalidImageCreateRequest(int productId) => new()
@@ -61,25 +54,25 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllFirstImagesForAllProducts_ShouldSucceed_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult2.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId2 = productInsertResult2.AsT0;
+        int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData((int)productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -95,31 +88,31 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Contains(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageFileExtension == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageFileExtension);
     }
 
     [Fact]
     public void GetAllFirstImagesForAllProducts_ShouldFail_WhenInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult2.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId2 = productInsertResult2.AsT0;
+        int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest invalidCreateRequest = GetInvalidFirstImageCreateRequest((int)productId1);
+        ServiceProductFirstImageCreateRequest invalidCreateRequest = GetInvalidFirstImageCreateRequest(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(invalidCreateRequest);
 
@@ -133,31 +126,31 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.DoesNotContain(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, invalidCreateRequest.ImageData)
-        && x.ImageFileExtension == invalidCreateRequest.ImageFileExtension);
+        && x.ImageContentType == invalidCreateRequest.ImageFileExtension);
     }
 
     [Fact]
     public void GetAllFirstImagesForSelectionOfProducts_ShouldSucceed_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult2.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId2 = productInsertResult2.AsT0;
+        int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData((int)productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -166,46 +159,48 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts( new List<uint> { productId1, productId2 } );
+        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(
+            new List<int> { productId1, productId2 } );
 
-        Assert.True(productFirstImages.Any());
+        Assert.NotEmpty(productFirstImages);
 
         Assert.Contains(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageFileExtension == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageFileExtension);
     }
 
     [Fact]
     public void GetAllFirstImagesForSelectionOfProducts_ShouldFail_WhenInsertIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult2.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId2 = productInsertResult2.AsT0;
+        int productId2 = productInsertResult2.AsT0;
 
-        
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(GetInvalidFirstImageCreateRequest((int)productId1));
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(
+            GetInvalidFirstImageCreateRequest(productId1));
 
         Assert.True(insertResult1.Match(
             _ => false,
             _ => true,
             _ => false));
 
-        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(new List<uint> { productId1, productId2 });
+        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(
+            new List<int> { productId1, productId2 });
 
         Assert.Empty(productFirstImages);
     }
@@ -213,25 +208,25 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllFirstImagesForSelectionOfProducts_ShouldFail_WhenProductIdsAreInvalidOrDontHaveRelatedImages()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult2.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId2 = productInsertResult2.AsT0;
+        int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData((int)productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -240,7 +235,8 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(new List<uint> { 0, productId2 });
+        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(
+            new List<int> { 0, productId2 });
 
         Assert.Empty(productFirstImages);
     }
@@ -248,26 +244,26 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetAllForProduct_ShouldSucceed_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId);
-        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData((int)productId);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
         Assert.True(insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
 
         Assert.True(insertResult1.Match(
             _ => true,
@@ -276,42 +272,42 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
 
-        Assert.True(productImages.Count() == 2);
+        Assert.Equal(2, productImages.Count());
 
         Assert.Contains(productImages, x =>
         x.ProductId == productId
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageFileExtension == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageFileExtension);
 
         Assert.Contains(productImages, x =>
         x.ProductId == productId
         && CompareDataInByteArrays(x.ImageData, createRequest2.ImageData)
-        && x.ImageFileExtension == createRequest2.ImageFileExtension);
+        && x.ImageContentType == createRequest2.ImageFileExtension);
     }
 
     [Fact]
     public void GetAllForProduct_ShouldFail_WhenInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetInvalidImageCreateRequest((int)productId);
-        ServiceProductImageCreateRequest createRequest2 = GetInvalidImageCreateRequest((int)productId);
+        ServiceProductImageCreateRequest createRequest1 = GetInvalidImageCreateRequest(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetInvalidImageCreateRequest(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
         Assert.True(insertResult1.Match(
             _ => false,
             _ => true,
             _ => false));
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
 
         Assert.True(insertResult1.Match(
             _ => false,
@@ -326,57 +322,61 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetByIdInAllImages_ShouldSucceed_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData((int)productId);
+        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
 
         Assert.True(insertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id = insertResult.AsT0;
+        int id = insertResult.AsT0;
+
+        Assert.True(id > 0);
 
         ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
 
         Assert.NotNull(productImage);
 
-        Assert.Equal((int)productId, productImage.ProductId);
+        Assert.Equal(productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
     }
 
     [Fact]
     public void GetByIdInAllImages_ShouldFail_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData((int)productId);
+        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
 
         Assert.True(insertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id = insertResult.AsT0;
+        int id = insertResult.AsT0;
+
+        Assert.True(id > 0);
 
         ProductImage? productImage = _productImageService.GetByIdInAllImages(999999999);
 
@@ -386,16 +386,16 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void GetByProductIdInFirstImages_ShouldSucceed_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData((int)productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -408,24 +408,24 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.NotNull(productImage);
 
-        Assert.Equal((int)productId, productImage.ProductId);
+        Assert.Equal(productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
     }
 
     [Fact]
     public void GetByProductIdInFirstImages_ShouldFail_WhenInsertIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest invalidCreateRequest = GetInvalidFirstImageCreateRequest((int)productId);
+        ServiceProductFirstImageCreateRequest invalidCreateRequest = GetInvalidFirstImageCreateRequest(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(invalidCreateRequest);
 
@@ -443,39 +443,40 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [MemberData(nameof(InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageCreateRequest createRequest, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
         if (createRequest.ProductId == _useRequiredValue)
         {
-            createRequest.ProductId = (int)productId1;
+            createRequest.ProductId = productId1;
         }
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest);
 
         Assert.Equal(expected, insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-
         if (expected)
         {
-            uint id = insertResult1.AsT0;
+            int id = insertResult1.AsT0;
+
+            Assert.True(id > 0);
 
             ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
 
             Assert.NotNull(productImage);
 
-            Assert.Equal((int)productId1, productImage.ProductId);
+            Assert.Equal(productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
         }
     }
 
@@ -552,24 +553,26 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [MemberData(nameof(InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner(
         ServiceProductImageCreateRequest createRequest,
-        uint? displayOrder,
+        int? displayOrder,
         bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
         if (createRequest.ProductId == _useRequiredValue)
         {
-            createRequest.ProductId = (int)productId1;
+            createRequest.ProductId = productId1;
         }
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest, displayOrder);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1
+            = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest, displayOrder);
 
         Assert.Equal(expected, insertResult1.Match(
             _ => true,
@@ -579,7 +582,9 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         if (expected)
         {
-            uint id = insertResult1.AsT0;
+            int id = insertResult1.AsT0;
+
+            Assert.True(id > 0);
 
             ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
 
@@ -587,7 +592,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.Equal((int)productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
         }
     }
 
@@ -687,18 +692,18 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [MemberData(nameof(InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductFirstImageCreateRequest createRequest, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
         if (createRequest.ProductId == _useRequiredValue)
         {
-            createRequest.ProductId = (int)productId1;
+            createRequest.ProductId = productId1;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest);
@@ -716,9 +721,9 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         {
             Assert.NotNull(productImage);
 
-            Assert.Equal((int)productId1, productImage.ProductId);
+            Assert.Equal(productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
         }
     }
 
@@ -737,7 +742,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = null,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -749,7 +754,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -761,7 +766,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -773,7 +778,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -785,7 +790,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "       ",
-                XML = null,
+                HtmlData = null,
             },
             false
         },
@@ -795,29 +800,31 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [MemberData(nameof(UpdateInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void UpdateInAllImages_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageUpdateRequest updateRequest, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        var createRequest = GetCreateRequestWithImageData((int)productId1);
+        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId1);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest);
 
         Assert.True(insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id = insertResult1.AsT0;
+        int id = insertResult1.AsT0;
+
+        Assert.True(id > 0);
 
         if (updateRequest.Id == _useRequiredValue)
         {
-            updateRequest.Id = (int)id;
+            updateRequest.Id = id;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productImageService.UpdateInAllImages(updateRequest);
@@ -831,17 +838,17 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.NotNull(productImage);
 
-        Assert.Equal((int)productId1, productImage.ProductId);
+        Assert.Equal(productId1, productImage.ProductId);
 
         if (expected)
         {
             Assert.True(CompareDataInByteArrays(updateRequest.ImageData, productImage.ImageData));
-            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageContentType);
         }
         else
         {
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
         }
     }
 
@@ -854,7 +861,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -866,7 +873,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = null,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -878,7 +885,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -890,7 +897,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -902,7 +909,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -914,7 +921,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "       ",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -924,16 +931,16 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [MemberData(nameof(UpdateInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void UpdateInFirstImages_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductFirstImageUpdateRequest updateRequest, bool expected)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult1.AsT0;
+        int productId = productInsertResult1.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData((int)productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest);
 
@@ -944,7 +951,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         if (updateRequest.ProductId == _useRequiredValue)
         {
-            updateRequest.ProductId = (int)productId;
+            updateRequest.ProductId = productId;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productImageService.UpdateInFirstImages(updateRequest);
@@ -958,18 +965,18 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.NotNull(productImage);
 
-        Assert.Equal((int)productId, productImage.ProductId);
-        Assert.Equal((int)productId, productImage.Id);
+        Assert.Equal(productId, productImage.ProductId);
+        Assert.Equal(productId, productImage.Id);
 
         if (expected)
         {
             Assert.True(CompareDataInByteArrays(updateRequest.ImageData, productImage.ImageData));
-            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageContentType);
         }
         else
         {
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageFileExtension);
+            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
         }
     }
 
@@ -982,7 +989,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -994,7 +1001,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = null,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             true
         },
@@ -1006,7 +1013,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -1018,7 +1025,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
                 ImageFileExtension = "image/png",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -1030,7 +1037,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = null,
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -1042,7 +1049,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
                 ImageFileExtension = "       ",
-                XML = null
+                HtmlData = null
             },
             false
         },
@@ -1051,25 +1058,27 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInAllImagesById_ShouldSucceed_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId1);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
         Assert.True(insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id = insertResult1.AsT0;
+        int id = insertResult1.AsT0;
+
+        Assert.True(id > 0);
 
         bool success = _productImageService.DeleteInAllImagesById(id);
 
@@ -1083,25 +1092,27 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInAllImagesById_ShouldFail_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
-        uint? productId1 = productInsertResult1.Match<uint?>(
+        int? productId1 = productInsertResult1.Match<int?>(
              id => id,
              validationResult => null,
              unexpectedFailureResult => null);
 
         Assert.NotNull(productId1);
+        Assert.True(productId1 > 0);
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId1);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1.Value);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
-        uint? id = insertResult1.Match<uint?>(
+        int? id = insertResult1.Match<int?>(
              id => id,
              validationResult => null,
              unexpectedFailureResult => null);
 
         Assert.NotNull(id);
+        Assert.True(id > 0);
 
         bool success = _productImageService.DeleteInAllImagesById(999999999);
 
@@ -1115,25 +1126,25 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInAllImagesAndImageFilePathInfosById_ShouldSucceed_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId1 = productInsertResult1.AsT0;
+        int productId1 = productInsertResult1.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId1);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
 
         Assert.True(insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id = insertResult1.AsT0;
+        int id = insertResult1.AsT0;
 
         bool success = _productImageService.DeleteInAllImagesAndImageFilePathInfosById(id);
 
@@ -1147,25 +1158,27 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInAllImagesAndImageFilePathInfosById_ShouldFail_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
-        uint? productId = productInsertResult.Match<uint?>(
+        int? productId = productInsertResult.Match<int?>(
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
 
         Assert.NotNull(productId);
+        Assert.True(productId > 0);
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId.Value);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
 
-        uint? id = insertResult1.Match<uint?>(
+        int? id = insertResult1.Match<int?>(
              id => id,
              validationResult => null,
              unexpectedFailureResult => null);
 
         Assert.NotNull(id);
+        Assert.True(id > 0);
 
         bool success = _productImageService.DeleteInAllImagesById(999999999);
 
@@ -1181,34 +1194,34 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteAllImagesForProduct_ShouldSucceed_WhenInsertsAreValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData((int)productId);
-        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData((int)productId);
+        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
 
         Assert.True(insertResult1.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint id1 = insertResult1.AsT0;
+        int id1 = insertResult1.AsT0;
 
         Assert.True(insertResult2.Match(
            _ => true,
            _ => false,
            _ => false));
 
-        uint id2 = insertResult2.AsT0;
+        int id2 = insertResult2.AsT0;
 
         bool success = _productImageService.DeleteAllImagesForProduct(productId);
 
@@ -1222,20 +1235,20 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteAllImagesForProduct_ShouldFail_WhenInsertsAreInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetInvalidImageCreateRequest((int)productId);
-        ServiceProductImageCreateRequest createRequest2 = GetInvalidImageCreateRequest((int)productId);
+        ServiceProductImageCreateRequest createRequest1 = GetInvalidImageCreateRequest(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetInvalidImageCreateRequest(productId);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
 
         Assert.True(insertResult1.Match(
             _ => false,
@@ -1259,16 +1272,16 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInFirstImagesByProductId_ShouldSucceed_WhenInsertIsValid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData((int)productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -1289,16 +1302,16 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInFirstImagesByProductId_ShouldFail_WhenInsertIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetInvalidFirstImageCreateRequest((int)productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetInvalidFirstImageCreateRequest(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -1319,16 +1332,16 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     [Fact]
     public void DeleteInFirstImagesByProductId_ShouldFail_WhenIdIsInvalid()
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
         Assert.True(productInsertResult.Match(
             _ => true,
             _ => false,
             _ => false));
 
-        uint productId = productInsertResult.AsT0;
+        int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData((int)productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -1347,7 +1360,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     }
 
 #pragma warning disable IDE0051 // Remove unused private members
-    private bool DeleteAllImagesInProduct(params uint[] productIds)
+    private bool DeleteAllImagesInProduct(params int[] productIds)
 #pragma warning restore IDE0051 // Remove unused private members
     {
         foreach (var productId in productIds)
