@@ -71,9 +71,9 @@ public class ProductCreateModel : PageModel
     private void CategorySelectItems_Initialize()
     {
         CategorySelectItems = _categoryService.GetAll()
-                    .Select(category => new SelectListItem() { Text = category.Description, Value = category.Id.ToString() })
-                    .OrderBy(x => x.Text)
-                    .ToList();
+            .Select(category => new SelectListItem() { Text = category.Description, Value = category.Id.ToString() })
+            .OrderBy(x => x.Text)
+            .ToList();
 
         CategorySelectItems.Add(new() { Selected = true, Disabled = true, Text = "-- Select a Category --" });
     }
@@ -81,9 +81,9 @@ public class ProductCreateModel : PageModel
     private void ManifacturerSelectItems_Initialize()
     {
         ManifacturerSelectItems = _manifacturerService.GetAll()
-                    .Select(manifacturer => new SelectListItem() { Text = manifacturer.RealCompanyName, Value = manifacturer.Id.ToString() })
-                    .OrderBy(x => x.Text)
-                    .ToList();
+            .Select(manifacturer => new SelectListItem() { Text = manifacturer.RealCompanyName, Value = manifacturer.Id.ToString() })
+            .OrderBy(x => x.Text)
+            .ToList();
 
         ManifacturerSelectItems.Add(new() { Selected = true, Disabled = true, Text = "-- Select a Manifacturer --" });
     }
