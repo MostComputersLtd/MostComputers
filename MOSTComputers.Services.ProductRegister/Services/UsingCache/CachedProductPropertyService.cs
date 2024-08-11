@@ -7,8 +7,9 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Services.Caching.Services.Contracts;
-using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductProperty;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductProperty;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -29,20 +30,28 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
 
     private readonly CancellationTokenSource _allCachedItemsTokenSource = new();
 
-    public IEnumerable<ProductProperty> GetAllInProduct(uint productId)
+    public IEnumerable<ProductProperty> GetAllInProduct(int productId)
     {
-        return _cache.GetOrAdd(GetByProductIdKey((int)productId),
+        if (productId <= 0) return Enumerable.Empty<ProductProperty>();
+
+        IEnumerable<ProductProperty> productProperties = _cache.GetOrAdd(GetByProductIdKey(productId),
             () => _productPropertyService.GetAllInProduct(productId),
             _allCachedItemsTokenSource.Token);
+
+        return CloneAll(productProperties);
     }
 
-    public ProductProperty? GetByNameAndProductId(string name, uint productId)
+    public ProductProperty? GetByNameAndProductId(string name, int productId)
     {
-        IEnumerable<ProductProperty>? cachedProductProperties = _cache.GetValueOrDefault<IEnumerable<ProductProperty>>(GetByProductIdKey((int)productId));
+        if (productId <= 0) return null;
+
+        IEnumerable<ProductProperty>? cachedProductProperties = _cache.GetValueOrDefault<IEnumerable<ProductProperty>>(GetByProductIdKey(productId));
 
         if (cachedProductProperties is not null)
         {
-            return cachedProductProperties.First(x => x.Characteristic == name);
+            ProductProperty cachedPropertyWithSameName = cachedProductProperties.First(x => x.Characteristic == name);
+
+            return Clone(cachedPropertyWithSameName);
         }
 
         return _productPropertyService.GetByNameAndProductId(name, productId);
@@ -56,7 +65,7 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         bool successFromResult = result.Match(
             success => true,
             _ => false,
-        _ => false);
+            _ => false);
 
         if (successFromResult)
         {
@@ -108,45 +117,51 @@ internal sealed class CachedProductPropertyService : IProductPropertyService
         return result;
     }
 
-    public bool Delete(uint productId, uint characteristicId)
+    public bool Delete(int productId, int characteristicId)
     {
+        if (productId <= 0 || characteristicId <= 0) return false;
+
         bool success = _productPropertyService.Delete(productId, characteristicId);
 
         if (success)
         {
-            string key = GetByProductIdKey((int)productId);
+            string key = GetByProductIdKey(productId);
 
             _cache.Evict(key);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
 
             IEnumerable<ProductProperty>? cachedProductProperties
                 = _cache.GetValueOrDefault<IEnumerable<ProductProperty>>(key);
 
             if (cachedProductProperties is null) return success;
 
-            _cache.Add(key, cachedProductProperties.Where(x => x.ProductCharacteristicId != (int)characteristicId));
+            _cache.Add(key, cachedProductProperties.Where(x => x.ProductCharacteristicId != characteristicId));
         }
 
         return success;
     }
 
-    public bool DeleteAllForProduct(uint productId)
+    public bool DeleteAllForProduct(int productId)
     {
+        if (productId <= 0) return false;
+
         bool success = _productPropertyService.DeleteAllForProduct(productId);
 
         if (success)
         {
-            _cache.Evict(GetByProductIdKey((int)productId));
+            _cache.Evict(GetByProductIdKey(productId));
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey((int)productId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
     }
 
-    public bool DeleteAllForCharacteristic(uint characteristicId)
+    public bool DeleteAllForCharacteristic(int characteristicId)
     {
+        if (characteristicId <= 0) return false;
+
         bool success = _productPropertyService.DeleteAllForCharacteristic(characteristicId);
 
         if (success)

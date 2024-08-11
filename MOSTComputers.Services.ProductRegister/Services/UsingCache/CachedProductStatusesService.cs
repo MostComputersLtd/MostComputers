@@ -6,6 +6,8 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductStatuses;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -27,19 +29,27 @@ internal sealed class CachedProductStatusesService : IProductStatusesService
         return _productStatusesService.GetAll();
     }
 
-    public ProductStatuses? GetByProductId(uint productId)
+    public ProductStatuses? GetByProductId(int productId)
     {
-        return _cache.GetOrAdd(GetByProductIdKey((int)productId),
+        if (productId <= 0) return null;
+
+        ProductStatuses? productStatuses = _cache.GetOrAdd(GetByProductIdKey(productId),
             () => _productStatusesService.GetByProductId(productId));
+
+        if (productStatuses is null) return null;
+
+        return Clone(productStatuses);
     }
 
-    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<uint> productIds)
+    public IEnumerable<ProductStatuses> GetSelectionByProductIds(IEnumerable<int> productIds)
     {
+        productIds = RemoveValuesSmallerThanOne(productIds);
+
         List<ProductStatuses>? cachedStatuses = null;
 
-        foreach (uint productId in productIds)
+        foreach (int productId in productIds)
         {
-            ProductStatuses? productStatuses = _cache.GetValueOrDefault<ProductStatuses>(GetByProductIdKey((int)productId));
+            ProductStatuses? productStatuses = _cache.GetValueOrDefault<ProductStatuses>(GetByProductIdKey(productId));
 
             if (productStatuses is not null)
             {
@@ -51,22 +61,29 @@ internal sealed class CachedProductStatusesService : IProductStatusesService
 
         if (cachedStatuses is not null)
         {
-            productIds = productIds.Except(cachedStatuses.Select(status => (uint)status.ProductId));
+            productIds = productIds.Except(cachedStatuses.Select(status => status.ProductId));
 
             if (!productIds.Any())
             {
-                return cachedStatuses;
+                return CloneAll(cachedStatuses);
             }
         }
 
         IEnumerable<ProductStatuses> statuses = _productStatusesService.GetSelectionByProductIds(productIds);
 
-        if (cachedStatuses is not null)
+        foreach (ProductStatuses status in statuses)
         {
-            return statuses.Concat(cachedStatuses);
+            _cache.Add(GetByProductIdKey(status.ProductId), status);
         }
 
-        return statuses;
+        if (cachedStatuses is not null)
+        {
+            List<ProductStatuses> productStatusesClone = CloneAll(statuses);
+
+            return productStatusesClone.Concat(cachedStatuses);
+        }
+
+        return CloneAll(statuses);
     }
 
     public OneOf<Success, ValidationResult> InsertIfItDoesntExist(ProductStatusesCreateRequest createRequest)
@@ -100,13 +117,15 @@ internal sealed class CachedProductStatusesService : IProductStatusesService
 
         return updateResult;
     }
-    public bool DeleteByProductId(uint productId)
+    public bool DeleteByProductId(int productId)
     {
+        if (productId <= 0) return false;
+
         bool success = _productStatusesService.DeleteByProductId(productId);
 
         if (success)
         {
-            _cache.Evict(GetByProductIdKey((int)productId));
+            _cache.Evict(GetByProductIdKey(productId));
         }
 
         return success;

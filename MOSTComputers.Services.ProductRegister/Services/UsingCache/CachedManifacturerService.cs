@@ -7,9 +7,9 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Manifacturer;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -28,28 +28,36 @@ internal sealed class CachedManifacturerService : IManifacturerService
 
     public IEnumerable<Manifacturer> GetAll()
     {
-        return _cache.GetOrAdd(GetAllKey, _manifacturerService.GetAll);
+        IEnumerable<Manifacturer> manifacturers = _cache.GetOrAdd(GetAllKey, _manifacturerService.GetAll);
+
+        return CloneAll(manifacturers);
     }
 
-    public Manifacturer? GetById(uint id)
+    public Manifacturer? GetById(int id)
     {
-        return _cache.GetOrAdd(GetByIdKey((int)id), () => _manifacturerService.GetById(id));
+        if (id <= 0) return null;
+
+        Manifacturer? manifacturer = _cache.GetOrAdd(GetByIdKey((int)id),
+            () => _manifacturerService.GetById(id));
+
+        if (manifacturer is null) return null;
+
+        return Clone(manifacturer);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ManifacturerCreateRequest createRequest,
         IValidator<ManifacturerCreateRequest>? validator = null)
     {
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _manifacturerService.Insert(createRequest, validator);
 
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _manifacturerService.Insert(createRequest, validator);
-
-        uint? idFromResult = result.Match<uint?>(
+        int? idFromResult = result.Match<int?>(
             id => id,
             _ => null,
             _ => null);
 
         if (idFromResult is not null)
         {
-            _cache.Evict(GetByIdKey((int)idFromResult));
+            _cache.Evict(GetByIdKey(idFromResult.Value));
 
             _cache.Evict(GetAllKey);
         }
@@ -77,13 +85,15 @@ internal sealed class CachedManifacturerService : IManifacturerService
         return result;
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         bool success = _manifacturerService.Delete(id);
 
         if (success)
         {
-            _cache.Evict(GetByIdKey((int)id));
+            _cache.Evict(GetByIdKey(id));
 
             _cache.Evict(GetAllKey);
         }

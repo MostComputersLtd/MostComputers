@@ -8,6 +8,7 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Category;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -26,21 +27,29 @@ internal sealed class CachedCategoryService : ICategoryService
 
     public IEnumerable<Category> GetAll()
     {
-        return _cache.GetOrAdd(GetAllKey, _categoryService.GetAll);
+        IEnumerable<Category> categories = _cache.GetOrAdd(GetAllKey, _categoryService.GetAll);
+
+        return CloneAll(categories);
     }
 
-    public Category? GetById(uint id)
+    public Category? GetById(int id)
     {
-        return _cache.GetOrAdd(GetByIdKey((int)id),
+        if (id <= 0) return null;
+
+        Category? category = _cache.GetOrAdd(GetByIdKey(id),
             () => _categoryService.GetById(id));
+
+        if (category is null) return null;
+
+        return Clone(category);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest,
         IValidator<ServiceCategoryCreateRequest>? validator = null)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> result = _categoryService.Insert(createRequest, validator);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result = _categoryService.Insert(createRequest, validator);
 
-        uint? idFromResult = result.Match<uint?>(
+        int? idFromResult = result.Match<int?>(
             id => id,
             _ => null,
             _ => null);
@@ -75,13 +84,15 @@ internal sealed class CachedCategoryService : ICategoryService
         return result;
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         bool success = _categoryService.Delete(id);
 
         if (success)
         {
-            _cache.Evict(GetByIdKey((int)id));
+            _cache.Evict(GetByIdKey(id));
 
             _cache.Evict(GetAllKey);
         }

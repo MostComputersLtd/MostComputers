@@ -9,6 +9,7 @@ using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Grouping;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductCharacteristic;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -27,8 +28,10 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
     public IEnumerable<ProductCharacteristic> GetAllByCategoryId(int categoryId)
     {
-        return _cache.GetOrAdd(GetByCategoryIdKey(categoryId),
+        IEnumerable<ProductCharacteristic> productCharacteristicsWithCategoryId = _cache.GetOrAdd(GetByCategoryIdKey(categoryId),
             () => _productCharacteristicService.GetAllByCategoryId(categoryId));
+
+        return CloneAll(productCharacteristicsWithCategoryId);
     }
 
     public IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(int categoryId)
@@ -42,7 +45,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (cachedCategoryData.Any())
             {
-                return cachedCategoryData;
+                return CloneAll(cachedCategoryData);
             }
         }
 
@@ -60,7 +63,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (cachedCategoryData.Any())
             {
-                return cachedCategoryData;
+                return CloneAll(cachedCategoryData);
             }
         }
 
@@ -90,7 +93,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (!categoryIds.Any())
             {
-                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, kvp.Value));
+                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, CloneAll(kvp.Value)));
             }
         }
 
@@ -98,7 +101,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
         foreach (IGrouping<int, ProductCharacteristic> group in output)
         {
-            _cache.Add<IEnumerable<ProductCharacteristic>>(GetByCategoryIdKey(group.Key), group);
+            _cache.Add<IEnumerable<ProductCharacteristic>>(GetByCategoryIdKey(group.Key), CloneAll(group));
         }
 
         if (savedCategories is not null)
@@ -123,7 +126,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (!categoryIds.Any())
             {
-                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, kvp.Value));
+                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, CloneAll(kvp.Value)));
             }
         }
 
@@ -140,7 +143,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
             output = output.Concat(savedPartOfOutput);
         }
 
-        return output;
+        return output.Select(grouping => new Grouping<int, ProductCharacteristic>(grouping.Key, CloneAll(grouping)));
     }
 
     public IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
@@ -154,7 +157,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (!categoryIds.Any())
             {
-                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, kvp.Value));
+                return savedCategories.Select(kvp => new Grouping<int, ProductCharacteristic>(kvp.Key, CloneAll(kvp.Value)));
             }
         }
 
@@ -171,7 +174,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
             output = output.Concat(savedPartOfOutput);
         }
 
-        return output;
+        return output.Select(grouping => new Grouping<int, ProductCharacteristic>(grouping.Key, CloneAll(grouping)));
     }
 
 
@@ -197,7 +200,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
                     }
                 }
 
-                if (characteristicsForEachCategory.Any())
+                if (characteristicsForEachCategory.Count > 0)
                 {
                     savedCategories ??= new();
 
@@ -234,15 +237,25 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         }
     }
 
-    public ProductCharacteristic? GetById(uint id)
+    public ProductCharacteristic? GetById(int id)
     {
-        return _productCharacteristicService.GetById(id);
+        if (id <= 0) return null;
+
+        ProductCharacteristic? productCharacteristic = _productCharacteristicService.GetById(id);
+
+        if (productCharacteristic is null) return null;
+
+        return Clone(productCharacteristic);
     }
 
     public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
     {
-        return _cache.GetOrAdd(GetByCategoryIdAndNameKey(categoryId, name),
+        ProductCharacteristic? productCharacteristic = _cache.GetOrAdd(GetByCategoryIdAndNameKey(categoryId, name),
             () => _productCharacteristicService.GetByCategoryIdAndName(categoryId, name));
+
+        if (productCharacteristic is null) return null;
+
+        return Clone(productCharacteristic);
     }
 
     public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
@@ -258,7 +271,9 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
 
             if (characteristicWithNameAndCategoryId is not null)
             {
-                output.Add(characteristicWithNameAndCategoryId);
+                ProductCharacteristic characteristicClone = Clone(characteristicWithNameAndCategoryId);
+
+                output.Add(characteristicClone);
 
                 names.Remove(name);
 
@@ -275,7 +290,7 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         {
             if (characteristic.Name is null) continue;
 
-            _cache.Add(GetByCategoryIdAndNameKey(categoryId, characteristic.Name), characteristic);
+            _cache.Add(GetByCategoryIdAndNameKey(categoryId, characteristic.Name), Clone(characteristic));
         }
 
         output.AddRange(characteristicsThatArentCached);
@@ -291,9 +306,9 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         return _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(categoryId, name, productCharacteristicType);
     }
 
-    public OneOf<uint, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
     {
-        OneOf<uint, ValidationResult, UnexpectedFailureResult> insertResult = _productCharacteristicService.Insert(createRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productCharacteristicService.Insert(createRequest);
 
         bool successOfResult = insertResult.Match(
             id => true,
@@ -344,8 +359,10 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         }
     }
 
-    public bool Delete(uint id)
+    public bool Delete(int id)
     {
+        if (id <= 0) return false;
+
         ProductCharacteristic? characteristic = GetById(id);
 
         bool success = _productCharacteristicService.Delete(id);
