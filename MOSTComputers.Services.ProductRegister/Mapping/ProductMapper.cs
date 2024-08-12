@@ -54,7 +54,6 @@ public sealed partial class ProductMapper
     [MapperIgnoreTarget(nameof(ProductImageFileNameInfoCreateRequest.Active))]
     internal partial ProductImageFileNameInfoCreateRequest Map(ServiceProductImageFileNameInfoCreateRequest serviceCategoryUpdateRequest);
 
-
     [MapperIgnoreTarget(nameof(ProductImageFileNameInfoByImageNumberUpdateRequest.Active))]
     internal partial ProductImageFileNameInfoByImageNumberUpdateRequest Map(ServiceProductImageFileNameInfoByImageNumberUpdateRequest serviceCategoryUpdateRequest);
 
