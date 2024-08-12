@@ -142,7 +142,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -150,7 +150,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -209,7 +209,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -217,7 +217,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -325,7 +325,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -333,7 +333,7 @@ internal static class CommonTestElements
                 new()
                 {
                     ImageData = LocalTestImageData,
-                    ImageFileExtension = "image/png",
+                    ImageContentType = "image/png",
                     HtmlData = "<data></data>",
                     DateModified = DateTime.Now,
                 },
@@ -451,7 +451,7 @@ internal static class CommonTestElements
         return new()
         {
             ImageData = LocalTestImageData,
-            ImageFileExtension = "image/png",
+            ImageContentType = "image/png",
             ProductId = productId,
             HtmlData = "<data></data>",
         };
@@ -462,7 +462,7 @@ internal static class CommonTestElements
         return new()
         {
             ImageData = LocalTestImageData,
-            ImageFileExtension = "image/png",
+            ImageContentType = "image/png",
             ProductId = productId,
             HtmlData = "<data></data>",
         };

@@ -206,7 +206,7 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
             CurrentProductImageCreateRequest imageFileNameInfo = new()
             {
                 ImageData = imageData,
-                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
+                ImageContentType = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
                 HtmlData = xml,
             };
 

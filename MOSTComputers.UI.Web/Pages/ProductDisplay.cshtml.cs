@@ -477,7 +477,7 @@ public sealed class ProductDisplayModel : PageModel
         ServiceProductImageCreateRequest imageCreateRequest = new()
         {
             ImageData = imageBytes,
-            ImageFileExtension = contentType,
+            ImageContentType = contentType,
             ProductId = (int)productId,
             HtmlData = GetProductXML(productId)
         };
@@ -561,7 +561,7 @@ public sealed class ProductDisplayModel : PageModel
         {
             ProductId = (int)newFirstImage.ProductId!,
             ImageData = newFirstImage.ImageData,
-            ImageFileExtension = newFirstImage.ImageContentType,
+            ImageContentType = newFirstImage.ImageContentType,
             HtmlData = newFirstImage.HtmlData,
         };
     }

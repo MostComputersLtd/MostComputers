@@ -38,7 +38,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     private static ServiceProductFirstImageCreateRequest GetInvalidFirstImageCreateRequest(int productId) => new()
     {
         ImageData = LocalTestImageData,
-        ImageFileExtension = null,
+        ImageContentType = null,
         ProductId = productId,
         HtmlData = "<data></data>",
     };
@@ -46,7 +46,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
     private static ServiceProductImageCreateRequest GetInvalidImageCreateRequest(int productId) => new()
     {
         ImageData = LocalTestImageData,
-        ImageFileExtension = null,
+        ImageContentType = null,
         ProductId = productId,
         HtmlData = "<data></data>",
     };
@@ -88,7 +88,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Contains(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageContentType == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageContentType);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.DoesNotContain(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, invalidCreateRequest.ImageData)
-        && x.ImageContentType == invalidCreateRequest.ImageFileExtension);
+        && x.ImageContentType == invalidCreateRequest.ImageContentType);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Contains(productFirstImages, x =>
         x.Id == productId1
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageContentType == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageContentType);
     }
 
     [Fact]
@@ -277,12 +277,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Contains(productImages, x =>
         x.ProductId == productId
         && CompareDataInByteArrays(x.ImageData, createRequest1.ImageData)
-        && x.ImageContentType == createRequest1.ImageFileExtension);
+        && x.ImageContentType == createRequest1.ImageContentType);
 
         Assert.Contains(productImages, x =>
         x.ProductId == productId
         && CompareDataInByteArrays(x.ImageData, createRequest2.ImageData)
-        && x.ImageContentType == createRequest2.ImageFileExtension);
+        && x.ImageContentType == createRequest2.ImageContentType);
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Equal(productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+        Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Equal(productId, productImage.ProductId);
         Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-        Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+        Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
     }
 
     [Fact]
@@ -476,7 +476,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.Equal(productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
         }
     }
 
@@ -494,7 +494,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = null,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             true
@@ -506,7 +506,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -518,7 +518,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             false
@@ -530,7 +530,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -542,7 +542,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "       ",
+                ImageContentType = "       ",
                 HtmlData = null
             },
             false
@@ -592,7 +592,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.Equal((int)productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
         }
     }
 
@@ -613,7 +613,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = null,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             null,
@@ -640,7 +640,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             null,
@@ -653,7 +653,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             null,
@@ -666,7 +666,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             null,
@@ -679,7 +679,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "       ",
+                ImageContentType = "       ",
                 HtmlData = null
             },
             null,
@@ -723,7 +723,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.Equal(productId1, productImage.ProductId);
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
         }
     }
 
@@ -741,7 +741,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = null,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             true
@@ -753,7 +753,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -765,7 +765,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             false
@@ -777,7 +777,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -789,7 +789,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "       ",
+                ImageContentType = "       ",
                 HtmlData = null,
             },
             false
@@ -843,12 +843,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         if (expected)
         {
             Assert.True(CompareDataInByteArrays(updateRequest.ImageData, productImage.ImageData));
-            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(updateRequest.ImageContentType, productImage.ImageContentType);
         }
         else
         {
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
         }
     }
 
@@ -860,7 +860,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             true
@@ -872,7 +872,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = null,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             true
@@ -884,7 +884,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -896,7 +896,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             false
@@ -908,7 +908,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -920,7 +920,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 Id = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "       ",
+                ImageContentType = "       ",
                 HtmlData = null
             },
             false
@@ -971,12 +971,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         if (expected)
         {
             Assert.True(CompareDataInByteArrays(updateRequest.ImageData, productImage.ImageData));
-            Assert.Equal(updateRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(updateRequest.ImageContentType, productImage.ImageContentType);
         }
         else
         {
             Assert.True(CompareDataInByteArrays(createRequest.ImageData, productImage.ImageData));
-            Assert.Equal(createRequest.ImageFileExtension, productImage.ImageContentType);
+            Assert.Equal(createRequest.ImageContentType, productImage.ImageContentType);
         }
     }
 
@@ -988,7 +988,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             true
@@ -1000,7 +1000,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = null,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             true
@@ -1012,7 +1012,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -1024,7 +1024,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = Array.Empty<byte>(),
-                ImageFileExtension = "image/png",
+                ImageContentType = "image/png",
                 HtmlData = null
             },
             false
@@ -1036,7 +1036,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = null,
+                ImageContentType = null,
                 HtmlData = null
             },
             false
@@ -1048,7 +1048,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             {
                 ProductId = _useRequiredValue,
                 ImageData = LocalTestImageData,
-                ImageFileExtension = "       ",
+                ImageContentType = "       ",
                 HtmlData = null
             },
             false

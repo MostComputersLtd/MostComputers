@@ -462,7 +462,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             CurrentProductImageCreateRequest imageFileNameInfo = new()
             {
                 ImageData = imageData,
-                ImageFileExtension = string.Concat("image/", item.PictureUrl.AsSpan(fileExtensionStartIndex)),
+                ImageContentType = string.Concat("image/", item.PictureUrl.AsSpan(fileExtensionStartIndex)),
                 HtmlData = xml,
             };
 

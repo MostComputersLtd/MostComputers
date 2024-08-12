@@ -1578,7 +1578,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 ProductImage imageInObject = imagesInObject[j];
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
-                    && imageInRequest.ImageFileExtension == imageInObject.ImageContentType
+                    && imageInRequest.ImageContentType == imageInObject.ImageContentType
                     && imageInRequest.HtmlData == imageInObject.HtmlData)
                 {
                     isMatched = true;
@@ -1667,7 +1667,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 ProductImage imageInObject = imagesInObject[j];
 
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
-                    && imageInRequest.ImageFileExtension == imageInObject.ImageContentType
+                    && imageInRequest.ImageContentType == imageInObject.ImageContentType
                     && imageInRequest.HtmlData == imageInObject.HtmlData)
                 {
                     isMatched = true;

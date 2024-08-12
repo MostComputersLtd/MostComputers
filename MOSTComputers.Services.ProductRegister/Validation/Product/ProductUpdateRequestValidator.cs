@@ -59,7 +59,7 @@ internal sealed class CurrentProductImageCreateUpdateValidator : AbstractValidat
     {
         RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
         RuleFor(x => x.ImageData).NotEmpty();
-        RuleFor(x => x.ImageFileExtension).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
+        RuleFor(x => x.ImageContentType).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
 

@@ -872,7 +872,7 @@ internal class ProductManipulateService : IProductManipulateService
                     {
                         ProductId = productId,
                         ImageData = image.ImageData,
-                        ImageFileExtension = image.ImageContentType,
+                        ImageContentType = image.ImageContentType,
                         HtmlData = image.HtmlData,
                     };
 
@@ -943,7 +943,7 @@ internal class ProductManipulateService : IProductManipulateService
                 CurrentProductImageUpdateRequest productImageUpdateRequest = new()
                 {
                     ImageData = image.ImageData,
-                    ImageFileExtension = image.ImageContentType,
+                    ImageContentType = image.ImageContentType,
                     HtmlData = image.HtmlData,
                 };
 
@@ -964,7 +964,7 @@ internal class ProductManipulateService : IProductManipulateService
                     {
                         ProductId = productId,
                         ImageData = productFirstImage.ImageData,
-                        ImageFileExtension = productFirstImage.ImageContentType,
+                        ImageContentType = productFirstImage.ImageContentType,
                         HtmlData = productFirstImage.HtmlData,
                     });
 
@@ -981,7 +981,7 @@ internal class ProductManipulateService : IProductManipulateService
                     {
                         ProductId = productId,
                         ImageData = productFirstImage.ImageData,
-                        ImageFileExtension = productFirstImage.ImageContentType,
+                        ImageContentType = productFirstImage.ImageContentType,
                         HtmlData = productFirstImage.HtmlData,
                     });
 

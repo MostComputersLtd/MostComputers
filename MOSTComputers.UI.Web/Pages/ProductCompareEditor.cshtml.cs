@@ -690,7 +690,7 @@ public class ProductCompareEditorModel : PageModel
                     {
                         ProductId = productId,
                         ImageData = image.ImageData,
-                        ImageFileExtension = image.ImageContentType,
+                        ImageContentType = image.ImageContentType,
                         HtmlData = image.HtmlData,
                     };
 
@@ -740,7 +740,7 @@ public class ProductCompareEditorModel : PageModel
                 CurrentProductImageUpdateRequest productImageUpdateRequest = new()
                 {
                     ImageData = image.ImageData,
-                    ImageFileExtension = image.ImageContentType,
+                    ImageContentType = image.ImageContentType,
                     HtmlData = image.HtmlData,
                 };
 

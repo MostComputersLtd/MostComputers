@@ -461,7 +461,7 @@ public sealed class ProductChangesService : IProductChangesService
             {
                 ProductId = productId,
                 ImageData = kvp.Key.ImageData,
-                ImageFileExtension = kvp.Key.ImageContentType,
+                ImageContentType = kvp.Key.ImageContentType,
             };
 
             OneOf<int, ValidationResult, UnexpectedFailureResult> productImageInsertResult
@@ -503,7 +503,7 @@ public sealed class ProductChangesService : IProductChangesService
         {
             ProductId = productId,
             ImageData = firstProductKvp.Key.ImageData,
-            ImageFileExtension = firstProductKvp.Key.ImageContentType,
+            ImageContentType = firstProductKvp.Key.ImageContentType,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult

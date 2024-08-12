@@ -143,7 +143,7 @@ internal static class ProductMappingUtils
             Images = product.Images?.ConvertAll(x => new CurrentProductImageCreateRequest()
             {
                 ImageData = x.ImageData,
-                ImageFileExtension = x.ImageContentType,
+                ImageContentType = x.ImageContentType,
                 DateModified = x.DateModified,
                 HtmlData = x.HtmlData,
             }),

@@ -15,8 +15,8 @@ internal sealed class ProductFirstImageCreateRequestValidator : AbstractValidato
     {
         RuleFor(x => x.ProductId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x).Must(x => (x.ImageData is not null) == (x.ImageFileExtension is not null));
+        RuleFor(x => x).Must(x => (x.ImageData is not null) == (x.ImageContentType is not null));
         RuleFor(x => x.ImageData).Must(IsNullOrNotEmpty);
-        RuleFor(x => x.ImageFileExtension).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
+        RuleFor(x => x.ImageContentType).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
