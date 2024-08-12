@@ -23,6 +23,9 @@ using OneOf;
 using OneOf.Types;
 using System.Transactions;
 using System.Web;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Utils.ProductImageFileNameUtils;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -31,6 +34,7 @@ public class ProductCompareEditorModel : PageModel
 {
     public ProductCompareEditorModel(
         IProductService productService,
+        IProductManipulateService productManipulateService,
         IProductDeserializeService productDeserializeService,
         IProductCharacteristicService productCharacteristicService,
         IProductImageService productImageService,
@@ -43,6 +47,7 @@ public class ProductCompareEditorModel : PageModel
         IProductXmlToProductMappingService productXmlToProductMappingService)
     {
         _productService = productService;
+        _productManipulateService = productManipulateService;
         _productDeserializeService = productDeserializeService;
         _productCharacteristicService = productCharacteristicService;
         _productImageService = productImageService;
@@ -56,6 +61,7 @@ public class ProductCompareEditorModel : PageModel
     }
 
     private readonly IProductService _productService;
+    private readonly IProductManipulateService _productManipulateService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IProductImageService _productImageService;
@@ -303,9 +309,9 @@ public class ProductCompareEditorModel : PageModel
 
         List<int> categoryIds = new() { -1 };
 
-        if (firstProduct!.CategoryID is not null)
+        if (firstProduct!.CategoryId is not null)
         {
-            categoryIds.Add(firstProduct.CategoryID.Value);
+            categoryIds.Add(firstProduct.CategoryId.Value);
         }
 
         IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsRelatedToProduct =
@@ -345,7 +351,7 @@ public class ProductCompareEditorModel : PageModel
         OneOf<XmlObjectData?, InvalidXmlResult> productDeserializeResult
             = _productDeserializeService.TryDeserializeProductsXml(xmlData);
 
-        return await productDeserializeResult.Match<Task<IActionResult>>(
+        return await productDeserializeResult.Match(
             async xmlObjectData =>
             {
                 if (xmlObjectData is null) return BadRequest();
@@ -380,9 +386,9 @@ public class ProductCompareEditorModel : PageModel
 
                 List<int> categoryIds = new() { -1 };
 
-                if (product!.CategoryID is not null)
+                if (product!.CategoryId is not null)
                 {
-                    categoryIds.Add(product.CategoryID.Value);
+                    categoryIds.Add(product.CategoryId.Value);
                 }
 
                 IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsRelatedToProduct =
@@ -483,13 +489,62 @@ public class ProductCompareEditorModel : PageModel
         {
             int firstProductId = _firstProduct.Id;
 
-            IStatusCodeActionResult result = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
-                SaveFirstProductInternal,
-                actionResult => actionResult.StatusCode == 200);
-
-            if (result.StatusCode != 200)
+            ProductFullUpdateRequest productFullUpdateRequest = new()
             {
-                return result;
+                Id = _firstProduct.Id,
+                Name = _firstProduct.Name,
+                AdditionalWarrantyPrice = _firstProduct.AdditionalWarrantyPrice,
+                AdditionalWarrantyTermMonths = _firstProduct.AdditionalWarrantyTermMonths,
+                StandardWarrantyPrice = _firstProduct.StandardWarrantyPrice,
+                StandardWarrantyTermMonths = _firstProduct.StandardWarrantyTermMonths,
+                DisplayOrder = _firstProduct.DisplayOrder,
+                Status = _firstProduct.Status,
+                PlShow = _firstProduct.PlShow,
+                Price1 = null,
+                DisplayPrice = _firstProduct.Price,
+                Price3 = null,
+                Currency = _firstProduct.Currency,
+                RowGuid = _firstProduct.RowGuid,
+                PromotionId = _firstProduct.PromotionId,
+                PromRid = _firstProduct.PromRid,
+                PromotionPictureId = _firstProduct.PromotionPictureId,
+                PromotionExpireDate = _firstProduct.PromotionExpireDate,
+                AlertPictureId = _firstProduct.AlertPictureId,
+                AlertExpireDate = _firstProduct.AlertExpireDate,
+                PriceListDescription = _firstProduct.PriceListDescription,
+                PartNumber1 = _firstProduct.PartNumber1,
+                PartNumber2 = _firstProduct.PartNumber2,
+                SearchString = _firstProduct.SearchString,
+                Category = _firstProduct.Category,
+                Manifacturer = _firstProduct.Manifacturer,
+                SubCategoryId = _firstProduct.SubCategoryId,
+
+                ImagesAndFileNames = ProductImageAndFileNameRelationsUtils.GetImageDictionaryFromImagesAndImageFileInfos(_firstProduct.Images, _firstProduct.ImageFileNames),
+
+                Properties = _firstProduct.Properties?.ToList(),
+
+                ManifacturerId = _firstProduct.ManifacturerId,
+                CategoryId = _firstProduct.CategoryId,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult, NotSupportedFileTypeResult> result
+                = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
+                    () => _productManipulateService.UpdateProductFull(productFullUpdateRequest),
+                    productUpdateResult => productUpdateResult.Match(
+                        success => true,
+                        validationResult => false,
+                        unexpectedFailureResult => false,
+                        notSupportedFileTypeResult => false));
+
+            IStatusCodeActionResult actionResult = result.Match<IStatusCodeActionResult>(
+                success => new OkResult(),
+                validationResult => BadRequest(validationResult),
+                unexpectedFailureResult => StatusCode(500),
+                notSupportedFileTypeResult => BadRequest(notSupportedFileTypeResult));
+
+            if (actionResult.StatusCode != 200)
+            {
+                return actionResult;
             }
 
             _firstProduct = null;
@@ -502,419 +557,6 @@ public class ProductCompareEditorModel : PageModel
         {
             return StatusCode(500);
         }
-    }
-
-    private IStatusCodeActionResult SaveFirstProductInternal()
-    {
-        if (_firstProduct is null) return BadRequest();
-
-        int productId = _firstProduct.Id;
-
-        Product? oldFirstProduct = _productService.GetByIdWithImages(productId);
-
-        if (oldFirstProduct is null) return BadRequest();
-
-        if (oldFirstProduct.Properties is null
-            || oldFirstProduct.Properties.Count <= 0)
-        {
-            oldFirstProduct.Properties = _productPropertyService.GetAllInProduct(productId)
-                .ToList();
-        }
-
-        if (oldFirstProduct.ImageFileNames is null
-            || oldFirstProduct.ImageFileNames.Count <= 0)
-        {
-            oldFirstProduct.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId)
-                .ToList();
-        }
-
-        ProductUpdateRequest productUpdateRequest = new()
-        {
-            Id = _firstProduct.Id,
-            Name = _firstProduct.Name,
-            AdditionalWarrantyPrice = _firstProduct.AdditionalWarrantyPrice,
-            AdditionalWarrantyTermMonths = _firstProduct.AdditionalWarrantyTermMonths,
-            StandardWarrantyPrice = _firstProduct.StandardWarrantyPrice,
-            StandardWarrantyTermMonths = _firstProduct.StandardWarrantyTermMonths,
-            DisplayOrder = _firstProduct.DisplayOrder,
-            Status = _firstProduct.Status,
-            PlShow = _firstProduct.PlShow,
-            DisplayPrice = _firstProduct.Price,
-            Currency = _firstProduct.Currency,
-            RowGuid = _firstProduct.RowGuid,
-            Promotionid = _firstProduct.Promotionid,
-            PromRid = _firstProduct.PromRid,
-            PromotionPictureId = _firstProduct.PromotionPictureId,
-            PromotionExpireDate = _firstProduct.PromotionExpireDate,
-            AlertPictureId = _firstProduct.AlertPictureId,
-            AlertExpireDate = _firstProduct.AlertExpireDate,
-            PriceListDescription = _firstProduct.PriceListDescription,
-            PartNumber1 = _firstProduct.PartNumber1,
-            PartNumber2 = _firstProduct.PartNumber2,
-            SearchString = _firstProduct.SearchString,
-            Properties = new(),
-
-            Images = new(),
-            ImageFileNames = new(),
-            CategoryID = _firstProduct.CategoryID,
-            ManifacturerId = _firstProduct.ManifacturerId,
-            SubCategoryId = _firstProduct.SubCategoryId,
-        };
-
-        IStatusCodeActionResult propertiesUpdateActionResult = UpdatePropertiesForFirstProduct(oldFirstProduct, productId, productUpdateRequest);
-
-        if (propertiesUpdateActionResult.StatusCode != 200)
-        {
-            return propertiesUpdateActionResult;
-        }
-
-        IStatusCodeActionResult imagesUpdateActionResult = UpdateImagesInFirstProduct(oldFirstProduct, productId, productUpdateRequest);
-
-        if (imagesUpdateActionResult.StatusCode != 200)
-        {
-            return imagesUpdateActionResult;
-        }
-
-        IStatusCodeActionResult imageFileNamesUpdateActionResult = UpdateImageFileNamesInFirstProduct(oldFirstProduct, productId);
-
-        if (imageFileNamesUpdateActionResult.StatusCode != 200)
-        {
-            return imageFileNamesUpdateActionResult;
-        }
-
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
-
-        IStatusCodeActionResult actionResultFromUpdate = productUpdateResult.Match<IStatusCodeActionResult>(
-            success => new OkResult(),
-            validationResult => BadRequest(validationResult),
-            unexpectedFailureResult => StatusCode(500));
-
-        if (actionResultFromUpdate.StatusCode != 200)
-        {
-            return actionResultFromUpdate;
-        }
-
-        return new OkResult();
-    }
-
-    private IStatusCodeActionResult UpdatePropertiesForFirstProduct(
-        Product oldFirstProduct,
-        int productId,
-        ProductUpdateRequest productUpdateRequestToAddPropsTo)
-    {
-        if (_firstProduct is null) return BadRequest();
-
-        foreach (ProductProperty newProductProp in _firstProduct.Properties)
-        {
-            ProductProperty? oldProductPropForSameCharacteristic = oldFirstProduct.Properties
-                .Find(prop => prop.ProductCharacteristicId == newProductProp.ProductCharacteristicId);
-
-            if (oldProductPropForSameCharacteristic is null)
-            {
-                ProductPropertyByCharacteristicIdCreateRequest propCreateRequest = new()
-                {
-                    ProductCharacteristicId = newProductProp.ProductCharacteristicId,
-                    ProductId = productId,
-                    DisplayOrder = newProductProp.DisplayOrder,
-                    Value = newProductProp.Value,
-                    XmlPlacement = newProductProp.XmlPlacement,
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult
-                    = _productPropertyService.InsertWithCharacteristicId(propCreateRequest);
-
-                IStatusCodeActionResult actionResultFromPropertyInsert = propertyInsertResult.Match<IStatusCodeActionResult>(
-                    success => new OkResult(),
-                    validationResult => BadRequest(validationResult),
-                    unexpectedFailureResult => StatusCode(500));
-
-                if (actionResultFromPropertyInsert.StatusCode != 200)
-                {
-                    return actionResultFromPropertyInsert;
-                }
-
-                continue;
-            }
-
-            if (oldProductPropForSameCharacteristic.Value == newProductProp.Value
-                && oldProductPropForSameCharacteristic.XmlPlacement == newProductProp.XmlPlacement)
-            {
-                oldFirstProduct.Properties.Remove(oldProductPropForSameCharacteristic);
-
-                continue;
-            }
-
-            CurrentProductPropertyUpdateRequest propUpdateRequest = new()
-            {
-                ProductCharacteristicId = newProductProp.ProductCharacteristicId,
-                DisplayOrder = newProductProp.DisplayOrder,
-                Value = newProductProp.Value,
-                XmlPlacement = newProductProp.XmlPlacement,
-            };
-
-            productUpdateRequestToAddPropsTo.Properties.Add(propUpdateRequest);
-
-            oldFirstProduct.Properties.Remove(oldProductPropForSameCharacteristic);
-        }
-
-        foreach (ProductProperty oldPropertyToDelete in oldFirstProduct.Properties)
-        {
-            if (oldPropertyToDelete.ProductCharacteristicId is null) return StatusCode(500);
-
-            bool imageFileNameDeleteSuccess = _productPropertyService.Delete(
-                productId, oldPropertyToDelete.ProductCharacteristicId.Value);
-
-            if (!imageFileNameDeleteSuccess) return StatusCode(500);
-        }
-
-        return new OkResult();
-    }
-
-    private IStatusCodeActionResult UpdateImagesInFirstProduct(
-        Product oldFirstProduct,
-        int productId,
-        ProductUpdateRequest productUpdateRequestToAddImagesTo)
-    {
-        if (_firstProduct is null) return BadRequest();
-
-        if (_firstProduct.Images is not null)
-        {
-            foreach (ProductImage image in _firstProduct.Images)
-            {
-                ProductImage? imageInOldProduct = oldFirstProduct.Images?.Find(
-                    img => img.Id == image.Id);
-
-                if (imageInOldProduct is null)
-                {
-                    ServiceProductImageCreateRequest productImageCreateRequest = new()
-                    {
-                        ProductId = productId,
-                        ImageData = image.ImageData,
-                        ImageContentType = image.ImageContentType,
-                        HtmlData = image.HtmlData,
-                    };
-
-                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageInsertResult
-                        = _productImageService.InsertInAllImages(productImageCreateRequest);
-
-                    int imageId = -1;
-
-                    IStatusCodeActionResult actionResultFromImageInsert = imageInsertResult.Match<IStatusCodeActionResult>(
-                        id =>
-                        {
-                            imageId = id;
-
-                            return new OkResult();
-                        },
-                        validationResult => BadRequest(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-
-                    if (actionResultFromImageInsert.StatusCode != 200)
-                    {
-                        return actionResultFromImageInsert;
-                    }
-
-                    int imageInOrderedListIndex = OrdersForImagesInFirstProduct.FindIndex(
-                        x => x.productImage == image);
-
-                    if (imageInOrderedListIndex <= -1) return StatusCode(500);
-
-                    (ProductImage productImage, int displayOrder) = OrdersForImagesInFirstProduct[imageInOrderedListIndex];
-
-                    productImage.Id = imageId;
-
-                    OrdersForImagesInFirstProduct[imageInOrderedListIndex] = new(productImage, displayOrder);
-
-                    continue;
-                }
-
-                if (CompareByteArrays(image.ImageData, imageInOldProduct.ImageData)
-                    && image.ImageContentType == imageInOldProduct.ImageContentType
-                    && image.HtmlData == imageInOldProduct.HtmlData)
-                {
-                    oldFirstProduct.Images?.Remove(imageInOldProduct);
-
-                    continue;
-                }
-
-                CurrentProductImageUpdateRequest productImageUpdateRequest = new()
-                {
-                    ImageData = image.ImageData,
-                    ImageContentType = image.ImageContentType,
-                    HtmlData = image.HtmlData,
-                };
-
-                productUpdateRequestToAddImagesTo.Images ??= new();
-
-                productUpdateRequestToAddImagesTo.Images.Add(productImageUpdateRequest);
-
-                oldFirstProduct.Images?.Remove(imageInOldProduct);
-            }
-        }
-
-        if (oldFirstProduct.Images is not null
-            && oldFirstProduct.Images.Count > 0)
-        {
-            foreach (ProductImage oldImageToBeRemoved in oldFirstProduct.Images)
-            {
-                bool imageDeleteResult = _productImageService.DeleteInAllImagesById(oldImageToBeRemoved.Id);
-
-                if (!imageDeleteResult) return StatusCode(500);
-            }
-        }
-
-        return new OkResult();
-    }
-
-    private IStatusCodeActionResult UpdateImageFileNamesInFirstProduct(
-        Product oldFirstProduct,
-        int productId)
-    {
-        if (_firstProduct is null) return BadRequest();
-
-        List<ServiceProductImageFileNameInfoCreateRequest> imageFileNameInfoCreateRequests = new();
-
-        if (oldFirstProduct.ImageFileNames is not null
-            && oldFirstProduct.ImageFileNames.Count > 0)
-        {
-            if (_firstProduct.ImageFileNames is null
-                || _firstProduct.ImageFileNames.Count <= 0)
-            {
-                foreach (ProductImageFileNameInfo oldProductImageFileName in oldFirstProduct.ImageFileNames)
-                {
-                    if (oldProductImageFileName.DisplayOrder is null) return StatusCode(500);
-
-                    bool imageFileNameDeleteResult = _productImageFileNameInfoService.DeleteByProductIdAndDisplayOrder(
-                        productId, oldProductImageFileName.DisplayOrder.Value);
-
-                    if (!imageFileNameDeleteResult) return StatusCode(500);
-
-                    for (int k = 0; k < oldFirstProduct.ImageFileNames.Count; k++)
-                    {
-                        ProductImageFileNameInfo oldImageFileName = oldFirstProduct.ImageFileNames[k];
-
-                        oldImageFileName.DisplayOrder = k + 1;
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < oldFirstProduct.ImageFileNames.Count; i++)
-                {
-                    ProductImageFileNameInfo oldProductImageFileName = oldFirstProduct.ImageFileNames[i];
-
-                    if (oldProductImageFileName.DisplayOrder is null) return StatusCode(500);
-
-                    ProductImageFileNameInfo? oldImageFileNameInCurrentProduct = _firstProduct.ImageFileNames.Find(
-                        imgFileNameInfo => imgFileNameInfo.FileName == oldProductImageFileName.FileName);
-                       
-                    if (oldImageFileNameInCurrentProduct is not null) continue;
-
-                    bool imageFileNameDeleteResult = _productImageFileNameInfoService.DeleteByProductIdAndDisplayOrder(
-                        productId, oldProductImageFileName.DisplayOrder.Value);
-
-                    if (!imageFileNameDeleteResult) return StatusCode(500);
-
-                    oldFirstProduct.ImageFileNames.RemoveAt(i);
-
-                    i--;
-
-                    for (int k = 0; k < oldFirstProduct.ImageFileNames.Count; k++)
-                    {
-                        ProductImageFileNameInfo oldImageFileName = oldFirstProduct.ImageFileNames[k];
-
-                        oldImageFileName.DisplayOrder = k + 1;
-                    }
-                }
-            }
-        }
-
-        if (_firstProduct.ImageFileNames is not null)
-        {
-            int newImageFileNamesCount = 0;
-
-            foreach (ProductImageFileNameInfo imageFileNameInfo in _firstProduct.ImageFileNames)
-            {
-                ProductImageFileNameInfo? imageFileNameOfOldProduct = oldFirstProduct.ImageFileNames?.Find(
-                    imgFileNameInfo => imgFileNameInfo.FileName == imageFileNameInfo.FileName);
-
-                if (imageFileNameOfOldProduct is null)
-                {
-                    ProductImage? imageRelatedToThatFileNameInfo = OrdersForImagesInFirstProduct.Find(
-                        x => imageFileNameInfo.DisplayOrder == x.displayOrder)
-                        .productImage;
-
-                    if (imageRelatedToThatFileNameInfo is null) return StatusCode(500);
-
-                    ServiceProductImageFileNameInfoCreateRequest imageFileNameCreateRequest = new()
-                    {
-                        ProductId = _firstProduct.Id,
-                        DisplayOrder = imageFileNameInfo.DisplayOrder,
-                        Active = imageFileNameInfo.Active,
-                        FileName = $"{imageRelatedToThatFileNameInfo.Id}.{GetFileExtensionFromFileType(imageRelatedToThatFileNameInfo.ImageContentType ?? "*")}",
-                    };
-
-                    imageFileNameInfoCreateRequests.Add(imageFileNameCreateRequest);
-
-                    newImageFileNamesCount++;
-
-                    continue;
-                }
-
-                if (imageFileNameInfo.FileName is null
-                    || imageFileNameInfo.DisplayOrder is null) continue;
-
-                int displayOrder = imageFileNameInfo.DisplayOrder.Value - newImageFileNamesCount;
-
-                bool isFileNameInfoSameAsOldOne = displayOrder == imageFileNameOfOldProduct.DisplayOrder
-                    && imageFileNameInfo.Active == imageFileNameOfOldProduct.Active;
-
-                if (isFileNameInfoSameAsOldOne) continue;
-
-                ServiceProductImageFileNameInfoByFileNameUpdateRequest imageFileNameUpdateRequest = new()
-                {
-                    ProductId = productId,
-                    NewDisplayOrder = displayOrder,
-                    Active = imageFileNameInfo.Active,
-                    FileName = imageFileNameInfo.FileName,
-                    NewFileName = null,
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> productImageFileNameUpdateResult
-                    = _productImageFileNameInfoService.UpdateByFileName(imageFileNameUpdateRequest);
-
-                IStatusCodeActionResult actionResultFromImageFileNameUpdate = productImageFileNameUpdateResult.Match<IStatusCodeActionResult>(
-                    id => new OkResult(),
-                    validationResult => BadRequest(validationResult),
-                    unexpectedFailureResult => StatusCode(500));
-
-                if (actionResultFromImageFileNameUpdate.StatusCode != 200)
-                {
-                    return actionResultFromImageFileNameUpdate;
-                }
-            }
-        }
-
-        IEnumerable<ServiceProductImageFileNameInfoCreateRequest> orderedImageFileNameInfoCreateRequests = imageFileNameInfoCreateRequests
-            .OrderBy(imageFileName => imageFileName.DisplayOrder);
-
-        foreach (ServiceProductImageFileNameInfoCreateRequest fileNameInfoCreateRequest in orderedImageFileNameInfoCreateRequests)
-        {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> fileNameInfoInsertResult
-                = _productImageFileNameInfoService.Insert(fileNameInfoCreateRequest);
-
-            IStatusCodeActionResult actionResultFromImageFileNameInsert = fileNameInfoInsertResult.Match<IStatusCodeActionResult>(
-                success => new OkResult(),
-                validationResult => BadRequest(validationResult),
-                unexpectedFailureResult => StatusCode(500));
-
-            if (actionResultFromImageFileNameInsert.StatusCode != 200)
-            {
-                return actionResultFromImageFileNameInsert;
-            }
-        }
-
-        return new OkResult();
     }
 
     private ProductFullEditorPartialModel GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum productIndicator)
@@ -1813,7 +1455,7 @@ public class ProductCompareEditorModel : PageModel
             Price = product.Price,
             Currency = product.Currency,
             RowGuid = product.RowGuid,
-            Promotionid = product.Promotionid,
+            PromotionId = product.PromotionId,
             PromRid = product.PromRid,
             PromotionPictureId = product.PromotionPictureId,
             PromotionExpireDate = product.PromotionExpireDate,
@@ -1823,7 +1465,7 @@ public class ProductCompareEditorModel : PageModel
             PartNumber1 = product.PartNumber1,
             PartNumber2 = product.PartNumber2,
             SearchString = product.SearchString,
-            CategoryID = product.CategoryID,
+            CategoryId = product.CategoryId,
             Category = product.Category,
             ManifacturerId = product.ManifacturerId,
             Manifacturer = product.Manifacturer,
