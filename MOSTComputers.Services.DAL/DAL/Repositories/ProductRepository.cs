@@ -300,7 +300,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                     ROW_NUMBER() OVER (ORDER BY products.S) AS RN
 
-                FROM dbo.MOSTPrices products
+                FROM {_tableName} products
                 LEFT JOIN Categories cat
                 ON cat.CategoryID = products.TID
                 LEFT JOIN dbo.Manufacturer man
@@ -1113,7 +1113,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         var parameters = new
         {
             id = updateRequest.Id,
-            CategoryId = updateRequest.CategoryID,
+            CategoryId = updateRequest.CategoryId,
             updateRequest.Name,
             ADDWRR = updateRequest.AdditionalWarrantyPrice,
             ADDWRRTERM = updateRequest.AdditionalWarrantyTermMonths,
@@ -1127,7 +1127,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             PRICE3 = updateRequest.Price3,
             CurrencyId = updateRequest.Currency,
             updateRequest.RowGuid,
-            PromPID = updateRequest.Promotionid,
+            PromPID = updateRequest.PromotionId,
             PromRID = updateRequest.PromRid,
             PromPictureId = updateRequest.PromotionPictureId,
             PromExpDate = updateRequest.PromotionExpireDate,

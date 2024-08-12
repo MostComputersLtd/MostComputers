@@ -293,9 +293,9 @@ internal class SearchStringOriginService : ISearchStringOriginService
     {
         List<int> categoriesToSearchIds = new() { -1 };
 
-        if (product.CategoryID is not null)
+        if (product.CategoryId is not null)
         {
-            categoriesToSearchIds.Add((int)product.CategoryID);
+            categoriesToSearchIds.Add((int)product.CategoryId);
         }
 
         IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsForProductCategoriesInGroups

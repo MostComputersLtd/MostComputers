@@ -50,7 +50,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
                 .ToList(),
             ImageFileNames = imagesAndImageFileNames.Select(x => x.Item2)
                 .ToList(),
-            CategoryID = (short?)product.Category.Id,
+            CategoryId = (short?)product.Category.Id,
             Category = Map(product.Category),
             ManifacturerId = (short?)product.Manifacturer.Id,
             Manifacturer = Map(product.Manifacturer),
