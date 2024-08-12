@@ -13,9 +13,9 @@ internal static class ProductSelectListItemUtils
             category => new SelectListItem(category.Description, category.Id.ToString()))
             .ToList();
 
-        string? productCategoryIdString = product.CategoryID.ToString();
+        string? productCategoryIdString = product.CategoryId.ToString();
 
-        if (product.CategoryID != null)
+        if (product.CategoryId != null)
         {
             foreach (SelectListItem selectListItem in selectListItems)
             {

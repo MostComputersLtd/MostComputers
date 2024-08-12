@@ -24,7 +24,7 @@ internal static class ProductMappingUtils
             Price3 = productDisplayData.Price3,
             Currency = productDisplayData.Currency,
             RowGuid = productDisplayData.RowGuid,
-            Promotionid = productDisplayData.PromotionId,
+            PromotionId = productDisplayData.PromotionId,
             PromRid = productDisplayData.PromRid,
             PromotionPictureId = productDisplayData.PromotionPictureId,
             PromotionExpireDate = productDisplayData.PromotionExpireDate,
@@ -35,7 +35,7 @@ internal static class ProductMappingUtils
             PartNumber2 = productDisplayData.PartNumber2,
             SearchString = productDisplayData.SearchString,
 
-            CategoryID = productDisplayData.CategoryId,
+            CategoryId = productDisplayData.CategoryId,
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
             SubCategoryId = productDisplayData.SubCategoryId,
         };
@@ -66,7 +66,7 @@ internal static class ProductMappingUtils
         productCreateRequest.DisplayPrice = otherProductData.Price;
         productCreateRequest.Currency = otherProductData.Currency;
         productCreateRequest.RowGuid = otherProductData.RowGuid;
-        productCreateRequest.PromotionId = otherProductData.Promotionid;
+        productCreateRequest.PromotionId = otherProductData.PromotionId;
         productCreateRequest.PromRid = otherProductData.PromRid;
         productCreateRequest.PromotionPictureId = otherProductData.PromotionPictureId;
         productCreateRequest.PromotionExpireDate = otherProductData.PromotionExpireDate;
@@ -77,7 +77,7 @@ internal static class ProductMappingUtils
         productCreateRequest.PartNumber2 = otherProductData.PartNumber2;
         productCreateRequest.SearchString = otherProductData.SearchString;
 
-        productCreateRequest.CategoryId = otherProductData.CategoryID;
+        productCreateRequest.CategoryId = otherProductData.CategoryId;
         productCreateRequest.ManifacturerId = otherProductData.ManifacturerId;
         productCreateRequest.SubCategoryId = otherProductData.SubCategoryId;
     }
@@ -97,7 +97,7 @@ internal static class ProductMappingUtils
             DisplayPrice = otherProductData.Price,
             Currency = otherProductData.Currency,
             RowGuid = otherProductData.RowGuid,
-            PromotionId = otherProductData.Promotionid,
+            PromotionId = otherProductData.PromotionId,
             PromRid = otherProductData.PromRid,
             PromotionPictureId = otherProductData.PromotionPictureId,
             PromotionExpireDate = otherProductData.PromotionExpireDate,
@@ -108,7 +108,7 @@ internal static class ProductMappingUtils
             PartNumber2 = otherProductData.PartNumber2,
             SearchString = otherProductData.SearchString,
 
-            CategoryId = otherProductData.CategoryID,
+            CategoryId = otherProductData.CategoryId,
             ManifacturerId = otherProductData.ManifacturerId,
             SubCategoryId = otherProductData.SubCategoryId,
         };
@@ -129,7 +129,7 @@ internal static class ProductMappingUtils
             DisplayPrice = product.Price,
             Currency = product.Currency,
             RowGuid = product.RowGuid,
-            PromotionId = product.Promotionid,
+            PromotionId = product.PromotionId,
             PromRid = product.PromRid,
             PromotionPictureId = product.PromotionPictureId,
             PromotionExpireDate = product.PromotionExpireDate,
@@ -163,7 +163,7 @@ internal static class ProductMappingUtils
                 XmlPlacement = x.XmlPlacement,
             }),
 
-            CategoryId = product.CategoryID,
+            CategoryId = product.CategoryId,
             ManifacturerId = product.ManifacturerId,
             SubCategoryId = product.SubCategoryId,
         };
@@ -185,7 +185,7 @@ internal static class ProductMappingUtils
             DisplayPrice = productToUpdate.Price,
             Currency = productToUpdate.Currency,
             RowGuid = productToUpdate.RowGuid,
-            Promotionid = productToUpdate.Promotionid,
+            PromotionId = productToUpdate.PromotionId,
             PromRid = productToUpdate.PromRid,
             PromotionPictureId = productToUpdate.PromotionPictureId,
             PromotionExpireDate = productToUpdate.PromotionExpireDate,
@@ -200,7 +200,7 @@ internal static class ProductMappingUtils
             Images = new(),
             ImageFileNames = new(),
 
-            CategoryID = productToUpdate.CategoryID,
+            CategoryId = productToUpdate.CategoryId,
             ManifacturerId = productToUpdate.ManifacturerId,
             SubCategoryId = productToUpdate.SubCategoryId,
         };

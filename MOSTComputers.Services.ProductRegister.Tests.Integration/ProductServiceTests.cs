@@ -1368,7 +1368,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(createRequest.Currency, insertedProduct.Currency);
         Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(createRequest.PromotionId, insertedProduct.Promotionid);
+        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionId);
         Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
         Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
@@ -1379,7 +1379,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(createRequest.PartNumber2, insertedProduct.PartNumber2);
         Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
 
-        Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryID);
+        Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryId);
         Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
         Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
@@ -1397,7 +1397,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(updateRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(updateRequest.Currency, insertedProduct.Currency);
         Assert.Equal(updateRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(updateRequest.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionId);
         Assert.Equal(updateRequest.PromRid, insertedProduct.PromRid);
         Assert.Equal(updateRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(updateRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
@@ -1408,7 +1408,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(updateRequest.PartNumber2, insertedProduct.PartNumber2);
         Assert.Equal(updateRequest.SearchString, insertedProduct.SearchString);
 
-        Assert.Equal(updateRequest.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(updateRequest.CategoryId, insertedProduct.CategoryId);
         Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManifacturerId);
         Assert.Equal(updateRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
@@ -1426,7 +1426,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(product.Price, insertedProduct.Price);
         Assert.Equal(product.Currency, insertedProduct.Currency);
         Assert.Equal(product.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(product.Promotionid, insertedProduct.Promotionid);
+        Assert.Equal(product.PromotionId, insertedProduct.PromotionId);
         Assert.Equal(product.PromRid, insertedProduct.PromRid);
         Assert.Equal(product.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(product.PromotionExpireDate, insertedProduct.PromotionExpireDate);
@@ -1437,7 +1437,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(product.PartNumber2, insertedProduct.PartNumber2);
         Assert.Equal(product.SearchString, insertedProduct.SearchString);
 
-        Assert.Equal(product.CategoryID, insertedProduct.CategoryID);
+        Assert.Equal(product.CategoryId, insertedProduct.CategoryId);
         Assert.Equal(product.ManifacturerId, insertedProduct.ManifacturerId);
         Assert.Equal(product.SubCategoryId, insertedProduct.SubCategoryId);
     }
@@ -1455,7 +1455,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             && createRequest.DisplayPrice == insertedProduct.Price
             && createRequest.Currency == insertedProduct.Currency
             && createRequest.RowGuid == insertedProduct.RowGuid
-            && createRequest.PromotionId == insertedProduct.Promotionid
+            && createRequest.PromotionId == insertedProduct.PromotionId
             && createRequest.PromRid == insertedProduct.PromRid
             && createRequest.PromotionPictureId == insertedProduct.PromotionPictureId
             && createRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
@@ -1466,7 +1466,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             && createRequest.PartNumber2 == insertedProduct.PartNumber2
             && createRequest.SearchString == insertedProduct.SearchString
 
-            && createRequest.CategoryId == insertedProduct.CategoryID
+            && createRequest.CategoryId == insertedProduct.CategoryId
             && createRequest.ManifacturerId == insertedProduct.ManifacturerId
             && createRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
@@ -1485,7 +1485,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         && updateRequest.DisplayPrice == insertedProduct.Price
         && updateRequest.Currency == insertedProduct.Currency
         && updateRequest.RowGuid == insertedProduct.RowGuid
-        && updateRequest.Promotionid == insertedProduct.Promotionid
+        && updateRequest.PromotionId == insertedProduct.PromotionId
         && updateRequest.PromRid == insertedProduct.PromRid
         && updateRequest.PromotionPictureId == insertedProduct.PromotionPictureId
         && updateRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
@@ -1496,7 +1496,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         && updateRequest.PartNumber2 == insertedProduct.PartNumber2
         && updateRequest.SearchString == insertedProduct.SearchString
 
-        && updateRequest.CategoryID == insertedProduct.CategoryID
+        && updateRequest.CategoryId == insertedProduct.CategoryId
         && updateRequest.ManifacturerId == insertedProduct.ManifacturerId
         && updateRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
@@ -1514,7 +1514,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         && product.Price == insertedProduct.Price
         && product.Currency == insertedProduct.Currency
         && product.RowGuid == insertedProduct.RowGuid
-        && product.Promotionid == insertedProduct.Promotionid
+        && product.PromotionId == insertedProduct.PromotionId
         && product.PromRid == insertedProduct.PromRid
         && product.PromotionPictureId == insertedProduct.PromotionPictureId
         && product.PromotionExpireDate == insertedProduct.PromotionExpireDate
@@ -1525,7 +1525,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         && product.PartNumber2 == insertedProduct.PartNumber2
         && product.SearchString == insertedProduct.SearchString
 
-        && product.CategoryID == insertedProduct.CategoryID
+        && product.CategoryId == insertedProduct.CategoryId
         && product.ManifacturerId == insertedProduct.ManifacturerId
         && product.SubCategoryId == insertedProduct.SubCategoryId);
     }

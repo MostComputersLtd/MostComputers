@@ -72,7 +72,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         ProductProperties = product.Properties;
 
-        InitializeCharacteristicsForProductCategory((uint?)product.CategoryID);
+        InitializeCharacteristicsForProductCategory((uint?)product.CategoryId);
     }
 
     private void InitializeCharacteristicsForProductCategory(uint? categoryId)
@@ -174,9 +174,9 @@ public class ProductPropertiesEditorModel : PageModel
 
         IEnumerable<ProductCharacteristic>? characteristicAndSearchStringAbbreviations = null;
 
-        if (product.CategoryID is not null)
+        if (product.CategoryId is not null)
         {
-            characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((int)product.CategoryID);
+            characteristicAndSearchStringAbbreviations = _productCharacteristicService.GetAllByCategoryId((int)product.CategoryId);
         }
 
         return Partial("ProductPopups/_ProductSearchStringDisplayPopupPartial", new ProductSearchStringDisplayPopupPartialModel()
@@ -213,7 +213,7 @@ public class ProductPropertiesEditorModel : PageModel
 
         Product = product;
 
-        InitializeCharacteristicsForProductCategory((uint?)product.CategoryID);
+        InitializeCharacteristicsForProductCategory((uint?)product.CategoryId);
 
         return Partial("ProductProperties/_ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartial",
             new ProductPropertyWithoutCharacteristicDisplayForPropertyEditorPartialModel()
@@ -328,7 +328,7 @@ public class ProductPropertiesEditorModel : PageModel
             DisplayPrice = product.Price,
             Currency = product.Currency,
             RowGuid = product.RowGuid,
-            Promotionid = product.Promotionid,
+            PromotionId = product.PromotionId,
             PromRid = product.PromRid,
             PromotionPictureId = product.PromotionPictureId,
             PromotionExpireDate = product.PromotionExpireDate,
@@ -343,7 +343,7 @@ public class ProductPropertiesEditorModel : PageModel
 
             Images = null,
             ImageFileNames = null,
-            CategoryID = product.CategoryID,
+            CategoryId = product.CategoryId,
             ManifacturerId = product.ManifacturerId,
             SubCategoryId = product.SubCategoryId,
         };

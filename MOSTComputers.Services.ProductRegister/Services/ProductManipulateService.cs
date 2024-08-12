@@ -632,7 +632,7 @@ internal class ProductManipulateService : IProductManipulateService
             DisplayPrice = productToUpdate.Price,
             Currency = productToUpdate.Currency,
             RowGuid = productToUpdate.RowGuid,
-            Promotionid = productToUpdate.Promotionid,
+            PromotionId = productToUpdate.PromotionId,
             PromRid = productToUpdate.PromRid,
             PromotionPictureId = productToUpdate.PromotionPictureId,
             PromotionExpireDate = productToUpdate.PromotionExpireDate,
@@ -647,7 +647,7 @@ internal class ProductManipulateService : IProductManipulateService
             Images = new(),
             ImageFileNames = new(),
 
-            CategoryID = productToUpdate.CategoryID,
+            CategoryId = productToUpdate.CategoryId,
             ManifacturerId = productToUpdate.ManifacturerId,
             SubCategoryId = productToUpdate.SubCategoryId,
         };
@@ -671,7 +671,7 @@ internal class ProductManipulateService : IProductManipulateService
             Price3 = productFullUpdateRequest.Price3,
             Currency = productFullUpdateRequest.Currency,
             RowGuid = productFullUpdateRequest.RowGuid,
-            Promotionid = productFullUpdateRequest.PromotionId,
+            PromotionId = productFullUpdateRequest.PromotionId,
             PromRid = productFullUpdateRequest.PromRid,
             PromotionPictureId = productFullUpdateRequest.PromotionPictureId,
             PromotionExpireDate = productFullUpdateRequest.PromotionExpireDate,
@@ -686,7 +686,7 @@ internal class ProductManipulateService : IProductManipulateService
             Images = new(),
             ImageFileNames = new(),
 
-            CategoryID = productFullUpdateRequest.CategoryId,
+            CategoryId = productFullUpdateRequest.CategoryId,
             ManifacturerId = productFullUpdateRequest.ManifacturerId,
             SubCategoryId = productFullUpdateRequest.SubCategoryId,
         };
@@ -1285,7 +1285,7 @@ internal class ProductManipulateService : IProductManipulateService
             Price3 = productUpdateRequestWithoutImagesInDB.Price3,
             Currency = productUpdateRequestWithoutImagesInDB.Currency,
             RowGuid = productUpdateRequestWithoutImagesInDB.RowGuid,
-            Promotionid = productUpdateRequestWithoutImagesInDB.PromotionId,
+            PromotionId = productUpdateRequestWithoutImagesInDB.PromotionId,
             PromRid = productUpdateRequestWithoutImagesInDB.PromRid,
             PromotionPictureId = productUpdateRequestWithoutImagesInDB.PromotionPictureId,
             PromotionExpireDate = productUpdateRequestWithoutImagesInDB.PromotionExpireDate,
@@ -1300,7 +1300,7 @@ internal class ProductManipulateService : IProductManipulateService
             Images = new(),
             ImageFileNames = new(),
 
-            CategoryID = productUpdateRequestWithoutImagesInDB.CategoryId,
+            CategoryId = productUpdateRequestWithoutImagesInDB.CategoryId,
             ManifacturerId = productUpdateRequestWithoutImagesInDB.ManifacturerId,
             SubCategoryId = productUpdateRequestWithoutImagesInDB.SubCategoryId,
         };
@@ -1322,7 +1322,7 @@ internal class ProductManipulateService : IProductManipulateService
             Price = productUpdateRequestWithoutImagesInDB.DisplayPrice,
             Currency = productUpdateRequestWithoutImagesInDB.Currency,
             RowGuid = productUpdateRequestWithoutImagesInDB.RowGuid,
-            Promotionid = productUpdateRequestWithoutImagesInDB.PromotionId,
+            PromotionId = productUpdateRequestWithoutImagesInDB.PromotionId,
             PromRid = productUpdateRequestWithoutImagesInDB.PromRid,
             PromotionPictureId = productUpdateRequestWithoutImagesInDB.PromotionPictureId,
             PromotionExpireDate = productUpdateRequestWithoutImagesInDB.PromotionExpireDate,
@@ -1341,7 +1341,7 @@ internal class ProductManipulateService : IProductManipulateService
                 .Where(fileNameInfo => fileNameInfo is not null)!
                 .ToList<ProductImageFileNameInfo>(),
 
-            CategoryID = productUpdateRequestWithoutImagesInDB.CategoryId,
+            CategoryId = productUpdateRequestWithoutImagesInDB.CategoryId,
             ManifacturerId = productUpdateRequestWithoutImagesInDB.ManifacturerId,
             SubCategoryId = productUpdateRequestWithoutImagesInDB.SubCategoryId,
         };

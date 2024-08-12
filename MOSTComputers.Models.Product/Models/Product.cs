@@ -14,7 +14,7 @@ public sealed class Product
     public decimal? Price { get; set; }
     public CurrencyEnum? Currency { get; set; }
     public Guid? RowGuid { get; set; }
-    public int? Promotionid { get; set; }
+    public int? PromotionId { get; set; }
     public int? PromRid { get; set; }
     public short? PromotionPictureId { get; set; }
     public DateTime? PromotionExpireDate { get; set; }
@@ -24,7 +24,7 @@ public sealed class Product
     public string? PartNumber1 { get; set; }
     public string? PartNumber2 { get; set; }
     public string? SearchString { get; set; }
-    public int? CategoryID { get; set; }
+    public int? CategoryId { get; set; }
     public Category? Category { get; set; }
     public short? ManifacturerId { get; set; }
     public Manifacturer? Manifacturer { get; set; }

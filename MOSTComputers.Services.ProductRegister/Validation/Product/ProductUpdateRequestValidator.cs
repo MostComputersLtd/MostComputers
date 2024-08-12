@@ -19,7 +19,7 @@ internal sealed class ProductUpdateRequestValidator : AbstractValidator<ProductU
         RuleFor(x => x.Price1).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
         RuleFor(x => x.DisplayPrice).Must(NullOrGreaterThanOrEqualToZero);  // not seen null
         RuleFor(x => x.Price3).Must(NullOrGreaterThanOrEqualToZero);   // not seen null
-        RuleFor(x => x.Promotionid).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.PromotionId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.PromRid).Must(NullOrGreaterThanZero);
         RuleFor(x => x.PromotionPictureId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.PromotionExpireDate).NotEqual(new DateTime(0));
@@ -37,7 +37,7 @@ internal sealed class ProductUpdateRequestValidator : AbstractValidator<ProductU
         RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageCreateUpdateValidator());
         RuleForEach(x => x.ImageFileNames).SetValidator(x => new CurrentProductImageFileNameInfoUpdateRequestValidator());
 
-        RuleFor(x => x.CategoryID).Must(NullOrGreaterThanZero);  // not seen null
+        RuleFor(x => x.CategoryId).Must(NullOrGreaterThanZero);  // not seen null
         RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
         RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);
     }

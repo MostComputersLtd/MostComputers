@@ -187,7 +187,7 @@ internal static class CommonTestElements
             Price3 = 122.5M,
             Currency = CurrencyEnum.EUR,
             RowGuid = Guid.NewGuid(),
-            Promotionid = null,
+            PromotionId = null,
             PromRid = null,
             PromotionPictureId = null,
             PromotionExpireDate = null,
@@ -230,7 +230,7 @@ internal static class CommonTestElements
                 new() { FileName = "1 - 3", ImageNumber = 1, NewDisplayOrder = 3 },
             },
 
-            CategoryID = categoryId,
+            CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
@@ -254,7 +254,7 @@ internal static class CommonTestElements
             Price3 = 122.5M,
             Currency = CurrencyEnum.EUR,
             RowGuid = Guid.NewGuid(),
-            Promotionid = null,
+            PromotionId = null,
             PromRid = null,
             PromotionPictureId = null,
             PromotionExpireDate = null,
@@ -278,7 +278,7 @@ internal static class CommonTestElements
             {
             },
 
-            CategoryID = categoryId,
+            CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };

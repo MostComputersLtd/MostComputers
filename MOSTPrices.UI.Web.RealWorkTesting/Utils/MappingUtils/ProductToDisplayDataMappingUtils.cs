@@ -28,7 +28,7 @@ public static class ProductToDisplayDataMappingUtils
             Price3 = 0,
             Currency = product.Currency,
             RowGuid = product.RowGuid,
-            PromotionId = product.Promotionid,
+            PromotionId = product.PromotionId,
             PromRid = product.PromRid,
             PromotionPictureId = product.PromotionPictureId,
             PromotionExpireDate = product.PromotionExpireDate,
@@ -44,7 +44,7 @@ public static class ProductToDisplayDataMappingUtils
             ImagesAndImageFileInfos = GetImageDictionaryFromImagesAndImageFileInfos(product.Images, product.ImageFileNames?.ToList()),
             Properties = product.Properties?.ToList(),
 
-            CategoryId = product.CategoryID,
+            CategoryId = product.CategoryId,
             ManifacturerId = product.ManifacturerId,
 
             ProductWorkStatusesId = productWorkStatuses?.Id ?? -1,
@@ -70,7 +70,7 @@ public static class ProductToDisplayDataMappingUtils
             Price = productDisplayData.DisplayPrice,
             Currency = productDisplayData.Currency,
             RowGuid = productDisplayData.RowGuid,
-            Promotionid = productDisplayData.PromotionId,
+            PromotionId = productDisplayData.PromotionId,
             PromRid = productDisplayData.PromRid,
             PromotionPictureId = productDisplayData.PromotionPictureId,
             PromotionExpireDate = productDisplayData.PromotionExpireDate,
@@ -94,7 +94,7 @@ public static class ProductToDisplayDataMappingUtils
             Properties = productDisplayData.Properties?.ToList() ?? new(),
 
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
-            CategoryID = productDisplayData.CategoryId,
+            CategoryId = productDisplayData.CategoryId,
         };
     }
 

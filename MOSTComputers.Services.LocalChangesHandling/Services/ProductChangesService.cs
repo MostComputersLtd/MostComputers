@@ -608,9 +608,9 @@ public sealed class ProductChangesService : IProductChangesService
     {
         if (productBeforeUpdate.SearchString != productAfterUpdate.SearchString
             || productBeforeUpdate.Status != productAfterUpdate.Status
-            || productBeforeUpdate.CategoryID != productAfterUpdate.CategoryID
+            || productBeforeUpdate.CategoryId != productAfterUpdate.CategoryId
             || productBeforeUpdate.ManifacturerId != productAfterUpdate.ManifacturerId
-            || productBeforeUpdate.Promotionid != productAfterUpdate.Promotionid
+            || productBeforeUpdate.PromotionId != productAfterUpdate.PromotionId
             || productBeforeUpdate.PromotionPictureId != productAfterUpdate.PromotionPictureId)
         {
             return true;

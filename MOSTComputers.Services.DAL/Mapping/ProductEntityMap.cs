@@ -19,7 +19,7 @@ internal sealed class ProductEntityMap : EntityMap<Product>
         Map(x => x.Price).ToColumn("PRICE2");
         Map(x => x.Currency).ToColumn("CurrencyId");
         Map(x => x.RowGuid).ToColumn("rowguid");
-        Map(x => x.Promotionid).ToColumn("PromPID");
+        Map(x => x.PromotionId).ToColumn("PromPID");
         Map(x => x.PromRid).ToColumn("PromRID");
         Map(x => x.PromotionPictureId).ToColumn("PromPictureID");
         Map(x => x.PromotionExpireDate).ToColumn("PromExpDate");
@@ -29,7 +29,7 @@ internal sealed class ProductEntityMap : EntityMap<Product>
         Map(x => x.PartNumber1).ToColumn("SPLMODEL");
         Map(x => x.PartNumber2).ToColumn("SPLMODEL1");
         Map(x => x.SearchString).ToColumn("SPLMODEL2");
-        Map(x => x.CategoryID).ToColumn("TID");
+        Map(x => x.CategoryId).ToColumn("TID");
         Map(x => x.ManifacturerId).ToColumn("MfrID");
         Map(x => x.SubCategoryId).ToColumn("SubcategoryID");
     }
