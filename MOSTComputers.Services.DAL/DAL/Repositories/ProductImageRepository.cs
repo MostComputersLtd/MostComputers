@@ -98,7 +98,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO #Temp_Table
-            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
 
             SELECT TOP 1 ID FROM #Temp_Table
             """;
@@ -108,7 +108,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             productId = createRequest.ProductId,
             createRequest.HtmlData,
             createRequest.ImageData,
-            createRequest.ImageFileExtension,
+            createRequest.ImageContentType,
             createRequest.DateModified,
         };
 
@@ -142,14 +142,14 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO #Temp_Table
-            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 0), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
 
             INSERT INTO {_imageFileNameInfosTable}(CSTID, ImageNumber, S, ImgFileName)
             VALUES (@productId,
                 (SELECT MAX(ImageNumber) + 1 FROM {_imageFileNameInfosTable}
                 WHERE CSTID = @productId),
                 @DisplayOrderInRange,
-                CONCAT(CAST((SELECT TOP 1 ID FROM #Temp_Table) AS VARCHAR), '.', SUBSTRING(@ImageFileExtension, CHARINDEX('/', @ImageFileExtension) + 1, 100)))
+                CONCAT(CAST((SELECT TOP 1 ID FROM #Temp_Table) AS VARCHAR), '.', SUBSTRING(@ImageContentType, CHARINDEX('/', @ImageContentType) + 1, 100)))
 
             SELECT TOP 1 ID FROM #Temp_Table
             """;
@@ -160,7 +160,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             displayOrder = displayOrder,
             createRequest.HtmlData,
             createRequest.ImageData,
-            createRequest.ImageFileExtension,
+            createRequest.ImageContentType,
             createRequest.DateModified,
         };
 
@@ -175,7 +175,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string insertInFirstImagesQuery =
             $"""
             INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@productId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (@productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
         var parameters = new
@@ -183,7 +183,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             productId = createRequest.ProductId,
             createRequest.HtmlData,
             createRequest.ImageData,
-            createRequest.ImageFileExtension,
+            createRequest.ImageContentType,
             createRequest.DateModified,
         };
 
@@ -199,7 +199,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             UPDATE {_allImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
-                ImageFileExt = @ImageFileExtension,
+                ImageFileExt = @ImageContentType,
                 DateModified = @DateModified
 
             WHERE ID = @id;
@@ -210,7 +210,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             id = updateRequest.Id,
             updateRequest.HtmlData,
             updateRequest.ImageData,
-            updateRequest.ImageFileExtension,
+            updateRequest.ImageContentType,
             updateRequest.DateModified,
         };
 
@@ -226,7 +226,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             UPDATE {_firstImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
-                ImageFileExt = @ImageFileExtension,
+                ImageFileExt = @ImageContentType,
                 DateModified = @DateModified
 
             WHERE ID = @productId;
@@ -237,7 +237,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             productId = updateRequest.ProductId,
             updateRequest.HtmlData,
             updateRequest.ImageData,
-            updateRequest.ImageFileExtension,
+            updateRequest.ImageContentType,
             updateRequest.DateModified,
         };
 
@@ -427,7 +427,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             ProductId = image.Id,
             HtmlData = image.HtmlData,
             ImageData = image.ImageData,
-            ImageContentType = image.ImageFileExtension,
+            ImageContentType = image.ImageContentType,
             DateModified = image.DateModified,
         };
     }

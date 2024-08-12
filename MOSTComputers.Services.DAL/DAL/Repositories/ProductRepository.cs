@@ -891,13 +891,13 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         const string insertInAllImagesQuery =
            $"""
             INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@Id, @ProductId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (@Id, @ProductId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
         const string insertInFirstImagesQuery =
             $"""
             INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
-            VALUES (@ProductId, @HtmlData, @ImageData, @ImageFileExtension, @DateModified)
+            VALUES (@ProductId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
         var parameters = new
@@ -1093,7 +1093,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             UPDATE {_allImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
-                ImageFileExt = @ImageFileExtension,
+                ImageFileExt = @ImageContentType,
                 DateModified = @DateModified
 
             WHERE ID = @Id;
@@ -1104,7 +1104,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             UPDATE {_firstImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
-                ImageFileExt = @ImageFileExtension,
+                ImageFileExt = @ImageContentType,
                 DateModified = @DateModified
 
             WHERE ID = @ProductId;
@@ -1299,7 +1299,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 Id = highestId + (i + 1),
                 ProductId = productId,
                 ImageData = item.ImageData,
-                ImageFileExtension = item.ImageFileExtension,
+                ImageContentType = item.ImageContentType,
                 HtmlData = item.HtmlData,
                 DateModified = item.DateModified,
             };
@@ -1328,7 +1328,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             ProductId = productId,
             ImageData = request.ImageData,
-            ImageFileExtension = request.ImageFileExtension,
+            ImageContentType = request.ImageContentType,
             HtmlData = request.HtmlData,
             DateModified = request.DateModified,
         };
@@ -1364,7 +1364,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             Id = productId,
             ImageData = request.ImageData,
-            ImageFileExtension = request.ImageFileExtension,
+            ImageContentType = request.ImageContentType,
             HtmlData = request.HtmlData,
         };
     }
@@ -1375,7 +1375,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             ProductId = productId,
             ImageData = request.ImageData,
-            ImageFileExtension = request.ImageFileExtension,
+            ImageContentType = request.ImageContentType,
             HtmlData = request.HtmlData,
         };
     }
@@ -1386,7 +1386,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         public int? ProductId { get; set; }
         public string? HtmlData { get; set; }
         public byte[]? ImageData { get; set; }
-        public string? ImageFileExtension { get; set; }
+        public string? ImageContentType { get; set; }
         public DateTime? DateModified { get; set; }
     }
 }
