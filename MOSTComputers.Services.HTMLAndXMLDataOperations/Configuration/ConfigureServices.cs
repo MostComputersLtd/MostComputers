@@ -26,7 +26,7 @@ public static class ConfigureServices
     {
         services.AddXmlDeserializer();
 
-        services.AddScoped<IProductHtmlService, ProductHtmlService>();
+        services.TryAddScoped<IProductHtmlService, ProductHtmlService>();
 
         return services;
     }
