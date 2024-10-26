@@ -1,4 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
@@ -20,9 +21,9 @@ public interface IProductImageRepository
     OneOf<int, UnexpectedFailureResult> InsertInAllImages(ProductImageCreateRequest createRequest);
     OneOf<int, UnexpectedFailureResult> InsertInAllImagesAndImageFileNameInfos(ProductImageCreateRequest createRequest, int? displayOrder = null);
     OneOf<Success, UnexpectedFailureResult> InsertInFirstImages(ProductFirstImageCreateRequest createRequest);
-    OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData);
-    OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData);
-    OneOf<Success, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData);
+    OneOf<bool, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData);
+    OneOf<bool, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData);
+    OneOf<bool, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData);
     OneOf<Success, UnexpectedFailureResult> UpdateInAllImages(ProductImageUpdateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> UpdateInFirstImages(ProductFirstImageUpdateRequest createRequest);
 }
