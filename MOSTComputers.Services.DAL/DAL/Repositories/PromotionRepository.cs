@@ -5,6 +5,7 @@ using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -87,8 +88,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             AND Active = 1;
             """;
 
-        return _relationalDataAccess.GetData<Promotion, dynamic>(getActiveForProductQuery, new { productId = productId })
-            .FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<Promotion, dynamic>(getActiveForProductQuery, new { productId = productId });
     }
 
     public OneOf<int, UnexpectedFailureResult> Insert(PromotionCreateRequest createRequest)
@@ -102,34 +102,35 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
             VALUES(ISNULL((SELECT MAX(PromotionID) + 1 FROM {_tableName}), 1), @ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
             @ExpirationDate, @MinimumQuantity, @MaximumQuantity, @CampaignId, @QuantityIncrement, @RequiredProductIdsString, @ExpQuantity, @SoldQuantity,
             @Name, @Consignation, @Points, @RegistrationId, @TimeStamp, @PromotionVisualizationId)
-            """;
+            """
+        ;
 
         var parameters = new
         {
-            createRequest.ProductId,
-            createRequest.PromotionAddedDate,
-            createRequest.Source,
-            createRequest.Type,
-            createRequest.Status,
-            createRequest.SPOID,
-            createRequest.DiscountUSD,
-            createRequest.DiscountEUR,
-            createRequest.Active,
-            createRequest.StartDate,
-            createRequest.ExpirationDate,
-            createRequest.MinimumQuantity,
-            createRequest.MaximumQuantity,
-            createRequest.CampaignId,
-            createRequest.QuantityIncrement,
+            ProductId = createRequest.ProductId,
+            PromotionAddedDate = createRequest.PromotionAddedDate,
+            Source = createRequest.Source,
+            Type = createRequest.Type,
+            Status = createRequest.Status,
+            SPOID = createRequest.SPOID,
+            DiscountUSD = createRequest.DiscountUSD,
+            DiscountEUR = createRequest.DiscountEUR,
+            Active = createRequest.Active,
+            StartDate = createRequest.StartDate,
+            ExpirationDate = createRequest.ExpirationDate,
+            MinimumQuantity = createRequest.MinimumQuantity,
+            MaximumQuantity = createRequest.MaximumQuantity,
+            CampaignId = createRequest.CampaignId,
+            QuantityIncrement = createRequest.QuantityIncrement,
             RequiredProductIdsString = GetRequiredProductIdsStringFromList(createRequest.RequiredProductIds),
-            createRequest.ExpQuantity,
-            createRequest.SoldQuantity,
-            createRequest.Name,
-            createRequest.Consignation,
-            createRequest.Points,
-            createRequest.TimeStamp,
-            createRequest.RegistrationId,
-            createRequest.PromotionVisualizationId
+            ExpQuantity = createRequest.ExpQuantity,
+            SoldQuantity = createRequest.SoldQuantity,
+            Name = createRequest.Name,
+            Consignation = createRequest.Consignation,
+            Points = createRequest.Points,
+            TimeStamp = createRequest.TimeStamp,
+            RegistrationId = createRequest.RegistrationId,
+            PromotionVisualizationId = createRequest.PromotionVisualizationId
         };
 
         int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
@@ -173,33 +174,33 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
         var parameters = new
         {
             id = updateRequest.Id,
-            updateRequest.ProductId,
-            updateRequest.PromotionAddedDate,
-            updateRequest.Source,
-            updateRequest.Type,
-            updateRequest.Status,
-            updateRequest.SPOID,
-            updateRequest.DiscountUSD,
-            updateRequest.DiscountEUR,
-            updateRequest.Active,
-            updateRequest.StartDate,
-            updateRequest.ExpirationDate,
-            updateRequest.MinimumQuantity,
-            updateRequest.MaximumQuantity,
-            updateRequest.CampaignId,
-            updateRequest.QuantityIncrement,
+            ProductId = updateRequest.ProductId,
+            PromotionAddedDate = updateRequest.PromotionAddedDate,
+            Source = updateRequest.Source,
+            Type = updateRequest.Type,
+            Status = updateRequest.Status,
+            SPOID = updateRequest.SPOID,
+            DiscountUSD = updateRequest.DiscountUSD,
+            DiscountEUR = updateRequest.DiscountEUR,
+            Active = updateRequest.Active,
+            StartDate = updateRequest.StartDate,
+            ExpirationDate = updateRequest.ExpirationDate,
+            MinimumQuantity = updateRequest.MinimumQuantity,
+            MaximumQuantity = updateRequest.MaximumQuantity,
+            CampaignId = updateRequest.CampaignId,
+            QuantityIncrement = updateRequest.QuantityIncrement,
             RequiredProductIdsString = GetRequiredProductIdsStringFromList(updateRequest.RequiredProductIds),
-            updateRequest.ExpQuantity,
-            updateRequest.SoldQuantity,
-            updateRequest.Name,
-            updateRequest.Consignation,
-            updateRequest.Points,
-            updateRequest.TimeStamp,
-            updateRequest.RegistrationId,
-            updateRequest.PromotionVisualizationId
+            ExpQuantity = updateRequest.ExpQuantity,
+            SoldQuantity = updateRequest.SoldQuantity,
+            Name = updateRequest.Name,
+            Consignation = updateRequest.Consignation,
+            Points = updateRequest.Points,
+            TimeStamp = updateRequest.TimeStamp,
+            RegistrationId = updateRequest.RegistrationId,
+            PromotionVisualizationId = updateRequest.PromotionVisualizationId
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
@@ -214,7 +215,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteQuery, new { id = id });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected == 0) return false;
 
@@ -236,7 +237,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Promotion, dynamic>(deleteAllByProductIdQuery, new { productId = productId });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllByProductIdQuery, new { productId = productId });
 
             if (rowsAffected == 0) return false;
 
