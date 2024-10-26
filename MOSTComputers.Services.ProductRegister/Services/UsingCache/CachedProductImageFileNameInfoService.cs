@@ -43,6 +43,54 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
         return CloneAll(productImageFileNameInfos);
     }
 
+    public ProductImageFileNameInfo? GetByProductIdAndImageNumber(int productId, int imageNumber)
+    {
+        IEnumerable<ProductImageFileNameInfo>? fileNameInfos
+            = _cache.GetValueOrDefault<IEnumerable<ProductImageFileNameInfo>>(GetByProductIdKey(productId));
+
+        if (fileNameInfos is not null
+            && fileNameInfos.Any())
+        {
+            foreach (ProductImageFileNameInfo fileNameInfo in fileNameInfos)
+            {
+                if (fileNameInfo.ImageNumber != imageNumber) continue;
+
+                _cache.AddOrUpdate(GetByProductIdAndImageNumberKey(productId, imageNumber), fileNameInfo);
+
+                return fileNameInfo;
+            }
+        }
+
+        return _cache.GetOrAdd(GetByProductIdAndImageNumberKey(productId, imageNumber),
+            () => _imageFileNameInfoService.GetByProductIdAndImageNumber(productId, imageNumber));
+    }
+
+    public ProductImageFileNameInfo? GetByFileName(string fileName)
+    {
+        ProductImageFileNameInfo? fileNameInfo = _imageFileNameInfoService.GetByFileName(fileName);
+
+        if (fileNameInfo is null) return null;
+
+        _cache.Add(GetByProductIdAndImageNumberKey(fileNameInfo.ProductId, fileNameInfo.ImageNumber), fileNameInfo);
+
+        return fileNameInfo;
+    }
+
+    public int? GetHighestImageNumber(int productId)
+    {
+        IEnumerable<ProductImageFileNameInfo>? fileNameInfos
+            = _cache.GetValueOrDefault<IEnumerable<ProductImageFileNameInfo>>(GetByProductIdKey(productId));
+
+        if (fileNameInfos is null)
+        {
+            return _imageFileNameInfoService.GetHighestImageNumber(productId);
+        }
+
+        if (!fileNameInfos.Any()) return null;
+
+        return fileNameInfos.Max(x => x.ImageNumber);
+    }
+
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
         IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null)
     {
@@ -55,20 +103,26 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (successFromResult)
         {
-            _cache.Evict(GetByProductIdKey(createRequest.ProductId));
+            int productId = createRequest.ProductId;
+
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
+            _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(createRequest.ProductId));
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return insertResult;
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest,
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest,
         IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>? validator = null)
     {
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _imageFileNameInfoService.Update(updateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _imageFileNameInfoService.UpdateByImageNumber(updateRequest);
 
         bool successFromResult = updateResult.Match(
             success => true,
@@ -77,11 +131,17 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (successFromResult)
         {
-            _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
+            int productId = updateRequest.ProductId;
+
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
+            _cache.Evict(GetByProductIdKey(productId));
+
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return updateResult;
@@ -100,11 +160,17 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (successFromResult)
         {
-            _cache.Evict(GetByProductIdKey(updateRequest.ProductId));
+            int productId = updateRequest.ProductId;
+
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
+            _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
 
-            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(updateRequest.ProductId));
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
+
+            _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return updateResult;
@@ -118,9 +184,13 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (success)
         {
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
             _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
+
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
 
             _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
@@ -136,9 +206,13 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (success)
         {
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
             _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
+
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
 
             _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
@@ -154,13 +228,28 @@ internal sealed class CachedProductImageFileNameInfoService : IProductImageFileN
 
         if (success)
         {
+            int? highestImageNumber = GetHighestImageNumber(productId);
+
             _cache.Evict(GetByProductIdKey(productId));
 
             _cache.Evict(GetAllKey);
+
+            EvictAllIndividualCachedItems(productId, highestImageNumber);
 
             _cache.Evict(CacheKeyUtils.ForProduct.GetByIdKey(productId));
         }
 
         return success;
+    }
+
+    private void EvictAllIndividualCachedItems(int productId, int? highestImageNumber)
+    {
+        if (highestImageNumber is not null)
+        {
+            for (int i = 1; i <= highestImageNumber.Value; i++)
+            {
+                _cache.Evict(GetByProductIdAndImageNumberKey(productId, i));
+            }
+        }
     }
 }
