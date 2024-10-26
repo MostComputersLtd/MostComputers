@@ -4,20 +4,33 @@ namespace MOSTComputers.Services.ProductImageFileManagement.Utils;
 
 public static class ProductImageFileManagementUtils
 {
-    public static AllowedImageFileType? GetAllowedImageFileTypeFromFileExtension(string extension)
+    public static AllowedImageFileType? GetAllowedImageFileTypeFromFileExtension(string extensionWithoutDot)
     {
-        return extension switch
+        return extensionWithoutDot switch
         {
-            "jpg" => AllowedImageFileType.JPG,
-            "jpeg" => AllowedImageFileType.JPEG,
-            "png" => AllowedImageFileType.PNG,
+            "jpg" or "JPG" => AllowedImageFileType.JPG,
+            "jpeg" or "JPEG" => AllowedImageFileType.JPEG,
+            "png" or "PNG" => AllowedImageFileType.PNG,
             _ => null
         };
     }
 
-    public static string GetFileExtensionWithoutDot(string fullFileName)
+    public static AllowedImageFileType? GetAllowedImageFileTypeFromContentType(string contentType)
     {
-        string fileExtension = Path.GetExtension(fullFileName);
+        return contentType switch
+        {
+            "image/jpg" => AllowedImageFileType.JPG,
+            "image/jpeg" => AllowedImageFileType.JPEG,
+            "image/png" => AllowedImageFileType.PNG,
+            _ => null
+        };
+    }
+
+    public static string? GetFileExtensionWithoutDot(string fullFileName)
+    {
+        string? fileExtension = Path.GetExtension(fullFileName);
+
+        if (string.IsNullOrWhiteSpace(fileExtension)) return null;
 
         return fileExtension[1..];
     }
