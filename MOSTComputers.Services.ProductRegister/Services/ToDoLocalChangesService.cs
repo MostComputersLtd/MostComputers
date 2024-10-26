@@ -79,7 +79,7 @@ internal sealed class ToDoLocalChangesService : IToDoLocalChangesService
         return _toDoLocalChangesRepository.DeleteRangeByIds(ids);
     }
 
-    public bool DeleteByTableNameAndElementId(string tableName, int elementId)
+    public bool DeleteAllByTableNameAndElementId(string tableName, int elementId)
     {
         return _toDoLocalChangesRepository.DeleteByTableNameAndElementId(tableName, elementId);
     }
