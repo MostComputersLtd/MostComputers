@@ -11,6 +11,7 @@ public sealed class ServiceProductImageFileNameInfoByFileNameUpdateRequest
     public int ProductId { get; set; }
     public string FileName { get; set; }
     public string? NewFileName { get; set; }
+    public bool ShouldUpdateDisplayOrder { get; set; }
     public int? NewDisplayOrder { get; set; }
     public bool? Active { get; set; }
 }
