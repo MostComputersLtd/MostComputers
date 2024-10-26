@@ -1,4 +1,5 @@
 ﻿namespace MOSTComputers.Models.Product.Models.Requests.Product;
+
 public sealed class ProductUpdateRequest
 {
     public int Id { get; set; }
@@ -35,8 +36,8 @@ public sealed class ProductUpdateRequest
 
 public sealed class CurrentProductPropertyUpdateRequest
 {
-    public int? ProductCharacteristicId { get; set; }
-    public int? DisplayOrder { get; set; }
+    public int ProductCharacteristicId { get; set; }
+    public int? CustomDisplayOrder { get; set; }
     public string? Value { get; set; }
     public XMLPlacementEnum? XmlPlacement { get; set; }
 }
@@ -53,6 +54,7 @@ public sealed class CurrentProductImageFileNameInfoUpdateRequest
 {
     public string? FileName { get; set; }
     public int ImageNumber { get; set; }
+    public bool ShouldUpdateDisplayOrder { get; set; }
     public int? NewDisplayOrder { get; set; }
     public bool Active { get; set; }
 }
