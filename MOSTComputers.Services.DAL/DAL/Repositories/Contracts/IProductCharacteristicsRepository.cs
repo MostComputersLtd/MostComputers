@@ -19,6 +19,7 @@ public interface IProductCharacteristicsRepository
     ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name);
     ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(int categoryId, string name, ProductCharacteristicTypeEnum productCharacteristicType);
     IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names);
+    IEnumerable<ProductCharacteristic> GetSelectionByIds(List<int> ids);
     OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest);
