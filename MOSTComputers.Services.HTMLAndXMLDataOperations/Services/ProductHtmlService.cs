@@ -39,7 +39,7 @@ internal sealed class ProductHtmlService : IProductHtmlService
 
         xslFileFullPath = xslFileFullPath.Replace('\\', '/');
 
-        string xml = _productDeserializeService.SerializeProductXml(product, true);
+        string xml = _productDeserializeService.SerializeProductXml(product, false);
 
         XslCompiledTransform xslCompiledTransform = new(enableDebug: true);
 
@@ -66,7 +66,7 @@ internal sealed class ProductHtmlService : IProductHtmlService
 
         xslFileFullPath = xslFileFullPath.Replace('\\', '/');
 
-        OneOf<string, InvalidXmlResult> serializeProductResult = _productDeserializeService.TrySerializeProductXml(product, true);
+        OneOf<string, InvalidXmlResult> serializeProductResult = _productDeserializeService.TrySerializeProductXml(product, false);
 
         return serializeProductResult.Match<OneOf<string, InvalidXmlResult>>(
             xml =>
