@@ -53,10 +53,10 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
 
         var parameters = new
         {
-            insertRequest.BGName,
+            BGName = insertRequest.BGName,
             Name = insertRequest.RealCompanyName,
-            insertRequest.DisplayOrder,
-            insertRequest.Active,
+            DisplayOrder = insertRequest.DisplayOrder,
+            Active = insertRequest.Active,
         };
 
         double? id = _relationalDataAccess.SaveDataAndReturnValue<double?, dynamic>(insertQuery, parameters);
@@ -79,13 +79,13 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         var parameters = new
         {
             id = updateRequest.Id,
-            updateRequest.BGName,
+            BGName = updateRequest.BGName,
             Name = updateRequest.RealCompanyName,
-            updateRequest.DisplayOrder,
-            updateRequest.Active,
+            DisplayOrder = updateRequest.DisplayOrder,
+            Active = updateRequest.Active,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
     }
@@ -100,7 +100,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Manifacturer, dynamic>(deleteQuery, new { id = id });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, new { id = id });
 
             return rowsAffected > 0;
         }
