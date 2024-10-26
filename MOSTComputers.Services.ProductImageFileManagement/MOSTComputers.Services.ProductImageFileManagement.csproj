@@ -13,7 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.FileManagement\MOSTComputers.Models.FileManagement.csproj" />
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.TransactionalFileManagement\MOSTComputers.Services.TransactionalFileManagement.csproj" />
   </ItemGroup>
 
 </Project>
