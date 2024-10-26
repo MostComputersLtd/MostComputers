@@ -59,6 +59,25 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         return _relationalDataAccess.GetData<ExternalChangeData, dynamic>(getAllForOperationTypeQuery, parameters);
     }
 
+    public IEnumerable<ExternalChangeData> GetAllByTableNameAndElementId(string tableName, int elementId)
+    {
+        const string getByTableNameAndElementIdQuery =
+        $"""
+        SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
+        FROM {_tableName}
+        WHERE TableName = @tableName
+        AND ID = @elementId;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName,
+            elementId = elementId
+        };
+
+        return _relationalDataAccess.GetData<ExternalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
+    }
+
     public ExternalChangeData? GetById(int id)
     {
         const string getByIdQuery =
@@ -76,25 +95,6 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         return _relationalDataAccess.GetDataFirstOrDefault<ExternalChangeData, dynamic>(getByIdQuery, parameters);
     }
 
-    public ExternalChangeData? GetByTableNameAndElementId(string tableName, int elementId)
-    {
-        const string getByTableNameAndElementIdQuery =
-            $"""
-            SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-            FROM {_tableName}
-            WHERE TableName = @tableName
-            AND ID = @elementId;
-            """;
-
-        var parameters = new
-        {
-            tableName = tableName,
-            elementId = elementId
-        };
-
-        return _relationalDataAccess.GetDataFirstOrDefault<ExternalChangeData, dynamic>(getByTableNameAndElementIdQuery, parameters);
-    }
-
     public bool DeleteById(int id)
     {
         const string deleteByIdQuery =
@@ -108,7 +108,29 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
             id = id
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
+
+        return (rowsAffected > 0);
+    }
+
+    public bool DeleteByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum operationType)
+    {
+        const string deleteByTableNameAndElementIdQuery =
+        $"""
+        DELETE FROM {_tableName}
+        WHERE TableName = @tableName
+        AND ID = @elementId
+        AND Operation = @operationType;
+        """;
+
+        var parameters = new
+        {
+            tableName = tableName,
+            elementId = elementId,
+            operationType = (int)operationType,
+        };
+
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -126,12 +148,12 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
             ids = ids
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
 
-    public bool DeleteByTableNameAndElementId(string tableName, int elementId)
+    public bool DeleteAllByTableNameAndElementId(string tableName, int elementId)
     {
         const string deleteByTableNameAndElementIdQuery =
         $"""
@@ -146,7 +168,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
             elementId = elementId
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByTableNameAndElementIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -166,7 +188,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
             elementIds = elementIds
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ExternalChangeData, dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
 
         return (rowsAffected > 0);
     }
