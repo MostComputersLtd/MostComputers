@@ -1,4 +1,5 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
@@ -20,9 +21,10 @@ public interface IProductRepository
     Product? GetById_WithManifacturerAndCategoryAndImages(int id);
     Product? GetById_WithManifacturerAndCategoryAndProperties(int id);
     Product? GetProductWithHighestId_WithManifacturerAndCategory();
-    OneOf<int, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest);
     OneOf<Success, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest);
     bool Delete(int id);
     IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(string searchStringParts);
     IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(int start, uint end, string searchStringParts);
+    IEnumerable<Product> GetAllInCategory_WithManifacturerAndCategory(int categoryId);
 }
