@@ -58,7 +58,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
     {
         return new()
         {
-            Id = manifacturer.Id,
+            IdAsString = manifacturer.Id.ToString(),
             Name = manifacturer.RealCompanyName ?? string.Empty,
         };
     }
@@ -80,7 +80,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
                 {
                     PictureUrl = initialPath + fileNameInfo.FileName,
                     ThumbnailUrl = initialPath + fileNameInfo.FileName,
-                    DisplayOrder = (short)(fileNameInfo.DisplayOrder ?? 0)
+                    DisplayOrder = fileNameInfo.DisplayOrder ?? 0
                 };
 
                 output.Add(xmlShopItem);
@@ -115,7 +115,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
                 {
                     PictureUrl = initialPath + fileName ?? "",
                     ThumbnailUrl = initialPath + fileName ?? "",
-                    DisplayOrder = (short)(i)
+                    DisplayOrder = i
                 };
 
                 output.Add(xmlShopItem);
@@ -143,7 +143,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
                 {
                     PictureUrl = initialPath + fileName ?? "",
                     ThumbnailUrl = initialPath + fileName ?? "",
-                    DisplayOrder = (short)(relatedFileNameInfo?.DisplayOrder ?? i)
+                    DisplayOrder = relatedFileNameInfo?.DisplayOrder ?? i
                 };
 
                 output.Add(xmlShopItem);
@@ -153,7 +153,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
 
                 for (int k = 0; k < output.Count; k++)
                 {
-                    output[k].DisplayOrder = (short)(k + 1);
+                    output[k].DisplayOrder = k + 1;
                 }
             }
         }
