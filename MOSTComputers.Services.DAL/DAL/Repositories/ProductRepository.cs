@@ -1,5 +1,4 @@
-﻿using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+﻿using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Data;
@@ -10,6 +9,8 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
+using FluentValidation.Results;
+using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
@@ -21,8 +22,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     private const string _firstImagesTableName = "dbo.Images";
     private const string _allImagesTableName = "dbo.ImagesAll";
     private const string _propertiesTableName = "dbo.ProductXML";
-    private const string _imageFileNamesTable = "dbo.ImageFileName";
-    private const string _productStatusesTable = "dbo.ProductStatuses";
+    private const string _productCharacteristicsTableName = "dbo.ProductKeyword";
+    private const string _imageFileNamesTableName = "dbo.ImageFileName";
+    private const string _productStatusesTableName = "dbo.ProductStatuses";
 
     public ProductRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -58,6 +60,37 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             splitOn: "CategoryID,PersonalManifacturerId",
 
             new { });
+    }
+
+    public IEnumerable<Product> GetAllInCategory_WithManifacturerAndCategory(int categoryId)
+    {
+        const string getAllWithManifacturerAndCategoryQuery =
+            $"""
+            SELECT CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, products.S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, products.rowguid,
+                PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, products.MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2,
+                CategoryID, ParentId, Description, IsLeaf,
+                man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
+
+            FROM {_tableName} products
+            LEFT JOIN {_categoriesTableName} cat
+            ON cat.CategoryID = products.TID
+            LEFT JOIN {_manifacturersTableName} man
+            ON man.MfrID = products.MfrID
+            WHERE TID = @categoryId
+            ORDER BY S;
+            """;
+
+        return _relationalDataAccess.GetData<Product, Category, Manifacturer, dynamic>(getAllWithManifacturerAndCategoryQuery,
+            (product, category, manifacturer) =>
+            {
+                product.Category = category;
+                product.Manifacturer = manifacturer;
+
+                return product;
+            },
+            splitOn: "CategoryID,PersonalManifacturerId",
+
+            new { categoryId = categoryId });
     }
 
     public IEnumerable<Product> GetAll_WithManifacturerAndCategory_WhereSearchNameContainsSubstring(string subString)
@@ -100,7 +133,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         const string getAllWhereSearchStringMatchesAllSearchStringPartsQuery =
             $"""
-            CREATE TABLE #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES (SearchStringPart VARCHAR(50));
+            DECLARE @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES TABLE (SearchStringPart VARCHAR(50));
             
             DECLARE @StartIndex INT = 1;
 
@@ -110,7 +143,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             BEGIN
                 SET @StartIndex = CHARINDEX(' ', @searchStringParts);
 
-                INSERT INTO #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
+                INSERT INTO @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
                 VALUES (
                     CASE
                         WHEN @StartIndex != 0 THEN SUBSTRING(@searchStringParts, 0, @StartIndex - 1)
@@ -130,7 +163,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                         (SELECT SUM(LocalPosition) FROM
                             (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
-                                FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
+                                FROM @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
 
                 FROM {_tableName} products
                 LEFT JOIN {_categoriesTableName} cat
@@ -189,7 +222,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             },
             splitOn: "CategoryID,PersonalManifacturerId",
 
-            new { ids });
+            new { });
     }
 
     public IEnumerable<Product> GetAll_WithManifacturerAndCategoryAndFirstImage_ByIds(List<int> ids)
@@ -226,7 +259,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 product.Images ??= new List<ProductImage>();
 
-                product.Images.Add(image);
+                if (image is not null)
+                {
+                    product.Images.Add(image);
+                }
 
                 return product;
             },
@@ -255,7 +291,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE products.CSTID IN @productIds
             ORDER BY S;
             """;
-
+        
         Dictionary<int, Product> productsAndIdsDict = new();
 
         _relationalDataAccess.GetData<Product, Category, Manifacturer, ProductProperty, dynamic>(getAllWithManifacturerAndCategoryAndPropertiesByIdsQuery,
@@ -265,7 +301,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 if (exists)
                 {
-                    productSaved!.Properties.Add(property);
+                    if (property is not null)
+                    {
+                        productSaved!.Properties.Add(property);
+                    }
 
                     return product;
                 }
@@ -275,7 +314,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
                 product.Properties ??= new();
 
-                product.Properties.Add(property);
+                if (property is not null)
+                {
+                    product.Properties.Add(property);
+                }
 
                 productsAndIdsDict.Add(product.Id, product);
 
@@ -303,7 +345,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 FROM {_tableName} products
                 LEFT JOIN Categories cat
                 ON cat.CategoryID = products.TID
-                LEFT JOIN dbo.Manufacturer man
+                LEFT JOIN {_manifacturersTableName} man
                 ON man.MfrID = products.MfrID
             ) AS selectSt
 
@@ -329,7 +371,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             paramters);
     }
-
+    
     public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereNameContainsSubstring(int start, uint end, string subString)
     {
         const string getAllWithManifacturerAndCategoryQuery =
@@ -383,7 +425,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             parameters);
     }
-
+    
     public IEnumerable<Product> GetFirstInRange_WithManifacturerAndCategory_WhereSearchStringMatchesAllSearchStringParts(
         int start,
         uint end,
@@ -391,10 +433,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         const string getFistInRangeWhereSearchStringMatchesAllSearchStringPartsQuery =
             $"""
-            DECLARE @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES TABLE
-            (
-                SearchStringPart VARCHAR(50)
-            );
+            DECLARE @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES TABLE (SearchStringPart VARCHAR(50));
             
             DECLARE @StartIndex INT = 1;
 
@@ -537,7 +576,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             string queryStart =
                 $"""
-                CREATE TABLE #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES (SearchStringPart VARCHAR(50));
+                DECLARE @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES TABLE (SearchStringPart VARCHAR(50));
                 
                 DECLARE @StartIndex INT = 1;
                 
@@ -547,7 +586,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 BEGIN
                     SET @StartIndex = CHARINDEX(' ', @searchStringParts);
                 
-                    INSERT INTO #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
+                    INSERT INTO @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES(SearchStringPart)
                     VALUES (
                         CASE
                             WHEN @StartIndex != 0 THEN SUBSTRING(@searchStringParts, 0, @StartIndex)
@@ -609,15 +648,15 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     ,
                             (SELECT SUM(LocalPosition) FROM
                                 (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
-                                    FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS {searchStringSubPosition}
+                                    FROM @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS {searchStringSubPosition}
                     """;
-
+                
                 queryWhereStatementInSelect +=
                     $"""
                         {GetWhereOrAndSqlBasedOnIfThereIsAWhereAlready(hasWhereStatementInSelectPart)} 0 < ISNULL(
                             (SELECT SUM(LocalPos) FROM
                                 (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPos
-                                    FROM #TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringSubPos
+                                    FROM @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringSubPos
                                     HAVING MIN(LocalPos) > 0), 0)
                     """;
 
@@ -659,7 +698,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 querySecondSelect +=
                     $"""
 
-                    INNER JOIN {_productStatusesTable} productStatuses
+                    INNER JOIN {_productStatusesTableName} productStatuses
                     ON productStatuses.CSTID = products.CSTID
                     """;
 
@@ -860,32 +899,44 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             .FirstOrDefault();
     }
 
-    public OneOf<int, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest)
     {
         const string insertProductQuery =
             $"""
-            CREATE TABLE #Temp_Table (ID INT)
+            DECLARE @InsertedIdTable TABLE (Id INT);
             
             INSERT INTO {_tableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2)
-            OUTPUT INSERTED.CSTID INTO #Temp_Table
+            OUTPUT INSERTED.CSTID INTO @InsertedIdTable
             VALUES (ISNULL((SELECT MAX(CSTID) + 1 FROM {_tableName}), 1), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
                 @PromPID, @PromRID, @PromPictureId, @PromExpDate, @AlertPictureId, @AlertExpDate, @PriceListDescription, @ManifacturerId, @SubcategoryId, @SPLMODEL, @SPLMODEL1, @SPLMODEL2)
 
-            SELECT TOP 1 ID FROM #Temp_Table
+            SELECT ISNULL((SELECT TOP 1 Id FROM @InsertedIdTable), 0);
+            """;
+
+        const string getCharacteristicsByIdQuery =
+            $"""
+            SELECT * FROM {_productCharacteristicsTableName}
+            WHERE ProductKeywordID IN @characteristicIds;
             """;
 
         const string insertPropertiesQuery =
             $"""
-            INSERT INTO {_propertiesTableName}(CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
-            VALUES(@ProductId, @ProductCharacteristicId, @DisplayOrder,
-            (SELECT Name FROM dbo.ProductKeyword WHERE ProductKeywordID = @ProductCharacteristicId), @Value, @XmlPlacement)
+            DECLARE @DefaultDisplayOrder INT, @Name VARCHAR(50);
+
+            SELECT @DefaultDisplayOrder = S, @Name = Name
+            FROM {_productCharacteristicsTableName}
+            WHERE ProductKeywordID = @ProductCharacteristicId;
+
+            INSERT INTO {_propertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
+            SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement
             """;
 
-        const string insertImageFilePathInfosQuery =
+        const string insertImageFileNameInfosQuery =
             $"""
-            INSERT INTO {_imageFileNamesTable}(CSTID, ImgNo, ImgFileName, Active)
-            VALUES (@ProductId, @DisplayOrder, @FileName, @Active)
+            INSERT INTO {_imageFileNamesTableName} (CSTID, ImageNumber, S, ImgFileName, Active)
+            VALUES (@ProductId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {_imageFileNamesTableName} WHERE CSTID = @ProductId), 1),
+                @DisplayOrder, @FileName, @Active)
             """;
 
         const string insertInAllImagesQuery =
@@ -900,55 +951,91 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             VALUES (@ProductId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
-        var parameters = new
-        {
-            CategoryId = createRequest.CategoryId,
-            CfgSubType = createRequest.Name,
-            ADDWRR = createRequest.AdditionalWarrantyPrice,
-            ADDWRRTERM = createRequest.AdditionalWarrantyTermMonths,
-            ADDWRRDEF = createRequest.StandardWarrantyPrice,
-            DEFWRRTERM = createRequest.StandardWarrantyTermMonths,
-            createRequest.DisplayOrder,
-            OLD = createRequest.Status,
-            PLSHOW = createRequest.PlShow,
-            PRICE1 = createRequest.Price1,
-            PRICE2 = createRequest.DisplayPrice,
-            PRICE3 = createRequest.Price3,
-            CurrencyId = createRequest.Currency,
-            createRequest.RowGuid,
-            PromPID = createRequest.PromotionId,
-            PromRID = createRequest.PromRid,
-            PromPictureId = createRequest.PromotionPictureId,
-            PromExpDate = createRequest.PromotionExpireDate,
-            createRequest.AlertPictureId,
-            AlertExpDate = createRequest.AlertExpireDate,
-            createRequest.PriceListDescription,
-            createRequest.ManifacturerId,
-            SubcategoryId = createRequest.SubCategoryId,
-            SPLMODEL = createRequest.PartNumber1,
-            SPLMODEL1 = createRequest.PartNumber2,
-            SPLMODEL2 = createRequest.SearchString,
-        };
-
-        OneOf<int, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<int, UnexpectedFailureResult>>(InsertAllRecordsInTransaction<dynamic>, parameters);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> result
+            = _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition(
+                InsertAllRecordsInTransaction,
+                resultLocal => resultLocal.Match(
+                    id => true,
+                    validationResult => false,
+                    unexpectedFailureResult => false),
+                createRequest);
 
         return result;
 
-        OneOf<int, UnexpectedFailureResult> InsertAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U parametersLocal)
+        OneOf<int, ValidationResult, UnexpectedFailureResult> InsertAllRecordsInTransaction(IDbConnection connection, ProductCreateRequest createRequest)
         {
-            int id = connection.ExecuteScalar<int>(insertProductQuery, parametersLocal, transaction, commandType: CommandType.Text);
+            var parameters = new
+            {
+                CategoryId = createRequest.CategoryId,
+                CfgSubType = createRequest.Name,
+                ADDWRR = createRequest.AdditionalWarrantyPrice,
+                ADDWRRTERM = createRequest.AdditionalWarrantyTermMonths,
+                ADDWRRDEF = createRequest.StandardWarrantyPrice,
+                DEFWRRTERM = createRequest.StandardWarrantyTermMonths,
+                DisplayOrder = createRequest.DisplayOrder,
+                OLD = createRequest.Status,
+                PLSHOW = createRequest.PlShow,
+                PRICE1 = createRequest.Price1,
+                PRICE2 = createRequest.DisplayPrice,
+                PRICE3 = createRequest.Price3,
+                CurrencyId = createRequest.Currency,
+                RowGuid = createRequest.RowGuid,
+                PromPID = createRequest.PromotionId,
+                PromRID = createRequest.PromRid,
+                PromPictureId = createRequest.PromotionPictureId,
+                PromExpDate = createRequest.PromotionExpireDate,
+                AlertPictureId = createRequest.AlertPictureId,
+                AlertExpDate = createRequest.AlertExpireDate,
+                PriceListDescription = createRequest.PriceListDescription,
+                ManifacturerId = createRequest.ManifacturerId,
+                SubcategoryId = createRequest.SubCategoryId,
+                SPLMODEL = createRequest.PartNumber1,
+                SPLMODEL1 = createRequest.PartNumber2,
+                SPLMODEL2 = createRequest.SearchString,
+            };
+
+            int newProductId = connection.ExecuteScalar<int>(insertProductQuery, parameters, commandType: CommandType.Text);
 
             if (createRequest.Properties is not null
                 && createRequest.Properties.Count > 0)
             {
-                int rowsAffected = connection.Execute(insertPropertiesQuery, createRequest.Properties.Select(x => Map(x, id)), transaction, commandType: CommandType.Text);
+                IEnumerable<int> characteristicIds = createRequest.Properties.Select(x => x.ProductCharacteristicId);
 
-                if (rowsAffected == 0)
+                var relevantCharacteristicsQueryParameters = new
                 {
-                    transaction.Rollback();
+                    characteristicIds = characteristicIds,
+                };
 
-                    return new UnexpectedFailureResult();
+                IEnumerable<ProductCharacteristic> characteristics = _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(
+                    getCharacteristicsByIdQuery, relevantCharacteristicsQueryParameters);
+
+                ValidationResult propertiesValidationResult = new();
+
+                foreach (int characteristicId in characteristicIds)
+                {
+                    ProductCharacteristic? matchingCharacteristic = characteristics.FirstOrDefault(x => x.Id == characteristicId);
+
+                    if (matchingCharacteristic is null)
+                    {
+                        AddValidationErrorsForInsertWithCharacteristicIdResult(-1, propertiesValidationResult);
+                    }
+                    else if (matchingCharacteristic.CategoryId != createRequest.CategoryId)
+                    {
+                        AddValidationErrorsForInsertWithCharacteristicIdResult(-3, propertiesValidationResult);
+                    }
                 }
+
+                if (!propertiesValidationResult.IsValid)
+                {
+                    return propertiesValidationResult;
+                }
+
+                IEnumerable<ProductPropertyByCharacteristicIdCreateRequest> propertyCreateRequests
+                    = createRequest.Properties.Select(x => Map(x, newProductId));
+
+                int rowsAffectedByPropertyInsert = connection.Execute(insertPropertiesQuery, propertyCreateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByPropertyInsert < createRequest.Properties.Count) return new UnexpectedFailureResult();
             }
 
             if (createRequest.ImageFileNames is not null
@@ -965,18 +1052,32 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     imageFileNameCreateRequest.DisplayOrder = i + 1;
                 }
 
-                connection.Execute(insertImageFilePathInfosQuery, orderedImageFileNames.Select(x => Map(x, id)), transaction, commandType: CommandType.Text);
+                IEnumerable<ProductImageFileNameInfoCreateRequest> imageFileNameInfoCreateRequests
+                    = orderedImageFileNames.Select(x => Map(x, newProductId));
+
+                int rowsAffectedByImageFileNameInsert = connection.Execute(
+                    insertImageFileNameInfosQuery, imageFileNameInfoCreateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByImageFileNameInsert < createRequest.ImageFileNames.Count) return new UnexpectedFailureResult();
             }
 
             if (createRequest.Images is not null
                 && createRequest.Images.Count > 0)
             {
-                connection.Execute(insertInAllImagesQuery, MapToLocalAllImages(createRequest.Images, id, connection, transaction), transaction, commandType: CommandType.Text);
+                List<LocalProductImageCreateRequest> imageCreateRequests = MapToLocalAllImages(createRequest.Images, newProductId, connection);
 
-                connection.Execute(insertInFirstImagesQuery, Map(createRequest.Images[0], id), transaction, commandType: CommandType.Text);
+                int rowsAffectedByImageInsert = connection.Execute(insertInAllImagesQuery, imageCreateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByImageInsert < createRequest.Images.Count) return new UnexpectedFailureResult();
+
+                ProductImageCreateRequest firstImageCreateRequest = Map(createRequest.Images[0], newProductId);
+
+                int rowsAffectedByFirstImageInsert = connection.Execute(insertInFirstImagesQuery, firstImageCreateRequest, commandType: CommandType.Text);
+
+                if (rowsAffectedByFirstImageInsert < 1) return new UnexpectedFailureResult();
             }
 
-            return id;
+            return newProductId;
         }
     }
 
@@ -1018,7 +1119,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         const string updatePropertiesQuery =
             $"""
             UPDATE {_propertiesTableName}
-            SET S = @DisplayOrder,
+            SET S = ISNULL(@CustomDisplayOrder, S),
                 KeywordValue = @Value,
                 Discr = @XmlPlacement
             
@@ -1028,65 +1129,56 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string updateImageFilePathInfosQuery =
             $"""
+            DECLARE @DisplayOrder INT;
+            DECLARE @MaxDisplayOrder INT;
+            
+            SELECT TOP 1 @DisplayOrder = S FROM {_imageFileNamesTableName}
+            WHERE CSTID = @ProductId
+            AND ImageNumber = @ImageNumber;
+            
+            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {_imageFileNamesTableName} WHERE CSTID = @ProductId), 1);
+            
             SET @NewDisplayOrder = 
             CASE 
+                WHEN @NewDisplayOrder IS NULL THEN NULL
                 WHEN @NewDisplayOrder < 1 THEN 1
-                WHEN @NewDisplayOrder > ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1) THEN ISNULL((SELECT MAX(ImgNo) FROM ImageFileName WHERE CSTID = @productId), 1)
+                WHEN @NewDisplayOrder > @MaxDisplayOrder THEN @MaxDisplayOrder
                 ELSE @NewDisplayOrder
             END;
-
-            UPDATE {_imageFileNamesTable}
-            SET ImgNo = 
-                CASE
-                    WHEN ImgNo = @DisplayOrder THEN @NewDisplayOrder
-                    WHEN @DisplayOrder < @NewDisplayOrder AND ImgNo > @DisplayOrder AND ImgNo <= @NewDisplayOrder THEN ImgNo - 1
-                    WHEN @DisplayOrder > @NewDisplayOrder AND ImgNo < @DisplayOrder AND ImgNo >= @NewDisplayOrder THEN ImgNo + 1
-                    ELSE ImgNo
+            
+            IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId)
+            BEGIN       
+                UPDATE {_imageFileNamesTableName}
+                SET S = 
+                    CASE
+                        WHEN S = @DisplayOrder AND ImageNumber = @ImageNumber THEN @NewDisplayOrder
+                        WHEN @DisplayOrder < @NewDisplayOrder AND S > @DisplayOrder AND S <= @NewDisplayOrder THEN S - 1
+                        WHEN @DisplayOrder > @NewDisplayOrder AND S < @DisplayOrder AND S >= @NewDisplayOrder THEN S + 1
+                        ELSE S
+                    END
+                WHERE CSTID = @ProductId;
+            
+                UPDATE {_imageFileNamesTableName}
+                SET ImgFileName = @FileName,
+                    Active = @Active
+            
+                WHERE CSTID = @ProductId
+                AND ImageNumber = @ImageNumber;
+            
+                IF @@ROWCOUNT > 0
+                BEGIN
+                    SELECT 1;
                 END
-            WHERE CSTID = @productId;
-
-            UPDATE {_imageFileNamesTable}
-            SET ImgFileName = @FileName,
-                Active = @Active
-
-            WHERE CSTID = @productId
-            AND ImgNo = @NewDisplayOrder;
+                ELSE
+                BEGIN
+                    SELECT 0;
+                END
+            END
+            ELSE
+            BEGIN
+                SELECT -1;
+            END
             """;
-
-        //DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
-
-        //SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(ImgNo) + 1 FROM {_imageFileNamesTable}
-        //WHERE CSTID = @productId
-        //AND ImgNo <> @DisplayOrder;
-
-        //SELECT TOP 1 @DisplayOrderInRange = ISNULL(
-        //    (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_imageFileNamesTable}
-        //    WHERE @MaxDisplayOrderForProduct <= @NewDisplayOrder),
-        //    @NewDisplayOrder);
-
-        //UPDATE {_imageFileNamesTable}
-        //    SET ImgNo = ImgNo + 1
-        //WHERE CSTID = @productId
-        //AND ImgNo >= @DisplayOrderInRange
-        //AND ImgNo <> @DisplayOrder;
-
-        //UPDATE {_imageFileNamesTable}
-        //SET ImgNo = @DisplayOrderInRange,
-        //    ImgFileName = @FileName
-
-        //WHERE CSTID = @productId
-        //AND ImgNo = @DisplayOrder;
-
-        //UPDATE {_imageFileNamesTable} 
-        //    SET ImgNo = rowNumber
-        //FROM {_imageFileNamesTable}
-        //INNER JOIN 
-        //    (SELECT ImgNo, CSTID, ROW_NUMBER() OVER (ORDER BY ImgNo) as rowNumber
-        //    FROM {_imageFileNamesTable}
-        //    WHERE CSTID = @productId) drRowNumbers
-        //        ON drRowNumbers.ImgNo = {_imageFileNamesTable}.ImgNo
-        //WHERE {_imageFileNamesTable}.CSTID = @productId;
-        //""";
 
         const string updateInAllImagesQuery =
             $"""
@@ -1110,69 +1202,86 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             WHERE ID = @ProductId;
             """;
 
-        var parameters = new
-        {
-            id = updateRequest.Id,
-            CategoryId = updateRequest.CategoryId,
-            updateRequest.Name,
-            ADDWRR = updateRequest.AdditionalWarrantyPrice,
-            ADDWRRTERM = updateRequest.AdditionalWarrantyTermMonths,
-            ADDWRRDEF = updateRequest.StandardWarrantyPrice,
-            DEFWRRTERM = updateRequest.StandardWarrantyTermMonths,
-            updateRequest.DisplayOrder,
-            updateRequest.Status,
-            PLSHOW = updateRequest.PlShow,
-            PRICE1 = updateRequest.Price1,
-            PRICE2 = updateRequest.DisplayPrice,
-            PRICE3 = updateRequest.Price3,
-            CurrencyId = updateRequest.Currency,
-            updateRequest.RowGuid,
-            PromPID = updateRequest.PromotionId,
-            PromRID = updateRequest.PromRid,
-            PromPictureId = updateRequest.PromotionPictureId,
-            PromExpDate = updateRequest.PromotionExpireDate,
-            updateRequest.AlertPictureId,
-            AlertExpDate = updateRequest.AlertExpireDate,
-            updateRequest.PriceListDescription,
-            updateRequest.ManifacturerId,
-            SubcategoryId = updateRequest.SubCategoryId,
-            SPLMODEL = updateRequest.PartNumber1,
-            SPLMODEL1 = updateRequest.PartNumber2,
-            SPLMODEL2 = updateRequest.SearchString
-        };
-
-        var result = _relationalDataAccess.SaveDataInTransactionUsingAction<Product, dynamic, OneOf<Success, UnexpectedFailureResult>>(
-            UpdateAllRecordsInTransaction<dynamic>, parameters);
+        OneOf<Success, UnexpectedFailureResult> result = _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition(
+            UpdateAllRecordsInTransaction,
+            resultLocal => resultLocal.Match(
+                success => true,
+                unexpectedFailureResult => false),
+            updateRequest);
 
         return result;
 
-        OneOf<Success, UnexpectedFailureResult> UpdateAllRecordsInTransaction<U>(IDbConnection connection, IDbTransaction transaction, U _)
+        OneOf<Success, UnexpectedFailureResult> UpdateAllRecordsInTransaction(IDbConnection connection, ProductUpdateRequest updateRequest)
         {
-            connection.Execute(updateProductQuery, parameters, transaction, commandType: CommandType.Text);
+            var parameters = new
+            {
+                id = updateRequest.Id,
+                CategoryId = updateRequest.CategoryId,
+                Name = updateRequest.Name,
+                ADDWRR = updateRequest.AdditionalWarrantyPrice,
+                ADDWRRTERM = updateRequest.AdditionalWarrantyTermMonths,
+                ADDWRRDEF = updateRequest.StandardWarrantyPrice,
+                DEFWRRTERM = updateRequest.StandardWarrantyTermMonths,
+                DisplayOrder = updateRequest.DisplayOrder,
+                Status = updateRequest.Status,
+                PLSHOW = updateRequest.PlShow,
+                PRICE1 = updateRequest.Price1,
+                PRICE2 = updateRequest.DisplayPrice,
+                PRICE3 = updateRequest.Price3,
+                CurrencyId = updateRequest.Currency,
+                RowGuid = updateRequest.RowGuid,
+                PromPID = updateRequest.PromotionId,
+                PromRID = updateRequest.PromRid,
+                PromPictureId = updateRequest.PromotionPictureId,
+                PromExpDate = updateRequest.PromotionExpireDate,
+                AlertPictureId = updateRequest.AlertPictureId,
+                AlertExpDate = updateRequest.AlertExpireDate,
+                PriceListDescription = updateRequest.PriceListDescription,
+                ManifacturerId = updateRequest.ManifacturerId,
+                SubcategoryId = updateRequest.SubCategoryId,
+                SPLMODEL = updateRequest.PartNumber1,
+                SPLMODEL1 = updateRequest.PartNumber2,
+                SPLMODEL2 = updateRequest.SearchString
+            };
+
+            connection.Execute(updateProductQuery, parameters, commandType: CommandType.Text);
 
             if (updateRequest.Properties is not null
                 && updateRequest.Properties.Count > 0)
             {
-                int rowsAffected = connection.Execute(updatePropertiesQuery, updateRequest.Properties.Select(x => Map(x, updateRequest.Id)), transaction, commandType: CommandType.Text);
+                IEnumerable<ProductPropertyUpdateRequest> propertyUpdateRequests = updateRequest.Properties.Select(x => Map(x, updateRequest.Id));
 
-                if (rowsAffected == 0) return new UnexpectedFailureResult();
+                int rowsAffectedByPropertyUpdate = connection.Execute(updatePropertiesQuery, propertyUpdateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByPropertyUpdate < updateRequest.Properties.Count) return new UnexpectedFailureResult();
             }
 
             if (updateRequest.ImageFileNames is not null
                 && updateRequest.ImageFileNames.Count > 0)
             {
-                connection.Execute(updateImageFilePathInfosQuery, updateRequest.ImageFileNames
-                    .Select(x => Map(x, updateRequest.Id)),
-                    transaction,
-                    commandType: CommandType.Text);
+                IEnumerable<ProductImageFileNameInfoByImageNumberUpdateRequest> imageFileNameUpdateRequests =
+                    updateRequest.ImageFileNames.Select(x => Map(x, updateRequest.Id));
+
+                int rowsAffectedByImageFileNameUpdate = connection.Execute(
+                    updateImageFilePathInfosQuery, imageFileNameUpdateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByImageFileNameUpdate < updateRequest.ImageFileNames.Count) return new UnexpectedFailureResult();
             }
 
             if (updateRequest.Images is not null
                 && updateRequest.Images.Count > 0)
             {
-                connection.Execute(updateInAllImagesQuery, updateRequest.Images.Select(x => Map(x, updateRequest.Id)), transaction, commandType: CommandType.Text);
+                IEnumerable<ProductImageUpdateRequest> imageUpdateRequests = updateRequest.Images.Select(x => Map(x, updateRequest.Id));
 
-                connection.Execute(updateInFirstImagesQuery, MapToFirstImage(updateRequest.Images.First(), updateRequest.Id), transaction, commandType: CommandType.Text);
+                int rowsAffectedByImagesUpdate = connection.Execute(updateInAllImagesQuery, imageUpdateRequests, commandType: CommandType.Text);
+
+                if (rowsAffectedByImagesUpdate < updateRequest.Images.Count) return new UnexpectedFailureResult();
+
+                ProductFirstImageUpdateRequest firstImageUpdateRequest = MapToFirstImage(updateRequest.Images.First(), updateRequest.Id);
+
+                int rowsAffectedByFirstImageUpdate = connection.Execute(updateInFirstImagesQuery, firstImageUpdateRequest, commandType: CommandType.Text);
+
+                if (rowsAffectedByFirstImageUpdate < 1) return new UnexpectedFailureResult();
             }
 
             return new Success();
@@ -1191,7 +1300,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             DELETE FROM {_propertiesTableName}
             WHERE CSTID = @id;
 
-            DELETE FROM {_imageFileNamesTable}
+            DELETE FROM {_imageFileNamesTableName}
             WHERE CSTID = @id;
 
             DELETE FROM {_allImagesTableName}
@@ -1267,7 +1376,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             ProductId = productId,
             ProductCharacteristicId = request.ProductCharacteristicId,
-            DisplayOrder = request.DisplayOrder,
+            CustomDisplayOrder = request.CustomDisplayOrder,
             Value = request.Value,
             XmlPlacement = request.XmlPlacement,
         };
@@ -1284,11 +1393,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         };
     }
 
-    private List<LocalProductImageCreateRequest> MapToLocalAllImages(List<CurrentProductImageCreateRequest> requests, int productId, IDbConnection connection, IDbTransaction transaction)
+    private List<LocalProductImageCreateRequest> MapToLocalAllImages(
+        List<CurrentProductImageCreateRequest> requests, int productId, IDbConnection connection)
     {
         List<LocalProductImageCreateRequest> output = new();
 
-        int highestId = GetHighestImageId(connection, transaction) ?? 0;
+        int highestId = GetHighestImageId(connection) ?? 1;
 
         for (int i = 0; i < requests.Count; i++)
         {
@@ -1310,7 +1420,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         return output;
     }
 
-    private int? GetHighestImageId(IDbConnection connection, IDbTransaction transaction)
+    private int? GetHighestImageId(IDbConnection connection, IDbTransaction? transaction = null)
     {
         const string getHighestIdFromAllImages =
             $"""
@@ -1340,7 +1450,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
         {
             ProductId = productId,
             ProductCharacteristicId = request.ProductCharacteristicId,
-            DisplayOrder = request.DisplayOrder,
+            CustomDisplayOrder = request.CustomDisplayOrder,
             Value = request.Value,
             XmlPlacement = request.XmlPlacement,
         };
