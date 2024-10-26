@@ -17,4 +17,7 @@ public interface IProductImageFileNameInfoRepository
     bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ProductImageFileNameInfoByFileNameUpdateRequest updateRequest);
     bool DeleteByProductIdAndImageNumber(int productId, int imageNumber);
+    ProductImageFileNameInfo? GetByProductIdAndImageNumber(int productId, int imageNumber);
+    ProductImageFileNameInfo? GetByFileName(string fileName);
+    int? GetHighestImageNumber(int productId);
 }
