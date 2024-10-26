@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.Services.ProductImageFileManagement.Models;
+﻿namespace MOSTComputers.Models.FileManagement.Models;
 
 public readonly struct FileAlreadyExistsResult
 {

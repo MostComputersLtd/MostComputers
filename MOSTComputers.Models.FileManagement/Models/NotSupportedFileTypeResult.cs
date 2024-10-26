@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MOSTComputers.Services.ProductImageFileManagement.Models;
+namespace MOSTComputers.Models.FileManagement.Models;
 
 public readonly struct NotSupportedFileTypeResult
 {
