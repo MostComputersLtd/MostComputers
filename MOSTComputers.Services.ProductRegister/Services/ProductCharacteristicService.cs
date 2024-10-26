@@ -71,10 +71,26 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
     {
         return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
     }
-    
+
     public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
     {
         return _productCharacteristicsRepository.GetSelectionByCategoryIdAndNames(categoryId, names);
+    }
+
+    public IEnumerable<ProductCharacteristic> GetSelectionByCharacteristicIds(IEnumerable<int> ids)
+    {
+        if (!ids.Any()) return Enumerable.Empty<ProductCharacteristic>();
+
+        List<int> uniqueIds = new();
+
+        foreach (int id in ids)
+        {
+            if (id <= 0 || uniqueIds.Contains(id)) continue;
+
+            uniqueIds.Add(id);
+        }
+
+        return _productCharacteristicsRepository.GetSelectionByIds(uniqueIds);
     }
 
     public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(

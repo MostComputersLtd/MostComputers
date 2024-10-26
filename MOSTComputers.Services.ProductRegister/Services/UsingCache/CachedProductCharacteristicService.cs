@@ -298,6 +298,21 @@ internal sealed class CachedProductCharacteristicService : IProductCharacteristi
         return output;
     }
 
+    public IEnumerable<ProductCharacteristic> GetSelectionByCharacteristicIds(IEnumerable<int> ids)
+    {
+        IEnumerable<ProductCharacteristic> characteristics
+            = _productCharacteristicService.GetSelectionByCharacteristicIds(ids);
+
+        foreach (ProductCharacteristic characteristic in characteristics)
+        {
+            if (characteristic.CategoryId is null || characteristic.Name is null) continue;
+
+            _cache.Add(GetByCategoryIdAndNameKey(characteristic.CategoryId.Value, characteristic.Name), Clone(characteristic));
+        }
+
+        return characteristics;
+    }
+
     public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
         int categoryId,
         string name,

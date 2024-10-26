@@ -20,6 +20,7 @@ public interface IProductCharacteristicService
     ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name);
     ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(int categoryId, string name, ProductCharacteristicTypeEnum productCharacteristicType);
     IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names);
+    IEnumerable<ProductCharacteristic> GetSelectionByCharacteristicIds(IEnumerable<int> ids);
     OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByIdUpdateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? validator = null);
