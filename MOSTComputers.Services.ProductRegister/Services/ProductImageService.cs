@@ -8,8 +8,11 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Mapping;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Utils.OneOf;
+using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using static MOSTComputers.Services.ProductRegister.StaticUtilities.ImageUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -167,7 +170,167 @@ internal sealed class ProductImageService : IProductImageService
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData)
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpsertFirstAndAllImagesForProduct(
+        int productId,
+        List<ImageAndImageFileNameUpsertRequest> imageAndFileNameUpsertRequests,
+        List<ProductImage>? oldProductImages = null)
+    {
+        imageAndFileNameUpsertRequests = OrderImageAndImageFileNameUpsertRequests(imageAndFileNameUpsertRequests);
+
+        ImageAndImageFileNameUpsertRequest? productFirstImageUpsertRequest = null;
+
+        for (int i = 0; i < imageAndFileNameUpsertRequests.Count; i++)
+        {
+            ImageAndImageFileNameUpsertRequest imageAndFileNameInfoUpsertRequest = imageAndFileNameUpsertRequests[i];
+
+            ProductImageUpsertRequest? image = imageAndFileNameInfoUpsertRequest.ProductImageUpsertRequest;
+
+            if (image is null) continue;
+
+            ProductImage? imageInOldProduct = oldProductImages?.Find(
+                img => img.Id == image.OriginalImageId);
+
+            if (imageInOldProduct is null)
+            {
+                ServiceProductImageCreateRequest productImageCreateRequest = new()
+                {
+                    ProductId = productId,
+                    ImageData = imageAndFileNameInfoUpsertRequest.ImageData,
+                    ImageContentType = imageAndFileNameInfoUpsertRequest.ImageContentType,
+                    HtmlData = image.HtmlData,
+                };
+
+                OneOf<int, ValidationResult, UnexpectedFailureResult> imageInsertResult
+                    = InsertInAllImages(productImageCreateRequest);
+
+                int imageId = -1;
+
+                bool isImageInsertSuccessful = imageInsertResult.Match(
+                    id =>
+                    {
+                        imageId = id;
+
+                        return true;
+                    },
+                    validationResult => false,
+                    unexpectedFailureResult => false);
+
+                if (!isImageInsertSuccessful)
+                {
+                    return imageInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+                        id => new Success(),
+                        validationResult => validationResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+
+                image.OriginalImageId = imageId;
+
+                if (productFirstImageUpsertRequest is null
+                    && imageAndFileNameInfoUpsertRequest.ProductImageUpsertRequest is not null)
+                {
+                    productFirstImageUpsertRequest = imageAndFileNameInfoUpsertRequest;
+                }
+
+                continue;
+            }
+
+            if (productFirstImageUpsertRequest is null
+                && imageAndFileNameInfoUpsertRequest.ProductImageUpsertRequest is not null)
+            {
+                productFirstImageUpsertRequest = imageAndFileNameInfoUpsertRequest;
+            }
+
+            if (CompareByteArrays(imageAndFileNameInfoUpsertRequest.ImageData, imageInOldProduct.ImageData)
+                && imageAndFileNameInfoUpsertRequest.ImageContentType == imageInOldProduct.ImageContentType
+                && image.HtmlData == imageInOldProduct.HtmlData)
+            {
+                oldProductImages?.Remove(imageInOldProduct);
+
+                continue;
+            }
+
+            ServiceProductImageUpdateRequest productImageUpdateRequest = new()
+            {
+                Id = image.OriginalImageId!.Value,
+                ImageData = imageAndFileNameInfoUpsertRequest.ImageData,
+                ImageContentType = imageAndFileNameInfoUpsertRequest.ImageContentType,
+                HtmlData = image.HtmlData,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
+                = UpdateInAllImages(productImageUpdateRequest);
+
+            bool isImageUpdateSuccessful = imageUpdateResult.Match(
+                success => true,
+                validationResult => false,
+                unexpectedFailureResult => false);
+
+            if (!isImageUpdateSuccessful) return imageUpdateResult;
+
+            oldProductImages?.Remove(imageInOldProduct);
+        }
+
+        ProductImage? oldProductFirstImage = GetFirstImageForProduct(productId);
+
+        if (productFirstImageUpsertRequest is not null)
+        {
+            if (oldProductFirstImage is null)
+            {
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult = InsertInFirstImages(new()
+                {
+                    ProductId = productId,
+                    ImageData = productFirstImageUpsertRequest.ImageData,
+                    ImageContentType = productFirstImageUpsertRequest.ImageContentType,
+                    HtmlData = productFirstImageUpsertRequest.ProductImageUpsertRequest!.HtmlData,
+                });
+
+                bool isFirstImageInsertSuccessful = insertFirstImageResult.Match(
+                    success => true,
+                    validationResult => false,
+                    unexpectedFailureResult => false);
+
+                if (!isFirstImageInsertSuccessful) return insertFirstImageResult;
+            }
+            else
+            {
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> updateFirstImageResult = UpdateInFirstImages(new()
+                {
+                    ProductId = productId,
+                    ImageData = productFirstImageUpsertRequest.ImageData,
+                    ImageContentType = productFirstImageUpsertRequest.ImageContentType,
+                    HtmlData = productFirstImageUpsertRequest.ProductImageUpsertRequest!.HtmlData,
+                });
+
+                bool isFirstImageInsertSuccessful = updateFirstImageResult.Match(
+                    success => true,
+                    validationResult => false,
+                    unexpectedFailureResult => false);
+
+                if (!isFirstImageInsertSuccessful) return updateFirstImageResult;
+            }
+        }
+        else if (oldProductFirstImage is not null)
+        {
+            bool isFirstImageDeleted = DeleteInFirstImagesByProductId(productId);
+
+            if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+        }
+
+        if (oldProductImages is not null
+            && oldProductImages.Count > 0)
+        {
+            foreach (ProductImage oldImageToBeRemoved in oldProductImages)
+            {
+                bool imageDeleteResult = DeleteInAllImagesById(oldImageToBeRemoved.Id);
+
+                if (!imageDeleteResult) return new UnexpectedFailureResult();
+            }
+        }
+
+        return new Success();
+    }
+
+    public OneOf<bool, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInAllImagesById(int imageId, string htmlData)
     {
         ValidationResult validationResult = new();
 
@@ -176,19 +339,19 @@ internal sealed class ProductImageService : IProductImageService
             validationResult.Errors.Add(new(nameof(imageId), "Invalid id"));
         }
 
-        if (string.IsNullOrEmpty(htmlData))
+        if (string.IsNullOrWhiteSpace(htmlData))
         {
             validationResult.Errors.Add(new(nameof(htmlData), "Cannot be null, empty, or whitespace"));
         }
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> updateHtmlDataInAllImagesResult = _productImageRepository.UpdateHtmlDataInAllImagesById(imageId, htmlData);
+        OneOf<bool, UnexpectedFailureResult> updateHtmlDataInAllImagesResult = _productImageRepository.UpdateHtmlDataInAllImagesById(imageId, htmlData);
 
-        return updateHtmlDataInAllImagesResult.Map<Success, ValidationResult, UnexpectedFailureResult>();
+        return updateHtmlDataInAllImagesResult.Map<bool, ValidationResult, UnexpectedFailureResult>();
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData)
+    public OneOf<bool, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstImagesByProductId(int productId, string htmlData)
     {
         ValidationResult validationResult = new();
 
@@ -197,19 +360,20 @@ internal sealed class ProductImageService : IProductImageService
             validationResult.Errors.Add(new(nameof(productId), "Invalid id"));
         }
 
-        if (string.IsNullOrEmpty(htmlData))
+        if (string.IsNullOrWhiteSpace(htmlData))
         {
             validationResult.Errors.Add(new(nameof(htmlData), "Cannot be null, empty, or whitespace"));
         }
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> updateHtmlDataInFirstImagesResult = _productImageRepository.UpdateHtmlDataInFirstImagesByProductId(productId, htmlData);
+        OneOf<bool, UnexpectedFailureResult> updateHtmlDataInFirstImagesResult
+            = _productImageRepository.UpdateHtmlDataInFirstImagesByProductId(productId, htmlData);
 
-        return updateHtmlDataInFirstImagesResult.Map<Success, ValidationResult, UnexpectedFailureResult>();
+        return updateHtmlDataInFirstImagesResult.Map<bool, ValidationResult, UnexpectedFailureResult>();
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData)
+    public OneOf<bool, ValidationResult, UnexpectedFailureResult> UpdateHtmlDataInFirstAndAllImagesByProductId(int productId, string htmlData)
     {
         ValidationResult validationResult = new();
 
@@ -218,16 +382,17 @@ internal sealed class ProductImageService : IProductImageService
             validationResult.Errors.Add(new(nameof(productId), "Invalid id"));
         }
 
-        if (string.IsNullOrEmpty(htmlData))
+        if (string.IsNullOrWhiteSpace(htmlData))
         {
             validationResult.Errors.Add(new(nameof(htmlData), "Cannot be null, empty, or whitespace"));
         }
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<Success, UnexpectedFailureResult> updateHtmlDataInAllAndFirstImagesResult = _productImageRepository.UpdateHtmlDataInFirstAndAllImagesByProductId(productId, htmlData);
+        OneOf<bool, UnexpectedFailureResult> updateHtmlDataInAllAndFirstImagesResult
+            = _productImageRepository.UpdateHtmlDataInFirstAndAllImagesByProductId(productId, htmlData);
 
-        return updateHtmlDataInAllAndFirstImagesResult.Map<Success, ValidationResult, UnexpectedFailureResult>();
+        return updateHtmlDataInAllAndFirstImagesResult.Map<bool, ValidationResult, UnexpectedFailureResult>();
     }
 
     public bool DeleteInAllImagesById(int id)
