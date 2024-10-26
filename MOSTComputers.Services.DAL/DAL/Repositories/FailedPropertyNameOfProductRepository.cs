@@ -14,7 +14,7 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IFailedPropertyNameOfProductRepository
 {
-    private const string _tableName = "FailedPropertyNamesOfProducts";
+    private const string _tableName = "dbo.FailedPropertyNamesOfProducts";
     public FailedPropertyNameOfProductRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -75,7 +75,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             createRequest.PropertyName
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(insertQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -99,7 +99,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             PropertyNames = createRequest.PropertyNames.AsEnumerable()
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(insertQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(insertQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -122,7 +122,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             updateRequest.NewPropertyName,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -142,7 +142,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             PropertyName = propertyName
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(deleteQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -155,7 +155,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID = @productId;
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(deleteQuery,
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery,
             new { productId = productId });
 
         return (rowsAffected > 0);
@@ -169,7 +169,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
             WHERE CSTID IN @productIds;
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<FailedPropertyNameOfProduct, dynamic>(getAllQuery,
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(getAllQuery,
             new { productIds = productIds });
 
         return (rowsAffected > 0);

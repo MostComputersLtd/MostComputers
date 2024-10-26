@@ -118,7 +118,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
             id = id
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -136,7 +136,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
             ids = ids
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -156,7 +156,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
             elementId = elementId
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -176,7 +176,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
             elementIds = elementIds
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
 
         return (rowsAffected > 0);
     }

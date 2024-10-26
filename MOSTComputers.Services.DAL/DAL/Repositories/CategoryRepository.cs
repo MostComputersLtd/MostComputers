@@ -93,7 +93,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             updateRequest.ProductsUpdateCounter,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return (rowsAffected > 0) ? new Success() : new UnexpectedFailureResult();
     }
@@ -108,7 +108,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<Category, dynamic>(deleteQuery, new { id = id });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, new { id = id });
 
             return (rowsAffected > 0);
         }
