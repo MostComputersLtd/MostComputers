@@ -6,7 +6,7 @@ namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 public class XmlShopItemImage
 {
     [XmlIgnore]
-    public short DisplayOrder { get; set; }
+    public int? DisplayOrder { get; set; }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     [XmlElement(ElementName = "picture_url")]
