@@ -7,10 +7,11 @@ public interface IExternalChangesRepository
     IEnumerable<ExternalChangeData> GetAll();
     IEnumerable<ExternalChangeData> GetAllForOperationType(ChangeOperationTypeEnum changeOperationType);
     IEnumerable<ExternalChangeData> GetAllForTable(string tableName);
+    IEnumerable<ExternalChangeData> GetAllByTableNameAndElementId(string tableName, int elementId);
     ExternalChangeData? GetById(int id);
-    ExternalChangeData? GetByTableNameAndElementId(string tableName, int elementId);
     bool DeleteById(int id);
-    bool DeleteByTableNameAndElementId(string tableName, int elementId);
+    bool DeleteAllByTableNameAndElementId(string tableName, int elementId);
     bool DeleteRangeByIds(IEnumerable<int> ids);
     bool DeleteRangeByTableNameAndElementIds(string tableName, IEnumerable<int> elementIds);
+    bool DeleteByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum operationType);
 }
