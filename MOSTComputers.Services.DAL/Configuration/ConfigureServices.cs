@@ -1,9 +1,13 @@
 ﻿using Dapper.FluentMap;
+using Dapper.FluentMap.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.DAL.DAL;
 using MOSTComputers.Services.DAL.DAL.Repositories;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.DAL.Repositories.ExternalXmlImport;
 using MOSTComputers.Services.DAL.Mapping;
+using MOSTComputers.Services.DAL.Mapping.ExternalXmlImport;
 
 namespace MOSTComputers.Services.DAL.Configuration;
 
@@ -19,7 +23,7 @@ public static class ConfigureServices
                 return dapperDataAccess;
             });
 
-        AddMappings();
+        AddDapperMappings();
 
         return services;
     }
@@ -40,14 +44,24 @@ public static class ConfigureServices
 
         services.AddScoped<IToDoLocalChangesRepository, ToDoLocalChangesRepository>();
 
-        services.AddScoped<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
-
         services.AddScoped<IProductWorkStatusesRepository, ProductWorkStatusesRepository>();
+
+        services.AddScoped<IFailedPropertyNameOfProductRepository, FailedPropertyNameOfProductRepository>();
+        services.AddScoped<IProductCharacteristicAndExternalXmlDataRelationRepository, ProductCharacteristicAndExternalXmlDataRelationRepository>();
+
+        AddExternalXmlImportRepositories(services);
 
         return services;
     }
 
-    private static void AddMappings()
+    private static void AddExternalXmlImportRepositories(IServiceCollection services)
+    {
+        services.AddScoped<IXmlImportProductPropertyRepository, XmlImportProductPropertyRepository>();
+        services.AddScoped<IXmlImportProductImageFileNameInfoRepository, XmlImportProductImageFileNameInfoRepository>();
+        services.AddScoped<IXmlImportProductImageRepository, XmlImportProductImageRepository>();
+    }
+
+    private static void AddDapperMappings()
     {
         FluentMapper.Initialize(config =>
         {
@@ -64,9 +78,20 @@ public static class ConfigureServices
             config.AddMap(new LocalChangeDataEntityMap());
             config.AddMap(new ExternalChangeDataEntityMap());
 
-            config.AddMap(new FailedPropertyNameOfProductEntityMap());
-
             config.AddMap(new ProductWorkStatusesEntityMap());
+
+            config.AddMap(new FailedPropertyNameOfProductEntityMap());
+            config.AddMap(new ProductCharacteristicAndExternalXmlDataRelationEntityMap());
+
+            AddExternalXmlImportDapperMappings(config);
         });
+    }
+
+    private static void AddExternalXmlImportDapperMappings(FluentMapConfiguration config)
+    {
+        config.AddMap(new XmlImportProductPropertyEntityMap());
+        config.AddMap(new XmlImportProductImageFileNameInfoEntityMap());
+        config.AddMap(new XmlImportProductFirstImageEntityMap());
+        config.AddMap(new XmlImportProductImageEntityMap());
     }
 }
