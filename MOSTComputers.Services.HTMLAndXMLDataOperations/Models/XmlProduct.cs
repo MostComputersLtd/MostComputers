@@ -59,34 +59,4 @@ public class XmlProduct
     [XmlArrayItem(ElementName = "property")]
     public List<XmlProductProperty> XmlProductProperties { get; set; }
 }
-
-[Serializable]
-public class XmlProductProperty
-{
-    public XmlProductProperty()
-    {
-    }
-
-    public XmlProductProperty(string name, string value)
-    {
-        Name = name;
-        Value = value;
-    }
-
-    public XmlProductProperty(string name, string order, string value)
-    {
-        Name = name;
-        Order = order;
-        Value = value;
-    }
-
-    [XmlAttribute(AttributeName = "name")]
-    public string Name { get; set; }
-
-    [XmlAttribute(AttributeName = "order")]
-    public string Order { get; set; }
-
-    [XmlText]
-    public string Value { get; set; }
-}
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
