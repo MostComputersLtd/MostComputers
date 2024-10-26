@@ -12,6 +12,7 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories;
 internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProductCharacteristicsRepository
 {
     private const string _tableName = "dbo.ProductKeyword";
+    private const string _categoriesTableName = "dbo.Categories";
 
     public ProductCharacteristicsRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
@@ -127,8 +128,8 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             AND Name = @Name;
             """;
 
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
-            new { categoryId = categoryId, Name = name }).FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery,
+            new { categoryId = categoryId, Name = name });
     }
 
     public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
@@ -147,6 +148,22 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
         };
 
         return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, parameters);
+    }
+
+    public IEnumerable<ProductCharacteristic> GetSelectionByIds(List<int> ids)
+    {
+        const string getSelectionByIdsQuery =
+            $"""
+            SELECT * FROM {_tableName}
+            WHERE ProductKeywordID IN @ids;
+            """;
+
+        var parameters = new
+        {
+            ids = ids,
+        };
+
+        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getSelectionByIdsQuery, parameters);
     }
 
     public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
@@ -168,44 +185,93 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             Name = name,
             productCharacteristicType = (int)productCharacteristicType
         };
-        return _relationalDataAccess.GetData<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, parameters)
-            .FirstOrDefault();
+        return _relationalDataAccess.GetDataFirstOrDefault<ProductCharacteristic, dynamic>(getByCategoryIdAndNameQuery, parameters);
     }
 
     public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
+            DECLARE @InsertedIdTable TABLE (Id INT);
+
             INSERT INTO {_tableName}(TID, Name, KeywordMeaning, S, Active, PKUserId, LastUpdate, KWPrCh)
-            OUTPUT INSERTED.ProductKeywordID
-            VALUES (@CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh)
+            OUTPUT INSERTED.ProductKeywordID INTO @InsertedIdTable
+            SELECT @CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh
+            WHERE EXISTS (SELECT 1 FROM {_categoriesTableName} WHERE CategoryID = @CategoryId)
+            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @CategoryId AND Name = @Name);
+
+            IF EXISTS (SELECT TOP 1 Id FROM @InsertedIdTable)
+            BEGIN
+                SELECT TOP 1 Id FROM @InsertedIdTable;
+            END
+            ELSE
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM {_categoriesTableName} WHERE CategoryID = @CategoryId)
+                BEGIN
+                    SELECT -1;
+                END
+                ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @CategoryId AND Name = @Name)
+                BEGIN
+                    SELECT -2;
+                END
+                ELSE
+                BEGIN
+                    SELECT 0;
+                END
+            END
             """;
+        
+        //ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForCreate(createRequest.Name, createRequest.CategoryId!.Value);
 
-        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForCreate(createRequest.Name, createRequest.CategoryId!.Value);
-
-        if (!resultInternal.IsValid) return resultInternal;
+        //if (!resultInternal.IsValid) return resultInternal;
 
         var parameters = new
         {
-            createRequest.CategoryId,
-            createRequest.Name,
-            createRequest.Meaning,
-            createRequest.DisplayOrder,
-            createRequest.Active,
-            createRequest.PKUserId,
-            createRequest.LastUpdate,
-            createRequest.KWPrCh,
+            CategoryId = createRequest.CategoryId,
+            Name = createRequest.Name,
+            Meaning = createRequest.Meaning,
+            DisplayOrder = createRequest.DisplayOrder,
+            Active = createRequest.Active,
+            PKUserId = createRequest.PKUserId,
+            LastUpdate = createRequest.LastUpdate,
+            KWPrCh = createRequest.KWPrCh,
         };
 
-        int? id = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
+        int? idOrFailureResult = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, parameters);
 
-        return (id is not null && id > 0) ? id.Value : new UnexpectedFailureResult();
+        if (idOrFailureResult is null || idOrFailureResult == 0) return new UnexpectedFailureResult();
+
+        if (idOrFailureResult > 0) return idOrFailureResult.Value;
+
+        ValidationResult validationResult = GetValidationResultFromFailedInsert(idOrFailureResult.Value);
+
+        return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+    }
+
+    private static ValidationResult GetValidationResultFromFailedInsert(int result)
+    {
+        ValidationResult output = new();
+
+        if (result == -1)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicCreateRequest.CategoryId), "Id does not correspond to any known category"));
+        }
+        else if (result == -2)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicCreateRequest.Name), "Cannot have a duplicate name value for items in the same category"));
+        }
+
+        return output;
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest)
     {
         const string updateByIdQuery =
             $"""
+            DECLARE @originalCategoryId SMALLINT;
+
+            SELECT TOP 1 @originalCategoryId = TID FROM {_tableName} WHERE ProductKeywordID = @id;
+
             UPDATE {_tableName}
             SET Name = @Name,
                 KeywordMeaning = @Meaning,
@@ -215,34 +281,79 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
                 LastUpdate = @LastUpdate,
                 KWPrCh = @KWPrCh
 
-            WHERE ProductKeywordID = @id;
+            WHERE ProductKeywordID = @id
+            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
+
+            IF @@ROWCOUNT > 0
+            BEGIN
+                SELECT 1;
+            END
+            ELSE IF NOT EXISTS (SELECT 1 FROM {_tableName} WHERE ProductKeywordID = @id)
+            BEGIN
+                SELECT -1;
+            END
+            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
+            BEGIN
+                SELECT -2;
+            END
+            ELSE
+            BEGIN
+                SELECT 0;
+            END
             """;
 
-        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateById(updateRequest.Name, (uint)updateRequest.Id);
+        //ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateById(updateRequest.Name, updateRequest.Id);
 
-        if (!resultInternal.IsValid) return resultInternal;
+        //if (!resultInternal.IsValid) return resultInternal;
 
         var parameters = new
         {
             id = updateRequest.Id,
-            updateRequest.Name,
-            updateRequest.Meaning,
-            updateRequest.DisplayOrder,
-            updateRequest.Active,
-            updateRequest.PKUserId,
-            updateRequest.LastUpdate,
-            updateRequest.KWPrCh,
+            Name = updateRequest.Name,
+            Meaning = updateRequest.Meaning,
+            DisplayOrder = updateRequest.DisplayOrder,
+            Active = updateRequest.Active,
+            PKUserId = updateRequest.PKUserId,
+            LastUpdate = updateRequest.LastUpdate,
+            KWPrCh = updateRequest.KWPrCh,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByIdQuery, parameters);
+        int? result = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(updateByIdQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        if (result is null || result == 0) return new UnexpectedFailureResult();
+
+        if (result > 0) return new Success();
+
+        ValidationResult validationResult = GetValidationResultFromFailedUpdateById(result.Value);
+
+        return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+        ;
+    }
+
+    private static ValidationResult GetValidationResultFromFailedUpdateById(int result)
+    {
+        ValidationResult output = new();
+
+        if (result == -1)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicByIdUpdateRequest.Id), "Id does not correspond to any known product characteristic"));
+        }
+        else if (result == -2)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicByIdUpdateRequest.Name), "Cannot have a duplicate name value for items in the same category"));
+        }
+
+        return output;
     }
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest)
     {
         const string updateByNameAndCategoryIdQuery =
             $"""
+            DECLARE @originalId SMALLINT
+
+            SELECT @originalId = ProductKeywordID FROM {_tableName} WHERE TID = @categoryId AND Name = @OldName;
+
             UPDATE {_tableName}
             SET Name = @Name,
                 KeywordMeaning = @Meaning,
@@ -253,115 +364,155 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
                 KWPrCh = @KWPrCh
 
             WHERE TID = @categoryId
-            AND Name = @OldName;
+            AND Name = @OldName
+            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
+
+            IF @@ROWCOUNT > 0
+            BEGIN
+                SELECT 1;
+            END
+            ELSE IF NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @OldName)
+            BEGIN
+                SELECT -1;
+            END
+            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
+            BEGIN
+                SELECT -2;
+            END
+            ELSE
+            BEGIN
+                SELECT 0;
+            END
             """;
 
-        ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(updateRequest.NewName, updateRequest.CategoryId);
+        //ValidationResult resultInternal = ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(updateRequest.NewName, updateRequest.CategoryId);
 
-        if (!resultInternal.IsValid) return resultInternal;
+        //if (!resultInternal.IsValid) return resultInternal;
 
         var parameters = new
         {
             categoryId = updateRequest.CategoryId,
             OldName = updateRequest.Name,
             Name = updateRequest.NewName,
-            updateRequest.Meaning,
-            updateRequest.DisplayOrder,
-            updateRequest.Active,
-            updateRequest.PKUserId,
-            updateRequest.LastUpdate,
-            updateRequest.KWPrCh,
+            Meaning = updateRequest.Meaning,
+            DisplayOrder = updateRequest.DisplayOrder,
+            Active = updateRequest.Active,
+            PKUserId = updateRequest.PKUserId,
+            LastUpdate = updateRequest.LastUpdate,
+            KWPrCh = updateRequest.KWPrCh,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(updateByNameAndCategoryIdQuery, parameters);
+        int? result = _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(updateByNameAndCategoryIdQuery, parameters);
 
-        return (rowsAffected != 0) ? new Success() : new UnexpectedFailureResult();
+        if (result is null || result == 0) return new UnexpectedFailureResult();
+
+        if (result > 0) return new Success();
+
+        ValidationResult validationResult = GetValidationResultFromFailedUpdateByNameAndCategoryId(result.Value);
+
+        return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
     }
 
-    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForCreate(string? name, int categoryId)
+    private static ValidationResult GetValidationResultFromFailedUpdateByNameAndCategoryId(int result)
     {
         ValidationResult output = new();
 
-        const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
-            $"""
-            SELECT CASE WHEN EXISTS(
-                SELECT * FROM {_tableName}
-                WHERE TID = @categoryId
-                AND Name = @Name
-            ) THEN 1 ELSE 0 END;
-            """;
-
-        bool duplicateCharacteristicExists = _relationalDataAccess.GetData<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery, 
-            new { categoryId = categoryId, Name = name })
-            .FirstOrDefault();
-
-        if (!duplicateCharacteristicExists) return output;
-
-            output.Errors.Add(
-                new ValidationFailure(
-                    nameof(ProductCharacteristic.Name),
-                    "Cannot have a duplicate name value for items in the same category"));
+        if (result == -1)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicByNameAndCategoryIdUpdateRequest.Name),
+                "Name does not correspond to any known product characteristic"));
+        }
+        else if (result == -2)
+        {
+            output.Errors.Add(new(nameof(ProductCharacteristicByNameAndCategoryIdUpdateRequest.NewName),
+                "Cannot have a duplicate name value for items in the same category"));
+        }
 
         return output;
     }
 
-    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateById(string? name, uint id)
-    {
-        ValidationResult output = new();
+    //private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForCreate(string? name, int categoryId)
+    //{
+    //    ValidationResult output = new();
 
-        const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
-            $"""
-            DECLARE @originalCategoryId SMALLINT
+    //    const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
+    //        $"""
+    //        SELECT CASE WHEN EXISTS(
+    //            SELECT * FROM {_tableName}
+    //            WHERE TID = @categoryId
+    //            AND Name = @Name
+    //        ) THEN 1 ELSE 0 END;
+    //        """;
 
-            SELECT @originalCategoryId = TID FROM {_tableName} WHERE ProductKeywordID = @id
+    //    bool duplicateCharacteristicExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery, 
+    //        new { categoryId = categoryId, Name = name });
+
+    //    if (!duplicateCharacteristicExists) return output;
+
+    //        output.Errors.Add(
+    //            new ValidationFailure(
+    //                nameof(ProductCharacteristic.Name),
+    //                "Cannot have a duplicate name value for items in the same category"));
+
+    //    return output;
+    //}
+
+    //private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateById(string? name, int id)
+    //{
+    //    ValidationResult output = new();
+
+    //    const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
+    //        $"""
+    //        DECLARE @originalCategoryId SMALLINT
+
+    //        SELECT @originalCategoryId = TID FROM {_tableName} WHERE ProductKeywordID = @id
             
-            SELECT CASE WHEN EXISTS(
-                SELECT * FROM {_tableName}
-                WHERE TID = @originalCategoryId
-                AND Name = @Name
-                AND ProductKeywordID <> @id
-            ) THEN 1 ELSE 0 END;
-            """;
+    //        SELECT CASE WHEN EXISTS(
+    //            SELECT * FROM {_tableName}
+    //            WHERE TID = @originalCategoryId
+    //            AND Name = @Name
+    //            AND ProductKeywordID <> @id
+    //        ) THEN 1 ELSE 0 END;
+    //        """;
 
-        bool duplicateCharacteristicExists = _relationalDataAccess.GetData<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
-            new { id = (int)id, Name = name })
-            .FirstOrDefault();
+    //    bool duplicateCharacteristicExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
+    //        new { id = id, Name = name });
 
-        if (!duplicateCharacteristicExists) return output;
+    //    if (!duplicateCharacteristicExists) return output;
 
-        output.Errors.Add(
-            new ValidationFailure(
-                nameof(ProductCharacteristic.Name),
-                "Cannot have a duplicate name value for items in the same category"));
+    //    output.Errors.Add(
+    //        new ValidationFailure(
+    //            nameof(ProductCharacteristic.Name),
+    //            "Cannot have a duplicate name value for items in the same category"));
 
-        return output;
-    }
+    //    return output;
+    //}
 
-    private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(string? newName, int categoryId)
-    {
-        ValidationResult output = new();
+    //private ValidationResult ValidateWhetherCharacteristicHasAUniqueNameForUpdateByNameAndCategoryId(string? newName, int categoryId)
+    //{
+    //    ValidationResult output = new();
 
-        const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
-            $"""
-            SELECT CASE WHEN EXISTS(
-                SELECT 1 FROM dbo.ProductKeyword
-                WHERE TID = @categoryId
-                AND CAST(Name AS BINARY) = CAST(@NewName AS BINARY)
-            ) THEN 1 ELSE 0 END
-            """;
+    //    const string checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery =
+    //        $"""
+    //        SELECT CASE WHEN EXISTS(
+    //            SELECT 1 FROM {_tableName}
+    //            WHERE TID = @categoryId
+    //            AND CAST(Name AS BINARY) = CAST(@NewName AS BINARY)
+    //        ) THEN 1 ELSE 0 END
+    //        """;
 
-        bool duplicateCharacteristicExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
-            new { categoryId = categoryId, NewName = newName });
+    //    bool duplicateCharacteristicExists = _relationalDataAccess.GetDataFirstOrDefault<bool, dynamic>(checkIfACharacteristicWithTheSameCategoryIdAndNameExistsQuery,
+    //        new { categoryId = categoryId, NewName = newName });
 
-        if (!duplicateCharacteristicExists) return output;
+    //    if (!duplicateCharacteristicExists) return output;
 
-        output.Errors.Add(
-            new ValidationFailure(
-                nameof(ProductCharacteristic.Name),
-                "Cannot have a duplicate name value for items in the same category"));
+    //    output.Errors.Add(
+    //        new ValidationFailure(
+    //            nameof(ProductCharacteristic.Name),
+    //            "Cannot have a duplicate name value for items in the same category"));
 
-        return output;
-    }
+    //    return output;
+    //}
 
     public bool Delete(int id)
     {
@@ -373,7 +524,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { id = id });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, new { id = id });
 
             if (rowsAffected <= 0) return false;
 
@@ -395,7 +546,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
         try
         {
-            int rowsAffected = _relationalDataAccess.SaveData<ProductCharacteristic, dynamic>(deleteQuery, new { categoryId = categoryId });
+            int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteQuery, new { categoryId = categoryId });
 
             if (rowsAffected <= 0) return false;
 
