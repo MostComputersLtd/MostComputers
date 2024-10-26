@@ -9,14 +9,15 @@ namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWorkStatusesRepository
 {
-    const string _tableName = "dbo.TodoProductWorkStatuses";
-    const string _productTableName = "dbo.MOSTPrices";
+    private const string _tableName = "dbo.TodoProductWorkStatuses";
+    private const string _productTableName = "dbo.MOSTPrices";
 
     public ProductWorkStatusesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
     }
 
+#pragma warning disable IDE0037 // Use inferred member name
     public IEnumerable<ProductWorkStatuses> GetAll()
     {
         const string getAllQuery =
@@ -51,7 +52,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             """;
 
         return _relationalDataAccess.GetData<ProductWorkStatuses, dynamic>(getAllWithProductXmlStatusQuery,
-            new { productNewStatus = (int)productXmlStatusEnum });
+            new { productXmlStatus = (int)productXmlStatusEnum });
     }
 
     public IEnumerable<ProductWorkStatuses> GetAllWithReadyForImageInsert(bool readyForImageInsert)
@@ -64,7 +65,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             """;
 
         return _relationalDataAccess.GetData<ProductWorkStatuses, dynamic>(getAllWithReadyForImageInsertQuery,
-            new { readyForImageInsert });
+            new { readyForImageInsert = readyForImageInsert });
     }
 
     public ProductWorkStatuses? GetById(int productWorkStatusesId)
@@ -77,7 +78,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             """;
 
         return _relationalDataAccess.GetDataFirstOrDefault<ProductWorkStatuses, dynamic>(getByIdQuery,
-            new { productWorkStatusesId });
+            new { productWorkStatusesId = productWorkStatusesId });
     }
 
     public ProductWorkStatuses? GetByProductId(int productId)
@@ -90,43 +91,34 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             """;
 
         return _relationalDataAccess.GetDataFirstOrDefault<ProductWorkStatuses, dynamic>(getAllByProductIdQuery,
-            new { productId });
+            new { productId = productId });
     }
 
     public OneOf<int, ValidationResult, UnexpectedFailureResult> InsertIfItDoesntExist(ProductWorkStatusesCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
-            DECLARE @TEMP_ProductWorkStatusesInsertIdStoring_Table TABLE (IdOrStatus INT);
-
-            DECLARE @StatusCode INT = 0;
-
-            DECLARE @Result VARCHAR(50);
+            DECLARE @Status INT = 0;
+            DECLARE @InsertedIdTable TABLE (Id INT);
 
             IF EXISTS (
                 SELECT 1 FROM {_tableName}
                 WHERE CSTID = @productId
-            ) SET @StatusCode = 1;
+            ) SET @Status = -1;
 
             IF NOT EXISTS (
                 SELECT 1 FROM {_productTableName}
                 WHERE CSTID = @productId
-            ) SET @StatusCode = 2;
+            ) SET @Status = -2;
 
-            IF @StatusCode = 0
+            IF @Status = 0
             BEGIN
-                INSERT INTO {_tableName}(CSTID, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus)
-                OUTPUT INSERTED.Id INTO @TEMP_ProductWorkStatusesInsertIdStoring_Table
+                INSERT INTO {_tableName} (CSTID, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus)
+                OUTPUT INSERTED.Id INTO @InsertedIdTable
                 VALUES(@productId, @ProductNewStatus, @ProductXmlStatus, @ReadyForImageInsert)
             END
 
-            INSERT INTO @TEMP_ProductWorkStatusesInsertIdStoring_Table (IdOrStatus)
-            VALUES (@StatusCode);
-
-            SELECT @Result = COALESCE(@Result + '/', '') + CAST(IdOrStatus AS VARCHAR(10))
-            FROM @TEMP_ProductWorkStatusesInsertIdStoring_Table;
-
-            SELECT @Result;
+            SELECT ISNULL((SELECT TOP 1 Id FROM @InsertedIdTable), @Status);
             """;
 
         var parameters = new
@@ -134,60 +126,66 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             productId = createRequest.ProductId,
             ProductNewStatus = (int)createRequest.ProductNewStatus,
             ProductXmlStatus = (int)createRequest.ProductXmlStatus,
-            createRequest.ReadyForImageInsert,
+            ReadyForImageInsert = createRequest.ReadyForImageInsert,
         };
 
-        (int, int) data = _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition<dynamic, (int, int)>(
+        int? result = _relationalDataAccess.SaveDataInTransactionScopeUsingActionAndCommitOnCondition<dynamic, int?>(
             actionInTransaction: paramsLocal => InsertAndExtractData(insertQuery, paramsLocal),
-            shouldCommit: tuple => tuple.Item1 > 0 && tuple.Item2 == 0,
+            shouldCommit: data => data is not null && data > 0,
             parameters);
 
-        if (data.Item2 < 0) return new UnexpectedFailureResult();
+        if (result is null || result == 0) return new UnexpectedFailureResult();
 
-        if (data.Item2 == 0) return data.Item1;
+        if (result > 0) return result.Value;
 
-        return GetValidationResultFromStatus(data.Item2);
+        ValidationResult validationResult = GetValidationResultFromFailedInsertResult(result.Value);
 
-        (int, int) InsertAndExtractData(string insertQuery, dynamic paramsLocal)
+        return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+
+        int? InsertAndExtractData(string insertQuery, dynamic paramsLocal)
         {
-            string? data = _relationalDataAccess.SaveDataAndReturnValue<string, dynamic>(insertQuery, paramsLocal);
-
-            if (data is null) return (-1, -1);
-
-            int indexOfSlash = data.IndexOf('/');
-
-            if (indexOfSlash < 0)
-            {
-                bool parseStatusOnlySuccess = int.TryParse(data, out int statusCodeOnlyResult);
-
-                return (-1, statusCodeOnlyResult);
-            }
-
-            string productWorkStatusIdAsString = data[..indexOfSlash];
-            string statusCodeAsString = data[(indexOfSlash + 1)..];
-
-            bool parseProductWorkStatusIdSuccess = int.TryParse(productWorkStatusIdAsString, out int productWorkStatusId);
-            bool parseStatusCodeSuccess = int.TryParse(statusCodeAsString, out int statusCode);
-
-            if (parseProductWorkStatusIdSuccess && parseStatusCodeSuccess)
-            {
-                return (productWorkStatusId, statusCode);
-            }
-
-            return (-1, -1);
+            return _relationalDataAccess.SaveDataAndReturnValue<int?, dynamic>(insertQuery, paramsLocal);
         }
+
+        //(int, int) InsertAndExtractData(string insertQuery, dynamic paramsLocal)
+        //{
+        //    string? data = _relationalDataAccess.SaveDataAndReturnValue<string, dynamic>(insertQuery, paramsLocal);
+
+        //    if (data is null) return (-1, -1);
+
+        //    int indexOfSlash = data.IndexOf('/');
+
+        //    if (indexOfSlash < 0)
+        //    {
+        //        bool parseStatusOnlySuccess = int.TryParse(data, out int statusCodeOnlyResult);
+
+        //        return (-1, statusCodeOnlyResult);
+        //    }
+
+        //    string productWorkStatusIdAsString = data[..indexOfSlash];
+        //    string statusCodeAsString = data[(indexOfSlash + 1)..];
+
+        //    bool parseProductWorkStatusIdSuccess = int.TryParse(productWorkStatusIdAsString, out int productWorkStatusId);
+        //    bool parseStatusCodeSuccess = int.TryParse(statusCodeAsString, out int statusCode);
+
+        //    if (parseProductWorkStatusIdSuccess && parseStatusCodeSuccess)
+        //    {
+        //        return (productWorkStatusId, statusCode);
+        //    }
+
+        //    return (-1, -1);
+        //}
     }
 
-    private static OneOf<int, ValidationResult, UnexpectedFailureResult> GetValidationResultFromStatus(int status)
+    private static ValidationResult GetValidationResultFromFailedInsertResult(int result)
     {
         ValidationResult validationResult = new();
 
-        if (status == 1)
+        if (result == 1)
         {
-            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
+            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "Product status already exists for this product"));
         }
-
-        else if (status == 2)
+        else if (result == 2)
         {
             validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "ProductId is invalid"));
         }
@@ -210,12 +208,12 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         var parameters = new
         {
             id = updateRequest.Id,
-            updateRequest.ProductNewStatus,
-            updateRequest.ProductXmlStatus,
-            updateRequest.ReadyForImageInsert,
+            ProductNewStatus = updateRequest.ProductNewStatus,
+            ProductXmlStatus = updateRequest.ProductXmlStatus,
+            ReadyForImageInsert = updateRequest.ReadyForImageInsert,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return rowsAffected > 0;
     }
@@ -235,12 +233,12 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         var parameters = new
         {
             productId = updateRequest.ProductId,
-            updateRequest.ProductNewStatus,
-            updateRequest.ProductXmlStatus,
-            updateRequest.ReadyForImageInsert,
+            ProductNewStatus = updateRequest.ProductNewStatus,
+            ProductXmlStatus = updateRequest.ProductXmlStatus,
+            ReadyForImageInsert = updateRequest.ReadyForImageInsert,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return rowsAffected > 0;
     }
@@ -252,7 +250,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             DELETE FROM {_tableName}
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteAllQuery, new { });
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllQuery, new { });
 
         return rowsAffected > 0;
     }
@@ -265,7 +263,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             WHERE ProductNewStatus = @productNewStatus
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteAllWithProductNewStatusQuery,
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllWithProductNewStatusQuery,
             new { productNewStatus = (int)productNewStatusEnum });
 
         return rowsAffected > 0;
@@ -279,8 +277,8 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             WHERE ProductXmlReadyStatus = @productXmlStatus
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteAllWithProductXmlStatusQuery,
-            new { productNewStatus = (int)productXmlStatusEnum });
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllWithProductXmlStatusQuery,
+            new { productXmlStatus = (int)productXmlStatusEnum });
 
         return rowsAffected > 0;
     }
@@ -293,8 +291,8 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             WHERE ReadyForImageInsertStatus = @readyForImageInsert
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteAllWithReadyForImageInsertQuery,
-            new { readyForImageInsert });
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllWithReadyForImageInsertQuery,
+            new { readyForImageInsert = readyForImageInsert });
 
         return rowsAffected > 0;
     }
@@ -307,8 +305,8 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             WHERE Id = @productWorkStatusesId
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteByIdQuery,
-            new { productWorkStatusesId });
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery,
+            new { productWorkStatusesId = productWorkStatusesId });
 
         return rowsAffected > 0;
     }
@@ -321,9 +319,10 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             WHERE CSTID = @productId
             """;
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductWorkStatuses, dynamic>(deleteAllByProductIdQuery,
-            new { productId });
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllByProductIdQuery,
+            new { productId = productId });
 
         return rowsAffected > 0;
     }
+#pragma warning restore IDE0037 // Use inferred member name
 }
