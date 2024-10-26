@@ -13,8 +13,11 @@ public interface IProductImageFileNameInfoService
 {
     IEnumerable<ProductImageFileNameInfo> GetAll();
     IEnumerable<ProductImageFileNameInfo> GetAllInProduct(int productId);
+    ProductImageFileNameInfo? GetByProductIdAndImageNumber(int productId, int imageNumber);
+    ProductImageFileNameInfo? GetByFileName(string fileName);
+    int? GetHighestImageNumber(int productId);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest, IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>? validator = null);
+    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>? validator = null);
     OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByFileName(ServiceProductImageFileNameInfoByFileNameUpdateRequest updateRequest, IValidator<ServiceProductImageFileNameInfoByFileNameUpdateRequest>? validator = null);
     bool DeleteByProductIdAndDisplayOrder(int productId, int displayOrder);
     bool DeleteAllForProductId(int productId);

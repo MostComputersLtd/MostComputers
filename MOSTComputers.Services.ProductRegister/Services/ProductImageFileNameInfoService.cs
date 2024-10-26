@@ -48,6 +48,27 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.GetAllInProduct(productId);
     }
 
+    public int? GetHighestImageNumber(int productId)
+    {
+        if (productId <= 0) return null;
+
+        return _imageFileNameInfoRepository?.GetHighestImageNumber(productId);
+    }
+
+    public ProductImageFileNameInfo? GetByProductIdAndImageNumber(int productId, int imageNumber)
+    {
+        if (productId <= 0 || imageNumber <= 0) return null;
+
+        return _imageFileNameInfoRepository.GetByProductIdAndImageNumber(productId, imageNumber);
+    }
+
+    public ProductImageFileNameInfo? GetByFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
+
+        return _imageFileNameInfoRepository.GetByFileName(fileName);
+    }
+
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> Insert(ServiceProductImageFileNameInfoCreateRequest createRequest,
         IValidator<ServiceProductImageFileNameInfoCreateRequest>? validator = null)
     {
@@ -62,7 +83,7 @@ internal sealed class ProductImageFileNameInfoService : IProductImageFileNameInf
         return _imageFileNameInfoRepository.Insert(createRequestInternal);
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest,
+    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByImageNumber(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest,
         IValidator<ServiceProductImageFileNameInfoByImageNumberUpdateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateRequestValidator);
