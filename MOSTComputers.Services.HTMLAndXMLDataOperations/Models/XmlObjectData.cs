@@ -15,7 +15,7 @@ public class XmlObjectData
     public XmlExchangeRatesEurAndUsdPerBgn ExchangeRates { get; set; }
 
     [XmlElement("rowstotal")]
-    public int TotalNumberOfItems { get => Products.Count; set { } }
+    public int TotalNumberOfItems { get => Products.Count; }
 
     [XmlElement("date_export", DataType = "date")]
     public DateTime DateOfExport { get; set; } = DateTime.Today;
