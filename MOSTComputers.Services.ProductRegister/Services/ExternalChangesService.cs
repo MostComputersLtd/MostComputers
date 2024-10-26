@@ -30,16 +30,22 @@ internal sealed class ExternalChangesService : IExternalChangesService
         return _externalChangesRepository.GetAllForOperationType(operationType);
     }
 
+    public IEnumerable<ExternalChangeData> GetAllByTableNameAndElementId(string tableName, int elementId)
+    {
+        if (string.IsNullOrWhiteSpace(tableName)
+            || elementId <= 0)
+        {
+            return Enumerable.Empty<ExternalChangeData>();
+        }
+
+        return _externalChangesRepository.GetAllByTableNameAndElementId(tableName, elementId);
+    }
+
     public ExternalChangeData? GetById(int id)
     {
         if (id <= 0) return null;
 
         return _externalChangesRepository.GetById(id);
-    }
-
-    public ExternalChangeData? GetByTableNameAndElementId(string tableName, int elementId)
-    {
-        return _externalChangesRepository.GetByTableNameAndElementId(tableName, elementId);
     }
 
     public bool DeleteById(int id)
@@ -49,6 +55,17 @@ internal sealed class ExternalChangesService : IExternalChangesService
         return _externalChangesRepository.DeleteById(id);
     }
 
+    public bool DeleteByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum operationType)
+    {
+        if (!string.IsNullOrWhiteSpace(tableName)
+            || elementId <= 0)
+        {
+            return false;
+        }
+
+        return _externalChangesRepository.DeleteByTableNameAndElementIdAndOperationType(tableName, elementId, operationType);
+    }
+
     public bool DeleteRangeByIds(IEnumerable<int> ids)
     {
         ids = RemoveValuesSmallerThanOne(ids);
@@ -56,9 +73,9 @@ internal sealed class ExternalChangesService : IExternalChangesService
         return _externalChangesRepository.DeleteRangeByIds(ids);
     }
 
-    public bool DeleteByTableNameAndElementId(string tableName, int elementId)
+    public bool DeleteAllByTableNameAndElementId(string tableName, int elementId)
     {
-        return _externalChangesRepository.DeleteByTableNameAndElementId(tableName, elementId);
+        return _externalChangesRepository.DeleteAllByTableNameAndElementId(tableName, elementId);
     }
 
     public bool DeleteRangeByTableNameAndElementIds(string tableName, IEnumerable<int> elementIds)
