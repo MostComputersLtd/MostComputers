@@ -79,8 +79,8 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
         var parameters = new
         {
             productId = createRequest.ProductId,
-            createRequest.IsProcessed,
-            createRequest.NeedsToBeUpdated,
+            IsProcessed = createRequest.IsProcessed,
+            NeedsToBeUpdated = createRequest.NeedsToBeUpdated,
         };
 
         int data = _relationalDataAccess.SaveDataAndReturnValue<int, dynamic>(insertQuery, parameters);
@@ -116,11 +116,11 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
         var parameters = new
         {
             productId = updateRequest.ProductId,
-            updateRequest.IsProcessed,
-            updateRequest.NeedsToBeUpdated,
+            IsProcessed = updateRequest.IsProcessed,
+            NeedsToBeUpdated = updateRequest.NeedsToBeUpdated,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductStatuses, dynamic>(updateQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(updateQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -138,7 +138,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
             productId = productId,
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<ProductStatuses, dynamic>(deleteByProductId, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByProductId, parameters);
 
         return (rowsAffected > 0);
     }
