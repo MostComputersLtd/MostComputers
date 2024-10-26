@@ -33,8 +33,7 @@ public sealed class ProductChangesService : IProductChangesService
         IProductHtmlService productHtmlService,
         ILocalChangesService localChangesService,
         IGetProductDataFromBeforeUpdateService getProductDataFromBeforeUpdateService,
-        IToDoLocalChangesService toDoLocalChangesService,
-        IProductImageSaveService productImageSaveService)
+        IToDoLocalChangesService toDoLocalChangesService)
     {
         _transactionExecuteService = transactionExecuteService;
         _productService = productService;
@@ -47,7 +46,6 @@ public sealed class ProductChangesService : IProductChangesService
         _localChangesService = localChangesService;
         _getProductDataFromBeforeUpdateService = getProductDataFromBeforeUpdateService;
         _toDoLocalChangesService = toDoLocalChangesService;
-        _productImageSaveService = productImageSaveService;
     }
 
     private const string _tableChangeNameOfProductsTable = "MOSTPRices";
@@ -62,7 +60,6 @@ public sealed class ProductChangesService : IProductChangesService
     private readonly IProductHtmlService _productHtmlService;
     private readonly ILocalChangesService _localChangesService;
     private readonly IToDoLocalChangesService _toDoLocalChangesService;
-    private readonly IProductImageSaveService _productImageSaveService;
     private readonly IGetProductDataFromBeforeUpdateService _getProductDataFromBeforeUpdateService;
 
     public OneOf<Success, ValidationResult, UnexpectedFailureResult> HandleAnyOperation(LocalChangeData localChangeData)
@@ -268,11 +265,17 @@ public sealed class ProductChangesService : IProductChangesService
             {
                 string htmlOfProduct = _productHtmlService.GetHtmlFromProduct(product);
 
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> imagesHtmlUpdateResult
+                OneOf<bool, ValidationResult, UnexpectedFailureResult> imagesHtmlUpdateResult
                     = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(productId, htmlOfProduct);
 
                 imagesHtmlUpdateResult.Switch(
-                    success => { },
+                    isSuccessful =>
+                    {
+                        if (!isSuccessful)
+                        {
+                            throw new TransactionInDoubtException("Operation failed for unknown reasons");
+                        }
+                    },
                     validationResult => throw new ValidationException(validationResult.Errors),
                     unexpectedFailureResult => throw new TransactionInDoubtException("Operation failed for unknown reasons"));
             }
@@ -436,80 +439,6 @@ public sealed class ProductChangesService : IProductChangesService
         _localChangesService.DeleteById(localChangeData.Id);
 
         return new Success();
-    }
-
-    private OneOf<Success, ValidationResult, UnexpectedFailureResult> InsertProductImages(int productId)
-    {
-        Dictionary<ProductImage, ProductImageFileNameInfo>? productEditedImageData = _productImageSaveService.GetImagesForProduct(productId);
-
-        if (productEditedImageData == null)
-        {
-            return new Success();
-        }
-
-        KeyValuePair<ProductImage, ProductImageFileNameInfo> firstProductKvp = new();
-
-        foreach (KeyValuePair<ProductImage, ProductImageFileNameInfo> kvp in productEditedImageData)
-        {
-            if (firstProductKvp.Value?.DisplayOrder is null
-                || firstProductKvp.Value.DisplayOrder > kvp.Value.DisplayOrder)
-            {
-                firstProductKvp = kvp;
-            }
-
-            ServiceProductImageCreateRequest serviceProductImageCreateRequest = new()
-            {
-                ProductId = productId,
-                ImageData = kvp.Key.ImageData,
-                ImageContentType = kvp.Key.ImageContentType,
-            };
-
-            OneOf<int, ValidationResult, UnexpectedFailureResult> productImageInsertResult
-                = _productImageService.InsertInAllImages(serviceProductImageCreateRequest);
-
-            bool imageInsertSuccess = productImageInsertResult.Match(
-                id => true,
-                validationResult => false,
-                unexpectedFailureResult => false);
-
-            if (!imageInsertSuccess)
-            {
-                return productImageInsertResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-                    id => new Success(),
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-
-            ServiceProductImageFileNameInfoCreateRequest imageFileNameInfoCreateRequest = new()
-            {
-                ProductId = productId,
-                DisplayOrder = kvp.Value.DisplayOrder,
-                Active = kvp.Value.Active,
-                FileName = kvp.Value.FileName,
-            };
-
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> productImageFileNameInfoInsertResult
-                = _productImageFileNameInfoService.Insert(imageFileNameInfoCreateRequest);
-
-            bool imageFileNameInsertSuccess = productImageInsertResult.Match(
-                id => true,
-                validationResult => false,
-                unexpectedFailureResult => false);
-
-            if (!imageInsertSuccess) return productImageFileNameInfoInsertResult;
-        }
-
-        ServiceProductFirstImageCreateRequest productFirstImageCreateRequest = new()
-        {
-            ProductId = productId,
-            ImageData = firstProductKvp.Key.ImageData,
-            ImageContentType = firstProductKvp.Key.ImageContentType,
-        };
-
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
-            = _productImageService.InsertInFirstImages(productFirstImageCreateRequest);
-
-        return insertFirstImageResult;
     }
 
     private static bool DetermineWhetherProductIsProcessedOrNot(Product productFull)
