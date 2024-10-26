@@ -1,4 +1,7 @@
-﻿using MOSTComputers.Services.ProductImageFileManagement.Models;
+﻿using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
+using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using SixLabors.ImageSharp;
@@ -9,12 +12,15 @@ namespace MOSTComputers.Services.ProductImageFileManagement.Services;
 
 internal sealed class ProductImageFileManagementService : IProductImageFileManagementService
 {
-    public ProductImageFileManagementService(string imageDirectoryFullPath)
+    public ProductImageFileManagementService(string imageDirectoryFullPath,
+        ITransactionalFileManager transactionalFileManager)
     {
         _imageDirectoryPath = imageDirectoryFullPath;
+        _transactionalFileManager = transactionalFileManager;
     }
 
     private readonly string _imageDirectoryPath;
+    private readonly ITransactionalFileManager _transactionalFileManager;
 
     public OneOf<string[], DirectoryNotFoundResult> GetAllImageFileNames()
     {
@@ -24,6 +30,70 @@ internal sealed class ProductImageFileManagementService : IProductImageFileManag
         }
 
         return Directory.GetFiles(_imageDirectoryPath);
+    }
+
+    public List<byte[]> GetAllStartingWith(string startingChars)
+    {
+        if (string.IsNullOrEmpty(startingChars)) return new();
+
+        IEnumerable<string> fileNames = Directory.EnumerateFiles(_imageDirectoryPath, $"{startingChars}*");
+
+        if (!fileNames.Any()) return new();
+
+        List<byte[]> output = new();
+
+        foreach (string fileName in fileNames)
+        {
+            var filePath = Path.Combine(_imageDirectoryPath, fileName);
+
+            byte[] fileData = File.ReadAllBytes(filePath);
+
+            output.Add(fileData);
+        }
+
+        return output;
+    }
+
+    public List<byte[]> GetAllStartingWithProductId(int productId)
+    {
+        if (productId <= 0) return new();
+
+        string startingChars = $"{productId}-";
+
+        IEnumerable<string> fileNames = Directory.EnumerateFiles(_imageDirectoryPath, $"{startingChars}*");
+
+        if (!fileNames.Any()) return new();
+
+        List<byte[]> output = new();
+
+        foreach (string fileName in fileNames)
+        {
+            var filePath = Path.Combine(_imageDirectoryPath, fileName);
+
+            byte[] fileData = File.ReadAllBytes(filePath);
+
+            output.Add(fileData);
+        }
+
+        return output;
+    }
+
+    public byte[]? GetByImageId(int imageId)
+    {
+        if (imageId <= 0) return null;
+
+        string startingChars = $"{imageId}.";
+
+        string? fileName = Directory.EnumerateFiles(_imageDirectoryPath, $"{startingChars}*")
+            .FirstOrDefault();
+
+        if (fileName is null) return null;
+
+        var filePath = Path.Combine(_imageDirectoryPath, fileName);
+
+        byte[] fileData = File.ReadAllBytes(filePath);
+
+        return fileData;
     }
 
     public OneOf<byte[], FileDoesntExistResult, NotSupportedFileTypeResult> GetImage(string fullFileName)
@@ -92,106 +162,112 @@ internal sealed class ProductImageFileManagementService : IProductImageFileManag
         string newFileNameWithoutExtension,
         AllowedImageFileType allowedImageFileType)
     {
-        string fullFileName = $"{fileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
+        RenameImageFileOperation renameImageFileOperation = new(_imageDirectoryPath, fileNameWithoutExtension, newFileNameWithoutExtension, allowedImageFileType);
+        
+        return _transactionalFileManager.EnlistOrExecuteOperation(renameImageFileOperation);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        //string fullFileName = $"{fileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
 
-        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
+        //string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
 
-        string newFullFileName = $"{newFileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
+        //if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
 
-        string newFilePath = Path.Combine(_imageDirectoryPath, newFullFileName);
+        //string newFullFileName = $"{newFileNameWithoutExtension}.{allowedImageFileType.FileExtension}";
 
-        if (File.Exists(newFilePath)) return new FileAlreadyExistsResult() { FileName = newFullFileName };
+        //string newFilePath = Path.Combine(_imageDirectoryPath, newFullFileName);
 
-        File.Move(filePath, newFilePath);
+        //if (File.Exists(newFilePath)) return new FileAlreadyExistsResult() { FileName = newFullFileName };
 
-        return new Success();
+        //File.Move(filePath, newFilePath);
+
+        //return new Success();
     }
 
     public async Task<OneOf<Success, DirectoryNotFoundResult, FileAlreadyExistsResult>> AddImageAsync(
         string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType)
     {
-        if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
+        CreateImageFileAsyncOperation createImageFileAsyncOperation = new(_imageDirectoryPath, fileNameWithoutExtension, imageData, imageFileType);
 
-        string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
+        return await _transactionalFileManager.EnlistOrExecuteOperationAsync(createImageFileAsyncOperation);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        //if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = fullFileName };
+        //string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
 
-        using MemoryStream memoryStream = new(imageData);
+        //string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        //if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = fullFileName };
 
-        await image.SaveAsync(filePath);
+        //using MemoryStream memoryStream = new(imageData);
 
-        return new Success();
+        //using Image image = await Image.LoadAsync(memoryStream);
+
+        //await image.SaveAsync(filePath);
+
+        //return new Success();
     }
 
     public async Task<OneOf<Success, DirectoryNotFoundResult, FileDoesntExistResult>> UpdateImageAsync(
         string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType)
     {
-        if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
+        UpdateImageFileAsyncOperation updateImageFileAsyncOperation = new(_imageDirectoryPath, fileNameWithoutExtension, imageData, imageFileType);
 
-        string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
+        return await _transactionalFileManager.EnlistOrExecuteOperationAsync(updateImageFileAsyncOperation);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        //if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
+        //string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
 
-        using MemoryStream memoryStream = new(imageData);
+        //string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        //if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
 
-        await image.SaveAsync(filePath);
+        //using MemoryStream memoryStream = new(imageData);
 
-        return new Success();
+        //using Image image = await Image.LoadAsync(memoryStream);
+
+        //await image.SaveAsync(filePath);
+
+        //return new Success();
     }
 
     public async Task<OneOf<Success, DirectoryNotFoundResult>> AddOrUpdateImageAsync(
         string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType)
     {
-        if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
+        AddOrUpdateImageFileAsyncOperation addOrUpdateImageFileAsyncOperation = new(_imageDirectoryPath, fileNameWithoutExtension, imageData, imageFileType);
 
-        string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
+        return await _transactionalFileManager.EnlistOrExecuteOperationAsync(addOrUpdateImageFileAsyncOperation);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        //if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        using MemoryStream memoryStream = new(imageData);
+        //string fullFileName = $"{fileNameWithoutExtension}.{imageFileType.FileExtension}";
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        //string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
 
-        await image.SaveAsync(filePath);
+        //using MemoryStream memoryStream = new(imageData);
 
-        return new Success();
+        //using Image image = await Image.LoadAsync(memoryStream);
+
+        //await image.SaveAsync(filePath);
+
+        //return new Success();
     }
 
     public OneOf<Success, FileDoesntExistResult> DeleteFile(string fullFileName)
     {
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        DeleteImageFileOperation deleteImageFileOperation = new(_imageDirectoryPath, fullFileName);
 
-        if (!File.Exists(filePath))
-        {
-            return new FileDoesntExistResult() { FileName = fullFileName };
-        }
+        return _transactionalFileManager.EnlistOrExecuteOperation(deleteImageFileOperation);
 
-        File.Delete(filePath);
+        //string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
 
-        return new Success();
-    }
+        //if (!File.Exists(filePath))
+        //{
+        //    return new FileDoesntExistResult() { FileName = fullFileName };
+        //}
 
-    public async Task<OneOf<Success, FileDoesntExistResult>> DeleteFileAsync(string fullFileName)
-    {
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        //File.Delete(filePath);
 
-        if (!File.Exists(filePath))
-        {
-            return new FileDoesntExistResult() { FileName = fullFileName };
-        }
-
-        await Task.Run(() => File.Delete(filePath));
-
-        return new Success();
+        //return new Success();
     }
 }
