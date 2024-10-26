@@ -1,8 +1,11 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
+using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using OneOf;
 using OneOf.Types;
 
@@ -23,9 +26,13 @@ public interface IProductService
     Product? GetByIdWithFirstImage(int id);
     Product? GetByIdWithProps(int id);
     Product? GetByIdWithImages(int id);
-    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null);
-    bool Delete(int id);
-    Product? GetProductWithHighestId();
     Product? GetProductFull(int productId);
+    Product? GetProductWithHighestId();
+    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
+    Task<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> InsertWithImagesOnlyInDirectoryAsync(ProductCreateWithoutImagesInDatabaseRequest productWithoutImagesInDBCreateRequest);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> UpdateProductAndUpdateImagesOnlyInDirectoryAsync(ProductUpdateWithoutImagesInDatabaseRequest productUpdateWithoutImagesInDBRequest);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateProductFullAsync(ProductFullUpdateRequest productFullUpdateRequest);
+    bool Delete(int id);
+    Product? GetProductFullWithHighestId();
+    IEnumerable<Product> GetAllInCategoryWithoutImagesAndProps(int categoryId);
 }

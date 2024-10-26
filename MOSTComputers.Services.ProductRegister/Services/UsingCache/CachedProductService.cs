@@ -12,6 +12,9 @@ using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ForProduct;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Models.FileManagement.Models;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
@@ -46,6 +49,11 @@ internal sealed class CachedProductService : IProductService
     public IEnumerable<Product> GetAllWithoutImagesAndProps()
     {
         return _productService.GetAllWithoutImagesAndProps();
+    }
+
+    public IEnumerable<Product> GetAllInCategoryWithoutImagesAndProps(int categoryId)
+    {
+        return _productService.GetAllInCategoryWithoutImagesAndProps(categoryId);
     }
 
     public IEnumerable<Product> GetAllWhereSearchStringMatches(string searchStringParts)
@@ -724,7 +732,34 @@ internal sealed class CachedProductService : IProductService
 
     public Product? GetProductWithHighestId()
     {
-        return _productService.GetProductWithHighestId();
+        Product? product = _productService.GetProductWithHighestId();
+
+        if (product is null) return null;
+
+        string productKey = GetByIdKey(product.Id);
+
+        _cache.Add(productKey, product);
+
+        string productPropertiesKey = CacheKeyUtils.ProductProperty.GetByProductIdKey(product.Id);
+        string productImageFileNamesKey = CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(product.Id);
+        string productImagesKey = CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(product.Id);
+
+        if (product.Properties is not null)
+        {
+            _cache.Add(productPropertiesKey, product.Properties);
+        }
+
+        if (product.ImageFileNames is not null)
+        {
+            _cache.Add(productImageFileNamesKey, product.ImageFileNames);
+        }
+
+        if (product.Images is not null)
+        {
+            _cache.Add(productImagesKey, product.Images);
+        }
+
+        return Clone(product);
     }
 
     public Product? GetProductFull(int productId)
@@ -733,20 +768,22 @@ internal sealed class CachedProductService : IProductService
 
         string productKey = GetByIdKey(productId);
 
+        string productPropertiesKey = CacheKeyUtils.ProductProperty.GetByProductIdKey(productId);
+        string productImageFileNamesKey = CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productId);
         string productImagesKey = CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(productId);
 
-        Product? cachedProduct = _cache.GetValueOrDefault<Product>(productImagesKey);
+        Product? cachedProduct = _cache.GetValueOrDefault<Product>(productKey);
 
         if (cachedProduct is not null)
         {
-            cachedProduct.Images ??= _productImageService.GetAllInProduct(productId)
-                .ToList();
+            cachedProduct.Properties ??= _cache.GetOrAdd(productPropertiesKey, () => _productPropertyService.GetAllInProduct(productId)
+                .ToList());
 
-            cachedProduct.ImageFileNames ??= _productImageFileNameInfoService.GetAllInProduct(productId)
-                .ToList();
+            cachedProduct.ImageFileNames ??= _cache.GetOrAdd(productImageFileNamesKey, () => _productImageFileNameInfoService.GetAllInProduct(productId)
+                .ToList());
 
-            cachedProduct.Properties ??= _productPropertyService.GetAllInProduct(productId)
-                .ToList();
+            cachedProduct.Images ??= _cache.GetOrAdd(productImagesKey, () => _productImageService.GetAllInProduct(productId)
+                .ToList());
 
             return Clone(cachedProduct);
         }
@@ -760,13 +797,41 @@ internal sealed class CachedProductService : IProductService
         return Clone(product);
     }
 
+    public Product? GetProductFullWithHighestId()
+    {
+        Product? product = _productService.GetProductFullWithHighestId();
+
+        if (product is null) return null;
+
+        int productId = product.Id;
+
+        string productKey = GetByIdKey(productId);
+
+        _cache.Add(productKey, product);
+
+        string productPropertiesKey = CacheKeyUtils.ProductProperty.GetByProductIdKey(productId);
+        string productImageFileNamesKey = CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productId);
+        string productImagesKey = CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(productId);
+
+        product.Properties ??= _cache.GetOrAdd(productPropertiesKey, () => _productPropertyService.GetAllInProduct(productId)
+            .ToList());
+
+        product.ImageFileNames ??= _cache.GetOrAdd(productImageFileNamesKey, () => _productImageFileNameInfoService.GetAllInProduct(productId)
+            .ToList());
+
+        product.Images ??= _cache.GetOrAdd(productImagesKey, () => _productImageService.GetAllInProduct(productId)
+            .ToList());
+
+        return Clone(product);
+    }
+
     public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest,
         IValidator<ProductCreateRequest>? validator = null)
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> result = _productService.Insert(createRequest, validator);
 
         int? idFromResult = result.Match<int?>(
-            id => (int)id,
+            id => id,
             _ => null,
             _ => null);
 
@@ -829,43 +894,113 @@ internal sealed class CachedProductService : IProductService
         return result;
     }
 
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ProductUpdateRequest updateRequest, IValidator<ProductUpdateRequest>? validator = null)
+    public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
+        InsertWithImagesOnlyInDirectoryAsync(ProductCreateWithoutImagesInDatabaseRequest productWithoutImagesInDBCreateRequest)
     {
-        int productId = updateRequest.Id;
+        OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> insertResult
+            = await _productService.InsertWithImagesOnlyInDirectoryAsync(productWithoutImagesInDBCreateRequest);
 
-        Product? productBeforeUpdate = GetByIdWithImages(productId);
+        int? idFromResult = insertResult.Match<int?>(
+            id => id,
+            ValidationResult => null,
+            unexpectedFailureResult => null,
+            directoryNotFoundResult => null,
+            fileDoesntExistResult => null);
+
+        if (idFromResult is not null)
+        {
+            _cache.Evict(GetByIdKey(idFromResult.Value));
+            _cancellationTokenSourceForOrderSaves.Cancel();
+
+            if (_cancellationTokenSourceForOrderSaves.IsCancellationRequested)
+            {
+                _cancellationTokenSourceForOrderSaves.Dispose();
+                _cancellationTokenSourceForOrderSaves = new();
+            }
+
+            _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(idFromResult.Value));
+            _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(idFromResult.Value));
+            _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(idFromResult.Value));
+            _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(idFromResult.Value));
+            _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(idFromResult.Value));
+
+            if (productWithoutImagesInDBCreateRequest.SearchString is not null)
+            {
+                foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForSearchStrings)
+                {
+                    if (!SearchStringSearchUtils.SearchStringContainsParts(productWithoutImagesInDBCreateRequest.SearchString, kvp.Key)) continue;
+
+                    kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForSearchStrings[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetBySearchStringKey(kvp.Key));
+                }
+            }
+
+            if (productWithoutImagesInDBCreateRequest.Name is not null)
+            {
+                foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForNames)
+                {
+                    if (!productWithoutImagesInDBCreateRequest.Name.Contains(kvp.Key)) continue;
+
+                    kvp.Value.Cancel();
+
+                    if (kvp.Value.IsCancellationRequested)
+                    {
+                        kvp.Value.Dispose();
+
+                        _cancellationTokenSourcesForNames[kvp.Key] = new CancellationTokenSource();
+                    }
+
+                    _cache.Evict(GetByNameKey(kvp.Key));
+                }
+            }
+        }
+
+        return insertResult;
+    }
+
+    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
+        UpdateProductAndUpdateImagesOnlyInDirectoryAsync(ProductUpdateWithoutImagesInDatabaseRequest productUpdateWithoutImagesInDBRequest)
+    {
+        int productId = productUpdateWithoutImagesInDBRequest.Id;
+
+        Product? productBeforeUpdate = GetProductFull(productId);
 
         if (productBeforeUpdate is null)
         {
             ValidationResult productDoesntExistValidationResult = new();
 
-            productDoesntExistValidationResult.Errors.Add(new(nameof(updateRequest.Id), "Argument does not correspond to any product Id"));
+            productDoesntExistValidationResult.Errors.Add(new(nameof(productUpdateWithoutImagesInDBRequest.Id), "Argument does not correspond to any product Id"));
 
             return productDoesntExistValidationResult;
         }
 
-        productBeforeUpdate.Properties ??= _productPropertyService.GetAllInProduct(updateRequest.Id)
-            .ToList();
-
-        productBeforeUpdate.ImageFileNames ??= _productImageFileNameInfoService.GetAllInProduct(updateRequest.Id)
-            .ToList();
-
-        string updatedProductKey = GetUpdatedByIdKey(updateRequest.Id);
+        string updatedProductKey = GetUpdatedByIdKey(productId);
 
         _cache.Add(updatedProductKey, productBeforeUpdate);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> result = _productService.Update(updateRequest, validator);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> updateResult
+            = await _productService.UpdateProductAndUpdateImagesOnlyInDirectoryAsync(productUpdateWithoutImagesInDBRequest);
 
-        bool successFromResult = result.Match(
+        bool successFromResult = updateResult.Match(
             success => true,
-            _ => false,
-            _ => false);
+            validationResult => false,
+            unexpectedFailureResult => false,
+            directoryNotFoundResult => false,
+            notSupportedFileTypeResult => false);
 
         if (!successFromResult)
         {
             _cache.Evict(updatedProductKey);
 
-            return result;
+            return updateResult;
         }
 
         _cache.Evict(GetByIdKey(productId));
@@ -879,40 +1014,36 @@ internal sealed class CachedProductService : IProductService
 
         _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(productId));
 
-        if (updateRequest.Images is not null
-            && updateRequest.Images.Count > 0)
+        _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(productId));
+
+        _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(productId));
+
+        if (productBeforeUpdate.Images is not null)
         {
-            _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(productId));
-
-            _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(productId));
-
-            if (productBeforeUpdate.Images is not null)
+            foreach (ProductImage image in productBeforeUpdate.Images)
             {
-                foreach (ProductImage image in productBeforeUpdate.Images)
-                {
-                    _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
-                }
+                _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
             }
         }
 
-        if (updateRequest.Properties is not null
-            && updateRequest.Properties.Count > 0)
+        _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(productId));
+
+        _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productId));
+        _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
+
+        if (productBeforeUpdate.ImageFileNames is not null)
         {
-            _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(productId));
+            foreach (ProductImageFileNameInfo fileNameInfo in productBeforeUpdate.ImageFileNames)
+            {
+                _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdAndImageNumberKey(productId, fileNameInfo.ImageNumber));
+            }
         }
 
-        if (updateRequest.ImageFileNames is not null
-            && updateRequest.ImageFileNames.Count > 0)
-        {
-            _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productId));
-            _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
-        }
-
-        if (updateRequest.SearchString is not null)
+        if (productUpdateWithoutImagesInDBRequest.SearchString is not null)
         {
             foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForSearchStrings)
             {
-                if (!SearchStringSearchUtils.SearchStringContainsParts(updateRequest.SearchString, kvp.Key)) continue;
+                if (!SearchStringSearchUtils.SearchStringContainsParts(productUpdateWithoutImagesInDBRequest.SearchString, kvp.Key)) continue;
 
                 kvp.Value.Cancel();
 
@@ -927,11 +1058,11 @@ internal sealed class CachedProductService : IProductService
             }
         }
 
-        if (updateRequest.Name is not null)
+        if (productUpdateWithoutImagesInDBRequest.Name is not null)
         {
             foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForNames)
             {
-                if (!updateRequest.Name.Contains(kvp.Key)) continue;
+                if (!productUpdateWithoutImagesInDBRequest.Name.Contains(kvp.Key)) continue;
 
                 kvp.Value.Cancel();
 
@@ -945,23 +1076,128 @@ internal sealed class CachedProductService : IProductService
                 _cache.Evict(GetByNameKey(kvp.Key));
             }
         }
-        
-        return result;
+
+        return updateResult;
+    }
+
+    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateProductFullAsync(ProductFullUpdateRequest productFullUpdateRequest)
+    {
+        int productId = productFullUpdateRequest.Id;
+
+        Product? productBeforeUpdate = GetProductFull(productId);
+
+        if (productBeforeUpdate is null)
+        {
+            ValidationResult productDoesntExistValidationResult = new();
+
+            productDoesntExistValidationResult.Errors.Add(new(nameof(productFullUpdateRequest.Id), "Argument does not correspond to any product Id"));
+
+            return productDoesntExistValidationResult;
+        }
+
+        string updatedProductKey = GetUpdatedByIdKey(productId);
+
+        _cache.Add(updatedProductKey, productBeforeUpdate);
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult
+            = await _productService.UpdateProductFullAsync(productFullUpdateRequest);
+
+        bool successFromResult = updateResult.Match(
+            success => true,
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        if (!successFromResult)
+        {
+            _cache.Evict(updatedProductKey);
+
+            return updateResult;
+        }
+
+        _cache.Evict(GetByIdKey(productId));
+        _cancellationTokenSourceForOrderSaves.Cancel();
+
+        if (_cancellationTokenSourceForOrderSaves.IsCancellationRequested)
+        {
+            _cancellationTokenSourceForOrderSaves.Dispose();
+            _cancellationTokenSourceForOrderSaves = new();
+        }
+
+        _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(productId));
+
+        _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(productId));
+
+        _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(productId));
+
+        if (productBeforeUpdate.Images is not null)
+        {
+            foreach (ProductImage image in productBeforeUpdate.Images)
+            {
+                _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
+            }
+        }
+
+        _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(productId));
+
+        _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(productId));
+        _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
+
+        if (productBeforeUpdate.ImageFileNames is not null)
+        {
+            foreach (ProductImageFileNameInfo fileNameInfo in productBeforeUpdate.ImageFileNames)
+            {
+                _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdAndImageNumberKey(productId, fileNameInfo.ImageNumber));
+            }
+        }
+
+        if (productFullUpdateRequest.SearchString is not null)
+        {
+            foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForSearchStrings)
+            {
+                if (!SearchStringSearchUtils.SearchStringContainsParts(productFullUpdateRequest.SearchString, kvp.Key)) continue;
+
+                kvp.Value.Cancel();
+
+                if (kvp.Value.IsCancellationRequested)
+                {
+                    kvp.Value.Dispose();
+
+                    _cancellationTokenSourcesForSearchStrings[kvp.Key] = new CancellationTokenSource();
+                }
+
+                _cache.Evict(GetBySearchStringKey(kvp.Key));
+            }
+        }
+
+        if (productFullUpdateRequest.Name is not null)
+        {
+            foreach (KeyValuePair<string, CancellationTokenSource> kvp in _cancellationTokenSourcesForNames)
+            {
+                if (!productFullUpdateRequest.Name.Contains(kvp.Key)) continue;
+
+                kvp.Value.Cancel();
+
+                if (kvp.Value.IsCancellationRequested)
+                {
+                    kvp.Value.Dispose();
+
+                    _cancellationTokenSourcesForNames[kvp.Key] = new CancellationTokenSource();
+                }
+
+                _cache.Evict(GetByNameKey(kvp.Key));
+            }
+        }
+
+        return updateResult;
     }
 
     public bool Delete(int id)
     {
         if (id <= 0) return false;
 
-        Product? productBeforeUpdate = GetByIdWithFirstImage(id);
+        Product? productBeforeUpdate = GetProductFull(id);
 
         if (productBeforeUpdate is null) return true;
-
-        productBeforeUpdate.Properties ??= _productPropertyService.GetAllInProduct(id)
-            .ToList();
-
-        productBeforeUpdate.ImageFileNames ??= _productImageFileNameInfoService.GetAllInProduct(id)
-            .ToList();
 
         bool success = _productService.Delete(id);
 
@@ -979,12 +1215,26 @@ internal sealed class CachedProductService : IProductService
             _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(id));
             _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(id));
             _cache.Evict(CacheKeyUtils.ProductProperty.GetByProductIdKey(id));
+
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdKey(id));
             _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetAllKey);
+
+            if (productBeforeUpdate.ImageFileNames is not null)
+            {
+                foreach (ProductImageFileNameInfo fileNameInfo in productBeforeUpdate.ImageFileNames)
+                {
+                    _cache.Evict(CacheKeyUtils.ProductImageFileNameInfo.GetByProductIdAndImageNumberKey(id, fileNameInfo.ImageNumber));
+                }
+            }
+
             _cache.Evict(CacheKeyUtils.ProductStatuses.GetByProductIdKey(id));
 
             if (productBeforeUpdate.Images is not null)
             {
+                _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByProductIdKey(id));
+
+                _cache.Evict(CacheKeyUtils.ProductImage.GetInFirstImagesByIdKey(id));
+
                 foreach (ProductImage image in productBeforeUpdate.Images)
                 {
                     _cache.Evict(CacheKeyUtils.ProductImage.GetInAllImagesByIdKey(image.Id));
