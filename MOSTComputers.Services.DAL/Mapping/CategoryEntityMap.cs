@@ -13,5 +13,6 @@ public sealed class CategoryEntityMap : EntityMap<Category>
         Map(x => x.DisplayOrder).ToColumn("S");
         Map(x => x.RowGuid).ToColumn("rowguid");
         Map(x => x.ProductsUpdateCounter).ToColumn("ProductsUpdateCounter");
+        Map(x => x.ParentCategoryId).ToColumn("ParentId");
     }
 }
