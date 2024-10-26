@@ -1,5 +1,4 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Utils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
@@ -30,10 +29,31 @@ public sealed class ProductFullUpdateRequest
     public string? PartNumber2 { get; set; }
     public string? SearchString { get; set; }
     public int? CategoryId { get; set; }
-    public MOSTComputers.Models.Product.Models.Category? Category { get; set; }
     public short? ManifacturerId { get; set; }
-    public Manifacturer? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
-    public List<ProductProperty>? Properties { get; set; }
-    public List<ImageAndImageFileNameRelation>? ImagesAndFileNames { get; set; }
+    public List<LocalProductPropertyUpsertRequest>? PropertyUpsertRequests { get; set; }
+    public List<ImageAndImageFileNameUpsertRequest>? ImageAndFileNameUpsertRequests { get; set; }
+}
+
+public class ImageAndImageFileNameUpsertRequest
+{
+    public required string ImageContentType { get; set; }
+    public byte[]? ImageData { get; set; }
+
+    public ProductImageUpsertRequest? ProductImageUpsertRequest { get; set; }
+    public ProductImageFileNameInfoUpsertRequest? ProductImageFileNameInfoUpsertRequest { get; set; }
+}
+
+public class ProductImageUpsertRequest
+{
+    public int? OriginalImageId { get; set; }
+    public string? HtmlData { get; set; }
+}
+
+public class ProductImageFileNameInfoUpsertRequest
+{
+    public int? OriginalImageNumber { get; set; }
+    public int? NewDisplayOrder { get; set; }
+    public string? CustomFileNameWithoutExtension { get; set; }
+    public bool Active { get; set; }
 }
