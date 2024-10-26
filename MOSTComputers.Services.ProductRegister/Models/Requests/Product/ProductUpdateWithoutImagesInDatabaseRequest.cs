@@ -1,4 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Utils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
@@ -29,10 +30,8 @@ public sealed class ProductUpdateWithoutImagesInDatabaseRequest
     public string? PartNumber2 { get; set; }
     public string? SearchString { get; set; }
     public int? CategoryId { get; set; }
-    public MOSTComputers.Models.Product.Models.Category? Category { get; set; }
     public short? ManifacturerId { get; set; }
-    public Manifacturer? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
-    public List<ProductProperty>? Properties { get; set; }
-    public List<ImageAndImageFileNameRelation>? ImagesAndFileNames { get; set; }
+    public List<LocalProductPropertyUpsertRequest>? PropertyUpsertRequests { get; set; }
+    public List<ImageFileAndFileNameInfoUpsertRequest>? ImageFileAndFileNameInfoUpsertRequests { get; set; }
 }
