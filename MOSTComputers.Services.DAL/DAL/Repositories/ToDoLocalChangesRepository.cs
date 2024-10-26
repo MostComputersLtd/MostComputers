@@ -114,21 +114,21 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
     {
         const string insertQuery =
             $"""
-            DECLARE @TEMP_ProductWorkStatuses_InsertIdSavingTable TABLE (ID INT)
+            DECLARE @InsertedIdTable TABLE (Id INT);
 
             INSERT INTO {_tableName} (ID, Operation, TableName, TimeStamp)
-            OUTPUT INSERTED.PK INTO @TEMP_ProductWorkStatuses_InsertIdSavingTable
+            OUTPUT INSERTED.PK INTO @InsertedIdTable
             VALUES(@TableElementId, @OperationType, @TableName, @TimeStamp)
 
-            SELECT TOP 1 ID FROM @TEMP_ProductWorkStatuses_InsertIdSavingTable
+            SELECT TOP 1 Id FROM @InsertedIdTable;
             """;
 
         var parameters = new
         {
-            toDoLocalChangeCreateRequest.TableElementId,
-            toDoLocalChangeCreateRequest.OperationType,
-            toDoLocalChangeCreateRequest.TableName,
-            toDoLocalChangeCreateRequest.TimeStamp,
+            TableElementId = toDoLocalChangeCreateRequest.TableElementId,
+            OperationType = toDoLocalChangeCreateRequest.OperationType,
+            TableName = toDoLocalChangeCreateRequest.TableName,
+            TimeStamp = toDoLocalChangeCreateRequest.TimeStamp,
         };
 
         int? toDoLocalChangeId = _relationalDataAccess.SaveDataAndReturnValue<int, dynamic>(insertQuery, parameters);
@@ -149,10 +149,10 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
 
         var parameters = new
         {
-            id = (int)id
+            id = id
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -170,7 +170,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
             ids = ids
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -190,7 +190,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
             elementId = elementId
         };
 
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdQuery, parameters);
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdQuery, parameters);
 
         return (rowsAffected > 0);
     }
@@ -209,8 +209,8 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
             tableName = tableName,
             elementIds = elementIds
         };
-
-        int rowsAffected = _relationalDataAccess.SaveData<LocalChangeData, dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
+        
+        int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteByTableNameAndElementIdsQuery, parameters);
 
         return (rowsAffected > 0);
     }
