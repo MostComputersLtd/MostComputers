@@ -1,13 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.Product;
@@ -54,8 +46,7 @@ internal sealed class CurrentProductPropertyCreateRequestValidator : AbstractVal
 {
     public CurrentProductPropertyCreateRequestValidator()
     {
-        RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.ProductCharacteristicId).GreaterThan(0);
         RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
     }
 }
@@ -65,7 +56,8 @@ internal sealed class CurrentProductImageCreateRequestValidator : AbstractValida
     public CurrentProductImageCreateRequestValidator()
     {
         RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x.ImageData).NotEmpty();
+        RuleFor(x => x).Must(x => (x.ImageData is not null) == (x.ImageContentType is not null));
+        RuleFor(x => x.ImageData).Must(IsNullOrNotEmpty);
         RuleFor(x => x.ImageContentType).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
@@ -74,7 +66,7 @@ internal sealed class CurrentProductImageFileNameInfoCreateRequestValidator : Ab
 {
     public CurrentProductImageFileNameInfoCreateRequestValidator()
     {
-        RuleFor(x => x.FileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
+        RuleFor(x => x.FileName).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanZero);
     }
 }
