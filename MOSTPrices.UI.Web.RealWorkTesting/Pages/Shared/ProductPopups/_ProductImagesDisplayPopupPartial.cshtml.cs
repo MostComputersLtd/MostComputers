@@ -1,5 +1,5 @@
+using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
 using MOSTComputers.Services.ProductImageFileManagement.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
@@ -18,14 +18,20 @@ public class ProductImagesDisplayPopupPartialModel
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductImageFileManagementService productImageFileManagementService,
+        string popupContainerId,
         string? notificationBoxId = null)
     {
         ProductImagePopupUsageEnum = productImagePopupUsageEnum;
         ProductData = productDisplayData;
+        PopupContainerId = popupContainerId;
         NotificationBoxId = notificationBoxId;
 
         ImagesToDisplay = GetImagesToDisplayFromData(
-            productImagePopupUsageEnum, productDisplayData, productImageService, productImageFileNameInfoService, productImageFileManagementService);
+            productImagePopupUsageEnum,
+            productDisplayData,
+            productImageService,
+            productImageFileNameInfoService,
+            productImageFileManagementService);
 
         if (productDisplayData?.ImagesAndImageFileInfos is not null)
         {
@@ -36,6 +42,7 @@ public class ProductImagesDisplayPopupPartialModel
     public List<ImageAndImageFileNameRelation> ImagesToDisplay { get; set; }
     public ProductImagePopupUsageEnum ProductImagePopupUsageEnum { get; }
     public ProductDisplayData ProductData { get; set; }
+    public string PopupContainerId { get; }
     public string? NotificationBoxId { get; }
 
     private static List<ImageAndImageFileNameRelation> GetImagesToDisplayFromData(
@@ -50,7 +57,7 @@ public class ProductImagesDisplayPopupPartialModel
             IEnumerable<ProductImage> productImages = productImageService.GetAllInProduct(productDisplayData.Id);
             IEnumerable<ProductImageFileNameInfo> productImageFileNameInfos = productImageFileNameInfoService.GetAllInProduct(productDisplayData.Id);
 
-            return GetImageDictionaryFromImagesAndImageFileInfos(productImages.ToList(), productImageFileNameInfos.ToList());
+            return GetImageRelationsFromImagesAndImageFileInfos(productImages.ToList(), productImageFileNameInfos.ToList());
         }
         else if (productImagePopupUsageEnum == ProductImagePopupUsageEnum.ImagesInFiles)
         {
