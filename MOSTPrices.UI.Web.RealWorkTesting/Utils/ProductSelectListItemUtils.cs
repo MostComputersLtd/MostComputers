@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.UI.Web.RealWorkTesting.Models.ImagesAndImageFilesComparison;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
+using SixLabors.ImageSharp;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Utils;
 
@@ -258,6 +260,16 @@ internal static class ProductSelectListItemUtils
         };
     }
 
+    public static List<SelectListItem> GetXmlPlacementSelectItems(ProductPropertyDisplayData productProperty)
+    {
+        return new()
+        {
+            new("At the top", ((int)XMLPlacementEnum.AtTheTop).ToString(), productProperty.XmlPlacement == XMLPlacementEnum.AtTheTop),
+            new("At the bottom", ((int)XMLPlacementEnum.InBottomInThePropertiesList).ToString(), productProperty.XmlPlacement == XMLPlacementEnum.InBottomInThePropertiesList),
+            new("As a site url", ((int)XMLPlacementEnum.AsSiteUrl).ToString(), productProperty.XmlPlacement == XMLPlacementEnum.AsSiteUrl),
+        };
+    }
+
     public static IEnumerable<SelectListItem> GetCharacteristicSelectListItems(IEnumerable<ProductCharacteristic> characteristicsForProductCategory)
     {
         return characteristicsForProductCategory
@@ -268,4 +280,34 @@ internal static class ProductSelectListItemUtils
                 Value = productCharacteristic.Id.ToString(),
             });
     }
+
+    public static IEnumerable<SelectListItem> GetImageComparisonDataSourceSelectListItems(
+        ImageComparisonDataSourceEnum? selectedImageComparisonDataSource = null)
+    {
+        List<SelectListItem> currencySelectListItems = new()
+        {
+            new ("Files", ((int)ImageComparisonDataSourceEnum.ImageFiles).ToString(),
+                selectedImageComparisonDataSource == ImageComparisonDataSourceEnum.ImageFiles),
+
+            new ("First images", ((int)ImageComparisonDataSourceEnum.FirstImages).ToString(),
+                selectedImageComparisonDataSource == ImageComparisonDataSourceEnum.FirstImages),
+
+            new ("All Images", ((int)ImageComparisonDataSourceEnum.AllImages).ToString(),
+                selectedImageComparisonDataSource == ImageComparisonDataSourceEnum.AllImages),
+
+            new ("First Testing Images", ((int)ImageComparisonDataSourceEnum.FirstImagesForTesting).ToString(),
+                selectedImageComparisonDataSource == ImageComparisonDataSourceEnum.FirstImagesForTesting),
+
+            new ("All Testing Images", ((int)ImageComparisonDataSourceEnum.AllImagesForTesting).ToString(),
+                selectedImageComparisonDataSource == ImageComparisonDataSourceEnum.AllImagesForTesting),
+        };
+
+        if (selectedImageComparisonDataSource == null)
+        {
+            currencySelectListItems.Add(new("-- Select a data source --", "-1", true, true));
+        }
+
+        return currencySelectListItems;
+    }
+
 }
