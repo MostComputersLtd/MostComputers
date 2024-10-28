@@ -44,9 +44,15 @@ public static class CacheKeyUtils
         private const string _coreWord = "productImageFileNameInfos";
 
         internal const string GetAllKey = _coreWord;
+
         internal static string GetByProductIdKey(int productId)
         {
             return $"products/{_coreWord}:{productId}";
+        }
+
+        internal static string GetByProductIdAndImageNumberKey(int productId, int imageNumber)
+        {
+            return $"products/{_coreWord}:{productId}/{imageNumber}";
         }
     }
 
