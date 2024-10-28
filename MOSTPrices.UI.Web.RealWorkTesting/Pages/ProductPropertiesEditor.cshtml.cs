@@ -70,7 +70,7 @@ public class ProductPropertiesEditorModel : PageModel
     [BindProperty(SupportsGet = true)]
     public int ProductId { get; set; }
     public ProductDisplayData? ProductDisplayData { get; set; }
-    public List<ProductProperty>? ProductProperties { get; set; }
+    public List<ProductPropertyDisplayData>? ProductProperties { get; set; }
     public List<ProductPropertyByCharacteristicIdCreateRequest> ProductPropertyCreateRequests { get; set; }
     public IEnumerable<SelectListItem>? CharacteristicsForProductCategory { get; set; }
 
@@ -123,7 +123,8 @@ public class ProductPropertiesEditorModel : PageModel
             productData,
             _productImageService,
             _productImageFileNameInfoService,
-            _productImageFileManagementService));
+            _productImageFileManagementService,
+            "ProductImages_popup_modal_content"));
     }
 
     public IActionResult OnGetGetRemainingCharacteristicsForProduct(int? characteristicToAddToSelectId = null)
@@ -273,21 +274,20 @@ public class ProductPropertiesEditorModel : PageModel
             }
         }
 
-        ProductProperty productProperty = new()
+        ProductPropertyDisplayData productPropertyData = new()
         {
-            ProductId = ProductId,
             ProductCharacteristicId = characteristicId,
-            Characteristic = firstCharacteristic?.Text
+            Characteristic = firstCharacteristic?.Text,
         };
 
         productDisplayData.Properties ??= new();
 
-        productDisplayData.Properties.Add(productProperty);
+        productDisplayData.Properties.Add(productPropertyData);
         
         return base.Partial("ProductProperties/_ProductSinglePropertyDisplayPartial",
             new ProductSinglePropertyDisplayPartialModel(
                 ProductId,
-                productProperty,
+                productPropertyData,
                 productDisplayData.Properties?.Count ?? 0,
                 true,
                 remainingCharacteristics,
@@ -310,7 +310,8 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (propCharacteristic is null) return BadRequest();
 
-        ProductProperty? propertyToUpdate = productDisplayData.Properties?.Find(prop => prop.ProductCharacteristicId == data.ProductCharacteristicId);
+        ProductPropertyDisplayData? propertyToUpdate = productDisplayData.Properties?
+            .Find(prop => prop.ProductCharacteristicId == data.ProductCharacteristicId);
 
         if (data.IsNew && propertyToUpdate == null)
         {
@@ -318,7 +319,6 @@ public class ProductPropertiesEditorModel : PageModel
 
             productDisplayData.Properties.Add(new()
             {
-                ProductId = ProductId,
                 ProductCharacteristicId = data.ProductCharacteristicId,
                 XmlPlacement = data.XmlPlacement,
                 Value = data.Value,
@@ -338,7 +338,6 @@ public class ProductPropertiesEditorModel : PageModel
 
         productDisplayData.Properties![productDisplayData.Properties.IndexOf(propertyToUpdate!)] = new()
         {
-            ProductId = ProductId,
             ProductCharacteristicId = data.ProductCharacteristicId,
             XmlPlacement = data.XmlPlacement,
             Value = data.Value,
@@ -371,7 +370,8 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (characteristicItemWithNewId == null) return BadRequest();
         
-        ProductProperty? propertyToChange = productDisplayData.Properties?.FirstOrDefault(property => property.ProductCharacteristicId == currentPropertyId);
+        ProductPropertyDisplayData? propertyToChange = productDisplayData.Properties?
+            .FirstOrDefault(property => property.ProductCharacteristicId == currentPropertyId);
 
         if (propertyToChange == null) return BadRequest();
 
@@ -393,13 +393,12 @@ public class ProductPropertiesEditorModel : PageModel
 
         ProductDisplayData = productDisplayData;
 
-        List<ProductProperty> properties = new();
+        List<ProductPropertyDisplayData> properties = new();
 
         foreach (ProductPropertyEditorData productPropertyEditorData in data)
         {
             properties.Add(new()
             {
-                ProductId = ProductId,
                 ProductCharacteristicId = productPropertyEditorData.ProductCharacteristicId,
                 XmlPlacement = productPropertyEditorData.XmlPlacement,
                 Value = productPropertyEditorData.Value,
@@ -428,12 +427,12 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (productDisplayData is null) return BadRequest();
 
-        ProductProperty? property = productDisplayData.Properties?
+        ProductPropertyDisplayData? propertyData = productDisplayData.Properties?
             .FirstOrDefault(property => property.ProductCharacteristicId == productCharacteristicId);
 
-        if (property is null) return BadRequest();
+        if (propertyData is null) return BadRequest();
 
-        bool? success = productDisplayData.Properties?.Remove(property);
+        bool? success = productDisplayData.Properties?.Remove(propertyData);
 
         if (success is null || !(bool)success)
         {
