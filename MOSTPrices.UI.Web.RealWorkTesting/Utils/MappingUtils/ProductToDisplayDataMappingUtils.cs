@@ -1,10 +1,12 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Services.ProductRegister.Models;
+using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using MOSTComputers.Utils.ProductImageFileNameUtils;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageAndFileNameRelationsUtils;
+
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils;
 
@@ -41,8 +43,10 @@ public static class ProductToDisplayDataMappingUtils
             Category = product.Category,
             Manifacturer = product.Manifacturer,
             SubCategoryId = product.SubCategoryId,
-            ImagesAndImageFileInfos = GetImageDictionaryFromImagesAndImageFileInfos(product.Images, product.ImageFileNames?.ToList()),
-            Properties = product.Properties?.ToList(),
+            ImagesAndImageFileInfos = GetImageRelationsFromImagesAndImageFileInfos(product.Images, product.ImageFileNames?.ToList()),
+            Properties = product.Properties?
+                .Select(property => MapToProductPropertyDisplayData(property))
+                .ToList(),
 
             CategoryId = product.CategoryId,
             ManifacturerId = product.ManifacturerId,
@@ -91,7 +95,9 @@ public static class ProductToDisplayDataMappingUtils
                 .Select(x => x.ProductImageFileNameInfo)
                 .Where(x => x != null)!
                 .ToList<ProductImageFileNameInfo>(),
-            Properties = productDisplayData.Properties?.ToList() ?? new(),
+            Properties = productDisplayData.Properties?
+                .Select(propertyData => MapToProductProperty(propertyData, productDisplayData.Id))
+                .ToList() ?? new(),
 
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
             CategoryId = productDisplayData.CategoryId,
@@ -162,11 +168,11 @@ public static class ProductToDisplayDataMappingUtils
             .ToList(),
 
             Properties = productDisplayData.Properties?
-                 .Select(x => new ProductProperty()
+                 .Select(x => new ProductPropertyDisplayData()
                  {
-                     ProductId = x.ProductId,
                      ProductCharacteristicId = x.ProductCharacteristicId,
                      DisplayOrder = x.DisplayOrder,
+                     CustomDisplayOrderOnInsertOrUpdate = x.CustomDisplayOrderOnInsertOrUpdate,
                      Value = x.Value,
                      Characteristic = x.Characteristic,
                      XmlPlacement = x.XmlPlacement,
@@ -175,14 +181,15 @@ public static class ProductToDisplayDataMappingUtils
             ManifacturerId = productDisplayData.ManifacturerId,
             CategoryId = productDisplayData.CategoryId,
 
-            ProductWorkStatusesId = productDisplayData.Id,
+            ProductWorkStatusesId = productDisplayData.ProductWorkStatusesId,
             ProductNewStatus = productDisplayData.ProductNewStatus,
             ProductXmlStatus = productDisplayData.ProductXmlStatus,
             ReadyForImageInsert = productDisplayData.ReadyForImageInsert,
         };
     }
 
-    public static ProductUpdateWithoutImagesInDatabaseRequest MapToProductUpdateRequestWithoutImagesInDB(ProductDisplayData productDisplayData)
+    public static ProductUpdateWithoutImagesInDatabaseRequest MapToProductUpdateRequestWithoutImagesInDB(
+        ProductDisplayData productDisplayData, List<ImageFileAndFileNameInfoUpsertRequest> imageFileUpsertRequests)
     {
         return new()
         {
@@ -210,20 +217,25 @@ public static class ProductToDisplayDataMappingUtils
             PartNumber1 = productDisplayData.PartNumber1,
             PartNumber2 = productDisplayData.PartNumber2,
             SearchString = productDisplayData.SearchString,
-            Category = productDisplayData.Category,
-            Manifacturer = productDisplayData.Manifacturer,
             SubCategoryId = productDisplayData.SubCategoryId,
 
-            ImagesAndFileNames = productDisplayData.ImagesAndImageFileInfos?.ToList(),
+            ImageFileAndFileNameInfoUpsertRequests = imageFileUpsertRequests,
 
-            Properties = productDisplayData.Properties?.ToList(),
+            PropertyUpsertRequests = productDisplayData.Properties?.Select(
+                propertyData => new LocalProductPropertyUpsertRequest()
+                {
+                    ProductCharacteristicId = propertyData.ProductCharacteristicId ?? 0,
+                    CustomDisplayOrder = propertyData.CustomDisplayOrderOnInsertOrUpdate,
+                    Value = propertyData.Value,
+                    XmlPlacement = propertyData.XmlPlacement,
+                }).ToList(),
 
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
             CategoryId = productDisplayData.CategoryId,
         };
     }
 
-    public static ProductFullUpdateRequest MapToProductFullUpdateRequest(ProductDisplayData productDisplayData)
+    public static ProductFullUpdateRequest GetProductFullUpdateRequest(ProductDisplayData productDisplayData)
     {
         return new()
         {
@@ -251,20 +263,28 @@ public static class ProductToDisplayDataMappingUtils
             PartNumber1 = productDisplayData.PartNumber1,
             PartNumber2 = productDisplayData.PartNumber2,
             SearchString = productDisplayData.SearchString,
-            Category = productDisplayData.Category,
-            Manifacturer = productDisplayData.Manifacturer,
             SubCategoryId = productDisplayData.SubCategoryId,
 
-            ImagesAndFileNames = productDisplayData.ImagesAndImageFileInfos?.ToList(),
+            ImageAndFileNameUpsertRequests = productDisplayData.ImagesAndImageFileInfos?
+                .Select(x => GetImageAndImageFileNameUpsertRequest(x))
+                .ToList(),
 
-            Properties = productDisplayData.Properties?.ToList(),
+            PropertyUpsertRequests = productDisplayData.Properties?.Select(
+                propertyData => new LocalProductPropertyUpsertRequest()
+                {
+                    ProductCharacteristicId = propertyData.ProductCharacteristicId ?? 0,
+                    CustomDisplayOrder = propertyData.CustomDisplayOrderOnInsertOrUpdate,
+                    Value = propertyData.Value,
+                    XmlPlacement = propertyData.XmlPlacement,
+                }).ToList(),
 
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
             CategoryId = productDisplayData.CategoryId,
         };
     }
 
-    public static ProductCreateWithoutImagesInDatabaseRequest MapToProductCreateRequestWithoutImagesInDB(ProductDisplayData productDisplayData)
+    public static ProductCreateWithoutImagesInDatabaseRequest MapToProductCreateRequestWithoutImagesInDB(
+        ProductDisplayData productDisplayData, List<ImageFileAndFileNameInfoUpsertRequest> imageFileAndFileNameInfoUpsertRequests)
     {
         return new()
         {
@@ -291,16 +311,104 @@ public static class ProductToDisplayDataMappingUtils
             PartNumber1 = productDisplayData.PartNumber1,
             PartNumber2 = productDisplayData.PartNumber2,
             SearchString = productDisplayData.SearchString,
-            Category = productDisplayData.Category,
-            Manifacturer = productDisplayData.Manifacturer,
             SubCategoryId = productDisplayData.SubCategoryId,
 
-            ImagesAndFileNames = productDisplayData.ImagesAndImageFileInfos?.ToList(),
+            Properties = productDisplayData.Properties?.Select(
+                propertyData => new CurrentProductPropertyCreateRequest()
+                {
+                    ProductCharacteristicId = propertyData.ProductCharacteristicId ?? 0,
+                    CustomDisplayOrder = propertyData.CustomDisplayOrderOnInsertOrUpdate,
+                    Value = propertyData.Value,
+                    XmlPlacement = propertyData.XmlPlacement,
+                }).ToList(),
 
-            Properties = productDisplayData.Properties?.ToList(),
+            ImageFileAndFileNameInfoUpsertRequests = imageFileAndFileNameInfoUpsertRequests,
 
             ManifacturerId = (short?)productDisplayData.ManifacturerId,
             CategoryId = productDisplayData.CategoryId,
+        };
+    }
+
+    public static ImageAndImageFileNameUpsertRequest GetImageAndImageFileNameUpsertRequest(ImageAndImageFileNameRelation imageAndImageFileNameRelation)
+    {
+        ProductImage? productImage = imageAndImageFileNameRelation.ProductImage;
+        ProductImageFileNameInfo? productImageFileNameInfo = imageAndImageFileNameRelation.ProductImageFileNameInfo;
+
+        string? imageContentType = productImage?.ImageContentType;
+
+        if (imageContentType is null)
+        {
+            string? fileExtension = Path.GetExtension(productImageFileNameInfo?.FileName);
+
+            if (fileExtension is not null)
+            {
+                imageContentType = GetImageContentTypeFromFileExtension(fileExtension);
+            }
+        }
+
+
+        ProductImageUpsertRequest? productImageUpsertRequest = null;
+        
+        if (productImage is not null)
+        {
+            productImageUpsertRequest = new()
+            {
+                OriginalImageId = (productImage.Id > 0) ? productImage.Id : null,
+                HtmlData = productImage.HtmlData,
+            };
+        }
+
+        ProductImageFileNameInfoUpsertRequest? productImageFileNameInfoUpsertRequest = null;
+
+        if (productImageFileNameInfo is not null)
+        {
+            int? newDisplayOrder = null;
+
+            if (productImageFileNameInfo.DisplayOrder is not null
+                && productImageFileNameInfo.DisplayOrder > 0)
+            {
+                newDisplayOrder = productImageFileNameInfo.DisplayOrder;
+            }
+
+            productImageFileNameInfoUpsertRequest = new()
+            {
+                OriginalImageNumber = (productImageFileNameInfo.ImageNumber > 0) ? productImageFileNameInfo.ImageNumber : null,
+                NewDisplayOrder = newDisplayOrder,
+                Active = productImageFileNameInfo.Active,
+            };
+        }
+
+        return new()
+        {
+            ImageContentType = imageContentType ?? string.Empty,
+            ImageData = productImage?.ImageData,
+            ProductImageUpsertRequest = productImageUpsertRequest,
+            ProductImageFileNameInfoUpsertRequest = productImageFileNameInfoUpsertRequest,
+        };
+    }
+
+    public static ProductPropertyDisplayData MapToProductPropertyDisplayData(ProductProperty productProperty)
+    {
+        return new()
+        {
+            ProductCharacteristicId = productProperty.ProductCharacteristicId,
+            Characteristic = productProperty.Characteristic,
+            DisplayOrder = productProperty.DisplayOrder,
+            Value = productProperty.Value,
+            XmlPlacement = productProperty.XmlPlacement,
+        };
+    }
+
+    public static ProductProperty MapToProductProperty(ProductPropertyDisplayData productPropertyData, int productId)
+    {
+        return new()
+        {
+            ProductId = productId,
+            ProductCharacteristicId = productPropertyData.ProductCharacteristicId,
+            Characteristic = productPropertyData.Characteristic,
+            DisplayOrder = productPropertyData.DisplayOrder,
+            Value = productPropertyData.Value,
+            XmlPlacement = productPropertyData.XmlPlacement,
         };
     }
 }
