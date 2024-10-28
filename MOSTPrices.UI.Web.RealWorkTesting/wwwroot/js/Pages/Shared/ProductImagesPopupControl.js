@@ -1,3 +1,5 @@
+const htmlDataDisplayCurrentImageIndexAttributeName = "data-html-data-display-current-image-index";
+
 function open_ProductImages_modal()
 {
     let dialog = document.getElementById("ProductImages_modal_dialog");
@@ -92,7 +94,7 @@ function productImageDisplay_ul_ondragover(e)
     }
 }
 
-function productImageDisplay_ul_li_ondragend(e)
+function productImageDisplay_ul_li_ondragend(e, productImagePopupUsageEnum)
 {
     setTimeout(() =>
     {
@@ -108,7 +110,8 @@ function productImageDisplay_ul_li_ondragend(e)
     const url = "/Index" + "?handler=UpdateImageDisplayOrder"
         + "&productId=" + productId
         + "&oldDisplayOrder=" + indexOfDraggedItem
-        + "&newDisplayOrder=" + newIndexOfDraggedItem;
+        + "&newDisplayOrder=" + newIndexOfDraggedItem
+        + "&productImagePopupUsage=" + productImagePopupUsageEnum;
 
     $.ajax({
         type: "PUT",
@@ -141,18 +144,65 @@ function getImageDisplayOrder(target)
     return newIndexOfDraggedItem + 1;
 }
 
-function displayImageHtmlData(htmlDataViewId, htmlDataInputId)
+function displayImageHtmlData(htmlDataViewId, htmlDataInputId, rawHtmlDataDisplayId)
 {
     if (htmlDataViewId == null
         || htmlDataInputId == null) return;
 
     var htmlDataView = document.getElementById(htmlDataViewId);
     var htmlDataInput = document.getElementById(htmlDataInputId);
+    var rawHtmlDataDisplay = document.getElementById(rawHtmlDataDisplayId);
 
     if (htmlDataView == null
         || htmlDataInput == null) return;
 
+    rawHtmlDataDisplay.style.display = "none";
+
     htmlDataView.innerHTML = htmlDataInput.value;
+
+    var elementImageIndexAsString = getLastPartInSeparatedStringInElementId(htmlDataInputId, "-");
+
+    htmlDataView.setAttribute(htmlDataDisplayCurrentImageIndexAttributeName, elementImageIndexAsString);
+
+    htmlDataView.style.display = "";
+}
+
+function toggleHtmlDataAndRawHtmlData(
+    htmlDataInputPrefix, htmlDataDisplayId, rawHtmlDataInputPrefix, rawHtmlDataDisplayTextAreaId, rawHtmlDataDisplayId)
+{
+    var htmlDataDisplay = document.getElementById(htmlDataDisplayId);
+    var rawHtmlDataDisplayInput = document.getElementById(rawHtmlDataDisplayTextAreaId);
+    var rawHtmlDataDisplay = document.getElementById(rawHtmlDataDisplayId);
+
+    var currentImageIndex = htmlDataDisplay.getAttribute(htmlDataDisplayCurrentImageIndexAttributeName);
+
+    if (currentImageIndex == null
+        || currentImageIndex === "")
+    {
+        currentImageIndex = rawHtmlDataDisplayInput.getAttribute(htmlDataDisplayCurrentImageIndexAttributeName);
+    }
+
+    var htmlDataInputId = htmlDataInputPrefix + currentImageIndex;
+    var rawHtmlDataInputId = rawHtmlDataInputPrefix + currentImageIndex;
+
+    var rawHtmlDataInput = document.getElementById(rawHtmlDataInputId);
+
+    if (htmlDataDisplay.style.display === "none")
+    {
+        displayImageHtmlData(htmlDataDisplayId, htmlDataInputId, rawHtmlDataDisplayId);
+
+        return;
+    }
+
+    htmlDataDisplay.style.display = "none";
+
+    rawHtmlDataDisplayInput.textContent = rawHtmlDataInput.value;
+
+    var elementImageIndexAsString = getLastPartInSeparatedStringInElementId(rawHtmlDataInput, "-");
+
+    rawHtmlDataDisplayInput.setAttribute(htmlDataDisplayCurrentImageIndexAttributeName, elementImageIndexAsString);
+
+    rawHtmlDataDisplay.style.display = "";
 }
 
 function addNewImage(fileInputElement, imagePopupUsage)
@@ -179,13 +229,15 @@ function addNewImage(fileInputElement, imagePopupUsage)
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
     })
-        .done(function (result) {
+        .done(function (result)
+        {
 
             var imagesPopupModalContent = document.getElementById("ProductImages_popup_modal_content");
 
             imagesPopupModalContent.innerHTML = result;
         })
-        .fail(function (jqXHR, textStatus) {
+        .fail(function (jqXHR, textStatus)
+        {
         });
 }
 
@@ -246,4 +298,13 @@ function delete_productImageDisplay_ul_li(productId, imageIndex, imagePopupUsage
 
             productImageDisplayList.removeChild(productImageListItemToDelete)
         });
+}
+
+function getLastPartInSeparatedStringInElementId(elementId, separator)
+{
+    if (typeof elementId !== "string") return null;
+
+    var stringParts = elementId.split(separator);
+
+    return stringParts[stringParts.length - 1];
 }

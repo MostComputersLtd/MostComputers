@@ -26,7 +26,7 @@
     </button>
 </div>
 <div id="ProductImages_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
-    <div class="container border-2 full-parent-width full-parent-height">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
         
         <ul id="productImageDisplay_ul"
             class="full-parent-width bg-white"
@@ -55,7 +55,7 @@
 
                     <li id="productImageDisplay_ul_li-@i" draggable="@imageDraggable"
                         ondragstart="productImageDisplay_ul_li_ondragstart(event)"
-                        ondragend="productImageDisplay_ul_li_ondragend(event)"
+                        ondragend="productImageDisplay_ul_li_ondragend(event, @((int)Model.ProductImagePopupUsageEnum))"
                         style="opacity: @opacityOfLi;">
                         
                         @if (imageFileNameInfo?.Active ?? false)
@@ -115,22 +115,24 @@
                                     No date provided
                                 </label>
                             }
-
+                            
                             <button id="product-image-popup-image-view-html-button-@i"
                                 style="background-color: @htmlDataButtonBackgroundColor;"
                                     onclick="displayImageHtmlData(
                                         'product-image-popup-view-html-display-div',
-                                        '_hidden_product-image-popup-image-view-html_input-@i')">
+                                        '_hidden_product-image-popup-image-view-html_input-@i',
+                                        'product-image-popup-view-raw-html-display_container')">
                                 View Html
                             </button>
                         </div>
-                        
+
                         <input id="_hidden_product-image-popup-image-view-html_input-@i" type="hidden" value='@image.HtmlData' />
+                        <input id="_hidden_product-image-popup-image-view-raw-html_input-@i" type="hidden" value='@(image.HtmlData)' />
                     </li>
                 }
             }
             
-            @if (Model.ProductImagePopupUsageEnum != ProductImagePopupUsageEnum.ImagesInDatabase)
+            @if (Model.ProductImagePopupUsageEnum == ProductImagePopupUsageEnum.DisplayData)
             {
                 <li id="addButtonLi"
                     class="product-image-popup-image-add-button-list-item">
@@ -143,8 +145,34 @@
             }
         </ul>
 
-        <div id="product-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3">
+        <div id="product-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3"
+             ondblclick="toggleHtmlDataAndRawHtmlData('_hidden_product-image-popup-image-view-html_input-',
+                'product-image-popup-view-html-display-div',
+                '_hidden_product-image-popup-image-view-raw-html_input-',
+                'product-image-popup-view-raw-html-display_textarea',
+                'product-image-popup-view-raw-html-display_container')"
+             data-html-data-display-current-image-index="@(Model.ImagesToDisplay?.Count > 0 ? 0 : null)">
             @Html.Raw(Model.ImagesToDisplay?.FirstOrDefault()?.ProductImage?.HtmlData)
+        </div>
+        
+        <div id="product-image-popup-view-raw-html-display_container"
+            class="display-flex-not-important flex-column full-parent-width flex-grow-1 flex-shrink-0" style="display: none;">
+            <textarea id="product-image-popup-view-raw-html-display_textarea"
+                      class="full-parent-width flex-grow-1 flex-shrink-0 pb-0 overflow-y-auto"
+                ondblclick="toggleHtmlDataAndRawHtmlData('_hidden_product-image-popup-image-view-html_input-',
+                    'product-image-popup-view-html-display-div',
+                    '_hidden_product-image-popup-image-view-raw-html_input-',
+                    'product-image-popup-view-raw-html-display_textarea',
+                    'product-image-popup-view-raw-html-display_container')"></textarea>
+
+                <button id="product-image-popup-view-raw-html-save_button" type="button"
+                    class="btn btn-secondary full-parent-width"
+                    onclick="alterAllImagesHtmlData(@Model.ProductData.Id,
+                        @((int)Model.ProductImagePopupUsageEnum),
+                        'product-image-popup-view-raw-html-display_textarea',
+                        '@Model.PopupContainerId')">
+                    Save
+                </button>
         </div>
     </div>
 </div>
