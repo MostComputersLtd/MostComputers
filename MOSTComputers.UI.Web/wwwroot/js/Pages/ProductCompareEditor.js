@@ -313,7 +313,7 @@ function toggleVisibilityBetweenSecondXmlAndProductViews(
         xmlElement.style.display = "none";
 
         productElement.style.display = "block";
-
+        
         $.when(setProductDataForSecondProductFromXml(xmlData, productElementId, addImageInputName, imagesContainerId))
             .done(function ()
             {

@@ -11,6 +11,7 @@ using MOSTComputers.UI.Web.Authentication;
 using FluentValidation;
 using MOSTComputers.UI.Web.Validation.Authentication;
 using MOSTComputers.UI.Web.Models.Authentication;
+using MOSTComputers.Services.ProductImageFileManagement.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,17 @@ builder.Services.AddCachedProductServices(builder.Configuration.GetConnectionStr
 
 builder.Services.AddHttpClient();
 
-builder.Services.AddXmlDeserializer();
+builder.Services.AddXmlDeserializer()
+    .AddProductHtmlService();
+
+string? productImageFolderFilePath = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("ProductImageDirectory");
+
+if (!Path.IsPathFullyQualified(productImageFolderFilePath!))
+{
+    productImageFolderFilePath = Path.GetFullPath(productImageFolderFilePath!, builder.Environment.ContentRootPath);
+}
+
+builder.Services.AddProductImageFileManagement(productImageFolderFilePath!);
 
 builder.Services.AddScoped<IProductXmlToProductMappingService, ProductXmlToProductMappingService>();
 builder.Services.AddScoped<IProductXmlToCreateRequestMappingService, ProductXmlToCreateRequestMappingService>();

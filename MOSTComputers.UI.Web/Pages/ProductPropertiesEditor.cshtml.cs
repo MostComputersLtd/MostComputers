@@ -17,6 +17,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using MOSTComputers.Models.FileManagement.Models;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -237,7 +241,7 @@ public class ProductPropertiesEditorModel : PageModel
                 ProductId = ProductId,
                 XmlPlacement = data.XmlPlacement,
                 Value = data.Value,
-                DisplayOrder = null,
+                CustomDisplayOrder = null,
             };
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> createResult = _productPropertyService.InsertWithCharacteristicId(productPropertyCreateRequest);
@@ -254,7 +258,7 @@ public class ProductPropertiesEditorModel : PageModel
             ProductId = ProductId,
             XmlPlacement = data.XmlPlacement,
             Value = data.Value,
-            DisplayOrder = null,
+            CustomDisplayOrder = null,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productPropertyService.Update(productPropertyUpdateRequest);
@@ -265,7 +269,7 @@ public class ProductPropertiesEditorModel : PageModel
             _ => StatusCode(500));
     }
 
-    public IActionResult OnPutUpdateAndInsertProperties([FromBody] List<ProductPropertyEditorData> data)
+    public async Task<IActionResult> OnPutUpdateAndInsertPropertiesAsync([FromBody] List<ProductPropertyEditorData> data)
     {
         if (data is null) return BadRequest();
 
@@ -308,13 +312,13 @@ public class ProductPropertiesEditorModel : PageModel
                 ProductId = ProductId,
                 XmlPlacement = propertyUIData.XmlPlacement ?? propertyInOriginalProduct.XmlPlacement,
                 Value = propertyUIData.Value ?? propertyInOriginalProduct.Value,
-                DisplayOrder = propertyInOriginalProduct.DisplayOrder,
+                CustomDisplayOrder = propertyInOriginalProduct.DisplayOrder,
             };
 
             propertyUpdateRequests.Add(productPropertyUpdateRequest);
         }
 
-        ProductUpdateRequest productUpdateRequest = new()
+        ProductUpdateWithoutImagesInDatabaseRequest productUpdateRequest = new()
         {
             Id = product.Id,
             Name = product.Name,
@@ -338,11 +342,10 @@ public class ProductPropertiesEditorModel : PageModel
             PartNumber1 = product.PartNumber1,
             PartNumber2 = product.PartNumber2,
             SearchString = product.SearchString,
-            Properties = propertyUpdateRequests.Select(Map)
+            PropertyUpsertRequests = propertyUpdateRequests.Select(MapToUpsertRequest)
                 .ToList(),
 
-            Images = null,
-            ImageFileNames = null,
+            ImageFileAndFileNameInfoUpsertRequests = null,
             CategoryId = product.CategoryId,
             ManifacturerId = product.ManifacturerId,
             SubCategoryId = product.SubCategoryId,
@@ -350,11 +353,12 @@ public class ProductPropertiesEditorModel : PageModel
 
         if (propertyUpdateRequests.Count > 0)
         {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+            OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> productUpdateResult
+                = await _productService.UpdateProductAndUpdateImagesOnlyInDirectoryAsync(productUpdateRequest);
 
             ValidationResult? validationResult = null;
 
-            IActionResult updateActionResult = productUpdateResult.Match<IActionResult>(
+            IStatusCodeActionResult updateActionResult = productUpdateResult.Match<IStatusCodeActionResult>(
                 _ => new OkResult(),
                 valResult =>
                 {
@@ -362,9 +366,11 @@ public class ProductPropertiesEditorModel : PageModel
 
                     return BadRequest(validationResult);
                 },
-                _ => StatusCode(500));
+                _ => StatusCode(500),
+                _ => StatusCode(500),
+                fileDoesntExistResult => BadRequest(fileDoesntExistResult));
 
-            if (updateActionResult is not OkResult)
+            if (updateActionResult.StatusCode != 200)
             {
                 return updateActionResult;
             }
@@ -398,7 +404,18 @@ public class ProductPropertiesEditorModel : PageModel
         return new()
         {
             ProductCharacteristicId = updateRequest.ProductCharacteristicId,
-            DisplayOrder = updateRequest.DisplayOrder,
+            CustomDisplayOrder = updateRequest.CustomDisplayOrder,
+            Value = updateRequest.Value,
+            XmlPlacement = updateRequest.XmlPlacement,
+        };
+    }
+
+    private static LocalProductPropertyUpsertRequest MapToUpsertRequest(ProductPropertyUpdateRequest updateRequest)
+    {
+        return new()
+        {
+            ProductCharacteristicId = updateRequest.ProductCharacteristicId,
+            CustomDisplayOrder = updateRequest.CustomDisplayOrder,
             Value = updateRequest.Value,
             XmlPlacement = updateRequest.XmlPlacement,
         };

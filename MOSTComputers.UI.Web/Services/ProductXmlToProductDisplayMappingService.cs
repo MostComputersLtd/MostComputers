@@ -88,7 +88,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
             ImageFileNames = createRequest.ImageFileNames,
 
             Category = Map(xmlProduct.Category),
-            Manifacturer = Map(xmlProduct.Manifacturer),
+            Manifacturer = GetManifacturerFromXmlData(xmlProduct.Manifacturer),
             SubCategoryId = createRequest.SubCategoryId
         };
 
@@ -103,7 +103,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
                 ProductCharacteristicId = prop.ProductCharacteristicId,
                 Name = xmlProp.Name,
                 Value = prop.Value,
-                DisplayOrder = prop.DisplayOrder,
+                DisplayOrder = prop.CustomDisplayOrder,
                 XmlPlacement = prop.XmlPlacement,
             });
         }
@@ -154,9 +154,9 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
 
             output.Properties.Add(new()
             {
-                ProductCharacteristicId = prop.ProductCharacteristicId,
+                ProductCharacteristicId = prop.ProductCharacteristicId ?? 0,
                 Value = prop.Value,
-                DisplayOrder = prop.DisplayOrder,
+                CustomDisplayOrder = prop.DisplayOrder,
                 XmlPlacement = prop.XmlPlacement,
             });
         }
@@ -206,7 +206,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
                 ImageFileNames = createRequest.ImageFileNames,
 
                 Category = Map(xmlProduct.Category),
-                Manifacturer = Map(xmlProduct.Manifacturer),
+                Manifacturer = GetManifacturerFromXmlData(xmlProduct.Manifacturer),
                 SubCategoryId = createRequest.SubCategoryId
             };
 
@@ -223,7 +223,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
                     ProductCharacteristicId = prop.ProductCharacteristicId,
                     Name = xmlProp.Name,
                     Value = prop.Value,
-                    DisplayOrder = prop.DisplayOrder,
+                    DisplayOrder = prop.CustomDisplayOrder,
                     XmlPlacement = prop.XmlPlacement,
                 });
 
@@ -311,7 +311,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
                 ImageFileNames = GetImageFileInfoCreateRequestsFromXmlData(product.ShopItemImages),
                 Images = images,
                 Category = Map(product.Category),
-                Manifacturer = Map(product.Manifacturer),
+                Manifacturer = GetManifacturerFromXmlData(product.Manifacturer),
                 PartNumber1 = partNumber1,
                 PartNumber2 = partNumber2,
                 SearchString = product.SearchString,
@@ -438,7 +438,7 @@ internal sealed class ProductXmlToProductDisplayMappingService : IProductXmlToPr
         };
     }
 
-    private static Manifacturer Map(XmlManifacturer manifacturer)
+    private static XmlManifacturerDisplayData GetManifacturerFromXmlData(XmlManifacturer manifacturer)
     {
         return new()
         {

@@ -26,6 +26,8 @@ using System.Web;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Utils.ProductImageFileNameUtils;
 using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Models.FileManagement.Models;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -34,10 +36,8 @@ public class ProductCompareEditorModel : PageModel
 {
     public ProductCompareEditorModel(
         IProductService productService,
-        IProductManipulateService productManipulateService,
         IProductDeserializeService productDeserializeService,
         IProductCharacteristicService productCharacteristicService,
-        IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductPropertyService productPropertyService,
         ITransactionExecuteService transactionExecuteService,
@@ -47,10 +47,8 @@ public class ProductCompareEditorModel : PageModel
         IProductXmlToProductMappingService productXmlToProductMappingService)
     {
         _productService = productService;
-        _productManipulateService = productManipulateService;
         _productDeserializeService = productDeserializeService;
         _productCharacteristicService = productCharacteristicService;
-        _productImageService = productImageService;
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productPropertyService = productPropertyService;
         _transactionExecuteService = transactionExecuteService;
@@ -61,10 +59,8 @@ public class ProductCompareEditorModel : PageModel
     }
 
     private readonly IProductService _productService;
-    private readonly IProductManipulateService _productManipulateService;
     private readonly IProductDeserializeService _productDeserializeService;
     private readonly IProductCharacteristicService _productCharacteristicService;
-    private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductPropertyService _productPropertyService;
     private readonly ITransactionExecuteService _transactionExecuteService;
@@ -481,7 +477,7 @@ public class ProductCompareEditorModel : PageModel
             GetProductFullEditorModelBasedOnProduct(FirstOrSecondProductEnum.Second));
     }
 
-    public IActionResult OnPutSaveFirstProduct()
+    public async Task<IActionResult> OnPutSaveFirstProductAsync()
     {
         if (_firstProduct is null) return BadRequest();
 
@@ -515,32 +511,37 @@ public class ProductCompareEditorModel : PageModel
                 PartNumber1 = _firstProduct.PartNumber1,
                 PartNumber2 = _firstProduct.PartNumber2,
                 SearchString = _firstProduct.SearchString,
-                Category = _firstProduct.Category,
-                Manifacturer = _firstProduct.Manifacturer,
                 SubCategoryId = _firstProduct.SubCategoryId,
 
-                ImagesAndFileNames = ProductImageAndFileNameRelationsUtils.GetImageDictionaryFromImagesAndImageFileInfos(_firstProduct.Images, _firstProduct.ImageFileNames),
+                ImageAndFileNameUpsertRequests = ProductImageAndFileNameRelationsUtils.GetImageRelationsFromImagesAndImageFileInfos(_firstProduct.Images, _firstProduct.ImageFileNames)
+                    .Select(x => GetImageAndImageFileNameUpsertRequest(x))
+                    .ToList(),
 
-                Properties = _firstProduct.Properties?.ToList(),
+                PropertyUpsertRequests = _firstProduct.Properties?.Select(
+                prop => new LocalProductPropertyUpsertRequest()
+                {
+                    ProductCharacteristicId = prop.ProductCharacteristicId ?? 0,
+                    CustomDisplayOrder = prop.DisplayOrder,
+                    Value = prop.Value,
+                    XmlPlacement = prop.XmlPlacement,
+                }).ToList(),
 
                 ManifacturerId = _firstProduct.ManifacturerId,
                 CategoryId = _firstProduct.CategoryId,
             };
 
-            OneOf<Success, ValidationResult, UnexpectedFailureResult, NotSupportedFileTypeResult> result
-                = _transactionExecuteService.ExecuteActionInTransactionAndCommitWithCondition(
-                    () => _productManipulateService.UpdateProductFull(productFullUpdateRequest),
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> result
+                = await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                    () => _productService.UpdateProductFullAsync(productFullUpdateRequest),
                     productUpdateResult => productUpdateResult.Match(
                         success => true,
                         validationResult => false,
-                        unexpectedFailureResult => false,
-                        notSupportedFileTypeResult => false));
+                        unexpectedFailureResult => false));
 
             IStatusCodeActionResult actionResult = result.Match<IStatusCodeActionResult>(
                 success => new OkResult(),
                 validationResult => BadRequest(validationResult),
-                unexpectedFailureResult => StatusCode(500),
-                notSupportedFileTypeResult => BadRequest(notSupportedFileTypeResult));
+                unexpectedFailureResult => StatusCode(500));
 
             if (actionResult.StatusCode != 200)
             {
@@ -1432,11 +1433,6 @@ public class ProductCompareEditorModel : PageModel
         return fileType;
     }
 
-    private static bool CompareByteArrays(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
-    {
-        return a.SequenceEqual(b);
-    }
-
     private static Product? CloneProduct(Product? product)
     {
         if (product is null) return null;
@@ -1503,6 +1499,64 @@ public class ProductCompareEditorModel : PageModel
                     Active = x.Active,
                 })
                 .ToList(),
+        };
+    }
+
+    public static ImageAndImageFileNameUpsertRequest GetImageAndImageFileNameUpsertRequest(ImageAndImageFileNameRelation imageAndImageFileNameRelation)
+    {
+        ProductImage? productImage = imageAndImageFileNameRelation.ProductImage;
+        ProductImageFileNameInfo? productImageFileNameInfo = imageAndImageFileNameRelation.ProductImageFileNameInfo;
+
+        string? imageContentType = productImage?.ImageContentType;
+
+        if (imageContentType is null)
+        {
+            string? fileExtension = Path.GetExtension(productImageFileNameInfo?.FileName);
+
+            if (fileExtension is not null)
+            {
+                imageContentType = GetImageContentTypeFromFileExtension(fileExtension);
+            }
+        }
+
+
+        ProductImageUpsertRequest? productImageUpsertRequest = null;
+
+        if (productImage is not null)
+        {
+            productImageUpsertRequest = new()
+            {
+                OriginalImageId = (productImage.Id > 0) ? productImage.Id : null,
+                HtmlData = productImage.HtmlData,
+            };
+        }
+
+        ProductImageFileNameInfoUpsertRequest? productImageFileNameInfoUpsertRequest = null;
+
+        if (productImageFileNameInfo is not null)
+        {
+            int? newDisplayOrder = null;
+
+            if (productImageFileNameInfo.DisplayOrder is not null
+                && productImageFileNameInfo.DisplayOrder > 0)
+            {
+                newDisplayOrder = productImageFileNameInfo.DisplayOrder;
+            }
+
+            productImageFileNameInfoUpsertRequest = new()
+            {
+                OriginalImageNumber = (productImageFileNameInfo.ImageNumber > 0) ? productImageFileNameInfo.ImageNumber : null,
+                NewDisplayOrder = newDisplayOrder,
+                Active = productImageFileNameInfo.Active,
+            };
+        }
+
+        return new()
+        {
+            ImageContentType = imageContentType ?? string.Empty,
+            ImageData = productImage?.ImageData,
+            ProductImageUpsertRequest = productImageUpsertRequest,
+            ProductImageFileNameInfoUpsertRequest = productImageFileNameInfoUpsertRequest,
         };
     }
 

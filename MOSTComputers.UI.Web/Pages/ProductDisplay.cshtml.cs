@@ -509,7 +509,7 @@ public sealed class ProductDisplayModel : PageModel
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInfoUpdateResult
-            = _productImageFileNameInfoService.Update(fileNameInfoUpdateRequest);
+            = _productImageFileNameInfoService.UpdateByImageNumber(fileNameInfoUpdateRequest);
 
         IStatusCodeActionResult statusCodeActionResult = imageFileNameInfoUpdateResult.Match<IStatusCodeActionResult>(
             _ => new OkResult(),
@@ -589,7 +589,7 @@ public sealed class ProductDisplayModel : PageModel
             Active = active,
         };
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateImageFileNameInfoResult = _productImageFileNameInfoService.Update(updateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateImageFileNameInfoResult = _productImageFileNameInfoService.UpdateByImageNumber(updateRequest);
 
         return updateImageFileNameInfoResult.Match<IActionResult>(
             _ => new OkResult(),

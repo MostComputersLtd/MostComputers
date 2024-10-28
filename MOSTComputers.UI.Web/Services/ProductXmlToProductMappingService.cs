@@ -37,6 +37,10 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
         (string? partNumber1, string? partNumber2) = GetPartNumbers(product);
 
+        OneOf<Manifacturer, ValidationResult> manifacturerResult = GetManifacturerFromXmlData(product.Manifacturer);
+
+        if (manifacturerResult.IsT1) return manifacturerResult.AsT1;
+
         return new Product()
         {
             Id = product.Id,
@@ -53,7 +57,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             CategoryId = (short?)product.Category.Id,
             Category = Map(product.Category),
             ManifacturerId = (short?)product.Manifacturer.Id,
-            Manifacturer = Map(product.Manifacturer),
+            Manifacturer = manifacturerResult.AsT0,
             SearchString = product.SearchString,
             PartNumber1 = partNumber1,
             PartNumber2 = partNumber2,
@@ -211,11 +215,20 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         };
     }
 
-    private static Manifacturer Map(XmlManifacturer manifacturer)
+    private static OneOf<Manifacturer, ValidationResult> GetManifacturerFromXmlData(XmlManifacturer manifacturer)
     {
-        return new()
+        if (manifacturer.Id is null)
         {
-            Id = manifacturer.Id,
+            ValidationResult validationResult = new();
+
+            validationResult.Errors.Add(new(nameof(XmlManifacturer.Id), "Id cannot be null."));
+
+            return validationResult;
+        }
+
+        return new Manifacturer()
+        {
+            Id = manifacturer.Id.Value,
             RealCompanyName = manifacturer.Name,
         };
     }

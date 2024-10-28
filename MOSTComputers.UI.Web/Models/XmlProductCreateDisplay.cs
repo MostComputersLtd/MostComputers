@@ -37,8 +37,17 @@ public sealed class XmlProductCreateDisplay
     public IEnumerable<SelectListItem>? Characteristics { get; set; }
 
     public Category? Category { get; set; }
-    public Manifacturer? Manifacturer { get; set; }
+    public XmlManifacturerDisplayData? Manifacturer { get; set; }
     public int? SubCategoryId { get; set; }
+}
+
+public sealed class XmlManifacturerDisplayData
+{
+    public int? Id { get; set; }
+    public string? BGName { get; set; }
+    public string? RealCompanyName { get; set; }
+    public int? DisplayOrder { get; set; }
+    public bool? Active { get; set; }
 }
 
 public sealed class DisplayPropertyCreateRequest

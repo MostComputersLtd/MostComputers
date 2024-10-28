@@ -82,8 +82,6 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
         return output;
     }
 
-    
-
     private async Task<OneOf<ProductCreateRequest, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xml)
     {
         OneOf<List<CurrentProductPropertyCreateRequest>, ValidationResult> resultOfPropsMapping
@@ -163,8 +161,8 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
 
             CurrentProductPropertyCreateRequest request = new()
             {
-                ProductCharacteristicId = productCharacteristic?.Id, // REMOVE "?? 0" after tests
-                DisplayOrder = int.Parse(property.Order),
+                ProductCharacteristicId = productCharacteristic?.Id ?? 0, // REMOVE "?? 0" after tests
+                CustomDisplayOrder = int.Parse(property.Order),
                 Value = property.Value,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList
             };
@@ -233,7 +231,6 @@ public class ProductXmlToCreateRequestMappingService : IProductXmlToCreateReques
         {
             DateOfExport = DateTime.Today,
             Products = xmlProducts,
-            TotalNumberOfItems = products.Count,
         };
 
         return output;
