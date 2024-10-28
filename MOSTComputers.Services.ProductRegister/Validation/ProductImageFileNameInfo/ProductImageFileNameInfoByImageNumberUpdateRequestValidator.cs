@@ -11,7 +11,7 @@ internal sealed class ProductImageFileNameInfoByImageNumberUpdateRequestValidato
     {
         RuleFor(x => x.ImageNumber).GreaterThan(0);
         RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.FileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
+        RuleFor(x => x.FileName).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.NewDisplayOrder).Must(NullOrGreaterThanZero);
     }
 }
