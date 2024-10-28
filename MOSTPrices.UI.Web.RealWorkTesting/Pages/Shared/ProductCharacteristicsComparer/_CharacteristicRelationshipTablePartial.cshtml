@@ -1,0 +1,411 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.RealWorkTesting.Models.ProductCharacteristicsComparer
+@using System.Drawing
+
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductCharacteristicsComparer.CharacteristicRelationshipTablePartialModel
+@{
+    bool areAllItemsInTheSameCategory = Model.AreAllItemsInTheSameCategory();
+}
+
+<div id="product_characteristics_compare_relationships_table_container">
+
+    @if (areAllItemsInTheSameCategory)
+    {
+        int categoryId = Model.CategoriesForItems[0].Id;
+
+        <h2 class="align-text-center">Category: @Model.CategoriesForItems[0].Description (ID: @categoryId)</h2>
+
+        <div class="full-parent-width d-inline-flex justify-content-center">
+            <button onclick="saveAllPropertiesForCategory(@categoryId)">Save Properties for category</button>
+            <button onclick="saveAllImageFileNamesForCategory(@categoryId)">Save Image File Names for category</button>
+            <button onclick="saveAllImagesForCategory(@categoryId)">Save Images for category</button>
+
+            <button type="button" onclick="showXmlViewForCategory(@categoryId, '@Model.RelationshipTableViewContainerId', '@Model.RelationshipXmlViewContainerId')">
+                XML
+            </button>
+
+            <button onclick="deleteSavedRelationsForCategory(@categoryId)">Delete Relations for category</button>
+        </div>
+    }
+    
+    <table id="product_characteristics_compare_relationships_table" class="full-parent-width full-parent-height mb-3">
+
+        <thead>
+            <tr>
+                <th class="align-text-center">
+                    <h4>Local:</h4>
+                </th>
+                <th class="align-text-center">
+                    <h4>Old XML:</h4>
+                </th>
+            </tr>
+        </thead>
+
+        <colgroup>
+            <col style="border-right: 0.1rem black solid;">
+            <col>
+        </colgroup>
+
+        <tr>
+            <td class="pe-2" style="width: 50%;">
+                <div class="full-parent-width d-flex" style="font-weight: bold; unicode-bidi: isolate;">
+
+                    @if (!areAllItemsInTheSameCategory)
+                    {
+                        <label style="width: 20%;" onclick="sortRelationshipTable('product_characteristics_compare_relationships_table', 0, false, 0)">
+                            Category
+                        </label>
+                    }
+
+                    <label style="width: 15%;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 0, false, @(areAllItemsInTheSameCategory ? 0 : 1))">
+                        Id
+                    </label>
+                    <label style="width: 20%;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 0, false, @(areAllItemsInTheSameCategory ? 1 : 2))">
+                        S
+                    </label>
+                    <label style="flex-grow: 1;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 0, false, @(areAllItemsInTheSameCategory ? 2 : 3))">
+                        Name
+                    </label>
+                    <label style="width: 20%;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 0, false, @(areAllItemsInTheSameCategory ? 3 : 4))">
+                        Meaning
+                    </label>
+                </div>
+            </td>
+
+            <td class="ps-2" style="width: 50%;">
+                <div class="full-parent-width d-flex" style="font-weight: bold; unicode-bidi: isolate;">
+
+                    @if (!areAllItemsInTheSameCategory)
+                    {
+                        <label style="width: 20%;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 1, false, 0)">
+                            Category
+                        </label>
+                    }
+
+                    <label style="flex-grow: 1;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 1, false, @(areAllItemsInTheSameCategory ? 0 : 1))">
+                        Name
+                    </label>
+                    <label style="width: 20%;" onclick="sortRelationshipTable(
+                        'product_characteristics_compare_relationships_table', 1, false, @(areAllItemsInTheSameCategory ? 1 : 2))">
+                        Order
+                    </label>
+                </div>
+            </td>
+        </tr>
+        
+        @for (int i = 0; i < Model.ExternalAndLocalCharacteristicRelations.Count; i++)
+        {
+            ExternalAndLocalCharacteristicRelationDisplayData relation = Model.ExternalAndLocalCharacteristicRelations[i];
+
+            <tr id="relationships_table_row-@i"
+                data-relationship-allows-drop-with-index="@i"
+                ondragenter="onDragEnterRelationshipElements(event, 'relationships_table_row-@i')"
+                ondragover="onDragOverRelationshipElements(event)"
+                ondragleave="onDragLeaveRelationshipElements(event, 'relationships_table_row-@i')"
+                ondrop="onDropRelationshipElements(event,
+                    'relationships_table_row-@i',
+                    'product_characteristics_compare_relationships_table_container',
+                    'product_characteristics_compare_relationships_table')"
+                class="full-parent-width">
+
+                <td class="pe-2" style="width: 50%;">
+
+                    @if (relation.MatchingLocalCharacteristics is null
+                       || relation.MatchingLocalCharacteristics.Count <= 0)
+                    {
+                        <label>No matching characteristic</label>
+                    }
+                    else if (relation.MatchingLocalCharacteristics.Count == 1)
+                    {
+                        LocalCharacteristicDisplayData characteristic = relation.MatchingLocalCharacteristics[0];
+
+                        Color? customBackgroundColor = characteristic.CustomBackgroundColor;
+
+                        string? backgroundColor = null;
+
+                        if (customBackgroundColor is not null)
+                        {
+                            backgroundColor = $"rgb({customBackgroundColor.Value.R}, {customBackgroundColor.Value.G}, {customBackgroundColor.Value.B})";
+                        }
+
+                        <table id="relationships_table_matching_local_characteristics_item-@i"
+                            data-sortable-single-item
+                            data-selectable-item-in-relationship-with-index="@i"
+                            data-selectable-item-in-relationship-index="0"
+                            data-selectable-item-in-relationship-type="0"
+                            draggable="true"
+                            ondragstart="onStartDraggingRelationshipElements(event, 'relationships_table_matching_local_characteristics_item-@i')"
+                            onclick="onClickToggleElementSelectOrRelationshipMatch(event, 'relationships_table_matching_local_characteristics_item-@i')"
+                            class="full-parent-width"
+                            style="background-color: @backgroundColor;">
+
+                            <tr class="full-parent-width">
+
+                                @if (!areAllItemsInTheSameCategory)
+                                {
+                                    <td style="width: 20%;">
+                                        <label>@characteristic.CategoryId</label>
+                                    </td>
+                                }
+
+                                <td style="width: 15%;">
+                                    <label>@characteristic.Id</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>@characteristic.DisplayOrder</label>
+                                </td>
+                                <td>
+                                    <label>@characteristic.Name</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>@(characteristic.Meaning ?? "-")</label>
+                                </td>
+                            </tr>
+                        </table>
+                    }
+                    else if (relation.MatchingLocalCharacteristics.Count > 1)
+                    {
+                        LocalCharacteristicDisplayData firstCharacteristic = relation.MatchingLocalCharacteristics[0];
+
+                        string allIdsString = string.Empty;
+
+                        @for (int j = 0; j < relation.MatchingLocalCharacteristics.Count; j++)
+                        {
+                            allIdsString += $"'relationships_table_matching_local_characteristics_duplicate_table_item-{i}-{j}'";
+
+                            if (j < relation.MatchingLocalCharacteristics.Count - 1)
+                            {
+                                allIdsString += ",";
+                            }
+                        }
+
+                        <table id="relationships_table_matching_local_characteristics_items-@i"
+                            class="full-parent-width" style="border: black 1px solid;">
+
+                            <tr onclick="toggleElementsDisplay([@allIdsString])">
+
+                                @if (!areAllItemsInTheSameCategory)
+                                {
+                                    <td style="width: 20%;">
+                                        <label>@firstCharacteristic.CategoryId</label>
+                                    </td>
+                                }
+                                
+                                <td style="width: 15%;">
+                                    <label>-</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>-</label>
+                                </td>
+                                <td>
+                                    <label>@firstCharacteristic.Name</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>-</label>
+                                </td>
+                            </tr>
+
+                            @for (int j = 0; j < relation.MatchingLocalCharacteristics.Count; j++)
+                            {
+                                LocalCharacteristicDisplayData characteristic = relation.MatchingLocalCharacteristics[j];
+
+                                Color? customBackgroundColor = characteristic.CustomBackgroundColor;
+
+                                string? backgroundColor = null;
+
+                                if (customBackgroundColor is not null)
+                                {
+                                    backgroundColor = $"rgb({customBackgroundColor.Value.R}, {customBackgroundColor.Value.G}, {customBackgroundColor.Value.B})";
+                                }
+
+                                <tr id="relationships_table_matching_local_characteristics_duplicate_table_item-@i-@j"
+                                    data-sortable-multiple-item-part
+                                    data-selectable-item-in-relationship-with-index="@i"
+                                    data-selectable-item-in-relationship-index="@j"
+                                    data-selectable-item-in-relationship-type="0"
+                                    draggable="true"
+                                    ondragstart="onStartDraggingRelationshipElements(event,
+                                        'relationships_table_matching_local_characteristics_duplicate_table_item-@i-@j')"
+                                    onclick="onClickToggleElementSelectOrRelationshipMatch(event,
+                                        'relationships_table_matching_local_characteristics_duplicate_table_item-@i-@j')"
+                                    class="full-parent-width"
+                                    style="display: none; background-color: @backgroundColor;">
+
+                                    @if (!areAllItemsInTheSameCategory)
+                                    {
+                                        <td style="width: 20%;">
+                                            <label>@characteristic.CategoryId</label>
+                                        </td>
+                                    }
+
+                                    <td style="width: 15%;">
+                                        <label>@characteristic.Id</label>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <label>@characteristic.DisplayOrder</label>
+                                    </td>
+                                    <td>
+                                        <label>@characteristic.Name</label>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <label>@(characteristic.Meaning ?? "-")</label>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    }
+
+                </td>
+
+                <td class="ps-2" style="width: 50%;">
+
+                    @if (relation.MatchingExternalProperties is null
+                       || relation.MatchingExternalProperties.Count <= 0)
+                    {
+                        <label>No matching property</label>
+                    }
+                    else if (relation.MatchingExternalProperties.Count == 1)
+                    {
+                        ExternalXmlPropertyDisplayData property = relation.MatchingExternalProperties[0];
+
+                        Color? customBackgroundColor = property.CustomBackgroundColor;
+
+                        string? backgroundColor = null;
+
+                        if (customBackgroundColor is not null)
+                        {
+                            backgroundColor = $"rgb({customBackgroundColor.Value.R}, {customBackgroundColor.Value.G}, {customBackgroundColor.Value.B})";
+                        }
+
+                        <table id="relationships_table_matching_external_properties_item-@i"
+                            data-sortable-single-item
+                            data-selectable-item-in-relationship-with-index="@i"
+                            data-selectable-item-in-relationship-index="0"
+                            data-selectable-item-in-relationship-type="1"
+                            draggable="true"
+                            ondragstart="onStartDraggingRelationshipElements(event, 'relationships_table_matching_external_properties_item-@i')"
+                            onclick="onClickToggleElementSelectOrRelationshipMatch(event, 'relationships_table_matching_external_properties_item-@i')"
+                            class="full-parent-width"
+                            style="background-color: @backgroundColor;">
+
+                            <tr class="full-parent-width">
+
+                                @if (!areAllItemsInTheSameCategory)
+                                {
+                                    <td style="width: 20%;">
+                                        <label>@property.CategoryId</label>
+                                    </td>
+                                }
+                                
+                                <td>
+                                    <label>@property.Name</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>@(property.Order?.ToString() ?? "-")</label>
+                                </td>
+                            </tr>
+                        </table>
+                    }
+                    else if (relation.MatchingExternalProperties.Count > 1)
+                    {
+                        ExternalXmlPropertyDisplayData firstProperty = relation.MatchingExternalProperties[0];
+
+                        string allIdsString = string.Empty;
+
+                        @for (int j = 0; j < relation.MatchingExternalProperties.Count; j++)
+                        {
+                            allIdsString += $"'relationships_table_matching_external_properties_duplicate_table_item-{i}-{j}'";
+
+                            if (j < relation.MatchingExternalProperties.Count - 1)
+                            {
+                                allIdsString += ",";
+                            }
+                        }
+
+                        <table id="relationships_table_matching_external_properties_items-@i"
+                            class="full-parent-width" style="border: black 1px solid;">
+
+                            <tr onclick="toggleElementsDisplay([@allIdsString])">
+
+                                @if (!areAllItemsInTheSameCategory)
+                                {
+                                    <td style="width: 20%;">
+                                        <label>@firstProperty.CategoryId</label>
+                                    </td>
+                                }
+                                
+                                <td>
+                                    <label>@firstProperty.Name</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>-</label>
+                                </td>
+                            </tr>
+
+                            @for (int j = 0; j < relation.MatchingExternalProperties.Count; j++)
+                            {
+                                ExternalXmlPropertyDisplayData property = relation.MatchingExternalProperties[j];
+
+                                Color? customBackgroundColor = property.CustomBackgroundColor;
+
+                                string? backgroundColor = null;
+
+                                if (customBackgroundColor is not null)
+                                {
+                                    backgroundColor = $"rgb({customBackgroundColor.Value.R}, {customBackgroundColor.Value.G}, {customBackgroundColor.Value.B})";
+                                }
+
+                                <tr id="relationships_table_matching_external_properties_duplicate_table_item-@i-@j"
+                                    data-sortable-multiple-item-part
+                                    data-selectable-item-in-relationship-with-index="@i"
+                                    data-selectable-item-in-relationship-index="@j"
+                                    data-selectable-item-in-relationship-type="1"
+                                    draggable="true"
+                                    ondragstart="onStartDraggingRelationshipElements(event,
+                                        'relationships_table_matching_external_properties_duplicate_table_item-@i-@j')"
+                                    onclick="onClickToggleElementSelectOrRelationshipMatch(event,
+                                        'relationships_table_matching_external_properties_duplicate_table_item-@i-@j')"
+                                    class="full-parent-width"
+                                    style="display: none; background-color: @backgroundColor;">
+
+                                    @if (!areAllItemsInTheSameCategory)
+                                    {
+                                        <td style="width: 20%;">
+                                            <label>@property.CategoryId</label>
+                                        </td>
+                                    }
+                                    
+                                    <td>
+                                        <label>@property.Name</label>
+                                    </td>
+                                    <td style="width: 20%;">
+                                        <label>@(property.Order?.ToString() ?? "-")</label>
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                    }
+
+                </td>
+            </tr>
+        }
+    </table>
+
+    <button type="button" class="full-parent-width btn btn-primary"
+        onclick="addNewEmptyRelationship('product_characteristics_compare_relationships_table_container',
+            'product_characteristics_compare_relationships_table')">
+        Add New
+    </button>
+    
+    @{
+        bool isSaveButtonActive = ProductCharacteristicsComparerModel.ExternalAndLocalCharacteristicRelations?.Count > 0;
+    }
+
+    <button type="button" onclick="saveAllRelationships()" class="full-parent-width btn btn-primary" @(isSaveButtonActive ? "" : "disabled")>Save</button>
+</div>

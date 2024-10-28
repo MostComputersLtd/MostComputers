@@ -1,0 +1,112 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.RealWorkTesting.Models.ProductCharacteristicsComparer
+
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductCharacteristicsComparer.LocalCharacteristicsListPartialModel
+@{
+}
+
+<table class="full-parent-width full-parent-height">
+
+    @if (Model.ExternalAndLocalCharacteristicRelations.Count() > 0)
+    {
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Order</th>
+            </tr>
+        </thead>
+    }
+
+    @for (int i = 0; i < Model.ExternalAndLocalCharacteristicRelations.Count(); i++)
+    {
+            ExternalAndLocalCharacteristicRelationDisplayData relation = Model.ExternalAndLocalCharacteristicRelations.ElementAt(i);
+
+            <tr class="full-parent-width">
+
+            @if (relation.MatchingLocalCharacteristics is null
+            || relation.MatchingLocalCharacteristics.Count <= 0)
+            {
+                <td colspan="4">No matching characteristic</td>
+            }
+            else if(relation.MatchingLocalCharacteristics.Count == 1)
+            {
+                LocalCharacteristicDisplayData characteristicData = relation.MatchingLocalCharacteristics[0];
+
+                <td style="width: 20%;">
+                    <label>@characteristicData.CategoryId</label>
+                </td>
+                <td style="width: 15%;">
+                    <label>@characteristicData.Id</label>
+                </td>
+                <td>
+                    <label>@characteristicData.Name</label>
+                </td>
+                <td style="width: 20%;">
+                    <label>@characteristicData.DisplayOrder</label>
+                </td>
+            }
+            else if (relation.MatchingLocalCharacteristics.Count > 1)
+            {
+                <td colspan="4">
+
+                    @{
+                        LocalCharacteristicDisplayData firstCharacteristicData = relation.MatchingLocalCharacteristics[0];
+
+                        string allIdsString = string.Empty;
+
+                        @for (int j = 0; j < relation.MatchingLocalCharacteristics.Count; j++)
+                        {
+                            allIdsString += $"'matching_local_characteristics_duplicate_table_item-{i}-{j}'";
+
+                            if (j < relation.MatchingLocalCharacteristics.Count - 1)
+                            {
+                                allIdsString += ",";
+                            }
+                        }
+                    }
+
+                    <table class="full-parent-width" style="border: black 1px solid;">
+                        <tr onclick="toggleElementsDisplay([@allIdsString])">
+                            <td style="width: 20%;">
+                                <label>@firstCharacteristicData.CategoryId</label>
+                            </td>
+                            <td style="width: 15%;">
+                                <label>-</label>
+                            </td>
+                            <td>
+                                <label>@firstCharacteristicData.Name</label>
+                            </td>
+                            <td style="width: 20%;">
+                                <label>-</label>
+                            </td>
+                        </tr>
+
+                        @for (int j = 0; j < relation.MatchingLocalCharacteristics.Count; j++)
+                        {
+                            LocalCharacteristicDisplayData characteristicData = relation.MatchingLocalCharacteristics[j];
+
+                            <tr id="matching_local_characteristics_duplicate_table_item-@i-@j" class="full-parent-width"
+                                style="display: none;">
+                                <td style="width: 20%;">
+                                    <label>@characteristicData.CategoryId</label>
+                                </td>
+                                <td style="width: 15%;">
+                                    <label>@characteristicData.Id</label>
+                                </td>
+                                <td>
+                                    <label>@characteristicData.Name</label>
+                                </td>
+                                <td style="width: 20%;">
+                                    <label>@characteristicData.DisplayOrder</label>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </td>
+            }
+
+        </tr>
+    }
+</table>
