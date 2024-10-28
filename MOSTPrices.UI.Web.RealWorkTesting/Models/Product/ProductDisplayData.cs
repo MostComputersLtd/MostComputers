@@ -38,7 +38,7 @@ public class ProductDisplayData
 
     public List<ImageAndImageFileNameRelation>? ImagesAndImageFileInfos { get; set; }
     
-    public List<ProductProperty>? Properties { get; set; }
+    public List<ProductPropertyDisplayData>? Properties { get; set; }
 
     public int? ProductWorkStatusesId { get; set; }
     public ProductNewStatusEnum? ProductNewStatus { get; set; }

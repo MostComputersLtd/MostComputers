@@ -1,6 +1,7 @@
 ﻿@page "{ProductId}"
 @using MOSTComputers.Models.Product.Models;
 @using MOSTComputers.Services.SearchStringOrigin.Models;
+@using MOSTComputers.UI.Web.RealWorkTesting.Models.Product
 @using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups
 @using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductProperties
 @using MOSTComputers.UI.Web.RealWorkTesting.Utils;
@@ -91,7 +92,7 @@
 
         @for (int i = 0; i < (Model.ProductProperties?.Count ?? 0); i++)
         {
-            ProductProperty productProperty = Model.ProductProperties![i];
+            ProductPropertyDisplayData productProperty = Model.ProductProperties![i];
 
             <partial name="ProductProperties/_ProductSinglePropertyDisplayPartial"
                 model='@new ProductSinglePropertyDisplayPartialModel(

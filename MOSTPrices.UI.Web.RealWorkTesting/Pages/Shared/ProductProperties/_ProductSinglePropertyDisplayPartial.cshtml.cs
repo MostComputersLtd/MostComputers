@@ -1,22 +1,21 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
+using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductProperties;
 
-#pragma warning disable IDE1006 // Naming Styles
 public class ProductSinglePropertyDisplayPartialModel
-#pragma warning restore IDE1006 // Naming Styles
 {
     public ProductSinglePropertyDisplayPartialModel(
         int productId,
-        ProductProperty productProperty,
+        ProductPropertyDisplayData productProperty,
         int tableRowIndex,
         bool isNew,
         IEnumerable<SelectListItem>? remainingCharacteristics,
         string? notificationBoxId = null)
     {
         ProductId = productId;
-        ProductProperty = productProperty;
+        ProductPropertyData = productProperty;
         TableRowIndex = tableRowIndex;
         IsNew = isNew;
         RemainingCharacteristics = remainingCharacteristics;
@@ -24,7 +23,7 @@ public class ProductSinglePropertyDisplayPartialModel
     }
 
     public int ProductId { get; }
-    public ProductProperty ProductProperty { get; }
+    public ProductPropertyDisplayData ProductPropertyData { get; }
     public int TableRowIndex { get; }
     public bool IsNew { get; }
     public IEnumerable<SelectListItem>? RemainingCharacteristics { get; }
