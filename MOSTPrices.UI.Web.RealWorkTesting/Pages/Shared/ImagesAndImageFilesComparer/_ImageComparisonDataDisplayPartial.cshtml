@@ -1,0 +1,103 @@
+﻿@using MOSTComputers.UI.Web.RealWorkTesting.Models.ImagesAndImageFilesComparison
+@using Microsoft.AspNetCore.Mvc.Infrastructure
+@using static MOSTComputers.UI.Web.RealWorkTesting.Utils.ProductSelectListItemUtils;
+
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ImagesAndImageFilesComparer.ImageComparisonDataDisplayPartialModel
+@{
+}
+
+<div class="d-flex flex-column full-parent-width full-parent-height">
+    <div class="d-inline-flex full-parent-width">
+
+        <div style="width: 25%;">
+            <h6>Data source:</h6>
+        </div>
+
+        <div class="flex-grow-1 flex-shrink-0">
+            <select id="@(Model.ElementIdAndNamePrefix)_data_source_select" class="full-parent-width"
+                onchange="onChange_DataSourceSelect_GetImageDataFromSource(
+                    @((int)Model.DataPlacementLocation),
+                    '@Model.CategorySelectElementId',
+                    '@Model.ProductIdInputElementId',
+                    '@(Model.ElementIdAndNamePrefix)_data_source_select',
+                    '@Model.PartialViewContainerId')"
+                    asp-items="@GetImageComparisonDataSourceSelectListItems(Model.DataSource)">
+            </select>
+        </div>
+    </div>
+
+    @{
+        List<ImageComparisonData>? imageComparisonDataList = null;
+
+        IStatusCodeActionResult getImageDataForCategoryActionResult = await Model.GetImageComparisonDataAsync();
+
+        if (getImageDataForCategoryActionResult.StatusCode == 200
+            && getImageDataForCategoryActionResult is ObjectResult objectResult)
+        {
+            List<ImageComparisonData>? imageComparisonDataFromResult = objectResult.Value as List<ImageComparisonData>;
+
+            if (imageComparisonDataFromResult is not null)
+            {
+                imageComparisonDataList = imageComparisonDataFromResult;
+            }
+        }
+    }
+
+    <div class="flex-grow-1 flex-shrink-0">
+        <ul class="full-parent-width full-parent-height ps-0 list-style-none overflow-y-auto">
+            @if (imageComparisonDataList is not null)
+            {
+                foreach (ImageComparisonData imageComparisonData in imageComparisonDataList)
+                {
+                    string? imageSource = null;
+
+                    if (imageComparisonData.ImageContentType is not null
+                    && imageComparisonData.ImageData is not null)
+                    {
+                        string imageData = Convert.ToBase64String(imageComparisonData.ImageData);
+
+                        imageSource = $"data:{imageComparisonData.ImageContentType};base64,{imageData}";
+                    }
+
+                    <li class="d-flex flex-row justify-content-around full-parent-width">
+                        @if (imageComparisonData.IdOrFileName.IsT0)
+                        {
+                            <div class="align-content-center">
+                                <label>@imageComparisonData.IdOrFileName.AsT0</label>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="align-content-center">
+                                <label>@imageComparisonData.IdOrFileName.AsT1</label>
+                            </div>
+                        }
+
+                        <div class="align-content-center">
+                            <label>@imageComparisonData.ProductId</label>
+                        </div>
+
+                        <div class="align-content-center">
+                            <label>@imageComparisonData.ImageContentType</label>
+                        </div>
+
+                        @if (imageSource is not null)
+                        {
+                            <div class="align-content-center">
+                                <div class="d-flex align-content-center full-parent-width" style="height: max-content;">
+                                    <img src="@imageSource" style="object-fit: contain; max-width: 100px;" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="align-content-center">
+                                <label class="full-parent-width align-text-center">-</label>
+                            </div>
+                        }
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+</div>
