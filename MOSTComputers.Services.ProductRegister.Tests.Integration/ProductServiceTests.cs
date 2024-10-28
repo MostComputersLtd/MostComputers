@@ -1,13 +1,19 @@
 ﻿using FluentValidation.Results;
+using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
+using MOSTComputers.Utils.ProductImageFileNameUtils;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageAndFileNameRelationsUtils;
+using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
@@ -16,24 +22,19 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 {
     public ProductServiceTests(
         IProductService productService,
-        IProductImageService productImageService,
-        IProductImageFileNameInfoService productImageFileNameInfoService,
+        IProductCharacteristicService productCharacteristicService,
         IProductPropertyService productPropertyService,
         IProductStatusesService productStatusesService)
         : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _productService = productService;
-        _productImageService = productImageService;
-        _productImageFileNameInfoService = productImageFileNameInfoService;
+        _productCharacteristicService = productCharacteristicService;
         _productPropertyService = productPropertyService;
         _productStatusesService = productStatusesService;
     }
 
-    private const int _useRequiredValue = -100;
-
     private readonly IProductService _productService;
-    private readonly IProductImageService _productImageService;
-    private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
+    private readonly IProductCharacteristicService _productCharacteristicService;
 
 #pragma warning disable IDE0052 // Remove unread private members
     private readonly IProductPropertyService _productPropertyService;
@@ -44,6 +45,13 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     public override async Task DisposeAsync()
     {
         await ResetDatabaseAsync();
+
+        string[] filePaths = Directory.GetFiles(Startup.ImageDirectoryFullPath);
+
+        foreach (string filePath in filePaths)
+        {
+            File.Delete(filePath);
+        }
     }
 
     [Fact]
@@ -219,7 +227,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         Product product1 = allProducts.Single(x => x.Id == productId1);
 
-        Assert.Equal((int)productId1, product1.Id);
+        Assert.Equal(productId1, product1.Id);
+
         AssertProductIsEqualToRequestWithoutPropsOrImages(product1, validCreateRequest);
 
         Assert.DoesNotContain(allProducts, x =>
@@ -983,6 +992,64 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Null(insertedProduct);
     }
 
+    [Fact]
+    public void GetProductFull_ShouldSucceedToGetWithSameId_WhenProductExists()
+    {
+        ProductCreateRequest validProductCreateRequest = ValidProductCreateRequest;
+
+        int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
+
+        Product? insertedProduct = _productService.GetProductFull(productId);
+
+        Assert.NotNull(insertedProduct);
+
+        Assert.True(CompareProductAndRequestWithoutPropsOrImages(insertedProduct, validProductCreateRequest));
+
+        Assert.True(ComparePropertiesInRequestAndProduct(validProductCreateRequest.Properties, insertedProduct.Properties));
+        Assert.True(CompareImagesInRequestAndProduct(validProductCreateRequest.Images, insertedProduct.Images));
+        Assert.True(CompareImageFileNamesInRequestAndProduct(validProductCreateRequest.ImageFileNames, insertedProduct.ImageFileNames));
+    }
+
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
+    [Fact]
+    public void GetProductFull_ShouldFailToGetWithSameId_WhenProductWithIdDoesntExist()
+    {
+        ProductCreateRequest validProductCreateRequest = ValidProductCreateRequest;
+
+        int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
+
+        Product? insertedProduct = _productService.GetProductFull(0);
+
+        Assert.Null(insertedProduct);
+    }
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
+
+    [Fact]
+    public void GetProductWithHighestId_ShouldSucceedToGetWithHighestId_WhenProductsExist()
+    {
+        ProductCreateRequest validProductCreateRequest = ValidProductCreateRequest;
+
+        int _ = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
+
+        Product? productWithHighestId = _productService.GetProductWithHighestId();
+
+        Assert.NotNull(productWithHighestId);
+         
+        Assert.True(CompareProductAndRequestWithoutPropsOrImages(productWithHighestId, validProductCreateRequest));
+
+        Assert.True(ComparePropertiesInRequestAndProduct(validProductCreateRequest.Properties, productWithHighestId.Properties));
+        Assert.True(CompareImagesInRequestAndProduct(validProductCreateRequest.Images, productWithHighestId.Images));
+        Assert.True(CompareImageFileNamesInRequestAndProduct(validProductCreateRequest.ImageFileNames, productWithHighestId.ImageFileNames));
+    }
+
+    [Fact]
+    public void GetProductWithHighestId_ShouldFailToGetWithHighestId_WhenNoProductsExist()
+    {
+        Product? productWithHighestId = _productService.GetProductWithHighestId();
+
+        Assert.Null(productWithHighestId);
+    }
+
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductCreateRequest createRequest, bool expected)
@@ -994,44 +1061,35 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => null,
             unexpectedFailureResult => null);
 
+        Assert.Equal(expected, productId is not null);
+
         if (expected)
         {
-            Assert.True(productId is not null);
-
-            Product? insertedProduct = _productService.GetByIdWithProps(productId.Value);
-
-            List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId.Value)
-                .ToList();
-
-            List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
-                .ToList();
+            Product? insertedProduct = _productService.GetProductFull(productId!.Value);
 
             Assert.NotNull(insertedProduct);
 
             AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, createRequest);
 
             Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, insertedProduct.Properties));
-            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
-            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
+            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, insertedProduct.Images));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, insertedProduct.ImageFileNames));
         }
     }
 
 #pragma warning disable CA2211 // Non-constant fields should not be visible
-    public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static TheoryData<ProductCreateRequest, bool> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
             ValidProductCreateRequest,
             true
         },
 
-        new object[2]
         {
             GetValidProductCreateRequestUsingRandomData(),
             true
         },
 
-        new object[2]
         {
             new ProductCreateRequest()
             {
@@ -1061,9 +1119,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 Properties = new()
                 {
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
                 },
                 Images = new List<CurrentProductImageCreateRequest>()
                 {
@@ -1082,7 +1140,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ProductCreateRequest()
             {
@@ -1112,9 +1169,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 Properties = new()
                 {
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
                 },
 
                 Images = new List<CurrentProductImageCreateRequest>()
@@ -1135,7 +1192,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ProductCreateRequest()
             {
@@ -1165,9 +1221,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 Properties = new()
                 {
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
                 },
 
                 Images = new List<CurrentProductImageCreateRequest>()
@@ -1188,7 +1244,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ProductCreateRequest()
             {
@@ -1218,9 +1273,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
                 Properties = new()
                 {
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
                 },
                 Images = new List<CurrentProductImageCreateRequest>()
                 {
@@ -1240,11 +1295,984 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         },
     };
 
-#pragma warning restore CA2211 // Non-constant fields should not be visible
+    [Theory]
+    [MemberData(nameof(InsertWithImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_WhenExpected_Data))]
+    public async Task InsertWithImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_WhenExpectedAsync(
+        ProductCreateWithoutImagesInDatabaseRequest createRequest, bool expected)
+    {
+        OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> insertResult
+            = await _productService.InsertWithImagesOnlyInDirectoryAsync(createRequest);
+
+        int? productId = insertResult.Match<int?>(
+            id => id,
+            validationResult => null,
+            unexpectedFailureResult => null,
+            directoryNotFoundResult => null,
+            fileDoesntExistResult => null);
+
+        Assert.Equal(expected, productId is not null);
+
+        if (expected)
+        {
+            Product? insertedProduct = _productService.GetProductFull(productId!.Value);
+
+            Assert.NotNull(insertedProduct);
+
+            AssertProductIsEqualToRequestWithoutPropsOrImages(insertedProduct, createRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, insertedProduct.Properties));
+
+            Assert.True(insertedProduct.Images is null || insertedProduct.Images.Count == 0);
+
+            Assert.True(CompareImageFileNamesAndImageFilesInRequestAndProduct(
+                productId.Value, createRequest.ImageFileAndFileNameInfoUpsertRequests, insertedProduct.ImageFileNames, insertedProduct.Images));
+        }
+    }
+
+    public static TheoryData<ProductCreateWithoutImagesInDatabaseRequest, bool> InsertWithImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_WhenExpected_Data = new()
+    {
+        {
+            GetValidProductCreateWithoutImagesInDatabaseRequest(),
+            true
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = null,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = null,
+                        Active = false,
+                    },
+                }
+            },
+            true
+        },
+
+        {
+            GetValidProductCreateWithoutImagesInDatabaseRequest(categoryId: -2),
+            false
+        },
+
+        {
+            GetValidProductCreateWithoutImagesInDatabaseRequest(manifacturerId: 0),
+            false
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = -1, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = string.Empty, XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "    ", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 0,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductCreateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                Properties = new()
+                {
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = -1,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = 33782,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+    };
 
     [Theory]
-    [MemberData(nameof(Update_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void Update_ShouldSucceedOrFail_InAnExpectedManner(ProductUpdateRequest updateRequest, bool expected)
+    [MemberData(nameof(UpdateProductAndUpdateImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    public async Task UpdateProductAndUpdateImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_InAnExpectedMannerAsync(
+        ProductUpdateWithoutImagesInDatabaseRequest updateRequest, bool expected)
+    {
+        ProductCreateRequest validProductCreateRequest = ValidProductCreateRequest;
+
+        int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
+
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
+        {
+            updateRequest.Id = productId;
+        }
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult> updateResult
+            = await _productService.UpdateProductAndUpdateImagesOnlyInDirectoryAsync(updateRequest);
+
+        Assert.Equal(expected, updateResult.Match(
+            id => true,
+            validationResult => false,
+            unexpectedFailureResult => false,
+            directoryNotFoundResult => false,
+            fileDoesntExistResult => false));
+
+        Product? updatedProduct = _productService.GetProductFull(productId);
+
+        Assert.NotNull(updatedProduct);
+
+        if (expected)
+        {
+            AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, updateRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(updateRequest.PropertyUpsertRequests, updatedProduct.Properties));
+
+            Assert.True(CompareImagesInRequestAndProduct(validProductCreateRequest.Images, updatedProduct.Images));
+
+            Assert.True(CompareImageFileNamesAndImageFilesInRequestAndProduct(
+                productId, updateRequest.ImageFileAndFileNameInfoUpsertRequests, updatedProduct.ImageFileNames, updatedProduct.Images));
+        }
+        else
+        {
+            AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, validProductCreateRequest);
+
+            Assert.True(ComparePropertiesInRequestAndProduct(validProductCreateRequest.Properties, updatedProduct.Properties));
+            Assert.True(CompareImagesInRequestAndProduct(validProductCreateRequest.Images, updatedProduct.Images));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(validProductCreateRequest.ImageFileNames, updatedProduct.ImageFileNames));
+        }
+    }
+
+    public static TheoryData<ProductUpdateWithoutImagesInDatabaseRequest, bool> UpdateProductAndUpdateImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    {
+        {
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(),
+            true
+        },
+
+        {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = null,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = null,
+                        Active = false,
+                    },
+                }
+            },
+            true
+        },
+
+        {
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(categoryId: -2),
+            false
+        },
+
+        {
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(manifacturerId: 0),
+            false
+        },
+
+        {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = -1, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 129, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+         {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = string.Empty, XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "    ", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 3,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = null,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 0,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+
+        {
+            new ProductUpdateWithoutImagesInDatabaseRequest()
+            {
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = "dddddddd",
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                },
+
+                ImageFileAndFileNameInfoUpsertRequests = new()
+                {
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = -1,
+                        CustomFileNameWithoutExtension = null,
+                        DisplayOrder = 1,
+                        Active = true,
+                    },
+
+                    new ImageFileAndFileNameInfoUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+                        OldFileName = null,
+                        RelatedImageId = 33782,
+                        CustomFileNameWithoutExtension = "custom_file_name",
+                        DisplayOrder = 2,
+                        Active = false,
+                    },
+                }
+            },
+            false
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(UpdateProductFull_ShouldSucceedOrFail_InAnExpectedManner_Data))]
+    public async Task UpdateProductFull_ShouldSucceedOrFail_InAnExpectedMannerAsync(ProductFullUpdateRequest updateRequest, bool expected)
     {
         ProductCreateRequest createRequest = GetValidProductCreateRequest();
 
@@ -1258,25 +2286,20 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        if (updateRequest.Id == _useRequiredValue)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
-            updateRequest.Id = (int)productId;
+            updateRequest.Id = productId.Value;
         }
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productService.Update(updateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult
+            = await _productService.UpdateProductFullAsync(updateRequest);
 
         Assert.Equal(expected, updateResult.Match(
             id => true,
             validationResult => false,
             unexpectedFailureResult => false));
 
-        Product? updatedProduct = _productService.GetByIdWithProps(productId.Value);
-
-        List<ProductImage> productImagesForProduct = _productImageService.GetAllInProduct(productId.Value)
-            .ToList();
-
-        List<ProductImageFileNameInfo> productImageFileNamesForProduct = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
-            .ToList();
+        Product? updatedProduct = _productService.GetProductFull(productId.Value);
 
         Assert.NotNull(updatedProduct);
 
@@ -1284,30 +2307,87 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         {
             AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, updateRequest);
 
-            Assert.True(ComparePropertiesInRequestAndProduct(updateRequest.Properties, updatedProduct.Properties));
-            Assert.True(CompareImagesInRequestAndProduct(updateRequest.Images, productImagesForProduct));
-            Assert.True(CompareUpdateRequestDataWithActualUpdatedData(createRequest.ImageFileNames, updateRequest.ImageFileNames, productImageFileNamesForProduct));
+            Assert.True(ComparePropertiesInRequestAndProduct(updateRequest.PropertyUpsertRequests, updatedProduct.Properties));
+            Assert.True(CompareImagesInRequestAndProduct(updateRequest.ImageAndFileNameUpsertRequests, updatedProduct.Images));
+            Assert.True(CompareUpdateRequestDataWithActualUpdatedData(
+                productId.Value, createRequest.ImageFileNames, updateRequest.ImageAndFileNameUpsertRequests, updatedProduct.ImageFileNames));
         }
         else
         {
             AssertProductIsEqualToRequestWithoutPropsOrImages(updatedProduct, createRequest);
 
             Assert.True(ComparePropertiesInRequestAndProduct(createRequest.Properties, updatedProduct.Properties));
-            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, productImagesForProduct));
-            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, productImageFileNamesForProduct));
+            Assert.True(CompareImagesInRequestAndProduct(createRequest.Images, updatedProduct.Images));
+            Assert.True(CompareImageFileNamesInRequestAndProduct(createRequest.ImageFileNames, updatedProduct.ImageFileNames));
         }
     }
 
-#pragma warning disable CA2211 // Non-constant fields should not be visible
-    public static List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static TheoryData<ProductFullUpdateRequest, bool> UpdateProductFull_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetValidProductUpdateRequest(_useRequiredValue),
+            new ProductFullUpdateRequest()
+            {
+                Id = UseRequiredValuePlaceholder,
+                Name = "Product name",
+                AdditionalWarrantyPrice = 3.00M,
+                AdditionalWarrantyTermMonths = 36,
+                StandardWarrantyPrice = "0.00",
+                StandardWarrantyTermMonths = 36,
+                DisplayOrder = 12324,
+                Status = ProductStatusEnum.Call,
+                PlShow = 0,
+                Price1 = 123.4M,
+                DisplayPrice = 123.99M,
+                Price3 = 122.5M,
+                Currency = CurrencyEnum.EUR,
+                RowGuid = Guid.NewGuid(),
+                PromotionId = null,
+                PromRid = null,
+                PromotionPictureId = null,
+                PromotionExpireDate = null,
+                AlertPictureId = null,
+                AlertExpireDate = null,
+                PriceListDescription = null,
+                PartNumber1 = "DF FKD@$ 343432 wdwfc",
+                PartNumber2 = "123123/DD",
+                SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+                PropertyUpsertRequests = new()
+                {
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                    new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.AtTheTop },
+                },
+                ImageAndFileNameUpsertRequests = new()
+                {
+                    new ImageAndImageFileNameUpsertRequest()
+                    {
+                        ImageContentType = "image/png",
+                        ImageData = LocalTestImageData,
+
+                        ProductImageUpsertRequest = new()
+                        {
+                            OriginalImageId = null,
+                            HtmlData = null,
+                        },
+
+                        ProductImageFileNameInfoUpsertRequest = new()
+                        {
+                            OriginalImageNumber = null,
+                            NewDisplayOrder = 1,
+                            Active = true,
+                        }
+                    },
+                },
+
+                CategoryId = 7,
+                ManifacturerId = 12,
+                SubCategoryId = null,
+            },
             true
         },
 
-        
+
     };
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
@@ -1384,7 +2464,65 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
-    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductUpdateRequest updateRequest)
+    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductCreateWithoutImagesInDatabaseRequest createRequest)
+    {
+        Assert.Equal(createRequest.Name, insertedProduct.Name);
+        Assert.Equal(createRequest.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
+        Assert.Equal(createRequest.AdditionalWarrantyTermMonths, insertedProduct.AdditionalWarrantyTermMonths);
+        Assert.Equal(createRequest.StandardWarrantyPrice, insertedProduct.StandardWarrantyPrice);
+        Assert.Equal(createRequest.StandardWarrantyTermMonths, insertedProduct.StandardWarrantyTermMonths);
+        Assert.Equal(createRequest.DisplayOrder, insertedProduct.DisplayOrder);
+        Assert.Equal(createRequest.Status, insertedProduct.Status);
+        Assert.Equal(createRequest.PlShow, insertedProduct.PlShow);
+        Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
+        Assert.Equal(createRequest.Currency, insertedProduct.Currency);
+        Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
+        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionId);
+        Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
+        Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
+        Assert.Equal(createRequest.AlertPictureId, insertedProduct.AlertPictureId);
+        Assert.Equal(createRequest.AlertExpireDate, insertedProduct.AlertExpireDate);
+        Assert.Equal(createRequest.PriceListDescription, insertedProduct.PriceListDescription);
+        Assert.Equal(createRequest.PartNumber1, insertedProduct.PartNumber1);
+        Assert.Equal(createRequest.PartNumber2, insertedProduct.PartNumber2);
+        Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
+
+        Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryId);
+        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductUpdateWithoutImagesInDatabaseRequest updateRequest)
+    {
+        Assert.Equal(updateRequest.Name, insertedProduct.Name);
+        Assert.Equal(updateRequest.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
+        Assert.Equal(updateRequest.AdditionalWarrantyTermMonths, insertedProduct.AdditionalWarrantyTermMonths);
+        Assert.Equal(updateRequest.StandardWarrantyPrice, insertedProduct.StandardWarrantyPrice);
+        Assert.Equal(updateRequest.StandardWarrantyTermMonths, insertedProduct.StandardWarrantyTermMonths);
+        Assert.Equal(updateRequest.DisplayOrder, insertedProduct.DisplayOrder);
+        Assert.Equal(updateRequest.Status, insertedProduct.Status);
+        Assert.Equal(updateRequest.PlShow, insertedProduct.PlShow);
+        Assert.Equal(updateRequest.DisplayPrice, insertedProduct.Price);
+        Assert.Equal(updateRequest.Currency, insertedProduct.Currency);
+        Assert.Equal(updateRequest.RowGuid, insertedProduct.RowGuid);
+        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionId);
+        Assert.Equal(updateRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(updateRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
+        Assert.Equal(updateRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
+        Assert.Equal(updateRequest.AlertPictureId, insertedProduct.AlertPictureId);
+        Assert.Equal(updateRequest.AlertExpireDate, insertedProduct.AlertExpireDate);
+        Assert.Equal(updateRequest.PriceListDescription, insertedProduct.PriceListDescription);
+        Assert.Equal(updateRequest.PartNumber1, insertedProduct.PartNumber1);
+        Assert.Equal(updateRequest.PartNumber2, insertedProduct.PartNumber2);
+        Assert.Equal(updateRequest.SearchString, insertedProduct.SearchString);
+
+        Assert.Equal(updateRequest.CategoryId, insertedProduct.CategoryId);
+        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(updateRequest.SubCategoryId, insertedProduct.SubCategoryId);
+    }
+
+    private static void AssertProductIsEqualToRequestWithoutPropsOrImages(Product insertedProduct, ProductFullUpdateRequest updateRequest)
     {
         Assert.Equal(updateRequest.Name, insertedProduct.Name);
         Assert.Equal(updateRequest.AdditionalWarrantyPrice, insertedProduct.AdditionalWarrantyPrice);
@@ -1531,7 +2669,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     }
 
 #pragma warning restore IDE0051 // Remove unused private members
-    private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyCreateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
+    private bool ComparePropertiesInRequestAndProduct(
+        List<CurrentProductPropertyCreateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
     {
         if (propsInRequest is null && propsInObject is null) return true;
 
@@ -1547,9 +2686,56 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             CurrentProductPropertyCreateRequest propInRequest = orderedPropsInRequest[i];
             ProductProperty propInObject = orderedPropsInObject[i];
 
+            int? expectedDisplayOrder = propInRequest.CustomDisplayOrder;
+
+            if (expectedDisplayOrder is null)
+            {
+                ProductCharacteristic? relatedCharacteristic = _productCharacteristicService.GetById(propInRequest.ProductCharacteristicId);
+
+                expectedDisplayOrder = relatedCharacteristic?.DisplayOrder;
+            }
+
             if (propInRequest.ProductCharacteristicId != propInObject.ProductCharacteristicId
                 || propInRequest.Value != propInObject.Value
-                || propInRequest.DisplayOrder != propInObject.DisplayOrder
+                || expectedDisplayOrder != propInObject.DisplayOrder
+                || propInRequest.XmlPlacement != propInObject.XmlPlacement)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool ComparePropertiesInRequestAndProduct(
+        List<LocalProductPropertyUpsertRequest>? propsInRequest, List<ProductProperty>? propsInObject)
+    {
+        if (propsInRequest is null && propsInObject is null) return true;
+
+        if (propsInRequest is null || propsInObject is null) return false;
+
+        if (propsInRequest.Count != propsInObject.Count) return false;
+
+        List<LocalProductPropertyUpsertRequest> orderedPropsInRequest = propsInRequest.OrderBy(x => x.ProductCharacteristicId).ToList();
+        List<ProductProperty> orderedPropsInObject = propsInObject.OrderBy(x => x.ProductCharacteristicId).ToList();
+
+        for (int i = 0; i < orderedPropsInRequest.Count; i++)
+        {
+            LocalProductPropertyUpsertRequest propInRequest = orderedPropsInRequest[i];
+            ProductProperty propInObject = orderedPropsInObject[i];
+
+            int? expectedDisplayOrder = propInRequest.CustomDisplayOrder;
+
+            if (expectedDisplayOrder is null)
+            {
+                ProductCharacteristic? relatedCharacteristic = _productCharacteristicService.GetById(propInRequest.ProductCharacteristicId);
+
+                expectedDisplayOrder = relatedCharacteristic?.DisplayOrder;
+            }
+
+            if (propInRequest.ProductCharacteristicId != propInObject.ProductCharacteristicId
+                || propInRequest.Value != propInObject.Value
+                || expectedDisplayOrder != propInObject.DisplayOrder
                 || propInRequest.XmlPlacement != propInObject.XmlPlacement)
             {
                 return false;
@@ -1565,8 +2751,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         if (imagesInRequest is null || imagesInObject is null) return false;
 
-        if (imagesInRequest.Count != imagesInObject.Count) return false;
-
         for (int i = 0; i < imagesInRequest.Count; i++)
         {
             CurrentProductImageCreateRequest imageInRequest = imagesInRequest[i];
@@ -1580,6 +2764,41 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
                 if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
                     && imageInRequest.ImageContentType == imageInObject.ImageContentType
                     && imageInRequest.HtmlData == imageInObject.HtmlData)
+                {
+                    isMatched = true;
+
+                    break;
+                }
+            }
+
+            if (!isMatched) return false;
+        }
+
+        return true;
+    }
+
+    private static bool CompareImagesInRequestAndProduct(List<ImageAndImageFileNameUpsertRequest>? imagesInRequest, List<ProductImage>? imagesInObject)
+    {
+        if (imagesInRequest is null && imagesInObject is null) return true;
+
+        if (imagesInRequest is null || imagesInObject is null) return false;
+
+        for (int i = 0; i < imagesInObject.Count; i++)
+        {
+            ProductImage imageInObject = imagesInObject[i];
+
+            bool isMatched = false;
+
+            for (int j = 0; j < imagesInRequest.Count; j++)
+            {
+                ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest = imagesInRequest[j];
+
+                ProductImageUpsertRequest? imageInRequest = imageAndImageFileNameUpsertRequest.ProductImageUpsertRequest;
+
+                if (imageInRequest == null) continue;
+
+                if (CompareDataInByteArrays(imageAndImageFileNameUpsertRequest.ImageData, imageInObject.ImageData)
+                    && imageAndImageFileNameUpsertRequest.ImageContentType == imageInObject.ImageContentType)
                 {
                     isMatched = true;
 
@@ -1620,118 +2839,316 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         return true;
     }
 
-    private static bool ComparePropertiesInRequestAndProduct(List<CurrentProductPropertyUpdateRequest>? propsInRequest, List<ProductProperty>? propsInObject)
+    private static bool CompareImageFileNamesAndImageFilesInRequestAndProduct(
+        int productId,
+        List<ImageFileAndFileNameInfoUpsertRequest>? imageFileNameUpsertRequest,
+        List<ProductImageFileNameInfo>? imageFileNamesInObject,
+        List<ProductImage>? imagesInObject)
     {
-        if (propsInRequest is null && propsInObject is null) return true;
+        if (imageFileNameUpsertRequest is null && imageFileNamesInObject is null) return true;
 
-        if (propsInRequest is null || propsInObject is null) return false;
+        if (imageFileNameUpsertRequest is null || imageFileNamesInObject is null) return false;
 
-        if (propsInRequest.Count != propsInObject.Count) return false;
+        if (imageFileNameUpsertRequest.Count != imageFileNamesInObject.Count) return false;
 
-        List<CurrentProductPropertyUpdateRequest> orderedPropsInRequest = propsInRequest.OrderBy(x => x.ProductCharacteristicId).ToList();
-        List<ProductProperty> orderedPropsInObject = propsInObject.OrderBy(x => x.ProductCharacteristicId).ToList();
+        List<ImageFileAndFileNameInfoUpsertRequest> orderedImageFileUpsertRequests = OrderImageFileAndFileNameInfoUpsertRequests(imageFileNameUpsertRequest);
 
-        for (int i = 0; i < orderedPropsInRequest.Count; i++)
+        List<ImageAndImageFileNameRelation> orderedImageFileNamesInObject = GetImageRelationsFromImagesAndImageFileInfos(imagesInObject, imageFileNamesInObject)
+            .Where(x => x.ProductImageFileNameInfo is not null)
+            .ToList();
+
+        for (int i = 0; i < orderedImageFileUpsertRequests.Count; i++)
         {
-            CurrentProductPropertyUpdateRequest propInRequest = orderedPropsInRequest[i];
-            ProductProperty propInObject = orderedPropsInObject[i];
+            ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = orderedImageFileUpsertRequests[i];
+            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i].ProductImageFileNameInfo!;
 
-            if (propInRequest.ProductCharacteristicId != propInObject.ProductCharacteristicId
-                || propInRequest.Value != propInObject.Value
-                || propInRequest.DisplayOrder != propInObject.DisplayOrder
-                || propInRequest.XmlPlacement != propInObject.XmlPlacement)
+            if (!CompareFileNameData(productId, orderedImageFileUpsertRequests, i, imageFileNameInObject)
+                || imageFileUpsertRequest.DisplayOrder != imageFileNameInObject.DisplayOrder
+                || imageFileUpsertRequest.Active != imageFileNameInObject.Active)
             {
                 return false;
             }
-        }
 
-        return true;
-    }
-
-    private static bool CompareImagesInRequestAndProduct(List<CurrentProductImageUpdateRequest>? imagesInRequest, List<ProductImage>? imagesInObject)
-    {
-        if (imagesInRequest is null && imagesInObject is null) return true;
-
-        if (imagesInRequest is null || imagesInObject is null) return false;
-
-        if (imagesInRequest.Count != imagesInObject.Count) return false;
-
-        for (int i = 0; i < imagesInRequest.Count; i++)
-        {
-            CurrentProductImageUpdateRequest imageInRequest = imagesInRequest[i];
-
-            bool isMatched = false;
-
-            for (int j = 0; j < imagesInObject.Count; j++)
+            if (imageFileNameInObject.FileName is not null)
             {
-                ProductImage imageInObject = imagesInObject[j];
+                string pathToImage = Path.Combine(Startup.ImageDirectoryFullPath, imageFileNameInObject.FileName);
 
-                if (CompareDataInByteArrays(imageInRequest.ImageData, imageInObject.ImageData)
-                    && imageInRequest.ImageContentType == imageInObject.ImageContentType
-                    && imageInRequest.HtmlData == imageInObject.HtmlData)
-                {
-                    isMatched = true;
-
-                    break;
-                }
+                if (!File.Exists(pathToImage)) return false;
             }
-
-            if (!isMatched) return false;
         }
 
         return true;
     }
 
     private static bool CompareUpdateRequestDataWithActualUpdatedData(
+        int productId,
         List<CurrentProductImageFileNameInfoCreateRequest>? createRequestData,
-        List<CurrentProductImageFileNameInfoUpdateRequest>? updateRequests,
-        List<ProductImageFileNameInfo> imageFileNamesInObject)
+        List<ImageAndImageFileNameUpsertRequest>? upsertRequests,
+        List<ProductImageFileNameInfo>? imageFileNamesInObject)
     {
-        if (updateRequests is null)
+        if (upsertRequests is null)
         {
             return CompareImageFileNamesInRequestAndProduct(createRequestData, imageFileNamesInObject);
         }
 
-        if (createRequestData is null)
+        bool areFileNamesInObjectEmpty = imageFileNamesInObject is null
+            || imageFileNamesInObject.Count <= 0;
+
+        if (areFileNamesInObjectEmpty)
         {
-            return imageFileNamesInObject.Count == 0;
+            return upsertRequests.Count == 0;
         }
 
-        int? maxDisplayOrder = createRequestData.Max(x => x.DisplayOrder);
-        
-        foreach (CurrentProductImageFileNameInfoUpdateRequest updateRequest in updateRequests)
-        {
-            if (updateRequest.NewDisplayOrder < 1)
-            {
-                updateRequest.NewDisplayOrder = 1;
-            }
-            else if (updateRequest.NewDisplayOrder > maxDisplayOrder)
-            {
-                updateRequest.NewDisplayOrder = maxDisplayOrder;
-            }
+        if (imageFileNamesInObject!.Count != upsertRequests.Count) return false;
 
-            foreach (CurrentProductImageFileNameInfoCreateRequest createRequestInner in createRequestData)
+        foreach (ProductImageFileNameInfo productImageFileNameInfo in imageFileNamesInObject)
+        {
+            ImageAndImageFileNameUpsertRequest? relatedUpsertRequest = GetRelatedUpsertRequest(productId, productImageFileNameInfo, upsertRequests);
+
+            if (relatedUpsertRequest is not null)
             {
-                //if (createRequestInner.DisplayOrder == updateRequest.DisplayOrder)
-                //{
-                //    createRequestInner.DisplayOrder = updateRequest.NewDisplayOrder;
-                //    createRequestInner.FileName = updateRequest.FileName;
-                //}
-                //else if (updateRequest.DisplayOrder < updateRequest.NewDisplayOrder
-                //    && createRequestInner.DisplayOrder > updateRequest.DisplayOrder
-                //    && createRequestInner.DisplayOrder <= updateRequest.NewDisplayOrder)
-                //{
-                //    createRequestInner.DisplayOrder--;
-                //}
-                //else if (updateRequest.DisplayOrder > updateRequest.NewDisplayOrder
-                //    && createRequestInner.DisplayOrder < updateRequest.DisplayOrder
-                //    && createRequestInner.DisplayOrder >= updateRequest.NewDisplayOrder)
-                //{
-                //    createRequestInner.DisplayOrder++;
-                //}
+                ProductImageFileNameInfoUpsertRequest? fileNameInfoUpsertRequest = relatedUpsertRequest.ProductImageFileNameInfoUpsertRequest;
+
+                if (fileNameInfoUpsertRequest is null) return false;
+
+                return fileNameInfoUpsertRequest.NewDisplayOrder == productImageFileNameInfo.DisplayOrder
+                    && fileNameInfoUpsertRequest.Active == productImageFileNameInfo.Active
+                    && CompareFileNameData(productId, upsertRequests, upsertRequests.IndexOf(relatedUpsertRequest), productImageFileNameInfo);
             }
         }
 
-        return CompareImageFileNamesInRequestAndProduct(createRequestData, imageFileNamesInObject);
+        return false;
+    }
+
+    private static ImageAndImageFileNameUpsertRequest? GetRelatedUpsertRequest(
+        int productId,
+        ProductImageFileNameInfo productImageFileNameInfo,
+        List<ImageAndImageFileNameUpsertRequest> upsertRequests)
+    {
+        ImageAndImageFileNameUpsertRequest? relatedUpsertRequest = upsertRequests.FirstOrDefault(
+            x => productImageFileNameInfo.ImageNumber == x.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber);
+
+        if (relatedUpsertRequest is not null) return relatedUpsertRequest;
+
+        for (int i = 0; i < upsertRequests.Count; i++)
+        {
+            ImageAndImageFileNameUpsertRequest upsertRequest = upsertRequests[i];
+
+            ProductImageFileNameInfoUpsertRequest? fileNameInfoUpsertRequest = upsertRequest.ProductImageFileNameInfoUpsertRequest;
+
+            if (fileNameInfoUpsertRequest is null) continue;
+
+            if (fileNameInfoUpsertRequest.NewDisplayOrder == productImageFileNameInfo.DisplayOrder
+                && fileNameInfoUpsertRequest.Active == productImageFileNameInfo.Active
+                && CompareFileNameData(productId, upsertRequests, i, productImageFileNameInfo))
+            {
+                return upsertRequest;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool CompareFileNameData(
+        int productId,
+        List<ImageFileAndFileNameInfoUpsertRequest> upsertRequests,
+        int indexOfItem,
+        ProductImageFileNameInfo productImageFileNameInfo)
+    {
+        ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = upsertRequests[indexOfItem];
+
+        string? fileName = productImageFileNameInfo.FileName;
+
+        if (fileName is null) return false;
+
+        string? expectedFileExtension = GetImageFileExtensionFromContentType(imageFileUpsertRequest.ImageContentType);
+
+        if (expectedFileExtension is null) return false;
+
+        string expectedFileName;
+
+        if (imageFileUpsertRequest.CustomFileNameWithoutExtension is not null)
+        {
+            expectedFileName = $"{imageFileUpsertRequest.CustomFileNameWithoutExtension}.{expectedFileExtension}";
+        }
+        else if (imageFileUpsertRequest?.RelatedImageId is not null)
+        {
+            expectedFileName = $"{imageFileUpsertRequest.RelatedImageId}.{expectedFileExtension}";
+        }
+        else
+        {
+            string? fileNameFromData = GetTemporaryFileNameWithoutExtension(productId, productImageFileNameInfo.ImageNumber);
+
+            if (fileNameFromData is null) return false;
+
+            expectedFileName = $"{fileNameFromData}.{expectedFileExtension}";
+        }
+
+        return expectedFileName == fileName;
+    }
+
+    private static bool CompareFileNameData(
+        int productId,
+        List<ImageAndImageFileNameUpsertRequest> upsertRequests,
+        int indexOfItem,
+        ProductImageFileNameInfo productImageFileNameInfo)
+    {
+        ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest = upsertRequests[indexOfItem];
+        ProductImageUpsertRequest? imageUpsertRequest = imageAndImageFileNameUpsertRequest.ProductImageUpsertRequest;
+        ProductImageFileNameInfoUpsertRequest? fileNameInfoUpsertRequest = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest;
+        string? fileName = productImageFileNameInfo.FileName;
+
+        if (fileNameInfoUpsertRequest is null) return fileName is null;
+
+        if (fileName is null) return false;
+
+        string? expectedFileExtension = GetImageFileExtensionFromContentType(imageAndImageFileNameUpsertRequest.ImageContentType);
+
+        if (expectedFileExtension is null) return false;
+
+        string expectedFileName;
+
+        if (fileNameInfoUpsertRequest.CustomFileNameWithoutExtension is not null)
+        {
+            expectedFileName = $"{fileNameInfoUpsertRequest.CustomFileNameWithoutExtension}.{expectedFileExtension}";
+        }
+        else if (imageUpsertRequest?.OriginalImageId is not null)
+        {
+            expectedFileName = $"{imageUpsertRequest.OriginalImageId}.{expectedFileExtension}";
+        }
+        else
+        {
+            int? expectedImageNumber = productImageFileNameInfo.ImageNumber;
+
+            if (expectedImageNumber is null) return false;
+
+            string? fileNameFromData = GetTemporaryFileNameWithoutExtension(productId, expectedImageNumber.Value);
+
+            if (fileNameFromData is null) return false;
+
+            expectedFileName = $"{fileNameFromData}.{expectedFileExtension}";
+        }
+
+        return expectedFileName == fileName;
+    }
+
+    private static int? GetExpectedImageNumber(List<ImageAndImageFileNameUpsertRequest> upsertRequests, int indexOfItemToFindImageNumberFor)
+    {
+        if (indexOfItemToFindImageNumberFor < 0
+            || indexOfItemToFindImageNumberFor >= upsertRequests.Count) return null;
+
+        ImageAndImageFileNameUpsertRequest upsertRequest = upsertRequests[indexOfItemToFindImageNumberFor];
+
+        int? originalImageNumber = upsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
+
+        if (originalImageNumber is not null) return originalImageNumber;
+
+        List<ImageAndImageFileNameUpsertRequest> orderedUpsertRequests = OrderImageAndImageFileNameUpsertRequests(upsertRequests);
+
+        int? maxImageNumberAlreadyPresent = null;
+
+        foreach (ImageAndImageFileNameUpsertRequest localUpsertRequest in orderedUpsertRequests)
+        {
+            int? localOriginalImageNumber = localUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
+
+            if (localOriginalImageNumber is null
+                || localOriginalImageNumber < maxImageNumberAlreadyPresent) continue;
+
+            maxImageNumberAlreadyPresent = localOriginalImageNumber;
+        }
+
+        foreach (ImageAndImageFileNameUpsertRequest localUpsertRequest in orderedUpsertRequests)
+        {
+            if (localUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber is not null) continue;
+
+            maxImageNumberAlreadyPresent++;
+
+            if (upsertRequest == localUpsertRequest) return maxImageNumberAlreadyPresent;
+        }
+
+        return 1;
+    }
+
+    private static List<ImageFileAndFileNameInfoUpsertRequest> OrderImageFileAndFileNameInfoUpsertRequests(
+        List<ImageFileAndFileNameInfoUpsertRequest> imagesAndImageFileNameInfos)
+    {
+        imagesAndImageFileNameInfos = imagesAndImageFileNameInfos.ToList();
+
+        ImageFileAndFileNameInfoUpsertRequest[] output
+            = new ImageFileAndFileNameInfoUpsertRequest[imagesAndImageFileNameInfos.Count];
+
+        for (int i = 0; i < imagesAndImageFileNameInfos.Count; i++)
+        {
+            ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = imagesAndImageFileNameInfos[i];
+
+            if (imageFileUpsertRequest.DisplayOrder is null) continue;
+
+            output[imageFileUpsertRequest.DisplayOrder.Value - 1] = imageFileUpsertRequest;
+
+            imagesAndImageFileNameInfos.Remove(imageFileUpsertRequest);
+
+            i--;
+        }
+
+        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest in imagesAndImageFileNameInfos
+            .OrderBy(x => x.RelatedImageId ?? int.MaxValue))
+        {
+            for (int i = 0; i < output.Length; i++)
+            {
+                ImageFileAndFileNameInfoUpsertRequest outputImageFileUpsertRequest = output[i];
+
+                if (outputImageFileUpsertRequest != null) continue;
+
+                output[i] = imageFileUpsertRequest;
+
+                break;
+            }
+        }
+
+        return output.ToList();
+    }
+
+    private static List<ImageAndImageFileNameUpsertRequest> OrderImageAndImageFileNameUpsertRequests(
+        List<ImageAndImageFileNameUpsertRequest> imagesAndImageFileNameInfos)
+    {
+        imagesAndImageFileNameInfos = imagesAndImageFileNameInfos.ToList();
+
+        ImageAndImageFileNameUpsertRequest[] output
+            = new ImageAndImageFileNameUpsertRequest[imagesAndImageFileNameInfos.Count];
+
+        for (int i = 0; i < imagesAndImageFileNameInfos.Count; i++)
+        {
+            ImageAndImageFileNameUpsertRequest imageAndFileNameRelation = imagesAndImageFileNameInfos[i];
+
+            ProductImageUpsertRequest? image = imageAndFileNameRelation.ProductImageUpsertRequest;
+            ProductImageFileNameInfoUpsertRequest? imageFileNameInfo = imageAndFileNameRelation.ProductImageFileNameInfoUpsertRequest;
+
+            if (image is null
+                || imageFileNameInfo is null
+                || imageFileNameInfo.NewDisplayOrder is null) continue;
+
+            output[imageFileNameInfo.NewDisplayOrder.Value - 1] = imageAndFileNameRelation;
+
+            imagesAndImageFileNameInfos.Remove(imageAndFileNameRelation);
+
+            i--;
+        }
+
+        foreach (ImageAndImageFileNameUpsertRequest imageAndFileNameRelation in imagesAndImageFileNameInfos
+            .OrderBy(x => x.ProductImageUpsertRequest?.OriginalImageId ?? int.MaxValue))
+        {
+            for (int i = 0; i < output.Length; i++)
+            {
+                ImageAndImageFileNameUpsertRequest outputRelation = output[i];
+
+                if (outputRelation != null) continue;
+
+                output[i] = imageAndFileNameRelation;
+
+                break;
+            }
+        }
+
+        return output.ToList();
     }
 }
