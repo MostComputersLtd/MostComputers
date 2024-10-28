@@ -21,12 +21,14 @@
 }
 
 @section Scripts {
-    <script src="~/js/Index.js"></script>
+    <script src="~/js/Pages/Index.js"></script>
     <script src="~/js/StringManipulation/DecodeFromHtml.js"></script>
+    <script src="~/js/StringManipulation/HtmlEncoding.js"></script>
     <script src="~/js/Pages/Shared/ProductImagesPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductFirstImagePopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductFullWithXmlPopupControl.js"></script>
     <script src="~/js/Pages/Shared/ProductChangesPopupControl.js"></script>
+    <script src="~/js/Pages/Shared/ProductFullHtmlBasedDisplayPopupControl.js"></script>
     <script src="~/js/Pages/Shared/SearchStringOriginSmallPopupsDisplayControl.js"></script>
     <script src="~/js/Pages/ProductAndPropertyDisplayCommon.js"></script>
     <script src="~/js/NotificationBox.js"></script>
@@ -78,7 +80,7 @@
             @Model.Products.Count,
             '_productTableSelectByElementId_tableIndex_input_hidden',
             [
-                'productTable_item-_NameInput',
+                'productTable_item-__hiddenNameInput',
                 'productTable_item-_AdditionalWarrantyPriceInput',
                 'productTable_item-_AdditionalWarrantyTermMonthsInput',
                 'productTable_item-_StandardWarrantyPriceInput',
@@ -171,11 +173,6 @@
         </tbody>
     </table>
 
-    <button id="addProductButton" class="btn btn-primary full-parent-width"
-        onclick="addNewProduct('productTableTbody', 'productTable_item-@Model.Products.Count.ToString()', @Model.Products.Count, 'productTableHighestIdLabel')">
-        +
-    </button>
-
     <button id="triggerChangesCheckButton" class="btn btn-primary product-display-trigger-changes-button"
         onclick="triggerChangesCheck('topNotificationBox')">
         Check for changes
@@ -187,6 +184,13 @@
 <div id="ProductFullWithXml_modal" class="modal fade" tabindex="-1" role="dialog">
     <div id="ProductFullWithXml_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
         <div id="ProductFullWithXml_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="ProductFullHtmlBased_modal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="ProductFullHtmlBased_modal_dialog" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="ProductFullHtmlBased_popup_modal_content" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
         </div>
     </div>
 </div>
