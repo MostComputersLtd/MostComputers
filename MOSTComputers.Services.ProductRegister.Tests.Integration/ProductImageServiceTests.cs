@@ -7,6 +7,7 @@ using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
+using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
@@ -23,8 +24,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productService = productService;
     }
-
-    private const int _useRequiredValue = -100;
 
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
@@ -51,6 +50,8 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         HtmlData = "<data></data>",
     };
 
+#pragma warning disable CA2211 // Non-constant fields should not be visible
+
     [Fact]
     public void GetAllFirstImagesForAllProducts_ShouldSucceed_WhenInsertsAreValid()
     {
@@ -72,7 +73,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetValidFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -150,7 +151,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetValidFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -226,7 +227,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId2 = productInsertResult2.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest1 = GetFirstImageCreateRequestWithImageData(productId1);
+        ServiceProductFirstImageCreateRequest createRequest1 = GetValidFirstImageCreateRequestWithImageData(productId1);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest1);
 
@@ -253,8 +254,8 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId);
-        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetValidImageCreateRequestWithImageData(productId);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
@@ -331,7 +332,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest = GetValidImageCreateRequestWithImageData(productId);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
 
@@ -365,7 +366,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest = GetValidImageCreateRequestWithImageData(productId);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInAllImages(createRequest);
 
@@ -395,7 +396,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetValidFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -452,7 +453,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId1 = productInsertResult1.AsT0;
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductId = productId1;
         }
@@ -480,19 +481,17 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ServiceProductImageCreateRequest, bool> InsertInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetCreateRequestWithImageData(_useRequiredValue),
+            GetValidImageCreateRequestWithImageData(UseRequiredValuePlaceholder),
             true
         },
 
-        new object[2]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = null,
                 ImageContentType = null,
                 HtmlData = null
@@ -500,11 +499,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = null,
                 HtmlData = null
@@ -512,11 +510,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -524,11 +521,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = null,
                 HtmlData = null
@@ -536,11 +532,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "       ",
                 HtmlData = null
@@ -566,9 +561,9 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
-            createRequest.ProductId = productId1;
+            createRequest.ProductId = productId1.Value;
         }
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1
@@ -596,22 +591,19 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-    public static List<object[]> InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ServiceProductImageCreateRequest, int?, bool> InsertInAllImagesAndImageFileNameInfos_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[3]
         {
-            GetCreateRequestWithImageData(_useRequiredValue),
+            GetValidImageCreateRequestWithImageData(UseRequiredValuePlaceholder),
             null,
             true
         },
 
 
-        new object[3]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = null,
                 ImageContentType = null,
                 HtmlData = null
@@ -620,25 +612,22 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[3]
         {
-            GetCreateRequestWithImageData(_useRequiredValue),
-            (uint?)1000,
+            GetValidImageCreateRequestWithImageData(UseRequiredValuePlaceholder),
+            1000,
             true
         },
 
-        new object[3]
         {
-            GetCreateRequestWithImageData(_useRequiredValue),
-            (uint?)0,
+            GetValidImageCreateRequestWithImageData(UseRequiredValuePlaceholder),
+            0,
             false
         },
 
-        new object[3]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = null,
                 HtmlData = null
@@ -647,11 +636,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[3]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -660,11 +648,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[3]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = null,
                 HtmlData = null
@@ -673,11 +660,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[3]
         {
             new ServiceProductImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "       ",
                 HtmlData = null
@@ -686,7 +672,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
     };
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
     [Theory]
     [MemberData(nameof(InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data))]
@@ -701,7 +686,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId1 = productInsertResult1.AsT0;
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductId = productId1;
         }
@@ -727,19 +712,17 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ServiceProductFirstImageCreateRequest, bool> InsertInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetFirstImageCreateRequestWithImageData(_useRequiredValue),
+            GetValidFirstImageCreateRequestWithImageData(UseRequiredValuePlaceholder),
             true
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = null,
                 ImageContentType = null,
                 HtmlData = null
@@ -747,11 +730,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = null,
                 HtmlData = null
@@ -759,11 +741,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -771,11 +752,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = null,
                 HtmlData = null
@@ -783,11 +763,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "       ",
                 HtmlData = null,
@@ -809,7 +788,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId1 = productInsertResult1.AsT0;
 
-        ServiceProductImageCreateRequest createRequest = GetCreateRequestWithImageData(productId1);
+        ServiceProductImageCreateRequest createRequest = GetValidImageCreateRequestWithImageData(productId1);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest);
 
@@ -822,7 +801,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(id > 0);
 
-        if (updateRequest.Id == _useRequiredValue)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
             updateRequest.Id = id;
         }
@@ -852,13 +831,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> UpdateInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ServiceProductImageUpdateRequest, bool> UpdateInAllImages_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -866,11 +844,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = null,
                 ImageContentType = null,
                 HtmlData = null
@@ -878,11 +855,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = null,
                 HtmlData = null
@@ -890,11 +866,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -902,11 +877,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = null,
                 HtmlData = null
@@ -914,11 +888,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductImageUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "       ",
                 HtmlData = null
@@ -940,7 +913,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult1.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetValidFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInFirstImages(createRequest);
 
@@ -949,7 +922,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        if (updateRequest.ProductId == _useRequiredValue)
+        if (updateRequest.ProductId == UseRequiredValuePlaceholder)
         {
             updateRequest.ProductId = productId;
         }
@@ -980,13 +953,12 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> UpdateInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ServiceProductFirstImageUpdateRequest, bool> UpdateInFirstImages_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -994,11 +966,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = null,
                 ImageContentType = null,
                 HtmlData = null
@@ -1006,11 +977,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = null,
                 HtmlData = null
@@ -1018,11 +988,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = Array.Empty<byte>(),
                 ImageContentType = "image/png",
                 HtmlData = null
@@ -1030,11 +999,10 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = null,
                 HtmlData = null
@@ -1042,17 +1010,265 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ServiceProductFirstImageUpdateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ImageData = LocalTestImageData,
                 ImageContentType = "       ",
                 HtmlData = null
             },
             false
         },
+    };
+
+    [Theory]
+    [MemberData(nameof(UpdateHtmlDataInFirstAndAllImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data))]
+    public void UpdateHtmlDataInFirstAndAllImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected(
+        int productIdToUse, string htmlData, bool expected)
+    {
+        int productId = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
+
+        ServiceProductImageCreateRequest imageCreateRequest = GetValidImageCreateRequestWithImageData(productId);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImages(imageCreateRequest);
+
+        int imageId = -1;
+
+        bool isImageInsertSuccessful = insertImageResult.Match(
+            id =>
+            {
+                imageId = id;
+
+                return true;
+            },
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isImageInsertSuccessful);
+        Assert.True(imageId > 0);
+
+        ServiceProductFirstImageCreateRequest firstImageCreateRequest = new()
+        {
+            ProductId = productId,
+            ImageData = imageCreateRequest.ImageData,
+            HtmlData = imageCreateRequest.HtmlData,
+            ImageContentType = imageCreateRequest.ImageContentType,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
+            = _productImageService.InsertInFirstImages(firstImageCreateRequest);
+
+        bool isFirstImageInsertSuccessful = insertFirstImageResult.Match(
+            id => true,
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isFirstImageInsertSuccessful);
+
+        if (productIdToUse == UseRequiredValuePlaceholder)
+        {
+            productIdToUse = productId;
+        }
+
+        OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
+            = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(productIdToUse, htmlData);
+
+        Assert.Equal(expected, updateImagesHtmlResult.Match(
+            isSuccessful => isSuccessful,
+            validationResult => false,
+            unexpectedFailureResult => false));
+
+        ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+
+        Assert.NotNull(firstImage);
+        Assert.NotNull(productImage);
+
+        if (expected)
+        {
+            Assert.Equal(htmlData, firstImage.HtmlData);
+            Assert.Equal(htmlData, productImage.HtmlData);
+        }
+        else
+        {
+            Assert.Equal(firstImageCreateRequest.HtmlData, firstImage.HtmlData);
+            Assert.Equal(imageCreateRequest.HtmlData, productImage.HtmlData);
+        }
+    }
+
+    public static TheoryData<int, string, bool> UpdateHtmlDataInFirstAndAllImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data = new()
+    {
+        { UseRequiredValuePlaceholder, "<data></data>", true },
+        { 0, "<data></data>", false },
+        { UseRequiredValuePlaceholder, string.Empty, false },
+        { UseRequiredValuePlaceholder, "      ", false },
+    };
+
+    [Theory]
+    [MemberData(nameof(UpdateHtmlDataInFirstImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data))]
+    public void UpdateHtmlDataInFirstImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected(
+        int productIdToUse, string htmlData, bool expected)
+    {
+        int productId = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
+
+        ServiceProductImageCreateRequest imageCreateRequest = GetValidImageCreateRequestWithImageData(productId);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImages(imageCreateRequest);
+
+        int imageId = -1;
+
+        bool isImageInsertSuccessful = insertImageResult.Match(
+            id =>
+            {
+                imageId = id;
+
+                return true;
+            },
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isImageInsertSuccessful);
+        Assert.True(imageId > 0);
+
+        ServiceProductFirstImageCreateRequest firstImageCreateRequest = new()
+        {
+            ProductId = productId,
+            ImageData = imageCreateRequest.ImageData,
+            HtmlData = imageCreateRequest.HtmlData,
+            ImageContentType = imageCreateRequest.ImageContentType,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
+            = _productImageService.InsertInFirstImages(firstImageCreateRequest);
+
+        bool isFirstImageInsertSuccessful = insertFirstImageResult.Match(
+            id => true,
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isFirstImageInsertSuccessful);
+
+        if (productIdToUse == UseRequiredValuePlaceholder)
+        {
+            productIdToUse = productId;
+        }
+
+        OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
+            = _productImageService.UpdateHtmlDataInFirstImagesByProductId(productIdToUse, htmlData);
+
+        Assert.Equal(expected, updateImagesHtmlResult.Match(
+            isSuccessful => isSuccessful,
+            validationResult => false,
+            unexpectedFailureResult => false));
+
+        ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+
+        Assert.NotNull(firstImage);
+        Assert.NotNull(productImage);
+
+        if (expected)
+        {
+            Assert.Equal(htmlData, firstImage.HtmlData);
+            Assert.Equal(imageCreateRequest.HtmlData, productImage.HtmlData);
+        }
+        else
+        {
+            Assert.Equal(firstImageCreateRequest.HtmlData, firstImage.HtmlData);
+            Assert.Equal(imageCreateRequest.HtmlData, productImage.HtmlData);
+        }
+    }
+
+    public static TheoryData<int, string, bool> UpdateHtmlDataInFirstImagesByProductId_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data = new()
+    {
+        { UseRequiredValuePlaceholder, "<data></data>", true },
+        { 0, "<data></data>", false },
+        { UseRequiredValuePlaceholder, string.Empty, false },
+        { UseRequiredValuePlaceholder, "      ", false },
+    };
+
+    [Theory]
+    [MemberData(nameof(UpdateHtmlDataInAllImagesById_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data))]
+    public void UpdateHtmlDataInAllImagesById_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected(
+        int imageIdToUse, string htmlData, bool expected)
+    {
+        int productId = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
+
+        ServiceProductImageCreateRequest imageCreateRequest = GetValidImageCreateRequestWithImageData(productId);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertImageResult = _productImageService.InsertInAllImages(imageCreateRequest);
+
+        int imageId = -1;
+
+        bool isImageInsertSuccessful = insertImageResult.Match(
+            id =>
+            {
+                imageId = id;
+
+                return true;
+            },
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isImageInsertSuccessful);
+        Assert.True(imageId > 0);
+
+        ServiceProductFirstImageCreateRequest firstImageCreateRequest = new()
+        {
+            ProductId = productId,
+            ImageData = imageCreateRequest.ImageData,
+            HtmlData = imageCreateRequest.HtmlData,
+            ImageContentType = imageCreateRequest.ImageContentType,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> insertFirstImageResult
+            = _productImageService.InsertInFirstImages(firstImageCreateRequest);
+
+        bool isFirstImageInsertSuccessful = insertFirstImageResult.Match(
+            id => true,
+            validationResult => false,
+            unexpectedFailureResult => false);
+
+        Assert.True(isFirstImageInsertSuccessful);
+
+        if (imageIdToUse == UseRequiredValuePlaceholder)
+        {
+            imageIdToUse = productId;
+        }
+
+        OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
+            = _productImageService.UpdateHtmlDataInAllImagesById(imageIdToUse, htmlData);
+
+        Assert.Equal(expected, updateImagesHtmlResult.Match(
+            isSuccessful => isSuccessful,
+            validationResult => false,
+            unexpectedFailureResult => false));
+
+        ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+
+        Assert.NotNull(firstImage);
+        Assert.NotNull(productImage);
+
+        Assert.Equal(firstImageCreateRequest.HtmlData, firstImage.HtmlData);
+
+        if (expected)
+        {
+            Assert.Equal(htmlData, productImage.HtmlData);
+        }
+        else
+        {
+            Assert.Equal(imageCreateRequest.HtmlData, productImage.HtmlData);
+        }
+    }
+
+    public static TheoryData<int, string, bool> UpdateHtmlDataInAllImagesById_ShouldSucceedToUpdateTheHtmlDataOfAllRelevantImages_WhenExpected_Data = new()
+    {
+        { UseRequiredValuePlaceholder, "<data></data>", true },
+        { 0, "<data></data>", false },
+        { UseRequiredValuePlaceholder, string.Empty, false },
+        { UseRequiredValuePlaceholder, "      ", false },
     };
 
     [Fact]
@@ -1067,7 +1283,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId1 = productInsertResult1.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId1);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
@@ -1102,7 +1318,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1.Value);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId1.Value);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
 
@@ -1135,7 +1351,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId1 = productInsertResult1.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId1);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId1);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
 
@@ -1168,7 +1384,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId.Value);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId.Value);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImagesAndImageFileNameInfos(createRequest1);
 
@@ -1203,8 +1419,8 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductImageCreateRequest createRequest1 = GetCreateRequestWithImageData(productId);
-        ServiceProductImageCreateRequest createRequest2 = GetCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest1 = GetValidImageCreateRequestWithImageData(productId);
+        ServiceProductImageCreateRequest createRequest2 = GetValidImageCreateRequestWithImageData(productId);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult1 = _productImageService.InsertInAllImages(createRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productImageService.InsertInAllImages(createRequest2);
@@ -1281,7 +1497,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetValidFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -1341,7 +1557,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         int productId = productInsertResult.AsT0;
 
-        ServiceProductFirstImageCreateRequest createRequest = GetFirstImageCreateRequestWithImageData(productId);
+        ServiceProductFirstImageCreateRequest createRequest = GetValidFirstImageCreateRequestWithImageData(productId);
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> insertResult = _productImageService.InsertInFirstImages(createRequest);
 
@@ -1372,4 +1588,6 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         return true;
     }
+
+#pragma warning restore CA2211 // Non-constant fields should not be visible
 }
