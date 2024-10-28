@@ -5,39 +5,49 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using OneOf;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using OneOf.Types;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Services;
 
-public class ProductXmlToProductMappingService : IProductXmlToProductMappingService
+public class XmlProductToProductMappingService : IXmlProductToProductMappingService
 {
-    public ProductXmlToProductMappingService(
+    public XmlProductToProductMappingService(
         IProductCharacteristicService productCharacteristicService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IProductHtmlService productHtmlService)
     {
         _productCharacteristicService = productCharacteristicService;
         _httpClientFactory = httpClientFactory;
+        _productHtmlService = productHtmlService;
     }
 
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IProductHtmlService _productHtmlService;
 
-    public async Task<OneOf<Product, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xmlForImages)
+    public async Task<OneOf<Product, ValidationResult, InvalidXmlResult>> GetProductFromXmlDataAsync(XmlProduct product)
     {
-        uint productId = (uint)product.Id;
+        int productId = product.Id;
 
         OneOf<List<ProductProperty>, ValidationResult> resultOfPropsMapping
-            = GetPropertiesFromXmlData(product.XmlProductProperties, productId, (uint)product.Category.Id);
+            = GetPropertiesFromXmlData(product.XmlProductProperties, productId, product.Category.Id);
 
         List<Tuple<ProductImage, ProductImageFileNameInfo>> imagesAndImageFileNames
-            = await GetImagesAndImageFileNameInfosFromXmlDataAsync(product.ShopItemImages, xmlForImages, productId);
+            = await GetImagesAndImageFileNameInfosFromXmlDataAsync(product.ShopItemImages, productId);
 
         int? standardWarrantyTermMonths = GetWarrantyData(product.XmlProductProperties);
 
         if (resultOfPropsMapping.IsT1) return resultOfPropsMapping.AsT1;
 
+        OneOf<Manifacturer, ValidationResult> manifacturerResult = GetManifacturerFromXmlData(product.Manifacturer);
+
+        if (manifacturerResult.IsT1) return manifacturerResult.AsT1;
+
+
         (string? partNumber1, string? partNumber2) = GetPartNumbers(product);
 
-        return new Product()
+        Product output = new()
         {
             Id = product.Id,
             Name = product.Name,
@@ -53,11 +63,17 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
             CategoryId = (short?)product.Category.Id,
             Category = Map(product.Category),
             ManifacturerId = (short?)product.Manifacturer.Id,
-            Manifacturer = Map(product.Manifacturer),
+            Manifacturer = manifacturerResult.AsT0,
             SearchString = product.SearchString,
             PartNumber1 = partNumber1,
             PartNumber2 = partNumber2,
         };
+
+        OneOf<Success, InvalidXmlResult> alterImageHtmlDataResult = TryAlterImageHtmlData(output);
+
+        return alterImageHtmlDataResult.Match<OneOf<Product, ValidationResult, InvalidXmlResult>>(
+            success => output,
+            invalidXmlResult => invalidXmlResult);
     }
 
     private static int? GetWarrantyData(List<XmlProductProperty> xmlProductProperties)
@@ -67,8 +83,17 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
         if (standardWarrantyXmlData is null) return null;
 
+        int monthsWordStartIndex = standardWarrantyXmlData.IndexOf("Months", StringComparison.CurrentCultureIgnoreCase);
+
+        if (monthsWordStartIndex < 0)
+        {
+            monthsWordStartIndex = standardWarrantyXmlData.IndexOf("Месеца", StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        if (monthsWordStartIndex < 0) return null;
+
         ReadOnlySpan<char> standardWarrantyTermMonthsData
-            = standardWarrantyXmlData.AsSpan(0, standardWarrantyXmlData.IndexOf("Months") - 1);
+            = standardWarrantyXmlData.AsSpan(0, monthsWordStartIndex - 1);
 
         int? standardWarrantyTermMonths = int.Parse(standardWarrantyTermMonthsData);
 
@@ -91,19 +116,17 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
     private OneOf<List<ProductProperty>, ValidationResult> GetPropertiesFromXmlData(
         List<XmlProductProperty> properties,
-        uint productId,
-        uint categoryId)
+        int productId,
+        int categoryId)
     {
-        int productIdInt = (int)productId;
-
         List<ProductProperty> output = new();
 
         for (int i = 0; i < properties.Count; i++)
         {
             XmlProductProperty property = properties[i];
 
-            ProductCharacteristic? productCharacteristic
-                = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType((int)categoryId, property.Name, ProductCharacteristicTypeEnum.ProductCharacteristic);
+            ProductCharacteristic? productCharacteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
+                categoryId, property.Name, ProductCharacteristicTypeEnum.ProductCharacteristic);
 
             // RETURN AFTER TESTS ================================================================================================================
 
@@ -121,7 +144,7 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
                 DisplayOrder = orderParseSuccess ? order : null,
                 Value = property.Value,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
-                ProductId = productIdInt,
+                ProductId = productId,
             };
 
             output.Add(request);
@@ -130,32 +153,9 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         return output;
     }
 
-    private static List<ProductImageFileNameInfo> GetImageFileInfosFromXmlData(List<XmlShopItemImage> images, uint productId)
-    {
-        List<ProductImageFileNameInfo> output = new();
-
-        for (int i = 0; i < images.Count; i++)
-        {
-            XmlShopItemImage item = images[i];
-
-            ProductImageFileNameInfo imageFileNameInfo = new()
-            {
-                FileName = item.PictureUrl[(item.PictureUrl.LastIndexOf('/') + 1)..],
-                DisplayOrder = i + 1,
-                Active = true,
-                ProductId = (int)productId
-            };
-
-            output.Add(imageFileNameInfo);
-        }
-
-        return output;
-    }
-
     private async Task<List<Tuple<ProductImage, ProductImageFileNameInfo>>> GetImagesAndImageFileNameInfosFromXmlDataAsync(
         List<XmlShopItemImage> images,
-        string xml,
-        uint productId)
+        int productId)
     {
         List<Tuple<ProductImage, ProductImageFileNameInfo>> output = new();
 
@@ -165,12 +165,18 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         {
             XmlShopItemImage item = images[i];
 
+            if (string.IsNullOrWhiteSpace(item.PictureUrl)) continue;
+
+            int indexOfLastSlashInImageUrl = item.PictureUrl.LastIndexOf('/');
+
+            string imageFileName = item.PictureUrl[(indexOfLastSlashInImageUrl + 1)..];
+
             ProductImageFileNameInfo imageFileNameInfo = new()
             {
-                FileName = item.PictureUrl[(item.PictureUrl.LastIndexOf('/') + 1)..],
+                FileName = imageFileName,
                 DisplayOrder = i + 1,
                 Active = true,
-                ProductId = (int)productId
+                ProductId = productId
             };
 
             byte[]? imageData = null;
@@ -186,19 +192,43 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
 
             bool isImageIdParseSuccessful = int.TryParse(imageIdAsString, out int imageId);
 
+            string fileExtensionWithDot = Path.GetExtension(item.PictureUrl);
+
             ProductImage image = new()
             {
                 Id = isImageIdParseSuccessful ? imageId : 0,
                 ImageData = imageData,
-                ImageContentType = string.Concat("image/", item.PictureUrl.AsSpan(item.PictureUrl.LastIndexOf('.') + 1)),
-                HtmlData = xml,
-                ProductId = (int)productId,
+                ImageContentType = string.Concat("image/", fileExtensionWithDot[1..]),
+                ProductId = productId,
             };
 
             output.Add(new(image, imageFileNameInfo));
         }
 
         return output;
+    }
+
+    private OneOf<Success, InvalidXmlResult> TryAlterImageHtmlData(Product product)
+    {
+        if (product.Images is null
+            || product.Images.Count <= 0)
+        {
+            return new Success();
+        }
+
+        OneOf<string, InvalidXmlResult> gethtmlDataFromProductResult = _productHtmlService.TryGetHtmlFromProduct(product);
+
+        return gethtmlDataFromProductResult.Match<OneOf<Success, InvalidXmlResult>>(
+            htmlDataFromProduct =>
+            {
+                foreach (ProductImage image in product.Images)
+                {
+                    image.HtmlData = htmlDataFromProduct;
+                }
+
+                return new Success();
+            },
+            invalidXmlResult => invalidXmlResult);
     }
 
     private static Category Map(XmlShopItemCategory category)
@@ -211,11 +241,20 @@ public class ProductXmlToProductMappingService : IProductXmlToProductMappingServ
         };
     }
 
-    private static Manifacturer Map(XmlManifacturer manifacturer)
+    private static OneOf<Manifacturer, ValidationResult> GetManifacturerFromXmlData(XmlManifacturer manifacturer)
     {
-        return new()
+        if (manifacturer.Id is null)
         {
-            Id = manifacturer.Id,
+            ValidationResult validationResult = new();
+
+            validationResult.Errors.Add(new(nameof(XmlManifacturer.Id), "Id cannot be null."));
+
+            return validationResult;
+        }
+
+        return new Manifacturer()
+        {
+            Id = manifacturer.Id.Value,
             RealCompanyName = manifacturer.Name,
         };
     }

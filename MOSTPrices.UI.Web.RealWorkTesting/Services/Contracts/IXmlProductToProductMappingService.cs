@@ -4,7 +4,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using OneOf;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
-public interface IProductXmlToProductMappingService
+public interface IXmlProductToProductMappingService
 {
-    Task<OneOf<Product, ValidationResult>> GetProductFromXmlDataAsync(XmlProduct product, string xml);
+    Task<OneOf<Product, ValidationResult, InvalidXmlResult>> GetProductFromXmlDataAsync(XmlProduct product);
 }
