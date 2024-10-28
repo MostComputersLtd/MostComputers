@@ -11,8 +11,13 @@ using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
 using MOSTComputers.UI.Web.RealWorkTesting.Services;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Validation.Authentication;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts.ExternalXmlImport;
+using MOSTComputers.UI.Web.RealWorkTesting.Services.ExternalXmlImport;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHttpClient();
 
 builder.Services.AddMemoryCachingServices();
 
@@ -28,6 +33,8 @@ if (!Path.IsPathFullyQualified(productImageFolderFilePath!))
 }
 
 builder.Services.AddProductImageFileManagement(productImageFolderFilePath!);
+
+builder.Services.TryAddSingleton<IProductXmlProvidingService, ProductXmlProvidingService>();
 
 builder.Services.AddSingleton<IProductTableDataService, ProductTableDataService>();
 
@@ -56,6 +63,9 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(90);
+    options.SlidingExpiration = true;
+
     options.LoginPath = "/Accounts/Login";
 });
 
@@ -64,7 +74,10 @@ builder.Services.AddCustomIdentity(builder.Configuration.GetConnectionString("MO
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
-// Add services to the container.
+builder.Services.AddScoped<IXmlProductToProductMappingService, XmlProductToProductMappingService>();
+
+builder.Services.AddScoped<IImageComparisonDataService, ImageComparisonDataService>();
+
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
