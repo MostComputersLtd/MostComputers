@@ -1,15 +1,9 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace MOSTComputers.Utils.ProductImageFileNameUtils;
 public static class ProductImageAndFileNameRelationsUtils
 {
-    public static List<ImageAndImageFileNameRelation> GetImageDictionaryFromImagesAndImageFileInfos(
+    public static List<ImageAndImageFileNameRelation> GetImageRelationsFromImagesAndImageFileInfos(
         List<ProductImage>? productImages, List<ProductImageFileNameInfo>? productImageFileNameInfos)
     {
         List<ImageAndImageFileNameRelation> output = new();
