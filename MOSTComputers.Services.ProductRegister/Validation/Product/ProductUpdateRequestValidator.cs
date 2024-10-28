@@ -34,7 +34,7 @@ internal sealed class ProductUpdateRequestValidator : AbstractValidator<ProductU
             .WithMessage("Must not have more than one property corresponding to one characteristic");
 
         RuleForEach(x => x.Properties).SetValidator(x => new CurrentProductPropertyUpdateRequestValidator());
-        RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageCreateUpdateValidator());
+        RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageUpdateRequestValidator());
         RuleForEach(x => x.ImageFileNames).SetValidator(x => new CurrentProductImageFileNameInfoUpdateRequestValidator());
 
         RuleFor(x => x.CategoryId).Must(NullOrGreaterThanZero);  // not seen null
@@ -47,18 +47,18 @@ internal sealed class CurrentProductPropertyUpdateRequestValidator : AbstractVal
 {
     public CurrentProductPropertyUpdateRequestValidator()
     {
-        RuleFor(x => x.ProductCharacteristicId).Must(NullOrGreaterThanZero);
-        RuleFor(x => x.DisplayOrder).Must(NullOrGreaterThanOrEqualToZero);
+        RuleFor(x => x.ProductCharacteristicId).GreaterThan(0);
         RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
     }
 }
 
-internal sealed class CurrentProductImageCreateUpdateValidator : AbstractValidator<CurrentProductImageUpdateRequest>
+internal sealed class CurrentProductImageUpdateRequestValidator : AbstractValidator<CurrentProductImageUpdateRequest>
 {
-    public CurrentProductImageCreateUpdateValidator()
+    public CurrentProductImageUpdateRequestValidator()
     {
         RuleFor(x => x.HtmlData).Must(IsNotEmptyOrWhiteSpace);
-        RuleFor(x => x.ImageData).NotEmpty();
+        RuleFor(x => x).Must(x => (x.ImageData is not null) == (x.ImageContentType is not null));
+        RuleFor(x => x.ImageData).Must(IsNullOrNotEmpty);
         RuleFor(x => x.ImageContentType).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
@@ -67,7 +67,7 @@ internal sealed class CurrentProductImageFileNameInfoUpdateRequestValidator : Ab
 {
     public CurrentProductImageFileNameInfoUpdateRequestValidator()
     {
-        RuleFor(x => x.FileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
+        RuleFor(x => x.FileName).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
         RuleFor(x => x.ImageNumber).GreaterThan(0);
         RuleFor(x => x.NewDisplayOrder).Must(NullOrGreaterThanZero);
     }
