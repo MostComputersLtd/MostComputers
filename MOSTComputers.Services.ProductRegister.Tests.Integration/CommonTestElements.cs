@@ -7,11 +7,23 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using System.Numerics;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 internal static class CommonTestElements
 {
+    internal const int UseRequiredValuePlaceholder = -1366748;
+
+    internal static readonly byte[] LocalTestImageData = LoadLocalTestImageData();
+
+    private static byte[] LoadLocalTestImageData()
+    {
+        byte[] pictureData = File.ReadAllBytes("C:/Users/Dani/source/repos/MOSTComputers/MOSTComputers.Services.ProductRegister.Tests.Integration/Images/RND_PC_IMG.png");
+
+        return pictureData;
+    }
+
     internal static readonly ProductCreateRequest ValidProductCreateRequest = new()
     {
         Name = "Product name",
@@ -33,16 +45,16 @@ internal static class CommonTestElements
         PromotionExpireDate = null,
         AlertPictureId = null,
         AlertExpireDate = null,
-        PriceListDescription = null,
+        PriceListDescription = "dddddddd",
         PartNumber1 = "DF FKD@$ 343432 wdwfc",
         PartNumber2 = "123123/DD",
         SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
 
         Properties = new()
         {
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
         },
         Images = new List<CurrentProductImageCreateRequest>()
         {
@@ -86,9 +98,9 @@ internal static class CommonTestElements
 
         Properties = new()
         {
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
         },
         Images = new List<CurrentProductImageCreateRequest>()
         {
@@ -105,7 +117,7 @@ internal static class CommonTestElements
 
     internal static ProductCreateRequest GetValidProductCreateRequest(int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
-        return new()
+        ProductCreateRequest productCreateRequest = new()
         {
             Name = "Product name",
             AdditionalWarrantyPrice = 3.00M,
@@ -131,19 +143,14 @@ internal static class CommonTestElements
             PartNumber2 = "123123/DD",
             SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
 
-            Properties = new()
-            {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            },
+            Properties = new(),
             Images = new List<CurrentProductImageCreateRequest>()
             {
                 new()
                 {
                     ImageData = LocalTestImageData,
                     ImageContentType = "image/png",
-                    HtmlData = "<data></data>",
+                    HtmlData = null,
                     DateModified = DateTime.Now,
                 },
 
@@ -167,11 +174,23 @@ internal static class CommonTestElements
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
+
+        if (categoryId == 7)
+        {
+            productCreateRequest.Properties = new()
+            {
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productCreateRequest;
     }
 
     internal static ProductUpdateRequest GetValidProductUpdateRequest(int id, int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
-        return new()
+        ProductUpdateRequest productUpdateRequest = new()
         {
             Id = id,
             Name = "Product name",
@@ -198,12 +217,8 @@ internal static class CommonTestElements
             PartNumber2 = "123123/DD",
             SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
 
-            Properties = new()
-            {
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            },
+            Properties = new(),
+
             Images = new List<CurrentProductImageUpdateRequest>()
             {
                 new()
@@ -234,11 +249,24 @@ internal static class CommonTestElements
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
+
+        if (categoryId == 7)
+        {
+            productUpdateRequest.Properties = new()
+            {
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productUpdateRequest;
     }
 
-    internal static ProductUpdateRequest GetValidProductUpdateRequestWithNoImages(int id, int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
+    internal static ProductUpdateRequest GetValidProductUpdateRequestWithNoImages(
+        int id, int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
-        return new()
+        ProductUpdateRequest productUpdateRequest = new()
         {
             Id = id,
             Name = "Product name",
@@ -265,12 +293,8 @@ internal static class CommonTestElements
             PartNumber2 = "123123/DD",
             SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
 
-            Properties = new()
-            {
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            },
+            Properties = new(),
+
             Images = new List<CurrentProductImageUpdateRequest>()
             {
             },
@@ -282,26 +306,89 @@ internal static class CommonTestElements
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
+
+        if (categoryId == 7)
+        {
+            productUpdateRequest.Properties = new()
+            {
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productUpdateRequest;
+    }
+
+    internal static ProductFullUpdateRequest GetValidProductFullUpdateRequestWithNoImages(
+        int id, int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
+    {
+        ProductFullUpdateRequest productFullUpdateRequest = new()
+        {
+            Id = id,
+            Name = "Product name",
+            AdditionalWarrantyPrice = 3.00M,
+            AdditionalWarrantyTermMonths = 36,
+            StandardWarrantyPrice = "0.00",
+            StandardWarrantyTermMonths = 36,
+            DisplayOrder = 12324,
+            Status = ProductStatusEnum.Call,
+            PlShow = 0,
+            Price1 = 123.4M,
+            DisplayPrice = 123.99M,
+            Price3 = 122.5M,
+            Currency = CurrencyEnum.EUR,
+            RowGuid = Guid.NewGuid(),
+            PromotionId = null,
+            PromRid = null,
+            PromotionPictureId = null,
+            PromotionExpireDate = null,
+            AlertPictureId = null,
+            AlertExpireDate = null,
+            PriceListDescription = null,
+            PartNumber1 = "DF FKD@$ 343432 wdwfc",
+            PartNumber2 = "123123/DD",
+            SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+            PropertyUpsertRequests = new(),
+            ImageAndFileNameUpsertRequests = new(),
+
+            CategoryId = categoryId,
+            ManifacturerId = manifacturerId,
+            SubCategoryId = subCategoryId,
+        };
+
+        if (categoryId == 7)
+        {
+            productFullUpdateRequest.PropertyUpsertRequests = new()
+            {
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.AtTheTop },
+            };
+        }
+
+        return productFullUpdateRequest;
     }
 
     internal static ProductCreateRequest GetValidProductCreateRequestUsingRandomData(int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
-        int? additionalWarantyTermMonths = _randomWarranties[Random.Shared.Next(0, _randomWarranties.Count - 1)];
+        int? additionalWarantyTermMonths = _randomWarranties[Random.Shared.Next(0, _randomWarranties.Count)];
 
-        return new()
+        ProductCreateRequest productCreateRequest = new()
         {
             Name = RandomString(Random.Shared.Next(10, 29)),
             AdditionalWarrantyTermMonths = additionalWarantyTermMonths,
             AdditionalWarrantyPrice = (additionalWarantyTermMonths is not null) ? 3.00M : 0.00M,
             StandardWarrantyPrice = "0.00",
-            StandardWarrantyTermMonths = _randomWarranties[Random.Shared.Next(0, _randomWarranties.Count - 1)],
+            StandardWarrantyTermMonths = _randomWarranties[Random.Shared.Next(0, _randomWarranties.Count)],
             DisplayOrder = Random.Shared.Next(1_000, 50_000_000),
-            Status = (ProductStatusEnum)Random.Shared.Next(0, 2),
-            PlShow = Random.Shared.Next(0, 1),
+            Status = (ProductStatusEnum)Random.Shared.Next(0, 3),
+            PlShow = Random.Shared.Next(0, 2),
             Price1 = Random.Shared.NextInt64(100, 900_000) / 100,
             DisplayPrice = Random.Shared.NextInt64(100, 900_000) / 100,
             Price3 = Random.Shared.NextInt64(100, 900_000) / 100,
-            Currency = _randomCurrencies[Random.Shared.Next(0, _randomCurrencies.Count - 1)],
+            Currency = _randomCurrencies[Random.Shared.Next(0, _randomCurrencies.Count)],
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -314,12 +401,8 @@ internal static class CommonTestElements
             PartNumber2 = RandomString(Random.Shared.Next(1, 10)),
             SearchString = RandomString(Random.Shared.Next(10, 35)),
 
-            Properties = new()
-            {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            },
+            Properties = new(),
+
             Images = new List<CurrentProductImageCreateRequest>()
             {
                 new()
@@ -348,6 +431,18 @@ internal static class CommonTestElements
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
         };
+
+        if (categoryId == 7)
+        {
+            productCreateRequest.Properties = new()
+            {
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productCreateRequest;
     }
 
     private static readonly List<int?> _randomWarranties = new() { null, 12, 18, 36, 45, 72, 144 };
@@ -359,25 +454,18 @@ internal static class CommonTestElements
         const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
         return new string(Enumerable.Repeat(allowedChars, length)
-        .Select(s => s[Random.Shared.Next(s.Length - 1)])
+        .Select(s => s[Random.Shared.Next(s.Length)])
         .ToArray());
     }
 
-    internal static readonly byte[] LocalTestImageData = LoadLocalTestImageData();
-
-    private static byte[] LoadLocalTestImageData()
+    internal static ProductCreateRequest GetValidProductCreateRequestWithNoImages(
+        int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
-        string pictureFile = File.ReadAllText("C:/Users/Dani/source/repos/MOSTComputers/MOSTComputers.Services.ProductRegister.Tests.Integration/Images/RND_PC_IMG.png");
-
-        string dataToGetRidOf = "data:image/png;base64,";
-
-        return Encoding.ASCII.GetBytes(pictureFile.Replace(dataToGetRidOf, string.Empty));
-    }
-
-    internal static ProductCreateRequest GetValidProductCreateRequestWithNoImages(int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
-    {
-        return new()
+        ProductCreateRequest productCreateRequest = new()
         {
+            CategoryId = categoryId,
+            ManifacturerId = manifacturerId,
+            SubCategoryId = subCategoryId,
             Name = "Product name",
             AdditionalWarrantyPrice = 3.00M,
             AdditionalWarrantyTermMonths = 36,
@@ -402,23 +490,195 @@ internal static class CommonTestElements
             PartNumber2 = "123123/DD",
             SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
 
-            Properties = new()
-            {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, DisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            },
+            Properties = new(),
+
             Images = new List<CurrentProductImageCreateRequest>()
             {
             },
             ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
             {
             },
+        };
 
+        if (categoryId == 7)
+        {
+            productCreateRequest.Properties = new()
+            {
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productCreateRequest;
+    }
+
+    public static ProductCreateWithoutImagesInDatabaseRequest GetValidProductCreateWithoutImagesInDatabaseRequest(
+        int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
+    {
+        ProductCreateWithoutImagesInDatabaseRequest productCreateWithoutImagesInDatabaseRequest = new()
+        {
             CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
+            Name = "Product name",
+            AdditionalWarrantyPrice = 3.00M,
+            AdditionalWarrantyTermMonths = 36,
+            StandardWarrantyPrice = "0.00",
+            StandardWarrantyTermMonths = 36,
+            DisplayOrder = 12324,
+            Status = ProductStatusEnum.Call,
+            PlShow = 0,
+            Price1 = 123.4M,
+            DisplayPrice = 123.99M,
+            Price3 = 122.5M,
+            Currency = CurrencyEnum.EUR,
+            RowGuid = Guid.NewGuid(),
+            PromotionId = null,
+            PromRid = null,
+            PromotionPictureId = null,
+            PromotionExpireDate = null,
+            AlertPictureId = null,
+            AlertExpireDate = null,
+            PriceListDescription = "dddddddd",
+            PartNumber1 = "DF FKD@$ 343432 wdwfc",
+            PartNumber2 = "123123/DD",
+            SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+            Properties = new(),
+
+            ImageFileAndFileNameInfoUpsertRequests = new()
+            {
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = null,
+                    DisplayOrder = 1,
+                    Active = true,
+                },
+
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = null,
+                    DisplayOrder = 3,
+                    Active = false,
+                },
+
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = "custom_file_name",
+                    DisplayOrder = 2,
+                    Active = false,
+                },
+            }
         };
+
+        if (categoryId == 7)
+        {
+            productCreateWithoutImagesInDatabaseRequest.Properties = new()
+            {
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productCreateWithoutImagesInDatabaseRequest;
+    }
+
+    public static ProductUpdateWithoutImagesInDatabaseRequest GetValidProductUpdateWithoutImagesInDatabaseRequest(
+        int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
+    {
+        ProductUpdateWithoutImagesInDatabaseRequest productUpdateWithoutImagesInDatabaseRequest = new()
+        {
+            CategoryId = categoryId,
+            ManifacturerId = manifacturerId,
+            SubCategoryId = subCategoryId,
+            Name = "Product name",
+            AdditionalWarrantyPrice = 3.00M,
+            AdditionalWarrantyTermMonths = 36,
+            StandardWarrantyPrice = "0.00",
+            StandardWarrantyTermMonths = 36,
+            DisplayOrder = 12324,
+            Status = ProductStatusEnum.Call,
+            PlShow = 0,
+            Price1 = 123.4M,
+            DisplayPrice = 123.99M,
+            Price3 = 122.5M,
+            Currency = CurrencyEnum.EUR,
+            RowGuid = Guid.NewGuid(),
+            PromotionId = null,
+            PromRid = null,
+            PromotionPictureId = null,
+            PromotionExpireDate = null,
+            AlertPictureId = null,
+            AlertExpireDate = null,
+            PriceListDescription = "dddddddd",
+            PartNumber1 = "DF FKD@$ 343432 wdwfc",
+            PartNumber2 = "123123/DD",
+            SearchString = "SKDJK DNKMWKE DS256 34563 SAMSON",
+
+            PropertyUpsertRequests = new(),
+
+            ImageFileAndFileNameInfoUpsertRequests = new()
+            {
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = null,
+                    DisplayOrder = 1,
+                    Active = true,
+                },
+
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = null,
+                    DisplayOrder = 3,
+                    Active = false,
+                },
+
+                new ImageFileAndFileNameInfoUpsertRequest()
+                {
+                    ImageContentType = "image/png",
+                    ImageData = LocalTestImageData,
+                    OldFileName = null,
+                    RelatedImageId = null,
+                    CustomFileNameWithoutExtension = "custom_file_name",
+                    DisplayOrder = 2,
+                    Active = false,
+                },
+            }
+        };
+
+        if (categoryId == 7)
+        {
+            productUpdateWithoutImagesInDatabaseRequest.PropertyUpsertRequests = new()
+            {
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = -16, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            };
+        }
+
+        return productUpdateWithoutImagesInDatabaseRequest;
     }
 
     internal static readonly ServiceCategoryCreateRequest ValidCategoryCreateRequest = new()
@@ -446,7 +706,7 @@ internal static class CommonTestElements
         };
     }
 
-    internal static ServiceProductImageCreateRequest GetCreateRequestWithImageData(int productId)
+    internal static ServiceProductImageCreateRequest GetValidImageCreateRequestWithImageData(int productId)
     {
         return new()
         {
@@ -457,7 +717,7 @@ internal static class CommonTestElements
         };
     }
 
-    internal static ServiceProductFirstImageCreateRequest GetFirstImageCreateRequestWithImageData(int productId)
+    internal static ServiceProductFirstImageCreateRequest GetValidFirstImageCreateRequestWithImageData(int productId)
     {
         return new()
         {
