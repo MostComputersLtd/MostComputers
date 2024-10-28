@@ -22,10 +22,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         _categoryService = categoryService;
     }
 
-    private const int _useRequiredIdValue = -100;
-
-    private const string _useRequiredNameForUpdateValue = "Use required name for update";
-
+    private const string _useRequiredNameValue = "Use required name for update __>?<<<,,,.k";
+    private const string _invalidCharacteristicName = ".d,.v,,.xcmv,fglfgklfblvklf,,bb,vccxccv<<>>";
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly ICategoryService _categoryService;
 
@@ -1099,12 +1097,12 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         Assert.NotNull(id3);
         Assert.True(id3 > 0);
-
+        
         List<int> categoryIds = new() { (int)categoryId1, (int)categoryId2 };
 
         IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsInCategories = _productCharacteristicService.GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(categoryIds);
 
-        Assert.True(characteristicsInCategories.Count() == 2);
+        Assert.Equal(2, characteristicsInCategories.Count());
 
         List<ProductCharacteristic> group1 = characteristicsInCategories.Single(x => x.Key == categoryId1).ToList();
         List<ProductCharacteristic> group2 = characteristicsInCategories.Single(x => x.Key == categoryId2).ToList();
@@ -1306,6 +1304,100 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
     }
 
     [Fact]
+    public void GetById_ShouldSucceed_WhenInsertIsValid()
+    {
+        const string nameOfCreateRequest = "NAME";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? categoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
+
+        ProductCharacteristicCreateRequest validCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(validCreateRequest);
+
+        int? characteristicId = characteristicInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
+
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetById(characteristicId.Value);
+
+        Assert.NotNull(characteristic);
+
+        Assert.Equal(characteristicId, characteristic.Id);
+        Assert.Equal(validCreateRequest.CategoryId, characteristic.CategoryId);
+        Assert.Equal(validCreateRequest.Name, characteristic.Name);
+        Assert.Equal(validCreateRequest.Meaning, characteristic.Meaning);
+        Assert.Equal(validCreateRequest.LastUpdate, characteristic.LastUpdate);
+        Assert.Equal(validCreateRequest.Active, characteristic.Active);
+        Assert.Equal(validCreateRequest.DisplayOrder, characteristic.DisplayOrder);
+        Assert.Equal(validCreateRequest.PKUserId, characteristic.PKUserId);
+        Assert.Equal(validCreateRequest.KWPrCh, characteristic.KWPrCh);
+    }
+
+    [Fact]
+    public void GetById_ShouldFail_WhenIdIsInvalid()
+    {
+        const string nameOfCreateRequest = "NAME";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? categoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
+
+        ProductCharacteristicCreateRequest validCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(validCreateRequest);
+
+        int? characteristicId = characteristicInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
+
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetById(0);
+
+        Assert.Null(characteristic);
+    }
+
+    [Fact]
     public void GetByCategoryIdAndName_ShouldSucceed_WhenInsertIsValid()
     {
         const string nameOfCreateRequest = "NAME";
@@ -1485,10 +1577,175 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId - 1, nameOfCreateRequest);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName(categoryId.Value - 1, nameOfCreateRequest);
 
         Assert.Null(characteristic);
     }
+
+    [Fact]
+    public void GetByCategoryIdAndNameAndCharacteristicType_ShouldSucceed_WhenInsertIsValid()
+    {
+        const string nameOfCreateRequest = "NAME";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? categoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
+
+        ProductCharacteristicCreateRequest validCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(validCreateRequest);
+
+        int? characteristicId = characteristicInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(characteristicId);
+        Assert.True(characteristicId > 0);
+
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
+            categoryId.Value, nameOfCreateRequest, ProductCharacteristicTypeEnum.ProductCharacteristic);
+
+        Assert.NotNull(characteristic);
+
+        Assert.Equal(characteristicId, characteristic.Id);
+        Assert.Equal(validCreateRequest.CategoryId, characteristic.CategoryId);
+        Assert.Equal(validCreateRequest.Name, characteristic.Name);
+        Assert.Equal(validCreateRequest.Meaning, characteristic.Meaning);
+        Assert.Equal(validCreateRequest.LastUpdate, characteristic.LastUpdate);
+        Assert.Equal(validCreateRequest.Active, characteristic.Active);
+        Assert.Equal(validCreateRequest.DisplayOrder, characteristic.DisplayOrder);
+        Assert.Equal(validCreateRequest.PKUserId, characteristic.PKUserId);
+        Assert.Equal(validCreateRequest.KWPrCh, characteristic.KWPrCh);
+    }
+
+    [Fact]
+    public void GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenRecordDoesntExist()
+    {
+        const string nameOfCreateRequest = "NAME";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? categoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
+
+        ProductCharacteristicCreateRequest invalidCreateRequest = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest);
+
+        invalidCreateRequest.Meaning = "  ";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(invalidCreateRequest);
+
+        int? characteristicId = characteristicInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.Null(characteristicId);
+
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
+            categoryId.Value, nameOfCreateRequest, ProductCharacteristicTypeEnum.ProductCharacteristic);
+
+        Assert.Null(characteristic);
+    }
+
+    [Theory]
+    [MemberData(nameof(GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid_Data))]
+    public void GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid(
+        int categoryId, string characteristicName, ProductCharacteristicTypeEnum characteristicType)
+    {
+        const string nameOfCreateRequest = "NAME";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? newCategoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(newCategoryId);
+        Assert.True(newCategoryId > 0);
+
+        ProductCharacteristicCreateRequest invalidCreateRequest = GetValidCharacteristicCreateRequest((int)newCategoryId, nameOfCreateRequest);
+
+        invalidCreateRequest.Meaning = "  ";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult = _productCharacteristicService.Insert(invalidCreateRequest);
+
+        int? characteristicId = characteristicInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.Null(characteristicId);
+
+        if (categoryId == UseRequiredValuePlaceholder)
+        {
+            categoryId = newCategoryId.Value;
+        }
+
+        if (characteristicName == _useRequiredNameValue)
+        {
+            characteristicName = nameOfCreateRequest;
+        }
+
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
+            categoryId, characteristicName, characteristicType);
+
+        Assert.Null(characteristic);
+    }
+
+#pragma warning disable CA2211 // Non-constant fields should not be visible
+    public static TheoryData<int, string, ProductCharacteristicTypeEnum> GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid_Data = new()
+    {
+        { 0, _useRequiredNameValue, ProductCharacteristicTypeEnum.ProductCharacteristic },
+        { -1, _useRequiredNameValue, ProductCharacteristicTypeEnum.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, string.Empty, ProductCharacteristicTypeEnum.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, "    ", ProductCharacteristicTypeEnum.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, _invalidCharacteristicName, ProductCharacteristicTypeEnum.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, _useRequiredNameValue, ProductCharacteristicTypeEnum.SearchStringAbbreviation },
+    };
+#pragma warning restore CA2211 // Non-constant fields should not be visible
 
     [Fact]
     public void GetSelectionByCategoryIdAndNames_ShouldSucceed_WhenInsertIsValid()
@@ -1580,6 +1837,101 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.Equal(validCreateRequest2.KWPrCh, productCharacteristic2.KWPrCh);
     }
 
+    [Fact]
+    public void GetSelectionByCharacteristicIds_ShouldSucceed_WhenInsertsAreValid()
+    {
+        const string nameOfCreateRequest1 = "NAME_1";
+        const string nameOfCreateRequest2 = "NAME_2";
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> categoryInsertResult = _categoryService.Insert(ValidCategoryCreateRequest);
+
+        int? categoryId = categoryInsertResult.Match<int?>(
+            id =>
+            {
+                ScheduleCategoriesForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(categoryId);
+        Assert.True(categoryId > 0);
+
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest1);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, nameOfCreateRequest2);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
+
+        int? characteristicId1 = characteristicInsertResult1.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
+
+        int? characteristicId2 = characteristicInsertResult2.Match<int?>(
+            id =>
+            {
+                ScheduleProductCharacteristicsForDeleteAfterTest(id);
+
+                return id;
+            },
+            validationResult => null,
+            unexpectedFailureResult => null);
+
+        Assert.NotNull(characteristicId1);
+        Assert.True(characteristicId1 > 0);
+
+        Assert.NotNull(characteristicId2);
+        Assert.True(characteristicId2 > 0);
+
+        List<int> characteristicIds = new() { characteristicId1.Value, characteristicId2.Value };
+
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIds(characteristicIds);
+
+        Assert.Equal(2, characteristics.Count());
+
+        ProductCharacteristic productCharacteristic1 = characteristics.First(x => x.Id == characteristicId1);
+
+        ProductCharacteristic productCharacteristic2 = characteristics.First(x => x.Id == characteristicId2);
+
+        Assert.Equal(characteristicId1, productCharacteristic1.Id);
+        Assert.Equal(validCreateRequest1.CategoryId, productCharacteristic1.CategoryId);
+        Assert.Equal(validCreateRequest1.Name, productCharacteristic1.Name);
+        Assert.Equal(validCreateRequest1.Meaning, productCharacteristic1.Meaning);
+        Assert.Equal(validCreateRequest1.LastUpdate, productCharacteristic1.LastUpdate);
+        Assert.Equal(validCreateRequest1.Active, productCharacteristic1.Active);
+        Assert.Equal(validCreateRequest1.DisplayOrder, productCharacteristic1.DisplayOrder);
+        Assert.Equal(validCreateRequest1.PKUserId, productCharacteristic1.PKUserId);
+        Assert.Equal(validCreateRequest1.KWPrCh, productCharacteristic1.KWPrCh);
+
+        Assert.Equal(characteristicId2, productCharacteristic2.Id);
+        Assert.Equal(validCreateRequest2.CategoryId, productCharacteristic2.CategoryId);
+        Assert.Equal(validCreateRequest2.Name, productCharacteristic2.Name);
+        Assert.Equal(validCreateRequest2.Meaning, productCharacteristic2.Meaning);
+        Assert.Equal(validCreateRequest2.LastUpdate, productCharacteristic2.LastUpdate);
+        Assert.Equal(validCreateRequest2.Active, productCharacteristic2.Active);
+        Assert.Equal(validCreateRequest2.DisplayOrder, productCharacteristic2.DisplayOrder);
+        Assert.Equal(validCreateRequest2.PKUserId, productCharacteristic2.PKUserId);
+        Assert.Equal(validCreateRequest2.KWPrCh, productCharacteristic2.KWPrCh);
+    }
+
+    [Fact]
+    public void GetSelectionByCharacteristicIds_ShouldFail_WhenRecordsDontExist()
+    {
+        List<int> characteristicIds = new() { 0, -1 };
+
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIds(characteristicIds);
+
+        Assert.Empty(characteristics);
+    }
+
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedOrFail_InAnExpectedManner_Data))]
     public void Insert_ShouldSucceedOrFail_InAnExpectedManner(ProductCharacteristicCreateRequest createRequest, bool expected)
@@ -1601,7 +1953,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        if (createRequest.CategoryId == _useRequiredIdValue)
+        if (createRequest.CategoryId == UseRequiredValuePlaceholder)
         {
             createRequest.CategoryId = (int)categoryId;
         }
@@ -1645,19 +1997,17 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         }
     }
 
-    public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ProductCharacteristicCreateRequest, bool> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
-        new object[2]
         {
-            GetValidCharacteristicCreateRequest(_useRequiredIdValue),
+            GetValidCharacteristicCreateRequest(UseRequiredValuePlaceholder),
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicCreateRequest()
             {
-                CategoryId = _useRequiredIdValue,
+                CategoryId = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1668,11 +2018,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicCreateRequest()
             {
-                CategoryId = _useRequiredIdValue,
+                CategoryId = UseRequiredValuePlaceholder,
                 Name = "",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1683,11 +2032,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicCreateRequest()
             {
-                CategoryId = _useRequiredIdValue,
+                CategoryId = UseRequiredValuePlaceholder,
                 Name = "          ",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1698,11 +2046,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicCreateRequest()
             {
-                CategoryId = _useRequiredIdValue,
+                CategoryId = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "",
                 PKUserId = 91,
@@ -1713,11 +2060,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicCreateRequest()
             {
-                CategoryId = _useRequiredIdValue,
+                CategoryId = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "        ",
                 PKUserId = 91,
@@ -1765,7 +2111,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        if (updateRequest.Id == _useRequiredIdValue)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
             updateRequest.Id = (int)characteristicId;
         }
@@ -1781,6 +2127,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         if (expected)
         {
+            Assert.NotNull(updateRequest.Name);
+
             ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, updateRequest.Name);
 
             Assert.NotNull(characteristic);
@@ -1797,6 +2145,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         }
         else
         {
+            Assert.NotNull(validCreateRequest.Name);
+
             ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, validCreateRequest.Name);
 
             Assert.NotNull(characteristic);
@@ -1812,13 +2162,12 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         }
     }
 
-    public static List<object[]> UpdateById_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ProductCharacteristicByIdUpdateRequest, bool> UpdateById_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1829,11 +2178,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1844,11 +2192,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1859,11 +2206,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "          ",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1874,11 +2220,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "",
                 PKUserId = 91,
@@ -1889,11 +2234,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "        ",
                 PKUserId = 91,
@@ -1904,11 +2248,10 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByIdUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -1956,12 +2299,12 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        if (updateRequest.CategoryId == _useRequiredIdValue)
+        if (updateRequest.CategoryId == UseRequiredValuePlaceholder)
         {
             updateRequest.CategoryId = (int)categoryId;
         }
 
-        if (updateRequest.Name == _useRequiredNameForUpdateValue)
+        if (updateRequest.Name == _useRequiredNameValue)
         {
             updateRequest.Name = validCreateRequest.Name!;
         }
@@ -1993,6 +2336,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         }
         else
         {
+            Assert.NotNull(validCreateRequest.Name);
+
             ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, validCreateRequest.Name);
 
             Assert.NotNull(characteristic);
@@ -2008,14 +2353,13 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         }
     }
 
-    public static List<object[]> UpdateByNameAndCategoryId_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ProductCharacteristicByNameAndCategoryIdUpdateRequest, bool> UpdateByNameAndCategoryId_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -2026,12 +2370,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -2042,12 +2385,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             true
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -2058,12 +2400,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "          ",
                 Meaning = "Name of the object",
                 PKUserId = 91,
@@ -2074,12 +2415,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "NAME",
                 Meaning = "",
                 PKUserId = 91,
@@ -2090,12 +2430,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "NAME",
                 Meaning = "        ",
                 PKUserId = 91,
@@ -2106,12 +2445,11 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             false
         },
 
-        new object[2]
         {
             new ProductCharacteristicByNameAndCategoryIdUpdateRequest()
             {
-                CategoryId = _useRequiredIdValue,
-                Name = _useRequiredNameForUpdateValue,
+                CategoryId = UseRequiredValuePlaceholder,
+                Name = _useRequiredNameValue,
                 NewName = "NAME",
                 Meaning = "Name of the object",
                 PKUserId = 91,
