@@ -1,7 +1,10 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Validation.Product;
 using System.Numerics;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
 
@@ -197,6 +200,30 @@ internal static class CommonElements
         return true;
     }
 
+    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<LocalProductPropertyUpsertRequest>? propertyUpsertRequests)
+    {
+        if (propertyUpsertRequests is null
+            || propertyUpsertRequests.Count <= 0) return true;
+
+        List<int> productCharacteristicIds = new();
+
+        foreach (LocalProductPropertyUpsertRequest propertyUpsertRequest in propertyUpsertRequests)
+        {
+            int? productCharacteristicId = propertyUpsertRequest.ProductCharacteristicId;
+
+            if (productCharacteristicId is null) continue;
+
+            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            {
+                return false;
+            }
+
+            productCharacteristicIds.Add(productCharacteristicId.Value);
+        }
+
+        return true;
+    }
+
     internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<CurrentProductPropertyUpdateRequest>? propertyCreateRequests)
     {
         if (propertyCreateRequests is null
@@ -219,6 +246,193 @@ internal static class CommonElements
         }
 
         return true;
+    }
+
+    public static bool DoesNotHaveImagesWithTheSameId(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
+    {
+        if (imageAndImageFileNameUpsertRequests is null
+            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
+
+        List<int> imageIds = new();
+
+        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
+        {
+            int? imageId = imageAndImageFileNameUpsertRequest.ProductImageUpsertRequest?.OriginalImageId;
+
+            if (imageId is null) continue;
+
+            if (imageIds.Contains(imageId.Value))
+            {
+                return false;
+            }
+
+            imageIds.Add(imageId.Value);
+        }
+
+        return true;
+    }
+
+    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameImageId(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
+    {
+        if (imageFileAndFileNameInfoUpsertRequests is null
+            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
+
+        List<int> imageIds = new();
+
+        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
+        {
+            int? imageId = imageFileAndFileNameInfoUpsertRequest?.RelatedImageId;
+
+            if (imageId is null) continue;
+
+            if (imageIds.Contains(imageId.Value))
+            {
+                return false;
+            }
+
+            imageIds.Add(imageId.Value);
+        }
+
+        return true;
+    }
+
+    public static bool DoesNotHaveImageFileNamesWithTheSameImageNumber(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
+    {
+        if (imageAndImageFileNameUpsertRequests is null
+            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
+
+        List<int> imageFileNameImageNumbers = new();
+
+        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
+        {
+            int? originalImageNumber = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
+
+            if (originalImageNumber is null) continue;
+
+            if (imageFileNameImageNumbers.Contains(originalImageNumber.Value))
+            {
+                return false;
+            }
+
+            imageFileNameImageNumbers.Add(originalImageNumber.Value);
+        }
+
+        return true;
+    }
+    
+    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameOldFileName(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
+    {
+        if (imageFileAndFileNameInfoUpsertRequests is null
+            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
+
+        List<string> imageFileNameImageNumbers = new();
+
+        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
+        {
+            string? oldFileName = imageFileAndFileNameInfoUpsertRequest?.OldFileName;
+
+            if (oldFileName is null) continue;
+
+            if (imageFileNameImageNumbers.Contains(oldFileName))
+            {
+                return false;
+            }
+
+            imageFileNameImageNumbers.Add(oldFileName);
+        }
+
+        return true;
+    }
+
+    public static bool DoesNotHaveImageFileNamesWithTheSameDisplayOrder(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
+    {
+        if (imageAndImageFileNameUpsertRequests is null
+            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
+
+        List<int> imageFileNameDisplayOrders = new();
+
+        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
+        {
+            int? displayOrder = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.NewDisplayOrder;
+
+            if (displayOrder is null) continue;
+
+            if (imageFileNameDisplayOrders.Contains(displayOrder.Value))
+            {
+                return false;
+            }
+
+            imageFileNameDisplayOrders.Add(displayOrder.Value);
+        }
+
+        return true;
+    }
+
+    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameDisplayOrder(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
+    {
+        if (imageFileAndFileNameInfoUpsertRequests is null
+            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
+
+        List<int> imageFileNameDisplayOrders = new();
+
+        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
+        {
+            int? displayOrder = imageFileAndFileNameInfoUpsertRequest?.DisplayOrder;
+
+            if (displayOrder is null) continue;
+
+            if (imageFileNameDisplayOrders.Contains(displayOrder.Value))
+            {
+                return false;
+            }
+
+            imageFileNameDisplayOrders.Add(displayOrder.Value);
+        }
+
+        return true;
+    }
+
+    public static bool DoesNotHaveImageFileNamesWithOutOfBoundsDisplayOrder(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
+    {
+        if (imageAndImageFileNameUpsertRequests is null
+            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
+
+        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
+        {
+            int? displayOrder = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.NewDisplayOrder;
+
+            if (displayOrder is not null
+                && displayOrder > imageAndImageFileNameUpsertRequests.Count) return false;
+        }
+
+        return true;
+    }
+
+    internal static bool IsContentTypeValidAndSupported(string contentType)
+    {
+        string? fileExtension = GetImageFileExtensionFromContentType(contentType);
+
+        if (fileExtension is null) return false;
+
+        return true;
+    }
+
+    internal static bool FileNameLengthIsLessThanMaxLength(string fileName, int maxLength)
+    {
+        return fileName.Length < maxLength;
+    }
+
+    internal static bool FileNameLengthIsLessThanMaxLength(string? fileNameWithoutExtension, string contentType, int maxLength)
+    {
+        if (fileNameWithoutExtension is null) return true;
+
+        string? fileExtension = GetImageFileExtensionFromContentType(contentType);
+
+        if (fileExtension is null) return false;
+
+        string fullFileName = $"{fileNameWithoutExtension}.{fileExtension}";
+
+        return fullFileName.Length < maxLength;
     }
 
     public static List<int> RemoveValuesSmallerThanNumber(IEnumerable<int> intList, int value)
