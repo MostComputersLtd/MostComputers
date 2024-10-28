@@ -29,9 +29,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         _categoryService = categoryService;
     }
 
-    private const int _useRequiredValue = -100;
-
-    private const string _useRequiredNameForUpdateValue = "Use required name for update";
+    private const string _useRequiredNameForUpdateValue = "Use required name for update /.//,?.,";
 
     private readonly IProductPropertyService _productPropertyService;
     private readonly IProductCharacteristicService _productCharacteristicService;
@@ -85,7 +83,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         ProductId = productId,
         ProductCharacteristicId = characteristicId,
         Value = value,
-        DisplayOrder = 12,
+        CustomDisplayOrder = 12,
         XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
     };
 
@@ -95,7 +93,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         ProductId = productId,
         ProductCharacteristicName = characteristicName,
         Value = value,
-        DisplayOrder = 12,
+        CustomDisplayOrder = 12,
         XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
     };
 
@@ -165,7 +163,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId1
         && x.Characteristic == characteristicName1
         && x.Value == propertyCreateRequest1.Value
-        && x.DisplayOrder == propertyCreateRequest1.DisplayOrder
+        && x.DisplayOrder == propertyCreateRequest1.CustomDisplayOrder
         && x.XmlPlacement == propertyCreateRequest1.XmlPlacement);
 
         Assert.Contains(propsInProduct, x =>
@@ -173,7 +171,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId2
         && x.Characteristic == characteristicName2
         && x.Value == propertyCreateRequest2.Value
-        && x.DisplayOrder == propertyCreateRequest2.DisplayOrder
+        && x.DisplayOrder == propertyCreateRequest2.CustomDisplayOrder
         && x.XmlPlacement == propertyCreateRequest2.XmlPlacement);
     }
 
@@ -232,7 +230,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId
         && x.Characteristic == characteristicName1
         && x.Value == propertyCreateRequest1.Value
-        && x.DisplayOrder == propertyCreateRequest1.DisplayOrder
+        && x.DisplayOrder == propertyCreateRequest1.CustomDisplayOrder
         && x.XmlPlacement == propertyCreateRequest1.XmlPlacement);
 
         Assert.DoesNotContain(propsInProduct, x =>
@@ -240,7 +238,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == 0
         && x.Characteristic == characteristicName2
         && x.Value == propertyCreateRequest2.Value
-        && x.DisplayOrder == propertyCreateRequest2.DisplayOrder
+        && x.DisplayOrder == propertyCreateRequest2.CustomDisplayOrder
         && x.XmlPlacement == propertyCreateRequest2.XmlPlacement);
     }
 
@@ -366,7 +364,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId1
         && x.Characteristic == characteristicName1
         && x.Value == invalidPropertyCreateRequest1.Value
-        && x.DisplayOrder == invalidPropertyCreateRequest1.DisplayOrder
+        && x.DisplayOrder == invalidPropertyCreateRequest1.CustomDisplayOrder
         && x.XmlPlacement == invalidPropertyCreateRequest1.XmlPlacement);
 
         Assert.DoesNotContain(propsInProduct, x =>
@@ -374,7 +372,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId2
         && x.Characteristic == characteristicName2
         && x.Value == invalidPropertyCreateRequest2.Value
-        && x.DisplayOrder == invalidPropertyCreateRequest2.DisplayOrder
+        && x.DisplayOrder == invalidPropertyCreateRequest2.CustomDisplayOrder
         && x.XmlPlacement == invalidPropertyCreateRequest2.XmlPlacement);
     }
 
@@ -433,7 +431,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         Assert.Equal((int)characteristicId, property.ProductCharacteristicId);
         Assert.Equal(characteristicName, property.Characteristic);
         Assert.Equal(propertyCreateRequest.Value, property.Value);
-        Assert.Equal(propertyCreateRequest.DisplayOrder, property.DisplayOrder);
+        Assert.Equal(propertyCreateRequest.CustomDisplayOrder, property.DisplayOrder);
         Assert.Equal(propertyCreateRequest.XmlPlacement, property.XmlPlacement);
     }
 
@@ -609,12 +607,12 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductId = (int)productId;
         }
 
-        if (createRequest.ProductCharacteristicId == _useRequiredValue)
+        if (createRequest.ProductCharacteristicId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductCharacteristicId = (int)characteristicId;
         }
@@ -626,7 +624,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
 
         Assert.Equal(expected, property is not null);
 
@@ -638,69 +636,108 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             Assert.Equal((int)characteristicId, property.ProductCharacteristicId);
             Assert.Equal(characteristicName, property.Characteristic);
             Assert.Equal(createRequest.Value, property.Value);
-            Assert.Equal(createRequest.DisplayOrder, property.DisplayOrder);
+            Assert.Equal(createRequest.CustomDisplayOrder ?? characteristicCreateRequest.DisplayOrder, property.DisplayOrder);
             Assert.Equal(createRequest.XmlPlacement, property.XmlPlacement);
         }
     }
 
-    public static readonly List<object[]> InsertWithCharacteristicId_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static readonly TheoryData<ProductPropertyByCharacteristicIdCreateRequest, bool> InsertWithCharacteristicId_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetValidCreateRequestById(_useRequiredValue, _useRequiredValue, "VAL_UPDATED"),
+            GetValidCreateRequestById(UseRequiredValuePlaceholder, UseRequiredValuePlaceholder, "VAL_UPDATED"),
             true
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicIdCreateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPDATED",
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyByCharacteristicIdCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPDATED",
+                CustomDisplayOrder = -12,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyByCharacteristicIdCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
                 Value = "",
-                DisplayOrder = 12,
+                CustomDisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicIdCreateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = string.Empty,
-                DisplayOrder = 12,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "                ",
+                CustomDisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicIdCreateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = "VAL_UPD",
-                DisplayOrder = 0,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "Longer than 200 characters: SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS" +
+                "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+                CustomDisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicIdCreateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = "VAL_UPD",
-                DisplayOrder = -12,
+                ProductId = 0,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPDATED",
+                CustomDisplayOrder = 12,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            false
+        },
+
+        {
+            new ProductPropertyByCharacteristicIdCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = 0,
+                Value = "VAL_UPDATED",
+                CustomDisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
@@ -746,7 +783,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductId = (int)productId;
         }
@@ -775,111 +812,123 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             Assert.Equal((int)characteristicId, property.ProductCharacteristicId);
             Assert.Equal(characteristicName, property.Characteristic);
             Assert.Equal(createRequest.Value, property.Value);
-            Assert.Equal(createRequest.DisplayOrder, property.DisplayOrder);
+            Assert.Equal(createRequest.CustomDisplayOrder ?? characteristicCreateRequest.DisplayOrder, property.DisplayOrder);
             Assert.Equal(createRequest.XmlPlacement, property.XmlPlacement);
         }
     }
 
-    public static readonly List<object[]> InsertWithCharacteristicName_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static readonly TheoryData<ProductPropertyByCharacteristicNameCreateRequest, bool> InsertWithCharacteristicName_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetValidCreateRequestByName(_useRequiredValue, _useRequiredNameForUpdateValue, "VAL_UPDATED"),
+            GetValidCreateRequestByName(UseRequiredValuePlaceholder, _useRequiredNameForUpdateValue, "VAL_UPDATED"),
             true
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicName = _useRequiredNameForUpdateValue,
+                Value = "VAL_UPD",
+                CustomDisplayOrder = 0,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyByCharacteristicNameCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicName = _useRequiredNameForUpdateValue,
+                Value = "VAL_UPD",
+                CustomDisplayOrder = -12,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyByCharacteristicNameCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicName = _useRequiredNameForUpdateValue,
+                Value = "VAL_UPD",
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyByCharacteristicNameCreateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
                 ProductCharacteristicName = "Memory size",
                 Value = "VAL_UPD",
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
+
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ProductCharacteristicName = string.Empty,
                 Value = "VAL_UPD",
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ProductCharacteristicName = "       ",
                 Value = "VAL_UPD",
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ProductCharacteristicName = _useRequiredNameForUpdateValue,
                 Value = string.Empty,
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 ProductCharacteristicName = _useRequiredNameForUpdateValue,
                 Value = "     ",
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyByCharacteristicNameCreateRequest()
             {
-                ProductId = _useRequiredValue,
+                ProductId = 0,
                 ProductCharacteristicName = _useRequiredNameForUpdateValue,
-                Value = "VAL_UPD",
-                DisplayOrder = 0,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
-            },
-
-            false
-        },
-
-        new object[2]
-        {
-            new ProductPropertyByCharacteristicNameCreateRequest()
-            {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicName = _useRequiredNameForUpdateValue,
-                Value = "VAL_UPD",
-                DisplayOrder = -12,
+                Value = "     ",
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
@@ -935,12 +984,12 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        if (updateRequest.ProductId == _useRequiredValue)
+        if (updateRequest.ProductId == UseRequiredValuePlaceholder)
         {
             updateRequest.ProductId = (int)productId;
         }
 
-        if (updateRequest.ProductCharacteristicId == _useRequiredValue)
+        if (updateRequest.ProductCharacteristicId == UseRequiredValuePlaceholder)
         {
             updateRequest.ProductCharacteristicId = (int)characteristicId;
         }
@@ -963,83 +1012,112 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         if (expected)
         {
             Assert.Equal(updateRequest.Value, property.Value);
-            Assert.Equal(updateRequest.DisplayOrder, property.DisplayOrder);
+            Assert.Equal(updateRequest.CustomDisplayOrder ?? characteristicCreateRequest.DisplayOrder, property.DisplayOrder);
             Assert.Equal(updateRequest.XmlPlacement, property.XmlPlacement);
         }
         else
         {
             Assert.Equal(createRequest.Value, property.Value);
-            Assert.Equal(createRequest.DisplayOrder, property.DisplayOrder);
+            Assert.Equal(createRequest.CustomDisplayOrder ?? characteristicCreateRequest.DisplayOrder, property.DisplayOrder);
             Assert.Equal(createRequest.XmlPlacement, property.XmlPlacement);
         }
     }
 
-    public static readonly List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static readonly TheoryData<ProductPropertyUpdateRequest, bool> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
             new ProductPropertyUpdateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
                 Value = "VAL_UPDATED",
-                DisplayOrder = 12,
+                CustomDisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             true
         },
 
-        new object[2]
         {
             new ProductPropertyUpdateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = "",
-                DisplayOrder = 12,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPD",
+                CustomDisplayOrder = 0,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPD",
+                CustomDisplayOrder = -12,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPD",
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            true
+        },
+
+        {
+            new ProductPropertyUpdateRequest()
+            {
+                ProductId = 0,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "VAL_UPD",
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyUpdateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = 0,
+                Value = "VAL_UPD",
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+            },
+
+            false
+        },
+
+        {
+            new ProductPropertyUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
                 Value = string.Empty,
-                DisplayOrder = 12,
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
             false
         },
 
-        new object[2]
         {
             new ProductPropertyUpdateRequest()
             {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = "VAL_UPD",
-                DisplayOrder = 0,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
-            },
-
-            false
-        },
-
-        new object[2]
-        {
-            new ProductPropertyUpdateRequest()
-            {
-                ProductId = _useRequiredValue,
-                ProductCharacteristicId = _useRequiredValue,
-                Value = "VAL_UPD",
-                DisplayOrder = -12,
+                ProductId = UseRequiredValuePlaceholder,
+                ProductCharacteristicId = UseRequiredValuePlaceholder,
+                Value = "      ",
                 XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             },
 
@@ -1384,7 +1462,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         && x.ProductCharacteristicId == characteristicId2
         && x.Characteristic == characteristicName2
         && x.Value == propertyCreateRequest2.Value
-        && x.DisplayOrder == propertyCreateRequest2.DisplayOrder
+        && x.DisplayOrder == propertyCreateRequest2.CustomDisplayOrder
         && x.XmlPlacement == propertyCreateRequest2.XmlPlacement);
     }
 }
