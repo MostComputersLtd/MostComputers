@@ -6,6 +6,7 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
+using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
@@ -35,8 +36,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         DisplayOrder = -12,
         Active = true
     };
-
-    private const int _useRequiredIdValue = -100;
 
     private readonly List<int> _manifacturerIdsToDelete = new();
 
@@ -215,15 +214,13 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ManifacturerCreateRequest, bool> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
-        new object[2]
         {
             _validCreateRequest,
             true
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -235,7 +232,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -247,7 +243,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -259,7 +254,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -271,7 +265,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -283,7 +276,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -295,7 +287,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -307,7 +298,6 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerCreateRequest()
             {
@@ -339,7 +329,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        if (updateRequest.Id == _useRequiredIdValue)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
             updateRequest.Id = (int)id;
         }
@@ -374,13 +364,12 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         }
     }
 
-    public static List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ManifacturerUpdateRequest, bool> Update_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
@@ -389,11 +378,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = "Еич Пи @",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
@@ -402,11 +390,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = null,
@@ -415,11 +402,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             true
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = string.Empty,
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
@@ -428,11 +414,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = "       ",
                 RealCompanyName = "HP@",
                 DisplayOrder = 12,
@@ -441,11 +426,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = null,
                 RealCompanyName = string.Empty,
                 DisplayOrder = 12,
@@ -454,11 +438,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = null,
                 RealCompanyName = "     ",
                 DisplayOrder = 12,
@@ -467,11 +450,10 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             false
         },
 
-        new object[2]
         {
             new ManifacturerUpdateRequest()
             {
-                Id = _useRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 BGName = null,
                 RealCompanyName = "HP@",
                 DisplayOrder = 0,

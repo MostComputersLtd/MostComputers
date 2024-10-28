@@ -26,8 +26,6 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
     private readonly IPromotionService _promotionService;
     private readonly IProductService _productService;
 
-    private const int _useRequiredValue = -100;
-
     private readonly List<int> _promotionsToRemoveProductIds = new();
 
     private void SchedulePromotionsForDeleteByProductIdAfterTest(params int[] ids)
@@ -325,7 +323,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(productIds);
 
-        Assert.True(promotions.Count() == 3);
+        Assert.Equal(3, promotions.Count());
 
         Assert.Contains(promotions, x =>
             ComparePromotionAndCreateRequest(validCreateRequest1, x));
@@ -667,7 +665,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        if (createRequest.ProductId == _useRequiredValue)
+        if (createRequest.ProductId == UseRequiredValuePlaceholder)
         {
             createRequest.ProductId = (int)productId;
         }
@@ -693,15 +691,13 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         }
     }
 
-    public static readonly List<object[]> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static readonly TheoryData<ServicePromotionCreateRequest, bool> Insert_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
-            GetValidPromotionCreateRequest(_useRequiredValue),
+            GetValidPromotionCreateRequest(UseRequiredValuePlaceholder),
             true
         },
 
-        new object[2]
         {
             new ServicePromotionCreateRequest()
             {
@@ -727,7 +723,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 Points = 2,
                 TimeStamp = null,
 
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 CampaignId = null,
                 RegistrationId = null,
                 PromotionVisualizationId = null,
@@ -735,7 +731,6 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServicePromotionCreateRequest()
             {
@@ -761,7 +756,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 Points = 2,
                 TimeStamp = null,
 
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 CampaignId = null,
                 RegistrationId = null,
                 PromotionVisualizationId = null,
@@ -791,7 +786,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        if (updateRequest.ProductId == _useRequiredValue)
+        if (updateRequest.ProductId == UseRequiredValuePlaceholder)
         {
             updateRequest.ProductId = (int)productId;
         }
@@ -807,7 +802,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         int promotionId = insertResult.AsT0;
 
-        if (updateRequest.Id == _useRequiredValue)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
             updateRequest.Id = promotionId;
         }
@@ -833,13 +828,12 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
         }
     }
 
-    public static readonly List<object[]> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
+    public static readonly TheoryData<ServicePromotionUpdateRequest, bool> Update_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
-        new object[2]
         {
             new ServicePromotionUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "2023_Q4",
                 Source = 1,
                 Type = 2,
@@ -862,7 +856,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 Points = 2,
                 TimeStamp = null,
 
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 CampaignId = null,
                 RegistrationId = null,
                 PromotionVisualizationId = null,
@@ -871,11 +865,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             true
         },
 
-        new object[2]
         {
             new ServicePromotionUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = string.Empty,
                 Source = 1,
                 Type = 2,
@@ -898,7 +891,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 Points = 2,
                 TimeStamp = null,
 
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 CampaignId = null,
                 RegistrationId = null,
                 PromotionVisualizationId = null,
@@ -907,11 +900,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServicePromotionUpdateRequest()
             {
-                Id = _useRequiredValue,
+                Id = UseRequiredValuePlaceholder,
                 Name = "    ",
                 Source = 1,
                 Type = 2,
@@ -934,7 +926,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
                 Points = 2,
                 TimeStamp = null,
 
-                ProductId = _useRequiredValue,
+                ProductId = UseRequiredValuePlaceholder,
                 CampaignId = null,
                 RegistrationId = null,
                 PromotionVisualizationId = null,

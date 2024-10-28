@@ -20,8 +20,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
     private readonly ICategoryService _categoryService;
 
-    private const int _insertRequiredIdValue = -100;
-
     private readonly ServiceCategoryCreateRequest _invalidCategoryCreateRequest = new()
     {
         Description = "     ",
@@ -145,7 +143,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
         Assert.True(category.DisplayOrder == ValidCategoryCreateRequest.DisplayOrder);
         Assert.True(category.ProductsUpdateCounter == ValidCategoryCreateRequest.ProductsUpdateCounter);
         Assert.True(category.ParentCategoryId == ValidCategoryCreateRequest.ParentCategoryId);
-        Assert.True(category.IsLeaf == false);
+        Assert.False(category.IsLeaf);
 
         //Assert.NotNull(category.RowGuid);
 
@@ -220,9 +218,9 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
         }
     }
 
-    public static List<object[]> Insert_ShouldSucceedOrFail_InExpectedManner_Data => new()
+    public static TheoryData<ServiceCategoryCreateRequest, bool> Insert_ShouldSucceedOrFail_InExpectedManner_Data => new()
     {
-        new object[2]
+        
         {
             new ServiceCategoryCreateRequest()
             {
@@ -233,8 +231,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             },
             true
         },
-
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -246,7 +242,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -258,7 +253,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-         new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -270,7 +264,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -282,7 +275,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -294,7 +286,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -306,7 +297,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -318,7 +308,6 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryCreateRequest()
             {
@@ -354,7 +343,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.NotNull(categoryInserted);
 
-        if (request.Id == _insertRequiredIdValue) request.Id = categoryInserted.Id;
+        if (request.Id == UseRequiredValuePlaceholder) request.Id = categoryInserted.Id;
 
         _categoryService.Update(request);
 
@@ -374,13 +363,12 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
         }
     }
 
-    public static List<object[]> Update_ShouldSucceedOrFail_InExpectedManner_Data => new()
+    public static TheoryData<ServiceCategoryUpdateRequest, bool> Update_ShouldSucceedOrFail_InExpectedManner_Data => new()
     {
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description",
                 DisplayOrder = 13123,
                 ProductsUpdateCounter = 0,
@@ -388,11 +376,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             true
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
                 DisplayOrder = 13123,
                 ProductsUpdateCounter = 0,
@@ -400,11 +387,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description",
                 DisplayOrder = -1,
                 ProductsUpdateCounter = 0,
@@ -412,11 +398,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-         new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description",
                 DisplayOrder = 0,
                 ProductsUpdateCounter = 0,
@@ -424,11 +409,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description",
                 DisplayOrder = 13123,
                 ProductsUpdateCounter = -1,
@@ -436,11 +420,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "description",
                 DisplayOrder = 0,
                 ProductsUpdateCounter = -1
@@ -448,11 +431,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "",
                 DisplayOrder = 13123,
                 ProductsUpdateCounter = 0,
@@ -460,11 +442,10 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             false
         },
 
-        new object[2]
         {
             new ServiceCategoryUpdateRequest()
             {
-                Id = _insertRequiredIdValue,
+                Id = UseRequiredValuePlaceholder,
                 Description = "         ",
                 DisplayOrder = 13123,
                 ProductsUpdateCounter = 0,
