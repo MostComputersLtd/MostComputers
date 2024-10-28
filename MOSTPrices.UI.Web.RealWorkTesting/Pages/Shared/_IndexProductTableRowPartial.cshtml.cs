@@ -18,6 +18,7 @@ public class IndexProductTableRowPartialModel
         IEnumerable<SelectListItem> productNewStatusSelectListItems,
         IEnumerable<SelectListItem> productXmlStatusSelectListItems,
         string? productFullWithXmlPopupContentId = null,
+        string? productFullHtmlBasedPopupContentId = null,
         string? productChangesPopupContentId = null,
         string? productImagesPopupContentId = null,
         string? productFirstImagePopupContentId = null)
@@ -33,6 +34,8 @@ public class IndexProductTableRowPartialModel
         ProductXmlStatusSelectListItems = productXmlStatusSelectListItems;
 
         ProductFullWithXmlPopupContentId = productFullWithXmlPopupContentId;
+        ProductFullHtmlBasedPopupContentId = productFullHtmlBasedPopupContentId;
+
         ProductChangesPopupContentId = productChangesPopupContentId;
         ProductImagesPopupContentId = productImagesPopupContentId;
         ProductFirstImagePopupContentId = productFirstImagePopupContentId;
@@ -45,6 +48,7 @@ public class IndexProductTableRowPartialModel
         IEnumerable<Category> allPossibleCategories,
         IEnumerable<Manifacturer> allPossibleManifacturers,
         string? productFullWithXmlPopupContentId = null,
+        string? productFullHtmlBasedPopupContentId = null,
         string? productChangesPopupContentId = null,
         string? productImagesPopupContentId = null,
         string? productFirstImagePopupContentId = null)
@@ -61,6 +65,8 @@ public class IndexProductTableRowPartialModel
         ProductXmlStatusSelectListItems = ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productData);
 
         ProductFullWithXmlPopupContentId = productFullWithXmlPopupContentId;
+        ProductFullHtmlBasedPopupContentId = productFullHtmlBasedPopupContentId;
+
         ProductChangesPopupContentId = productChangesPopupContentId;
         ProductImagesPopupContentId = productImagesPopupContentId;
         ProductFirstImagePopupContentId = productFirstImagePopupContentId;
@@ -77,7 +83,9 @@ public class IndexProductTableRowPartialModel
     public IEnumerable<SelectListItem> ProductXmlStatusSelectListItems { get; }
 
     public string? ProductFullWithXmlPopupContentId { get; }
+    public string? ProductFullHtmlBasedPopupContentId { get; }
     public string? ProductChangesPopupContentId { get; }
     public string? ProductImagesPopupContentId { get; }
     public string? ProductFirstImagePopupContentId { get; }
+    
 }
