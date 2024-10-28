@@ -11,9 +11,9 @@
     </td>
     
     <td class="hide-on-button-press">
-        <input id="@(Model.HtmlElementId)_NameInput" type="text"
-            asp-for="ProductDisplayData.Name" value="@Model.ProductDisplayData.Name"
-               data-for-product-property="@nameof(Model.ProductDisplayData.Name)" placeholder="-" />
+        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullHtmlBasedPopupData(@Model.ProductDisplayData.Id, '@Model.ProductFullHtmlBasedPopupContentId')">
+            @Model.ProductDisplayData.Name
+        </p>
     </td>
     
     <td class="hide-on-button-press">
@@ -193,7 +193,7 @@
         <button class="btn btn-outline-primary"
             onclick="saveProductWithoutSavingImagesInDAL(@Model.ProductDisplayData.Id,
                 'ProductChanges_modal_accept_button',
-                ['@(Model.HtmlElementId)_NameInput',
+                ['@(Model.HtmlElementId)__hiddenNameInput',
                 '@(Model.HtmlElementId)_AdditionalWarrantyPriceInput',
                 '@(Model.HtmlElementId)_AdditionalWarrantyTermMonthsInput',
                 '@(Model.HtmlElementId)_StandardWarrantyPriceInput',
@@ -257,7 +257,7 @@
         <button id="@(Model.HtmlElementId)_SaveButton" class="btn btn-outline-primary"
             onclick="saveProduct(@Model.ProductDisplayData.Id,
                 'ProductChanges_modal_accept_button',
-                ['@(Model.HtmlElementId)_NameInput',
+                ['@(Model.HtmlElementId)__hiddenNameInput',
                 '@(Model.HtmlElementId)_AdditionalWarrantyPriceInput',
                 '@(Model.HtmlElementId)_AdditionalWarrantyTermMonthsInput',
                 '@(Model.HtmlElementId)_StandardWarrantyPriceInput',
@@ -299,6 +299,9 @@
 </tr>
 
 <input id="@(Model.HtmlElementId)__hiddenProductIdInput" type="number" value="@Model.ProductDisplayData.Id" class="display-none" />
+
+<input id="@(Model.HtmlElementId)__hiddenNameInput" type="text" value="@Model.ProductDisplayData.Name"
+    data-for-product-property="@nameof(Model.ProductDisplayData.Name)" class="display-none" />
 
 <input id="@(Model.HtmlElementId)__hiddenProductStatusIdInput" type="number" value="@Model.ProductDisplayData.ProductWorkStatusesId"
     class="display-none" data-for-product-property="@nameof(Model.ProductDisplayData.ProductWorkStatusesId)" />
