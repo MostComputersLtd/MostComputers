@@ -56,43 +56,6 @@ function toggleFirstRows(shouldHide)
     this.sessionStorage.setItem(showProductMainDataKey, !shouldHide);
 }
 
-function addNewProduct(productTableBodyId, htmlElementId, tableIndex, productHighestIdPlusOneLabelId)
-{
-    const url = "/Index/" + "?handler=AddNewProduct" + "&htmlElementId=" + htmlElementId + "&tableIndex=" + tableIndex;
-
-    $.ajax({
-        type: "POST",
-        url: url,
-        contentType: "application/json",
-        data: null,
-        headers: {
-            RequestVerificationToken:
-                $('input:hidden[name="__RequestVerificationToken"]').val()
-        },
-    })
-        .done(function (result)
-        {
-            if (productTableBodyId == null || result == null) return;
-
-            var productTableBody = document.getElementById(productTableBodyId);
-
-            if (productTableBody == null) return;
-
-            productTableBody.innerHTML = result + productTableBody.innerHTML;
-
-            toggleFirstRowsBasedOnCachedData();
-
-            var productHighestIdPlusOneLabel = document.getElementById(productHighestIdPlusOneLabelId);
-
-            if (productHighestIdPlusOneLabel == null) return;
-
-            productHighestIdPlusOneLabel.textContent = parseInt(productHighestIdPlusOneLabel) + 1;
-        })
-        .fail(function (jqXHR, textStatus)
-        {
-        });
-}
-
 function addNewProductWithExistingProductData(
     productIdInputId,
     productHighestIdPlusOneLabelId,
@@ -283,7 +246,8 @@ function getOnlyProductWithId(
 
 function showProductXml(productId)
 {
-    fetch("/Index" + "?handler=Xml&productId=" + productId, {
+    fetch("/Index" + "?handler=Xml&productId=" + productId,
+    {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -578,6 +542,34 @@ function toggleReadyForImageInsertStatus(productId, htmlElementId, tableIndex, p
         });
 }
 
+async function alterAllImagesHtmlData(productId, popupUsage, rawHtmlDataDisplayTextareaId, productimagePopupContainerId = null)
+{
+    const rawHtmlDataDisplayTextarea = document.getElementById(rawHtmlDataDisplayTextareaId);
+
+    if (rawHtmlDataDisplayTextarea == null) return null;
+
+    const url = "/Index" + "?handler=AlterAllImagesHtmlData&productId=" + productId
+        + "&popupUsage=" + popupUsage;
+
+    var response = await fetch(url,
+    {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken':
+                $('input:hidden[name="__RequestVerificationToken"]').val()
+        },
+        body: JSON.stringify(rawHtmlDataDisplayTextarea.value)
+    });
+
+    var productimagePopupContainer = document.getElementById(productimagePopupContainerId);
+
+    if (response.status !== 200
+        || productimagePopupContainer == null) return;
+
+    productimagePopupContainer.innerHTML = await response.text();
+}
+
 function deleteProduct(productId, productTableRowId)
 {
     fetch("/Index/" + "?handler=DeleteProduct&productId=" + productId, {
@@ -665,6 +657,28 @@ function showProductFullWithXmlPopupData(productId, fullWithXmlpopupContentId)
                     $('#product_full_popup_carousel').carousel();
 
                     open_ProductFullWithXml_modal();
+                }
+            }
+        );
+    });
+}
+
+function showProductFullHtmlBasedPopupData(productId, fullWithXmlpopupContentId)
+{
+    return new Promise((resolve, reject) =>
+    {
+        $("#" + fullWithXmlpopupContentId).load("/Index?handler=GetProductFullHtmlBasedPopupPartialViewForProduct&productId=" + productId,
+            function (response, status, xhr)
+            {
+                if (status == "error")
+                {
+                    reject(xhr.statusText);
+                }
+                else
+                {
+                    resolve(response);
+
+                    open_ProductFullHtmlBased_modal();
                 }
             }
         );
