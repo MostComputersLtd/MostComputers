@@ -210,7 +210,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
             Assert.True(category.DisplayOrder == request.DisplayOrder);
             Assert.True(category.ProductsUpdateCounter == request.ProductsUpdateCounter);
             Assert.True(category.ParentCategoryId == request.ParentCategoryId);
-            Assert.True(category.IsLeaf == false);
+            Assert.False(category.IsLeaf);
 
             //Assert.NotNull(category.RowGuid);
 
