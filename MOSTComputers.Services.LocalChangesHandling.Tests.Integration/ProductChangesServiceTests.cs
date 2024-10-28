@@ -1,17 +1,17 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using System.Transactions;
 using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.LocalChangesHandling.Tests.Integration.CommonTestElements;
-using MOSTComputers.Models.Product.Models.ProductStatuses;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Tests.Integration;
 
@@ -244,7 +244,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         try
         {
-            using TransactionScope outerScope = new(TransactionScopeOption.Required, new TransactionOptions() { Timeout = new TimeSpan(0, 0, 0, 0, 5) });
+            using TransactionScope outerScope = new(TransactionScopeOption.Required, new TransactionOptions() { Timeout = new TimeSpan(0, 0, 0, 0, 0, 5) });
 
             handleInsertResult = _productChangesService.HandleInsert(changeDataForProduct);
 
@@ -266,7 +266,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     }
 
     [Fact]
-    public void HandleUpdate_ShouldSucceed_WhenConnectionToDBIsSuccessful_AndDataIsValid()
+    public async Task HandleUpdate_ShouldSucceed_WhenConnectionToDBIsSuccessful_AndDataIsValidAsync()
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
@@ -278,9 +278,10 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.NotNull(productIdFromInsertResult);
         Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
+        ProductFullUpdateRequest productUpdateRequest = GetValidProductFullUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult
+            = await _productService.UpdateProductFullAsync(productUpdateRequest);
 
         Assert.True(productUpdateResult.Match(
             success => true,
@@ -323,7 +324,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
     [Theory]
     [MemberData(nameof(HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid_Data))]
-    public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalid(LocalChangeData invalidChangeData)
+    public async Task HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButDataIsInvalidAsync(LocalChangeData invalidChangeData)
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
@@ -335,9 +336,10 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.NotNull(productIdFromInsertResult);
         Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
+        ProductFullUpdateRequest productUpdateRequest = GetValidProductFullUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult
+            = await _productService.UpdateProductFullAsync(productUpdateRequest);
 
         Assert.True(productUpdateResult.Match(
             success => true,
@@ -409,7 +411,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     };
 
     [Fact]
-    public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButProductIsAlreadyDeleted()
+    public async Task HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButProductIsAlreadyDeletedAsync()
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
@@ -421,9 +423,10 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.NotNull(productIdFromInsertResult);
         Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
+        ProductFullUpdateRequest productUpdateRequest = GetValidProductFullUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult
+            = await _productService.UpdateProductFullAsync(productUpdateRequest);
 
         Assert.True(productUpdateResult.Match(
             success => true,
@@ -460,7 +463,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     }
 
     [Fact]
-    public void HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButTransactionTimesOut()
+    public async Task HandleUpdate_ShouldFail_WhenConnectionToDBIsSuccessful_ButTransactionTimesOutAsync()
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequestWithNoImages);
 
@@ -472,9 +475,10 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         Assert.NotNull(productIdFromInsertResult);
         Assert.True(productIdFromInsertResult > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productIdFromInsertResult.Value);
+        ProductFullUpdateRequest productUpdateRequest = GetValidProductFullUpdateRequestWithNoImages(productIdFromInsertResult.Value);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult
+            = await _productService.UpdateProductFullAsync(productUpdateRequest);
 
         Assert.True(productUpdateResult.Match(
             success => true,
