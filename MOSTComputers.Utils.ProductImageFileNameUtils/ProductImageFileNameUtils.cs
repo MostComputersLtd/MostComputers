@@ -6,38 +6,15 @@ namespace MOSTComputers.Utils.ProductImageFileNameUtils;
 
 public static class ProductImageFileNameUtils
 {
-    public static OneOf<int, (int, int), False> GetImageIdOrTempIdFromImageFileName(string fileName)
+    public static string? GetTemporaryFileNameWithoutExtension(int productId, int imageNumber)
     {
-        int endIndexOfIdOfImageFromNameOfFileInfo = fileName.IndexOf('.');
+        if (productId <= 0
+            || imageNumber <= 0) return null;
 
-        if (endIndexOfIdOfImageFromNameOfFileInfo < 0) return new False();
-
-        string idOfImageAsString = fileName[..endIndexOfIdOfImageFromNameOfFileInfo];
-
-        bool succeededGettingIdFromFileInfoName = int.TryParse(idOfImageAsString, out int idOfImage);
-
-        if (succeededGettingIdFromFileInfoName) return idOfImage;
-
-        int indexOfSeparatorOfTempId = idOfImageAsString.IndexOf('-');
-
-        if (indexOfSeparatorOfTempId < 0) return new False();
-
-        string productIdPartOfTempIdAsString = idOfImageAsString[..indexOfSeparatorOfTempId];
-
-        bool isProductIdParsed = int.TryParse(productIdPartOfTempIdAsString, out int productId);
-
-        if (!isProductIdParsed) return new False();
-
-        string imageNumberPartOfTempIdAsString = idOfImageAsString[(indexOfSeparatorOfTempId + 1)..];
-
-        bool isImageNumberParsed = int.TryParse(imageNumberPartOfTempIdAsString, out int imageNumber);
-
-        if (!isImageNumberParsed) return new False();
-
-        return (productId, imageNumber);
+        return $"{productId}-{imageNumber}";
     }
 
-    public static string? GetTemporaryIdFromFileNameInfoAndContentType(ProductImageFileNameInfo productImageFileNameInfo, string imageContentType)
+    public static string? GetTemporaryFileNameFromFileNameInfoAndContentType(ProductImageFileNameInfo productImageFileNameInfo, string imageContentType)
     {
         if (productImageFileNameInfo.ProductId <= 0
             || productImageFileNameInfo.ImageNumber <= 0
@@ -48,6 +25,19 @@ public static class ProductImageFileNameUtils
         if (fileExtensionFromContentType is null) return null;
 
         return $"{productImageFileNameInfo.ProductId}-{productImageFileNameInfo.ImageNumber}.{fileExtensionFromContentType}";
+    }
+
+    public static string? GetTemporaryIdFromFileNameInfoAndContentType(int productId, int imageNumber, string imageContentType)
+    {
+        if (productId <= 0
+            || imageNumber <= 0
+            || string.IsNullOrWhiteSpace(imageContentType)) return null;
+
+        string? fileExtensionFromContentType = GetImageFileExtensionFromContentType(imageContentType);
+
+        if (fileExtensionFromContentType is null) return null;
+
+        return $"{productId}-{imageNumber}.{fileExtensionFromContentType}";
     }
 
     public static string? GetImageFileNameFromImageData(int imageId, string imageContentType)
