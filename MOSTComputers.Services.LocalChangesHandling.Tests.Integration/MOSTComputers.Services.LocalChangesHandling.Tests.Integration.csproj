@@ -25,7 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.LocalChangesHandling\MOSTComputers.Services.LocalChangesHandling.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
     <ProjectReference Include="..\MOSTComputers.Tests.Integration.Common\MOSTComputers.Tests.Integration.Common.csproj" />
   </ItemGroup>
 
