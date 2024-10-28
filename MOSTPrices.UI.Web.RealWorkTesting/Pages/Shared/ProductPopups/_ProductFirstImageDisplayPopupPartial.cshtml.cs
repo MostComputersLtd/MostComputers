@@ -1,5 +1,5 @@
+using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
 using MOSTComputers.Services.ProductImageFileManagement.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
