@@ -4,6 +4,7 @@ using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -199,7 +200,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.NotNull(productId3);
 
-        ServiceProductImageCreateRequest imageCreateRequest = GetCreateRequestWithImageData(productId1.Value);
+        ServiceProductImageCreateRequest imageCreateRequest = GetValidImageCreateRequestWithImageData(productId1.Value);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> productImageInsertResult = _productImageService.InsertInAllImages(imageCreateRequest);
 
@@ -306,7 +307,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
     }
 
     [Fact]
-    public void GetAllForOperationType_ShouldGetOnlyDataForItsGivenOperationType()
+    public async Task GetAllForOperationType_ShouldGetOnlyDataForItsGivenOperationTypeAsync()
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult1 = _productService.Insert(ValidProductCreateRequestWithNoImages);
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult2 = _productService.Insert(_invalidProductCreateRequest);
@@ -333,9 +334,10 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId3);
         Assert.True(productId3 > 0);
 
-        ProductUpdateRequest productUpdateRequest = GetValidProductUpdateRequestWithNoImages(productId1.Value);
+        ProductFullUpdateRequest productUpdateRequest = GetValidProductFullUpdateRequestWithNoImages(productId1.Value);
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult = _productService.Update(productUpdateRequest);
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> productUpdateResult
+            = await _productService.UpdateProductFullAsync(productUpdateRequest);
 
         Assert.True(productUpdateResult.Match(
             _ => true,
