@@ -1,7 +1,9 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils;
 
@@ -157,9 +159,9 @@ internal static class ProductMappingUtils
 
             Properties = product.Properties?.ConvertAll(x => new CurrentProductPropertyCreateRequest()
             {
-                ProductCharacteristicId = x.ProductCharacteristicId,
+                ProductCharacteristicId = x.ProductCharacteristicId ?? 0,
                 Value = x.Value,
-                DisplayOrder = x.DisplayOrder,
+                CustomDisplayOrder = x.DisplayOrder,
                 XmlPlacement = x.XmlPlacement,
             }),
 
@@ -203,6 +205,61 @@ internal static class ProductMappingUtils
             CategoryId = productToUpdate.CategoryId,
             ManifacturerId = productToUpdate.ManifacturerId,
             SubCategoryId = productToUpdate.SubCategoryId,
+        };
+    }
+
+    public static ImageAndImageFileNameUpsertRequest GetImageAndImageFileNameUpsertRequest(
+        ProductImage? productImage, ProductImageFileNameInfo? productImageFileNameInfo)
+    {
+        string? imageContentType = productImage?.ImageContentType;
+
+        if (imageContentType is null)
+        {
+            string? fileExtension = Path.GetExtension(productImageFileNameInfo?.FileName);
+
+            if (fileExtension is not null)
+            {
+                imageContentType = GetImageContentTypeFromFileExtension(fileExtension);
+            }
+        }
+
+        ProductImageUpsertRequest? productImageUpsertRequest = null;
+
+        if (productImage is not null)
+        {
+            productImageUpsertRequest = new()
+            {
+                OriginalImageId = (productImage.Id > 0) ? productImage.Id : null,
+                HtmlData = productImage.HtmlData,
+            };
+        }
+
+        ProductImageFileNameInfoUpsertRequest? productImageFileNameInfoUpsertRequest = null;
+
+        if (productImageFileNameInfo is not null)
+        {
+            int? newDisplayOrder = null;
+
+            if (productImageFileNameInfo.DisplayOrder is not null
+                && productImageFileNameInfo.DisplayOrder > 0)
+            {
+                newDisplayOrder = productImageFileNameInfo.DisplayOrder;
+            }
+
+            productImageFileNameInfoUpsertRequest = new()
+            {
+                OriginalImageNumber = (productImageFileNameInfo.ImageNumber > 0) ? productImageFileNameInfo.ImageNumber : null,
+                NewDisplayOrder = newDisplayOrder,
+                Active = productImageFileNameInfo.Active,
+            };
+        }
+
+        return new()
+        {
+            ImageContentType = imageContentType ?? string.Empty,
+            ImageData = productImage?.ImageData,
+            ProductImageUpsertRequest = productImageUpsertRequest,
+            ProductImageFileNameInfoUpsertRequest = productImageFileNameInfoUpsertRequest,
         };
     }
 }
