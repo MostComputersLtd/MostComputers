@@ -500,6 +500,20 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 NewDisplayOrder = 1000,
                 FileName = "12342.png",
                 Active = true,
+                ShouldUpdateDisplayOrder = true,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ImageNumber = UseRequiredValuePlaceholder,
+                NewDisplayOrder = 1000,
+                FileName = "12342.png",
+                Active = true,
+                ShouldUpdateDisplayOrder = false,
             },
             true
         },
@@ -511,6 +525,19 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 ImageNumber = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 2,
                 FileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ImageNumber = UseRequiredValuePlaceholder,
+                NewDisplayOrder = 2,
+                FileName = "12342.png",
+                ShouldUpdateDisplayOrder = false,
             },
             true
         },
@@ -521,7 +548,20 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 ProductId = UseRequiredValuePlaceholder,
                 ImageNumber = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 0,
-                FileName = "12342.png"
+                FileName = "12342.png",
+                ShouldUpdateDisplayOrder = false,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                ImageNumber = UseRequiredValuePlaceholder,
+                NewDisplayOrder = 0,
+                FileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -532,7 +572,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 ProductId = UseRequiredValuePlaceholder,
                 ImageNumber = 0,
                 NewDisplayOrder = 3,
-                FileName = "12342.png"
+                FileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -544,6 +585,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 ImageNumber = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 1000,
                 FileName = string.Empty,
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -556,6 +598,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 NewDisplayOrder = 1000,
                 FileName = "veryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy long " +
                 "imaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaage filename",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -566,7 +609,8 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 ProductId = 0,
                 ImageNumber = 3,
                 NewDisplayOrder = 1000,
-                FileName = "12342.png"
+                FileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -664,6 +708,20 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 NewDisplayOrder = 1000,
                 NewFileName = "12342.png",
                 Active = true,
+                ShouldUpdateDisplayOrder = true,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByFileNameUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                FileName = _useRequiredValuePlaceholder,
+                NewDisplayOrder = 1000,
+                NewFileName = "12342.png",
+                Active = true,
+                ShouldUpdateDisplayOrder = false,
             },
             true
         },
@@ -675,6 +733,19 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = _useRequiredValuePlaceholder,
                 NewDisplayOrder = 2,
                 NewFileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByFileNameUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                FileName = _useRequiredValuePlaceholder,
+                NewDisplayOrder = 2,
+                NewFileName = "12342.png",
+                ShouldUpdateDisplayOrder = false,
             },
             true
         },
@@ -686,6 +757,19 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = _useRequiredValuePlaceholder,
                 NewDisplayOrder = 0,
                 NewFileName = "12342.png",
+                ShouldUpdateDisplayOrder = false,
+            },
+            true
+        },
+
+        {
+            new ServiceProductImageFileNameInfoByFileNameUpdateRequest()
+            {
+                ProductId = UseRequiredValuePlaceholder,
+                FileName = _useRequiredValuePlaceholder,
+                NewDisplayOrder = 0,
+                NewFileName = "12342.png",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -697,6 +781,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = _useRequiredValuePlaceholder,
                 NewFileName = string.Empty,
                 NewDisplayOrder = 1000,
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -709,6 +794,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 NewDisplayOrder = 1000,
                 NewFileName = "veryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy long " +
                 "imaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaage filename",
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -720,6 +806,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = _useRequiredValuePlaceholder,
                 NewFileName = "12342.png",
                 NewDisplayOrder = 1000,
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -731,6 +818,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = string.Empty,
                 NewFileName = "12342.png",
                 NewDisplayOrder = 1000,
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
@@ -742,6 +830,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 FileName = "           ",
                 NewFileName = "12342.png",
                 NewDisplayOrder = 1000,
+                ShouldUpdateDisplayOrder = true,
             },
             false
         },
