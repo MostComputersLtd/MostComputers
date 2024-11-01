@@ -1,6 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models;
-using System.Text;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -8,6 +7,8 @@ using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using System.Numerics;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
@@ -19,9 +20,20 @@ internal static class CommonTestElements
 
     private static byte[] LoadLocalTestImageData()
     {
-        byte[] pictureData = File.ReadAllBytes("C:/Users/Dani/source/repos/MOSTComputers/MOSTComputers.Services.ProductRegister.Tests.Integration/Images/RND_PC_IMG.png");
+        byte[] pictureData = File.ReadAllBytes(Startup.TestingImageFileFullPath);
 
         return pictureData;
+    }
+
+    internal static byte[] GetImageDataEncoded(byte[] imageData)
+    {
+        using Image image = Image.Load(imageData);
+
+        using MemoryStream memoryStream = new();
+
+        image.Save(memoryStream, new PngEncoder());
+
+        return memoryStream.ToArray();
     }
 
     internal static readonly ProductCreateRequest ValidProductCreateRequest = new()
@@ -598,10 +610,11 @@ internal static class CommonTestElements
     }
 
     public static ProductUpdateWithoutImagesInDatabaseRequest GetValidProductUpdateWithoutImagesInDatabaseRequest(
-        int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
+        int productId, int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
     {
         ProductUpdateWithoutImagesInDatabaseRequest productUpdateWithoutImagesInDatabaseRequest = new()
         {
+            Id = productId,
             CategoryId = categoryId,
             ManifacturerId = manifacturerId,
             SubCategoryId = subCategoryId,
