@@ -1,14 +1,9 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 internal static class SuccessfulInsertAbstractions
@@ -37,7 +32,7 @@ internal static class SuccessfulInsertAbstractions
 
     public static int? InsertToDoLocalChangeAndGetIdOrNull(
         IToDoLocalChangesService toDoLocalChangesService,
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest)
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest)
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> toDoChangesInsertResult = toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest);
 
