@@ -11,7 +11,7 @@ internal class ProductImageFileNameInfoByFileNameUpdateRequestValidator
     {
         RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.FileName).Must(IsNotNullEmptyOrWhiteSpace).MaximumLength(50);
-        RuleFor(x => x.NewDisplayOrder).Must(NullOrGreaterThanZero);
+        RuleFor(x => x.NewDisplayOrder).Must((x, displayOrder) => IsDisplayOrderValidWhenNeeded(displayOrder, x.ShouldUpdateDisplayOrder));
         RuleFor(x => x.NewFileName).Must(IsNotEmptyOrWhiteSpace).MaximumLength(50);
     }
 }
