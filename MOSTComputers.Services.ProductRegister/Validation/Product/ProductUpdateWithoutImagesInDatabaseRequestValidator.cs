@@ -46,8 +46,8 @@ internal class ProductUpdateWithoutImagesInDatabaseRequestValidator : AbstractVa
         RuleFor(x => x.ImageFileAndFileNameInfoUpsertRequests).Must(DoesNotHaveImageFileUpsertRequestsWithTheSameDisplayOrder)
            .WithMessage("Must not have more than one request with the same display order.");
 
-        RuleFor(x => x.CategoryId).Must(NullOrGreaterThanZero);  // not seen null
-        RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
+        RuleFor(x => x.CategoryId).Must(categoryId => NullOrGreaterThanOrEqualTo(categoryId, -1));  // not seen null
+        RuleFor(x => x.ManifacturerId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);
     }
 }

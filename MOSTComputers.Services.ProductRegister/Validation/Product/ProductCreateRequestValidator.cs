@@ -36,8 +36,8 @@ internal sealed class ProductCreateRequestValidator : AbstractValidator<ProductC
         RuleForEach(x => x.Images).SetValidator(x => new CurrentProductImageCreateRequestValidator());
         RuleForEach(x => x.ImageFileNames).SetValidator(x => new CurrentProductImageFileNameInfoCreateRequestValidator());
 
-        RuleFor(x => x.CategoryId).Must(NullOrGreaterThanZero);  // not seen null
-        RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
+        RuleFor(x => x.CategoryId).Must(categoryId => NullOrGreaterThanOrEqualTo(categoryId, -1));  // not seen null
+        RuleFor(x => x.ManifacturerId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);
     }
 }

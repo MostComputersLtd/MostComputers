@@ -49,8 +49,8 @@ internal class ProductFullUpdateRequestValidator : AbstractValidator<ProductFull
         RuleFor(x => x.ImageAndFileNameUpsertRequests).Must(DoesNotHaveImageFileNamesWithOutOfBoundsDisplayOrder)
            .WithMessage("Must not have image file name with display order that is higher than all image file names.");
 
-        RuleFor(x => x.CategoryId).Must(NullOrGreaterThanZero);  // not seen null
-        RuleFor(x => x.ManifacturerId).Must(manifacturerId => NullOrGreaterThanOrEqualTo<short>(manifacturerId, -1));
+        RuleFor(x => x.CategoryId).Must(categoryId => NullOrGreaterThanOrEqualTo(categoryId, -1));  // not seen null
+        RuleFor(x => x.ManifacturerId).Must(NullOrGreaterThanZero);
         RuleFor(x => x.SubCategoryId).Must(NullOrGreaterThanOrEqualToZero);
     }
 }
