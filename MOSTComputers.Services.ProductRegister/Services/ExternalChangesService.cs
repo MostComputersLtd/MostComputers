@@ -57,7 +57,7 @@ internal sealed class ExternalChangesService : IExternalChangesService
 
     public bool DeleteByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum operationType)
     {
-        if (!string.IsNullOrWhiteSpace(tableName)
+        if (string.IsNullOrWhiteSpace(tableName)
             || elementId <= 0)
         {
             return false;
