@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+
 namespace MOSTComputers.UI.Web.RealWorkTesting.Utils;
 
 internal static class PageCommonElements
@@ -15,31 +17,31 @@ internal static class PageCommonElements
         IRazorViewEngine viewEngine,
         ITempDataProvider tempDataProvider)
     {
-        var actionContext = new ActionContext(pageModel.HttpContext, pageModel.RouteData, pageModel.PageContext.ActionDescriptor);
+        ActionContext actionContext = new(pageModel.HttpContext, pageModel.RouteData, pageModel.PageContext.ActionDescriptor);
 
-        var viewResult = viewEngine.FindView(actionContext, viewName, false);
+        ViewEngineResult viewResult = viewEngine.FindView(actionContext, viewName, false);
 
-        if (viewResult.View == null)
+        if (viewResult.View is null)
         {
             throw new ArgumentNullException($"{viewName} does not match any available view");
         }
 
-        using (var stringWriter = new StringWriter())
-        {
-            var viewContext = new ViewContext(
-                actionContext,
-                viewResult.View,
-                new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-                {
-                    Model = model
-                },
-                new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
-                stringWriter,
-                new HtmlHelperOptions()
-            );
+        using StringWriter stringWriter = new();
 
-            await viewResult.View.RenderAsync(viewContext);
-            return stringWriter.ToString();
-        }
+        ViewContext viewContext = new(
+            actionContext,
+            viewResult.View,
+            new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
+            {
+                Model = model
+            },
+            new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
+            stringWriter,
+            new HtmlHelperOptions()
+        );
+
+        await viewResult.View.RenderAsync(viewContext);
+
+        return stringWriter.ToString();
     }
 }
