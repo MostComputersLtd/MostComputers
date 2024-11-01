@@ -2,7 +2,6 @@
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Validation.Product;
 using System.Numerics;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
@@ -433,6 +432,16 @@ internal static class CommonElements
         string fullFileName = $"{fileNameWithoutExtension}.{fileExtension}";
 
         return fullFileName.Length < maxLength;
+    }
+
+    internal static bool IsDisplayOrderValidWhenNeeded(int? displayOrder, bool shouldUpdateDisplayOrder)
+    {
+        if (shouldUpdateDisplayOrder)
+        {
+            return NullOrGreaterThanZero(displayOrder);
+        }
+
+        return true;
     }
 
     public static List<int> RemoveValuesSmallerThanNumber(IEnumerable<int> intList, int value)
