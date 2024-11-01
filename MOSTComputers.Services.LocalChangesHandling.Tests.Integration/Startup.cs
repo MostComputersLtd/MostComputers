@@ -18,27 +18,37 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
 #pragma warning restore CA1822 // Mark members as static
     {
+        ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+        IHostEnvironment hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
+
+        int indexOfProjectName = hostEnvironment.ContentRootPath.IndexOf(hostEnvironment.ApplicationName);
+
+        if (indexOfProjectName < 0) throw new InvalidOperationException("Project name and root folder name do not match.");
+
+        int afterAppNameIndex = indexOfProjectName + hostEnvironment.ApplicationName.Length;
+
+        string projectFolderPath = hostEnvironment.ContentRootPath[..afterAppNameIndex];
+
         string productImageFolderFilePath = ImageDirectoryRelativePath;
 
         if (!Path.IsPathFullyQualified(productImageFolderFilePath))
         {
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
-
-            IHostEnvironment hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
-
-            int indexOfProjectName = hostEnvironment.ContentRootPath.IndexOf(hostEnvironment.ApplicationName);
-
-            if (indexOfProjectName < 0) throw new InvalidOperationException("Project name and root folder name do not match.");
-
-            int afterAppNameIndex = indexOfProjectName + hostEnvironment.ApplicationName.Length;
-
-            string projectFolderPath = hostEnvironment.ContentRootPath[..afterAppNameIndex];
-
             productImageFolderFilePath = Path.GetFullPath(productImageFolderFilePath, projectFolderPath)
                 .Replace('\\', '/');
-
-            ImageDirectoryFullPath = productImageFolderFilePath;
         }
+
+        ImageDirectoryFullPath = productImageFolderFilePath;
+
+        string testingImageFilePath = TestingImageFileRelativePath;
+
+        if (!Path.IsPathFullyQualified(testingImageFilePath))
+        {
+            testingImageFilePath = Path.GetFullPath(testingImageFilePath, projectFolderPath)
+                .Replace('\\', '/');
+        }
+
+        TestingImageFileFullPath = testingImageFilePath;
 
         services.AddProductImageFileManagement(productImageFolderFilePath);
 
@@ -52,7 +62,14 @@ public class Startup
 
     internal static string ConnectionString { get; } = GetConnectionString();
     internal static string ImageDirectoryRelativePath { get; } = GetImageDirectoryPath();
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     internal static string ImageDirectoryFullPath { get; private set; }
+
+    internal static string TestingImageFileRelativePath { get; } = GetTestingImageDataFilePath();
+    internal static string TestingImageFileFullPath { get; private set; }
+
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
     internal static readonly RespawnerOptions RespawnerOptionsToIgnoreTablesThatShouldntBeWiped = new()
     {
@@ -89,5 +106,17 @@ public class Startup
         System.Configuration.Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
 
         return config.AppSettings.Settings["ProductImageDirectory"].Value;
+    }
+
+    private static string GetTestingImageDataFilePath()
+    {
+        ExeConfigurationFileMap configMap = new()
+        {
+            ExeConfigFilename = "./App.config"
+        };
+
+        System.Configuration.Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
+
+        return config.AppSettings.Settings["TestingImageFilePath"].Value;
     }
 }
