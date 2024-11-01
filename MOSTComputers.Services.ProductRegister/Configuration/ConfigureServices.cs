@@ -16,6 +16,7 @@ using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductIma
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
@@ -35,6 +36,7 @@ using MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Validation.ProductStatuses;
 using MOSTComputers.Services.ProductRegister.Validation.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Validation.Promotion;
+using MOSTComputers.Services.ProductRegister.Validation.ToDoLocalChange;
 using static MOSTComputers.Services.DAL.Configuration.ConfigureServices;
 
 namespace MOSTComputers.Services.ProductRegister.Configuration;
@@ -172,6 +174,8 @@ public static class ConfigureServices
         services.AddScoped<IValidator<ProductWorkStatusesCreateRequest>, ProductWorkStatusesCreateRequestValidator>();
         services.AddScoped<IValidator<ProductWorkStatusesUpdateByIdRequest>, ProductWorkStatusesUpdateByIdRequestValidator>();
         services.AddScoped<IValidator<ProductWorkStatusesUpdateByProductIdRequest>, ProductWorkStatusesUpdateByProductIdRequestValidator>();
+
+        services.AddScoped<IValidator<ServiceToDoLocalChangeCreateRequest>, ServiceToDoLocalChangeCreateRequestValidator>();
 
         AddValidationForExternalXmlImport(services);
     }
