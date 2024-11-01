@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MOSTComputers.Services.Identity.DAL.Migrations
 {
-    [DbContext(typeof(AuthenticationDBContext))]
+    [DbContext(typeof(DefaultAuthenticationDBContext))]
     partial class AuthenticationDBContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

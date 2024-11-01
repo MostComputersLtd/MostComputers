@@ -9,19 +9,20 @@ using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.Identity.DAL;
 
-public sealed class AuthenticationDBContext : IdentityDbContext<IdentityUser>
+public sealed class DefaultAuthenticationDBContext : IdentityDbContext<IdentityUser>
 {
-    public AuthenticationDBContext()
+    public DefaultAuthenticationDBContext()
     {
         
     }
 
-    public AuthenticationDBContext(DbContextOptions options)
+    public DefaultAuthenticationDBContext(DbContextOptions options)
         : base(options)
     {
     }
 
     // For migration purposes (temporarely)
+
     //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     //{
     //    optionsBuilder.UseSqlServer("Data Source=(local);Initial Catalog=MOSTComputers.Services.Authentication;Integrated Security=True;Encrypt=False;");
