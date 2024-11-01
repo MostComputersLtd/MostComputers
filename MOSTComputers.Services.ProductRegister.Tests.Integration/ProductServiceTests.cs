@@ -4,15 +4,16 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductImageFileManagement.Services;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
-using MOSTComputers.Utils.ProductImageFileNameUtils;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
-using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageAndFileNameRelationsUtils;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
@@ -24,13 +25,17 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         IProductService productService,
         IProductCharacteristicService productCharacteristicService,
         IProductPropertyService productPropertyService,
-        IProductStatusesService productStatusesService)
+        IProductStatusesService productStatusesService,
+        IProductWorkStatusesService productWorkStatusesService,
+        IProductImageFileManagementService productImageFileManagementService)
         : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _productService = productService;
         _productCharacteristicService = productCharacteristicService;
         _productPropertyService = productPropertyService;
         _productStatusesService = productStatusesService;
+        _productWorkStatusesService = productWorkStatusesService;
+        _productImageFileManagementService = productImageFileManagementService;
     }
 
     private readonly IProductService _productService;
@@ -41,6 +46,9 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 #pragma warning restore IDE0052 // Remove unread private members
 
     private readonly IProductStatusesService _productStatusesService;
+    private readonly IProductWorkStatusesService _productWorkStatusesService;
+
+    private readonly IProductImageFileManagementService _productImageFileManagementService;
 
     public override async Task DisposeAsync()
     {
@@ -1325,7 +1333,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             Assert.True(insertedProduct.Images is null || insertedProduct.Images.Count == 0);
 
             Assert.True(CompareImageFileNamesAndImageFilesInRequestAndProduct(
-                productId.Value, createRequest.ImageFileAndFileNameInfoUpsertRequests, insertedProduct.ImageFileNames, insertedProduct.Images));
+                productId.Value, createRequest.ImageFileAndFileNameInfoUpsertRequests, insertedProduct.ImageFileNames));
         }
     }
 
@@ -1784,6 +1792,17 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
         int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
 
+        ProductWorkStatusesCreateRequest productStatusesCreateRequest = new()
+        {
+            ProductId = productId,
+            ProductNewStatus = ProductNewStatusEnum.ReadyForUse,
+            ProductXmlStatus = ProductXmlStatusEnum.ReadyForUse,
+            ReadyForImageInsert = false,
+        };
+
+        OneOf<int, ValidationResult, UnexpectedFailureResult> insertProductWorkStatusesResult
+            = _productWorkStatusesService.InsertIfItDoesntExist(productStatusesCreateRequest);
+
         if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
             updateRequest.Id = productId;
@@ -1812,7 +1831,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
             Assert.True(CompareImagesInRequestAndProduct(validProductCreateRequest.Images, updatedProduct.Images));
 
             Assert.True(CompareImageFileNamesAndImageFilesInRequestAndProduct(
-                productId, updateRequest.ImageFileAndFileNameInfoUpsertRequests, updatedProduct.ImageFileNames, updatedProduct.Images));
+                productId, updateRequest.ImageFileAndFileNameInfoUpsertRequests, updatedProduct.ImageFileNames));
         }
         else
         {
@@ -1827,7 +1846,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
     public static TheoryData<ProductUpdateWithoutImagesInDatabaseRequest, bool> UpdateProductAndUpdateImagesOnlyInDirectoryAsync_ShouldSucceedOrFail_InAnExpectedManner_Data = new()
     {
         {
-            GetValidProductUpdateWithoutImagesInDatabaseRequest(),
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(productId: UseRequiredValuePlaceholder),
             true
         },
 
@@ -1907,12 +1926,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         },
 
         {
-            GetValidProductUpdateWithoutImagesInDatabaseRequest(categoryId: -2),
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(productId: UseRequiredValuePlaceholder, categoryId: -2),
             false
         },
 
         {
-            GetValidProductUpdateWithoutImagesInDatabaseRequest(manifacturerId: 0),
+            GetValidProductUpdateWithoutImagesInDatabaseRequest(productId: UseRequiredValuePlaceholder, manifacturerId: 0),
             false
         },
 
@@ -2841,26 +2860,24 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
     private static bool CompareImageFileNamesAndImageFilesInRequestAndProduct(
         int productId,
-        List<ImageFileAndFileNameInfoUpsertRequest>? imageFileNameUpsertRequest,
-        List<ProductImageFileNameInfo>? imageFileNamesInObject,
-        List<ProductImage>? imagesInObject)
+        List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameUpsertRequests,
+        List<ProductImageFileNameInfo>? imageFileNamesInObject)
     {
-        if (imageFileNameUpsertRequest is null && imageFileNamesInObject is null) return true;
+        if (imageFileAndFileNameUpsertRequests is null && imageFileNamesInObject is null) return true;
 
-        if (imageFileNameUpsertRequest is null || imageFileNamesInObject is null) return false;
+        if (imageFileAndFileNameUpsertRequests is null || imageFileNamesInObject is null) return false;
 
-        if (imageFileNameUpsertRequest.Count != imageFileNamesInObject.Count) return false;
+        if (imageFileAndFileNameUpsertRequests.Count != imageFileNamesInObject.Count) return false;
 
-        List<ImageFileAndFileNameInfoUpsertRequest> orderedImageFileUpsertRequests = OrderImageFileAndFileNameInfoUpsertRequests(imageFileNameUpsertRequest);
+        List<ImageFileAndFileNameInfoUpsertRequest> orderedImageFileUpsertRequests
+            = OrderImageFileAndFileNameInfoUpsertRequests(imageFileAndFileNameUpsertRequests);
 
-        List<ImageAndImageFileNameRelation> orderedImageFileNamesInObject = GetImageRelationsFromImagesAndImageFileInfos(imagesInObject, imageFileNamesInObject)
-            .Where(x => x.ProductImageFileNameInfo is not null)
-            .ToList();
+        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = OrderImageFileNameInfos(imageFileNamesInObject);
 
         for (int i = 0; i < orderedImageFileUpsertRequests.Count; i++)
         {
             ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = orderedImageFileUpsertRequests[i];
-            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i].ProductImageFileNameInfo!;
+            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i]!;
 
             if (!CompareFileNameData(productId, orderedImageFileUpsertRequests, i, imageFileNameInObject)
                 || imageFileUpsertRequest.DisplayOrder != imageFileNameInObject.DisplayOrder
@@ -2871,9 +2888,20 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
 
             if (imageFileNameInObject.FileName is not null)
             {
-                string pathToImage = Path.Combine(Startup.ImageDirectoryFullPath, imageFileNameInObject.FileName);
+                bool isImageDataEqual = false;
 
-                if (!File.Exists(pathToImage)) return false;
+                string filePath = Path.Combine(Startup.ImageDirectoryFullPath, imageFileNameInObject.FileName);
+
+                if (File.Exists(filePath))
+                {
+                    byte[] imageData = File.ReadAllBytes(filePath);
+
+                    byte[] imageDataEncoded = GetImageDataEncoded(imageFileUpsertRequest.ImageData);
+
+                    isImageDataEqual = imageData.SequenceEqual(imageDataEncoded);
+                }
+
+                if (!isImageDataEqual) return false;
             }
         }
 
@@ -2994,8 +3022,10 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         ProductImageFileNameInfo productImageFileNameInfo)
     {
         ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest = upsertRequests[indexOfItem];
+
         ProductImageUpsertRequest? imageUpsertRequest = imageAndImageFileNameUpsertRequest.ProductImageUpsertRequest;
         ProductImageFileNameInfoUpsertRequest? fileNameInfoUpsertRequest = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest;
+
         string? fileName = productImageFileNameInfo.FileName;
 
         if (fileNameInfoUpsertRequest is null) return fileName is null;
@@ -3030,43 +3060,6 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         }
 
         return expectedFileName == fileName;
-    }
-
-    private static int? GetExpectedImageNumber(List<ImageAndImageFileNameUpsertRequest> upsertRequests, int indexOfItemToFindImageNumberFor)
-    {
-        if (indexOfItemToFindImageNumberFor < 0
-            || indexOfItemToFindImageNumberFor >= upsertRequests.Count) return null;
-
-        ImageAndImageFileNameUpsertRequest upsertRequest = upsertRequests[indexOfItemToFindImageNumberFor];
-
-        int? originalImageNumber = upsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
-
-        if (originalImageNumber is not null) return originalImageNumber;
-
-        List<ImageAndImageFileNameUpsertRequest> orderedUpsertRequests = OrderImageAndImageFileNameUpsertRequests(upsertRequests);
-
-        int? maxImageNumberAlreadyPresent = null;
-
-        foreach (ImageAndImageFileNameUpsertRequest localUpsertRequest in orderedUpsertRequests)
-        {
-            int? localOriginalImageNumber = localUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
-
-            if (localOriginalImageNumber is null
-                || localOriginalImageNumber < maxImageNumberAlreadyPresent) continue;
-
-            maxImageNumberAlreadyPresent = localOriginalImageNumber;
-        }
-
-        foreach (ImageAndImageFileNameUpsertRequest localUpsertRequest in orderedUpsertRequests)
-        {
-            if (localUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber is not null) continue;
-
-            maxImageNumberAlreadyPresent++;
-
-            if (upsertRequest == localUpsertRequest) return maxImageNumberAlreadyPresent;
-        }
-
-        return 1;
     }
 
     private static List<ImageFileAndFileNameInfoUpsertRequest> OrderImageFileAndFileNameInfoUpsertRequests(
@@ -3150,5 +3143,56 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
         }
 
         return output.ToList();
+    }
+
+    private static List<ProductImageFileNameInfo> OrderImageFileNameInfos(
+        List<ProductImageFileNameInfo> productImageFileNameInfos)
+    {
+        productImageFileNameInfos = new(productImageFileNameInfos);
+
+        ProductImageFileNameInfo[] output
+            = new ProductImageFileNameInfo[productImageFileNameInfos.Count];
+
+        for (int i = 0; i < productImageFileNameInfos.Count; i++)
+        {
+            ProductImageFileNameInfo imageFileNameInfo = productImageFileNameInfos[i];
+
+            if (imageFileNameInfo is null
+                || imageFileNameInfo.DisplayOrder is null) continue;
+
+            output[imageFileNameInfo.DisplayOrder.Value - 1] = imageFileNameInfo;
+
+            productImageFileNameInfos.Remove(imageFileNameInfo);
+
+            i--;
+        }
+
+        foreach (ProductImageFileNameInfo productImageFileNameInfo in productImageFileNameInfos
+            .OrderBy(x => GetImageIdFromFileName(x.FileName) ?? int.MaxValue))
+        {
+            for (int i = 0; i < output.Length; i++)
+            {
+                ProductImageFileNameInfo outputFileNameInfo = output[i];
+
+                if (outputFileNameInfo != null) continue;
+
+                output[i] = productImageFileNameInfo;
+
+                break;
+            }
+        }
+
+        return output.ToList();
+    }
+
+    private static int? GetImageIdFromFileName(string? fileName)
+    {
+        if (fileName is null) return null;
+
+        string imageIdPart = Path.GetFileNameWithoutExtension(fileName);
+
+        bool isParseSuccessful = int.TryParse(imageIdPart, out int imageId);
+
+        return isParseSuccessful ? imageId : null;
     }
 }
