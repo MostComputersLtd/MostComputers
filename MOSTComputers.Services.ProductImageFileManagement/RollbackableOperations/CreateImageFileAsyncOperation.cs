@@ -4,6 +4,9 @@ using MOSTComputers.Services.TransactionalFileManagement.Contracts;
 using OneOf;
 using OneOf.Types;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
 
