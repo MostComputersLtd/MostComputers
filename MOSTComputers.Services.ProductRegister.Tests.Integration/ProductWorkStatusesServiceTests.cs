@@ -961,7 +961,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
-            ProductId = 0,
+            ProductId = productId,
             ProductNewStatus = ProductNewStatusEnum.New,
             ProductXmlStatus = ProductXmlStatusEnum.NotReady,
             ReadyForImageInsert = true,
@@ -1101,7 +1101,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
-            ProductId = 0,
+            ProductId = productId,
             ProductNewStatus = ProductNewStatusEnum.New,
             ProductXmlStatus = ProductXmlStatusEnum.NotReady,
             ReadyForImageInsert = true,
@@ -2087,7 +2087,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByProductId(-1);
 
-        Assert.True(isDeleteByProductIdSuccessful);
+        Assert.False(isDeleteByProductIdSuccessful);
 
         ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByProductId(productId);
 
@@ -2159,7 +2159,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteById(-1);
 
-        Assert.True(isDeleteByProductIdSuccessful);
+        Assert.False(isDeleteByProductIdSuccessful);
 
         ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetById(workStatusId);
 
