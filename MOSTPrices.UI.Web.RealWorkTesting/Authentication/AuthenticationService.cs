@@ -51,7 +51,7 @@ internal class AuthenticationService(
         return await _signInManager.PasswordSignInAsync(loginRequest.Username, loginRequest.Password, false, false);
     }
 
-    public async Task LogoutAsync(LogInRequest loginRequest)
+    public async Task LogoutAsync()
     {
         await _signInManager.SignOutAsync();
     }
