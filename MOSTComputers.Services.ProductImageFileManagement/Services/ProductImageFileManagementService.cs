@@ -98,7 +98,9 @@ internal sealed class ProductImageFileManagementService : IProductImageFileManag
 
     public OneOf<byte[], FileDoesntExistResult, NotSupportedFileTypeResult> GetImage(string fullFileName)
     {
-        string fileExtension = GetFileExtensionWithoutDot(fullFileName);
+        string? fileExtension = GetFileExtensionWithoutDot(fullFileName);
+
+        if (fileExtension is null) return new FileDoesntExistResult() { FileName = fullFileName };
 
         AllowedImageFileType? allowedImageFileTypeData = GetAllowedImageFileTypeFromFileExtension(fileExtension);
 
@@ -125,7 +127,9 @@ internal sealed class ProductImageFileManagementService : IProductImageFileManag
 
     public async Task<OneOf<byte[], FileDoesntExistResult, NotSupportedFileTypeResult>> GetImageAsync(string fullFileName)
     {
-        string fileExtension = GetFileExtensionWithoutDot(fullFileName);
+        string? fileExtension = GetFileExtensionWithoutDot(fullFileName);
+
+        if (fileExtension is null) return new FileDoesntExistResult() { FileName = fullFileName };
 
         AllowedImageFileType? allowedImageFileTypeData = GetAllowedImageFileTypeFromFileExtension(fileExtension);
 
