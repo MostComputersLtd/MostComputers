@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 public class ToDoLocalChangeCreateRequest
 {
-    public string TableName { get; set; }
+    public required string TableName { get; set; }
     public int TableElementId { get; set; }
     public ChangeOperationTypeEnum OperationType { get; set; }
     public DateTime TimeStamp { get; set; }
