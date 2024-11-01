@@ -1,17 +1,15 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using OneOf;
-using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MOSTComputers.Services.Identity.Services;
 
-internal sealed class IdentityService(UserManager<IdentityUser> userManager) : IIdentityService
+internal sealed class IdentityService : IIdentityService
 {
-    private readonly UserManager<IdentityUser> _userManager = userManager;
+    public IdentityService(UserManager<IdentityUser> userManager)
+    {
+        _userManager = userManager;
+    }
+
+    private readonly UserManager<IdentityUser> _userManager;
 
     public async Task<IdentityResult> TryAddUserAsync(IdentityUser user, string password)
     {
