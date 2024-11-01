@@ -7,7 +7,7 @@ using OneOf;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.FilePathUtils;
 
-namespace MOSTComputers.UI.Web.Pages.Accounts;
+namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Accounts;
 
 public sealed class LoginModel : PageModel
 {
