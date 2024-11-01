@@ -15,6 +15,17 @@ internal static class CommonTestElements
     internal const string tableNameOfManifacturersTable = "Manufacturer";
     internal const string tableNameOfPromotionsTable = "Promotions";
 
+    internal static readonly byte[] LocalTestImageData = LoadLocalTestImageData();
+
+    private static byte[] LoadLocalTestImageData()
+    {
+        string pictureFile = File.ReadAllText(Startup.TestingImageFileFullPath);
+
+        string dataToGetRidOf = "data:image/png;base64,";
+
+        return Encoding.ASCII.GetBytes(pictureFile.Replace(dataToGetRidOf, string.Empty));
+    }
+
     internal static string GetFullTableName(string tableName)
     {
         return "dbo." + tableName;
@@ -412,17 +423,6 @@ internal static class CommonTestElements
         return new string(Enumerable.Repeat(allowedChars, length)
         .Select(s => s[Random.Shared.Next(s.Length - 1)])
         .ToArray());
-    }
-
-    internal static readonly byte[] LocalTestImageData = LoadLocalTestImageData();
-
-    private static byte[] LoadLocalTestImageData()
-    {
-        string pictureFile = File.ReadAllText("C:/Users/Dani/source/repos/MOSTComputers/MOSTComputers.Services.ProductRegister.Tests.Integration/Images/RND_PC_IMG.png");
-
-        string dataToGetRidOf = "data:image/png;base64,";
-
-        return Encoding.ASCII.GetBytes(pictureFile.Replace(dataToGetRidOf, string.Empty));
     }
 
     internal static ProductCreateRequest GetValidProductCreateRequestWithNoImages(int? categoryId = 7, short? manifacturerId = 12, int? subCategoryId = null)
