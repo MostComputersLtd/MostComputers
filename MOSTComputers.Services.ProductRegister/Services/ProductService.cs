@@ -210,7 +210,32 @@ internal sealed class ProductService : IProductService
 
     public Product? GetProductWithHighestId()
     {
-        return _productRepository.GetProductWithHighestId_WithManifacturerAndCategory();
+        Product? product = _productRepository.GetProductWithHighestId_WithManifacturerAndCategory();
+
+        if (product is null) return null;
+
+        if (product.Properties is null
+            || product.Properties.Count <= 0)
+        {
+            product.Properties = _productPropertyService.GetAllInProduct(product.Id)
+                .ToList();
+        }
+
+        if (product.ImageFileNames is null
+            || product.ImageFileNames.Count <= 0)
+        {
+            product.ImageFileNames = _productImageFileNameInfoService.GetAllInProduct(product.Id)
+                .ToList();
+        }
+
+        if (product.Images is null
+            || product.Images.Count <= 0)
+        {
+            product.Images = _productImageService.GetAllInProduct(product.Id)
+                .ToList();
+        }
+
+        return product;
     }
 
     public Product? GetProductFull(int productId)
@@ -898,7 +923,7 @@ internal sealed class ProductService : IProductService
                 CurrentProductPropertyUpdateRequest propUpdateRequest = new()
                 {
                     ProductCharacteristicId = productPropUpsertRequest.ProductCharacteristicId,
-                    CustomDisplayOrder = productPropUpsertRequest.CustomDisplayOrder,
+                    CustomDisplayOrder = newDisplayOrder,
                     Value = productPropUpsertRequest.Value,
                     XmlPlacement = productPropUpsertRequest.XmlPlacement,
                 };
@@ -1591,7 +1616,7 @@ internal sealed class ProductService : IProductService
                     = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(product.Id, htmlData);
 
                 return updateImagesHtmlDataResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-                    isSuccessful => isSuccessful ? new Success() : new UnexpectedFailureResult(),
+                    doAnyImagesExist => new Success(),
                     validationResult => validationResult,
                     unexpectedFailureResult => unexpectedFailureResult);
             },
