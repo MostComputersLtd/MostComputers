@@ -5,11 +5,13 @@ using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Requests.Promotion;
+using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using Riok.Mapperly.Abstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Mapping;
@@ -63,7 +65,10 @@ public sealed partial class ProductMapper
     [MapperIgnoreTarget(nameof(ProductImageFileNameInfoByFileNameUpdateRequest.Active))]
     internal partial ProductImageFileNameInfoByFileNameUpdateRequest Map(ServiceProductImageFileNameInfoByFileNameUpdateRequest serviceCategoryUpdateRequest);
 
-    
+    [MapperIgnoreTarget(nameof(ToDoLocalChangeCreateRequest.TimeStamp))]
+    internal partial ToDoLocalChangeCreateRequest Map(ServiceToDoLocalChangeCreateRequest serviceToDoLocalChangeCreateRequest);
+
+
 #pragma warning restore RMG020 // Source member is not mapped to any target member
 #pragma warning restore IDE0079 // Remove unnecessary suppression
 

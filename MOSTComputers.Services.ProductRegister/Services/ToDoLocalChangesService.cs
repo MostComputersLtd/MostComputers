@@ -8,6 +8,8 @@ using OneOf;
 using FluentValidation;
 using FluentValidation.Results;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
+using MOSTComputers.Services.ProductRegister.Mapping;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 
@@ -15,14 +17,17 @@ internal sealed class ToDoLocalChangesService : IToDoLocalChangesService
 {
     public ToDoLocalChangesService(
         IToDoLocalChangesRepository toDoLocalChangesRepository,
-        IValidator<ToDoLocalChangeCreateRequest>? createRequestValidator = null)
+        ProductMapper productMapper,
+        IValidator<ServiceToDoLocalChangeCreateRequest>? createRequestValidator = null)
     {
         _toDoLocalChangesRepository = toDoLocalChangesRepository;
+        _productMapper = productMapper;
         _createRequestValidator = createRequestValidator;
     }
 
     private readonly IToDoLocalChangesRepository _toDoLocalChangesRepository;
-    private readonly IValidator<ToDoLocalChangeCreateRequest>? _createRequestValidator;
+    private readonly ProductMapper _productMapper;
+    private readonly IValidator<ServiceToDoLocalChangeCreateRequest>? _createRequestValidator;
 
     public IEnumerable<LocalChangeData> GetAll()
     {
@@ -51,14 +56,18 @@ internal sealed class ToDoLocalChangesService : IToDoLocalChangesService
         return _toDoLocalChangesRepository.GetByTableNameAndElementIdAndOperationType(tableName, elementId, changeOperationType);
     }
 
-    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ToDoLocalChangeCreateRequest createRequest,
-        IValidator<ToDoLocalChangeCreateRequest>? validator = null)
+    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServiceToDoLocalChangeCreateRequest createRequest,
+        IValidator<ServiceToDoLocalChangeCreateRequest>? validator = null)
     {
         ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
 
         if (!validationResult.IsValid) return validationResult;
 
-        OneOf<int, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesRepository.Insert(createRequest);
+        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest = _productMapper.Map(createRequest);
+
+        toDoLocalChangeCreateRequest.TimeStamp = DateTime.Now;
+
+        OneOf<int, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesRepository.Insert(toDoLocalChangeCreateRequest);
 
         return toDoLocalChangeInsertResult.Match<OneOf<int, ValidationResult, UnexpectedFailureResult>>(
             id => id,
