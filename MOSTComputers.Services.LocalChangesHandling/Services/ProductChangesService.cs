@@ -15,6 +15,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using OneOf;
 using OneOf.Types;
 using System.Transactions;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Services;
 
@@ -140,12 +141,11 @@ public sealed class ProductChangesService : IProductChangesService
 
         ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
 
-        ToDoLocalChangeCreateRequest toDoChangeCreateRequest = new()
+        ServiceToDoLocalChangeCreateRequest toDoChangeCreateRequest = new()
         {
             TableName = localChangeData.TableName,
             OperationType = localChangeData.OperationType,
             TableElementId = localChangeData.TableElementId,
-            TimeStamp = localChangeData.TimeStamp,
         };
 
         if (productWorkStatuses is not null)
