@@ -15,13 +15,16 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts.ExternalXmlImport;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.ExternalXmlImport;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+const string productDBConnectionStringName = "MostDBNew";
+//const string identityDBConnectionStringName = "MOSTComputers.Services.Authentication";
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddMemoryCachingServices();
 
-builder.Services.AddCachedProductServices(builder.Configuration.GetConnectionString("MostDBNew")!);
+builder.Services.AddCachedProductServices(builder.Configuration.GetConnectionString(productDBConnectionStringName)!);
 
 builder.Services.AddSearchStringOriginService();
 
@@ -69,10 +72,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Accounts/Login";
 });
 
-builder.Services.AddCustomIdentity(builder.Configuration.GetConnectionString("MOSTComputers.Services.Authentication")!)
+//builder.Services.AddCustomIdentity(builder.Configuration.GetConnectionString(identityDBConnectionStringName)!)
+builder.Services.AddCustomIdentityWithPasswordsTableOnly(builder.Configuration.GetConnectionString(productDBConnectionStringName)!)
     .AddSignInManager();
 
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+//builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IAuthenticationService, PasswordsTableOnlyAuthenticationService>();
 
 builder.Services.AddScoped<IXmlProductToProductMappingService, XmlProductToProductMappingService>();
 
