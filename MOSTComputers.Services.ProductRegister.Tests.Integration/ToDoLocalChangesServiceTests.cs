@@ -1,8 +1,8 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -11,6 +11,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.Successful
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
+[Collection(DefaultTestCollection.Name)]
 public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebProjects
 {
     public ToDoLocalChangesServiceTests(
@@ -53,24 +54,22 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = 1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -85,15 +84,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -101,24 +98,22 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = -1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
@@ -138,14 +133,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChanges, x =>
             x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -153,24 +146,22 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = 1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -187,15 +178,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -203,24 +192,22 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = -1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
@@ -242,14 +229,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChanges, x =>
             x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -257,36 +242,33 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = 1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Update,
-            TimeStamp = DateTime.Now
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
@@ -303,22 +285,19 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
         Assert.DoesNotContain(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId3
             && x.TableElementId == toDoLocalChangeCreateRequest3.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest3.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest3.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType);
     }
 
     [Fact]
@@ -326,24 +305,22 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = -1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
         };
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
@@ -356,12 +333,11 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         Assert.True(hasToDoLocalChangeInsertFailedWithValidationResult);
 
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Update,
-            TimeStamp = DateTime.Now
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
@@ -378,21 +354,18 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChanges, x =>
             x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
         Assert.DoesNotContain(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId3
             && x.TableElementId == toDoLocalChangeCreateRequest3.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest3.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest3.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType);
     }
 
     [Theory]
@@ -401,12 +374,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -428,7 +401,6 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             Assert.Equal(productId1, toDoLocalChangeData.TableElementId);
             Assert.Equal(_productsTableName, toDoLocalChangeData.TableName);
             Assert.Equal(toDoLocalChangeCreateRequest1.OperationType, toDoLocalChangeData.OperationType);
-            Assert.Equal(toDoLocalChangeCreateRequest1.TimeStamp, toDoLocalChangeData.TimeStamp);
         }
     }
 
@@ -446,12 +418,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -474,7 +446,6 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             Assert.Equal(productId1, toDoLocalChangeData.TableElementId);
             Assert.Equal(_productsTableName, toDoLocalChangeData.TableName);
             Assert.Equal(toDoLocalChangeCreateRequest1.OperationType, toDoLocalChangeData.OperationType);
-            Assert.Equal(toDoLocalChangeCreateRequest1.TimeStamp, toDoLocalChangeData.TimeStamp);
         }
     }
 
@@ -494,7 +465,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     [Theory]
     [MemberData(nameof(Insert_ShouldSucceedToInsert_WhenExpected_Data))]
     public void Insert_ShouldSucceedToInsert_WhenExpected(
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest, bool expected)
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest, bool expected)
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
@@ -524,119 +495,88 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             Assert.Equal(toDoLocalChangeCreateRequest.TableElementId, toDoLocalChangeData.TableElementId);
             Assert.Equal(toDoLocalChangeCreateRequest.TableName, toDoLocalChangeData.TableName);
             Assert.Equal(toDoLocalChangeCreateRequest.OperationType, toDoLocalChangeData.OperationType);
-            Assert.Equal(toDoLocalChangeCreateRequest.TimeStamp, toDoLocalChangeData.TimeStamp);
         }
     }
 
-    public static TheoryData<ToDoLocalChangeCreateRequest, bool>
+    public static TheoryData<ServiceToDoLocalChangeCreateRequest, bool>
         Insert_ShouldSucceedToInsert_WhenExpected_Data = new()
     {
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
                 OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
             },
             true
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = 1,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
+                OperationType = ChangeOperationTypeEnum.Create,  
             },
             true
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
                 OperationType = ChangeOperationTypeEnum.Update,
-                TimeStamp = DateTime.Now,
             },
             true
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
                 OperationType = ChangeOperationTypeEnum.Delete,
-                TimeStamp = DateTime.Now,
             },
             true
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = 0,
                 TableName = _productsTableName,
                 OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
             },
             false
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = -1,
                 TableName = _productsTableName,
                 OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
             },
             false
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = string.Empty,
                 OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
             },
             false
         },
 
         {
-            new ToDoLocalChangeCreateRequest()
+            new ServiceToDoLocalChangeCreateRequest()
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = "     ",
-                OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
-            },
-            false
-        },
-
-        {
-            new ToDoLocalChangeCreateRequest()
-            {
-                TableElementId = UseRequiredValuePlaceholder,
-                TableName = _invalidTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = DateTime.Now,
-            },
-            false
-        },
-
-        {
-            new ToDoLocalChangeCreateRequest()
-            {
-                TableElementId = UseRequiredValuePlaceholder,
-                TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
-                TimeStamp = new DateTime(0),
+                OperationType = ChangeOperationTypeEnum.Create,  
             },
             false
         },
@@ -648,24 +588,24 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
         int productId2 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = productId2,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -680,15 +620,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
         List<int> ids = new() { productId1, productId2 };
 
@@ -702,15 +640,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -732,24 +668,24 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
         int productId2 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = productId2,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -764,15 +700,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
         List<int> ids = new() { toDoLocalChangeId1.Value, toDoLocalChangeId2.Value };
 
@@ -786,15 +720,13 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
     }
 
     [Fact]
@@ -813,36 +745,36 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
         int productId2 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest2 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Update,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest3 = new()
         {
             TableElementId = productId2,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
@@ -857,22 +789,19 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId3
             && x.TableElementId == toDoLocalChangeCreateRequest3.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest3.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest3.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType);
 
         bool isDeleteSuccessful = _toDoLocalChangesService.DeleteAllByTableNameAndElementId(_productsTableName, productId1);
 
@@ -884,23 +813,20 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             x.Id == toDoLocalChangeId1
             && x.TableElementId == toDoLocalChangeCreateRequest1.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest1.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest1.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest1.OperationType);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId2
             && x.TableElementId == toDoLocalChangeCreateRequest2.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest2.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest2.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest2.OperationType);
 
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId3
             && x.TableElementId == toDoLocalChangeCreateRequest3.TableElementId
             && x.TableName == toDoLocalChangeCreateRequest3.TableName
-            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType
-            && x.TimeStamp == toDoLocalChangeCreateRequest3.TimeStamp);
+            && x.OperationType == toDoLocalChangeCreateRequest3.OperationType);
     }
 
     [Fact]
@@ -918,12 +844,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -948,12 +874,12 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
+        ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest1 = new()
         {
             TableElementId = productId1,
             TableName = _productsTableName,
             OperationType = ChangeOperationTypeEnum.Create,
-            TimeStamp = DateTime.Now,
+            
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
