@@ -196,13 +196,13 @@ public sealed partial class ProductMapper
 #pragma warning restore CA1822 // Mark members as static
     }
 
-    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoCreateRequest.Active))]
+    [MapperIgnoreTarget(nameof(XmlImportProductImageFileNameInfoCreateRequest.Active))]
     internal partial XmlImportProductImageFileNameInfoCreateRequest Map(XmlImportServiceProductImageFileNameInfoCreateRequest serviceCategoryUpdateRequest);
 
-    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoByImageNumberUpdateRequest.Active))]
+    [MapperIgnoreTarget(nameof(XmlImportProductImageFileNameInfoByImageNumberUpdateRequest.Active))]
     internal partial XmlImportProductImageFileNameInfoByImageNumberUpdateRequest Map(XmlImportServiceProductImageFileNameInfoByImageNumberUpdateRequest serviceCategoryUpdateRequest);
 
-    [MapperIgnoreTarget(nameof(ProductImageFileNameInfoByFileNameUpdateRequest.Active))]
+    [MapperIgnoreTarget(nameof(XmlImportProductImageFileNameInfoByFileNameUpdateRequest.Active))]
     internal partial XmlImportProductImageFileNameInfoByFileNameUpdateRequest Map(XmlImportServiceProductImageFileNameInfoByFileNameUpdateRequest serviceCategoryUpdateRequest);
 
 
@@ -220,6 +220,4 @@ public sealed partial class ProductMapper
 
     [MapperIgnoreTarget(nameof(XmlImportProductFirstImageUpdateRequest.DateModified))]
     internal partial XmlImportProductFirstImageUpdateRequest Map(XmlImportServiceProductFirstImageUpdateRequest serviceCategoryUpdateRequest);
-
-
 }

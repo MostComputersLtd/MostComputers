@@ -1,41 +1,41 @@
-using FluentValidation.Results;
+using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using FluentValidation.Results;
+using OneOf;
+using OneOf.Types;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Requests.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
+using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.ProductImageFileManagement.Services;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.ProductCharacteristicsComparer;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductCharacteristicsComparer;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts.ExternalXmlImport;
-using OneOf;
-using OneOf.Types;
-using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
-using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
-using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
-using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImageFileNameInfo;
 using MOSTComputers.Utils.OneOf;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using Microsoft.AspNetCore.Authorization;
+using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 
 using static MOSTComputers.Services.ProductImageFileManagement.Utils.ProductImageFileManagementUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.PageCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductCharacteristicComparerMappingUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductMappingUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
-using MOSTComputers.Models.FileManagement.Models;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
 
@@ -584,9 +584,9 @@ public class ProductCharacteristicsComparerModel : PageModel
             {
                 int? displayOrder = (imageFileData.DisplayOrder > 0) ? imageFileData.DisplayOrder.Value : null;
 
-                XmlImportProductImageFileNameInfo? matchingFileNameInfo = GetMatchingFileNameInfo(productId, displayOrder);
-
                 string? imageFileName = (string.IsNullOrWhiteSpace(imageFileData.PictureUrl)) ? null : Path.GetFileName(imageFileData.PictureUrl);
+
+                XmlImportProductImageFileNameInfo? matchingFileNameInfo = GetMatchingFileNameInfo(productId, imageFileName);
 
                 if (matchingFileNameInfo is null)
                 {
@@ -778,15 +778,15 @@ public class ProductCharacteristicsComparerModel : PageModel
         return null;
     }
 
-    private XmlImportProductImageFileNameInfo? GetMatchingFileNameInfo(int productId, int? displayOrder)
+    private XmlImportProductImageFileNameInfo? GetMatchingFileNameInfo(int productId, string? fileName)
     {
-        if (displayOrder == null) return null;
+        if (string.IsNullOrWhiteSpace(fileName)) return null;
 
         IEnumerable<XmlImportProductImageFileNameInfo> imageFileNames = _xmlImportProductImageFileNameInfoService.GetAllInProduct(productId);
 
         foreach (XmlImportProductImageFileNameInfo imageFileNameInfo in imageFileNames)
         {
-            if (imageFileNameInfo.DisplayOrder == displayOrder) return imageFileNameInfo;
+            if (imageFileNameInfo.FileName == fileName) return imageFileNameInfo;
         }
 
         return null;

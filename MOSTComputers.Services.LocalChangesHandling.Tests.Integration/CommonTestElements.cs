@@ -59,9 +59,9 @@ internal static class CommonTestElements
 
         Properties = new()
         {
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
         },
         Images = new List<CurrentProductImageCreateRequest>()
         {
@@ -105,9 +105,9 @@ internal static class CommonTestElements
 
         Properties = new()
         {
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+            new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
         },
         Images = new List<CurrentProductImageCreateRequest>()
         {
@@ -152,9 +152,9 @@ internal static class CommonTestElements
 
             Properties = new()
             {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             Images = new List<CurrentProductImageCreateRequest>()
             {
@@ -219,9 +219,9 @@ internal static class CommonTestElements
 
             Properties = new()
             {
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             Images = new List<CurrentProductImageUpdateRequest>()
             {
@@ -286,9 +286,9 @@ internal static class CommonTestElements
 
             Properties = new()
             {
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyUpdateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             Images = new List<CurrentProductImageUpdateRequest>()
             {
@@ -334,9 +334,9 @@ internal static class CommonTestElements
 
             PropertyUpsertRequests = new()
             {
-                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new LocalProductPropertyUpsertRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             ImageAndFileNameUpsertRequests = new(),
 
@@ -378,9 +378,9 @@ internal static class CommonTestElements
 
             Properties = new()
             {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             Images = new List<CurrentProductImageCreateRequest>()
             {
@@ -455,9 +455,9 @@ internal static class CommonTestElements
 
             Properties = new()
             {
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 129, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 130, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
-                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 131, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 404, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 405, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
+                new CurrentProductPropertyCreateRequest() { ProductCharacteristicId = 406, CustomDisplayOrder = 13213, Value = "DDS256", XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList },
             },
             Images = new List<CurrentProductImageCreateRequest>()
             {

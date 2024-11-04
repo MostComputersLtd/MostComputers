@@ -95,9 +95,9 @@ public static class ProductImageFileNameUtils
 
         string? contentType = fileExtension switch
         {
-            "jpeg" => "image/jpeg",
-            "jpg" => "image/jpg",
-            "png" => "image/png",
+            "jpeg" or "JPEG" => "image/jpeg",
+            "jpg" or "JPG" => "image/jpg",
+            "png" or "PNG" => "image/png",
             _ => null
         };
 

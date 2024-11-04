@@ -22,7 +22,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         IProductChangesService productChangesService,
         ILocalChangesService localChangesService,
         IProductService productService,
-        IProductStatusesService productStatusesService,
+        IProductWorkStatusesService productWorkStatusesService,
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductPropertyService productPropertyService)
@@ -31,7 +31,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         _productChangesService = productChangesService;
         _localChangesService = localChangesService;
         _productService = productService;
-        _productStatusesService = productStatusesService;
+        _productWorkStatusesService = productWorkStatusesService;
         _productImageService = productImageService;
         _productImageFileNameInfoService = productImageFileNameInfoService;
         _productPropertyService = productPropertyService;
@@ -42,7 +42,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
     private readonly IProductChangesService _productChangesService;
     private readonly ILocalChangesService _localChangesService;
     private readonly IProductService _productService;
-    private readonly IProductStatusesService _productStatusesService;
+    private readonly IProductWorkStatusesService _productWorkStatusesService;
     private readonly IProductImageService _productImageService;
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductPropertyService _productPropertyService;
@@ -81,13 +81,13 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductStatuses? productStatuses = _productStatusesService.GetByProductId(productIdFromInsertResult.Value);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productIdFromInsertResult.Value);
 
-        Assert.NotNull(productStatuses);
+        Assert.NotNull(productWorkStatuses);
 
-        Assert.True(productStatuses.ProductId == productIdFromInsertResult.Value
-            && productStatuses.IsProcessed == true
-            && productStatuses.NeedsToBeUpdated == false);
+        Assert.True(productWorkStatuses.ProductId == productIdFromInsertResult.Value
+            && productWorkStatuses.ProductNewStatus == ProductNewStatusEnum.New
+            && productWorkStatuses.ProductXmlStatus == ProductXmlStatusEnum.NotReady);
 
         LocalChangeData? changeDataForProductHandleInsert
             = _localChangesService.GetByTableNameAndElementIdAndOperationType(
@@ -313,13 +313,14 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         Assert.NotNull(productAfterUpdate);
 
-        ProductStatuses? productStatusAfterUpdate = _productStatusesService.GetByProductId(productIdFromInsertResult.Value);
+        ProductWorkStatuses? productStatusAfterUpdate = _productWorkStatusesService.GetByProductId(productIdFromInsertResult.Value);
 
         Assert.NotNull(productStatusAfterUpdate);
 
         Assert.Equal(productIdFromInsertResult.Value, productStatusAfterUpdate.ProductId);
-        Assert.Equal(DetermineWhetherProductIsProcessedOrNot(productAfterUpdate), productStatusAfterUpdate.IsProcessed);
-        Assert.Equal(DetermineWhetherUpdateIsImportant(productBeforeUpdate, productAfterUpdate), productStatusAfterUpdate.NeedsToBeUpdated);
+        Assert.Equal(ProductNewStatusEnum.ReadyForUse, productStatusAfterUpdate.ProductNewStatus);
+        Assert.Equal(ProductXmlStatusEnum.ReadyForUse, productStatusAfterUpdate.ProductXmlStatus);
+        Assert.False(productStatusAfterUpdate.ReadyForImageInsert);
     }
 
     [Theory]
@@ -362,13 +363,14 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         Assert.NotNull(productAfterUpdate);
 
-        ProductStatuses? productStatusAfterUpdate = _productStatusesService.GetByProductId((int)productIdFromInsertResult.Value);
+        ProductWorkStatuses? productStatusAfterUpdate = _productWorkStatusesService.GetByProductId(productIdFromInsertResult.Value);
 
         if (productStatusAfterUpdate is not null)
         {
             Assert.Equal((int)productIdFromInsertResult, productStatusAfterUpdate.ProductId);
-            Assert.Equal(DetermineWhetherProductIsProcessedOrNot(productAfterUpdate), productStatusAfterUpdate.IsProcessed);
-            Assert.False(productStatusAfterUpdate.NeedsToBeUpdated);
+            Assert.Equal(ProductNewStatusEnum.ReadyForUse, productStatusAfterUpdate.ProductNewStatus);
+            Assert.Equal(ProductXmlStatusEnum.ReadyForUse, productStatusAfterUpdate.ProductXmlStatus);
+            Assert.False(productStatusAfterUpdate.ReadyForImageInsert);
         }
     }
 
@@ -697,7 +699,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
 
         if (productProperties.Any()) return false;
 
-        ProductStatuses? productStatuses = _productStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productStatuses = _productWorkStatusesService.GetByProductId(productId);
 
         if (productStatuses is not null) return false;
 
@@ -735,7 +737,7 @@ public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebPro
         if (product.Images is null
             || product.Images.Count == 0)
         {
-            product.Images = _productImageService.GetAllInProduct((int)productId)
+            product.Images = _productImageService.GetAllInProduct(productId)
                 .ToList();
         }
 
