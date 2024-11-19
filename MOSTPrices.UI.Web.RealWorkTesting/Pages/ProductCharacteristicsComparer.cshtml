@@ -15,12 +15,13 @@
 @section Scripts {
     <script src="~/js/RandomColorGeneration.js"></script>
     <script src="~/js/ElementSorting.js"></script>
+    <script src="~/js/ElementDisplayToggle.js"></script>
     <script src="~/js/Pages/ProductCharacteristicsComparer.js"></script>
 }
 
 <div id="characteristics_comparer_local_and_external_table_container" class="full-parent-height flex-row display-flex-not-important">
     <div id="local_xml_data_container" class="full-parent-height d-flex flex-column me-3"
-        style="width: 50%;">
+         style="width: 50%;">
         <header class="full-parent-width">
 
             <ul class="d-flex list-style-none mb-2">
@@ -28,23 +29,30 @@
                     <label>Local:</label>
                 </li>
 
-                <li class="d-flex align-content-center flex-wrap flex-grow-1">
+                <li class="d-flex align-content-center flex-wrap" style="flex-grow: 0.5;">
                     <label class="switch">
                         <input id="productCompareEditor_LocalProductEditorContainer_ProductOrXmlCheckBox" type="checkbox"
                             onchange="toggleViews('local_xml_textbox_container', 'local_product_characteristics_data_container')">
-                            <span class="slider round"></span>
+                        <span class="slider round"></span>
                     </label>
                 </li>
 
-                <li class="d-flex align-content-center flex-wrap">
-                    <button type="button" onclick="compareExternalAndLocalDataForCategoryFromFile(
-                        'local_product_characteristics_category_to_compare_select',
-                        'local_product_characteristics_data_container',
-                        'external_product_characteristics_data_container',
-                        'characteristics_comparer_relationships_table_view_container',
-                        'product_characteristics_compare_relationships_table')">
+                <li class="display-flex-not-important justify-content-center align-content-center flex-wrap flex-grow-1 ms-2 me-2">
+                    <button id="local_xml_data_container_compare_in_category_button" type="button"
+                        class="btn btn-outline-primary full-parent-width"
+                        onclick="compareExternalAndLocalDataForCategoryFromFile(
+                            'local_product_characteristics_category_to_compare_select',
+                            'local_product_characteristics_data_container',
+                            'external_product_characteristics_data_container',
+                            'characteristics_comparer_relationships_table_view_container',
+                            'product_characteristics_compare_relationships_table',
+                            'local_xml_data_container_compare_in_category_button',
+                            'local_xml_data_container_compare_in_category_loader')">
                         Compare All In Category
+
                     </button>
+
+                    <div id="local_xml_data_container_compare_in_category_loader" class="round-loader-default" style="display: none;"></div>
                 </li>
 
                 <li class="d-flex align-content-center flex-wrap">
@@ -71,7 +79,7 @@
     </div>
 
     <div id="external_xml_data_container" class="full-parent-height d-flex flex-column"
-        style="width: 50%;">
+         style="width: 50%;">
 
         <header class="full-parent-width">
             <ul class="d-flex list-style-none mb-2">
@@ -88,7 +96,7 @@
                 </li>
 
                 <li class="d-flex align-content-center flex-wrap">
-                    <button type="button" onclick="toggleViews(
+                    <button type="button" class="btn btn-outline-primary" onclick="toggleViews(
                         'characteristics_comparer_local_and_external_table_container',
                         'characteristics_comparer_relationships_table_view_container')">
                         View Relationships
@@ -96,23 +104,36 @@
                 </li>
 
                 <li class="d-flex align-content-center flex-wrap">
-                    <button type="button" onclick="compareExternalAndLocalData('external_xml_textbox',
-                        'local_product_characteristics_data_container',
-                        'external_product_characteristics_data_container',
-                        'characteristics_comparer_relationships_table_view_container',
-                        'product_characteristics_compare_relationships_table')">
+                    <button id="external_xml_data_container_compare_button" type="button"
+                        class="btn btn-outline-primary"
+                        onclick="compareExternalAndLocalData('external_xml_textbox',
+                            'local_product_characteristics_data_container',
+                            'external_product_characteristics_data_container',
+                            'characteristics_comparer_relationships_table_view_container',
+                            'product_characteristics_compare_relationships_table',
+                            'external_xml_data_container_compare_button',
+                            'external_xml_data_container_compare_loader')">
                         Compare
                     </button>
+
+                    <div id="external_xml_data_container_compare_loader" class="round-loader-default" style="display: none;"></div>
                 </li>
 
                 <li class="d-flex align-content-center flex-wrap">
-                    <button type="button" onclick="compareExternalAndLocalDataFromFile(
-                        'local_product_characteristics_data_container',
-                        'external_product_characteristics_data_container',
-                        'characteristics_comparer_relationships_table_view_container',
-                        'product_characteristics_compare_relationships_table')">
+                    <button id="external_xml_data_container_compare_with_file_button" type="button"
+                        class="btn btn-outline-primary" onclick="compareExternalAndLocalDataFromFile(
+                            'local_product_characteristics_data_container',
+                            'external_product_characteristics_data_container',
+                            'characteristics_comparer_relationships_table_view_container',
+                            'product_characteristics_compare_relationships_table',
+                            'external_xml_data_container_compare_with_file_button',
+                            'external_xml_data_container_compare_with_file_loader')">
                         Compare With File
                     </button>
+
+                    <div id="external_xml_data_container_compare_with_file_loader"
+                         class="round-loader-default" style="display: none;">
+                    </div>
                 </li>
             </ul>
         </header>
