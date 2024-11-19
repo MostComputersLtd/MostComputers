@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.ImagesAndImageFilesComparison;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ImagesAndImageFilesComparer;
-using OneOf;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
 
+[Authorize]
 public class ImagesAndImageFilesComparerModel : PageModel
 {
     public ImagesAndImageFilesComparerModel(ICategoryService categoryService, IImageComparisonDataService imageComparisonDataService)

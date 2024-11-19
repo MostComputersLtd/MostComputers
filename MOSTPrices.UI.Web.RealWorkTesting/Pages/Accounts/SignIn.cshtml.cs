@@ -1,16 +1,18 @@
-using FluentValidation.Results;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MOSTComputers.UI.Web.RealWorkTesting.Authentication;
-using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
+using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
+using MOSTComputers.UI.Web.RealWorkTesting.Authentication;
+using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Accounts;
 
+[Authorize]
 public sealed class SignInModel : PageModel
 {
     private readonly IAuthenticationService _authenticationService;
