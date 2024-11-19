@@ -1,25 +1,26 @@
-﻿using FluentValidation;
+﻿using System.Transactions;
+using FluentValidation;
 using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
-using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
-using System.Transactions;
-using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Mapping;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
+using MOSTComputers.Utils.OneOf;
+
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ImageUtils;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
@@ -927,6 +928,8 @@ internal sealed class ProductService : IProductService
                     Value = productPropUpsertRequest.Value,
                     XmlPlacement = productPropUpsertRequest.XmlPlacement,
                 };
+
+                productUpdateRequestToAddPropsTo.Properties ??= new();
 
                 productUpdateRequestToAddPropsTo.Properties.Add(propUpdateRequest);
 
