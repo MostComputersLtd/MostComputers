@@ -83,6 +83,8 @@ builder.Services.AddScoped<IXmlProductToProductMappingService, XmlProductToProdu
 
 builder.Services.AddScoped<IImageComparisonDataService, ImageComparisonDataService>();
 
+builder.Services.AddScoped<IProductXmlDataSaveService, ProductXmlDataSaveService>();
+
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
