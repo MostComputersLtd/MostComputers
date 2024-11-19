@@ -4,7 +4,6 @@ using Dapper;
 using Dapper.FluentMap;
 using Dapper.FluentMap.Mapping;
 using System.Transactions;
-using System.Data.Common;
 
 namespace MOSTComputers.Services.DAL.DAL;
 
