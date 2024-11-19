@@ -19,56 +19,6 @@ const matchedItemAttributeName = 'data-product-characteristics-compare-matched-i
 
 const matchedItemRandomColorGenerationSeed = 36;
 
-function toggleViews(xmlTextAreaContainerId, characteristicsDataContainerId)
-{
-    var xmlTextAreaContainer = document.getElementById(xmlTextAreaContainerId);
-    var characteristicsDataContainer = document.getElementById(characteristicsDataContainerId);
-
-    if (xmlTextAreaContainer == null
-        || characteristicsDataContainer == null)
-    {
-        return false;
-    }
-
-    if (characteristicsDataContainer.style.display === "none")
-    {
-        xmlTextAreaContainer.style.display = "none";
-        characteristicsDataContainer.style.display = "";
-    }
-    else
-    {
-        characteristicsDataContainer.style.display = "none";
-        xmlTextAreaContainer.style.display = "";
-    }
-}
-
-function toggleElementDisplay(elementId)
-{
-    var element = document.getElementById(elementId);
-
-    if (element.style.display === "none")
-    {
-        element.style.display = "";
-    }
-    else
-    {
-        element.style.display = "none";
-    }
-}
-
-function toggleElementsDisplay(elementIds)
-{
-    if (!Array.isArray(elementIds))
-    {
-        throw new Error("elementIds must be an array");
-    }
-
-    for (var i = 0; i < elementIds.length; i++)
-    {
-        toggleElementDisplay(elementIds[i]);
-    }
-}
-
 function sortRelationshipTable(
     relationshipTableId,
     sortByCharacteristicsOrProperties,
@@ -134,12 +84,14 @@ function sortRelationshipsByCharacteristicColumn(cell, extraSortParams)
     return (cellValue != null) ? cellValue.trim() : null;
 }
 
-function compareExternalAndLocalData(
+async function compareExternalAndLocalData(
     externalXmlTextBoxId,
     localCharacteristicDataListContainerId,
     externalPropertyDataListContainerId,
     characteristicsRelationshipTableContainerId,
-    characteristicsRelationshipTableId)
+    characteristicsRelationshipTableId,
+    compareDataInCategoryButtonId,
+    loaderElementId = null)
 {
     var externalXmlTextBox = document.getElementById(externalXmlTextBoxId);
 
@@ -151,7 +103,7 @@ function compareExternalAndLocalData(
 
     const url = "/ProductCharacteristicsComparer" + "?handler=CompareExternalAndLocalData";
 
-    fetch(url, {
+    var promise = fetch(url, {
         method: 'POST',
         body: JSON.stringify(externalXmlTextBox.value),
         headers: {
@@ -159,69 +111,77 @@ function compareExternalAndLocalData(
             'RequestVerificationToken':
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
-    })
-        .then(async function (response)
-        {
-            if (response.status !== 200) return;
+    });
 
-            var responseData = await response.json();
+    var response = await AwaitWithCallbacks(promise,
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
-            var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
-            var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
+    if (response.status !== 200) return;
 
-            var characteristicsRelationshipTableContainer = document.getElementById(characteristicsRelationshipTableContainerId);
+    var responseData = await response.json();
 
-            localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
-            externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+    var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
+    var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
 
-            characteristicsRelationshipTableContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+    var characteristicsRelationshipTableContainer = document.getElementById(characteristicsRelationshipTableContainerId);
 
-            sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
-        });
+    localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
+    externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+
+    characteristicsRelationshipTableContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+
+    sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
 }
 
-function compareExternalAndLocalDataFromFile(
+async function compareExternalAndLocalDataFromFile(
     localCharacteristicDataListContainerId,
     externalPropertyDataListContainerId,
     characteristicsRelationshipTableContainerId,
-    characteristicsRelationshipTableId)
+    characteristicsRelationshipTableId,
+    compareDataInCategoryButtonId,
+    loaderElementId)
 {
     const url = "/ProductCharacteristicsComparer" + "?handler=CompareExternalAndLocalDataFromFile";
 
-    fetch(url, {
+    var promise = fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'RequestVerificationToken':
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
-    })
-        .then(async function (response)
-        {
-            if (response.status !== 200) return;
+    });
 
-            var responseData = await response.json();
+    var response = await AwaitWithCallbacks(promise,
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
-            var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
-            var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
+    if (response.status !== 200) return;
 
-            var characteristicsRelationshipTableContainer = document.getElementById(characteristicsRelationshipTableContainerId);
+    var responseData = await response.json();
 
-            localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
-            externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+    var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
+    var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
 
-            characteristicsRelationshipTableContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+    var characteristicsRelationshipTableContainer = document.getElementById(characteristicsRelationshipTableContainerId);
 
-            sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
-        });
+    localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
+    externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+
+    characteristicsRelationshipTableContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+
+    sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
 }
 
-function compareExternalAndLocalDataForCategoryFromFile(
+async function compareExternalAndLocalDataForCategoryFromFile(
     categoryIdSelectId,
     localCharacteristicDataListContainerId,
     externalPropertyDataListContainerId,
     characteristicsRelationshipTablePartialViewContainerId,
-    characteristicsRelationshipTableId)
+    characteristicsRelationshipTableId,
+    compareDataInCategoryButtonId,
+    loaderElementId = null)
 {
     var categoryIdSelect = document.getElementById(categoryIdSelectId);
 
@@ -232,32 +192,34 @@ function compareExternalAndLocalDataForCategoryFromFile(
     const url = "/ProductCharacteristicsComparer" + "?handler=CompareExternalAndLocalDataForCategoryFromFile"
         + "&categoryId=" + categoryId;
 
-    fetch(url, {
+    var promise = fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'RequestVerificationToken':
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
-    })
-        .then(async function (response)
-        {
-            if (response.status !== 200) return;
+    });
 
-            var responseData = await response.json();
+    var response = await AwaitWithCallbacks(promise,
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
+        function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
-            var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
-            var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
+    if (response.status !== 200) return;
 
-            var characteristicsRelationshipTablePartialViewContainer = document.getElementById(characteristicsRelationshipTablePartialViewContainerId);
+    var responseData = await response.json();
 
-            localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
-            externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+    var localCharacteristicDataListContainer = document.getElementById(localCharacteristicDataListContainerId);
+    var externalPropertyDataListContainer = document.getElementById(externalPropertyDataListContainerId);
 
-            characteristicsRelationshipTablePartialViewContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+    var characteristicsRelationshipTablePartialViewContainer = document.getElementById(characteristicsRelationshipTablePartialViewContainerId);
 
-            sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
-        });
+    localCharacteristicDataListContainer.innerHTML = responseData.localCharacteristicsPartialViewText;
+    externalPropertyDataListContainer.innerHTML = responseData.externalPropertiesPartialViewText;
+
+    characteristicsRelationshipTablePartialViewContainer.innerHTML = responseData.characteristicsRelationshipTablePartialViewText;
+
+    sortRelationshipTableWithSessionStorageData(characteristicsRelationshipTableId);
 }
 
 function addNewEmptyRelationship(
