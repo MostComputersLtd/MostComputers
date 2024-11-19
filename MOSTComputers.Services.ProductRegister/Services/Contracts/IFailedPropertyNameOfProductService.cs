@@ -1,6 +1,6 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.FailureData;
-using MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropertyNameOfProduct;
+using MOSTComputers.Services.DAL.Models.Requests.FailureData.FailedPropertyNameOfProduct;
 using OneOf;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;

@@ -1,6 +1,4 @@
 ﻿using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
-using OneOf.Types;
 using OneOf;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using FluentValidation.Results;
@@ -8,6 +6,7 @@ using FluentValidation;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 internal class ProductWorkStatusesService : IProductWorkStatusesService

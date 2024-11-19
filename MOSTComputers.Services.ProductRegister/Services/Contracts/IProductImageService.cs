@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using OneOf;
 using OneOf.Types;
 

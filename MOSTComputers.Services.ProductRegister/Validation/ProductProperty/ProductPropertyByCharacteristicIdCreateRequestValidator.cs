@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductProperty;

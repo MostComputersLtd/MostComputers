@@ -3,13 +3,13 @@ using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using OneOf;
 using FluentValidation;
 using FluentValidation.Results;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Mapping;
+using MOSTComputers.Services.DAL.Models.Requests.ToDoLocalChanges;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 

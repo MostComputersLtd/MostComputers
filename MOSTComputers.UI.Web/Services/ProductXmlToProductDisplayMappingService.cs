@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -10,6 +9,7 @@ using FluentValidation.Results;
 using MOSTComputers.Models.Product.MappingUtils;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Services.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.Services;
 

@@ -1,5 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models.FailureData;
-using MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropertyNameOfProduct;
+using MOSTComputers.Services.DAL.Models.Requests.FailureData.FailedPropertyNameOfProduct;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IFailedPropertyNameOfProductRepository

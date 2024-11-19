@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models.Requests.Promotion;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.Promotion;

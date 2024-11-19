@@ -1,6 +1,5 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
@@ -8,6 +7,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using OneOf;
 using MOSTComputers.Models.Product.MappingUtils;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Services;
 

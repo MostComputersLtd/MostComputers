@@ -1,8 +1,8 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.External;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;

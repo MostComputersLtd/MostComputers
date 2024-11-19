@@ -1,7 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
 using OneOf;
 using OneOf.Types;
 

@@ -1,7 +1,7 @@
 ﻿using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ToDoLocalChanges;
 using OneOf;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;

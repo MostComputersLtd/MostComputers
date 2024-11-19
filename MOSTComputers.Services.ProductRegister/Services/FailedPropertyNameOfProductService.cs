@@ -1,19 +1,12 @@
-﻿using MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropertyNameOfProduct;
-using MOSTComputers.Models.Product.Models.FailureData;
-using MOSTComputers.Services.DAL.DAL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using MOSTComputers.Models.Product.Models.FailureData;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Models.Product.Models;
 using FluentValidation;
 using FluentValidation.Results;
 using OneOf;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.DAL.Models.Requests.FailureData.FailedPropertyNameOfProduct;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 

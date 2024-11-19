@@ -1,9 +1,9 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;

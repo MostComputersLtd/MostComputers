@@ -6,13 +6,13 @@ using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Utils.OneOf;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ImageUtils;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 

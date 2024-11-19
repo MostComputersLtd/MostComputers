@@ -1,7 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using OneOf;
 

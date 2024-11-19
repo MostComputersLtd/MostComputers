@@ -5,11 +5,11 @@ using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductProperty;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 

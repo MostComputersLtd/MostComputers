@@ -1,16 +1,18 @@
-﻿using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Models.Product.Models.Requests.Category;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Models.Product.Models.Requests.Promotion;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
+﻿using MOSTComputers.Services.DAL.Models.Requests.Category;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Models.Requests.Promotion;
+using MOSTComputers.Services.DAL.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using Riok.Mapperly.Abstractions;
 

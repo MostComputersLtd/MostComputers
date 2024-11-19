@@ -1,7 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Services.Caching.Services.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
 using OneOf.Types;

@@ -11,30 +11,22 @@ using OneOf;
 using OneOf.Types;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.Requests.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
 using MOSTComputers.Models.FileManagement.Models;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
-using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.ProductCharacteristicsComparer;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductCharacteristicsComparer;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts.ExternalXmlImport;
-using MOSTComputers.Utils.OneOf;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 
-using static MOSTComputers.Services.ProductImageFileManagement.Utils.ProductImageFileManagementUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.PageCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductCharacteristicComparerMappingUtils;
-using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductMappingUtils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
@@ -61,6 +53,7 @@ public class ProductCharacteristicsComparerModel : PageModel
         IProductHtmlService productHtmlService,
         IProductToXmlProductMappingService productToXmlProductMappingService,
         IXmlProductToProductMappingService xmlProductToProductMappingService,
+        IProductXmlDataSaveService productRelationDataSaveService,
         ITransactionExecuteService transactionExecuteService)
     {
         _httpClientFactory = httpClientFactory;
@@ -81,6 +74,7 @@ public class ProductCharacteristicsComparerModel : PageModel
         _productHtmlService = productHtmlService;
         _productToXmlProductMappingService = productToXmlProductMappingService;
         _xmlProductToProductMappingService = xmlProductToProductMappingService;
+        _productRelationDataSaveService = productRelationDataSaveService;
         _transactionExecuteService = transactionExecuteService;
     }
 
@@ -109,7 +103,7 @@ public class ProductCharacteristicsComparerModel : PageModel
 
     private readonly IProductToXmlProductMappingService _productToXmlProductMappingService;
     private readonly IXmlProductToProductMappingService _xmlProductToProductMappingService;
-
+    private readonly IProductXmlDataSaveService _productRelationDataSaveService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
     public List<Product> LocalProducts { get; } = new();
@@ -409,7 +403,14 @@ public class ProductCharacteristicsComparerModel : PageModel
                     List<ProductCharacteristicAndExternalXmlDataRelation> alreadyAddedRelations
                         = _productCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryId(categoryId);
 
-                    return UpsertProductPropertiesFromXmlPropertiesBasedOnRelationData(productDeserializeResult.Products, alreadyAddedRelations);
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertPropertiesResult
+                        = _productRelationDataSaveService.UpsertProductPropertiesFromXmlPropertiesBasedOnRelationData(
+                            productDeserializeResult.Products, alreadyAddedRelations);
+
+                    return upsertPropertiesResult.Match(
+                        success => new OkResult(),
+                        validationResult => GetBadRequestResultFromValidationResult(validationResult),
+                        unexpectedFailureResult => StatusCode(500));
                 }
 
                 return new OkResult();
@@ -421,44 +422,64 @@ public class ProductCharacteristicsComparerModel : PageModel
     {
         OneOf<string, NotFound> getProductXmlResult = await _productXmlProvidingService.GetProductXmlAsync();
 
-        return await getProductXmlResult.Match(
-            productXml =>
-            {
-                XmlObjectData? productDeserializeResult = _productDeserializeService.DeserializeProductsXml(productXml);
+        if (getProductXmlResult.IsT1)
+        {
+            return NotFound(getProductXmlResult.AsT1); 
+        }
 
-                if (productDeserializeResult?.Products is not null
-                    && productDeserializeResult.Products.Count > 0)
-                {
-                    productDeserializeResult.Products = productDeserializeResult.Products.FindAll(x => x.Category?.Id == categoryId);
+        string productXml = getProductXmlResult.AsT0;
 
-                    return UpsertImageFileNamesAndFilesFromXmlDataAsync(productDeserializeResult.Products, insertFiles: true);
-                }
+        XmlObjectData? productDeserializeResult = _productDeserializeService.DeserializeProductsXml(productXml);
 
-                return Task.FromResult<IStatusCodeActionResult>(new OkResult());
-            },
-            notFound => Task.FromResult<IStatusCodeActionResult>(StatusCode(500)));
+        if (productDeserializeResult?.Products is not null
+            && productDeserializeResult.Products.Count > 0)
+        {
+            productDeserializeResult.Products = productDeserializeResult.Products.FindAll(x => x.Category?.Id == categoryId);
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult, NotSupportedFileTypeResult, DirectoryNotFoundResult> upsertImageFileNamesAndFilesResult
+                = await _productRelationDataSaveService.UpsertImageFileNamesAndFilesFromXmlDataAsync(
+                    productDeserializeResult.Products, insertFiles: true);
+
+            return upsertImageFileNamesAndFilesResult.Match(
+                success => new OkResult(),
+                validationResult => GetBadRequestResultFromValidationResult(validationResult),
+                unexpectedFailureResult => StatusCode(500),
+                notSupportedFileTypeResult => BadRequest(notSupportedFileTypeResult),
+                directoryNotFoundResult => StatusCode(500));
+        }
+
+        return new OkResult();
     }
 
     public async Task<IActionResult> OnPostSaveAllImagesForTestingForCategoryAsync(int categoryId)
     {
         OneOf<string, NotFound> getProductXmlResult = await _productXmlProvidingService.GetProductXmlAsync();
 
-        return await getProductXmlResult.Match(
-            productXml =>
-            {
-                XmlObjectData? productDeserializeResult = _productDeserializeService.DeserializeProductsXml(productXml);
+        if (getProductXmlResult.IsT1)
+        {
+            return NotFound(getProductXmlResult.AsT1);
+        }
 
-                if (productDeserializeResult?.Products is not null
-                    && productDeserializeResult.Products.Count > 0)
-                {
-                    productDeserializeResult.Products = productDeserializeResult.Products.FindAll(x => x.Category?.Id == categoryId);
+        string productXml = getProductXmlResult.AsT0;
 
-                    return UpsertTestingImagesFromXmlDataAsync(productDeserializeResult.Products);
-                }
+        XmlObjectData? productDeserializeResult = _productDeserializeService.DeserializeProductsXml(productXml);
 
-                return Task.FromResult<IStatusCodeActionResult>(new OkResult());
-            },
-            notFound => Task.FromResult<IStatusCodeActionResult>(StatusCode(500)));
+        if (productDeserializeResult?.Products is not null
+            && productDeserializeResult.Products.Count > 0)
+        {
+            productDeserializeResult.Products = productDeserializeResult.Products.FindAll(x => x.Category?.Id == categoryId);
+
+            OneOf<Success, ValidationResult, InvalidXmlResult, UnexpectedFailureResult> result
+                = await _productRelationDataSaveService.UpsertTestingImagesFromXmlDataAsync(productDeserializeResult.Products);
+
+            return result.Match(
+                success => new OkResult(),
+                validationResult => GetBadRequestResultFromValidationResult(validationResult),
+                invalidXmlResult => BadRequest(invalidXmlResult),
+                unexpectedFailureResult => StatusCode(500));
+        }
+
+        return new OkResult();
     }
 
     public IStatusCodeActionResult UpsertNewRelationFromData(
@@ -485,311 +506,6 @@ public class ProductCharacteristicsComparerModel : PageModel
         return upsertRelationResult.Match(
             id => new OkResult(),
             unexpectedFailureResult => StatusCode(500));
-    }
-
-    private IStatusCodeActionResult UpsertProductPropertiesFromXmlPropertiesBasedOnRelationData(
-        IEnumerable<XmlProduct> xmlProducts, List<ProductCharacteristicAndExternalXmlDataRelation> characteristicAndPropertyRelations)
-    {
-        foreach (XmlProduct xmlProduct in xmlProducts)
-        {
-            int categoryId = xmlProduct.Category.Id;
-
-            foreach (XmlProductProperty xmlProductProperty in xmlProduct.XmlProductProperties)
-            {
-                ProductCharacteristicAndExternalXmlDataRelation? matchingRelation = characteristicAndPropertyRelations
-                    .FirstOrDefault(x =>
-                    {
-                        bool successfulParse = int.TryParse(xmlProductProperty.Order, out int xmlOrder);
-
-                        int? actualXmlOrder = successfulParse ? xmlOrder : null;
-
-                        return x.CategoryId == categoryId
-                            && x.XmlName == xmlProductProperty.Name
-                            && x.XmlDisplayOrder == actualXmlOrder;
-                    });
-
-                bool successfulParse = int.TryParse(xmlProductProperty.Order, out int xmlOrder);
-
-                int? actualXmlOrder = successfulParse ? xmlOrder : null;
-
-                XmlImportProductProperty? alreadyExistingProperty = GetExistingPropertyWithSameXmlData(xmlProduct, xmlProductProperty, actualXmlOrder);
-
-                if (alreadyExistingProperty is null)
-                {
-                    XmlImportProductPropertyByCharacteristicIdCreateRequest propertyCreateRequest = new()
-                    {
-                        ProductId = xmlProduct.Id,
-                        ProductCharacteristicId = matchingRelation?.ProductCharacteristicId,
-                        Value = xmlProductProperty.Value,
-                        XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
-                        XmlName = xmlProductProperty.Name,
-                        XmlDisplayOrder = actualXmlOrder,
-                    };
-
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> createPropertyResult
-                        = _xmlImportProductPropertyService.InsertWithCharacteristicId(propertyCreateRequest);
-
-                    if (createPropertyResult.Value is not Success)
-                    {
-                        return createPropertyResult.Match(
-                            success => new OkResult(),
-                            validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                            unexpectedFailureResult => StatusCode(500));
-                    }
-
-                    continue;
-                }
-
-                XmlImportProductPropertyUpdateByXmlDataRequest propertyUpdateRequest = new()
-                {
-                    ProductId = xmlProduct.Id,
-                    ProductCharacteristicId = matchingRelation?.ProductCharacteristicId,
-                    Value = xmlProductProperty.Value,
-                    XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
-                    XmlName = xmlProductProperty.Name,
-                    XmlDisplayOrder = actualXmlOrder,
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> updatePropertyResult
-                    = _xmlImportProductPropertyService.UpdateByXmlData(propertyUpdateRequest);
-
-                if (updatePropertyResult.Value is not Success)
-                {
-                    return updatePropertyResult.Match(
-                        success => new OkResult(),
-                        validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-                }
-            }
-        }
-
-        return new OkResult();
-    }
-
-    private async Task<IStatusCodeActionResult> UpsertImageFileNamesAndFilesFromXmlDataAsync(IEnumerable<XmlProduct> xmlProducts, bool insertFiles = false)
-    {
-        using HttpClient httpClient = _httpClientFactory.CreateClient();
-
-        foreach (XmlProduct xmlProduct in xmlProducts)
-        {
-            int productId = xmlProduct.Id;
-
-            IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
-
-            int imagesCount = productImages.Count();
-
-            ProductImage? productFirstImage = _productImageService.GetFirstImageForProduct(productId);
-
-            foreach (XmlShopItemImage imageFileData in xmlProduct.ShopItemImages.OrderBy(x => x.DisplayOrder ?? int.MaxValue))
-            {
-                int? displayOrder = (imageFileData.DisplayOrder > 0) ? imageFileData.DisplayOrder.Value : null;
-
-                string? imageFileName = (string.IsNullOrWhiteSpace(imageFileData.PictureUrl)) ? null : Path.GetFileName(imageFileData.PictureUrl);
-
-                XmlImportProductImageFileNameInfo? matchingFileNameInfo = GetMatchingFileNameInfo(productId, imageFileName);
-
-                if (matchingFileNameInfo is null)
-                {
-                    XmlImportServiceProductImageFileNameInfoCreateRequest fileNameInfoCreateRequest = new()
-                    {
-                        ProductId = productId,
-                        DisplayOrder = displayOrder,
-                        FileName = imageFileName,
-                        Active = false,
-                        ImagesInImagesAllForProductCount = imagesCount,
-                        IsProductFirstImageInImages = (productFirstImage is not null),
-                    };
-
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameInsertResult
-                        = _xmlImportProductImageFileNameInfoService.Insert(fileNameInfoCreateRequest);
-
-                    if (imageFileNameInsertResult.Value is not Success)
-                    {
-                        return imageFileNameInsertResult.Match(
-                            success => new OkResult(),
-                            validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                            unexpectedFailureResult => StatusCode(500));
-                    }
-
-                    if (insertFiles
-                        && !string.IsNullOrWhiteSpace(imageFileName))
-                    {
-                        IStatusCodeActionResult imageFileUpsertActionResult =
-                            await UpsertImageFileAsync(httpClient, imageFileData, imageFileName);
-
-                        if (imageFileUpsertActionResult.StatusCode != 200) return imageFileUpsertActionResult;
-                    }
-
-                    continue;
-                }
-
-                XmlImportServiceProductImageFileNameInfoByImageNumberUpdateRequest fileNameInfoUpdateRequest = new()
-                {
-                    ProductId = productId,
-                    FileName = imageFileName,
-                    Active = false,
-                    ImagesInImagesAllForProductCount = imagesCount,
-                    IsProductFirstImageInImages = (productFirstImage is not null),
-                    ImageNumber = matchingFileNameInfo.ImageNumber,
-                    NewDisplayOrder = displayOrder,
-                    ShouldUpdateDisplayOrder = (displayOrder != matchingFileNameInfo.DisplayOrder)
-                };
-
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> imageFileNameUpdateResult
-                    = _xmlImportProductImageFileNameInfoService.UpdateByImageNumber(fileNameInfoUpdateRequest);
-
-                if (imageFileNameUpdateResult.Value is not Success)
-                {
-                    return imageFileNameUpdateResult.Match(
-                        success => new OkResult(),
-                        validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-                }
-
-                if (insertFiles
-                    && !string.IsNullOrWhiteSpace(imageFileName))
-                {
-                    IStatusCodeActionResult imageFileUpsertActionResult =
-                        await UpsertImageFileAsync(httpClient, imageFileData, imageFileName);
-
-                    if (imageFileUpsertActionResult.StatusCode != 200) return imageFileUpsertActionResult;
-                }
-            }
-        }
-
-        return new OkResult();
-    }
-
-    private async Task<IStatusCodeActionResult> UpsertImageFileAsync(
-        HttpClient httpClient, XmlShopItemImage imageFileData, string imageFileName)
-    {
-        int imageFileNameExtensionStartIndex = imageFileName.IndexOf('.');
-
-        if (imageFileNameExtensionStartIndex < 0)
-        {
-            ValidationResult invalidPathValidationResult = new();
-
-            invalidPathValidationResult.Errors.Add(new(nameof(XmlShopItemImage.PictureUrl), "Url is invalid"));
-
-            return GetBadRequestResultFromValidationResult(invalidPathValidationResult);
-        }
-
-        string fileNameWithoutExtension = imageFileName[..imageFileNameExtensionStartIndex];
-
-        string? fileExtension = GetFileExtensionWithoutDot(imageFileName);
-
-        if (fileExtension is null) return BadRequest();
-
-        AllowedImageFileType? imageFileType = GetAllowedImageFileTypeFromFileExtension(fileExtension);
-
-        if (imageFileType is null) return BadRequest();
-
-        byte[] imageData = await httpClient.GetByteArrayAsync(imageFileData.PictureUrl);
-
-        OneOf<Success, DirectoryNotFoundResult> upsertImageFileResult
-            = await _productImageFileManagementService.AddOrUpdateImageAsync(fileNameWithoutExtension, imageData, imageFileType);
-
-        IStatusCodeActionResult upsertImageFileActionResult = upsertImageFileResult.Match(
-            success => new OkResult(),
-            directoryNotFoundResult => StatusCode(500));
-
-        return upsertImageFileActionResult;
-    }
-
-    private async Task<IStatusCodeActionResult> UpsertTestingImagesFromXmlDataAsync(IEnumerable<XmlProduct> xmlProducts)
-    {
-        foreach (XmlProduct xmlProduct in xmlProducts)
-        {
-            OneOf<Product, ValidationResult, InvalidXmlResult> getProductFromXmlDataResult
-                = await _xmlProductToProductMappingService.GetProductFromXmlDataAsync(xmlProduct);
-
-            int productId = xmlProduct.Id;
-
-            IStatusCodeActionResult result = getProductFromXmlDataResult.Match(
-                product =>
-                {
-                    if (product.Images is null
-                        || product.Images.Count <= 0)
-                    {
-                        return new OkResult();
-                    }
-
-                    IEnumerable<XmlImportProductImage> existingProductImages = _xmlImportProductImageService.GetAllInProduct(productId);
-
-                    List<ImageAndImageFileNameUpsertRequest> imageUpsertRequests = new();
-
-                    for (int i = 0; i < product.Images.Count; i++)
-                    {
-                        ProductImage image = product.Images[i];
-
-                        ProductImageFileNameInfo? matchingFileNameInfo = product.ImageFileNames?.FirstOrDefault(fileNameInfo =>
-                        {
-                            if (fileNameInfo.FileName is null) return false;
-
-                            int indexOfDotInFileName = fileNameInfo.FileName.IndexOf('.');
-
-                            if (indexOfDotInFileName < 0) return false;
-
-                            string idPartOfFileName = fileNameInfo.FileName[..indexOfDotInFileName];
-
-                            bool parseSuccess = int.TryParse(idPartOfFileName, out int imageId);
-
-                            if (!parseSuccess) return false;
-
-                            return imageId == image.Id;
-                        });
-
-                        ImageAndImageFileNameUpsertRequest requestFromImage = GetImageAndImageFileNameUpsertRequest(image, matchingFileNameInfo);
-
-                        imageUpsertRequests.Add(requestFromImage);
-                    }
-
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertImagesResult
-                        = _xmlImportProductImageService.UpsertFirstAndAllImagesForProduct(productId, imageUpsertRequests, existingProductImages.ToList());
-
-                    return upsertImagesResult.Match(
-                        success => new OkResult(),
-                        validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                        unexpectedFailureResult => StatusCode(500));
-                },
-                validationResult => GetBadRequestResultFromValidationResult(validationResult),
-                invalidXmlResult => BadRequest(invalidXmlResult));
-
-            if (result.StatusCode != 200) return result;
-        }
-
-        return new OkResult();
-    }
-
-    private XmlImportProductProperty? GetExistingPropertyWithSameXmlData(
-        XmlProduct xmlProduct, XmlProductProperty xmlProductProperty, int? actualXmlOrder)
-    {
-        IEnumerable<XmlImportProductProperty> propertiesOfProduct = _xmlImportProductPropertyService.GetAllInProduct(xmlProduct.Id);
-
-        foreach (XmlImportProductProperty property in propertiesOfProduct)
-        {
-            if (property.XmlName == xmlProductProperty.Name
-                && property.XmlDisplayOrder == actualXmlOrder)
-            {
-                return property;
-            }
-        }
-
-        return null;
-    }
-
-    private XmlImportProductImageFileNameInfo? GetMatchingFileNameInfo(int productId, string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName)) return null;
-
-        IEnumerable<XmlImportProductImageFileNameInfo> imageFileNames = _xmlImportProductImageFileNameInfoService.GetAllInProduct(productId);
-
-        foreach (XmlImportProductImageFileNameInfo imageFileNameInfo in imageFileNames)
-        {
-            if (imageFileNameInfo.FileName == fileName) return imageFileNameInfo;
-        }
-
-        return null;
     }
 
     public IActionResult OnPutMatchCorrespondingPropertyAndCharacteristic(

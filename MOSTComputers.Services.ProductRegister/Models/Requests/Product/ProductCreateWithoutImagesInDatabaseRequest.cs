@@ -1,6 +1,5 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Utils.ProductImageFileNameUtils;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 

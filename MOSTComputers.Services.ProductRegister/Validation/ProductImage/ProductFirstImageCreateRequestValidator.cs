@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductImage;

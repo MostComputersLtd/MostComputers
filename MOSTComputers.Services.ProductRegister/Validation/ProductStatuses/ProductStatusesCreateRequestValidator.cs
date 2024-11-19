@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductStatuses;
 

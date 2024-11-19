@@ -1,6 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 using OneOf;
 using OneOf.Types;
 

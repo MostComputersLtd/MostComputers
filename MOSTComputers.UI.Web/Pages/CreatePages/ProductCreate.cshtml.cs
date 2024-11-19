@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.Pages.CreatePages;
 

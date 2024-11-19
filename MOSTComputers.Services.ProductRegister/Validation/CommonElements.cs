@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using System.Numerics;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;

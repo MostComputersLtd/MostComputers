@@ -1,6 +1,6 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
+using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
 using OneOf;
 using OneOf.Types;
 

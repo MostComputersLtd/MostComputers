@@ -2,11 +2,9 @@
 using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Mapping;
 using MOSTComputers.Utils.OneOf;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
@@ -14,6 +12,7 @@ using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImpor
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ImageUtils;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductImage;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport;
 

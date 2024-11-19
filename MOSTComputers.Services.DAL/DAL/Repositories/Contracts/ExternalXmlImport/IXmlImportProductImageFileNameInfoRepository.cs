@@ -1,7 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductImageFileNameInfo;
 using OneOf;
 using OneOf.Types;
 

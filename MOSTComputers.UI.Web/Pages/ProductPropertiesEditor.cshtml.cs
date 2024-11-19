@@ -1,6 +1,4 @@
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
@@ -8,7 +6,6 @@ using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.UI.Web.Models;
-using MOSTComputers.UI.Web.Pages.Shared;
 using MOSTComputers.UI.Web.Pages.Shared.ProductProperties;
 using MOSTComputers.UI.Web.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
@@ -18,9 +15,11 @@ using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.UI.Web.Pages.Shared.ProductPopups;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -397,17 +396,6 @@ public class ProductPropertiesEditorModel : PageModel
         }
 
         return new OkResult();
-    }
-
-    private static CurrentProductPropertyUpdateRequest Map(ProductPropertyUpdateRequest updateRequest)
-    {
-        return new()
-        {
-            ProductCharacteristicId = updateRequest.ProductCharacteristicId,
-            CustomDisplayOrder = updateRequest.CustomDisplayOrder,
-            Value = updateRequest.Value,
-            XmlPlacement = updateRequest.XmlPlacement,
-        };
     }
 
     private static LocalProductPropertyUpsertRequest MapToUpsertRequest(ProductPropertyUpdateRequest updateRequest)

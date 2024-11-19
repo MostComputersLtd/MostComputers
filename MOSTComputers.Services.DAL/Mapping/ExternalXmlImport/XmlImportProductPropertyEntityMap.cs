@@ -1,5 +1,4 @@
 ﻿using Dapper.FluentMap.Mapping;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 
 namespace MOSTComputers.Services.DAL.Mapping.ExternalXmlImport;

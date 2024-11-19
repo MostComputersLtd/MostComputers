@@ -5,9 +5,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -20,6 +17,9 @@ using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.UI.Web.StaticUtilities;
 using OneOf;
 using OneOf.Types;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.UI.Web.Pages.Shared.ProductPopups;
 
 namespace MOSTComputers.UI.Web.Pages;
 

@@ -6,8 +6,8 @@ using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 

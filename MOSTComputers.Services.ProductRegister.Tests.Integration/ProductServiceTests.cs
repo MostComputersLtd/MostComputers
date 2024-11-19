@@ -1,20 +1,20 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
+using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 

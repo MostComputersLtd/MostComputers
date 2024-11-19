@@ -1,9 +1,8 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
-using MOSTComputers.UI.Web.Models;
 using OneOf;
 
 namespace MOSTComputers.UI.Web.Services.Contracts;

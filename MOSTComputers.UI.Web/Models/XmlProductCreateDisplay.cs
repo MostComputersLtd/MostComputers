@@ -1,6 +1,6 @@
-﻿using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Product.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.Models;
 

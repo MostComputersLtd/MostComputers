@@ -1,7 +1,7 @@
-﻿using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Product.Models;
 using System.Text;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Tests.Integration;
 

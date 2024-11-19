@@ -1,14 +1,14 @@
-﻿using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using System.Numerics;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 

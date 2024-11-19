@@ -1,15 +1,14 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using OneOf.Types;
 using OneOf;
 using FluentValidation.Results;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.Manifacturer;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
+using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 

@@ -6,8 +6,8 @@ using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 

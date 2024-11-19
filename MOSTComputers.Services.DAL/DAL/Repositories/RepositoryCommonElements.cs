@@ -1,5 +1,5 @@
 ﻿using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using System.Text;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;

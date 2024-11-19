@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Promotion;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
 using OneOf;
 using OneOf.Types;
 

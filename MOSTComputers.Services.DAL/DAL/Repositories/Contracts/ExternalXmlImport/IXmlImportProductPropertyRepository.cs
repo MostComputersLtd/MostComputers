@@ -1,8 +1,7 @@
 ﻿using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductProperty;
 using OneOf;
 using OneOf.Types;
 

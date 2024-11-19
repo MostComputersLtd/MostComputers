@@ -4,8 +4,6 @@ using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 using MOSTComputers.Services.LocalChangesHandling.Validation;
@@ -16,6 +14,7 @@ using OneOf;
 using OneOf.Types;
 using System.Transactions;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
+using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Services;
 

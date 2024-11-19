@@ -1,6 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using MOSTComputers.Utils.ProductImageFileNameUtils;

@@ -1,7 +1,7 @@
 ﻿using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.Requests.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
 using OneOf;
 using OneOf.Types;

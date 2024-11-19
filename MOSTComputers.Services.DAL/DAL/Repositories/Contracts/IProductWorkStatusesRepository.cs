@@ -1,9 +1,8 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
 using OneOf;
-using OneOf.Types;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 public interface IProductWorkStatusesRepository

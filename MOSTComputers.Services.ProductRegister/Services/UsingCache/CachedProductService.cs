@@ -4,7 +4,6 @@ using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.Caching.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -12,9 +11,9 @@ using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ForProduct;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
 
 namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 

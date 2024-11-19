@@ -4,10 +4,10 @@ using OneOf;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Validation;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductProperty;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport;
 
