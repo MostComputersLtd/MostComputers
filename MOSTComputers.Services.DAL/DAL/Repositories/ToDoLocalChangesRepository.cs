@@ -1,16 +1,16 @@
 ﻿using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using MOSTComputers.Models.Product.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
+using MOSTComputers.Services.DAL.Models.Requests.ToDoLocalChanges;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalChangesRepository
 {
-    private const string _tableName = "dbo.TodoChanges4Web";
-
     public ToDoLocalChangesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -23,7 +23,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp 
-        FROM {_tableName}
+        FROM {ToDoLocalChangesTableName}
         ORDER BY TimeStamp;
         """;
 
@@ -36,7 +36,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {ToDoLocalChangesTableName}
         WHERE TableName = @tableName
         ORDER BY TimeStamp;
         """;
@@ -55,7 +55,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {ToDoLocalChangesTableName}
         WHERE Operation = @changeOperationType
         ORDER BY TimeStamp;
         """;
@@ -76,7 +76,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {ToDoLocalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -94,7 +94,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {ToDoLocalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId
         AND Operation = @changeOperationType;
@@ -116,7 +116,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
             $"""
             DECLARE @InsertedIdTable TABLE (Id INT);
 
-            INSERT INTO {_tableName} (ID, Operation, TableName, TimeStamp)
+            INSERT INTO {ToDoLocalChangesTableName} (ID, Operation, TableName, TimeStamp)
             OUTPUT INSERTED.PK INTO @InsertedIdTable
             VALUES(@TableElementId, @OperationType, @TableName, @TimeStamp)
 
@@ -143,7 +143,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
 
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ToDoLocalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -161,7 +161,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
     {
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ToDoLocalChangesTableName}
         WHERE PK IN @ids;
         """;
 
@@ -179,7 +179,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
     {
         const string deleteByTableNameAndElementIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ToDoLocalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId;
         """;
@@ -199,7 +199,7 @@ internal sealed class ToDoLocalChangesRepository : RepositoryBase, IToDoLocalCha
     {
         const string deleteByTableNameAndElementIdsQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ToDoLocalChangesTableName}
         WHERE TableName = @tableName
         AND ID IN @elementIds;
         """;

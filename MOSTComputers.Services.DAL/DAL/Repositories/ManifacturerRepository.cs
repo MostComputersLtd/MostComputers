@@ -1,16 +1,16 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Manifacturer;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepository
 {
-    private const string _tableName = "dbo.Manufacturer";
-
     public ManifacturerRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -23,7 +23,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         const string getAllQuery = 
             $"""
             SELECT MfrID AS PersonalManifacturerId, BGName, Name, S AS ManifacturerDisplayOrder, Active
-            FROM {_tableName}
+            FROM {ManifacturersTableName}
             ORDER BY S
             """;
 
@@ -35,7 +35,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
         const string getByIdQuery =
             $"""
             SELECT MfrID AS PersonalManifacturerId, BGName, Name, S AS ManifacturerDisplayOrder, Active
-            FROM {_tableName}
+            FROM {ManifacturersTableName}
             WHERE MfrID = @id;
             """;
 
@@ -46,9 +46,9 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
     {
         const string insertQuery =
             $"""
-            INSERT INTO {_tableName}(MfrID, BGName, Name, S, Active)
+            INSERT INTO {ManifacturersTableName}(MfrID, BGName, Name, S, Active)
             OUTPUT INSERTED.MfrID
-            VALUES (ISNULL((SELECT MAX(MfrID) + 1 FROM {_tableName}), 1), @BGName, @Name, @DisplayOrder, @Active)
+            VALUES (ISNULL((SELECT MAX(MfrID) + 1 FROM {ManifacturersTableName}), 1), @BGName, @Name, @DisplayOrder, @Active)
             """;
 
         var parameters = new
@@ -68,7 +68,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {ManifacturersTableName}
             SET BGName = @BGName,
                 Name = @Name,
                 S = @DisplayOrder,
@@ -94,7 +94,7 @@ internal sealed class ManifacturerRepository : RepositoryBase, IManifacturerRepo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ManifacturersTableName}
             WHERE MfrID = @id;
             """;
 

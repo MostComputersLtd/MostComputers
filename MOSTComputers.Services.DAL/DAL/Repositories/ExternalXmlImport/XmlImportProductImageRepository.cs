@@ -2,17 +2,15 @@
 using OneOf.Types;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductImage;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.ExternalXmlImport;
 
 internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImportProductImageRepository
 {
-    private const string _firstImagesTableName = "dbo.TEST_Images";
-    private const string _allImagesTableName = "dbo.TEST_ImagesAll";
-    private const string _imageFileNameInfosTable = "dbo.ImageFileName";
-
     public XmlImportProductImageRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -25,7 +23,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
         const string getAllInProductQuery =
             $"""
             SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_allImagesTableName}
+            FROM {AllImagesTestingTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -37,7 +35,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
         const string getAllFirstImagesForAllProductsQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTestingTableName}
             """;
 
         IEnumerable<XmlImportProductFirstImage> images = _relationalDataAccess.GetData<XmlImportProductFirstImage, dynamic>(getAllFirstImagesForAllProductsQuery, new { });
@@ -50,7 +48,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
         const string getByIdInFirstImagesQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTestingTableName}
             WHERE ID IN @productIds
             """;
 
@@ -65,7 +63,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
         const string getByIdInAllImagesQuery =
             $"""
             SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_allImagesTableName}
+            FROM {AllImagesTestingTableName}
             WHERE ID = @id;
             """;
 
@@ -77,7 +75,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
         const string getByIdInFirstImagesQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTestingTableName}
             WHERE ID = @productId;
             """;
 
@@ -93,11 +91,11 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string upsertInAllImagesQuery =
             $"""
-            IF NOT EXISTS (SELECT 1 FROM {_allImagesTableName} WHERE ID = @id)
+            IF NOT EXISTS (SELECT 1 FROM {AllImagesTestingTableName} WHERE ID = @id)
             BEGIN
                 DECLARE @InsertedIdTable TABLE (Id INT);
 
-                INSERT INTO {_allImagesTableName} (ID, CSTID, Description, Image, ImageFileExt, DateModified)
+                INSERT INTO {AllImagesTestingTableName} (ID, CSTID, Description, Image, ImageFileExt, DateModified)
                 OUTPUT INSERTED.ID INTO @InsertedIdTable
                 VALUES (@id, @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified);
 
@@ -105,7 +103,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
             END
             ELSE
             BEGIN
-                UPDATE {_allImagesTableName}
+                UPDATE {AllImagesTestingTableName}
                 SET Description = @HtmlData,
                     Image = @ImageData,
                     ImageFileExt = @ImageContentType,
@@ -139,28 +137,28 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
 
             DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
 
-            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {_imageFileNameInfosTable}
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId;
             
             SET @displayOrder = ISNULL(@displayOrder, ISNULL(@MaxDisplayOrderForProduct, 1));
 
             SELECT TOP 1 @DisplayOrderInRange = ISNULL(
-                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_imageFileNameInfosTable}
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {ImageFileNamesTableName}
                 WHERE @MaxDisplayOrderForProduct <= @displayOrder),
                 @displayOrder);
             
-            UPDATE {_imageFileNameInfosTable}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S + 1
             WHERE CSTID = @productId
             AND S >= @DisplayOrderInRange;
 
-            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {AllImagesTestingTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO @InsertedIdTable
-            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {AllImagesTestingTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
 
-            INSERT INTO {_imageFileNameInfosTable}(CSTID, ImageNumber, S, ImgFileName)
+            INSERT INTO {ImageFileNamesTableName}(CSTID, ImageNumber, S, ImgFileName)
             VALUES (@productId,
-                (SELECT MAX(ImageNumber) + 1 FROM {_imageFileNameInfosTable}
+                (SELECT MAX(ImageNumber) + 1 FROM {ImageFileNamesTableName}
                 WHERE CSTID = @productId),
                 @DisplayOrderInRange,
                 CONCAT(CAST((SELECT TOP 1 Id FROM @InsertedIdTable) AS VARCHAR), '.', SUBSTRING(@ImageContentType, CHARINDEX('/', @ImageContentType) + 1, 100)))
@@ -188,7 +186,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string insertInFirstImagesQuery =
             $"""
-            INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {FirstImagesTestingTableName}(ID, Description, Image, ImageFileExt, DateModified)
             VALUES (@productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
@@ -210,7 +208,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string updateInAllImagesQuery =
             $"""
-            UPDATE {_allImagesTableName}
+            UPDATE {AllImagesTestingTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -237,7 +235,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string updateInFirstImagesQuery =
             $"""
-            UPDATE {_firstImagesTableName}
+            UPDATE {FirstImagesTestingTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -264,9 +262,9 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string updateHtmlDataInAllImagesByIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_allImagesTableName} WHERE ID = @imageId)
+            IF EXISTS (SELECT 1 FROM {AllImagesTestingTableName} WHERE ID = @imageId)
             BEGIN
-                UPDATE {_allImagesTableName}
+                UPDATE {AllImagesTestingTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @imageId;
@@ -296,9 +294,9 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string updateHtmlDataInFirstImagesByProductIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_firstImagesTableName} WHERE ID = @productId)
+            IF EXISTS (SELECT 1 FROM {FirstImagesTestingTableName} WHERE ID = @productId)
             BEGIN
-                UPDATE {_firstImagesTableName}
+                UPDATE {FirstImagesTestingTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @productId;
@@ -328,19 +326,19 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string updateHtmlDataInFirstAndAllImagesByProductIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_allImagesTableName} WHERE CSTID = @productId)
-            OR EXISTS (SELECT 1 FROM {_firstImagesTableName} WHERE ID = @productId)
+            IF EXISTS (SELECT 1 FROM {AllImagesTestingTableName} WHERE CSTID = @productId)
+            OR EXISTS (SELECT 1 FROM {FirstImagesTestingTableName} WHERE ID = @productId)
             BEGIN
                 DECLARE @TotalAffectedRows INT = 0;
             
-                UPDATE {_allImagesTableName}
+                UPDATE {AllImagesTestingTableName}
                 SET Description = @HtmlData
             
                 WHERE CSTID = @productId;
 
                 SET @TotalAffectedRows = @TotalAffectedRows + @@ROWCOUNT;
 
-                UPDATE {_firstImagesTableName}
+                UPDATE {FirstImagesTestingTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @productId;
@@ -372,7 +370,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTestingTableName}
             WHERE ID = @id;
             """;
 
@@ -397,17 +395,17 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
             DECLARE @displayOrderOfDeletedImage INT;
             DECLARE @productIdOfDeletedImage INT;
 
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTestingTableName}
             WHERE ID = @id;
 
             SELECT TOP 1 @displayOrderOfDeletedImage = S, @productIdOfDeletedImage = CSTID
-            FROM {_imageFileNameInfosTable}
+            FROM {ImageFileNamesTableName}
             WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
 
-            DELETE FROM {_imageFileNameInfosTable}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
 
-            UPDATE {_imageFileNameInfosTable}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S - 1
 
             WHERE CSTID = @productIdOfDeletedImage
@@ -433,7 +431,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_firstImagesTableName}
+            DELETE FROM {FirstImagesTestingTableName}
             WHERE ID = @id;
             """;
 
@@ -455,7 +453,7 @@ internal sealed class XmlImportProductImageRepository : RepositoryBase, IXmlImpo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTestingTableName}
             WHERE CSTID = @productId;
             """;
 

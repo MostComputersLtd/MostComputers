@@ -1,20 +1,13 @@
-﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.FailureData;
-using MOSTComputers.Models.Product.Models.FailureData.Requests.FailedPropertyNameOfProduct;
+﻿using MOSTComputers.Models.Product.Models.FailureData;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
-using OneOf;
-using OneOf.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MOSTComputers.Services.DAL.Models.Requests.FailureData.FailedPropertyNameOfProduct;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IFailedPropertyNameOfProductRepository
 {
-    private const string _tableName = "dbo.FailedPropertyNamesOfProducts";
     public FailedPropertyNameOfProductRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -26,7 +19,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {FailedPropertyNamesOfProductsTableName}
             """;
 
         return _relationalDataAccess.GetData<FailedPropertyNameOfProduct, dynamic>(getAllQuery, new { });
@@ -36,7 +29,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string getAllForProductQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {FailedPropertyNamesOfProductsTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -48,7 +41,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {FailedPropertyNamesOfProductsTableName}
             WHERE CSTID IN @productIds;
             """;
 
@@ -61,11 +54,11 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
         const string insertQuery =
             $"""
             IF NOT EXISTS(
-                SELECT 1 FROM {_tableName}
+                SELECT 1 FROM {FailedPropertyNamesOfProductsTableName}
                 WHERE CSTID = @productId
                 AND PropertyName = @PropertyName
             )
-            INSERT INTO {_tableName}(CSTID, PropertyName)
+            INSERT INTO {FailedPropertyNamesOfProductsTableName}(CSTID, PropertyName)
             VALUES (@productId, PropertyName)
             """;
 
@@ -85,11 +78,11 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
         const string insertQuery =
             $"""
             IF NOT EXISTS(
-                SELECT 1 FROM {_tableName}
+                SELECT 1 FROM {FailedPropertyNamesOfProductsTableName}
                 WHERE CSTID = @productId
                 AND PropertyName = @PropertyNames
             )
-            INSERT INTO {_tableName}(CSTID, PropertyName)
+            INSERT INTO {FailedPropertyNamesOfProductsTableName}(CSTID, PropertyName)
             VALUES (@productId, @PropertyNames)
             """;
 
@@ -108,7 +101,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {FailedPropertyNamesOfProductsTableName}
                 SET PropertyName = @NewPropertyName
 
             WHERE CSTID = @productId
@@ -131,7 +124,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {FailedPropertyNamesOfProductsTableName}
             WHERE CSTID = @productId
             AND PropertyName = @PropertyName;
             """;
@@ -151,7 +144,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {FailedPropertyNamesOfProductsTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -165,7 +158,7 @@ internal sealed class FailedPropertyNameOfProductRepository : RepositoryBase, IF
     {
         const string getAllQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {FailedPropertyNamesOfProductsTableName}
             WHERE CSTID IN @productIds;
             """;
 

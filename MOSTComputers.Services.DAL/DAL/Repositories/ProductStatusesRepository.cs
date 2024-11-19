@@ -1,17 +1,16 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductStatuses;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatusesRepository
 {
-    const string _tableName = "dbo.ProductStatuses";
-    const string _productTableName = "dbo.MOSTPrices";
-
     public ProductStatusesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -23,7 +22,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductStatusesTableName}
             """;
 
         return _relationalDataAccess.GetData<ProductStatuses, dynamic>(getAllQuery, new { });
@@ -33,7 +32,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string getByProductIdQuery =
             $"""
-            SELECT TOP 1 * FROM {_tableName}
+            SELECT TOP 1 * FROM {ProductStatusesTableName}
             WHERE CSTID = @productId
             """;
 
@@ -44,7 +43,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string getByProductIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductStatusesTableName}
             WHERE CSTID IN @productIds
             """;
 
@@ -58,18 +57,18 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
             DECLARE @StatusCode INT = 0;
 
             IF EXISTS (
-                SELECT 1 FROM {_tableName}
+                SELECT 1 FROM {ProductStatusesTableName}
                 WHERE CSTID = @productId
             ) SET @StatusCode = 1;
 
             IF NOT EXISTS (
-                SELECT 1 FROM {_productTableName}
+                SELECT 1 FROM {ProductsTableName}
                 WHERE CSTID = @productId
             ) SET @StatusCode = 2;
 
             IF @StatusCode = 0
             BEGIN
-                INSERT INTO {_tableName}(CSTID, IsProcessed, NeedsToBeUpdated)
+                INSERT INTO {ProductStatusesTableName}(CSTID, IsProcessed, NeedsToBeUpdated)
                 VALUES(@productId, @IsProcessed, @NeedsToBeUpdated)
             END
 
@@ -106,7 +105,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {ProductStatusesTableName}
             SET IsProcessed = @IsProcessed,
                 NeedsToBeUpdated = @NeedsToBeUpdated
 
@@ -129,7 +128,7 @@ internal sealed class ProductStatusesRepository : RepositoryBase, IProductStatus
     {
         const string deleteByProductId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductStatusesTableName}
             WHERE CSTID = @productId
             """;
 

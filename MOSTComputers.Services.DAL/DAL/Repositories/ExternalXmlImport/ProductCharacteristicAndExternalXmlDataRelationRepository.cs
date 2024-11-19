@@ -1,17 +1,17 @@
 ﻿using Dapper;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.Requests.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.ExternalXmlImport;
 
 internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository : RepositoryBase, IProductCharacteristicAndExternalXmlDataRelationRepository
 {
-    private const string _tableName = "[dbo].[ProductKeywordAndExternalXmlDataRelations]";
-
     public ProductCharacteristicAndExternalXmlDataRelationRepository(IRelationalDataAccess relationalDataAccess) : base(relationalDataAccess)
     {
     }
@@ -22,7 +22,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             """;
 
         return _relationalDataAccess.GetData<ProductCharacteristicAndExternalXmlDataRelation, dynamic>(getAllQuery, new { })
@@ -33,7 +33,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string getAllWithSameCategoryIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE TID = @categoryId;
             """;
 
@@ -46,7 +46,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string getAllWithSameCategoryIdAndXmlNameQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE TID = @categoryId
             AND XmlName = @Name;
             """;
@@ -65,7 +65,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string getByIdQuery =
             $"""
-            SELECT TOP 1 * FROM {_tableName}
+            SELECT TOP 1 * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE Id = @id;
             """;
 
@@ -77,7 +77,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string getByCharacteristicIdQuery =
             $"""
-            SELECT TOP 1 * FROM {_tableName}
+            SELECT TOP 1 * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE ProducKeywordID = @characteristicId;
             """;
 
@@ -89,16 +89,16 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string upsertByCharacteristicIdQuery =
             $"""
-            IF NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @CategoryId AND XmlName = @XmlName AND XmlDisplayOrder = @XmlDisplayOrder)
+            IF NOT EXISTS (SELECT 1 FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName} WHERE TID = @CategoryId AND XmlName = @XmlName AND XmlDisplayOrder = @XmlDisplayOrder)
             OR (@ProductCharacteristicId = NULL)
             BEGIN
-                INSERT INTO {_tableName} (TID, TIDName, ProducKeywordID, ProducKeywordName, ProducKeywordMeaning, XmlName, XmlDisplayOrder)
+                INSERT INTO {ProductCharacteristicAndExternalXmlDataRelationsTableName} (TID, TIDName, ProducKeywordID, ProducKeywordName, ProducKeywordMeaning, XmlName, XmlDisplayOrder)
                 VALUES (@CategoryId, @CategoryName, @ProductCharacteristicId, @ProductCharacteristicName,
                     @ProductCharacteristicMeaning, @XmlName, @XmlDisplayOrder)
             END
             ELSE
             BEGIN
-                UPDATE {_tableName}
+                UPDATE {ProductCharacteristicAndExternalXmlDataRelationsTableName}
                 SET TIDName = @CategoryName,
                     ProducKeywordID = @ProductCharacteristicId,
                     ProducKeywordName = @ProductCharacteristicName,
@@ -130,7 +130,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string deleteAllWithSameCategoryIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE TID = @categoryId;
             """;
 
@@ -144,7 +144,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string deleteAllWithSameCategoryIdAndXmlNameQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE TID = @categoryId
             AND XmlName = @Name;
             """;
@@ -164,7 +164,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string deleteByIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE Id = @id;
             """;
 
@@ -178,7 +178,7 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
     {
         const string deleteByCharacteristicIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             WHERE ProducKeywordID = @characteristicId;
             """;
 

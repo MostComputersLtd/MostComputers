@@ -1,19 +1,18 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 #pragma warning disable IDE0037 // Use inferred member name
 
 internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProductCharacteristicsRepository
 {
-    private const string _tableName = "dbo.ProductKeyword";
-    private const string _categoriesTableName = "dbo.Categories";
-
     public ProductCharacteristicsRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -23,7 +22,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getAllCharacteristicsAndSearchStringAbbreviationsByCategoryIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             ORDER BY S;
             """;
@@ -36,7 +35,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getAllCharacteristicsByCategoryIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             AND KWPrCh = 1
             ORDER BY S;
@@ -50,7 +49,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getAllSearchStringAbbreviationsByCategoryIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             AND KWPrCh = 0
             ORDER BY S;
@@ -64,7 +63,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID IN @categoryIds
             ORDER BY S;
             """;
@@ -79,7 +78,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getCharacteristicsForSelectionOfCategoryIdsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID IN @categoryIds
             AND KWPrCh = 1
             ORDER BY S;
@@ -95,7 +94,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getSearchStringAbbreviationsForSelectionOfCategoryIdsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID IN @categoryIds
             AND KWPrCh = 0
             ORDER BY S;
@@ -111,7 +110,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getByCategoryIdAndNameQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE ProductKeywordID = @id;
             """;
 
@@ -123,7 +122,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getByCategoryIdAndNameQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             AND Name = @Name;
             """;
@@ -136,7 +135,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getByCategoryIdAndNameQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             AND Name IN @Names;
             """;
@@ -154,7 +153,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getSelectionByIdsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE ProductKeywordID IN @ids;
             """;
 
@@ -173,7 +172,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string getByCategoryIdAndNameQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId
             AND Name = @Name
             AND KWPrCh = @productCharacteristicType;
@@ -194,11 +193,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             $"""
             DECLARE @InsertedIdTable TABLE (Id INT);
 
-            INSERT INTO {_tableName}(TID, Name, KeywordMeaning, S, Active, PKUserId, LastUpdate, KWPrCh)
+            INSERT INTO {ProductCharacteristicsTableName}(TID, Name, KeywordMeaning, S, Active, PKUserId, LastUpdate, KWPrCh)
             OUTPUT INSERTED.ProductKeywordID INTO @InsertedIdTable
             SELECT @CategoryId, @Name, @Meaning, @DisplayOrder, @Active, @PKUserId, @LastUpdate, @KWPrCh
-            WHERE EXISTS (SELECT 1 FROM {_categoriesTableName} WHERE CategoryID = @CategoryId)
-            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @CategoryId AND Name = @Name);
+            WHERE EXISTS (SELECT 1 FROM {CategoriesTableName} WHERE CategoryID = @CategoryId)
+            AND NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name);
 
             IF EXISTS (SELECT TOP 1 Id FROM @InsertedIdTable)
             BEGIN
@@ -206,11 +205,11 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             END
             ELSE
             BEGIN
-                IF NOT EXISTS (SELECT 1 FROM {_categoriesTableName} WHERE CategoryID = @CategoryId)
+                IF NOT EXISTS (SELECT 1 FROM {CategoriesTableName} WHERE CategoryID = @CategoryId)
                 BEGIN
                     SELECT -1;
                 END
-                ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @CategoryId AND Name = @Name)
+                ELSE IF EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name)
                 BEGIN
                     SELECT -2;
                 END
@@ -270,9 +269,9 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             $"""
             DECLARE @originalCategoryId SMALLINT;
 
-            SELECT TOP 1 @originalCategoryId = TID FROM {_tableName} WHERE ProductKeywordID = @id;
+            SELECT TOP 1 @originalCategoryId = TID FROM {ProductCharacteristicsTableName} WHERE ProductKeywordID = @id;
 
-            UPDATE {_tableName}
+            UPDATE {ProductCharacteristicsTableName}
             SET Name = @Name,
                 KeywordMeaning = @Meaning,
                 S = @DisplayOrder,
@@ -282,17 +281,17 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
                 KWPrCh = @KWPrCh
 
             WHERE ProductKeywordID = @id
-            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
+            AND NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
 
             IF @@ROWCOUNT > 0
             BEGIN
                 SELECT 1;
             END
-            ELSE IF NOT EXISTS (SELECT 1 FROM {_tableName} WHERE ProductKeywordID = @id)
+            ELSE IF NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE ProductKeywordID = @id)
             BEGIN
                 SELECT -1;
             END
-            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
+            ELSE IF EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @originalCategoryId AND Name = @Name AND ProductKeywordID <> @id)
             BEGIN
                 SELECT -2;
             END
@@ -352,9 +351,9 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
             $"""
             DECLARE @originalId SMALLINT
 
-            SELECT @originalId = ProductKeywordID FROM {_tableName} WHERE TID = @categoryId AND Name = @OldName;
+            SELECT @originalId = ProductKeywordID FROM {ProductCharacteristicsTableName} WHERE TID = @categoryId AND Name = @OldName;
 
-            UPDATE {_tableName}
+            UPDATE {ProductCharacteristicsTableName}
             SET Name = @Name,
                 KeywordMeaning = @Meaning,
                 S = @DisplayOrder,
@@ -365,17 +364,17 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
 
             WHERE TID = @categoryId
             AND Name = @OldName
-            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
+            AND NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
 
             IF @@ROWCOUNT > 0
             BEGIN
                 SELECT 1;
             END
-            ELSE IF NOT EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @OldName)
+            ELSE IF NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @categoryId AND Name = @OldName)
             BEGIN
                 SELECT -1;
             END
-            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
+            ELSE IF EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @categoryId AND Name = @Name AND ProductKeywordID <> @originalId)
             BEGIN
                 SELECT -2;
             END
@@ -518,7 +517,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicsTableName}
             WHERE ProductKeywordID = @id;
             """;
 
@@ -540,7 +539,7 @@ internal sealed class ProductCharacteristicsRepository : RepositoryBase, IProduc
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductCharacteristicsTableName}
             WHERE TID = @categoryId;
             """;
 

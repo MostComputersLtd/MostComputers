@@ -1,17 +1,16 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
 using OneOf;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWorkStatusesRepository
 {
-    private const string _tableName = "dbo.TodoProductWorkStatuses";
-    private const string _productTableName = "dbo.MOSTPrices";
-
     public ProductWorkStatusesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -23,7 +22,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getAllQuery =
             $"""
             SELECT Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             """;
 
         return _relationalDataAccess.GetData<ProductWorkStatuses, dynamic>(getAllQuery, new { });
@@ -34,7 +33,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getAllWithProductNewStatusQuery =
             $"""
             SELECT Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             WHERE ProductNewStatus = @productNewStatus
             """;
 
@@ -47,7 +46,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getAllWithProductXmlStatusQuery =
             $"""
             SELECT Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             WHERE ProductXmlReadyStatus = @productXmlStatus
             """;
 
@@ -60,7 +59,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getAllWithReadyForImageInsertQuery =
             $"""
             SELECT Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             WHERE ReadyForImageInsertStatus = @readyForImageInsert
             """;
 
@@ -73,7 +72,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getByIdQuery =
             $"""
             SELECT TOP 1 Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             WHERE Id = @productWorkStatusesId
             """;
 
@@ -86,7 +85,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
         const string getAllByProductIdQuery =
             $"""
             SELECT TOP 1 Id AS ProductWorkStatusId, CSTID AS ProductWorkStatusProductId, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus
-            FROM {_tableName}
+            FROM {ProductWorkStatusesTableName}
             WHERE CSTID = @productId
             """;
 
@@ -102,18 +101,18 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
             DECLARE @InsertedIdTable TABLE (Id INT);
 
             IF EXISTS (
-                SELECT 1 FROM {_tableName}
+                SELECT 1 FROM {ProductWorkStatusesTableName}
                 WHERE CSTID = @productId
             ) SET @Status = -1;
 
             IF NOT EXISTS (
-                SELECT 1 FROM {_productTableName}
+                SELECT 1 FROM {ProductsTableName}
                 WHERE CSTID = @productId
             ) SET @Status = -2;
 
             IF @Status = 0
             BEGIN
-                INSERT INTO {_tableName} (CSTID, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus)
+                INSERT INTO {ProductWorkStatusesTableName} (CSTID, ProductNewStatus, ProductXmlReadyStatus, ReadyForImageInsertStatus)
                 OUTPUT INSERTED.Id INTO @InsertedIdTable
                 VALUES(@productId, @ProductNewStatus, @ProductXmlStatus, @ReadyForImageInsert)
             END
@@ -197,7 +196,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {ProductWorkStatusesTableName}
             SET ProductNewStatus = @ProductNewStatus,
                 ProductXmlReadyStatus = @ProductXmlStatus,
                 ReadyForImageInsertStatus = @ReadyForImageInsert
@@ -222,7 +221,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {ProductWorkStatusesTableName}
             SET ProductNewStatus = @ProductNewStatus,
                 ProductXmlReadyStatus = @ProductXmlStatus,
                 ReadyForImageInsertStatus = @ReadyForImageInsert
@@ -247,7 +246,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteAllQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             """;
 
         int rowsAffected = _relationalDataAccess.SaveData<dynamic>(deleteAllQuery, new { });
@@ -259,7 +258,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteAllWithProductNewStatusQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             WHERE ProductNewStatus = @productNewStatus
             """;
 
@@ -273,7 +272,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteAllWithProductXmlStatusQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             WHERE ProductXmlReadyStatus = @productXmlStatus
             """;
 
@@ -287,7 +286,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteAllWithReadyForImageInsertQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             WHERE ReadyForImageInsertStatus = @readyForImageInsert
             """;
 
@@ -301,7 +300,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteByIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             WHERE Id = @productWorkStatusesId
             """;
 
@@ -315,7 +314,7 @@ internal sealed class ProductWorkStatusesRepository : RepositoryBase, IProductWo
     {
         const string deleteAllByProductIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductWorkStatusesTableName}
             WHERE CSTID = @productId
             """;
 

@@ -1,19 +1,17 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductPropertyRepository : RepositoryBase, IProductPropertyRepository
 {
-    private const string _tableName = "dbo.ProductXML";
-    private const string _productCharacteristicsTableName = "dbo.ProductKeyword";
-    private const string _productsTableName = "dbo.MOSTPrices";
-
     //private const string _getCharacteristicNameQuery =
     //    $"""
     //    SELECT TOP 1 Name FROM {_productCharacteristicTableName}
@@ -44,24 +42,24 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         DECLARE @DefaultDisplayOrder INT, @Name VARCHAR(50);
 
         SELECT @DefaultDisplayOrder = S, @Name = Name
-        FROM {_productCharacteristicsTableName}
+        FROM {ProductCharacteristicsTableName}
         WHERE ProductKeywordID = @ProductCharacteristicId;
 
-        INSERT INTO {_tableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
+        INSERT INTO {PropertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
         SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement
 
-        WHERE EXISTS (SELECT 1 FROM {_productCharacteristicsTableName} WHERE ProductKeywordID = @ProductCharacteristicId)
-        AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+        WHERE EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE ProductKeywordID = @ProductCharacteristicId)
+        AND NOT EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
 
         IF @@ROWCOUNT > 0
         BEGIN
             SELECT 1;
         END
-        ELSE IF NOT EXISTS (SELECT 1 FROM {_productCharacteristicsTableName} WHERE ProductKeywordID = @ProductCharacteristicId)
+        ELSE IF NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE ProductKeywordID = @ProductCharacteristicId)
         BEGIN
             SELECT -1;
         END
-        ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+        ELSE IF EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
         BEGIN
             SELECT -2;
         END
@@ -83,7 +81,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         const string getAllInProductQuery =
             $"""
             SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
-            FROM {_tableName}
+            FROM {PropertiesTableName}
             WHERE CSTID = @productId
             ORDER BY S;
             """;
@@ -96,7 +94,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
         const string getByNameAndProductIdQuery =
             $"""
             SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
-            FROM {_tableName}
+            FROM {PropertiesTableName}
             WHERE CSTID = @productId
             AND Keyword = @Name;
             """;
@@ -144,30 +142,30 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
             DECLARE @DefaultDisplayOrder INT;
             DECLARE @ProductCharacteristicId INT;
 
-            SELECT TOP 1 @CategoryId = TID FROM {_productsTableName}
+            SELECT TOP 1 @CategoryId = TID FROM {ProductsTableName}
             WHERE CSTID = @ProductId;
 
             SELECT @ProductCharacteristicId = ProductKeywordID, @DefaultDisplayOrder = S
-            FROM {_productCharacteristicsTableName}
+            FROM {ProductCharacteristicsTableName}
 
             WHERE TID = @CategoryId
             AND Name = @Name;
 
-            INSERT INTO {_tableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
+            INSERT INTO {PropertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
             SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement
 
-            WHERE EXISTS (SELECT 1 FROM {_productCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name)
-            AND NOT EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+            WHERE EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name)
+            AND NOT EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
 
             IF @@ROWCOUNT > 0
             BEGIN
                 SELECT 1;
             END
-            ELSE IF NOT EXISTS (SELECT 1 FROM {_productCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name)
+            ELSE IF NOT EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE TID = @CategoryId AND Name = @Name)
             BEGIN
                 SELECT -1;
             END
-            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+            ELSE IF EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
             BEGIN
                 SELECT -2;
             END
@@ -243,9 +241,9 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     {
         const string updateQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_productCharacteristicsTableName} WHERE ProductKeywordID = @productKeywordId)
+            IF EXISTS (SELECT 1 FROM {ProductCharacteristicsTableName} WHERE ProductKeywordID = @productKeywordId)
             BEGIN
-                UPDATE {_tableName}
+                UPDATE {PropertiesTableName}
                 SET KeywordValue = @Value,
                     S = ISNULL(@CustomDisplayOrder, S),
                     Discr = @XmlPlacement
@@ -325,7 +323,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE CSTID = @productId
             AND ProductKeywordID = @characteristicId
             """;
@@ -349,7 +347,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -372,7 +370,7 @@ internal sealed class ProductPropertyRepository : RepositoryBase, IProductProper
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE ProductKeywordID = @characteristicId;
             """;
 

@@ -1,39 +1,37 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.Requests.ProductProperty;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport.ProductProperty;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories.ExternalXmlImport;
 
 internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlImportProductPropertyRepository
 {
-    private const string _tableName = "dbo.ProductXML";
-    private const string _productCharacteristicsTableName = "dbo.ProductKeyword";
-    private const string _productsTableName = "dbo.MOSTPrices";
-
     internal const string insertWithCharacteristicIdQuery =
         $"""
         DECLARE @DefaultDisplayOrder INT, @Name VARCHAR(50);
 
         SELECT @DefaultDisplayOrder = S, @Name = Name
-        FROM {_productCharacteristicsTableName}
+        FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
         WHERE ProductKeywordID = @ProductCharacteristicId;
 
-        INSERT INTO {_tableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder)
+        INSERT INTO {PropertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder)
         SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement,
         @XmlName, @XmlDisplayOrder
 
-        WHERE NOT EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+        WHERE NOT EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
 
         IF @@ROWCOUNT > 0
         BEGIN
             SELECT 1;
         END
-        ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+        ELSE IF EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
         BEGIN
             SELECT -2;
         END
@@ -55,7 +53,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
         const string getAllInProductQuery =
             $"""
             SELECT CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder
-            FROM {_tableName}
+            FROM {PropertiesTableName}
             WHERE CSTID = @productId
             ORDER BY S;
             """;
@@ -68,7 +66,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
         const string getByNameAndProductIdQuery =
             $"""
             SELECT TOP 1 CSTID AS PropertyProductId, ProductKeywordID, S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder
-            FROM {_tableName}
+            FROM {PropertiesTableName}
             WHERE CSTID = @productId
             AND Keyword = @Name;
             """;
@@ -112,26 +110,26 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
             DECLARE @DefaultDisplayOrder INT;
             DECLARE @ProductCharacteristicId INT;
 
-            SELECT TOP 1 @CategoryId = TID FROM {_productsTableName}
+            SELECT TOP 1 @CategoryId = TID FROM {ProductsTableName}
             WHERE CSTID = @ProductId;
 
             SELECT @ProductCharacteristicId = ProductKeywordID, @DefaultDisplayOrder = S
-            FROM {_productCharacteristicsTableName}
+            FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
 
             WHERE TID = @CategoryId
             AND Name = @Name;
 
-            INSERT INTO {_tableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder)
+            INSERT INTO {PropertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr, XmlName, XmlDisplayOrder)
             SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement,
                 @XmlName, @XmlDisplayOrder
 
-            WHERE NOT EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+            WHERE NOT EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
 
             IF @@ROWCOUNT > 0
             BEGIN
                 SELECT 1;
             END
-            ELSE IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
+            ELSE IF EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE CSTID = @ProductId AND ProductKeywordID = @ProductCharacteristicId)
             BEGIN
                 SELECT -2;
             END
@@ -185,7 +183,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {PropertiesTableName}
             SET KeywordValue = @Value,
                 S = ISNULL(@CustomDisplayOrder, S),
                 Discr = @XmlPlacement,
@@ -240,7 +238,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE CSTID = @productId
             AND ProductKeywordID = @characteristicId
             """;
@@ -264,7 +262,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -287,7 +285,7 @@ internal sealed class XmlImportProductPropertyRepository : RepositoryBase, IXmlI
     {
         const string deleteByProductAndCharacteristicId =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PropertiesTableName}
             WHERE ProductKeywordID = @characteristicId;
             """;
 

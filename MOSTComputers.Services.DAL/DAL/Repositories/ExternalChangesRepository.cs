@@ -2,12 +2,12 @@
 using MOSTComputers.Models.Product.Models.Changes.External;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
+
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChangesRepository
 {
-    private const string _tableName = "dbo.Changes";
-
     public ExternalChangesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -19,7 +19,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         const string getAllQuery =
         $"""
         SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName};
+        FROM {ExternalChangesTableName};
         """;
 
         return _relationalDataAccess.GetData<ExternalChangeData, dynamic>(getAllQuery, new { });
@@ -30,7 +30,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         const string getAllForTableQuery =
         $"""
         SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName}
+        FROM {ExternalChangesTableName}
         WHERE TableName = @tableName;
         """;
 
@@ -47,7 +47,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         const string getAllForOperationTypeQuery =
         $"""
         SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName}
+        FROM {ExternalChangesTableName}
         WHERE Operation = @changeOperationType;
         """;
 
@@ -64,7 +64,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         const string getByTableNameAndElementIdQuery =
         $"""
         SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName}
+        FROM {ExternalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId;
         """;
@@ -83,7 +83,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
         const string getByIdQuery =
         $"""
         SELECT PK AS ExternalChangePK, ID AS ExternalChangeID, Operation AS ExternalChangeOperation, TableName AS ExternalChangeTableName
-        FROM {_tableName}
+        FROM {ExternalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -99,7 +99,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ExternalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -117,7 +117,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string deleteByTableNameAndElementIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ExternalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId
         AND Operation = @operationType;
@@ -139,7 +139,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ExternalChangesTableName}
         WHERE PK IN @ids;
         """;
 
@@ -157,7 +157,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string deleteByTableNameAndElementIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ExternalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId;
         """;
@@ -177,7 +177,7 @@ internal sealed class ExternalChangesRepository : RepositoryBase, IExternalChang
     {
         const string deleteByTableNameAndElementIdsQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {ExternalChangesTableName}
         WHERE TableName = @tableName
         AND ID IN @elementIds;
         """;

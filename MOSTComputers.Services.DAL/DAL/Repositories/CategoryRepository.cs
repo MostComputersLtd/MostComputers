@@ -1,18 +1,17 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Category;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.Category;
 using OneOf;
 using OneOf.Types;
-using System.Data;
 using System.Data.SqlClient;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
 {
-    private const string _tableName = "dbo.Categories";
-
     public CategoryRepository(IRelationalDataAccess relationalDataAccess)
         :base(relationalDataAccess)
     {
@@ -24,7 +23,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {CategoriesTableName}
             ORDER BY S;
             """;
 
@@ -35,7 +34,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
     {
         const string getByIdQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {CategoriesTableName}
             WHERE CategoryID = @id;
             """;
 
@@ -48,10 +47,10 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
             $"""
             IF @parentId IS NULL
             OR EXISTS (
-                SELECT TOP 1 CategoryID FROM {_tableName}
+                SELECT TOP 1 CategoryID FROM {CategoriesTableName}
                 WHERE CategoryID = @parentId
             )
-            INSERT INTO {_tableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
+            INSERT INTO {CategoriesTableName}(Description, IsLeaf, S, rowguid, ProductsUpdateCounter, ParentId)
             OUTPUT INSERTED.CategoryID
             VALUES (@Description, @IsLeaf, @DisplayOrder, @RowGuid, @ProductsUpdateCounter, @parentId);
             """;
@@ -75,7 +74,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {CategoriesTableName}
             SET Description = @Description,
                 S = @DisplayOrder,
                 rowguid = @RowGuid,
@@ -102,7 +101,7 @@ internal sealed class CategoryRepository : RepositoryBase, ICategoryRepository
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {CategoriesTableName}
             WHERE CategoryID = @id;
             """;
 

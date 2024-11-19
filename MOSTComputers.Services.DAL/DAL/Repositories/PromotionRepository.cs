@@ -1,18 +1,17 @@
-﻿using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
-using OneOf;
+﻿using OneOf;
 using OneOf.Types;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.Promotion;
-using MOSTComputers.Models.Product.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.Promotion;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
+using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
+
 internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
 {
-    private const string _tableName = "dbo.Promotions";
-
     public PromotionRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -24,7 +23,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             """;
 
         return _relationalDataAccess.GetData<Promotion, dynamic>(getAllQuery, new { });
@@ -34,7 +33,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getAllActiveQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             WHERE Active = 1;
             """;
 
@@ -45,7 +44,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getAllForProductQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -56,7 +55,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getAllForSelectionOfProductsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             WHERE CSTID IN
             """;
 
@@ -69,7 +68,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getAllActiveForSelectionOfProductsQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             WHERE Active = 1
             AND CSTID IN
             """;
@@ -83,7 +82,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string getActiveForProductQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {PromotionsTableName}
             WHERE CSTID = @productId
             AND Active = 1;
             """;
@@ -95,11 +94,11 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string insertQuery =
             $"""
-            INSERT INTO {_tableName}(PromotionID, CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
+            INSERT INTO {PromotionsTableName}(PromotionID, CSTID, ChgDate, PromSource, PromType, Status, SPOID, PromotionUSD, PromotionEUR, Active, StartDate,
             ExpDate, MinQty, MaxQty, CampaignID, QtyIncrement, RequiredCSTIDs, ExpQty, SoldQty, PromotionName, Consignation, Points, RegistrationID,
             Timestamp, PromotionVisualizationId)
             OUTPUT INSERTED.PromotionID
-            VALUES(ISNULL((SELECT MAX(PromotionID) + 1 FROM {_tableName}), 1), @ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
+            VALUES(ISNULL((SELECT MAX(PromotionID) + 1 FROM {PromotionsTableName}), 1), @ProductId, @PromotionAddedDate, @Source, @Type, @Status, @SPOID, @DiscountUSD, @DiscountEUR, @Active, @StartDate,
             @ExpirationDate, @MinimumQuantity, @MaximumQuantity, @CampaignId, @QuantityIncrement, @RequiredProductIdsString, @ExpQuantity, @SoldQuantity,
             @Name, @Consignation, @Points, @RegistrationId, @TimeStamp, @PromotionVisualizationId)
             """
@@ -142,7 +141,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string updateQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {PromotionsTableName}
             SET CSTID = @ProductId,
                 ChgDate = @PromotionAddedDate,
                 PromSource = @Source,
@@ -209,7 +208,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PromotionsTableName}
             WHERE PromotionId = @id;
             """;
 
@@ -231,7 +230,7 @@ internal sealed class PromotionRepository : RepositoryBase, IPromotionRepository
     {
         const string deleteAllByProductIdQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {PromotionsTableName}
             WHERE CSTID = @productId;
             """;
 

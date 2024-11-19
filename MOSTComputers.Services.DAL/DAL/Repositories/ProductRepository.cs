@@ -1,29 +1,23 @@
-﻿using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+﻿using System.Data;
+using Dapper;
+using FluentValidation.Results;
 using OneOf;
 using OneOf.Types;
-using System.Data;
-using Dapper;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using FluentValidation.Results;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+
 using static MOSTComputers.Services.DAL.DAL.Repositories.RepositoryCommonElements;
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductRepository : RepositoryBase, IProductRepository
 {
-    private const string _tableName = "dbo.MOSTPrices";
-    private const string _categoriesTableName = "dbo.Categories";
-    private const string _manifacturersTableName = "dbo.Manufacturer";
-    private const string _firstImagesTableName = "dbo.Images";
-    private const string _allImagesTableName = "dbo.ImagesAll";
-    private const string _propertiesTableName = "dbo.ProductXML";
-    private const string _productCharacteristicsTableName = "dbo.ProductKeyword";
-    private const string _imageFileNamesTableName = "dbo.ImageFileName";
     private const string _productStatusesTableName = "dbo.ProductStatuses";
 
     public ProductRepository(IRelationalDataAccess relationalDataAccess)
@@ -41,10 +35,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 CategoryID, ParentId, Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
 
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
             ORDER BY S;
             """;
@@ -71,10 +65,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 CategoryID, ParentId, Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
 
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
             WHERE TID = @categoryId
             ORDER BY S;
@@ -105,10 +99,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                     CHARINDEX(@subString, products.CFGSUBTYPE) AS SubPosition
 
-                FROM {_tableName} products
-                LEFT JOIN {_categoriesTableName} cat
+                FROM {ProductsTableName} products
+                LEFT JOIN {CategoriesTableName} cat
                 ON cat.CategoryID = products.TID
-                LEFT JOIN {_manifacturersTableName} man
+                LEFT JOIN {ManifacturersTableName} man
                 ON man.MfrID = products.MfrID
             )
                 AS Data
@@ -165,10 +159,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                             (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
                                 FROM @TEMP_TABLE_GET_ALL_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
 
-                FROM {_tableName} products
-                LEFT JOIN {_categoriesTableName} cat
+                FROM {ProductsTableName} products
+                LEFT JOIN {CategoriesTableName} cat
                 ON cat.CategoryID = products.TID
-                LEFT JOIN {_manifacturersTableName} man
+                LEFT JOIN {ManifacturersTableName} man
                 ON man.MfrID = products.MfrID
             )
                 AS Data
@@ -198,10 +192,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 CategoryID, ParentId, Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
 
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
             WHERE CSTID IN
             """;
@@ -235,12 +229,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                 ID AS ImageProductId, firstImages.Description AS HtmlData, Image, ImageFileExt, DateModified
 
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
-            LEFT JOIN {_firstImagesTableName} firstImages
+            LEFT JOIN {FirstImagesTableName} firstImages
             ON firstImages.ID = products.CSTID
             WHERE CSTID IN
             """;
@@ -281,12 +275,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                 properties.CSTID AS PropertyProductId, ProductKeywordID, properties.S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
 
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
-            LEFT JOIN {_propertiesTableName} properties
+            LEFT JOIN {PropertiesTableName} properties
             ON properties.CSTID = products.CSTID
             WHERE products.CSTID IN @productIds
             ORDER BY S;
@@ -342,10 +336,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                     ROW_NUMBER() OVER (ORDER BY products.S) AS RN
 
-                FROM {_tableName} products
+                FROM {ProductsTableName} products
                 LEFT JOIN Categories cat
                 ON cat.CategoryID = products.TID
-                LEFT JOIN {_manifacturersTableName} man
+                LEFT JOIN {ManifacturersTableName} man
                 ON man.MfrID = products.MfrID
             ) AS selectSt
 
@@ -392,10 +386,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                         man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                         CHARINDEX(@subString, products.CFGSUBTYPE) AS SubPosition
 
-                    FROM {_tableName} products
-                    LEFT JOIN {_categoriesTableName} cat
+                    FROM {ProductsTableName} products
+                    LEFT JOIN {CategoriesTableName} cat
                     ON cat.CategoryID = products.TID
-                    LEFT JOIN {_manifacturersTableName} man
+                    LEFT JOIN {ManifacturersTableName} man
                     ON man.MfrID = products.MfrID
                     WHERE CHARINDEX(@subString, products.CFGSUBTYPE) > 0
                 )
@@ -471,10 +465,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                                 (SELECT CHARINDEX(SearchStringPart, products.SPLMODEL2 COLLATE Cyrillic_General_CI_AS) AS LocalPosition
                                     FROM @TEMP_TABLE_GET_FIRST_IN_RANGE_WHERE_SEARCHSTRING_MATCHES) AS SearchStringCharInd) AS SubPosition
 
-                    FROM {_tableName} products
-                    LEFT JOIN {_categoriesTableName} cat
+                    FROM {ProductsTableName} products
+                    LEFT JOIN {CategoriesTableName} cat
                     ON cat.CategoryID = products.TID
-                    LEFT JOIN {_manifacturersTableName} man
+                    LEFT JOIN {ManifacturersTableName} man
                     ON man.MfrID = products.MfrID
                     WHERE 0 < ISNULL(
                         (SELECT SUM(LocalPos) FROM
@@ -620,10 +614,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
             string querySecondSelect =
                 $"""
-                        FROM {_tableName} products
-                        LEFT JOIN {_categoriesTableName} cat
+                        FROM {ProductsTableName} products
+                        LEFT JOIN {CategoriesTableName} cat
                         ON cat.CategoryID = products.TID
-                        LEFT JOIN {_manifacturersTableName} man
+                        LEFT JOIN {ManifacturersTableName} man
                         ON man.MfrID = products.MfrID
                 """;
 
@@ -733,12 +727,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                 ID AS ImageProductId, firstImages.Description AS HtmlData, Image, ImageFileExt, DateModified
             
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
-            LEFT JOIN {_firstImagesTableName} firstImages
+            LEFT JOIN {FirstImagesTableName} firstImages
             ON firstImages.ID = products.CSTID
             WHERE products.CSTID = @id;
             """;
@@ -776,12 +770,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                 properties.CSTID AS PropertyProductId, ProductKeywordID, properties.S AS PropertyDisplayOrder, Keyword, KeywordValue, Discr
             
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
-            LEFT JOIN {_propertiesTableName} properties
+            LEFT JOIN {PropertiesTableName} properties
             ON properties.CSTID = products.CSTID
             WHERE products.CSTID = @id;
             """;
@@ -825,12 +819,12 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active,
                 images.CSTID AS ImageProductId, images.ID AS ImagePrime, images.Description AS HtmlData, Image, ImageFileExt, DateModified
             
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
-            LEFT JOIN {_allImagesTableName} images
+            LEFT JOIN {AllImagesTableName} images
             ON images.CSTID = products.CSTID
             WHERE products.CSTID = @id;
             """;
@@ -875,10 +869,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 CategoryID, ParentId, cat.Description, IsLeaf,
                 man.MfrID AS PersonalManifacturerId, BGName, Name, man.S AS ManifacturerDisplayOrder, Active
             
-            FROM {_tableName} products
-            LEFT JOIN {_categoriesTableName} cat
+            FROM {ProductsTableName} products
+            LEFT JOIN {CategoriesTableName} cat
             ON cat.CategoryID = products.TID
-            LEFT JOIN {_manifacturersTableName} man
+            LEFT JOIN {ManifacturersTableName} man
             ON man.MfrID = products.MfrID
             ORDER BY products.CSTID DESC;
             """;
@@ -905,10 +899,10 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             $"""
             DECLARE @InsertedIdTable TABLE (Id INT);
             
-            INSERT INTO {_tableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
+            INSERT INTO {ProductsTableName} (CSTID, TID, CFGSUBTYPE, ADDWRR, ADDWRRTERM, ADDWRRDEF, DEFWRRTERM, S, OLD, PLSHOW, PRICE1, PRICE2, PRICE3, CurrencyId, rowguid,
                 PromPID, PromRID, PromPictureID, PromExpDate, AlertPictureID, AlertExpDate, PriceListDescription, MfrID, SubcategoryID, SPLMODEL, SPLMODEL1, SPLMODEL2)
             OUTPUT INSERTED.CSTID INTO @InsertedIdTable
-            VALUES (ISNULL((SELECT MAX(CSTID) + 1 FROM {_tableName}), 1), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
+            VALUES (ISNULL((SELECT MAX(CSTID) + 1 FROM {ProductsTableName}), 1), @CategoryId, @CfgSubType, @ADDWRR, @ADDWRRTERM, @ADDWRRDEF, @DEFWRRTERM, @DisplayOrder, @OLD, @PLSHOW, @PRICE1, @PRICE2, @PRICE3, @CurrencyId, @RowGuid,
                 @PromPID, @PromRID, @PromPictureId, @PromExpDate, @AlertPictureId, @AlertExpDate, @PriceListDescription, @ManifacturerId, @SubcategoryId, @SPLMODEL, @SPLMODEL1, @SPLMODEL2)
 
             SELECT ISNULL((SELECT TOP 1 Id FROM @InsertedIdTable), 0);
@@ -916,7 +910,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string getCharacteristicsByIdQuery =
             $"""
-            SELECT * FROM {_productCharacteristicsTableName}
+            SELECT * FROM {ProductCharacteristicsTableName}
             WHERE ProductKeywordID IN @characteristicIds;
             """;
 
@@ -925,29 +919,29 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             DECLARE @DefaultDisplayOrder INT, @Name VARCHAR(50);
 
             SELECT @DefaultDisplayOrder = S, @Name = Name
-            FROM {_productCharacteristicsTableName}
+            FROM {ProductCharacteristicsTableName}
             WHERE ProductKeywordID = @ProductCharacteristicId;
 
-            INSERT INTO {_propertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
+            INSERT INTO {PropertiesTableName} (CSTID, ProductKeywordID, S, Keyword, KeywordValue, Discr)
             SELECT @ProductId, @ProductCharacteristicId, ISNULL(@CustomDisplayOrder, @DefaultDisplayOrder), @Name, @Value, @XmlPlacement
             """;
 
         const string insertImageFileNameInfosQuery =
             $"""
-            INSERT INTO {_imageFileNamesTableName} (CSTID, ImageNumber, S, ImgFileName, Active)
-            VALUES (@ProductId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {_imageFileNamesTableName} WHERE CSTID = @ProductId), 1),
+            INSERT INTO {ImageFileNamesTableName} (CSTID, ImageNumber, S, ImgFileName, Active)
+            VALUES (@ProductId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {ImageFileNamesTableName} WHERE CSTID = @ProductId), 1),
                 @DisplayOrder, @FileName, @Active)
             """;
 
         const string insertInAllImagesQuery =
            $"""
-            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {AllImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             VALUES (@Id, @ProductId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
         const string insertInFirstImagesQuery =
             $"""
-            INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {FirstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
             VALUES (@ProductId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
@@ -1085,7 +1079,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         const string updateProductQuery =
             $"""
-            UPDATE {_tableName}
+            UPDATE {ProductsTableName}
             SET TID = @CategoryId,
                 CFGSUBTYPE = @Name,
                 ADDWRR = @ADDWRR,
@@ -1118,7 +1112,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string updatePropertiesQuery =
             $"""
-            UPDATE {_propertiesTableName}
+            UPDATE {PropertiesTableName}
             SET S = ISNULL(@CustomDisplayOrder, S),
                 KeywordValue = @Value,
                 Discr = @XmlPlacement
@@ -1132,11 +1126,11 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
             DECLARE @DisplayOrder INT;
             DECLARE @MaxDisplayOrder INT;
             
-            SELECT TOP 1 @DisplayOrder = S FROM {_imageFileNamesTableName}
+            SELECT TOP 1 @DisplayOrder = S FROM {ImageFileNamesTableName}
             WHERE CSTID = @ProductId
             AND ImageNumber = @ImageNumber;
             
-            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {_imageFileNamesTableName} WHERE CSTID = @ProductId), 1);
+            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {ImageFileNamesTableName} WHERE CSTID = @ProductId), 1);
             
             SET @NewDisplayOrder = 
             CASE 
@@ -1146,9 +1140,9 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                 ELSE @NewDisplayOrder
             END;
             
-            IF EXISTS (SELECT 1 FROM {_tableName} WHERE CSTID = @ProductId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @ProductId)
             BEGIN       
-                UPDATE {_imageFileNamesTableName}
+                UPDATE {ImageFileNamesTableName}
                 SET S = 
                     CASE
                         WHEN S = @DisplayOrder AND ImageNumber = @ImageNumber THEN @NewDisplayOrder
@@ -1158,7 +1152,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
                     END
                 WHERE CSTID = @ProductId;
             
-                UPDATE {_imageFileNamesTableName}
+                UPDATE {ImageFileNamesTableName}
                 SET ImgFileName = @FileName,
                     Active = @Active
             
@@ -1182,7 +1176,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string updateInAllImagesQuery =
             $"""
-            UPDATE {_allImagesTableName}
+            UPDATE {AllImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -1193,7 +1187,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string updateInFirstImagesQuery =
             $"""
-            UPDATE {_firstImagesTableName}
+            UPDATE {FirstImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -1294,19 +1288,19 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
 
         const string deleteProductAndRelatedItemsQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ProductsTableName}
             WHERE CSTID = @id;
 
-            DELETE FROM {_propertiesTableName}
+            DELETE FROM {PropertiesTableName}
             WHERE CSTID = @id;
 
-            DELETE FROM {_imageFileNamesTableName}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE CSTID = @id;
 
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTableName}
             WHERE CSTID = @id;
 
-            DELETE FROM {_firstImagesTableName}
+            DELETE FROM {FirstImagesTableName}
             WHERE ID = @id;
             """;
 
@@ -1424,7 +1418,7 @@ internal sealed class ProductRepository : RepositoryBase, IProductRepository
     {
         const string getHighestIdFromAllImages =
             $"""
-            SELECT MAX(ID) FROM {_allImagesTableName}
+            SELECT MAX(ID) FROM {AllImagesTableName}
             """;
 
         int? highestId = _relationalDataAccess.GetDataFirstOrDefault<int?, dynamic>(getHighestIdFromAllImages, new { }, connection, transaction);

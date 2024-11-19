@@ -3,18 +3,14 @@ using OneOf;
 using OneOf.Types;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport;
-using MOSTComputers.Models.Product.Models.ExternalXmlImport.ProductImage;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImage;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepository
 {
-    private const string _firstImagesTableName = "dbo.Images";
-    private const string _allImagesTableName = "dbo.ImagesAll";
-    private const string _imageFileNameInfosTable = "dbo.ImageFileName";
-
     public ProductImageRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -27,7 +23,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string getAllInProductQuery =
             $"""
             SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_allImagesTableName}
+            FROM {AllImagesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -39,7 +35,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string getAllFirstImagesForAllProductsQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTableName}
             """;
 
         IEnumerable<ProductFirstImage> images = _relationalDataAccess.GetData<ProductFirstImage, dynamic>(getAllFirstImagesForAllProductsQuery, new { });
@@ -52,7 +48,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string getByIdInFirstImagesQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTableName}
             WHERE ID IN @productIds
             """;
 
@@ -67,7 +63,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string getByIdInAllImagesQuery =
             $"""
             SELECT ID AS ImagePrime, CSTID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_allImagesTableName}
+            FROM {AllImagesTableName}
             WHERE ID = @id;
             """;
 
@@ -79,7 +75,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
         const string getByIdInFirstImagesQuery =
             $"""
             SELECT ID AS ImageProductId, Description AS HtmlData, Image, ImageFileExt, DateModified
-            FROM {_firstImagesTableName}
+            FROM {FirstImagesTableName}
             WHERE ID = @productId;
             """;
 
@@ -97,9 +93,9 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             $"""
             DECLARE @InsertedIdTable TABLE (Id INT);
 
-            INSERT INTO {_allImagesTableName} (ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {AllImagesTableName} (ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO @InsertedIdTable
-            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {AllImagesTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
 
             SELECT TOP 1 Id FROM @InsertedIdTable;
             """;
@@ -126,28 +122,28 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
 
             DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
 
-            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {_imageFileNameInfosTable}
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId;
             
             SET @displayOrder = ISNULL(@displayOrder, ISNULL(@MaxDisplayOrderForProduct, 1));
 
             SELECT TOP 1 @DisplayOrderInRange = ISNULL(
-                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_imageFileNameInfosTable}
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {ImageFileNamesTableName}
                 WHERE @MaxDisplayOrderForProduct <= @displayOrder),
                 @displayOrder);
             
-            UPDATE {_imageFileNameInfosTable}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S + 1
             WHERE CSTID = @productId
             AND S >= @DisplayOrderInRange;
 
-            INSERT INTO {_allImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {AllImagesTableName}(ID, CSTID, Description, Image, ImageFileExt, DateModified)
             OUTPUT INSERTED.ID INTO @InsertedIdTable
-            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {_allImagesTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
+            VALUES (ISNULL((SELECT MAX(ID) + 1 FROM {AllImagesTableName}), 1), @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
 
-            INSERT INTO {_imageFileNameInfosTable}(CSTID, ImageNumber, S, ImgFileName)
+            INSERT INTO {ImageFileNamesTableName}(CSTID, ImageNumber, S, ImgFileName)
             VALUES (@productId,
-                (SELECT MAX(ImageNumber) + 1 FROM {_imageFileNameInfosTable}
+                (SELECT MAX(ImageNumber) + 1 FROM {ImageFileNamesTableName}
                 WHERE CSTID = @productId),
                 @DisplayOrderInRange,
                 CONCAT(CAST((SELECT TOP 1 Id FROM @InsertedIdTable) AS VARCHAR), '.', SUBSTRING(@ImageContentType, CHARINDEX('/', @ImageContentType) + 1, 100)))
@@ -175,7 +171,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string insertInFirstImagesQuery =
             $"""
-            INSERT INTO {_firstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
+            INSERT INTO {FirstImagesTableName}(ID, Description, Image, ImageFileExt, DateModified)
             VALUES (@productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
@@ -197,7 +193,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string updateInAllImagesQuery =
             $"""
-            UPDATE {_allImagesTableName}
+            UPDATE {AllImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -224,7 +220,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string updateInFirstImagesQuery =
             $"""
-            UPDATE {_firstImagesTableName}
+            UPDATE {FirstImagesTableName}
             SET Description = @HtmlData,
                 Image = @ImageData,
                 ImageFileExt = @ImageContentType,
@@ -251,9 +247,9 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string updateHtmlDataInAllImagesByIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_allImagesTableName} WHERE ID = @imageId)
+            IF EXISTS (SELECT 1 FROM {AllImagesTableName} WHERE ID = @imageId)
             BEGIN
-                UPDATE {_allImagesTableName}
+                UPDATE {AllImagesTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @imageId;
@@ -283,9 +279,9 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string updateHtmlDataInFirstImagesByProductIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_firstImagesTableName} WHERE ID = @productId)
+            IF EXISTS (SELECT 1 FROM {FirstImagesTableName} WHERE ID = @productId)
             BEGIN
-                UPDATE {_firstImagesTableName}
+                UPDATE {FirstImagesTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @productId;
@@ -315,19 +311,19 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string updateHtmlDataInFirstAndAllImagesByProductIdQuery =
             $"""
-            IF EXISTS (SELECT 1 FROM {_allImagesTableName} WHERE CSTID = @productId)
-            OR EXISTS (SELECT 1 FROM {_firstImagesTableName} WHERE ID = @productId)
+            IF EXISTS (SELECT 1 FROM {AllImagesTableName} WHERE CSTID = @productId)
+            OR EXISTS (SELECT 1 FROM {FirstImagesTableName} WHERE ID = @productId)
             BEGIN
                 DECLARE @TotalAffectedRows INT = 0;
             
-                UPDATE {_allImagesTableName}
+                UPDATE {AllImagesTableName}
                 SET Description = @HtmlData
             
                 WHERE CSTID = @productId;
 
                 SET @TotalAffectedRows = @TotalAffectedRows + @@ROWCOUNT;
 
-                UPDATE {_firstImagesTableName}
+                UPDATE {FirstImagesTableName}
                 SET Description = @HtmlData
 
                 WHERE ID = @productId;
@@ -359,7 +355,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTableName}
             WHERE ID = @id;
             """;
 
@@ -384,17 +380,17 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
             DECLARE @displayOrderOfDeletedImage INT;
             DECLARE @productIdOfDeletedImage INT;
 
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTableName}
             WHERE ID = @id;
 
             SELECT TOP 1 @displayOrderOfDeletedImage = S, @productIdOfDeletedImage = CSTID
-            FROM {_imageFileNameInfosTable}
+            FROM {ImageFileNamesTableName}
             WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
 
-            DELETE FROM {_imageFileNameInfosTable}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE SUBSTRING(ImgFileName, 1, CHARINDEX('.', ImgFileName) - 1) = CAST(@id as VARCHAR);
 
-            UPDATE {_imageFileNameInfosTable}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S - 1
 
             WHERE CSTID = @productIdOfDeletedImage
@@ -420,7 +416,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_firstImagesTableName}
+            DELETE FROM {FirstImagesTableName}
             WHERE ID = @id;
             """;
 
@@ -442,7 +438,7 @@ internal sealed class ProductImageRepository : RepositoryBase, IProductImageRepo
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_allImagesTableName}
+            DELETE FROM {AllImagesTableName}
             WHERE CSTID = @productId;
             """;
 

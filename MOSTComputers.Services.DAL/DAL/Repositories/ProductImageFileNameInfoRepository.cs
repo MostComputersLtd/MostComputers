@@ -1,18 +1,17 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+using MOSTComputers.Services.DAL.Models.Requests.ProductImageFileNameInfo;
 using OneOf;
 using OneOf.Types;
+
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
 
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProductImageFileNameInfoRepository
 {
-    private const string _tableName = "dbo.ImageFileName";
-    private const string _productsTableName = "dbo.MOSTPrices";
-
     public ProductImageFileNameInfoRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -24,7 +23,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string getAllQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ImageFileNamesTableName}
             ORDER BY CSTID, S;
             """;
 
@@ -35,7 +34,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string getAllForProductQuery =
             $"""
-            SELECT * FROM {_tableName}
+            SELECT * FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             ORDER BY S;
             """;
@@ -47,7 +46,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string getAllForProductQuery =
             $"""
-            SELECT TOP 1 * FROM {_tableName}
+            SELECT TOP 1 * FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND ImageNumber = @imageNumber
             """;
@@ -60,7 +59,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string getAllForProductQuery =
             $"""
-            SELECT TOP 1 * FROM {_tableName}
+            SELECT TOP 1 * FROM {ImageFileNamesTableName}
             WHERE ImgFileName = @fileName
             """;
 
@@ -72,7 +71,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string getAllForProductQuery =
             $"""
-            SELECT MAX(ImageNumber) FROM {_tableName}
+            SELECT MAX(ImageNumber) FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -86,31 +85,31 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             $"""
             DECLARE @DisplayOrderInRange INT, @MaxDisplayOrderForProduct INT
 
-            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {_tableName}
+            SELECT TOP 1 @MaxDisplayOrderForProduct = MAX(S) + 1 FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId;
 
             SELECT TOP 1 @DisplayOrderInRange = ISNULL(
-                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {_tableName}
+                (SELECT TOP 1 @MaxDisplayOrderForProduct FROM {ImageFileNamesTableName}
                 WHERE @MaxDisplayOrderForProduct <= @DisplayOrder),
                 @DisplayOrder);
 
-            IF EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                     SET S = S + 1
                 WHERE CSTID = @productId
                 AND S >= @DisplayOrderInRange;
 
-                INSERT INTO {_tableName}(CSTID, ImageNumber, S, ImgFileName, Active)
-                SELECT @productId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {_tableName} WHERE CSTID = @productId), 1),
+                INSERT INTO {ImageFileNamesTableName}(CSTID, ImageNumber, S, ImgFileName, Active)
+                SELECT @productId, ISNULL((SELECT MAX(ImageNumber) + 1 FROM {ImageFileNamesTableName} WHERE CSTID = @productId), 1),
                 @DisplayOrderInRange, @FileName, @Active
-                WHERE EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId);
+                WHERE EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId);
             END
             IF @@ROWCOUNT > 0
             BEGIN
                 SELECT 1;
             END
-            ELSE IF NOT EXISTS(SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            ELSE IF NOT EXISTS(SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN
                 SELECT -1;
             END
@@ -151,11 +150,11 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             DECLARE @DisplayOrder INT;
             DECLARE @MaxDisplayOrder INT;
             
-            SELECT TOP 1 @DisplayOrder = S FROM {_tableName}
+            SELECT TOP 1 @DisplayOrder = S FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND ImageNumber = @ImageNumber;
 
-            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {_tableName} WHERE CSTID = @productId), 1);
+            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {ImageFileNamesTableName} WHERE CSTID = @productId), 1);
 
             SET @NewDisplayOrder = 
             CASE 
@@ -165,9 +164,9 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                 ELSE @NewDisplayOrder
             END;
 
-            IF EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN       
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET S = 
                     CASE
                         WHEN S = @DisplayOrder AND ImageNumber = @ImageNumber THEN @NewDisplayOrder
@@ -177,7 +176,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                     END
                 WHERE CSTID = @productId;
 
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET ImgFileName = @FileName,
                     Active = @Active
 
@@ -201,9 +200,9 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         const string updateQueryWithNoDisplayOrderChanges =
             $"""
-            IF EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN 
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET ImgFileName = @FileName,
                     Active = @Active
 
@@ -259,11 +258,11 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             DECLARE @MaxDisplayOrder INT;
             
             SELECT TOP 1 @DisplayOrder = S
-            FROM {_tableName}
+            FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND ImgFileName = @FileName;
 
-            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {_tableName} WHERE CSTID = @productId), 1);
+            SELECT @MaxDisplayOrder = ISNULL((SELECT COUNT(*) FROM {ImageFileNamesTableName} WHERE CSTID = @productId), 1);
 
             SET @NewDisplayOrder = 
             CASE 
@@ -273,9 +272,9 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                 ELSE @NewDisplayOrder
             END;
 
-            IF EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN       
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET S = 
                     CASE
                         WHEN S = @DisplayOrder AND ImgFileName = @FileName THEN @NewDisplayOrder
@@ -285,7 +284,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
                     END
                 WHERE CSTID = @productId;
 
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET ImgFileName = ISNULL(@NewFileName, ImgFileName),
                     Active = @Active
 
@@ -302,9 +301,9 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
 
         const string updateByFileNameWithoutDisplayOrderChanges =
             $"""
-            IF EXISTS (SELECT 1 FROM {_productsTableName} WHERE CSTID = @productId)
+            IF EXISTS (SELECT 1 FROM {ProductsTableName} WHERE CSTID = @productId)
             BEGIN 
-                UPDATE {_tableName}
+                UPDATE {ImageFileNamesTableName}
                 SET ImgFileName = ISNULL(@NewFileName, ImgFileName),
                     Active = @Active
             
@@ -410,7 +409,7 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
     {
         const string deleteQuery =
             $"""
-            DELETE FROM {_tableName}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId;
             """;
 
@@ -438,21 +437,21 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             DECLARE @DisplayOrder INT;
             
             SELECT TOP 1 @DisplayOrder = S
-            FROM {_tableName}
+            FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND ImageNumber = @ImageNumber;
 
-            DELETE FROM {_tableName}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND ImageNumber = @ImageNumber;
 
-            UPDATE {_tableName}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S - 1
             
             WHERE CSTID = @productId
             AND S > @DisplayOrder;
 
-            UPDATE {_tableName}
+            UPDATE {ImageFileNamesTableName}
             SET ImageNumber = ImageNumber - 1
             
             WHERE CSTID = @productId
@@ -486,21 +485,21 @@ internal sealed class ProductImageFileNameInfoRepository : RepositoryBase, IProd
             DECLARE @DeletedItemImageNumber INT;
 
             SELECT TOP 1 @DeletedItemImageNumber = ImageNumber
-            FROM {_tableName}
+            FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND S = @DisplayOrder;
 
-            DELETE FROM {_tableName}
+            DELETE FROM {ImageFileNamesTableName}
             WHERE CSTID = @productId
             AND S = @DisplayOrder;
 
-            UPDATE {_tableName}
+            UPDATE {ImageFileNamesTableName}
                 SET S = S - 1
             
             WHERE CSTID = @productId
             AND S > @DisplayOrder;
 
-            UPDATE {_tableName}
+            UPDATE {ImageFileNamesTableName}
             SET ImageNumber = ImageNumber - 1
             
             WHERE CSTID = @productId

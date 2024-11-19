@@ -2,12 +2,12 @@
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 
+using static MOSTComputers.Services.DAL.Utils.TableAndColumnNameUtils;
+
 namespace MOSTComputers.Services.DAL.DAL.Repositories;
 
 internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepository
 {
-    private const string _tableName = "dbo.Changes4Web";
-
     public LocalChangesRepository(IRelationalDataAccess relationalDataAccess)
         : base(relationalDataAccess)
     {
@@ -20,7 +20,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp 
-        FROM {_tableName}
+        FROM {LocalChangesTableName}
         ORDER BY TimeStamp;
         """;
 
@@ -33,7 +33,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {LocalChangesTableName}
         WHERE TableName = @tableName
         ORDER BY TimeStamp;
         """;
@@ -52,7 +52,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {LocalChangesTableName}
         WHERE Operation = @changeOperationType
         ORDER BY TimeStamp;
         """;
@@ -71,7 +71,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {LocalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -89,7 +89,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
         $"""
         SELECT PK AS LocalChangePK, ID AS LocalChangeID, Operation AS LocalChangeOperation, 
             TableName AS LocalChangeTableName, TimeStamp AS LocalChangeTimeStamp
-        FROM {_tableName}
+        FROM {LocalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId
         AND Operation = @changeOperationType;
@@ -109,7 +109,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {LocalChangesTableName}
         WHERE PK = @id;
         """;
 
@@ -127,7 +127,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string deleteByIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {LocalChangesTableName}
         WHERE PK IN @ids;
         """;
 
@@ -145,7 +145,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string deleteByTableNameAndElementIdQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {LocalChangesTableName}
         WHERE TableName = @tableName
         AND ID = @elementId;
         """;
@@ -165,7 +165,7 @@ internal sealed class LocalChangesRepository : RepositoryBase, ILocalChangesRepo
     {
         const string deleteByTableNameAndElementIdsQuery =
         $"""
-        DELETE FROM {_tableName}
+        DELETE FROM {LocalChangesTableName}
         WHERE TableName = @tableName
         AND ID IN @elementIds;
         """;
