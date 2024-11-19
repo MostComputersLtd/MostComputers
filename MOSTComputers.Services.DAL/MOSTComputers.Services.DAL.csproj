@@ -20,8 +20,4 @@
     <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\Responses\" />
-  </ItemGroup>
-
 </Project>
