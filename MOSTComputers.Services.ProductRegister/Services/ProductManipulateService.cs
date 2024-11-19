@@ -1,30 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Models.Product.Models.Requests.ProductImage;
-using MOSTComputers.Models.Product.Models.Requests.ProductProperty;
-using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
-using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using OneOf;
-using OneOf.Types;
-using System.Transactions;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using MOSTComputers.Utils.ProductImageFileNameUtils;
-
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
-
-using static MOSTComputers.Services.ProductImageFileManagement.Utils.ProductImageFileManagementUtils;
-using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
-using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageAndFileNameRelationsUtils;
-using static MOSTComputers.Utils.OneOf.OneOfExtensions;
-
-namespace MOSTComputers.Services.ProductRegister.Services;
+﻿namespace MOSTComputers.Services.ProductRegister.Services;
 
 //internal sealed class ProductManipulateService : IProductManipulateService
 //{

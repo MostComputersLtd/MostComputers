@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 

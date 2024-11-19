@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductPopups;

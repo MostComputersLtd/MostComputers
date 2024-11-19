@@ -1,6 +1,4 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using OneOf;
-using OneOf.Types;
 
 namespace MOSTComputers.Utils.ProductImageFileNameUtils;
 

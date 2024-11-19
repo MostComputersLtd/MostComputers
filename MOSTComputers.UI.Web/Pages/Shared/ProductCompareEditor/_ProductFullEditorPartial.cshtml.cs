@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;

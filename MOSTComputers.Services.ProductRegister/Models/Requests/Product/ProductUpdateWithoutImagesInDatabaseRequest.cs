@@ -1,6 +1,4 @@
 ﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.Product;
-using MOSTComputers.Utils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 public sealed class ProductUpdateWithoutImagesInDatabaseRequest

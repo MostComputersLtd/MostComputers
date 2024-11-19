@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Requests.ProductImageFileNameInfo;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
 using OneOf;

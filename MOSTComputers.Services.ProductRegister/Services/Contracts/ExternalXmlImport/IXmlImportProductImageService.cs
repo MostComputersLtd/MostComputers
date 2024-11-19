@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.ExternalXmlImport.ProductImage;

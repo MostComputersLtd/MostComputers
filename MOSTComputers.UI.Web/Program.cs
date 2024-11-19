@@ -5,7 +5,6 @@ using MOSTComputers.UI.Web.Services;
 using MOSTComputers.UI.Web.Services.Contracts;
 using MOSTComputers.Services.Caching.Configuration;
 using MOSTComputers.Services.Identity.Confuguration;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using MOSTComputers.UI.Web.Authentication;
 using FluentValidation;

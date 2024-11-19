@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
-using MOSTComputers.Models.Product.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.ProductProperties;

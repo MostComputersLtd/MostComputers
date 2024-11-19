@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MOSTComputers.Services.ProductRegister.Models.Grouping;
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Grouping;
 
 internal class Grouping<TKey, TElement> : List<TElement>, IGrouping<TKey, TElement>
 {

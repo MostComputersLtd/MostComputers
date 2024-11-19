@@ -1,5 +1,4 @@
-﻿using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Changes;
+﻿using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;

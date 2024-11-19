@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using MOSTComputers.Services.LocalChangesHandling.Services.BackgroundServices;
+﻿using MOSTComputers.Services.LocalChangesHandling.Services.BackgroundServices;
 using MOSTComputers.Services.LocalChangesHandling.Services.Contracts;
 
 namespace MOSTComputers.Services.LocalChangesHandling.Services;
