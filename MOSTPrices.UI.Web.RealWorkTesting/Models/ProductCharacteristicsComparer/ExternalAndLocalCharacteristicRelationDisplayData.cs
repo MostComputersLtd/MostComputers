@@ -1,7 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using MOSTComputers.Models.Product.Models;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Models.ProductCharacteristicsComparer;
 
