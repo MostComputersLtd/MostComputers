@@ -24,7 +24,10 @@ internal static class TableAndColumnNameUtils
     internal const string ToDoLocalChangesTableName = "dbo.TodoChanges4Web";
 
     internal const string FailedPropertyNamesOfProductsTableName = "dbo.FailedPropertyNamesOfProducts";
+
     internal const string ProductCharacteristicAndExternalXmlDataRelationsTableName = "[dbo].[ProductKeywordAndExternalXmlDataRelations]";
+    internal const string FirstImagesTestingTableName = "dbo.TEST_Images";
+    internal const string AllImagesTestingTableName = "dbo.TEST_ImagesAll";
 
     internal static class ProductsTable
     {
@@ -253,5 +256,30 @@ internal static class TableAndColumnNameUtils
         internal const string ProductCharacteristicMeaningColumnName = "ProducKeywordMeaning";
         internal const string XmlNameColumnName = "XmlName";
         internal const string XmlDisplayOrderColumnName = "XmlDisplayOrder";
+    }
+
+    internal static class FirstImagesTestingTable
+    {
+        internal const string IdColumnName = "ID";
+        internal const string IdColumnAlias = "ImageProductId";
+
+        internal const string HtmlDataColumnName = "HtmlData";
+        internal const string ImageDataColumnName = "Image";
+        internal const string ImageContentTypeColumnName = "ImageFileExt";
+        internal const string DateModifiedColumnName = "DateModified";
+    }
+
+    internal static class AllImagesTestingTable
+    {
+        internal const string IdColumnName = "ID";
+        internal const string IdColumnAlias = "ImagePrime";
+
+        internal const string ProductIdColumnName = "CSTID";
+        internal const string ProductIdColumnAlias = "ImageProductId";
+
+        internal const string HtmlDataColumnName = "HtmlData";
+        internal const string ImageDataColumnName = "Image";
+        internal const string ImageContentTypeColumnName = "ImageFileExt";
+        internal const string DateModifiedColumnName = "DateModified";
     }
 }
