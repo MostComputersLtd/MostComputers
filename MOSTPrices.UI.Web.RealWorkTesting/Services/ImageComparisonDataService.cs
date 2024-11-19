@@ -2,7 +2,6 @@
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
@@ -13,6 +12,7 @@ using FluentValidation.Results;
 using static MOSTComputers.Services.ProductImageFileManagement.Utils.ProductImageFileManagementUtils;
 using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 using static MOSTComputers.Utils.OneOf.OneOfExtensions;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Services;
 

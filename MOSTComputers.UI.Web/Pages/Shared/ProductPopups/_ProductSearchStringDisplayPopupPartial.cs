@@ -1,13 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
-using MOSTComputers.UI.Web.Models;
-using MOSTComputers.UI.Web.Services;
-using MOSTComputers.UI.Web.Services.Contracts;
 
-namespace MOSTComputers.UI.Web.Pages.Shared;
+namespace MOSTComputers.UI.Web.Pages.Shared.ProductPopups;
 
 public class ProductSearchStringDisplayPopupPartialModel
 {

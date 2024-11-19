@@ -11,7 +11,7 @@ using MOSTComputers.Services.ProductRegister.StaticUtilities;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.CacheKeyUtils.ProductImageFileNameInfo;
 using static MOSTComputers.Services.ProductRegister.StaticUtilities.ProductDataCloningUtils;
 
-namespace MOSTComputers.Services.ProductRegister.Services;
+namespace MOSTComputers.Services.ProductRegister.Services.UsingCache;
 
 internal sealed class CachedProductImageFileNameInfoService : IProductImageFileNameInfoService
 {

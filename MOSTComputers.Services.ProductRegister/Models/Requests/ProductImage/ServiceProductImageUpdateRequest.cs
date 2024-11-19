@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.Models.Product.Models.Requests.ProductImage;
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 
 public sealed class ServiceProductImageUpdateRequest
 {

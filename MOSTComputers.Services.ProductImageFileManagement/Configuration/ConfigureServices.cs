@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.ProductImageFileManagement.Services;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.TransactionalFileManagement.Services;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
-using System;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.Configuration;
 

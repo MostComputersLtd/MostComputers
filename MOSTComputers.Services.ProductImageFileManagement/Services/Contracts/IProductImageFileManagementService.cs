@@ -3,7 +3,7 @@ using MOSTComputers.Services.ProductImageFileManagement.Models;
 using OneOf;
 using OneOf.Types;
 
-namespace MOSTComputers.Services.ProductImageFileManagement.Services;
+namespace MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 public interface IProductImageFileManagementService
 {
     Task<OneOf<Success, DirectoryNotFoundResult, FileAlreadyExistsResult>> AddImageAsync(string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType);

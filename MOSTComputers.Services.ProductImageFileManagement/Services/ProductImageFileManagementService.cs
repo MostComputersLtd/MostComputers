@@ -1,6 +1,7 @@
 ﻿using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Services.ProductImageFileManagement.Models;
 using MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using OneOf;
 using OneOf.Types;
