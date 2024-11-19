@@ -56,8 +56,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    options.Password.RequiredLength = 8;
-    options.Password.RequiredUniqueChars = 5;
+    options.Password.RequiredLength = 1;
+    options.Password.RequiredUniqueChars = 1;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
