@@ -2,9 +2,9 @@
 
 namespace MOSTComputers.Tests.Integration.Common.DependancyInjection;
 
-public class IntegrationTestBaseForNonWebProjects : IAsyncLifetime
+public class IntegrationTestBaseForNonWebProjectsWithDBReset : IAsyncLifetime
 {
-    public IntegrationTestBaseForNonWebProjects(string connString, RespawnerOptions? respawnerOptions = null)
+    public IntegrationTestBaseForNonWebProjectsWithDBReset(string connString, RespawnerOptions? respawnerOptions = null)
     {
         _connString = connString;
         _respawnerOptions = respawnerOptions;
