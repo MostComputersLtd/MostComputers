@@ -113,7 +113,7 @@ async function compareExternalAndLocalData(
         },
     });
 
-    var response = await AwaitWithCallbacks(promise,
+    var response = await awaitWithCallbacks(promise,
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
@@ -153,7 +153,7 @@ async function compareExternalAndLocalDataFromFile(
         },
     });
 
-    var response = await AwaitWithCallbacks(promise,
+    var response = await awaitWithCallbacks(promise,
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
@@ -201,7 +201,7 @@ async function compareExternalAndLocalDataForCategoryFromFile(
         },
     });
 
-    var response = await AwaitWithCallbacks(promise,
+    var response = await awaitWithCallbacks(promise,
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); },
         function () { toggleViews(compareDataInCategoryButtonId, loaderElementId); });
 
