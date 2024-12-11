@@ -1,0 +1,71 @@
+﻿@using MOSTComputers.Services.Identity.Models
+@using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication
+@using MOSTComputers.UI.Web.RealWorkTesting.Pages.Accounts.Admin
+@using static MOSTComputers.UI.Web.RealWorkTesting.Utils.SelectListItemUtils
+
+@model MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared.Accounts.Admin.UsersListPartialModel
+@{
+}
+
+<ul class="full-parent-width full-parent-height d-flex flex-column list-style-none overflow-y-auto">
+
+    @if (Model.Users is not null
+    && Model.Users.Count > 0)
+    {
+        for (int i = 0; i < Model.Users.Count; i++)
+        {
+            UserDisplayData userData = Model.Users[i];
+
+            List<SelectListItem> userRoleSelectListItems = (userData.UserRoles is not null)
+            ? GetUserRolesSelectItems(userData.UserRoles)
+            : GetUserRolesSelectItems();
+
+            <li class="d-inline-flex justify-content-around align-text-center mt-1 mb-1">
+                <div class="col-4">
+                    <label>@userData.User.Id</label>
+                </div>
+                <div class="col-2">
+                    <label>@userData.User.UserName</label>
+                </div>
+                <div class="col-3">
+                    <div style="position: relative;">
+                        <button id="admin_panel_user_roles_dropdown_button-@i" class="full-parent-width btn btn-outline-info"
+                                onclick="toggleElementDisplay('admin_panel_user_roles_dropdown-@i')">
+                            View
+                        </button>
+                        <div id="admin_panel_user_roles_dropdown-@i" class="full-parent-width"
+                             style="position: absolute; z-index: 1; background-color: white; border: 2px blue solid; border-radius: 5%; display: none;">
+                            @for (int j = 0; j < userRoleSelectListItems.Count; j++)
+                            {
+                                SelectListItem item = userRoleSelectListItems[j];
+
+                                string roleSeletedClassName = item.Selected ? "role-element-selected" : string.Empty;
+                                string roleCheckboxIsChecked = item.Selected ? "checked" : string.Empty;
+
+                                <div id="role_element-@i-@j" class="full-parent-width d-inline-flex @roleSeletedClassName"
+                                     onclick="toggleUserRole('@userData.User.Id', @item.Value, 'role_element-@i-@j', 'role_element_checkbox-@i-@j')">
+                                    <div class="col-3">
+                                        <input id="role_element_checkbox-@i-@j" name="role_element_checkbox" type="checkbox"
+                                            @roleCheckboxIsChecked data-selectedRoleValue="@item.Value" />
+                                    </div>
+                                    <div class="col-9 align-text-center">
+                                        <label>@item.Text</label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="col-2 ps-1 pe-1">
+                    <button class="btn btn-outline-primary"
+                            onclick="openChangePassword_modal('@userData.User.Id')">
+                        Change Password
+                    </button>
+                </div>
+                <div class="col-1">
+                    <button class="btn btn-close" onclick="deleteUser('@userData.User.Id', '@Model.ContainerElementId', '@Model.NotificationBoxId')"></button>
+                </div>
+            </li>
+        }
+    }
+</ul>
