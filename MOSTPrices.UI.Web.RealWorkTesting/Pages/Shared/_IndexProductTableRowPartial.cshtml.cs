@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
+using MOSTComputers.UI.Web.RealWorkTesting.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Utils;
 
@@ -17,11 +18,11 @@ public class IndexProductTableRowPartialModel
         IEnumerable<SelectListItem> currencySelectListItems,
         IEnumerable<SelectListItem> productNewStatusSelectListItems,
         IEnumerable<SelectListItem> productXmlStatusSelectListItems,
-        string? productFullWithXmlPopupContentId = null,
-        string? productFullHtmlBasedPopupContentId = null,
-        string? productChangesPopupContentId = null,
-        string? productImagesPopupContentId = null,
-        string? productFirstImagePopupContentId = null)
+        ModalData productFullWithXmlPopupContentId,
+        ModalData productFullHtmlBasedPopupContentId,
+        ModalData productChangesPopupContentId,
+        ModalData productImagesPopupContentId,
+        ModalData productFirstImagePopupContentId)
     {
         ProductDisplayData = product;
         HtmlElementId = htmlElementId;
@@ -33,12 +34,12 @@ public class IndexProductTableRowPartialModel
         ProductNewStatusSelectListItems = productNewStatusSelectListItems;
         ProductXmlStatusSelectListItems = productXmlStatusSelectListItems;
 
-        ProductFullWithXmlPopupContentId = productFullWithXmlPopupContentId;
-        ProductFullHtmlBasedPopupContentId = productFullHtmlBasedPopupContentId;
+        ProductFullWithXmlPopupData = productFullWithXmlPopupContentId;
+        ProductFullHtmlBasedPopupData = productFullHtmlBasedPopupContentId;
 
-        ProductChangesPopupContentId = productChangesPopupContentId;
-        ProductImagesPopupContentId = productImagesPopupContentId;
-        ProductFirstImagePopupContentId = productFirstImagePopupContentId;
+        ProductChangesPopupData = productChangesPopupContentId;
+        ProductImagesPopupData = productImagesPopupContentId;
+        ProductFirstImagePopupData = productFirstImagePopupContentId;
     }
 
     public IndexProductTableRowPartialModel(
@@ -47,29 +48,29 @@ public class IndexProductTableRowPartialModel
         int tableIndex,
         IEnumerable<Category> allPossibleCategories,
         IEnumerable<Manifacturer> allPossibleManifacturers,
-        string? productFullWithXmlPopupContentId = null,
-        string? productFullHtmlBasedPopupContentId = null,
-        string? productChangesPopupContentId = null,
-        string? productImagesPopupContentId = null,
-        string? productFirstImagePopupContentId = null)
+        ModalData productFullWithXmlPopupContentId,
+        ModalData productFullHtmlBasedPopupContentId,
+        ModalData productChangesPopupContentId,
+        ModalData productImagesPopupContentId,
+        ModalData productFirstImagePopupContentId)
     {
         ProductDisplayData = productData;
         HtmlElementId = htmlElementId;
         TableIndex = tableIndex;
 
-        CategorySelectListItems = ProductSelectListItemUtils.GetCategorySelectListItems(productData, allPossibleCategories);
-        ManifacturerSelectListItems = ProductSelectListItemUtils.GetManifacturerSelectListItems(productData, allPossibleManifacturers);
-        StatusSelectListItems = ProductSelectListItemUtils.GetStatusSelectListItems(productData);
-        CurrencySelectListItems = ProductSelectListItemUtils.GetCurrencySelectListItems(productData);
-        ProductNewStatusSelectListItems = ProductSelectListItemUtils.GetProductNewStatusSelectListItems(productData);
-        ProductXmlStatusSelectListItems = ProductSelectListItemUtils.GetProductXmlStatusSelectListItems(productData);
+        CategorySelectListItems = SelectListItemUtils.GetCategorySelectListItems(productData, allPossibleCategories);
+        ManifacturerSelectListItems = SelectListItemUtils.GetManifacturerSelectListItems(productData, allPossibleManifacturers);
+        StatusSelectListItems = SelectListItemUtils.GetStatusSelectListItems(productData);
+        CurrencySelectListItems = SelectListItemUtils.GetCurrencySelectListItems(productData);
+        ProductNewStatusSelectListItems = SelectListItemUtils.GetProductNewStatusSelectListItems(productData);
+        ProductXmlStatusSelectListItems = SelectListItemUtils.GetProductXmlStatusSelectListItems(productData);
 
-        ProductFullWithXmlPopupContentId = productFullWithXmlPopupContentId;
-        ProductFullHtmlBasedPopupContentId = productFullHtmlBasedPopupContentId;
+        ProductFullWithXmlPopupData = productFullWithXmlPopupContentId;
+        ProductFullHtmlBasedPopupData = productFullHtmlBasedPopupContentId;
 
-        ProductChangesPopupContentId = productChangesPopupContentId;
-        ProductImagesPopupContentId = productImagesPopupContentId;
-        ProductFirstImagePopupContentId = productFirstImagePopupContentId;
+        ProductChangesPopupData = productChangesPopupContentId;
+        ProductImagesPopupData = productImagesPopupContentId;
+        ProductFirstImagePopupData = productFirstImagePopupContentId;
     }
 
     public ProductDisplayData ProductDisplayData { get; }
@@ -82,10 +83,9 @@ public class IndexProductTableRowPartialModel
     public IEnumerable<SelectListItem> ProductNewStatusSelectListItems { get; }
     public IEnumerable<SelectListItem> ProductXmlStatusSelectListItems { get; }
 
-    public string? ProductFullWithXmlPopupContentId { get; }
-    public string? ProductFullHtmlBasedPopupContentId { get; }
-    public string? ProductChangesPopupContentId { get; }
-    public string? ProductImagesPopupContentId { get; }
-    public string? ProductFirstImagePopupContentId { get; }
-    
+    public ModalData ProductFullWithXmlPopupData { get; }
+    public ModalData ProductFullHtmlBasedPopupData { get; }
+    public ModalData ProductChangesPopupData { get; }
+    public ModalData ProductImagesPopupData { get; }
+    public ModalData ProductFirstImagePopupData { get; }
 }

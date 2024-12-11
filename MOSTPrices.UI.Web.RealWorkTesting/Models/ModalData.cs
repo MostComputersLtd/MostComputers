@@ -11,6 +11,7 @@ public readonly struct ModalData
     {
         ModalId = modalId;
         ModalDialogId = modalDialogId;
+
         ModalContentId = modalContentId;
     }
 

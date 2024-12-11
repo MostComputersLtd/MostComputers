@@ -24,6 +24,7 @@ using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Utils;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.MappingUtils.ProductToDisplayDataMappingUtils;
+using MOSTComputers.UI.Web.RealWorkTesting.Models;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Pages;
 
@@ -66,6 +67,10 @@ public class ProductPropertiesEditorModel : PageModel
     private readonly IProductImageFileNameInfoService _productImageFileNameInfoService;
     private readonly IProductImageFileManagementService _productImageFileManagementService;
 
+    public readonly ModalData ProductImagesModalData = new("ProductImages_modal", "ProductImages_modal_dialog", "ProductImages_popup_modal_content");
+    public readonly ModalData SearchStringPopupModalData = new("ProductSearchString_modal", "ProductSearchString_modal_dialog", "ProductSearchString_popup_modal_content");
+    public readonly ModalData ProductXmlPopupModalData = new("ProductXml_modal", "ProductXml_modal_dialog", "ProductXml_popup_modal_content");
+
     [BindProperty(SupportsGet = true)]
     public int ProductId { get; set; }
     public ProductDisplayData? ProductDisplayData { get; set; }
@@ -103,6 +108,7 @@ public class ProductPropertiesEditorModel : PageModel
             {
                 return Partial("ProductPopups/_ProductGeneratedXmlPopupPartial", new ProductGeneratedXmlPopupPartialModel()
                 {
+                    ModalData = ProductXmlPopupModalData,
                     Product = product,
                     XmlData = xml,
                     NotificationBoxId = "topNotificationBox"
@@ -123,7 +129,7 @@ public class ProductPropertiesEditorModel : PageModel
             _productImageService,
             _productImageFileNameInfoService,
             _productImageFileManagementService,
-            "ProductImages_popup_modal_content"));
+            ProductImagesModalData));
     }
 
     public IActionResult OnGetGetRemainingCharacteristicsForProduct(int? characteristicToAddToSelectId = null)
@@ -163,7 +169,7 @@ public class ProductPropertiesEditorModel : PageModel
         IEnumerable<ProductCharacteristic> characteristicsForProductCategory
             = _productCharacteristicService.GetCharacteristicsOnlyByCategoryId((int)categoryId.Value);
 
-        return ProductSelectListItemUtils.GetCharacteristicSelectListItems(characteristicsForProductCategory);
+        return SelectListItemUtils.GetCharacteristicSelectListItems(characteristicsForProductCategory);
     }
 
     public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin()

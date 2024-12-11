@@ -53,13 +53,15 @@
         <td>
             <ul class="full-parent-width buttons-for-popups-list">
                 <li class="button-for-popup-li">
-                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId, 'ProductImages_popup_modal_content')">
+                    <button class="btn full-parent-height" onclick="showImagePopupData(@Model.ProductId,
+                        '@Model.ProductImagesModalData.ModalId', '@Model.ProductImagesModalData.ModalDialogId', '@Model.ProductImagesModalData.ModalContentId')">
                         <img src="~/img/show_Images_ProductDisplay_icon.png" alt="Images"
                             class="imagePopupButton_imagePopupButtonImage"/>
                     </button>
                 </li>
                 <li id="propertyDisplayMainContainer_table_xmlPopupButton_li" class="button-for-popup-li">
-                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId, 'ProductXml_popup_modal_content')">
+                    <button class="btn btn-secondary full-parent-height" onclick="showXmlPopupData(@Model.ProductId,
+                        '@Model.ProductXmlPopupModalData.ModalId', '@Model.ProductXmlPopupModalData.ModalDialogId', '@Model.ProductXmlPopupModalData.ModalContentId')">
                         View XML
                     </button>
                 </li>
@@ -78,7 +80,7 @@
                 
                 <partial name="ProductPopups/_SearchStringOriginSmallPopupsDisplayPartial"
                     model='@new SearchStringOriginSmallPopupsDisplayPartialModel(
-                        Model.ProductId, new List<string> (), Model.GetSearchStringOriginData(Model.ProductId), true, "productProperties")' />
+                     Model.SearchStringPopupModalData, Model.ProductId, new List<string> (), Model.GetSearchStringOriginData(Model.ProductId), true, "productProperties")' />
                 
             </td>
         }

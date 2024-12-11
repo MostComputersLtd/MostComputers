@@ -21,6 +21,7 @@ using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.Utils.ProductImageFileNameUtils;
+using MOSTComputers.UI.Web.RealWorkTesting.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using MOSTComputers.UI.Web.RealWorkTesting.Services.Contracts;
 using MOSTComputers.UI.Web.RealWorkTesting.Pages.Shared;
@@ -84,6 +85,13 @@ public class IndexModel : PageModel
     private readonly IProductHtmlService _productHtmlService;
     private readonly ILocalChangesCheckingImmediateExecutionService _localChangesCheckingImmediateExecutionService;
     private readonly IProductImageFileManagementService _productImageFileManagementService;
+
+    private readonly ModalData _productFullWithXmlModalData = new("ProductFullWithXml_modal", "ProductFullWithXml_modal_dialog", "ProductFullWithXml_popup_modal_content");
+    private readonly ModalData _productFullHtmlBasedModalData = new("ProductFullHtmlBased_modal", "ProductFullHtmlBased_modal_dialog", "ProductFullHtmlBased_popup_modal_content");
+    private readonly ModalData _productChangesModalData = new("ProductChanges_modal", "ProductChanges_modal_dialog", "ProductChanges_popup_modal_content");
+    private readonly ModalData _productImagesModalData = new("ProductImages_modal", "ProductImages_modal_dialog", "ProductImages_popup_modal_content");
+    private readonly ModalData _productFirstImageModalData = new("ProductFirstImage_modal", "ProductFirstImage_modal_dialog", "ProductFirstImage_popup_modal_content");
+    public readonly ModalData _searchStringPopupModalData = new("ProductSearchString_modal", "ProductSearchString_modal_dialog", "ProductSearchString_popup_modal_content");
 
     public IReadOnlyList<ProductDisplayData> Products { get; set; }
 
@@ -156,6 +164,7 @@ public class IndexModel : PageModel
             _productImageService,
             _productImageFileNameInfoService,
             _productImageFileManagementService,
+            _productFirstImageModalData,
             "topNotificationBox"));
     }
 
@@ -179,7 +188,7 @@ public class IndexModel : PageModel
             _productImageService,
             _productImageFileNameInfoService,
             _productImageFileManagementService,
-            "ProductImages_popup_modal_content",
+            _productImagesModalData,
             "topNotificationBox"));
     }
 
@@ -197,7 +206,13 @@ public class IndexModel : PageModel
             if (getEvenIfProductDoesntExist)
             {
                 return Partial("ProductPopups/_ProductChangesPopupPartial",
-                    new ProductChangesPopupPartialModel(null, null));
+                    new ProductChangesPopupPartialModel()
+                    {
+                        SearchStringPopupModalData = _searchStringPopupModalData,
+                        ModalData = new("ProductChanges_modal", "ProductChanges_modal_dialog", "ProductChanges_popup_modal_content"),
+                        Product = null,
+                        ProductSearchStringPartsAndDataAboutTheirOrigin = null,
+                    });
             }
 
             return NotFound();
@@ -206,7 +221,14 @@ public class IndexModel : PageModel
         List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringOriginData
             = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(productToDisplay);
 
-        return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(productToDisplay, searchStringOriginData));
+        return Partial("ProductPopups/_ProductChangesPopupPartial",
+            new ProductChangesPopupPartialModel()
+            {
+                SearchStringPopupModalData = _searchStringPopupModalData,
+                ModalData = _productChangesModalData,
+                Product = productToDisplay,
+                ProductSearchStringPartsAndDataAboutTheirOrigin = searchStringOriginData
+            });
     }
 
     public IActionResult OnGetGetProductFullPopupPartialViewForProduct(int productId)
@@ -224,7 +246,7 @@ public class IndexModel : PageModel
         string productManufacturerSiteLink = string.Empty;
 
         return Partial("ProductPopups/_ProductFullDisplayWithXmlPopupPartial",
-            new ProductFullDisplayWithXmlPopupPartialModel(productToDisplay, productXml, productManufacturerSiteLink));
+            new ProductFullDisplayWithXmlPopupPartialModel(_productFullWithXmlModalData, productToDisplay, productXml, productManufacturerSiteLink));
     }
 
     public IActionResult OnGetGetProductFullHtmlBasedPopupPartialViewForProduct(int productId, bool getEvenIfProductDoesntExist = false)
@@ -243,6 +265,7 @@ public class IndexModel : PageModel
                 return Partial("ProductPopups/_ProductFullHtmlBasedDisplayPopupPartial",
                     new ProductFullHtmlBasedDisplayPopupPartialModel()
                     {
+                        ModalData = _productFullHtmlBasedModalData,
                         ProductHtmlService = _productHtmlService
                     });
             }
@@ -256,6 +279,7 @@ public class IndexModel : PageModel
         return Partial("ProductPopups/_ProductFullHtmlBasedDisplayPopupPartial", new ProductFullHtmlBasedDisplayPopupPartialModel()
         {
             ProductHtmlService = _productHtmlService,
+            ModalData = _productFullHtmlBasedModalData,
             Product = productToDisplay,
             ProductSearchStringPartsAndDataAboutTheirOrigin = searchStringOriginData
         });
@@ -447,11 +471,11 @@ public class IndexModel : PageModel
             tableIndex,
             allPossibleCategories,
             allPossibleManifacturers,
-            "ProductFullWithXml_popup_modal_content",
-            "ProductFullHtmlBased_popup_modal_content",
-            "ProductChanges_popup_modal_content",
-            "ProductImages_popup_modal_content",
-            "ProductFirstImage_popup_modal_content");
+            _productFullWithXmlModalData,
+            _productFullHtmlBasedModalData,
+            _productChangesModalData,
+            _productImagesModalData,
+            _productFirstImageModalData);
 
         return base.Partial("_IndexProductTableRowPartial", productPartialModel);
     }
@@ -469,11 +493,11 @@ public class IndexModel : PageModel
             tableIndex,
             allPossibleCategories,
             allPossibleManifacturers,
-            "ProductFullWithXml_popup_modal_content",
-            "ProductFullHtmlBased_popup_modal_content",
-            "ProductChanges_popup_modal_content",
-            "ProductImages_popup_modal_content",
-            "ProductFirstImage_popup_modal_content");
+            _productFullWithXmlModalData,
+            _productFullHtmlBasedModalData,
+            _productChangesModalData,
+            _productImagesModalData,
+            _productFirstImageModalData);
     }
 
     public IndexProductTableRowPartialModel GetTableRowModel(ProductDisplayData productData, int tableIndex, string htmlElementId)
@@ -497,11 +521,11 @@ public class IndexModel : PageModel
             tableIndex,
             allPossibleCategories,
             allPossibleManifacturers,
-            "ProductFullWithXml_popup_modal_content",
-            "ProductFullHtmlBased_popup_modal_content",
-            "ProductChanges_popup_modal_content",
-            "ProductImages_popup_modal_content",
-            "ProductFirstImage_popup_modal_content");
+            _productFullWithXmlModalData,
+            _productFullHtmlBasedModalData,
+            _productChangesModalData,
+            _productImagesModalData,
+            _productFirstImageModalData);
     }
 
     public IActionResult OnPostAddNewImageToProduct(int productId, ProductImagePopupUsageEnum productImagePopupUsage, IFormFile fileInfo)
@@ -657,7 +681,13 @@ public class IndexModel : PageModel
             List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringOriginData
                 = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(updatedProduct);
 
-            return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(updatedProduct, searchStringOriginData));
+            return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel()
+            {
+                SearchStringPopupModalData = _searchStringPopupModalData,
+                ModalData = _productChangesModalData,
+                Product = updatedProduct,
+                ProductSearchStringPartsAndDataAboutTheirOrigin = searchStringOriginData
+            });
         }
 
         ProductWorkStatusesUpdateByProductIdRequest productWorkStatusesUpdateRequest = new()
@@ -688,7 +718,13 @@ public class IndexModel : PageModel
                 List<Tuple<string, List<SearchStringPartOriginData>?>>? searchStringOriginData
                     = _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOrigin(updatedProduct);
 
-                return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel(updatedProduct, searchStringOriginData));
+                return Partial("ProductPopups/_ProductChangesPopupPartial", new ProductChangesPopupPartialModel()
+                {
+                    SearchStringPopupModalData = _searchStringPopupModalData,
+                    ModalData = _productChangesModalData,
+                    Product = updatedProduct,
+                    ProductSearchStringPartsAndDataAboutTheirOrigin = searchStringOriginData
+                });
             },
             validationResult => GetBadRequestResultFromValidationResult(validationResult));
     }
@@ -946,7 +982,7 @@ public class IndexModel : PageModel
             _productImageService,
             _productImageFileNameInfoService,
             _productImageFileManagementService,
-            "ProductImages_popup_modal_content",
+            _productImagesModalData,
             "topNotificationBox"));
     }
 

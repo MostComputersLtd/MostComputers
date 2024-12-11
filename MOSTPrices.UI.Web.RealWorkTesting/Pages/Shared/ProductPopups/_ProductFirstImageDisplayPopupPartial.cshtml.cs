@@ -2,6 +2,7 @@ using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.UI.Web.RealWorkTesting.Models;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using OneOf;
 
@@ -17,10 +18,12 @@ public class ProductFirstImageDisplayPopupPartialModel
         IProductImageService productImageService,
         IProductImageFileNameInfoService productImageFileNameInfoService,
         IProductImageFileManagementService productImageFileManagementService,
+        ModalData modalData,
         string? notificationBoxId = null)
     {
         ProductImagePopupUsage = productImagePopupUsage;
         ProductDisplayData = productDisplayData;
+        ModalData = modalData;
         NotificationBoxId = notificationBoxId;
 
         ImageToDisplay = GetImageToDisplay(
@@ -29,6 +32,7 @@ public class ProductFirstImageDisplayPopupPartialModel
 
     public ProductImagePopupUsageEnum ProductImagePopupUsage { get; }
     public ProductDisplayData ProductDisplayData { get; }
+    public ModalData ModalData { get; }
     public string? NotificationBoxId { get; }
     public ProductImage? ImageToDisplay { get; }
 

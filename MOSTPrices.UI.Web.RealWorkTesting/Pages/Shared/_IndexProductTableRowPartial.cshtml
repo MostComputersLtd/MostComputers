@@ -5,13 +5,15 @@
 
 <tr id="@Model.HtmlElementId">
     <td>
-        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullWithXmlPopupData(@Model.ProductDisplayData.Id, '@Model.ProductFullWithXmlPopupContentId')">
+        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullWithXmlPopupData(@Model.ProductDisplayData.Id,
+            '@Model.ProductFullWithXmlPopupData.ModalId', '@Model.ProductFullWithXmlPopupData.ModalDialogId', '@Model.ProductFullWithXmlPopupData.ModalContentId')">
             @Model.ProductDisplayData.Id
         </p>
     </td>
     
     <td class="hide-on-button-press">
-        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullHtmlBasedPopupData(@Model.ProductDisplayData.Id, '@Model.ProductFullHtmlBasedPopupContentId')">
+        <p class="link-info mt-1 mb-0 text-center" onclick="showProductFullHtmlBasedPopupData(@Model.ProductDisplayData.Id,
+            '@Model.ProductFullHtmlBasedPopupData.ModalId', '@Model.ProductFullHtmlBasedPopupData.ModalDialogId', '@Model.ProductFullHtmlBasedPopupData.ModalContentId')">
             @Model.ProductDisplayData.Name
         </p>
     </td>
@@ -112,7 +114,7 @@
             asp-for="ProductDisplayData.PromotionExpireDate" value="@Model.ProductDisplayData.PromotionExpireDate"
             data-for-product-property="@nameof(Model.ProductDisplayData.PromotionExpireDate)" placeholder="-" />
     </td>
-
+    
     <td class="hide-on-button-press">
         <input id="@(Model.HtmlElementId)_AlertPictureIdInput" type="number"
             asp-for="ProductDisplayData.AlertPictureId" value="@Model.ProductDisplayData.AlertPictureId"
@@ -166,25 +168,29 @@
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showFirstImagePopupData(@Model.ProductDisplayData.Id, '@Model.ProductFirstImagePopupContentId')">
+        <button class="btn btn-secondary" onclick="showFirstImagePopupData(@Model.ProductDisplayData.Id,
+            '@Model.ProductFirstImagePopupData.ModalId', '@Model.ProductFirstImagePopupData.ModalDialogId', '@Model.ProductFirstImagePopupData.ModalContentId')">
             Images
         </button>
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInDatabase), '@Model.ProductImagesPopupContentId')">
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInDatabase),
+            '@Model.ProductImagesPopupData.ModalId', '@Model.ProductImagesPopupData.ModalDialogId', '@Model.ProductImagesPopupData.ModalContentId')">
             Images All
         </button>
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInFiles), '@Model.ProductImagesPopupContentId')">
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.ImagesInFiles),
+            '@Model.ProductImagesPopupData.ModalId', '@Model.ProductImagesPopupData.ModalDialogId', '@Model.ProductImagesPopupData.ModalContentId')">
             Image Files
         </button>
     </td>
 
     <td>
-        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.DisplayData), '@Model.ProductImagesPopupContentId')">
+        <button class="btn btn-secondary" onclick="showImagesPopupData(@Model.ProductDisplayData.Id, @((int)ProductImagePopupUsageEnum.DisplayData),
+            '@Model.ProductImagesPopupData.ModalId', '@Model.ProductImagesPopupData.ModalDialogId', '@Model.ProductImagesPopupData.ModalContentId')">
             Edit Images
         </button>
     </td>
@@ -223,7 +229,9 @@
                 '@(Model.HtmlElementId)_ProductXmlStatusSelect',
                 '@(Model.HtmlElementId)__hiddenProductStatusIdInput',
                 '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'],
-                '@Model.ProductChangesPopupContentId')">
+                '@Model.ProductChangesPopupData.ModalId',
+                '@Model.ProductChangesPopupData.ModalDialogId',
+                '@Model.ProductChangesPopupData.ModalContentId')">
             Save
         </button>
     </td>
@@ -287,7 +295,9 @@
                 '@(Model.HtmlElementId)_ProductXmlStatusSelect',
                 '@(Model.HtmlElementId)__hiddenProductStatusIdInput',
                 '@(Model.HtmlElementId)__hiddenReadyForImageInsertInput'],
-                '@Model.ProductChangesPopupContentId')">
+                '@Model.ProductChangesPopupData.ModalId',
+                '@Model.ProductChangesPopupData.ModalDialogId',
+                '@Model.ProductChangesPopupData.ModalContentId')">
             Save
         </button>
     </td>
