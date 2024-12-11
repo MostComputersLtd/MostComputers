@@ -7,33 +7,34 @@ public class SignInRequestValidator : AbstractValidator<SignInRequest>
 {
     public SignInRequestValidator()
     {
-        RuleFor(request => request.Username).MinimumLength(3).MaximumLength(20);
+        RuleFor(request => request.Username).MinimumLength(1).MaximumLength(20);
 
         RuleFor(request => request.Password)
-            .MinimumLength(8).WithMessage("Password must have atleast 8 characters")
-            .Must(username =>
-            {
-                ReadOnlySpan<char> usernameSpan = username.AsSpan();
-
-                List<char> uniqueChars = new();
-
-                foreach (char item in usernameSpan)
-                {
-                    if (!uniqueChars.Contains(item))
-                    {
-                        uniqueChars.Add(item);
-                    }
-                }
-
-                if (uniqueChars.Count < 5) return false;
-
-                return true;
-            })
-            .WithMessage("Password must have atleast 5 different characters");
+            .NotNull().WithMessage("Password is required")
+            .NotEmpty().WithMessage("Password is required");
 
         RuleFor(request => request.ConfirmPassword)
             .NotNull().WithMessage("Must match the password")
             .NotEmpty().WithMessage("Must match the password")
             .Equal(request => request.Password).WithMessage("Must match the password");
+
+        RuleFor(request => request.Roles).Must(
+            roleNames =>
+            {
+                if (roleNames is null || roleNames.Count <= 0) return true;
+
+                List<string> uniqueRoles = new();
+
+                foreach (UserRoles item in roleNames)
+                {
+                    if (item.RoleName is null) return false;
+
+                    if (uniqueRoles.Contains(item.RoleName)) return false;
+
+                    uniqueRoles.Add(item.RoleName);
+                }
+
+                return true;
+            });
     }
 }
