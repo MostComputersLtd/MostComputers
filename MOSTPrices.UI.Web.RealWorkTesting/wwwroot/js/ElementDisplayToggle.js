@@ -50,7 +50,7 @@ function toggleElementsDisplay(elementIds)
     }
 }
 
-async function AwaitWithCallbacks(promise, onBeforeAwaitCallback = null, onAfterAwaitCallback = null)
+async function awaitWithCallbacks(promise, onBeforeAwaitCallback = null, onAfterAwaitCallback = null)
 {
     if (Object.prototype.toString.call(promise) !== '[object Promise]'
         || typeof promise.then !== "function")
