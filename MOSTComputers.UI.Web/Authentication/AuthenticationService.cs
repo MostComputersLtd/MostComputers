@@ -10,12 +10,12 @@ namespace MOSTComputers.UI.Web.Authentication;
 
 internal class AuthenticationService(
     SignInManager<IdentityUser> signInManager,
-    IIdentityService identityService,
+    IIdentityService<IdentityUser, IdentityRole> identityService,
     IValidator<SignInRequest> signInRequestValidator,
     IValidator<LogInRequest> logInRequestValidator) : IAuthenticationService
 {
     private readonly SignInManager<IdentityUser> _signInManager = signInManager;
-    private readonly IIdentityService _identityService = identityService;
+    private readonly IIdentityService<IdentityUser, IdentityRole> _identityService = identityService;
     private readonly IValidator<SignInRequest> _signInRequestValidator = signInRequestValidator;
     private readonly IValidator<LogInRequest> _logInRequestValidator = logInRequestValidator;
 
