@@ -27,6 +27,7 @@
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Authentication\MOSTComputers.Services.Identity.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.PDF\MOSTComputers.Services.PDF.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
@@ -34,6 +35,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="Pages\Accounts\Admin\AdminPanel.cshtml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Content Update="Pages\ProductPropertiesEditor.cshtml">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
