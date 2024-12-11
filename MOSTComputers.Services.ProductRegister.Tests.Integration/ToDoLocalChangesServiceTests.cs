@@ -12,7 +12,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.Successful
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ToDoLocalChangesServiceTests(
         IToDoLocalChangesService toDoLocalChangesService,

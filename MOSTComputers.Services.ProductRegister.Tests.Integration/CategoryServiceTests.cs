@@ -10,7 +10,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public CategoryServiceTests(ICategoryService categoryService)
         : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)

@@ -14,7 +14,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ProductPropertyServiceTests(
         IProductPropertyService productPropertyService,

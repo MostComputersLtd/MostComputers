@@ -12,7 +12,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public PromotionServiceTests(
         IPromotionService promotionService,

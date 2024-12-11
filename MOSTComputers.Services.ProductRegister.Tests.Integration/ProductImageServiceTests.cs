@@ -12,7 +12,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.Successful
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ProductImageServiceTests(
         IProductImageService productImageService,

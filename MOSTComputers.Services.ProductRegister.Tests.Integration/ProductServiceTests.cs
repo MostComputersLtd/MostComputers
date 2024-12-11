@@ -19,7 +19,7 @@ using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ProductServiceTests(
         IProductService productService,

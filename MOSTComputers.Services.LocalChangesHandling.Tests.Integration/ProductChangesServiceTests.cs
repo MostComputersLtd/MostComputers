@@ -16,7 +16,7 @@ using static MOSTComputers.Services.LocalChangesHandling.Tests.Integration.Commo
 namespace MOSTComputers.Services.LocalChangesHandling.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ProductChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ProductChangesServiceTests(
         IProductChangesService productChangesService,

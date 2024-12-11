@@ -13,7 +13,7 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.Successful
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
 
 [Collection(DefaultTestCollection.Name)]
-public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebProjects
+public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ExternalChangesServiceTests(
         IExternalChangesService externalChangesService,
