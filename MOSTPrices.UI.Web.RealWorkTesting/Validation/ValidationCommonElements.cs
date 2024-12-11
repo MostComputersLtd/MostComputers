@@ -1,4 +1,5 @@
 ﻿using FluentValidation.Results;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -56,6 +57,23 @@ public static class ValidationCommonElements
         foreach (ValidationFailure? error in validationResult.Errors)
         {
             pageModel.ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+        }
+    }
+
+    internal static IStatusCodeActionResult GetActionResultFromIdentityResult(this PageModel pageModel, IdentityResult identityResult)
+    {
+        if (identityResult.Succeeded) return new OkResult();
+
+        AddIdentityErrorsToModelState(pageModel, identityResult.Errors);
+
+        return new BadRequestObjectResult(pageModel.ModelState);
+    }
+
+    internal static void AddIdentityErrorsToModelState(PageModel pageModel, IEnumerable<IdentityError> identityErrors)
+    {
+        foreach (IdentityError error in identityErrors)
+        {
+            pageModel.ModelState.AddModelError(error.Code, error.Description);
         }
     }
 }
