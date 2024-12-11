@@ -10,7 +10,7 @@
 }
 
 @section Scripts {
-    <script src="~/js/Pages/Accounts/Login.js"></script>
+    <script src="~/js/Pages/Accounts/CommonElements.js"></script>
 }
 
 <form method="post" asp-page-handler="LogIn" class="parent-fullscreen-form children-limit-space-with-padding">
@@ -49,7 +49,7 @@
                     <span class="text-danger validation-span">@error.ErrorMessage</span>
                 }
             }
-
+            
         </div>
 
         <div class="row login-or-signIn-row mb-2">
@@ -63,7 +63,7 @@
                 <!--
                 <label>Dont have an account:</label>
                 <button type="button" class="btn btn-secondary login-or-signIn-other-page-redirect-button"
-                    onclick="redirectToSignInPage('_hidden_returnUrl_input')">
+                    onclick="redirectToSignInPage(SignInPageUsageOptions.SignIn, '_hidden_returnUrl_input')">
                     Sign In
                 </button>
                 -->
