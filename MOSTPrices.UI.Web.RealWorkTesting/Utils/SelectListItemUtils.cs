@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.ImagesAndImageFilesComparison;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Product;
 using SixLabors.ImageSharp;
 
 namespace MOSTComputers.UI.Web.RealWorkTesting.Utils;
 
-internal static class ProductSelectListItemUtils
+internal static class SelectListItemUtils
 {
     public static IEnumerable<SelectListItem> GetCategorySelectListItems(Product product, IEnumerable<Category> allPossibleCategories)
     {
@@ -310,4 +311,44 @@ internal static class ProductSelectListItemUtils
         return currencySelectListItems;
     }
 
+    public static List<SelectListItem> GetUserRolesSelectItems()
+    {
+        return new()
+        {
+            new("Admin", UserRoles.Admin.Value.ToString(), false),
+            new("Xml Relation Editor", UserRoles.XmlRelationEditor.Value.ToString(), false),
+            new("Product Editor", UserRoles.ProductEditor.Value.ToString(), false),
+            new("Employee", UserRoles.Employee.Value.ToString(), false),
+            new("User", UserRoles.User.Value.ToString(), false),
+        };
+    }
+
+    public static List<SelectListItem> GetUserRolesSelectItems(UserRoles userRole)
+    {
+        return new()
+        {
+            new("Admin", UserRoles.Admin.Value.ToString(), UserRoles.Admin.Equals(userRole)),
+            new("Xml Relation Editor", UserRoles.XmlRelationEditor.Value.ToString(), UserRoles.XmlRelationEditor.Equals(userRole)),
+            new("Product Editor", UserRoles.ProductEditor.Value.ToString(), UserRoles.ProductEditor.Equals(userRole)),
+            new("Employee", UserRoles.Employee.Value.ToString(), UserRoles.Employee.Equals(userRole)),
+            new("User", UserRoles.User.Value.ToString(), UserRoles.User.Equals(userRole)),
+        };
+    }
+
+    public static List<SelectListItem> GetUserRolesSelectItems(List<UserRoles> userRoles)
+    {
+        return new()
+        {
+            new("Admin", UserRoles.Admin.Value.ToString(), userRoles.FirstOrDefault(userRole => userRole.Equals(UserRoles.Admin)) is not null),
+
+            new("Xml Relation Editor", UserRoles.XmlRelationEditor.Value.ToString(),
+                userRoles.FirstOrDefault(userRole => userRole.Equals(UserRoles.XmlRelationEditor)) is not null),
+
+            new("Product Editor", UserRoles.ProductEditor.Value.ToString(),
+                userRoles.FirstOrDefault(userRole => userRole.Equals(UserRoles.ProductEditor)) is not null),
+
+            new("Employee", UserRoles.Employee.Value.ToString(), userRoles.FirstOrDefault(userRole => userRole.Equals(UserRoles.Employee)) is not null),
+            new("User", UserRoles.User.Value.ToString(), userRoles.FirstOrDefault(userRole => userRole.Equals(UserRoles.User)) is not null),
+        };
+    }
 }
