@@ -16,14 +16,11 @@ public static class Configuration
             options.UseSqlServer(authenticationDBConnString);
         });
 
-        IdentityBuilder identityBuilder = services.AddIdentityCore<IdentityUser>(options =>
-        {
-            options.Password.RequiredLength = 8;
-            options.Password.RequiredUniqueChars = 5;
-        })
-        .AddEntityFrameworkStores<DefaultAuthenticationDBContext>();
+        IdentityBuilder identityBuilder = services.AddIdentityCore<IdentityUser>()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<DefaultAuthenticationDBContext>();
 
-        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<IIdentityService<IdentityUser, IdentityRole>, IdentityService>();
 
         return identityBuilder;
     }
@@ -35,15 +32,13 @@ public static class Configuration
             options.UseSqlServer(authenticationDBConnString);
         });
 
-        IdentityBuilder identityBuilder = services.AddIdentityCore<PasswordsTableOnlyUser>(options =>
-        {
-            options.Password.RequiredLength = 8;
-            options.Password.RequiredUniqueChars = 5;
-        })
-            .AddUserStore<PasswordsTableOnlyUserStore>()
+        IdentityBuilder identityBuilder = services.AddIdentityCore<PasswordsTableOnlyUser>()
+            .AddRoles<PasswordsTableOnlyRole>()
+            //.AddRoleStore<PasswordsTableOnlyRoleStore>()
+            //.AddUserStore<PasswordsTableOnlyUserStore>()
             .AddEntityFrameworkStores<PasswordsTableOnlyAuthenticationDBContext>();
 
-        services.AddScoped<IPasswordsTableOnlyIdentityService, PasswordsTableOnlyIdentityService>();
+        services.AddScoped<IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole>, PasswordsTableOnlyIdentityService>();
 
         return identityBuilder;
     }
