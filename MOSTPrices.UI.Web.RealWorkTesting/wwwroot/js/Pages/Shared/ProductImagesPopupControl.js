@@ -1,23 +1,11 @@
 const htmlDataDisplayCurrentImageIndexAttributeName = "data-html-data-display-current-image-index";
 
-function open_ProductImages_modal()
-{
-    let dialog = document.getElementById("ProductImages_modal_dialog");
-
-    dialog.style.height = window.innerHeight;
-
-    $("#ProductImages_modal").modal("show");
-}
-
-function close_ProductImages_modal()
-{
-    $("#ProductImages_modal").modal("toggle");
-}
-
 function scrollHorizontally(e)
 {
     var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+
     document.getElementById("productImageDisplay_ul").scrollLeft -= (delta * 30);
+
     e.preventDefault();
 }
 
@@ -214,7 +202,7 @@ function addNewImage(fileInputElement, imagePopupUsage)
 
     var formBody = new FormData();
 
-    formBody.append("fileInfo", fileInputElement.files[0])
+    formBody.append("fileInfo", fileInputElement.files[0]);
 
     var url = "/Index" + "?handler=AddNewImageToProduct" + "&productId=" + productId + "&productImagePopupUsage=" + imagePopupUsage;
 

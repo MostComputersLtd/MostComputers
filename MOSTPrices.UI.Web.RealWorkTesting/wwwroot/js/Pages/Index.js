@@ -278,11 +278,12 @@ function open_product_xml(xml)
     }, 1000);
 }
 
-async function saveProductWithoutSavingImagesInDAL(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds, changesPopupContentId)
+async function saveProductWithoutSavingImagesInDAL(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds,
+    changesPopupModalId, changesPopupModalDialogId, changesPopupContentId)
 {
     if (productChangesModalAcceptButtonId == null) return;
 
-    await showChangesPopupData(productId, changesPopupContentId);
+    await showChangesPopupData(productId, changesPopupModalId, changesPopupModalDialogId, changesPopupContentId);
 
     var productChangesModalAcceptButton = document.getElementById(productChangesModalAcceptButtonId);
 
@@ -318,11 +319,12 @@ async function saveProductWithoutSavingImagesInDAL(productId, productChangesModa
     });
 }
 
-async function saveProduct(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds, changesPopupContentId)
+async function saveProduct(productId, productChangesModalAcceptButtonId, productDataInputsAndSelectsIds,
+    changesPopupModalId, changesPopupModalDialogId, changesPopupContentId)
 {
     if (productChangesModalAcceptButtonId == null) return;
 
-    await showChangesPopupData(productId, changesPopupContentId);
+    await showChangesPopupData(productId, changesPopupModalId, changesPopupModalDialogId, changesPopupContentId);
 
     var productChangesModalAcceptButton = document.getElementById(productChangesModalAcceptButtonId);
 
@@ -542,7 +544,7 @@ function toggleReadyForImageInsertStatus(productId, htmlElementId, tableIndex, p
         });
 }
 
-async function alterAllImagesHtmlData(productId, popupUsage, rawHtmlDataDisplayTextareaId, productimagePopupContainerId = null)
+async function alterAllImagesHtmlData(productId, popupUsage, rawHtmlDataDisplayTextareaId, productimagePopupContentId = null)
 {
     const rawHtmlDataDisplayTextarea = document.getElementById(rawHtmlDataDisplayTextareaId);
 
@@ -562,7 +564,7 @@ async function alterAllImagesHtmlData(productId, popupUsage, rawHtmlDataDisplayT
         body: JSON.stringify(rawHtmlDataDisplayTextarea.value)
     });
 
-    var productimagePopupContainer = document.getElementById(productimagePopupContainerId);
+    var productimagePopupContainer = document.getElementById(productimagePopupContentId);
 
     if (response.status !== 200
         || productimagePopupContainer == null) return;
@@ -592,7 +594,7 @@ function deleteProduct(productId, productTableRowId)
         });
 }
 
-function showFirstImagePopupData(productId, firstImagePopupContentId)
+function showFirstImagePopupData(productId, firstImagePopupModalId, firstImagePopupModalDialogId, firstImagePopupContentId)
 {
     return new Promise((resolve, reject) =>
     {
@@ -607,14 +609,14 @@ function showFirstImagePopupData(productId, firstImagePopupContentId)
                 {
                     resolve(response);
 
-                    open_ProductFirstImage_modal();
+                    openModal(firstImagePopupModalId, firstImagePopupModalDialogId);
                 }
             }
         );
     });
 }
 
-function showImagesPopupData(productId, imagePopupUsage, imagesPopupContentId)
+function showImagesPopupData(productId, imagePopupUsage, imagesPopupModalId, imagesPopupModalDialogId, imagesPopupContentId)
 {
     if (imagePopupUsage == null) return;
 
@@ -632,18 +634,18 @@ function showImagesPopupData(productId, imagePopupUsage, imagesPopupContentId)
                 {
                     resolve(response);
 
-                    open_ProductImages_modal();
+                    openModal(imagesPopupModalId, imagesPopupModalDialogId);
                 }
             }
         );
     });
 }
 
-function showProductFullWithXmlPopupData(productId, fullWithXmlpopupContentId)
+function showProductFullWithXmlPopupData(productId, fullWithXmlPopupModalId, fullWithXmlPopupModalDialogId, fullWithXmlPopupContentId)
 {
     return new Promise((resolve, reject) =>
     {
-        $("#" + fullWithXmlpopupContentId).load("/Index?handler=GetProductFullPopupPartialViewForProduct&productId=" + productId,
+        $("#" + fullWithXmlPopupContentId).load("/Index?handler=GetProductFullPopupPartialViewForProduct&productId=" + productId,
             function (response, status, xhr)
             {
                 if (status == "error")
@@ -656,18 +658,18 @@ function showProductFullWithXmlPopupData(productId, fullWithXmlpopupContentId)
 
                     $('#product_full_popup_carousel').carousel();
 
-                    open_ProductFullWithXml_modal();
+                    openModal(fullWithXmlPopupModalId, fullWithXmlPopupModalDialogId);
                 }
             }
         );
     });
 }
 
-function showProductFullHtmlBasedPopupData(productId, fullWithXmlpopupContentId)
+function showProductFullHtmlBasedPopupData(productId, fullHtmlBasedPopupModalId, fullHtmlBasedPopupModalDialogId, fullHtmlBasedPopupContentId)
 {
     return new Promise((resolve, reject) =>
     {
-        $("#" + fullWithXmlpopupContentId).load("/Index?handler=GetProductFullHtmlBasedPopupPartialViewForProduct&productId=" + productId,
+        $("#" + fullHtmlBasedPopupContentId).load("/Index?handler=GetProductFullHtmlBasedPopupPartialViewForProduct&productId=" + productId,
             function (response, status, xhr)
             {
                 if (status == "error")
@@ -678,14 +680,14 @@ function showProductFullHtmlBasedPopupData(productId, fullWithXmlpopupContentId)
                 {
                     resolve(response);
 
-                    open_ProductFullHtmlBased_modal();
+                    openModal(fullHtmlBasedPopupModalId, fullHtmlBasedPopupModalDialogId);
                 }
             }
         );
     });
 }
 
-function showChangesPopupData(productId, changesPopupContentId, getEvenIfProductDoesntExist = false)
+function showChangesPopupData(productId, changesPopupModalId, changesPopupModalDialogId, changesPopupContentId, getEvenIfProductDoesntExist = false)
 {
     return new Promise((resolve, reject) =>
     {
@@ -701,7 +703,7 @@ function showChangesPopupData(productId, changesPopupContentId, getEvenIfProduct
                 {
                     resolve(response);
 
-                    open_ProductChanges_modal();
+                    openModal(changesPopupModalId, changesPopupModalDialogId);
                 }
             }
         );

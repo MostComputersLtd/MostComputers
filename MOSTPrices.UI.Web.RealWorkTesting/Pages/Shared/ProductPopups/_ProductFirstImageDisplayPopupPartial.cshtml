@@ -11,7 +11,7 @@
     <h4 class="modal-title modal-product-name">@Model.ProductDisplayData.Name</h4>
     <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @Model.ProductDisplayData.Id</h4>
 
-    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductFirstImage_modal()">
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
     </button>
 </div>
 
@@ -54,7 +54,7 @@
                     </h3>
                 }
 
-                <div id="product-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3">
+                <div id="product-first-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3">
                     @Html.Raw(firstImage?.HtmlData)
                 </div>
             </div>

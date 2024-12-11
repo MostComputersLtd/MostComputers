@@ -1,10 +1,6 @@
-function open_ProductSearchString_modal()
+function open_ProductSearchString_modal(modalId, modalDialogId)
 {
-    var dialog = document.getElementById("ProductSearchString_modal_dialog");
-
-    dialog.style.height = window.innerHeight;
-
-    $("#ProductSearchString_modal").modal("show");
+    openModal(modalId, modalDialogId);
 
     var idsOfMultipleOriginsLists = getMultipleOriginsListIds();
 
@@ -12,7 +8,7 @@ function open_ProductSearchString_modal()
     {
         for (var i = 0; i < idsOfMultipleOriginsLists.length; i++)
         {
-            placeFixedListInTheCorrentPosition(idsOfMultipleOriginsLists[i]);
+            placeFixedListInTheCorrectPosition(idsOfMultipleOriginsLists[i]);
         }
     });
 
@@ -41,11 +37,6 @@ function getMultipleOriginsListIds()
     }
 
     return output;
-}
-
-function close_ProductSearchString_modal()
-{
-    $("#ProductSearchString_modal").modal("toggle");
 }
 
 function getSearchStringData()
@@ -155,7 +146,7 @@ function ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsShow(ind
 
     if (listOfOptionsToShow.style.visibility === "hidden")
     {
-        placeFixedListInTheCorrentPosition(index);
+        placeFixedListInTheCorrectPosition(index);
 
         listOfOptionsToShow.style.visibility = "visible";
 
@@ -199,7 +190,7 @@ function searchStringPartOrigin_multipleOriginsRemove(index, substringToHighligh
     removeHighlightAllElementsTextsWhereValueIsPresent(allLabels, substringToHighlight)
 }
 
-function placeFixedListInTheCorrentPosition(index)
+function placeFixedListInTheCorrectPosition(index)
 {
     if (index === null
         || index === undefined
@@ -249,48 +240,3 @@ function placeFixedListInTheCorrentPosition(index)
         listOfOptionsToShow.style.bottom = "";
     }
 }
-
-//function placeListForMultipleOptionsInTheCorrectPlace(index)
-//{
-//    if (index === null
-//        || index === undefined
-//        || (isNaN(index) && isNaN(parseInt(index)))) return;
-
-//    var listOfOptionsToShow = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayList-" + index);
-//    var buttonToShowOptions = document.getElementById("ProductSearchStringPopup_searchStringPartOrigin_multipleOriginsDisplayButton-" + index);
-
-//    var popupDialog = document.getElementById("ProductSearchString_popup_searchStringPartsOrigin_ul");
-
-//    var rectOfDialog = popupDialog.getBoundingClientRect();
-
-//    listOfOptionsToShow.style.maxWidth = popupDialog.clientWidth;
-//    listOfOptionsToShow.style.width = popupDialog.clientWidth * 0.7 + "px";
-
-//    var rectOfList = listOfOptionsToShow.getBoundingClientRect();
-
-//    var listRight = window.innerWidth - rectOfList.right;
-//    var dialogRight = window.innerWidth - rectOfDialog.right;
-
-//    var listBottom = window.innerHeight - rectOfList.bottom;
-//    var dialogBottom = window.innerHeight - rectOfDialog.bottom;
-
-//    if (listRight < dialogRight)
-//    {
-//        listOfOptionsToShow.style.left = -(listOfOptionsToShow.offsetWidth - buttonToShowOptions.offsetWidth) + "px";
-//    }
-
-//    if (rectOfList.left < rectOfDialog.left)
-//    {
-//        listOfOptionsToShow.style.left = 0 + "px";
-//    }
-
-//    if (listBottom < dialogBottom)
-//    {
-//        listOfOptionsToShow.style.bottom = buttonToShowOptions.offsetHeight + "px";
-//    }
-
-//    if (rectOfList.top < rectOfDialog.top)
-//    {
-//        listOfOptionsToShow.style.bottom = "";
-//    }
-//}

@@ -5,11 +5,11 @@ function copySearchStringPartToClipboard(data, notificationBoxId = null)
     showNotificationWithText(notificationBoxId, "Copied!", "notificationBox-short-message");
 }
 
-function showXmlPopupData(productId, productXmlPopupContentId)
+function showXmlPopupData(productId, productXmlPopupModalId, productXmlPopupModalDialogId, productXmlPopupContentId)
 {
     $("#" + productXmlPopupContentId).load("/ProductPropertiesEditor/" + productId + "?handler=GetPartialViewXmlForProduct");
 
-    open_ProductXml_modal();
+    openModal(productXmlPopupModalId, productXmlPopupModalDialogId);
 }
 
 function copyXmlTextToClipboard(notificationBoxId = null)
@@ -59,11 +59,11 @@ function copyXmlTextToClipboard(notificationBoxId = null)
 //    }
 //}
 
-function showImagePopupData(productId, productImagePopupContentId)
+function showImagePopupData(productId, productImagePopupModalId, productImagePopupModalDialogId, productImagePopupContentId)
 {
     $("#" + productImagePopupContentId).load("/ProductPropertiesEditor/" + productId + "?handler=GetPartialViewImagesForProduct");
 
-    open_ProductImages_modal();
+    openModal(productImagePopupModalId, productImagePopupModalDialogId);
 }
 
 function getImageFileData(productId, notificationBoxId = null)

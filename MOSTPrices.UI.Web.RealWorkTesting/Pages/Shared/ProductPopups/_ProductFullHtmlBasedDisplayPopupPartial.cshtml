@@ -21,7 +21,7 @@
             <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @(Model.Product?.Id.ToString() ?? "-")</h4>
         </li>
         <li class="product-changes-popup-header-close-button-li flex-grow-1 flex-shrink-0">
-            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductFullHtmlBased_modal()">
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
             </button>
         </li>
     </ul>

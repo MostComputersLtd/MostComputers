@@ -30,7 +30,7 @@
         </li>
 
         <li class="product-changes-popup-header-close-button-li">
-            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="close_ProductChanges_modal()">
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
             </button>
         </li>
     </ul>
@@ -159,6 +159,7 @@
 
                         <partial name="ProductPopups/_SearchStringOriginSmallPopupsDisplayPartial"
                             model="@new SearchStringOriginSmallPopupsDisplayPartialModel(
+                                Model.SearchStringPopupModalData,
                                 Model.Product.Id,
                                 new List<string>() { searchStringSearchItemId },
                                 Model.ProductSearchStringPartsAndDataAboutTheirOrigin,
@@ -176,7 +177,7 @@
                     <label class="element-collection-dataItem">@ProductStatusMapping.GetBGStatusStringFromStatusEnum(Model.Product.Status)</label>
 
                 </div>
-
+                
                 List<ProductProperty> properties = Model.Product.Properties;
 
                 @if (properties is not null)
