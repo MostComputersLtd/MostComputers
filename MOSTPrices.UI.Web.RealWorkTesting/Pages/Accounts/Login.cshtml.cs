@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.UI.Web.RealWorkTesting.Authentication;
 using MOSTComputers.UI.Web.RealWorkTesting.Models.Authentication;
 using OneOf;
+using MOSTComputers.Services.Identity.Models;
 using static MOSTComputers.UI.Web.RealWorkTesting.Validation.ValidationCommonElements;
 using static MOSTComputers.UI.Web.RealWorkTesting.Utils.FilePathUtils;
 
@@ -11,9 +12,9 @@ namespace MOSTComputers.UI.Web.RealWorkTesting.Pages.Accounts;
 
 public sealed class LoginModel : PageModel
 {
-    private readonly IAuthenticationService _authenticationService;
+    private readonly IAuthenticationService<PasswordsTableOnlyUser> _authenticationService;
 
-    public LoginModel(IAuthenticationService authenticationService)
+    public LoginModel(IAuthenticationService<PasswordsTableOnlyUser> authenticationService)
     {
         _authenticationService = authenticationService;
     }
