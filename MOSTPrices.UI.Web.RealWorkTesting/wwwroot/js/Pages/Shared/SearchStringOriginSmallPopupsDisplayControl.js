@@ -14,5 +14,4 @@ function addCopiedPartToTotalCopyAndMakeElementVisible(part, elementIds = null, 
 
         element.style.visibility = "visible";
     }
-
 }
