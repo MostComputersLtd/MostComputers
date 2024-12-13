@@ -1,8 +1,8 @@
 ﻿using HtmlAgilityPack;
 using MOSTComputers.Services.PDF.Models;
 using MOSTComputers.Services.PDF.Services.Contracts;
-using Spire.Pdf;
-using System.Text;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 using static MOSTComputers.Services.PDF.Utils.CurrencyToWordsConversionUtils;
 
 namespace MOSTComputers.Services.PDF.Services;
@@ -14,6 +14,13 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
     }
 
     private readonly string _htmlTemplateFilePath;
+    
+    private const string _invoiceTemplateBodyElementId = "invoiceTemplateBody";
+
+    private const string _invoiceTemplateBodyBackgroundDarkerClassName = "invoiceTemplateBodyBackgroundDarker";
+
+    private const string _invoiceTemplateElementId = "invoiceTemplateContainer_original";
+    private const string _invoiceTemplateConstrainedToPageClassName = "invoiceTemplateConstrainedToPage";
 
     private const string _invoiceTemplateLeftFirmAndAddressElementId = "invoiceTemplateLeftFirmAndAddress";
     private const string _invoiceTemplateLeftFirmElementId = "invoiceTemplateLeftFirmId";
@@ -60,11 +67,11 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
     private const string _invoiceTemplateInvoiceCreatorElementId = "invoiceTemplateInvoiceCreator";
     private const string _invoiceTemplateLeagalTextElementId = "invoiceTemplateLeagalText";
 
-    public PdfDocument CreateInvoicePdf(InvoiceData invoiceData, string destinationFilePath)
+    public async Task CreateInvoicePdf(InvoiceData invoiceData, string destinationFilePath)
     {
-        HtmlDocument document = new();
+        HtmlDocument htmlDocument = new();
 
-        document.Load(_htmlTemplateFilePath);
+        htmlDocument.Load(_htmlTemplateFilePath);
 
         string invoiceDateAsString = invoiceData.Date.ToString("dd.MM.yyy");
         string invoiceDueDateAsString = invoiceData.DueDate.ToString("dd.MM.yyy");
@@ -77,55 +84,56 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
 
         string totalPriceChargedFromVatString = GetCurrencyStringFromRoundedPrice(CeilingToTwoDecimals(totalPriceChargedFromVat), "лв", true);
 
-        double totalPrice = totalPriceWithoutVat + totalPriceChargedFromVat;
+        double totalPrice = CeilingToTwoDecimals(totalPriceWithoutVat + totalPriceChargedFromVat);
 
-        string totalPriceString = GetCurrencyStringFromRoundedPrice(CeilingToTwoDecimals(totalPrice), "лв", true);
+        string totalPriceString = GetCurrencyStringFromRoundedPrice(totalPrice, "лв", true);
 
         string totalPriceInWords = ConvertPriceToWordsInLeva(totalPrice);
 
         double varPercentageAsPercent = invoiceData.VatPercentageFraction * 100;
         string varPercentageText = varPercentageAsPercent.ToString() + "%";
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeftFirmAndAddressElementId, invoiceData.RecipientData.FirmName + "<br>" + invoiceData.RecipientData.FirmAddress);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeftFirmElementId, invoiceData.RecipientData.FirmOrPersonId);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeftFirmVatElementId, invoiceData.RecipientData.VatId);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeftFirmMRPersonElementId, invoiceData.RecipientData.MRPersonFullName);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmAndAddressElementId, invoiceData.RecipientData.FirmName + "<br>" + invoiceData.RecipientData.FirmAddress);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmElementId, invoiceData.RecipientData.FirmOrPersonId);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmVatElementId, invoiceData.RecipientData.VatId);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmMRPersonElementId, invoiceData.RecipientData.MRPersonFullName);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateRightFirmAndAddressElementId, invoiceData.SupplierData.FirmName + "<br>" + invoiceData.SupplierData.FirmAddress);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateRightFirmIdElementId, invoiceData.SupplierData.FirmOrPersonId);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateRightFirmVatIdElementId, invoiceData.SupplierData.VatId);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateRightFirmMRPersonElementId, invoiceData.SupplierData.MRPersonFullName);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmAndAddressElementId, invoiceData.SupplierData.FirmName + "<br>" + invoiceData.SupplierData.FirmAddress);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmIdElementId, invoiceData.SupplierData.FirmOrPersonId);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmVatIdElementId, invoiceData.SupplierData.VatId);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmMRPersonElementId, invoiceData.SupplierData.MRPersonFullName);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateInvoiceIdElementId, invoiceData.InvoiceId);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateInvoiceIdElementId, invoiceData.InvoiceId);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateDateOfIssueElementId, invoiceDateAsString);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateDateOfTaxEventElementId, invoiceDateAsString);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateDueDateElementId, invoiceDueDateAsString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateDateOfIssueElementId, invoiceDateAsString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateDateOfTaxEventElementId, invoiceDateAsString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateDueDateElementId, invoiceDueDateAsString);
 
-        AddPurchasesToInvoiceList(invoiceData, document);
+        AddPurchasesToInvoiceList(invoiceData, htmlDocument);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateSupplierBankIdElementId, invoiceData.SupplierData.BankId ?? string.Empty);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateSupplierIbanElementId, invoiceData.SupplierData.Iban ?? string.Empty);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateSupplierBankIdElementId, invoiceData.SupplierData.BankId ?? string.Empty);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateSupplierIbanElementId, invoiceData.SupplierData.Iban ?? string.Empty);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateTotalPriceInInvoiceElementId, totalPriceWithoutVatString);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateTaxBaseElementId, totalPriceWithoutVatString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceInInvoiceElementId, totalPriceWithoutVatString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTaxBaseElementId, totalPriceWithoutVatString);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateVatPercentElementId, varPercentageText);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateVatChargedElementId, totalPriceChargedFromVatString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateVatPercentElementId, varPercentageText);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateVatChargedElementId, totalPriceChargedFromVatString);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateTotalPriceElementId, totalPriceString);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceElementId, totalPriceString);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateTotalPriceInWordsElementId, totalPriceInWords);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplatePaymentMethodElementId, invoiceData.TypeOfPayment);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceInWordsElementId, totalPriceInWords);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplatePaymentMethodElementId, invoiceData.TypeOfPayment);
 
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeftFirmMRPersonSignatureInitialsElementId, invoiceData.RecipientFullName);
-        ChangeHtmlElementInnerHtml(document, _invoiceTemplateInvoiceCreatorElementId, invoiceData.AuthorFullName);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmMRPersonSignatureInitialsElementId, invoiceData.RecipientFullName);
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateInvoiceCreatorElementId, invoiceData.AuthorFullName);
 
         //ChangeHtmlElementInnerHtml(document, _invoiceTemplateLeagalTextElementId, invoiceData.);
 
-        document.Save(destinationFilePath, Encoding.UTF8);
+        ChangeHtmlElement(htmlDocument, _invoiceTemplateBodyElementId, x => x.RemoveClass(_invoiceTemplateBodyBackgroundDarkerClassName));
+        ChangeHtmlElement(htmlDocument, _invoiceTemplateElementId, x => x.RemoveClass(_invoiceTemplateConstrainedToPageClassName));
 
-        return new();
+        await ConvertHtmlToPDFAndSaveAsync(htmlDocument, invoiceData, destinationFilePath);
     }
 
     private static void AddPurchasesToInvoiceList(InvoiceData invoiceData, HtmlDocument document)
@@ -187,6 +195,36 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
         }
     }
 
+    private static async Task ConvertHtmlToPDFAndSaveAsync(HtmlDocument document, InvoiceData invoiceData, string destinationFilePath)
+    {
+        BrowserFetcher browserFetcher = new();
+
+        await browserFetcher.DownloadAsync();
+
+        IBrowser browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        {
+            Headless = true
+        });
+
+        using var page = await browser.NewPageAsync();
+
+        await page.SetContentAsync(document.DocumentNode.OuterHtml);
+
+        MarginOptions pdfMargins = new() { Left = "0.4in", Right = "0.39in", Top = "0.4in", Bottom = "0.39in" };
+
+        await page.PdfAsync(destinationFilePath, new()
+        {
+            Format = PaperFormat.A4,
+            HeaderTemplate = "<div id='header-template'></div>",
+            FooterTemplate = $"<div id='footer-template' style='font-size:14px !important; width: 100%; margin-right: {pdfMargins.Right}; display: inline-flex; justify-content: flex-end;'><p>Фактура № {invoiceData.InvoiceId}: Стр. <span class='pageNumber'></span> / <span class='totalPages'></span></p></div>",
+            DisplayHeaderFooter = true,
+            OmitBackground = false,
+            Scale = 1.25M,
+            PrintBackground = true,
+            MarginOptions = pdfMargins
+        });
+    }
+
     private static string GetCurrencyStringFromRoundedPrice(double roundedPrice, string currency, bool addWhiteSpaceBetweenPriceAndCurrency)
     {
         string output = roundedPrice.ToString("F2");
@@ -241,6 +279,17 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
         if (element is null) return false;
 
         element.InnerHtml = newInnerHtml;
+
+        return true;
+    }
+
+    private static bool ChangeHtmlElement(HtmlDocument htmlDocument, string elementId, Action<HtmlNode> changeAction)
+    {
+        HtmlNode? element = htmlDocument.GetElementbyId(elementId);
+
+        if (element is null) return false;
+
+        changeAction(element);
 
         return true;
     }
