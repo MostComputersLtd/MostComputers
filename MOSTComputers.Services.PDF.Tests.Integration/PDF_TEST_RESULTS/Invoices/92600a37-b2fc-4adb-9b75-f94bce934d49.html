@@ -9,8 +9,11 @@
             font-family: Verdana, Arial, Helvetica, sans-serif;
             font-size: 12px;
             text-decoration: none;
-            background-color: #ebebeb;
             text-align: center;
+        }
+
+        .invoiceTemplateBodyBackgroundDarker {
+            background-color: #ebebeb;
         }
 
         .simplebox .invoiceTemplate {
@@ -32,7 +35,6 @@
         }
 
         .invoiceTemplate {
-            height: 880px;
             width: 690px;
             padding: 30px 20px;
             overflow: hidden;
@@ -43,6 +45,10 @@
             box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
             -webkit-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
             -moz-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
+        }
+
+        .invoiceTemplateConstrainedToPage {
+            height: 880px;
         }
 
         div {
@@ -260,7 +266,7 @@
             }
     </style>
 </head>
-<body>
+<body id="invoiceTemplateBody">
     <div id="invoiceTemplateContainer_original" class="invoiceTemplate">
         <div class="invoiceTemplateSubHeader" id="invoiceTemplateSubHeader_original invoiceTemplateBorder">
             <table cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -330,15 +336,15 @@
                     </tr>
                     <tr>
                         <td>Дата на издаване:</td>
-                        <td id="invoiceTemplateDateOfIssue" class="invoiceTemplateInvoiceDataHighlight">11.12.2024</td>
+                        <td id="invoiceTemplateDateOfIssue" class="invoiceTemplateInvoiceDataHighlight">12.12.2024</td>
                     </tr>
                     <tr>
                         <td>Дата на данъчно събитие:</td>
-                        <td id="invoiceTemplateDateOfTaxEvent" class="invoiceTemplateInvoiceDataHighlight">11.12.2024</td>
+                        <td id="invoiceTemplateDateOfTaxEvent" class="invoiceTemplateInvoiceDataHighlight">12.12.2024</td>
                     </tr>
                     <tr>
                         <td>Дата на падеж:</td>
-                        <td id="invoiceTemplateDueDate" class="invoiceTemplateInvoiceDataHighlight">26.12.2024</td>
+                        <td id="invoiceTemplateDueDate" class="invoiceTemplateInvoiceDataHighlight">27.12.2024</td>
                     </tr>
                 </tbody>
             </table>
@@ -357,44 +363,136 @@
                 </tr>
             </thead>
             <tbody id="invoiceTemplateEntriesTBody">
-
-                <tr id="invoiceTemplateEntry-0">
+                
+            <tr id="invoiceTemplateEntry-0">
                     <td id="invoiceTemplateEntryNumber-0" width="2%" align="center">1</td>
                     <td id="invoiceTemplateEntryName-0" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
-                    <td id="invoiceTemplateEntryQuantity-0" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryQuantity-0" width="13%" align="center">6</td>
                     <td id="invoiceTemplateEntryUnitOfMeasure-0" width="8%" align="center">брой</td>
                     <td id="invoiceTemplateEntryPricePerUnit-0" width="10%" align="right">222.49</td>
-                    <td id="invoiceTemplateEntryTotalPrice-0" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryTotalPrice-0" width="7%" align="right" style="background: #f5f5f5;">1334.95</td>
                     <td id="invoiceTemplateEntryCurrency-0" width="4%" style="background: #f5f5f5;" align="right">лв</td>
-                </tr>
-                <tr id="invoiceTemplateEntry-0">
+                </tr><tr id="invoiceTemplateEntry-0">
                     <td id="invoiceTemplateEntryNumber-1" width="2%" align="center">2</td>
-                    <td id="invoiceTemplateEntryName-1" width="48%">NOTEBOOK IP2 7 / 82VGFF423S</td>
-                    <td id="invoiceTemplateEntryQuantity-1" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryName-1" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-1" width="13%" align="center">6</td>
                     <td id="invoiceTemplateEntryUnitOfMeasure-1" width="8%" align="center">брой</td>
-                    <td id="invoiceTemplateEntryPricePerUnit-1" width="10%" align="right">934.99</td>
-                    <td id="invoiceTemplateEntryTotalPrice-1" width="7%" align="right" style="background: #f5f5f5;">1869.98</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-1" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-1" width="7%" align="right" style="background: #f5f5f5;">1334.95</td>
                     <td id="invoiceTemplateEntryCurrency-1" width="4%" style="background: #f5f5f5;" align="right">лв</td>
-                </tr>
-                <tr id="invoiceTemplateEntry-0">
+                </tr><tr id="invoiceTemplateEntry-0">
                     <td id="invoiceTemplateEntryNumber-2" width="2%" align="center">3</td>
-                    <td id="invoiceTemplateEntryName-2" width="48%">TABLET LENOVO SP1 19 / 82VNSFG423</td>
-                    <td id="invoiceTemplateEntryQuantity-2" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryName-2" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-2" width="13%" align="center">6</td>
                     <td id="invoiceTemplateEntryUnitOfMeasure-2" width="8%" align="center">брой</td>
-                    <td id="invoiceTemplateEntryPricePerUnit-2" width="10%" align="right">459.57</td>
-                    <td id="invoiceTemplateEntryTotalPrice-2" width="7%" align="right" style="background: #f5f5f5;">919.14</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-2" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-2" width="7%" align="right" style="background: #f5f5f5;">1334.95</td>
                     <td id="invoiceTemplateEntryCurrency-2" width="4%" style="background: #f5f5f5;" align="right">лв</td>
-                </tr>
-                <tr id="invoiceTemplateEntry-0">
+                </tr><tr id="invoiceTemplateEntry-0">
                     <td id="invoiceTemplateEntryNumber-3" width="2%" align="center">4</td>
-                    <td id="invoiceTemplateEntryName-3" width="48%">MACBOOK 8 / 72VG2F4GV5</td>
-                    <td id="invoiceTemplateEntryQuantity-3" width="13%" align="center">1</td>
+                    <td id="invoiceTemplateEntryName-3" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-3" width="13%" align="center">6</td>
                     <td id="invoiceTemplateEntryUnitOfMeasure-3" width="8%" align="center">брой</td>
-                    <td id="invoiceTemplateEntryPricePerUnit-3" width="10%" align="right">2324.79</td>
-                    <td id="invoiceTemplateEntryTotalPrice-3" width="7%" align="right" style="background: #f5f5f5;">2324.80</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-3" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-3" width="7%" align="right" style="background: #f5f5f5;">1334.95</td>
                     <td id="invoiceTemplateEntryCurrency-3" width="4%" style="background: #f5f5f5;" align="right">лв</td>
-                </tr>
-            </tbody>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-4" width="2%" align="center">5</td>
+                    <td id="invoiceTemplateEntryName-4" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-4" width="13%" align="center">6</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-4" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-4" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-4" width="7%" align="right" style="background: #f5f5f5;">1334.95</td>
+                    <td id="invoiceTemplateEntryCurrency-4" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-5" width="2%" align="center">6</td>
+                    <td id="invoiceTemplateEntryName-5" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-5" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-5" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-5" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-5" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-5" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-6" width="2%" align="center">7</td>
+                    <td id="invoiceTemplateEntryName-6" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-6" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-6" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-6" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-6" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-6" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-7" width="2%" align="center">8</td>
+                    <td id="invoiceTemplateEntryName-7" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-7" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-7" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-7" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-7" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-7" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-8" width="2%" align="center">9</td>
+                    <td id="invoiceTemplateEntryName-8" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-8" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-8" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-8" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-8" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-8" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-9" width="2%" align="center">10</td>
+                    <td id="invoiceTemplateEntryName-9" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-9" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-9" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-9" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-9" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-9" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-10" width="2%" align="center">11</td>
+                    <td id="invoiceTemplateEntryName-10" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-10" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-10" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-10" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-10" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-10" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-11" width="2%" align="center">12</td>
+                    <td id="invoiceTemplateEntryName-11" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-11" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-11" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-11" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-11" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-11" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-12" width="2%" align="center">13</td>
+                    <td id="invoiceTemplateEntryName-12" width="48%">NOTEBOOK LENOVO IP1 15 / 82VG24423S</td>
+                    <td id="invoiceTemplateEntryQuantity-12" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-12" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-12" width="10%" align="right">222.49</td>
+                    <td id="invoiceTemplateEntryTotalPrice-12" width="7%" align="right" style="background: #f5f5f5;">444.98</td>
+                    <td id="invoiceTemplateEntryCurrency-12" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-13" width="2%" align="center">14</td>
+                    <td id="invoiceTemplateEntryName-13" width="48%">NOTEBOOK IP2 7 / 82VGFF423S</td>
+                    <td id="invoiceTemplateEntryQuantity-13" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-13" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-13" width="10%" align="right">934.99</td>
+                    <td id="invoiceTemplateEntryTotalPrice-13" width="7%" align="right" style="background: #f5f5f5;">1869.98</td>
+                    <td id="invoiceTemplateEntryCurrency-13" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-14" width="2%" align="center">15</td>
+                    <td id="invoiceTemplateEntryName-14" width="48%">TABLET LENOVO SP1 19 / 82VNSFG423</td>
+                    <td id="invoiceTemplateEntryQuantity-14" width="13%" align="center">2</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-14" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-14" width="10%" align="right">459.57</td>
+                    <td id="invoiceTemplateEntryTotalPrice-14" width="7%" align="right" style="background: #f5f5f5;">919.14</td>
+                    <td id="invoiceTemplateEntryCurrency-14" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr><tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-15" width="2%" align="center">16</td>
+                    <td id="invoiceTemplateEntryName-15" width="48%">MACBOOK 8 / 72VG2F4GV5</td>
+                    <td id="invoiceTemplateEntryQuantity-15" width="13%" align="center">1</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-15" width="8%" align="center">брой</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-15" width="10%" align="right">2324.79</td>
+                    <td id="invoiceTemplateEntryTotalPrice-15" width="7%" align="right" style="background: #f5f5f5;">2324.80</td>
+                    <td id="invoiceTemplateEntryCurrency-15" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr></tbody>
         </table>
         <div class="invoiceTemplateSummaryData" id="invoiceTemplateSummaryData_original">
             <div class="invoiceTemplateLeftColumn">
@@ -419,11 +517,11 @@
                     <tbody>
                         <tr>
                             <td>Сума по фактура:</td>
-                            <td id="invoiceTemplateTotalPriceInInvoice" class="summaryHighlight">5558.90 лв</td>
+                            <td id="invoiceTemplateTotalPriceInInvoice" class="summaryHighlight">15348.45 лв</td>
                         </tr>
                         <tr>
                             <td>Данъчна основа:</td>
-                            <td id="invoiceTemplateTaxBase" class="summaryHighlight">5558.90 лв</td>
+                            <td id="invoiceTemplateTaxBase" class="summaryHighlight">15348.45 лв</td>
                         </tr>
                         <tr>
                             <td>Процент ДДС:</td>
@@ -431,11 +529,11 @@
                         </tr>
                         <tr>
                             <td>Начислен ДДС:</td>
-                            <td id="invoiceTemplateVatCharged" class="summaryHighlight">1111.78 лв</td>
+                            <td id="invoiceTemplateVatCharged" class="summaryHighlight">3069.70 лв</td>
                         </tr>
                         <tr>
                             <td>Всичко:</td>
-                            <td class="summaryHighlight summaryBig"><span id="pamount_total">6670.67 лв</span></td>
+                            <td class="summaryHighlight summaryBig"><span id="pamount_total">18418.15 лв</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -446,7 +544,7 @@
         <div id="extraRows_original" style="padding-bottom:30px;">
             <div class="invoiceTemplateExtraDataRow" style="margin-top: 15px; border-top: 1px solid black;">
                 <p>
-                    Словом: <span id="invoiceTemplateTotalPriceInWords" class="invoiceTemplateBold">шест хиляди шестстотин седемдесет лева и шестдесет и шест стотинки</span>
+                    Словом: <span id="invoiceTemplateTotalPriceInWords" class="invoiceTemplateBold">осемнадесет хиляди четиристотин осемнадесет лева и четиринадесет стотинки</span>
                 </p>
             </div>
             <div class="invoiceTemplateExtraDataRow">
