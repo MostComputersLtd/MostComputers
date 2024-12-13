@@ -46,7 +46,7 @@ public class Startup
         HtmlTemplateFileFullPath = htmlTemplateFilePath;
 
         //services.AddPdfInvoiceServices(PdfTemplateFileFullPath);
-        services.AddHtmlInvoiceServices(HtmlTemplateFileFullPath);
+        services.AddPdfInvoiceServices(HtmlTemplateFileFullPath);
 
         string pdfInvoicesTestFolderFilePath = PdfInvoiceTestFolderRelativePath;
 
