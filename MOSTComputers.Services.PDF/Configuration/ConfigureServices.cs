@@ -11,22 +11,8 @@ using System.Threading.Tasks;
 namespace MOSTComputers.Services.PDF.Configuration;
 public static class ConfigureServices
 {
-    public static IServiceCollection AddPdfInvoiceServices(this IServiceCollection services, string pdfInvoiceTemplateFilePath)
+    public static IServiceCollection AddPdfInvoiceServices(this IServiceCollection services, string htmlInvoiceTemplateFilePath)
     {
-        services.TryAddScoped<PdfBasicOperationsService>();
-        services.AddScoped<IPdfInvoiceService, PdfInvoiceService>(config =>
-        {
-            PdfInvoiceService pdfInvoiceService = new(config.GetRequiredService<PdfBasicOperationsService>(), pdfInvoiceTemplateFilePath);
-
-            return pdfInvoiceService;
-        });
-
-        return services;
-    }
-
-    public static IServiceCollection AddHtmlInvoiceServices(this IServiceCollection services, string htmlInvoiceTemplateFilePath)
-    {
-        services.TryAddScoped<PdfBasicOperationsService>();
         services.AddScoped<IPdfInvoiceService, PdfInvoiceServiceWithHtmlTemplate>(config =>
         {
             PdfInvoiceServiceWithHtmlTemplate pdfInvoiceService = new(htmlInvoiceTemplateFilePath);

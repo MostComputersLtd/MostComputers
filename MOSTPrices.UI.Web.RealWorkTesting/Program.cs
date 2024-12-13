@@ -54,7 +54,7 @@ if (!Path.IsPathFullyQualified(htmlInvoiceTemplateFilePath!))
 }
 
 // builder.Services.AddPdfInvoiceServices(pdfInvoiceTemplateFilePath!);
-builder.Services.AddHtmlInvoiceServices(htmlInvoiceTemplateFilePath!);
+builder.Services.AddPdfInvoiceServices(htmlInvoiceTemplateFilePath!);
 
 builder.Services.TryAddSingleton<IProductXmlProvidingService, ProductXmlProvidingService>();
 
