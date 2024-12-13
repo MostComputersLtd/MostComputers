@@ -20,6 +20,12 @@ internal static class CurrencyToWordsConversionUtils
         "девет"
     };
 
+    private readonly static string[] _stotinkiUnitsMap = {
+        "",
+        "една",
+        "две",
+    };
+
     private readonly static string[] _teensMap = {
         "десет",
         "единадесет",
@@ -62,24 +68,71 @@ internal static class CurrencyToWordsConversionUtils
     internal static string ConvertPriceToWordsInLeva(double amount)
     {
         int leva = (int)amount;
-        int stotinki = (int)((amount - leva) * 100);
+        int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
 
-        string levaPart = ConvertNumberToWordsInLeva(leva, _unitsMap, _teensMap, _tensMap, _hundredsMap);
-        string stotinkiPart = ConvertNumberToWordsInLeva(stotinki, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+        string levaPart = ConvertNumberToWordsInLeva(leva, PriceConvertScaleEnum.Leva, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+
+        if (stotinki == 0)
+        {
+            return $"{levaPart} лева";
+        }
+
+        string stotinkiPart = ConvertNumberToWordsInLeva(stotinki, PriceConvertScaleEnum.Stotinki, _unitsMap, _teensMap, _tensMap, _hundredsMap);
 
         return $"{levaPart} лева и {stotinkiPart} стотинки";
     }
 
-    private static string ConvertNumberToWordsInLeva(int number, string[] unitsMap, string[] teensMap, string[] tensMap, string[] hundredsMap)
+    private static string ConvertNumberToWordsInLeva(int number, PriceConvertScaleEnum priceConvertScale, string[] unitsMap, string[] teensMap, string[] tensMap, string[] hundredsMap)
     {
         if (number == 0) return "нула";
-        if (number < 0) return "минус " + ConvertNumberToWordsInLeva(Math.Abs(number), unitsMap, teensMap, tensMap, hundredsMap);
+        if (number < 0) return "минус " + ConvertNumberToWordsInLeva(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap);
 
         string words = "";
 
-        if (number / 1000 > 0)
+        int billionsInNumber = number / 1_000_000_000;
+
+        if (billionsInNumber > 0)
         {
-            words += ConvertNumberToWordsInLeva(number / 1000, unitsMap, teensMap, tensMap, hundredsMap) + " хиляди ";
+            if (billionsInNumber == 1)
+            {
+                words += " един милиард ";
+            }
+            else
+            {
+                words += ConvertNumberToWordsInLeva(number / 1_000_000_000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " милиарда ";
+            }
+
+            number %= 1_000_000_000;
+        }
+
+        int millionsInNumber = number / 1000000;
+
+        if (millionsInNumber > 0)
+        {
+            if (millionsInNumber == 1)
+            {
+                words += " един милион ";
+            }
+            else
+            {
+                words += ConvertNumberToWordsInLeva(number / 1000000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " милиона ";
+            }
+
+            number %= 1000000;
+        }
+
+        int thousandsInNumber = number / 1000;
+
+        if (thousandsInNumber > 0)
+        {
+            if (thousandsInNumber == 1)
+            {
+                words += " хиляда ";
+            }
+            else
+            {
+                words += ConvertNumberToWordsInLeva(number / 1000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " хиляди ";
+            }
 
             number %= 1000;
         }
@@ -93,23 +146,47 @@ internal static class CurrencyToWordsConversionUtils
         {
             if (number < 10)
             {
-                words += unitsMap[number];
+                string wordForTenInNumber = unitsMap[number];
+
+                if (priceConvertScale == PriceConvertScaleEnum.Stotinki
+                   && number < _stotinkiUnitsMap.Length)
+                {
+                    wordForTenInNumber = _stotinkiUnitsMap[number];
+                }
+
+                words += (words == "" ? "" : "и ") + wordForTenInNumber;
             }
             else if (number < 20)
             {
-                words += teensMap[number - 10];
+                words += (words == "" ? "" : "и ") + teensMap[number - 10];
             }
             else
             {
                 words += tensMap[number / 10];
-                
-                if ((number % 10) > 0)
+
+                int tensInNumber = (number % 10);
+
+                if (tensInNumber > 0)
                 {
-                    words += " и " + unitsMap[number % 10];
+                    string wordForTenInNumber = unitsMap[tensInNumber];
+
+                    if (priceConvertScale == PriceConvertScaleEnum.Stotinki
+                       && tensInNumber < _stotinkiUnitsMap.Length)
+                    {
+                        wordForTenInNumber = _stotinkiUnitsMap[tensInNumber];
+                    }
+
+                    words += " и " + wordForTenInNumber;
                 }
             }
         }
 
         return words.Trim();
     }
+}
+
+internal enum PriceConvertScaleEnum
+{
+    Stotinki = 0,
+    Leva = 1,
 }
