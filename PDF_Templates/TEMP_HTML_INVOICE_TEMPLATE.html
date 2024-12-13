@@ -20,20 +20,6 @@
             margin: 20px auto 40px;
         }
 
-        .invoiceTemplate * {
-            font-family: Verdana, Helvetica, sans-serif !important;
-            font-size: 12px;
-        }
-
-        .invoiceTemplate * {
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            font-size: 13px;
-            font-family: arial, Helvetica, sans-serif;
-            white-space: nowrap;
-        }
-
         .invoiceTemplate {
             width: 690px;
             padding: 30px 20px;
@@ -49,6 +35,20 @@
 
         .invoiceTemplateConstrainedToPage {
             height: 880px;
+        }
+
+        .invoiceTemplate * {
+            font-family: Verdana, Helvetica, sans-serif !important;
+            font-size: 12px;
+        }
+
+        .invoiceTemplate * {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            font-family: arial, Helvetica, sans-serif;
+            white-space: normal;
         }
 
         div {
@@ -205,6 +205,9 @@
             background: #cccccc;
         }
 
+        .invoiceTemplateTotalPriceInWords {
+        }
+
         .clearboth {
             clear: both;
             line-height: 1px;
@@ -272,8 +275,8 @@
             <table cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tbody>
                     <tr>
-                        <td width="50%"><h2>Получател</h2></td>
-                        <td width="50%"><h2>Доставчик</h2></td>
+                        <td width="50%" align-content="end"><h2>Получател</h2></td>
+                        <td width="50%" align-content="end"><h2>Доставчик</h2></td>
                     </tr>
                     <tr>
                         <td class="invoiceTemplateTargetData" style="border-right: none;" valign="top">
@@ -430,7 +433,7 @@
         <div id="extraRows_original" style="padding-bottom:30px;">
             <div class="invoiceTemplateExtraDataRow" style="margin-top: 15px; border-top: 1px solid black;">
                 <p>
-                    Словом: <span id="invoiceTemplateTotalPriceInWords" class="invoiceTemplateBold">Двеста шестдесет и два лева и осемдесет и шест стотинки</span>
+                    Словом: <span id="invoiceTemplateTotalPriceInWords" class="invoiceTemplateBold invoiceTemplateTotalPriceInWords">Двеста шестдесет и два лева и осемдесет и шест стотинки</span>
                 </p>
             </div>
             <div class="invoiceTemplateExtraDataRow">
