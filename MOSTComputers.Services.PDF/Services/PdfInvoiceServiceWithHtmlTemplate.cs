@@ -216,7 +216,7 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
         {
             Format = PaperFormat.A4,
             HeaderTemplate = "<div id='header-template'></div>",
-            FooterTemplate = $"<div id='footer-template' style='font-size:14px !important; width: 100%; margin-right: {pdfMargins.Right}; display: inline-flex; justify-content: flex-end;'><p>Фактура № {invoiceData.InvoiceId}: Стр. <span class='pageNumber'></span> / <span class='totalPages'></span></p></div>",
+            FooterTemplate = $"<div id='footer-template' style='font-size:14px !important; width: 100%; height: 25px; align-content: end; margin-right: {pdfMargins.Right}; display: inline-flex; justify-content: flex-end;'><p>Фактура № {invoiceData.InvoiceId}: Стр. <span class='pageNumber'></span> / <span class='totalPages'></span></p></div>",
             DisplayHeaderFooter = true,
             OmitBackground = false,
             Scale = 1.25M,
@@ -239,7 +239,11 @@ internal class PdfInvoiceServiceWithHtmlTemplate : IPdfInvoiceService
 
     private static double CeilingToTwoDecimals(double value)
     {
-        double newVal = Math.Round(value + 0.005, 2);
+        double newVal = Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+        if (newVal == value) return newVal;
+
+        newVal = Math.Round(value + 0.005, 2);
 
         return newVal;
     }
