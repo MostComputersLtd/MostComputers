@@ -20,14 +20,14 @@ public class PdfInvoiceServiceTests
     private readonly IPdfInvoiceService _pdfInvoiceService;
 
     [Fact]
-    public void CreateInvoicePdf_ShouldSucceed_WhenDocumentIsLoadedAndDestinationFileExists()
+    public async Task CreateInvoicePdf_ShouldSucceed_WhenDocumentIsLoadedAndDestinationFileExistsAsync()
     {
         InvoiceData invoiceData = GetValidInvoiceData();
 
-        string pdfTestFileName = $"{Guid.NewGuid()}.html";
+        string pdfTestFileName = $"{Guid.NewGuid()}.pdf";
         string pdfInvoiceTestFileFullPath = Path.Combine(Startup.PdfInvoiceTestFolderFullPath, pdfTestFileName).Replace("\\", "/");
 
-        PdfDocument resultingDocument = _pdfInvoiceService.CreateInvoicePdf(invoiceData, pdfInvoiceTestFileFullPath);
+        await _pdfInvoiceService.CreateInvoicePdf(invoiceData, pdfInvoiceTestFileFullPath);
     }
 
     private static InvoiceData GetValidInvoiceData()
@@ -64,6 +64,18 @@ public class PdfInvoiceServiceTests
             },
             Purchases = new()
             {
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 6, PricePerUnit = 555555, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 6, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 6, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 6, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 6, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
+                new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
                 new() { ProductName = "NOTEBOOK LENOVO IP1 15 / 82VG24423S", Quantity = 2, PricePerUnit = 222.49, UnitOfMeasurement = "брой", Currency = "лв" },
                 new() { ProductName = "NOTEBOOK IP2 7 / 82VGFF423S", Quantity = 2, PricePerUnit = 934.99, UnitOfMeasurement = "брой", Currency = "лв" },
                 new() { ProductName = "TABLET LENOVO SP1 19 / 82VNSFG423", Quantity = 2, PricePerUnit = 459.57, UnitOfMeasurement = "брой", Currency = "лв" },
