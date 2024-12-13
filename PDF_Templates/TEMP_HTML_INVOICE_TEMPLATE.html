@@ -9,8 +9,11 @@
             font-family: Verdana, Arial, Helvetica, sans-serif;
             font-size: 12px;
             text-decoration: none;
-            background-color: #ebebeb;
             text-align: center;
+        }
+
+        .invoiceTemplateBodyBackgroundDarker {
+            background-color: #ebebeb;
         }
 
         .simplebox .invoiceTemplate {
@@ -32,7 +35,6 @@
         }
 
         .invoiceTemplate {
-            height: 880px;
             width: 690px;
             padding: 30px 20px;
             overflow: hidden;
@@ -43,6 +45,10 @@
             box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
             -webkit-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
             -moz-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
+        }
+
+        .invoiceTemplateConstrainedToPage {
+            height: 880px;
         }
 
         div {
@@ -260,8 +266,8 @@
             }
     </style>
 </head>
-<body>
-    <div id="invoiceTemplateContainer_original" class="invoiceTemplate">
+<body id="invoiceTemplateBody" class="invoiceTemplateBodyBackgroundDarker">
+    <div id="invoiceTemplateContainer_original" class="invoiceTemplate invoiceTemplateConstrainedToPage">
         <div class="invoiceTemplateSubHeader" id="invoiceTemplateSubHeader_original invoiceTemplateBorder">
             <table cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tbody>
