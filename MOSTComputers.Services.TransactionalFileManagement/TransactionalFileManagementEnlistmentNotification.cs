@@ -3,7 +3,6 @@ using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using System.Transactions;
 
 namespace MOSTComputers.Services.TransactionalFileManagement;
-
 public class TransactionalFileManagementEnlistmentNotification : IEnlistmentNotification
 {
     internal TransactionalFileManagementEnlistmentNotification(string transactionId, IEnlistmentManager enlistmentManager)
@@ -76,7 +75,9 @@ public class TransactionalFileManagementEnlistmentNotification : IEnlistmentNoti
         {
             throw new TransactionException("Failed to roll back.", ex);
         }
-
-        _enlistmentManager.TryRemoveNotification(this);
+        finally
+        {
+            _enlistmentManager.TryRemoveNotification(this);
+        }
     }
 }

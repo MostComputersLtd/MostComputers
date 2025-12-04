@@ -1,0 +1,240 @@
+﻿@typeparam TItem
+
+@{
+    AdditionalAttributes.TryGetValue("class", out object? dropdownSelectAdditionalClasses);
+    AdditionalTopSelectedItemsContainerAttributes.TryGetValue("class", out object? topSelectedItemsContainerAdditionalClasses);
+    AdditionalDropdownListAttributes.TryGetValue("class", out object? dropdownListAdditionalClasses);
+}
+
+<div @attributes="AdditionalAttributes" class="dropdown-select @dropdownSelectAdditionalClasses">
+    <div @attributes="AdditionalTopSelectedItemsContainerAttributes"
+         class="dropdown-select-top-selected-items-container @topSelectedItemsContainerAdditionalClasses"
+         @onclick="ToggleDropdown">
+        @SelectedItemsTemplate(SelectedItems)
+    </div>
+
+    <div @attributes="AdditionalDropdownListAttributes"
+        class="@dropdownListAdditionalClasses dropdown-select-dropdown @(IsOpen ? "open" : string.Empty)">
+
+        @if (Items.Count > 0)
+        {
+            @foreach (TItem item in Items)
+            {
+                DropdownSelectItem dropdownItem = new()
+                {
+                    Item = item,
+                    IsSelected = SelectedItems?.Contains(item) ?? false
+                };
+
+                <div @onclick="() => ToggleItemSelection(item)">
+                    @ItemTemplate(dropdownItem)
+                </div>
+            }
+        }
+        else if (NoItemsTemplate is not null)
+        {
+            @NoItemsTemplate(new());
+        }
+    </div>
+</div>
+
+@code {
+    public enum SelectionMode
+    {
+        None,
+        Single,
+        Multiple
+    }
+
+    public sealed class DropdownSelectItem
+    {
+        public required TItem Item { get; init; }
+		public required bool IsSelected { get; init; }
+	}
+
+    public readonly struct NoItemsResult {}
+
+    [Parameter, EditorRequired] public required RenderFragment<DropdownSelectItem> ItemTemplate { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<List<TItem>?> SelectedItemsTemplate { get; set; }
+
+    [Parameter] public RenderFragment<NoItemsResult>? NoItemsTemplate { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+    [Parameter] public Dictionary<string, object> AdditionalTopSelectedItemsContainerAttributes { get; set; } = new();
+    [Parameter] public Dictionary<string, object> AdditionalDropdownListAttributes { get; set; } = new();
+
+    [Parameter] public List<TItem> Items { get; set; } = [];
+    private List<TItem>? _previousItems { get; set; }
+
+    [Parameter] public List<int>? SelectedItemIndexes { get; set; }
+    private List<int>? _previousSelectedItemIndexes { get; set; }
+
+    public List<TItem> SelectedItems { get; private set; } = [];
+
+    [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+
+    [Parameter] public SelectionMode ItemSelectionMode { get; set; } = SelectionMode.None;
+    private SelectionMode? _previousItemSelectionMode;
+
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (_previousItems is not null && _previousItems != Items)
+        {
+            SelectedItems.Clear();
+        }
+
+        _previousItems = Items;
+
+        if (_previousSelectedItemIndexes is not null && SelectedItemIndexes is not null && _previousSelectedItemIndexes != SelectedItemIndexes)
+        {
+            SetSelectedItemsFromIndexes(SelectedItemIndexes);
+        }
+
+		_previousSelectedItemIndexes = SelectedItemIndexes;
+
+        if (_previousItemSelectionMode is not null && _previousItemSelectionMode != ItemSelectionMode)
+        {
+            bool hadAnySeletedItems = SelectedItems.Count > 0;
+
+            if (ItemSelectionMode == SelectionMode.None)
+            {
+                SelectedItems.Clear();
+
+                if (!hadAnySeletedItems) return;
+
+                SelectedItemsChanged.InvokeAsync(SelectedItems);
+            }
+            else if (ItemSelectionMode == SelectionMode.Single)
+            {
+                if (!hadAnySeletedItems) return;
+
+                bool hadMoreThanOneSeletedItems = SelectedItems.Count > 1;
+
+                if (!hadMoreThanOneSeletedItems) return;
+
+                SelectedItems.RemoveRange(1, SelectedItems.Count - 1);
+
+                SelectedItemsChanged.InvokeAsync(SelectedItems);
+            }
+        }
+
+        _previousItemSelectionMode = ItemSelectionMode;
+    }
+
+    public void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+    }
+
+    public void SetDropdownOpenState(bool isOpen)
+    {
+        IsOpen = isOpen;
+    }
+
+    private void SetSelectedItemsFromIndexes(List<int> selectedItemIndexes)
+    {
+        bool hadAnySeletedItems = SelectedItems.Count > 0;
+
+        if (ItemSelectionMode == SelectionMode.None || selectedItemIndexes.Count <= 0)
+        {
+            SelectedItems.Clear();
+
+            if (hadAnySeletedItems)
+            {
+                SelectedItemsChanged.InvokeAsync(SelectedItems);
+            }
+
+            return;
+        }
+
+        if (ItemSelectionMode == SelectionMode.Single)
+        {
+            TItem? firstSelectedItem = Items[selectedItemIndexes[0]];
+
+            if (SelectedItems.Count == 1 && SelectedItems.Contains(firstSelectedItem)) return;
+
+            SelectedItems.Clear();
+
+            SelectedItems.Add(firstSelectedItem);
+
+            SelectedItemsChanged.InvokeAsync(SelectedItems);
+        }
+
+        List<TItem> itemsToBeSelected = [];
+
+        foreach (int index in selectedItemIndexes)
+        {
+            if (index < 0 || index >= Items.Count) continue;
+
+            TItem item = Items[index];
+
+            itemsToBeSelected.Add(item);
+        }
+
+        bool isNewSelectionDifferent = false;
+
+        if (SelectedItems.Count != itemsToBeSelected.Count)
+        {
+            isNewSelectionDifferent = true;
+        }
+        else
+        {
+            foreach (TItem item in itemsToBeSelected)
+            {
+                if (!SelectedItems.Contains(item))
+                {
+                    isNewSelectionDifferent = true;
+                }
+            }
+        }
+
+		if (!isNewSelectionDifferent) return;
+
+		SelectedItems.Clear();
+
+		SelectedItems.AddRange(itemsToBeSelected);
+
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+	}
+
+    private void ToggleItemSelection(TItem item)
+    {
+        if (ItemSelectionMode == SelectionMode.None) return;
+
+		bool isSelected = SelectedItems.Contains(item);
+
+        if (ItemSelectionMode == SelectionMode.Single)
+        {
+            if (isSelected)
+            {
+				SelectedItems.Remove(item);
+
+                SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+                return;
+            }
+
+            SelectedItems.Clear();
+
+            SelectedItems.Add(item);
+
+            SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+            return;
+        }
+
+        if (isSelected)
+        {
+            SelectedItems.Remove(item);
+        }
+        else
+        {
+            SelectedItems.Add(item);
+		}
+
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+}

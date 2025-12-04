@@ -1,0 +1,116 @@
+﻿@using MOSTComputers.Models.Product.Models.PromotionFiles
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Controllers
+@using MOSTComputers.UI.Web.Controllers.Images
+@using MOSTComputers.UI.Web.Models.ProductEditor
+@using MOSTComputers.UI.Web.Models.ProductEditor.ProductImages;
+@using MOSTComputers.UI.Web.Models.ProductEditor.ProductProperties;
+@using static MOSTComputers.Utils.Files.FileExtensionUtils;
+
+@model ProductPropertiesEditorImagesListItemPartialModel
+@{
+    Layout = null;
+
+    ProductImageDisplayData? image = Model.ImageData;
+    ProductImageFileDisplayData? imageFile = Model.ImageFileData;
+    PromotionProductFileInfo? promotionProductFile = Model.RelatedPromotionProductFile;
+
+    int? productId = image?.ProductId ?? imageFile?.ProductId ?? promotionProductFile?.ProductId;
+}
+
+<li id="productImageDisplayListItem-@Model.ElementIndex" class="product-image-display-list-item me-2"
+    draggable="true" data-drag-and-drop-interactable-image-list-item="true"
+    data-image-list-item-image-id="@image?.ExistingImageId"
+    ondragstart="onDragStartImageListItem(event)"
+    ondragend="onDragEndImageListItem(event, @productId, '@Model.ProductPropertiesEditorContainerElementId', '@Model.RelatedProductTableRowElementId')"
+    style="position: relative; min-width: 20%; display: flex; flex-direction: column;">
+
+    @if (image is not null)
+    {
+        @if (image.ExistingImageId is not null)
+        {
+            string? imageDataRoute = $"/{ProductImageDataController.ControllerRoute}/{image.ExistingImageId}";
+
+            <button name="Image #@Model.ElementIndex" class="btn flex-grow-1" ondblclick="openDataUrlInNewWindow('@imageDataRoute')"
+                style="background: url('@imageDataRoute') no-repeat center; background-size: contain; background-origin: content-box;">
+            </button>
+        }
+
+        string displayDeleteButton = (image.ExistingImageId is not null) ? "" : "none";
+
+        <div class="product-image-popup-image-delete-button-container">
+            <button type="button" class="btn-close product-image-popup-image-delete-button"
+                aria-label="Close" style="display: @displayDeleteButton;"
+                onclick="deleteImageAndDisplayChanges(
+                    @image.ExistingImageId,
+                    true,
+                    '@Model.ProductPropertiesEditorContainerElementId',
+                    '@Model.RelatedProductTableRowElementId')" />
+        </div>
+
+        <div>
+            @if (image.DateModified is not null)
+            {
+                <p class="align-text-center">
+                    @image.DateModified.Value.ToString("MM.dd.yyyy")
+                </p>
+            }
+            else
+            {
+                <p class="align-text-center">
+                    No date provided
+                </p>
+            }
+        </div>
+    }
+
+    @if (promotionProductFile?.PromotionFileInfo.FileName is not null)
+    {
+        string promotionFileDataRoute = $"/{PromotionFileDataController.ControllerRoute}/{promotionProductFile.PromotionFileInfo.FileName}";
+
+        <div class="d-flex flex-row justify-content-center">
+            <p class="me-1 mb-0">Promo:</p>
+
+            <a href="@promotionFileDataRoute" target="_blank" class="align-text-center">
+                @(promotionProductFile.PromotionFileInfo.Name ?? promotionProductFile.PromotionFileInfo.FileName)
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column justify-content-center">
+            <p class="flex-shrink-0 flex-grow-1"></p>
+        </div>
+    }
+
+    @if (imageFile?.FileName is not null)
+    {
+        string? imageDisplayOrderString = (imageFile.DisplayOrder is not null) ? $"{imageFile.DisplayOrder}: " : null;
+
+        string imageFileDataRoute = $"/{ProductImageFileDataController.ControllerRoute}/{imageFile.FileName}";
+
+        string imageFileDisplayData = imageDisplayOrderString + imageFile.FileName;
+
+        <div class="d-flex justify-content-center">
+            <a href="@imageFileDataRoute" target="_blank" class="align-text-center">
+                @imageFileDisplayData
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column justify-content-center">
+            <p class="flex-shrink-0 flex-grow-1"></p>
+        </div>
+    }
+
+    @if (Model.IncludeHtmlDataView && image is not null)
+    {
+        <button id="product-image-popup-image-view-html-button-@Model.ElementIndex">
+            View Html
+        </button>
+
+        <input id="_hidden_product-image-popup-image-view-html_input-@Model.ElementIndex" type="hidden" value='@image.HtmlData' />
+        <input id="_hidden_product-image-popup-image-view-raw-html_input-@Model.ElementIndex" type="hidden" value='@(image.HtmlData)' />
+    }
+</li>

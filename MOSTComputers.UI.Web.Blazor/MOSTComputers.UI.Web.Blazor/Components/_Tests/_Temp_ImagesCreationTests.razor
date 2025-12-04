@@ -1,0 +1,282 @@
+﻿@page "/_tests/_temp_imagesCreationTests"
+
+@rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Admin")]
+
+@using Dapper
+@using MOSTComputers.Models.Product.Models.Changes
+@using MOSTComputers.Services.DataAccess.Common
+@using MOSTComputers.Services.DataAccess.Products.Configuration;
+@using System.Transactions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Data.SqlClient
+@using System.Data
+@using OneOf
+@using OneOf.Types
+
+@inject IServiceProvider KeyedServices
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+	<div class="full-parent-width mb-2 d-flex flex-row align-items-center">
+		<select @bind="_selectedChangeOperationType" class="me-3">
+
+			<option value="">-- All --</option>
+
+			@foreach (ChangeOperationType changeOperationType in Enum.GetValues<ChangeOperationType>())
+			{
+				<option value="@changeOperationType">@changeOperationType</option>
+			}
+		</select>
+
+		<div class="round-loader-default me-3" style="display: @(_isLoadingNewChanges ? "" : "none")"></div>
+
+		<button class="btn btn-outline-primary me-3" @onclick="GetAndDisplayAllNewExternalChangesAsync"
+			style="display: @(_isLoadingNewChanges ? "none" : "")">
+			Get New Changes
+		</button>
+
+		@if (_lastProcessedNewChangesTime is not null)
+		{
+			<p class="mb-0 me-3">Last Capture Date: @_lastProcessedNewChangesTime</p>
+		}
+
+		<div class="flex-grow-1 d-flex flex-row justify-content-end">
+
+			<input type="number" min="@_selectedAutoSearchTimeOption.MinAllowedValue" max="@_selectedAutoSearchTimeOption.MaxAllowedValue"
+				placeholder="" class="me-1" @bind="_autoSearchTimeValue" />
+
+			<select @bind="_selectedAutoSearchTimeOptionInSelect" class="me-3">
+				<option value="@AutoSearchTimeOptions.Hours.Value">@AutoSearchTimeOptions.Hours.DisplayName</option>
+				<option value="@AutoSearchTimeOptions.Minutes.Value">@AutoSearchTimeOptions.Minutes.DisplayName</option>
+				<option value="@AutoSearchTimeOptions.Seconds.Value">@AutoSearchTimeOptions.Seconds.DisplayName</option>
+			</select>
+
+			@if (_isAutoSearchActive)
+			{
+				<button class="btn btn-danger" @onclick="StopAutoSearch">Stop auto search</button>
+			}
+			else
+			{
+				<button class="btn btn-primary" @onclick="StartAutoSearch">Start auto search</button>
+			}
+		</div>
+
+	</div>
+
+	<div class="full-parent-width flex-grow-1 d-flex flex-column">
+		<table class="full-parent-width ps-0 mb-0">
+			<thead>
+				<tr>
+					<th>PK</th>
+					<th>ID</th>
+					<th>Operation</th>
+					<th>Table</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				@foreach (ExternalChangeData externalChange in _externalChanges)
+				{
+					if (_selectedChangeOperationType is not null && externalChange.Operation != _selectedChangeOperationType) continue;
+
+					<tr>
+						<td>@externalChange.PK</td>
+						<td>@externalChange.ID</td>
+						<td>@externalChange.Operation</td>
+						<td>@externalChange.TableName</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+@code {
+	public sealed class ExternalChangeData
+	{
+		public int PK { get; set; }
+		public int ID { get; set; }
+		public ChangeOperationType Operation { get; set; }
+		public string? TableName { get; set; }
+	}
+
+	private sealed class AutoSearchTimeOptions
+	{
+		private AutoSearchTimeOptions(int value, string displayName, int? minAllowedValue, int? maxAllowedValue)
+		{
+			Value = value;
+			DisplayName = displayName;
+			MinAllowedValue = minAllowedValue;
+			MaxAllowedValue = maxAllowedValue;
+		}
+
+		public int Value { get; }
+		public string DisplayName { get; }
+		public int? MinAllowedValue { get; }
+		public int? MaxAllowedValue { get; }
+
+		public static AutoSearchTimeOptions Hours = new(1, "Hours", 1, 23);
+		public static AutoSearchTimeOptions Minutes = new(2, "Minutes", 1, 59);
+		public static AutoSearchTimeOptions Seconds = new(3, "Seconds", 1, 59);
+	}
+
+	private int? _lastProcessedExternalChangeId = null;
+	private DateTime? _lastProcessedNewChangesTime = null;
+
+	private IConnectionStringProvider? _connectionStringProvider = null;
+
+	private List<ExternalChangeData> _externalChanges = new();
+
+	private ChangeOperationType? _selectedChangeOperationType { get; set; }
+
+	private bool _isLoadingNewChanges = false;
+
+	private AutoSearchTimeOptions _selectedAutoSearchTimeOption { get; set; } = AutoSearchTimeOptions.Seconds;
+
+	private int _selectedAutoSearchTimeOptionInSelect
+	{
+		get => _selectedAutoSearchTimeOption.Value;
+		set => _selectedAutoSearchTimeOption = value switch
+		{
+			1 => AutoSearchTimeOptions.Hours,
+			2 => AutoSearchTimeOptions.Minutes,
+			3 => AutoSearchTimeOptions.Seconds,
+			_ => AutoSearchTimeOptions.Seconds
+		};
+	}
+
+	private int? _autoSearchTimeValue { get; set; } = null;
+
+	private CancellationTokenSource? _autoSearchCancellationTokenSource;
+	private bool _isAutoSearchActive = false;
+
+	protected override void OnInitialized()
+	{
+		_connectionStringProvider = KeyedServices.GetKeyedService<IConnectionStringProvider>(
+			ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey);
+	}
+
+	private void StartAutoSearch()
+	{
+		_autoSearchCancellationTokenSource = new();
+
+		_isAutoSearchActive = true;
+
+		Task _ = AutoSearchAsync(_autoSearchCancellationTokenSource.Token);
+	}
+
+	private async Task AutoSearchAsync(CancellationToken cancellationToken = default)
+	{
+		TimeSpan? selectedTimerTimeSpan = GetSelectedTimerTimeSpan();
+
+		if (selectedTimerTimeSpan is null) return;
+
+		using PeriodicTimer periodicTimer = new(selectedTimerTimeSpan.Value);
+
+		try
+		{
+			while (_isAutoSearchActive && await periodicTimer.WaitForNextTickAsync(cancellationToken))
+			{
+				await GetAndDisplayAllNewExternalChangesAsync();
+
+				TimeSpan? selectedTimerTimeSpanInner = GetSelectedTimerTimeSpan();
+
+				if (selectedTimerTimeSpanInner is null) return;
+
+				periodicTimer.Period = selectedTimerTimeSpanInner.Value;
+
+				await InvokeAsync(StateHasChanged);
+			}
+		}
+		catch (OperationCanceledException)
+		{
+			// Ignore
+		}
+	}
+
+	private void StopAutoSearch()
+	{
+		_autoSearchCancellationTokenSource?.Cancel();
+		_autoSearchCancellationTokenSource?.Dispose();
+
+		_autoSearchCancellationTokenSource = null;
+
+		_isAutoSearchActive = false;
+	}
+
+	private TimeSpan? GetSelectedTimerTimeSpan()
+	{
+		if (_autoSearchTimeValue is null) return null;
+
+		if (_selectedAutoSearchTimeOption == AutoSearchTimeOptions.Seconds) return TimeSpan.FromSeconds(_autoSearchTimeValue.Value);
+		else if (_selectedAutoSearchTimeOption == AutoSearchTimeOptions.Minutes) return TimeSpan.FromMinutes(_autoSearchTimeValue.Value);
+		else if (_selectedAutoSearchTimeOption == AutoSearchTimeOptions.Hours) return TimeSpan.FromHours(_autoSearchTimeValue.Value);
+
+		return null;
+	}
+
+	private async Task GetAndDisplayAllNewExternalChangesAsync()
+	{
+		_isLoadingNewChanges = true;
+
+		OneOf<List<ExternalChangeData>, No> externalChangesResult = await GetAllNewExternalChangesAsync();
+
+		if (!externalChangesResult.IsT0) return;
+
+		List<ExternalChangeData> externalChanges = externalChangesResult.AsT0;
+
+		if (externalChanges.Count > 0)
+		{
+			_lastProcessedExternalChangeId = externalChanges.Max(change => change.PK);
+			_lastProcessedNewChangesTime = DateTime.Now;
+
+			_externalChanges.Clear();
+
+			_externalChanges.AddRange(externalChanges);
+		}
+
+		_isLoadingNewChanges = false;
+	}
+
+	private async Task<OneOf<List<ExternalChangeData>, No>> GetAllNewExternalChangesAsync()
+	{
+		if (_connectionStringProvider is null) return new No();
+
+		const string getAllQuery =
+            @"
+            SELECT PK, ID, Operation, TableName 
+            FROM [dbo].[Changes] WITH (NOLOCK)
+            ORDER BY PK;
+            ";
+
+		const string getAllWithGreaterPKThanLastQuery =
+			@"
+				SELECT PK, ID, Operation, TableName
+				FROM [dbo].[Changes] WITH (NOLOCK)
+				WHERE PK > @LastProcessedExternalChangeId
+				ORDER BY PK;
+			";
+
+		using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+		using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+		IEnumerable<ExternalChangeData> localChanges;
+
+		if (_lastProcessedExternalChangeId is null)
+		{
+			localChanges = await dbConnection.QueryAsync<ExternalChangeData>(
+				getAllQuery, new { }, commandType: CommandType.Text);
+		}
+		else
+		{
+			localChanges = await dbConnection.QueryAsync<ExternalChangeData>(
+				getAllWithGreaterPKThanLastQuery, new { LastProcessedExternalChangeId = _lastProcessedExternalChangeId }, commandType: CommandType.Text);
+		}
+
+        transactionScope.Complete();
+
+        return localChanges.AsList();
+	}
+}

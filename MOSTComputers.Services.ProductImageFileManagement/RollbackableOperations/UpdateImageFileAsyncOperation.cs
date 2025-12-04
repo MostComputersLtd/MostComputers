@@ -1,66 +1,83 @@
 ﻿using MOSTComputers.Models.FileManagement.Models;
-using OneOf.Types;
-using OneOf;
 using MOSTComputers.Services.TransactionalFileManagement.Contracts;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
+using OneOf;
+using OneOf.Types;
 using SixLabors.ImageSharp;
 
-namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
+using static MOSTComputers.Utils.Files.ContentTypeUtils;
 
+namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
 internal sealed class UpdateImageFileAsyncOperation
-    : IRollbackableOperationAsync<OneOf<Success, DirectoryNotFoundResult, FileDoesntExistResult>>
+    : IRollbackableOperationAsync<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>>
 {
     public UpdateImageFileAsyncOperation(
         string imageDirectoryPath,
-        string fileNameWithoutExtension,
-        byte[] imageData,
-        AllowedImageFileType imageFileType)
+        string fullFileName,
+        byte[] imageData)
     {
         _imageDirectoryPath = imageDirectoryPath;
-        _fileNameWithoutExtension = fileNameWithoutExtension;
+        _fullFileName = fullFileName;
         _imageData = imageData;
-        _imageFileType = imageFileType;
     }
 
     private readonly string _imageDirectoryPath;
-    private readonly string _fileNameWithoutExtension;
+    private readonly string _fullFileName;
     private readonly byte[] _imageData;
-    private readonly AllowedImageFileType _imageFileType;
 
     private bool _succeeded = false;
 
     private byte[]? _oldImageData;
 
-    public async Task<OneOf<Success, DirectoryNotFoundResult, FileDoesntExistResult>> ExecuteAsync()
+    public async Task<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> ExecuteAsync()
     {
         if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
+        string? contentType = GetContentTypeFromExtension(_fullFileName);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        if (!IsImageContentType(contentType))
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
 
-        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+
+        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = _fullFileName };
 
         _oldImageData = File.ReadAllBytes(filePath);
 
         using MemoryStream memoryStream = new(_imageData);
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        try
+        {
+            using Image image = await Image.LoadAsync(memoryStream);
 
-        await image.SaveAsync(filePath);
+            await image.SaveAsync(filePath);
 
-        _succeeded = true;
+            _succeeded = true;
 
-        return new Success();
+            return new Success();
+        }
+        catch (UnknownImageFormatException)
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
+        catch (InvalidImageContentException)
+        {
+            return FileSaveFailureResult.FromInvalidContent(new());
+        }
     }
 
     public void Rollback()
     {
         if (!_succeeded) return;
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
-
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
         if (!File.Exists(filePath)) throw new FileNotFoundException($"Inconsistent state: Cannot rollback, because file is missing: {filePath}");
 

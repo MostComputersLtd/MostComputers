@@ -2,7 +2,6 @@
 using System.Transactions;
 
 namespace MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
-
 public interface ITransactionalFileManager
 {
     void EnlistOrExecuteOperation(IRollbackableOperation rollbackableOperation);

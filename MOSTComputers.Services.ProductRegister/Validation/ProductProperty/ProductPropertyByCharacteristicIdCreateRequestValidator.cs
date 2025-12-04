@@ -1,15 +1,14 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
-
-internal sealed class ProductPropertyByCharacteristicIdCreateRequestValidator : AbstractValidator<ProductPropertyByCharacteristicIdCreateRequest>
+internal sealed class ProductPropertyByCharacteristicIdCreateRequestValidator : AbstractValidator<ServiceProductPropertyByCharacteristicIdCreateRequest>
 {
     public ProductPropertyByCharacteristicIdCreateRequestValidator()
     {
         RuleFor(x => x.ProductId).GreaterThan(0);
         RuleFor(x => x.ProductCharacteristicId).GreaterThan(0);
-        RuleFor(x => x.Value).Must(IsNotEmptyOrWhiteSpace).MaximumLength(200);
+        RuleFor(x => x.Value).NotEmptyOrWhiteSpace();
     }
 }

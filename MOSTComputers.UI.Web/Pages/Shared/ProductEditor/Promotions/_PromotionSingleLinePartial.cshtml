@@ -1,0 +1,55 @@
+﻿@model MOSTComputers.UI.Web.Pages.Shared.ProductEditor.Promotions.PromotionSingleLinePartialModel
+@{
+}
+
+<div class="row full-parent-width">
+    <p style="width: max-content;">PID:</p>
+
+    <p style="width: max-content;">@(Model.Promotion.Id.ToString())</p>
+
+    @if (Model.Promotion.DiscountEUR > 0)
+    {
+        <p style="width: max-content;">Discount: @(Model.Promotion.DiscountEUR ?? 0M)€</p>
+    }
+
+    @if (Model.Promotion.DiscountUSD > 0)
+    {
+        <p style="width: max-content;">Discount: @(Model.Promotion.DiscountUSD ?? 0M)$</p>
+    }
+
+    <p style="width: max-content;">Name: @(Model.Promotion.Name ?? "-")</p>
+
+    <p style="width: max-content;">Type: @(Model.Promotion.Type?.ToString() ?? "-")</p>
+
+    <p style="width: max-content;">Start Date: @(Model.Promotion.StartDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+    <p style="width: max-content;">Expire Date: @(Model.Promotion.ExpirationDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+
+    @if (Model.Promotion.MinimumQuantity > 0)
+    {
+        <p style="width: max-content;">Min Qty: @(Model.Promotion.MinimumQuantity ?? 0)</p>
+    }
+
+    @if (Model.Promotion.MaximumQuantity > 0)
+    {
+        <p style="width: max-content;">Max Qty: @(Model.Promotion.MaximumQuantity ?? 0)</p>
+    }
+
+    @if (Model.Promotion.ExpQuantity > 0)
+    {
+        <p style="width: max-content;">Expire Qty: @(Model.Promotion.ExpQuantity ?? 0)</p>
+    }
+
+    @if (Model.Promotion.RequiredProductIds?.Count > 0)
+    {
+        <p style="width: max-content;">With:</p>
+
+        <ul class="d-inline-flex list-style-none" style="width: min-content">
+            @foreach (int requiredProductId in Model.Promotion.RequiredProductIds)
+            {
+                <li class="ms-2 me-2">
+                    <p style="width: min-content;">@requiredProductId</p>
+                </li>
+            }
+        </ul>
+    }
+</div>

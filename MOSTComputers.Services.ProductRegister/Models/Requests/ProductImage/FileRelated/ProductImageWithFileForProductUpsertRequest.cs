@@ -1,0 +1,16 @@
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
+
+public sealed class ProductImageWithFileForProductUpsertRequest
+{
+    public required int? ExistingImageId { get; init; }
+    public required string FileExtension { get; init; }
+    public required byte[] ImageData { get; init; }
+    public string? HtmlData { get; init; }
+    public FileForImageForProductUpsertRequest? FileUpsertRequest { get; init; }
+}
+
+public sealed class FileForImageForProductUpsertRequest
+{
+    public int? CustomDisplayOrder { get; init; }
+    public bool? Active { get; init; }
+}

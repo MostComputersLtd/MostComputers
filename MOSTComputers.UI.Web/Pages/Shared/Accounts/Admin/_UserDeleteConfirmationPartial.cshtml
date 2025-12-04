@@ -1,0 +1,19 @@
+﻿@model MOSTComputers.UI.Web.Pages.Shared.Accounts.Admin.UserDeleteConfirmationPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width border-bottom-0">
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalContainerId')">
+    </button>
+</div>
+
+<div id="UserDeleteConfirmation_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container border-2 full-parent-width full-parent-height p-4 d-flex flex-column align-content-center justify-content-center">
+        <p>Are you sure you want to delete user @(Model.UserName)?</p>
+        <button id="delete_user_confirm_button" type="button"
+            class="btn btn-danger"
+                onclick="deleteUser('@Model.UserId', '@Model.UserListModalContainerId', '@Model.NotificationBoxId')">
+            Delete
+        </button>
+    </div>
+</div>

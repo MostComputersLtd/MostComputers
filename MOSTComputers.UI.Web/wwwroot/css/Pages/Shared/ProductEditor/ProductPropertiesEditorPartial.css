@@ -1,0 +1,7 @@
+﻿.product-editor-images-container > div {
+    height: inherit
+}
+
+    .product-editor-images-container > div > ul {
+        height: 100%
+    }

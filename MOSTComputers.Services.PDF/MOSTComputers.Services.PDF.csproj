@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FreeSpire.PDF" Version="10.2.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="PuppeteerSharp" Version="20.0.5" />
+    <PackageReference Include="PuppeteerSharp" Version="20.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
   </ItemGroup>
 
 </Project>

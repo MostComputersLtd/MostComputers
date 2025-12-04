@@ -1,0 +1,137 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductImage
+@using MOSTComputers.UI.Web.Controllers
+@using MOSTComputers.UI.Web.Controllers.Images
+
+@model ImagesDisplayPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+    <h5 class="modal-title modal-title">Img All:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.ProductId</h4>
+    <h4 class="modal-title modal-product-name">@Model.ProductName</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+
+<div id="ProductImages_popup" class="modal-body full-parent-width overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <ul id="productImageDisplay_ul"
+            class="full-parent-width"
+            onmousewheel="scrollHorizontally(event, 'productImageDisplay_ul')">
+
+            @if (Model.Images is not null
+                && Model.Images.Count > 0)
+            {
+                string? firstModelHtmlData = Model.Images.First()?.HtmlData;
+
+                for (int i = 0; i < Model.Images.Count; i++)
+                {
+                    ProductImageData? image = Model.Images[i];
+
+                    if (image is null) continue;
+
+                    string imageDataRoute;
+
+                    if (Model.IsOriginalData)
+                    {
+                        imageDataRoute = $"/{OriginalProductImageDataController.ControllerRoute}/{image.Id}";
+                    }
+                    else
+                    {
+                        imageDataRoute = $"/{ProductImageDataController.ControllerRoute}/{image.Id}";
+                    }
+
+                    string htmlDataButtonBackgroundColor = (firstModelHtmlData == image.HtmlData) ? "#FFFFFF" : "#F7B9B9";
+
+                    <li id="productImageDisplay_ul_li-@i">
+
+                        <button name="Image #@i" class="btn" ondblclick="openDataUrlInNewWindow('@imageDataRoute')">
+                            <img id="popupImage-@i" src="@imageDataRoute" title="Image #@i" draggable="false" />
+                        </button>
+
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+
+                            @if (image.DateModified is not null)
+                            {
+                                <p class="align-text-center mb-0">
+                                    @image.DateModified.Value.ToString("dd.MM.yyyy")
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="align-text-center mb-0">
+                                    No date provided
+                                </p>
+                            }
+
+                            <button id="product-image-popup-image-view-html-button-@i"
+                                style="background-color: @htmlDataButtonBackgroundColor;"
+                                onclick="displayImageHtmlData(
+                                    'product-image-popup-view-html-display-div',
+                                    '_hidden_product-image-popup-image-view-html_input-@i',
+                                    'product-image-popup-view-raw-html-display_container')">
+                                View Html
+                            </button>
+                        </div>
+
+                        <input id="_hidden_product-image-popup-image-view-html_input-@i" type="hidden" value='@image.HtmlData' />
+                        <input id="_hidden_product-image-popup-image-view-raw-html_input-@i" type="hidden" value='@(image.HtmlData)' />
+                    </li>
+                }
+            }
+        </ul>
+
+        <div id="product-image-popup-view-html-display-div" class="product-image-popup-view-html-display-div pb-4 mt-3"
+            ondblclick="toggleHtmlDataAndRawHtmlData('_hidden_product-image-popup-image-view-html_input-',
+                'product-image-popup-view-html-display-div',
+                '_hidden_product-image-popup-image-view-raw-html_input-',
+                'product-image-popup-view-raw-html-display_textarea',
+                'product-image-popup-view-raw-html-display_container')"
+            data-html-data-display-current-image-index="@(Model.Images?.Count > 0 ? 0 : null)">
+            @Html.Raw(Model.Images?.FirstOrDefault()?.HtmlData)
+        </div>
+
+        <div id="product-image-popup-view-raw-html-display_container"
+            class="display-flex-not-important flex-column full-parent-width flex-grow-1 flex-shrink-0" style="display: none;">
+            <textarea id="product-image-popup-view-raw-html-display_textarea"
+                class="full-parent-width flex-grow-1 flex-shrink-0 pb-0 overflow-y-auto"
+                ondblclick="toggleHtmlDataAndRawHtmlData('_hidden_product-image-popup-image-view-html_input-',
+                    'product-image-popup-view-html-display-div',
+                    '_hidden_product-image-popup-image-view-raw-html_input-',
+                    'product-image-popup-view-raw-html-display_textarea',
+                    'product-image-popup-view-raw-html-display_container')">
+            </textarea>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer full-parent-width product-image-popup-footer_buttons-container">
+    <table id="ProductFirstImage_modal_footer_buttons_table"
+        class="full-parent-width full-parent-height product-image_modal_footer_buttons_table">
+        <tr class="full-parent-width full-parent-height">
+            <td>
+                <button id="copyImageButton"
+                        class="full-parent-width footer-button btn btn-primary"
+                        onclick="copyImageDataToClipboard('@Model.NotificationBoxId')">
+                    <h7 class="footer-button-main-text">Copy to clipboard</h7>
+                    <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
+                </button>
+            </td>
+
+            <td>
+                <button id="copyImageButton"
+                        class="full-parent-width footer-button btn btn-primary"
+                        onclick="getImageFileData(@Model.ProductId, '@Model.NotificationBoxId')">
+                    <h7 class="footer-button-main-text">Save</h7>
+                    <p class="footer-button-small-text">(Or just press Ctrl + A)</p>
+                </button>
+            </td>
+        </tr>
+    </table>
+</div>

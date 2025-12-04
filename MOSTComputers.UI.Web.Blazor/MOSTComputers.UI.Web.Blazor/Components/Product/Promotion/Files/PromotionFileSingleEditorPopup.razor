@@ -1,0 +1,401 @@
+﻿@using OneOf
+@rendermode InteractiveServer
+
+@implements IAsyncDisposable
+
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+@inject IJSRuntime JSRuntime
+
+<Popup IsVisible="@IsVisible" IsVisibleChanged="OnVisibleChanged" PopupMarginOptions="PopupMarginOptions">
+    <HeaderContent>
+        <div class="promotion-file-single-editor-popup-header">
+
+            <h5 class="popup-header-text promotion-file-single-editor-popup-header-text">Promotion File:</h5>
+
+            @if (_promotionFileEditData.Id is not null)
+            {
+                <h4 class="popup-header-text">
+                    PrId: @_promotionFileEditData.Id
+                </h4>
+            }
+            <div class="full-parent-height d-flex flex-row align-items-center ms-3">
+
+                @if (_promotionFileEditData.CreateUserName is not null)
+                {
+                    <p class="mb-0">
+                        Created:
+                        <span>@_promotionFileEditData.CreateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@_promotionFileEditData.CreateDate)
+                        </span>
+                    </p>
+                }
+
+                @if (_promotionFileEditData.LastUpdateUserName is not null)
+                {
+                    <p class="ms-lg-2 me-3 mb-0">
+                        Last Update:
+                        <span>@_promotionFileEditData.LastUpdateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@_promotionFileEditData.LastUpdateDate)
+                        </span>
+                    </p>
+                }
+
+                @if (ShouldDisplaySaveButton)
+                {
+                    <div class="save-button-container">
+                        <button class="btn btn-primary" @onclick='OnSaveButtonClicked'>
+                            @SaveButtonText
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="promotion-file-single-editor-popup-body-container">
+            <div class="container promotion-file-single-editor-popup-body">
+                <div class="row flex-grow-1">
+                    <div class="col-12 col-md-6">
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorNameInput" class="me-2">Name:</label>
+                            <input id="promotionSingleEditorNameInput" @bind="_promotionFileEditData.Name"
+                                   placeholder="Promotion File Name" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorActiveInput" class="me-2">Active:</label>
+                            <input id="promotionSingleEditorActiveInput" type="checkbox" @bind="_promotionFileEditData.Active" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorValidFromInput" class="me-2">From:</label>
+                            <input id="promotionSingleEditorValidFromInput" type="date" @bind="_promotionFileEditData.ValidFrom" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorValidToInput" class="me-2">To:</label>
+                            <input id="promotionSingleEditorValidToInput" type="date" @bind="_promotionFileEditData.ValidTo" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorDescriptionInput" class="me-2">Description:</label>
+                            <input id="promotionSingleEditorDescriptionInput" type="text" @bind="_promotionFileEditData.Description" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="promotionSingleEditorRequiredProductsInput" class="me-2">Required CSTIDs:</label>
+                            <input id="promotionSingleEditorRequiredProductsInput" type="text" @bind="_promotionFileEditData.RelatedProductsString" />
+                        </div>
+                    </div>
+
+                    <div id="promotionSingleEditorImageDropZone" class="col-12 col-md-6"
+                            @ondragenter='() => RegisterPromotionFileDropZone("promotionSingleEditorImageDropZone", "promotionSingleEditorFileInput")'
+                            @ondragover:preventDefault>
+
+                        <div class="d-flex flex-column mb-2">
+
+                            @{
+								string? currentFileName = _selectedFile?.Name ?? _promotionFileEditData.FileName;
+                            }
+
+                            @if (currentFileName is not null)
+                            {
+                                <div class="full-parent-width mb-2 d-flex flex-row align-items-center">
+
+                                    <p class="mb-0 me-2">Change file name:</p>
+
+                                    <input type="text" style="flex-grow: 1; text-align: end;" placeholder="New file name" @bind="_preferredFileNameWithoutExtension" />
+
+                                    <p class="mb-0">@Path.GetExtension(currentFileName)</p>
+                                </div>
+                            }
+
+                            <button id="promotionSingleEditorFileButton" class="btn btn-secondary mb-2"
+                                @onclick='() => ForceFileInputClickAsync("promotionSingleEditorFileInput")'>
+                                Select file
+                            </button>
+
+                            @if (_selectedFile is not null)
+                            {
+                                <div class="full-parent-width mb-2 d-flex flex-row flex-wrap">
+                                    <p class="m-0">Selected File:&nbsp;</p>
+
+                                    <p id="promotionSingleEditorFileDisplayText" class="mb-0" style="white-space: pre-wrap;">
+                                        @_selectedFile.Name
+                                    </p>
+                                </div>
+							}
+
+                            <InputFile OnChange="OnFileChangedAsync" id="promotionSingleEditorFileInput" type="file" accept="*" style="display: none;" />
+                        </div>
+
+                        @if (_selectedFileObjectUrl is not null && _selectedFile is not null)
+                        {
+                            <div class="flex-grow-1 mb-2 d-flex justify-content-center">
+                                <PromotionFile FileOptions="PromotionFile.FilePathOptions.CreateForOtherFile(_selectedFileObjectUrl, _selectedFile.ContentType)"
+                                    class="full-parent-width full-parent-height" />
+                            </div>
+                        }
+
+                        @if (_promotionFileEditData.FileName is not null)
+                        {
+                            <div class="mb-2 me-1" style="word-break: break-all">
+                                Current file: @_promotionFileEditData.FileName
+                            </div>
+
+                            <div class="flex-grow-1 mb-2 d-flex justify-content-center">
+                                <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName)"
+                                    class="full-parent-width full-parent-height" />
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="row justify-content-center align-content-center">
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+    public sealed class CreatePromotionFileEditData
+    {
+        public string? Name { get; set; }
+        public bool Active { get; set; } = false;
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+    }
+
+    public sealed class UpdatePromotionFileEditData
+    {
+        public required int Id { get; init; }
+        public string? Name { get; init; }
+        public required bool Active { get; init; }
+        public DateTime? ValidFrom { get; init; }
+        public DateTime? ValidTo { get; init; }
+        public required string FileName { get; init; }
+        public string? Description { get; init; }
+        public string? RelatedProductsString { get; init; }
+        public required string CreateUserName { get; init; }
+        public required DateTime CreateDate { get; init; }
+        public required string LastUpdateUserName { get; init; }
+        public required DateTime LastUpdateDate { get; init; }
+    }
+
+    public sealed class PromotionFileEditData
+    {
+        public int? Id { get; set; }
+        public string? Name { get; set; }
+        public bool Active { get; set; } = false;
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? FileName { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+        public string? CreateUserName { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public string? LastUpdateUserName { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
+    }
+
+    public sealed class EditedPromotionFileData
+    {
+        public required OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> PromotionFileEditedData { get; init; }
+        public IBrowserFile? BrowserFile { get; init; }
+        public string? PreferredNameWithoutExtension { get; init; }
+    }
+
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private void OnVisibleChanged(bool isVisible)
+    {
+        IsVisible = isVisible;
+
+        IsVisibleChanged.InvokeAsync(isVisible);
+    }
+
+    [Parameter, EditorRequired] public required OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> PromotionFileEditOptions { get; set; }
+    private OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData>? _previousPromotionFileEditOptions = null;
+
+	private PromotionFileEditData _promotionFileEditData { get; set; } = default!;
+
+    [Parameter] public bool ShouldDisplaySaveButton { get; set; } = false;
+    [Parameter] public string SaveButtonText { get; set; } = "Save";
+    [Parameter] public Dictionary<string, object> SaveButtonAdditionalAttributes { get; set; } = new();
+
+    [Parameter] public EventCallback<EditedPromotionFileData> SaveButtonClicked { get; set; }
+
+    private void OnSaveButtonClicked()
+    {
+        OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> promotionFileEditedData
+            = PromotionFileEditOptions.Match<OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData>>(
+            create => new CreatePromotionFileEditData
+            {
+                Name = _promotionFileEditData.Name,
+                Active = _promotionFileEditData.Active,
+                ValidFrom = _promotionFileEditData.ValidFrom,
+                ValidTo = _promotionFileEditData.ValidTo,
+                Description = _promotionFileEditData.Description,
+                RelatedProductsString = _promotionFileEditData.RelatedProductsString,
+            },
+            update => new UpdatePromotionFileEditData
+            {
+                Id = update.Id,
+                Name = _promotionFileEditData.Name,
+                Active = _promotionFileEditData.Active,
+                ValidFrom = _promotionFileEditData.ValidFrom,
+                ValidTo = _promotionFileEditData.ValidTo,
+                Description = _promotionFileEditData.Description,
+                RelatedProductsString = _promotionFileEditData.RelatedProductsString,
+                FileName = update.FileName,
+                CreateUserName = update.CreateUserName,
+                CreateDate = update.CreateDate,
+                LastUpdateUserName = update.LastUpdateUserName,
+                LastUpdateDate = update.LastUpdateDate
+			});
+
+        EditedPromotionFileData? editedPromotionFileData = new()
+        {
+            PromotionFileEditedData = promotionFileEditedData,
+            BrowserFile = _selectedFile,
+            PreferredNameWithoutExtension = _preferredFileNameWithoutExtension,
+        };
+
+        SaveButtonClicked.InvokeAsync(editedPromotionFileData);
+    }
+
+    private IBrowserFile? _selectedFile;
+
+    private string? _preferredFileNameWithoutExtension = null;
+
+    private string? _selectedFileObjectUrl = null;
+
+    private IJSObjectReference? _jsModule;
+
+    protected override void OnParametersSet()
+    {
+        if (_previousPromotionFileEditOptions is null || !_previousPromotionFileEditOptions.Value.Equals(PromotionFileEditOptions))
+        {
+            _promotionFileEditData = PromotionFileEditOptions.Match(
+                create => new PromotionFileEditData
+                {
+                    Name = create.Name,
+                    Active = create.Active,
+                    ValidFrom = create.ValidFrom,
+                    ValidTo = create.ValidTo,
+                    Description = create.Description,
+                    RelatedProductsString = create.RelatedProductsString,
+                },
+                update => new PromotionFileEditData
+                {
+                    Id = update.Id,
+                    Name = update.Name,
+                    Active = update.Active,
+                    ValidFrom = update.ValidFrom,
+                    ValidTo = update.ValidTo,
+                    FileName = update.FileName,
+                    Description = update.Description,
+                    RelatedProductsString = update.RelatedProductsString,
+                    CreateUserName = update.CreateUserName,
+                    CreateDate = update.CreateDate,
+                    LastUpdateUserName = update.LastUpdateUserName,
+                    LastUpdateDate = update.LastUpdateDate
+                });
+        }
+
+		_previousPromotionFileEditOptions = PromotionFileEditOptions;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Product/Promotion/Files/PromotionFileSingleEditorPopup.razor.js");
+        }
+    }
+
+    private async Task ForceFileInputClickAsync(string fileInputElementId)
+    {
+        if (_jsModule is null || fileInputElementId is null) return;
+
+        await _jsModule.InvokeVoidAsync("forceFileInputClick", fileInputElementId);
+    }
+
+    private async Task RegisterPromotionFileDropZone(string dropzoneElementId, string fileInputElementId)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("registerPromotionFileDropZone", dropzoneElementId, fileInputElementId);
+    }
+
+    private async Task OnFileChangedAsync(InputFileChangeEventArgs e)
+    {
+        IBrowserFile file = e.File;
+
+        if (file is null || file.Size == 0)
+        {
+            return;
+        }
+
+        bool userHasSelectedAPreferredFileName = _selectedFile is not null
+            && !string.IsNullOrWhiteSpace(_preferredFileNameWithoutExtension)
+            && _preferredFileNameWithoutExtension != Path.GetFileNameWithoutExtension(_selectedFile.Name);
+
+        _selectedFile = file;
+
+        if (!userHasSelectedAPreferredFileName)
+        {
+            _preferredFileNameWithoutExtension = Path.GetFileNameWithoutExtension(file.Name);
+        }
+
+        if (!string.IsNullOrEmpty(_selectedFileObjectUrl))
+        {
+            await RevokeObjectUrlAsync(_selectedFileObjectUrl);
+        }
+
+        _selectedFileObjectUrl = await CreateObjectUrlForFileInInputElementAsync("promotionSingleEditorFileInput", 0);
+    }
+
+    private async Task<string?> CreateObjectUrlForFileInInputElementAsync(string fileInputElementId, int fileIndex = 0)
+    {
+        if (_jsModule is null) return null;
+
+        return await _jsModule.InvokeAsync<string?>("createObjectUrlForFileInInputElement", fileInputElementId, fileIndex);
+    }
+
+    private async Task RevokeObjectUrlAsync(string url)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("revokeObjectUrl", url);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            if (!string.IsNullOrEmpty(_selectedFileObjectUrl))
+            {
+                await RevokeObjectUrlAsync(_selectedFileObjectUrl);
+            }
+
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

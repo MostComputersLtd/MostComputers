@@ -1,0 +1,157 @@
+﻿@page "/Account/Login"
+
+@using System.ComponentModel.DataAnnotations
+@using MOSTComputers.Services.Identity.Models
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+
+@inject SignInManager<PasswordsTableOnlyUser> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log in - MOST Computers</PageTitle>
+
+<HeadContent>
+    <link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg-page: #f3f4f6;
+            --bg-card: #ffffff;
+            --border-soft: #e1e1e1;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --accent: #c9302c;
+            --accent-hover: #b32826;
+            --radius-card: 10px;
+            --radius-input: 5px;
+        }
+
+        body {
+            background-color: var(--bg-page);
+        }
+    </style>
+</HeadContent>
+
+<section class="login-section">
+    <div class="login-card">
+
+        <div class="login-logo">
+            <img src="https://iili.io/f27B4Eu.png" alt="MOST Computers">
+        </div>
+
+        <div class="login-header">
+            <h1>Вход</h1>
+            <p>Моля, въведете вашите данни за достъп.</p>
+        </div>
+
+        <StatusMessage Message="@errorMessage" />
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" autocomplete="off" class="login-form">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+            <div class="form-field">
+                <label for="username">Username</label>
+                <InputText @bind-value="Input.Username" class="form-field-input" autocomplete="off" aria-required="true" placeholder="Username" />
+                <ValidationMessage For="() => Input.Username" class="text-danger" />
+            </div>
+            <div class="form-field">
+                <label for="password">Password</label>
+                <InputText type="password" @bind-value="Input.Password" class="form-field-input" autocomplete="off" aria-required="true" placeholder="Password" />
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+            <div class="login-remember-row">
+                <label for="rememberMe">
+                    Remember me
+                </label>
+
+                <InputCheckbox id="rememberMe" @bind-value="Input.RememberMe" class="login-remember-row-input" />
+            </div>
+
+            <button type="submit" class="login-submit-btn">Вход</button>
+
+            @* <div class="login-links-row">
+                <a href="/Account/ForgotPassword">Забравена парола?</a>
+                <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))>
+                    Регистрация
+                </a>
+            </div> *@
+        </EditForm>
+
+        <p class="login-footer-note">
+            При проблем с достъпа, свържете се с администратор на Мост Компютърс.
+        </p>
+     @* <div class="col-md-6 col-md-offset-2">
+            <section>
+                <h3>Use another service to log in.</h3>
+                <hr />
+                <ExternalLoginPicker />
+            </section>
+        </div> *@
+    </div>
+</section>
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            // Clear the existing external cookie to ensure a clean login process
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        }
+    }
+
+    public async Task LoginUser()
+    {
+        // This doesn't count login failures towards account lockout
+        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+        SignInResult result = await SignInManager.PasswordSignInAsync(Input.Username, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("User logged in.");
+
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            RedirectManager.RedirectTo(
+                "Account/LoginWith2fa",
+                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        }
+        else if (result.IsLockedOut)
+        {
+            Logger.LogWarning("User account locked out.");
+
+            RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else
+        {
+            errorMessage = "Error: Invalid login attempt.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        public string Username { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

@@ -1,0 +1,294 @@
+﻿@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using static MOSTComputers.Utils.Files.ContentTypeUtils;
+
+<Popup IsVisible="IsVisible" IsVisibleChanged="OnVisibleChanged" PopupMarginOptions="PopupMarginOptions">
+    <HeaderContent>
+
+        <div class="d-flex align-items-center justify-content-between full-parent-width">
+
+            <h5 class="popup-header-text me-3">Promotion Product File:</h5>
+
+            @if (PromotionProductFileInfoData.Id is not null)
+            {
+                <h4 class="popup-header-text me-3">
+                    PrCID: @PromotionProductFileInfoData.Id
+                </h4>
+            }
+
+            <div class="full-parent-height d-flex flex-row align-items-center ms-3">
+
+                @if (PromotionProductFileInfoData.CreateUserName is not null)
+                {
+                    <p class="mb-0">
+                        Created:
+                        <span>@PromotionProductFileInfoData.CreateUserName</span>
+                        <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                            (@PromotionProductFileInfoData.CreateDate)
+                        </span>
+                    </p>
+
+                    <p class="ms-lg-2 mb-0">
+                        Last Update:
+                        <span>@PromotionProductFileInfoData.LastUpdateUserName</span>
+                        <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                            (@PromotionProductFileInfoData.LastUpdateDate)
+                        </span>
+                    </p>
+                }
+            </div>
+
+            @if (ShouldDisplaySaveButton)
+            {
+                <div class="flex-grow-1 d-flex justify-content-end align-items-center">
+                    <button class="btn btn-primary" @onclick='OnSaveButtonClicked'>
+                        @SaveButtonText
+                    </button>
+                </div>
+            }
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="container border-2 d-flex flex-column full-parent-width full-parent-height">
+            <div class="row flex-grow-1 md overflow-y-auto">
+                <div class="col-12 col-md-6">
+
+                    <div class="mb-2">
+                        <label for="productPromotionFileSingleEditorActiveInput" class="me-2">Active:</label>
+                        <input id="productPromotionFileSingleEditorActiveInput" type="checkbox"
+                            @bind="PromotionProductFileInfoData.Active" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="productPromotionFileSingleEditorValidFromInput" class="me-2">From:</label>
+                        <input id="productPromotionFileSingleEditorValidFromInput" type="date"
+                            @bind="PromotionProductFileInfoData.ValidFrom" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="productPromotionFileSingleEditorValidToInput" class="me-2">To:</label>
+                        <input id="productPromotionFileSingleEditorValidToInput" type="date"
+                            @bind="PromotionProductFileInfoData.ValidTo" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="productPromotionFileSingleEditorShouldAddToImagesInput" class="me-2">Add to images:</label>
+
+                        @if (_canAddToImages)
+                        {
+                            <input id="productPromotionFileSingleEditorShouldAddToImagesInput" type="checkbox"
+                                @bind="PromotionProductFileInfoData.ShouldAddToImages" />
+                        }
+                        else
+                        {
+                            <input id="productPromotionFileSingleEditorShouldAddToImagesInput" type="checkbox" disabled />
+                        }
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 d-flex flex-column" style="max-height: 100%;">
+                    <div class="d-flex flex-column" style="max-height: 100%;">
+                        <div class="full-parent-width mb-2 d-flex flex-row flex-wrap">
+                            <label for="promotionProductFilesValidOnInput" style="height: min-content; align-self: center;">Active on:</label>
+                            <input id="promotionProductFilesValidOnInput" type="date" class="ms-1 me-2" placeholder="Date"
+                                @bind="_validOnPromotionFileSearchDate"/>
+
+                            <input id="promotionProductFilesSearchInput" type="text" class="flex-shrink-0 flex-grow-1"
+                                placeholder="Search..." @bind="_promotionFileSearchString" />
+
+                            <div style="flex-grow: 1; display: flex; justify-content: end;">
+
+                                <button id="promotionProductFilesSearchButton" type="button" class="btn btn-info ms-4"
+                                    @onclick='SearchPromotionFiles'>
+                                    Search
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div id="promotionProductFilesPromotionFilesContainer"
+                            class="full-parent-width flex-grow-1 p-0 m-0 overflow-y-auto">
+
+                            <PromotionFileList PromotionFiles="_searchedPromotionFiles"
+                                ItemSelectionMode="PromotionFileList.SelectionMode.Single"
+                                SelectionChanged="OnPromotionFileListSelectionChanged" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+    public sealed class PromotionProductFileInfoEditData
+    {
+        public int? Id { get; set; }
+        public required int ProductId { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public bool Active { get; set; } = false;
+        public int? ProductImageId { get; set; }
+        public string? CreateUserName { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public string? LastUpdateUserName { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
+        public PromotionFileList.PromotionFileInfoListItem? PromotionFileInfo { get; set; }
+        public bool ShouldAddToImages { get; set; } = true;
+    }
+
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private void OnVisibleChanged(bool isVisible)
+    {
+        IsVisible = isVisible;
+
+        IsVisibleChanged.InvokeAsync(isVisible);
+    }
+
+    [Parameter] public required PromotionProductFileInfoEditData PromotionProductFileInfoData { get; set; }
+    [Parameter] public List<PromotionFileList.PromotionFileInfoListItem> PossiblePromotionFiles { get; set; } = new();
+
+    [Parameter] public bool ShouldAddToImagesDefaultValue { get; set; } = false;
+
+    [Parameter] public bool ShouldDisplaySaveButton { get; set; } = true;
+    [Parameter] public string SaveButtonText { get; set; } = "Save";
+    [Parameter] public EventCallback<PromotionProductFileInfoEditData> SaveButtonClicked { get; set; }
+
+    private List<PromotionFileList.PromotionFileInfoListItem> _searchedPromotionFiles { get; set; } = new();
+
+    private bool _canAddToImages;
+
+    private DateOnly? _validOnPromotionFileSearchDate { get; set; }
+    private string? _promotionFileSearchString { get; set; }
+
+    private void OnPromotionFileListSelectionChanged(IReadOnlyList<PromotionFileList.PromotionFileInfoListItem> selectedItems)
+    {
+        if (selectedItems.Count <= 0)
+        {
+            PromotionProductFileInfoData.PromotionFileInfo = null;
+        }
+        else
+        {
+            PromotionProductFileInfoData.PromotionFileInfo = selectedItems[0];
+        }
+
+        SetShouldAddToImagesDefaultValues();
+    }
+
+    private void OnSaveButtonClicked()
+    {
+        SaveButtonClicked.InvokeAsync(PromotionProductFileInfoData);
+    }
+
+    protected override void OnInitialized()
+    {
+        SearchPromotionFiles();
+
+        SetShouldAddToImagesDefaultValues();
+    }
+
+    protected override void OnParametersSet()
+    {
+        SearchPromotionFiles();
+
+        SetShouldAddToImagesDefaultValues();
+    }
+
+    private void SearchPromotionFiles()
+    {
+        _searchedPromotionFiles = GetSearchedPromotionFileData(
+            PossiblePromotionFiles, _promotionFileSearchString, _validOnPromotionFileSearchDate);
+    }
+
+    private static List<PromotionFileList.PromotionFileInfoListItem> GetSearchedPromotionFileData(
+        List<PromotionFileList.PromotionFileInfoListItem> allPromotionFileInfos,
+        string? userInputString,
+        DateOnly? validOnDate)
+    {
+        List<PromotionFileList.PromotionFileInfoListItem> output = new();
+
+        userInputString = userInputString?.Trim();
+
+        bool parseUserInputSuccess = int.TryParse(userInputString, out int searchedId);
+
+        foreach (PromotionFileList.PromotionFileInfoListItem promotionFileInfo in allPromotionFileInfos)
+        {
+            if (validOnDate is not null)
+            {
+                if (promotionFileInfo.ValidFrom is not null
+                    && validOnDate < DateOnly.FromDateTime(promotionFileInfo.ValidFrom.Value))
+                {
+                    continue;
+                }
+
+                if (promotionFileInfo.ValidTo is not null
+                    && validOnDate > DateOnly.FromDateTime(promotionFileInfo.ValidTo.Value))
+                {
+                    continue;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(userInputString))
+            {
+                output.Add(promotionFileInfo);
+
+                continue;
+            }
+
+            if (promotionFileInfo.Name is not null
+                && promotionFileInfo.Name.Contains(userInputString))
+            {
+                output.Add(promotionFileInfo);
+
+                continue;
+            }
+
+            if (promotionFileInfo.FileName is not null
+                && promotionFileInfo.FileName.Contains(userInputString))
+            {
+                output.Add(promotionFileInfo);
+
+                continue;
+            }
+
+            if (parseUserInputSuccess && promotionFileInfo.Id == searchedId)
+            {
+                output.Add(promotionFileInfo);
+            }
+        }
+
+        return output;
+    }
+
+    private void SetShouldAddToImagesDefaultValues()
+    {
+        if (PromotionProductFileInfoData.PromotionFileInfo is null)
+        {
+            _canAddToImages = false;
+            PromotionProductFileInfoData.ShouldAddToImages = false;
+
+            return;
+        }
+
+        string? newPromotionFileContentType = GetContentTypeFromExtension(PromotionProductFileInfoData.PromotionFileInfo.FileName);
+
+        if (!IsImageContentType(newPromotionFileContentType))
+        {
+            _canAddToImages = false;
+            PromotionProductFileInfoData.ShouldAddToImages = false;
+
+            return;
+        }
+
+        if (!_canAddToImages)
+        {
+            PromotionProductFileInfoData.ShouldAddToImages = ShouldAddToImagesDefaultValue;
+        }
+
+        _canAddToImages = true;
+    }
+}

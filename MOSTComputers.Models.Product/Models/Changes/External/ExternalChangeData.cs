@@ -2,8 +2,8 @@
 
 public sealed class ExternalChangeData
 {
-    public int Id { get; set; }
-    public string TableName { get; set; }
-    public int TableElementId { get; set; }
-    public ChangeOperationTypeEnum OperationType { get; set; }
+    public int Id { get; init; }
+    public string TableName { get; init; }
+    public int TableElementId { get; init; }
+    public ChangeOperationType OperationType { get; init; }
 }

@@ -1,0 +1,74 @@
+﻿@page "/promotionGroupImages/{PromotionGroupId:int}"
+
+@rendermode InteractiveServer
+
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
+
+@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+
+<div class="full-parent-width full-parent-height d-flex flex-column overflow-auto">
+
+    @if (PromotionGroupImageFiles.Count == 0)
+    {
+        <div class="full-parent-width full-parent-height d-flex justify-content-center align-content-center">
+            <h3 class="mb-0">No promotions right now.</h3>
+        </div>
+    }
+    else
+    {
+	    <PromotionGroupImages ImageFiles="PromotionGroupImageFiles" />
+    }
+</div>
+
+@code {
+    [Parameter] public int? PromotionGroupId { get; set; }
+    private int? _currentPromotionGroupId = null;
+
+    private List<PromotionGroupImages.GroupPromotionImageFileDisplayData> PromotionGroupImageFiles = new();
+
+    override protected async Task OnParametersSetAsync()
+    {
+        if (PromotionGroupId is null || _currentPromotionGroupId == PromotionGroupId)
+        {
+            return;
+        }
+
+        _currentPromotionGroupId = PromotionGroupId;
+
+        List<GroupPromotionContent> promotionGroupContents
+            = await GroupPromotionContentsRepository.GetAllActiveInGroupAsync(PromotionGroupId.Value);
+
+        List<int> promotionIds = promotionGroupContents.Select(x => x.Id).ToList();
+
+        List<IGrouping<int, GroupPromotionImageFileData>> imageFilesForPromotions = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+
+        promotionGroupContents = promotionGroupContents
+            .Where(x => (x.StartDate is null || x.StartDate <= DateTime.Now)
+                && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now))
+            .OrderBy(x => x.DisplayOrder)
+            .ToList();
+
+        PromotionGroupImageFiles = new();
+
+        foreach (GroupPromotionContent groupPromotionContent in promotionGroupContents)
+        {
+            IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = imageFilesForPromotions.FirstOrDefault(x => x.Key == groupPromotionContent.Id);
+
+            if (imageFilesForPromotion is null) continue;
+
+            foreach (GroupPromotionImageFileData imageFileForPromotion in imageFilesForPromotion)
+            {
+                PromotionGroupImageFiles.Add(new()
+                {
+                    Id = imageFileForPromotion.Id,
+                    FileName = imageFileForPromotion.FileName
+                });
+
+            }
+        }
+	}
+}

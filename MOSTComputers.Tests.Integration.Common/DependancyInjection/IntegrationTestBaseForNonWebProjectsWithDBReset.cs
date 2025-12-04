@@ -1,7 +1,6 @@
 ﻿using Respawn;
 
 namespace MOSTComputers.Tests.Integration.Common.DependancyInjection;
-
 public class IntegrationTestBaseForNonWebProjectsWithDBReset : IAsyncLifetime
 {
     public IntegrationTestBaseForNonWebProjectsWithDBReset(string connString, RespawnerOptions? respawnerOptions = null)

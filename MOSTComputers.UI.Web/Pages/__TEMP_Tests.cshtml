@@ -1,0 +1,21 @@
+﻿@page
+@model MOSTComputers.UI.Web.Pages.TEMP_TestsModel
+@{
+    ViewData["Title"] = "Tests";
+}
+
+@section Styles {
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Data/StandardDataConversions.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+}
+
+<a class="btn btn-outline-primary" asp-page-handler="SaveAllImageFiles">Save All Image Files</a>
+<a class="btn btn-outline-primary" asp-page-handler="SaveProductPropertiesFromOriginalImageHtml">Save All Properties From Original Images Html Data</a>
+<a class="btn btn-outline-primary" asp-page-handler="SaveAllImagesAndFilesAndPropertiesFromHtml">Save All Properties And Images From Original Images Html Data</a>
+<a class="btn btn-outline-primary" asp-page-handler="SaveUnsavedImagesAndFilesAndPropertiesFromHtml">Save Unsaved Properties And Images From Original Images Html Data</a>

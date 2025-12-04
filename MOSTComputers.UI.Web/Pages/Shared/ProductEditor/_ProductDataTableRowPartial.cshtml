@@ -1,0 +1,197 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.Promotions
+@using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils;
+
+@model MOSTComputers.UI.Web.Pages.Shared.ProductEditor.ProductDataTableRowPartialModel
+@{
+	IEnumerable<Promotion>? orderedPromotions = Model.ProductData.ProductPromotions?
+		.OrderBy(x => (x.Active ?? false) ? 1 : 0);
+
+	Promotion? promotionPID = orderedPromotions?
+		.FirstOrDefault(x => x.Id == Model.ProductData.Product.PromotionPid);
+
+	Promotion? promotionRID = orderedPromotions?
+		.FirstOrDefault(x => x.Id == Model.ProductData.Product.PromotionRid);
+
+	string productDataTableRowId = $"{Model.ProductTableEntryElementIdPrefix}{Model.ElementIndex}";
+}
+
+<tr id="@productDataTableRowId" class="productDataTableEntry"
+	data-for-image-save-product-id="@Model.ProductData.Product.Id"
+	data-for-image-save-item-index="@(Model.ElementIndex)">
+
+	<td>
+		@(Model.ProductData.ProductStatuses?.ProductNewStatus is not null
+			? GetProductNewStatusStringFromStatusEnum(Model.ProductData.ProductStatuses.ProductNewStatus)
+			: "-")
+	</td>
+	<td>@(Model.ProductData.Product.Status is not null ? GetStatusStringFromStatusEnum(Model.ProductData.Product.Status.Value) : "-")</td>
+	<td>
+		<p class="link-info" onclick="getXmlViewPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.XmlViewPartialModalData.ModalId',
+			'@Model.XmlViewPartialModalData.ModalDialogId',
+			'@Model.XmlViewPartialModalData.ModalContentId')">
+			@Model.ProductData.Product.Id
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getProductPropertiesEditorPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.ProductPropertiesEditorPartialModalData.ModalId',
+			'@Model.ProductPropertiesEditorPartialModalData.ModalDialogId',
+			'@Model.ProductPropertiesEditorPartialModalData.ModalContentId',
+			'@productDataTableRowId')">
+			@Model.ProductData.Product.Name
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getSearchStringPartsPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.SearchStringPartsPartialModalData.ModalId',
+			'@Model.SearchStringPartsPartialModalData.ModalDialogId',
+			'@Model.SearchStringPartsPartialModalData.ModalContentId')">
+			@(Model.ProductData.SearchStringParts?.Count ?? 0)
+		</p>
+	</td>
+	<td>
+		@if (promotionPID is not null)
+		{
+			<p class="link-info" onclick="getPromotionViewPopupData(event,
+				@Model.ProductData.Product.Id,
+				@promotionPID.Id,
+				'@Model.PromotionViewPartialModalData.ModalId',
+				'@Model.PromotionViewPartialModalData.ModalDialogId',
+				'@Model.PromotionViewPartialModalData.ModalContentId')">
+				@(promotionPID is not null ? "Yes" : "No")
+			</p>
+		}
+		else
+		{
+			<p>@(promotionPID is not null ? "Yes" : "No")</p>
+		}
+	</td>
+	<td>
+		@if (promotionRID is not null)
+		{
+			<p class="link-info" onclick="getPromotionViewPopupData(event,
+				@Model.ProductData.Product.Id,
+				@promotionRID.Id,
+				'@Model.PromotionViewPartialModalData.ModalId',
+				'@Model.PromotionViewPartialModalData.ModalDialogId',
+				'@Model.PromotionViewPartialModalData.ModalContentId')">
+				@(promotionRID is not null ? "Yes" : "No")
+			</p>
+		}
+		else
+		{
+			<p>@(promotionRID is not null ? "Yes" : "No")</p>
+		}
+	</td>
+	<td>
+		@if (Model.ProductData.Product.AlertPictureId > 0)
+		{
+			<p class="link-info" onclick="getInfoPromotionViewPopupData(event,
+				@Model.ProductData.Product.Id,
+				'@Model.InfoPromotionViewPartialModalData.ModalId',
+				'@Model.InfoPromotionViewPartialModalData.ModalDialogId',
+				'@Model.InfoPromotionViewPartialModalData.ModalContentId')">
+				@(Model.ProductData.Product.AlertPictureId > 0 ? "Yes" : "No")
+			</p>
+		}
+		else
+		{
+			<p>@(Model.ProductData.Product.AlertPictureId > 0 ? "Yes" : "No")</p>
+		}
+	</td>
+	<td>
+		<p class="link-info" onclick="getPromotionProductFileEditorPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.PromotionProductFileEditorPartialModalData.ModalId',
+			'@Model.PromotionProductFileEditorPartialModalData.ModalDialogId',
+			'@Model.PromotionProductFileEditorPartialModalData.ModalContentId',
+			'@productDataTableRowId')">
+			@(Model.ProductData.PromotionFilesCount > 0 ? "Yes" : "No")
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getPropertiesDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.ProductPropertiesPartialModalData.ModalId',
+			'@Model.ProductPropertiesPartialModalData.ModalDialogId',
+			'@Model.ProductPropertiesPartialModalData.ModalContentId')">
+			@(Model.ProductData.ProductPropertiesCount)
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getOldXmlPropertiesDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.OldXmlPropertiesPartialModalData.ModalId',
+			'@Model.OldXmlPropertiesPartialModalData.ModalDialogId',
+			'@Model.OldXmlPropertiesPartialModalData.ModalContentId')">
+			@(Model.ProductData.XmlProduct?.Properties?.Count ?? 0)
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="openOldXmlWindow(event, @Model.ProductData.Product.Id)">
+			@(Model.ProductData.XmlProduct?.Images.Count ?? 0)
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getImageFileDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.ImageFilesPartialModalData.ModalId',
+			'@Model.ImageFilesPartialModalData.ModalDialogId',
+			'@Model.ImageFilesPartialModalData.ModalContentId')">
+			@(Model.ProductData.DirectoryImagesCount)
+		</p>
+	</td>
+	<td>@(Model.ProductData.OriginalFirstImageExists ? "Yes" : "No")</td>
+	<td>
+		<p class="link-info" onclick="getImageDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+            false,
+			'@Model.ImagesPartialModalData.ModalId',
+			'@Model.ImagesPartialModalData.ModalDialogId',
+			'@Model.ImagesPartialModalData.ModalContentId')">
+			@(Model.ProductData.LocalImagesCount)
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getOriginalImageDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+            false,
+			'@Model.ImagesPartialModalData.ModalId',
+			'@Model.ImagesPartialModalData.ModalDialogId',
+			'@Model.ImagesPartialModalData.ModalContentId')">
+			@(Model.ProductData.OriginalImagesCount)
+		</p>
+	</td>
+	<td>
+		<p class="link-info" onclick="getImageFileNameInfoDisplayPopupData(event,
+			@Model.ProductData.Product.Id,
+			'@Model.ImageFileNameInfosPartialModalData.ModalId',
+			'@Model.ImageFileNameInfosPartialModalData.ModalDialogId',
+			'@Model.ImageFileNameInfosPartialModalData.ModalContentId')">
+			@(Model.ProductData.FileNameData?.Count ?? 0)
+		</p>
+	</td>
+
+	<td>
+		<button type="button" class="btn btn-outline-primary" onclick="saveAllMatchedXmlPropertiesAndImages(
+			@Model.ProductData.Product.Id,
+			'@Model.PartialViewContainerElementId')">
+			S Old
+		</button>
+	</td>
+
+	<td>
+		<input id="productDataTableEntrySelectCheckbox-@(Model.ElementIndex)" type="checkbox"
+			onclick="onClickProductRowSelectCheckbox(event,
+				'@productDataTableRowId',
+				'productDataTableEntrySelectCheckbox-@(Model.ElementIndex)',
+				'@Model.ProductTableEntryElementIdPrefix',
+				'productDataTableEntrySelectCheckbox-')" />
+	</td>
+</tr>

@@ -2,17 +2,17 @@
 using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -61,12 +61,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
     }
 
@@ -98,12 +98,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId3);
     }
 
@@ -129,12 +129,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
     }
 
@@ -166,12 +166,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
-        Assert.Contains(data, x => 
+        Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId3);
     }
 
@@ -215,12 +215,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId3);
     }
 
@@ -246,18 +246,18 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Equal(2, data.Count());
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
     }
 
@@ -289,19 +289,19 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId3);
         Assert.True(productId3 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Equal(2, data.Count());
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1
         );
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId3
         );
     }
@@ -348,15 +348,15 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Equal(3, data.Count());
 
-        Assert.Contains(data, x => 
+        Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1
         );
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId3
         );
     }
@@ -374,14 +374,14 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Single(data);
 
         LocalChangeData dataFromGetAll = data.First();
 
         Assert.True(dataFromGetAll.TableName == _productsTableChangeName
-            && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetAll.OperationType == ChangeOperationType.Create
             && dataFromGetAll.TableElementId == productId1);
 
         LocalChangeData? dataFromGetById = _localChangesService.GetById(dataFromGetAll.Id);
@@ -391,10 +391,10 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.True(dataFromGetAll.Id == dataFromGetById.Id
             && dataFromGetAll.TableName == _productsTableChangeName
             && dataFromGetById.TableName == _productsTableChangeName
-            && dataFromGetAll.TableElementId == dataFromGetById.TableElementId 
+            && dataFromGetAll.TableElementId == dataFromGetById.TableElementId
             && dataFromGetAll.TableElementId == productId1
             && dataFromGetAll.OperationType == dataFromGetById.OperationType
-            && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetAll.OperationType == ChangeOperationType.Create
             && dataFromGetAll.TimeStamp == dataFromGetById.TimeStamp);
     }
 
@@ -411,14 +411,14 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Single(data);
 
         LocalChangeData dataFromGetAll = data.First();
 
         Assert.True(dataFromGetAll.TableName == _productsTableChangeName
-            && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetAll.OperationType == ChangeOperationType.Create
             && dataFromGetAll.TableElementId == productId1);
 
         LocalChangeData? dataFromGetById = _localChangesService.GetById(0);
@@ -440,14 +440,14 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.True(productId1 > 0);
 
         LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, productId1.Value, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, productId1.Value, ChangeOperationType.Create);
 
         Assert.NotNull(dataFromGetById);
 
         Assert.True(dataFromGetById.Id > 0
             && dataFromGetById.TableName == _productsTableChangeName
             && dataFromGetById.TableElementId == productId1
-            && dataFromGetById.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetById.OperationType == ChangeOperationType.Create
             && dataFromGetById.TimeStamp > new DateTime(0));
     }
 
@@ -467,7 +467,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.True(productId1 > 0);
 
         LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            incorrectTableName, productId1.Value, ChangeOperationTypeEnum.Create);
+            incorrectTableName, productId1.Value, ChangeOperationType.Create);
 
         Assert.Null(dataFromGetById);
     }
@@ -486,7 +486,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.True(productId1 > 0);
 
         LocalChangeData? dataFromGetById = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, 0, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, 0, ChangeOperationType.Create);
 
         Assert.Null(dataFromGetById);
     }
@@ -504,14 +504,14 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Single(data);
 
         LocalChangeData dataFromGetAll = data.First();
 
         Assert.True(dataFromGetAll.TableName == _productsTableChangeName
-            && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetAll.OperationType == ChangeOperationType.Create
             && dataFromGetAll.TableElementId == productId1);
 
         bool deleteSuccess = _localChangesService.DeleteById(dataFromGetAll.Id);
@@ -536,14 +536,14 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Single(data);
 
         LocalChangeData dataFromGetAll = data.First();
 
         Assert.True(dataFromGetAll.TableName == _productsTableChangeName
-            && dataFromGetAll.OperationType == ChangeOperationTypeEnum.Create
+            && dataFromGetAll.OperationType == ChangeOperationType.Create
             && dataFromGetAll.TableElementId == productId1);
 
         bool deleteSuccess = _localChangesService.DeleteById(0);
@@ -577,18 +577,18 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
-        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> data = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Equal(2, data.Count());
 
-        Assert.Contains(data, x => 
+        Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         IEnumerable<int> changeDataIds = data.Select(x => x.Id);
@@ -597,7 +597,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(deleteSuccess);
 
-        IEnumerable<LocalChangeData> dataAfterDelete = _localChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> dataAfterDelete = _localChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.Empty(dataAfterDelete);
     }
@@ -617,19 +617,19 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         int elementId = productId1.Value;
 
-        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.NotNull(data);
 
         Assert.True(data.TableName == _productsTableChangeName
-            && data.OperationType == ChangeOperationTypeEnum.Create
+            && data.OperationType == ChangeOperationType.Create
             && data.TableElementId == productId1);
 
         bool deleteSuccess = _localChangesService.DeleteByTableNameAndElementId(_productsTableChangeName, elementId);
 
         Assert.True(deleteSuccess);
 
-        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+        LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(_productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.Null(dataAfterDelete);
     }
@@ -652,12 +652,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         int elementId = productId1.Value;
 
         LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.NotNull(data);
 
         Assert.True(data.TableName == _productsTableChangeName
-            && data.OperationType == ChangeOperationTypeEnum.Create
+            && data.OperationType == ChangeOperationType.Create
             && data.TableElementId == productId1);
 
         bool deleteSuccess = _localChangesService.DeleteByTableNameAndElementId(invalidTableName, elementId);
@@ -665,7 +665,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.False(deleteSuccess);
 
         LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.NotNull(dataAfterDelete);
     }
@@ -685,12 +685,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         int elementId = productId1.Value;
 
         LocalChangeData? data = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.NotNull(data);
 
         Assert.True(data.TableName == _productsTableChangeName
-            && data.OperationType == ChangeOperationTypeEnum.Create
+            && data.OperationType == ChangeOperationType.Create
             && data.TableElementId == productId1);
 
         bool deleteSuccess = _localChangesService.DeleteByTableNameAndElementId(_productsTableChangeName, 0);
@@ -698,7 +698,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.False(deleteSuccess);
 
         LocalChangeData? dataAfterDelete = _localChangesService.GetByTableNameAndElementIdAndOperationType(
-            _productsTableChangeName, elementId, ChangeOperationTypeEnum.Create);
+            _productsTableChangeName, elementId, ChangeOperationType.Create);
 
         Assert.NotNull(dataAfterDelete);
     }
@@ -719,7 +719,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
             _ => null,
             _ => null);
 
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -731,11 +731,11 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Equal(2, data.Count());
 
         Assert.Contains(data, x => x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x => x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         List<int> elementIds = new() { productId1.Value, productId2.Value };
@@ -778,11 +778,11 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
         Assert.Equal(2, data.Count());
 
         Assert.Contains(data, x => x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x => x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         List<int> elementIds = new() { productId1.Value, productId2.Value };
@@ -824,12 +824,12 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(data, x =>
             x.TableName == _productsTableChangeName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         List<int> elementIds = new() { productId1.Value, 0 };
@@ -848,7 +848,7 @@ public sealed class LocalChangesServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(singleDataRemaining.Id == secondProductChangeData.Id
             && singleDataRemaining.TableName == _productsTableChangeName
-            && singleDataRemaining.OperationType == ChangeOperationTypeEnum.Create
+            && singleDataRemaining.OperationType == ChangeOperationType.Create
             && singleDataRemaining.TableElementId == productId2);
     }
 }

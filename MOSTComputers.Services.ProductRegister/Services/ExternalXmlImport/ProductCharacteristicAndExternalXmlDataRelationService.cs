@@ -1,13 +1,12 @@
 ﻿using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts.ExternalXmlImport;
-using MOSTComputers.Services.DAL.Models.Requests.ExternalXmlImport;
-using MOSTComputers.Services.ProductRegister.Services.Contracts.ExternalXmlImport;
+using MOSTComputers.Services.DataAccess.Products.DataAccess.ExternalXmlImport.Contracts;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.ExternalXmlImport;
+using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts;
 using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport;
-
 internal sealed class ProductCharacteristicAndExternalXmlDataRelationService : IProductCharacteristicAndExternalXmlDataRelationService
 {
     public ProductCharacteristicAndExternalXmlDataRelationService(
@@ -18,53 +17,58 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationService : I
 
     private readonly IProductCharacteristicAndExternalXmlDataRelationRepository _productCharacteristicAndExternalXmlDataRelationRepository;
 
-    public List<ProductCharacteristicAndExternalXmlDataRelation> GetAll()
+    public async Task<List<ProductCharacteristicAndExternalXmlDataRelation>> GetAllAsync()
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.GetAll();
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetAllAsync();
     }
 
-    public List<ProductCharacteristicAndExternalXmlDataRelation> GetAllWithSameCategoryId(int categoryId)
+    public async Task<List<ProductCharacteristicAndExternalXmlDataRelation>> GetAllWithSameCategoryIdAsync(int categoryId)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithSameCategoryId(categoryId);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithSameCategoryIdAsync(categoryId);
     }
 
-    public List<ProductCharacteristicAndExternalXmlDataRelation> GetAllWithSameCategoryIdAndXmlName(int categoryId, string xmlName)
+    public async Task<List<ProductCharacteristicAndExternalXmlDataRelation>> GetAllWithSameCategoryIdsAsync(IEnumerable<int> categoryIds)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithSameCategoryIdAndXmlName(categoryId, xmlName);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithSameCategoryIdsAsync(categoryIds);
     }
 
-    public ProductCharacteristicAndExternalXmlDataRelation? GetByCharacteristicId(int characteristicId)
+    public async Task<List<ProductCharacteristicAndExternalXmlDataRelation>> GetAllWithSameCategoryIdAndXmlNameAsync(int categoryId, string xmlName)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.GetByCharacteristicId(characteristicId);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithSameCategoryIdAndXmlNameAsync(categoryId, xmlName);
     }
 
-    public ProductCharacteristicAndExternalXmlDataRelation? GetById(int id)
+    public async Task<List<ProductCharacteristicAndExternalXmlDataRelation>> GetAllWithCharacteristicIdAsync(int characteristicId)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.GetById(id);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetAllWithCharacteristicIdAsync(characteristicId);
     }
 
-    public OneOf<Success, UnexpectedFailureResult> UpsertByCharacteristicId(ProductCharacteristicAndExternalXmlDataRelationUpsertRequest createRequest)
+    public async Task<ProductCharacteristicAndExternalXmlDataRelation?> GetByIdAsync(int id)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.UpsertByCharacteristicId(createRequest);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.GetByIdAsync(id);
     }
 
-    public bool DeleteAllWithSameCategoryId(int categoryId)
+    public async Task<OneOf<Success, UnexpectedFailureResult>> UpsertByCharacteristicIdAsync(ProductCharacteristicAndExternalXmlDataRelationUpsertRequest createRequest)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.DeleteAllWithSameCategoryId(categoryId);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.UpsertByCharacteristicIdAsync(createRequest);
     }
 
-    public bool DeleteAllWithSameCategoryIdAndXmlName(int categoryId, string xmlName)
+    public async Task<bool> DeleteAllWithSameCategoryIdAsync(int categoryId)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.DeleteAllWithSameCategoryIdAndXmlName(categoryId, xmlName);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.DeleteAllWithSameCategoryIdAsync(categoryId);
     }
 
-    public bool DeleteByCharacteristicId(int characteristicId)
+    public async Task<bool> DeleteAllWithSameCategoryIdAndXmlNameAsync(int categoryId, string xmlName)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.DeleteByCharacteristicId(characteristicId);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.DeleteAllWithSameCategoryIdAndXmlNameAsync(categoryId, xmlName);
     }
 
-    public bool DeleteById(int id)
+    public async Task<bool> DeleteByCharacteristicIdAsync(int characteristicId)
     {
-        return _productCharacteristicAndExternalXmlDataRelationRepository.DeleteById(id);
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.DeleteByCharacteristicIdAsync(characteristicId);
+    }
+
+    public async Task<bool> DeleteByIdAsync(int id)
+    {
+        return await _productCharacteristicAndExternalXmlDataRelationRepository.DeleteByIdAsync(id);
     }
 }

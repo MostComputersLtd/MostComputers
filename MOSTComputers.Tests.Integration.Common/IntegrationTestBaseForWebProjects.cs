@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Respawn;
 
 namespace MOSTComputers.Tests.Integration.Common;
-
 public class IntegrationTestBaseForWebProjects<TProgramClass> : IAsyncLifetime
     where TProgramClass : class
 {

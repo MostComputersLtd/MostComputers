@@ -1,0 +1,356 @@
+﻿@typeparam TItem
+
+@implements IAsyncDisposable
+
+@using OneOf
+@using OneOf.Types
+
+@inject IJSRuntime JSRuntime
+
+<div @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses" @onmouseenter="StopAutoPlayAsync" @onmouseleave="StartAutoPlayAsync">
+    <div @attributes='AdditionalViewportAttributes' class="custom-carousel-viewport @_additionalViewportClasses">
+
+        @for (int i = 0; i < _carouselItems.Count; i++)
+        {
+            CarouselItem carouselItem = _carouselItems[i];
+
+            <div class="custom-carousel-slide" style="@carouselItem.TransformStyle @carouselItem.TransitionStyle">
+                @ItemTemplate(carouselItem.Item)
+            </div>
+        }
+
+        <button class="custom-carousel-control custom-prev" @onclick="Previous">&lt;</button>
+        <button class="custom-carousel-control custom-next" @onclick="Next">&gt;</button>
+    </div>
+
+
+    <div @attributes='AdditionalIndicatorsListContainerAttributes' class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
+
+        <div @attributes='AdditionalIndicatorsListAttributes' class="custom-carousel-indicators @_additionalIndicatorsListClasses">
+
+            @for (int i = 0; i < _carouselIndicators.Count; i++)
+            {
+                int currentIndex = i;
+
+                @if (ItemIndicatorTemplate is not null)
+                {
+                    @ItemIndicatorTemplate(_carouselIndicators[i]);
+                }
+                else
+                {
+                    <button class="custom-dot @(_carouselIndicators[i].IsActive ? "active" : null)" @onclick="() => GoTo(currentIndex)"></button>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code{
+    private sealed class CarouselItem
+    {
+        public required TItem Item { get; set; }
+
+        public string LeftStyle { get; set; } = string.Empty;
+        public string RightStyle { get; set; } = string.Empty;
+
+        public string TransformStyle { get; set; } = string.Empty;
+        public string TransitionStyle { get; set; } = string.Empty;
+    }
+
+    public sealed class CarouselIndicator
+    {
+        public required Carousel<TItem> Carousel { get; init; }
+        public required TItem Item { get; init; }
+
+        public bool IsActive { get; internal set; }
+
+        public async Task GoToItemAsync()
+        {
+            int index = Carousel.Items.IndexOf(Item);
+
+            if (index < 0) return;
+
+            await Carousel.GoTo(index);
+        }
+    }
+
+    private const string _activeTransformStyle = "transform:translateX(0%);";
+    private const string _leftTransformStyle = "transform:translateX(-100%);";
+    private const string _rightTransformStyle = "transform:translateX(100%);";
+
+    private string GetDefaultTransitionStyle()
+    {
+        return $"transition: all {TransitionMs}ms ease;";
+    }
+
+    [Parameter] public List<TItem> Items { get; set; } = new();
+
+    private List<CarouselItem> _carouselItems { get; set; } = new();
+
+    [Parameter, EditorRequired] public required RenderFragment<TItem> ItemTemplate { get; set; }
+
+    private List<CarouselIndicator> _carouselIndicators { get; set; } = new();
+
+    [Parameter] public RenderFragment<CarouselIndicator>? ItemIndicatorTemplate { get; set; } = null;
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+    private string? _additionalClasses = string.Empty;
+
+    [Parameter] public Dictionary<string, object> AdditionalViewportAttributes { get; set; } = new();
+    private string? _additionalViewportClasses = string.Empty;
+
+    [Parameter] public Dictionary<string, object> AdditionalIndicatorsListContainerAttributes { get; set; } = new();
+    private string? _additionalIndicatorsListContainerClasses = string.Empty;
+
+    [Parameter] public Dictionary<string, object> AdditionalIndicatorsListAttributes { get; set; } = new();
+    private string? _additionalIndicatorsListClasses = string.Empty;
+
+    [Parameter] public int TransitionMs { get; set; } = 600;
+
+    [Parameter] public OneOf<TimeSpan, No> AutoPlayOptions { get; set; } = new No();
+
+    private int _activeItemIndex = 0;
+
+    private bool _isAutoPlayRunning = false;
+
+    private IJSObjectReference? _jsModule;
+
+    private long? _autoSlideIntervalId = null;
+
+    protected override void OnParametersSet()
+    {
+        _additionalClasses = AdditionalAttributes.TryGetValue("class", out object? additionalClasses)
+            ? additionalClasses?.ToString() : null;
+
+        _additionalViewportClasses = AdditionalViewportAttributes.TryGetValue("class", out object? additionalViewportClasses)
+            ? additionalViewportClasses?.ToString() : null;
+
+        _additionalIndicatorsListContainerClasses = AdditionalIndicatorsListContainerAttributes.TryGetValue("class", out object? additionalIndicatorsListContainerClasses)
+            ? additionalIndicatorsListContainerClasses?.ToString() : null;
+
+        _additionalIndicatorsListClasses = AdditionalIndicatorsListAttributes.TryGetValue("class", out object? additionalIndicatorsListClasses)
+            ? additionalIndicatorsListClasses?.ToString() : null;
+
+        bool itemsHaveChanged = Items.Count != _carouselItems.Count;
+
+        if (!itemsHaveChanged)
+        {
+            foreach (TItem item in Items)
+            {
+                CarouselItem? matchingCarouselItem = _carouselItems.FirstOrDefault(x => EqualityComparer<TItem>.Default.Equals(x.Item, item));
+
+                if (matchingCarouselItem is not null) continue;
+
+                itemsHaveChanged = true;
+
+                break;
+            }
+        }
+
+        if (itemsHaveChanged)
+        {
+            _carouselItems.Clear();
+            _carouselIndicators.Clear();
+
+            _activeItemIndex = 0;
+
+            for (int i = 0; i < Items.Count; i++)
+            {
+                TItem item = Items[i];
+
+                if (i == _activeItemIndex)
+                {
+                    CarouselItem activeCarouselItem = new()
+                    {
+                        Item = item,
+                        TransformStyle = _activeTransformStyle,
+                    };
+
+                    CarouselIndicator activeCarouselIndicator = new()
+                    {
+                        Carousel = this,
+                        Item = item,
+                        IsActive = true,
+                    };
+
+                    _carouselItems.Add(activeCarouselItem);
+                    _carouselIndicators.Add(activeCarouselIndicator);
+
+                    continue;
+                }
+
+                CarouselItem carouselItem = new()
+                {
+                    Item = item,
+                    TransformStyle = _rightTransformStyle,
+                };
+
+                CarouselIndicator carouselIndicator = new()
+                {
+                    Carousel = this,
+                    Item = item,
+                    IsActive = false,
+                };
+
+                _carouselItems.Add(carouselItem);
+                _carouselIndicators.Add(carouselIndicator);
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Carousel.razor.js");
+
+            if (AutoPlayOptions.IsT0)
+            {
+                await StartAutoPlayAsync();
+            }
+            else if (AutoPlayOptions.IsT1)
+            {
+                await StopAutoPlayAsync();
+            }
+        }
+    }
+
+    private async Task StartAutoPlayAsync()
+    {
+        if (_isAutoPlayRunning || AutoPlayOptions.IsT1 || _jsModule is null) return;
+
+        _isAutoPlayRunning = true;
+
+        _autoSlideIntervalId = await _jsModule.InvokeAsync<int>("startAutoSlide", DotNetObjectReference.Create(this), AutoPlayOptions.AsT0.TotalMilliseconds);
+    }
+
+    private async Task StopAutoPlayAsync()
+    {
+        if (_jsModule is null || _autoSlideIntervalId is null) return;
+
+        await _jsModule.InvokeVoidAsync("stopAutoSlide", _autoSlideIntervalId);
+
+        _autoSlideIntervalId = null;
+
+        _isAutoPlayRunning = false;
+    }
+
+    private async Task Previous()
+    {
+        if (_carouselItems.Count <= 1) return;
+
+        CarouselItem currentItem = _carouselItems[_activeItemIndex];
+
+        currentItem.TransitionStyle = GetDefaultTransitionStyle();
+        currentItem.TransformStyle = _rightTransformStyle;
+
+        if (_activeItemIndex == 0)
+        {
+            _activeItemIndex = Items.Count - 1;
+        }
+        else
+        {
+            _activeItemIndex--;
+        }
+
+        CarouselItem previousItem = _carouselItems[_activeItemIndex];
+
+        previousItem.TransitionStyle = string.Empty;
+        previousItem.TransformStyle = _leftTransformStyle;
+
+        StateHasChanged();
+
+        await Task.Delay(50);
+
+        SetActiveIndicatorAt(_activeItemIndex);
+
+        previousItem.TransitionStyle = GetDefaultTransitionStyle();
+        previousItem.TransformStyle = _activeTransformStyle;
+    }
+
+    [JSInvokable("Next")]
+    public async Task Next()
+    {
+        if (_carouselItems.Count <= 1) return;
+
+        CarouselItem currentItem = _carouselItems[_activeItemIndex];
+
+        currentItem.TransitionStyle = GetDefaultTransitionStyle();
+        currentItem.TransformStyle = _leftTransformStyle;
+
+        _activeItemIndex = (_activeItemIndex + 1) % Items.Count;
+
+        CarouselItem nextItem = _carouselItems[_activeItemIndex];
+
+        nextItem.TransitionStyle = string.Empty;
+        nextItem.TransformStyle = _rightTransformStyle;
+
+        StateHasChanged();
+
+        await Task.Delay(50);
+
+        SetActiveIndicatorAt(_activeItemIndex);
+
+        nextItem.TransitionStyle = GetDefaultTransitionStyle();
+        nextItem.TransformStyle = _activeTransformStyle;
+
+        StateHasChanged();
+    }
+
+    private async Task GoTo(int index)
+    {
+        if (_activeItemIndex == index || _carouselItems.Count <= 1) return;
+
+        CarouselItem currentItem = _carouselItems[_activeItemIndex];
+
+        currentItem.TransitionStyle = GetDefaultTransitionStyle();
+        currentItem.TransformStyle = (index > _activeItemIndex) ? _leftTransformStyle : _rightTransformStyle;
+
+        CarouselItem nextItem = _carouselItems[index];
+
+        nextItem.TransitionStyle = string.Empty;
+
+        nextItem.TransformStyle = (index > _activeItemIndex) ? _rightTransformStyle : _leftTransformStyle;
+
+        _activeItemIndex = index;
+
+        StateHasChanged();
+
+        await Task.Delay(50);
+
+        SetActiveIndicatorAt(_activeItemIndex);
+
+        nextItem.TransitionStyle = GetDefaultTransitionStyle();
+        nextItem.TransformStyle = _activeTransformStyle;
+    }
+
+    private void SetActiveIndicatorAt(int index)
+    {
+        if (index < 0 || index >= _carouselIndicators.Count) return;
+
+        CarouselIndicator? activeIndicator = _carouselIndicators.Find(x => x.IsActive);
+
+        if (activeIndicator is not null)
+        {
+            activeIndicator.IsActive = false;
+        }
+
+        _carouselIndicators[index].IsActive = true;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await StopAutoPlayAsync();
+
+            if (_jsModule is not null)
+            {
+                await _jsModule.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

@@ -1,0 +1,75 @@
+﻿@page
+@using MOSTComputers.UI.Web.Pages.Shared.Barcodes
+@model ProductBarcodeReaderModel
+@{
+    ViewData["Title"] = "Barcode Scanner";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Barcodes/ProductBarcodeReader.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/@@zxing/library@latest"></script>
+
+    <script src="~/js/Data/Retrieval/FileInputCommon.js"></script>
+    <script src="~/js/Data/Retrieval/Barcode/BarcodeRead.js"></script>
+
+    <script src="~/js/Display/GetElementFromText.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+
+    <script src="~/js/Pages/Barcodes/ProductBarcodeReader.js"></script>
+}
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+
+    <div class="full-parent-width d-flex flex-row">
+        <p class="me-2 mb-0">Product ID:</p>
+        <input id="productBarcodeReaderProductIdInput" class="flex-grow-1" />
+    </div>
+
+    <div class="full-parent-width d-flex flex-column">
+
+        <div id="productBarcodeReaderGTINCodeResultsContainer" class="full-parent-width d-flex flex-column"
+            data-insert-element-index="0">
+
+        </div>
+
+        <p>S/N: -</p>
+    </div>
+
+    <div class="full-parent-width flex-grow-1 product-barcode-reader-video-and-overlay-container">
+
+        <div id="productBarcodeReaderVideoContainer"
+            class="full-parent-width full-parent-height product-barcode-reader-video-container"
+            style="display: none;">
+            <video id="productBarcodeReaderVideo" class="product-barcode-reader-video">
+            </video>
+        </div>
+
+        <div id="productBarcodeReaderScanOverlay" class="product-barcode-reader-scan-overlay">
+            <div class="product-barcode-reader-scan-overlay-visible-part">
+                <div class="product-barcode-reader-scan-overlay-visible-part-content">
+                    <button class="btn btn-outline-primary mb-3" onclick="decodeProductGTINCodeAndDisplayChanges()">
+                        Scan
+                    </button>
+
+                    <p class="full-parent-width mb-0 align-text-center">or</p>
+
+                    <button class="btn btn-outline-secondary"
+                        onclick="forceFileInputClick('productBarcodeReaderAddBarcodeFileInput')">
+                        Scan from file
+                    </button>
+
+                    <input id="productBarcodeReaderAddBarcodeFileInput" type="file" accept="image/*"
+                        onchange="decodeProductGTINCodeFromFileAndDisplayChanges(this.id)" style="display: none;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()

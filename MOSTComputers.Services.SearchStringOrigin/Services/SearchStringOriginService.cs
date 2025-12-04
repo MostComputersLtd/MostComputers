@@ -4,7 +4,6 @@ using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 
 namespace MOSTComputers.Services.SearchStringOrigin.Services;
-
 internal class SearchStringOriginService : ISearchStringOriginService
 {
     public SearchStringOriginService(
@@ -15,261 +14,79 @@ internal class SearchStringOriginService : ISearchStringOriginService
 
     private readonly IProductCharacteristicService _productCharacteristicService;
 
-    public static string[]? GetSearchStringParts(Product product)
+    public async Task<Dictionary<int, List<SearchStringPartOriginData>>> GetSearchStringPartsAndDataAboutTheirOriginForProductsAsync(IEnumerable<Product> products)
     {
-        if (product.SearchString == null) return null;
+        IEnumerable<int> categoryIds = products
+            .Select(x => x.CategoryId)
+            .Distinct()
+            .Where(x => x is not null)
+            .Cast<int>();
 
-        string[] output = product.SearchString.Split(' ');
+        List<ProductCharacteristic> characteristicsRelatedToProducts = await GetSearchStringAbbreviationsRelatedToProductsAsync(categoryIds);
+
+        Dictionary<int, List<SearchStringPartOriginData>> output = new();
+
+        foreach (Product product in products)
+        {
+            if (product.SearchString is null) continue;
+
+            List<string>? searchStringPartsSimple = GetSearchStringPartsSimple(product.SearchString);
+
+            if (searchStringPartsSimple is null) continue;
+
+            List<SearchStringPartOriginData> searchStringPartsForProduct = new();
+
+            foreach (string searchStringPart in searchStringPartsSimple)
+            {
+                ProductCharacteristic? productCharacteristic = characteristicsRelatedToProducts
+                    .FirstOrDefault(x => x.Name == searchStringPart);
+
+                if (productCharacteristic is null) continue;
+
+                SearchStringPartOriginData searchStringPartOriginData = new(searchStringPart, productCharacteristic);
+
+                searchStringPartsForProduct.Add(searchStringPartOriginData);
+            }
+
+            output.Add(product.Id, searchStringPartsForProduct);
+        }
 
         return output;
     }
 
-    //public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product)
-    //{
-    //    if (product.SearchString == null) return null;
-
-    //    List<Tuple<string, List<SearchStringPartOriginData>?>> output = new();
-
-    //    string[] searchStringParts = product.SearchString
-    //        .Trim()
-    //        .Split(' ');
-
-    //    List<ProductCharacteristic> characteristicsRelatedToProduct = GetCharacteristicsRelatedToProduct(product);
-
-    //    for (int i = searchStringParts.Length - 1; i >= 0; i--)
-    //    {
-    //        string searchStringPart = searchStringParts[i];
-
-    //        Tuple<string, List<SearchStringPartOriginData>?>? tupleWithSameValue = output.FirstOrDefault(x => x.Item1 == searchStringPart);
-
-    //        if (tupleWithSameValue is not null)
-    //        {
-    //            output.Add(tupleWithSameValue);
-
-    //            continue;
-    //        }
-
-    //        List<ProductCharacteristic>? productCharacteristics
-    //            = GetCharacteristicsForSearchStringPart(characteristicsRelatedToProduct, searchStringPart);
-
-    //        if (productCharacteristics is null)
-    //        {
-    //            output.Add(new(searchStringPart, null));
-
-    //            continue;
-    //        }
-
-    //        //bool doesPartHaveAnExactCharacteristic = DoesPartHaveAnExactCharacteristic(searchStringPart, productCharacteristics);
-
-    //        //if (!doesPartHaveAnExactCharacteristic)
-    //        //{
-    //        //    Tuple<string, List<SearchStringPartOriginData>?> tupleOfPartAfterThisPart = output.Last();
-
-    //        //    List<SearchStringPartOriginData>? partAfterThisOneOriginData = tupleOfPartAfterThisPart.Item2;
-
-    //        //    bool doesPartAfterThisOneHaveAnExactOriginData = DoesPartHaveAnExactOriginData(tupleOfPartAfterThisPart.Item1, partAfterThisOneOriginData);
-
-    //        //    if (!doesPartAfterThisOneHaveAnExactOriginData)
-    //        //    {
-    //        //        for (int j = 0; j < productCharacteristics.Count; j++)
-    //        //        {
-    //        //            ProductCharacteristic notExactCharacteristic = productCharacteristics[j];
-
-    //        //            if (notExactCharacteristic.Name is null) continue;
-
-    //        //            string[] characteristicNameSplitParts = notExactCharacteristic.Name.Split(' ');
-
-    //        //            for (int k = 0; k < characteristicNameSplitParts.Length; k++)
-    //        //            {
-    //        //                string characteristicNameParts = characteristicNameSplitParts[k];
-
-    //        //                var outputEntryFromCharacteristicPart = 
-    //        //            }
-    //        //        }
-    //        //    }
-    //        //}
-
-    //        IEnumerable<SearchStringPartOriginData> productOriginDataFromRelatedCharacteristics
-    //            = productCharacteristics.Select(characteristic => new SearchStringPartOriginData(searchStringPart, characteristic));
-
-    //        output.Add(new(searchStringPart, productOriginDataFromRelatedCharacteristics.ToList()));
-    //    }
-
-    //    output.Reverse();
-
-    //    return output;
-    //}
-
-    public List<Tuple<string, List<SearchStringPartOriginData>?>>? GetSearchStringPartsAndDataAboutTheirOrigin(Product product)
+    public async Task<List<SearchStringPartOriginData>?> GetSearchStringPartsAndDataAboutTheirOriginAsync(string? searchString, int? categoryId)
     {
-        if (product.SearchString == null) return null;
+        if (searchString is null) return null;
 
-        List<string>? searchStringPartsSimple = GetSearchStringPartsSimple(product);
+        List<string>? searchStringPartsSimple = GetSearchStringPartsSimple(searchString);
 
-        if (searchStringPartsSimple == null) return null;
+        if (searchStringPartsSimple is null) return null;
 
-        List<Tuple<string, List<SearchStringPartOriginData>?>> output = new();
+        List<SearchStringPartOriginData> output = new();
 
-        List<ProductCharacteristic> characteristicsRelatedToProduct = GetCharacteristicsRelatedToProduct(product);
+        List<ProductCharacteristic> characteristicsRelatedToProduct = await GetSearchStringAbbreviationsRelatedToProductAsync(categoryId);
 
-        List<string[]> searchStringCompositePartRegions = new();
-
-        int currentRegionStartIndex = 0;
-
-        for (int i = 0; i < searchStringPartsSimple.Count - 1; i++)
+        foreach (string searchStringPart in searchStringPartsSimple)
         {
-            string searchStringSinglePart = searchStringPartsSimple[i];
+            ProductCharacteristic? productCharacteristic = characteristicsRelatedToProduct
+                .FirstOrDefault(x => x.Name == searchStringPart);
 
-            ProductCharacteristic? productCharacteristicExactMatch
-                = characteristicsRelatedToProduct.FirstOrDefault(characteristic
-                    => string.Equals(characteristic.Name, searchStringSinglePart, StringComparison.OrdinalIgnoreCase));
+            if (productCharacteristic is null) continue;
 
-            if (productCharacteristicExactMatch != null)
-            {
-                SearchStringPartOriginData searchStringPartOriginDataForSimple = new(searchStringSinglePart, productCharacteristicExactMatch);
+            SearchStringPartOriginData searchStringPartOriginData = new(searchStringPart, productCharacteristic);
 
-                output.Add(new(searchStringSinglePart, new() { searchStringPartOriginDataForSimple }));
-
-                if (currentRegionStartIndex != i)
-                {
-                    string[] regionOfUnmatchedItems = searchStringPartsSimple
-                        .Skip(currentRegionStartIndex)
-                        .Take(i - currentRegionStartIndex)
-                        .ToArray();
-
-                    searchStringCompositePartRegions.Add(regionOfUnmatchedItems);
-                }
-
-                currentRegionStartIndex = i + 1;
-            }
+            output.Add(searchStringPartOriginData);
         }
 
-        int simplePartsLastItemIndex = searchStringPartsSimple.Count - 1;
-
-        string searchStringLastSinglePart = searchStringPartsSimple[simplePartsLastItemIndex];
-
-        ProductCharacteristic? lastProductCharacteristicExactMatch
-            = characteristicsRelatedToProduct.FirstOrDefault(characteristic
-                => string.Equals(characteristic.Name, searchStringLastSinglePart, StringComparison.OrdinalIgnoreCase));
-
-        if (lastProductCharacteristicExactMatch != null)
-        {
-            SearchStringPartOriginData searchStringPartOriginDataForLastSimple = new(searchStringLastSinglePart, lastProductCharacteristicExactMatch);
-
-            output.Add(new(searchStringLastSinglePart, new() { searchStringPartOriginDataForLastSimple }));
-        }
-
-        if (currentRegionStartIndex != simplePartsLastItemIndex)
-        {
-            if (lastProductCharacteristicExactMatch is null)
-            {
-                simplePartsLastItemIndex++;
-            }
-
-            string[] regionOfUnmatchedItems = searchStringPartsSimple
-                .Skip(currentRegionStartIndex)
-                .Take(simplePartsLastItemIndex - currentRegionStartIndex)
-                .ToArray();
-
-            searchStringCompositePartRegions.Add(regionOfUnmatchedItems);
-        }
-
-        for (int i = 0; i < searchStringCompositePartRegions.Count; i++)
-        {
-            string[] compositePartsRegion = searchStringCompositePartRegions[i];
-
-            if (compositePartsRegion.Length == 1)
-            {
-                string part = compositePartsRegion[0];
-
-                List<SearchStringPartOriginData> characteristicsThatContainTheSearchedWordOriginData = characteristicsRelatedToProduct
-                    .Where(characteristic => characteristic.Name?.Contains(part, StringComparison.OrdinalIgnoreCase) ?? false)
-                    .Select(characteristic => new SearchStringPartOriginData(part, characteristic))
-                    .ToList();
-
-                output.Add(new(part, characteristicsThatContainTheSearchedWordOriginData));
-
-                continue;
-            }
-
-            bool lastItemInPartsIsMatched = false;
-
-            for (int j = 0; j < compositePartsRegion.Length - 1; j++)
-            {
-                string part = compositePartsRegion[j];
-
-                string matchString = part;
-
-                bool foundCompositeMatch = false;
-
-                IEnumerable<ProductCharacteristic> characteristicsThatContainTheSearchedWord = characteristicsRelatedToProduct
-                    .Where(characteristic => characteristic.Name?.Contains(part, StringComparison.OrdinalIgnoreCase) ?? false);
-
-                for (int k = j + 1; k < compositePartsRegion.Length; k++)
-                {
-                    string afterPart = compositePartsRegion[k];
-
-                    matchString += (" " + afterPart);
-
-                    ProductCharacteristic? compositeExactMatch = characteristicsThatContainTheSearchedWord.FirstOrDefault(characteristic
-                        => string.Equals(characteristic.Name, matchString, StringComparison.OrdinalIgnoreCase));
-
-                    if (compositeExactMatch is not null)
-                    {
-                        if (k == compositePartsRegion.Length - 1)
-                        {
-                            lastItemInPartsIsMatched = true;
-                        }
-
-                        SearchStringPartOriginData compositeMatchOriginData = new(matchString, compositeExactMatch);
-
-                        output.Add(new(matchString, new List<SearchStringPartOriginData>() { compositeMatchOriginData }));
-
-                        compositePartsRegion = compositePartsRegion
-                            .Skip(k)
-                            .ToArray();
-
-                        j = k + 1;
-
-                        foundCompositeMatch = true;
-
-                        break;
-                    }
-                }
-
-                if (!foundCompositeMatch)
-                {
-                    List<SearchStringPartOriginData> multipleMatchOriginList
-                        = characteristicsThatContainTheSearchedWord.Select(characteristic => new SearchStringPartOriginData(part, characteristic))
-                            .ToList();
-
-                    output.Add(new(part, multipleMatchOriginList));
-                }
-            }
-
-            if (!lastItemInPartsIsMatched)
-            {
-                string compositePartsLastRegion = compositePartsRegion[^1];
-
-                List<SearchStringPartOriginData> characteristicsThatContainTheSearchedWord = characteristicsRelatedToProduct
-                    .Where(characteristic => characteristic.Name?.Contains(compositePartsLastRegion, StringComparison.OrdinalIgnoreCase) ?? false)
-                    .Select(characteristic => new SearchStringPartOriginData(compositePartsLastRegion, characteristic))
-                    .ToList();
-
-                output.Add(new(compositePartsLastRegion, characteristicsThatContainTheSearchedWord));
-            }
-        }
-
-        return output
-            .OrderBy(tuple => product.SearchString.IndexOf(tuple.Item1))
+        return output.OrderBy(x => x.Characteristic.DisplayOrder ?? int.MaxValue)
             .ToList();
     }
 
-    private static List<string>? GetSearchStringPartsSimple(Product product)
+    private static List<string>? GetSearchStringPartsSimple(string? searchString)
     {
-        if (product.SearchString == null) return null;
+        if (string.IsNullOrWhiteSpace(searchString)) return null;
 
-        List<string> searchStringPartsSimple = product.SearchString
+        List<string> searchStringPartsSimple = searchString
             .Trim()
             .Split(' ')
             .ToList();
@@ -289,50 +106,35 @@ internal class SearchStringOriginService : ISearchStringOriginService
         return searchStringPartsSimple;
     }
 
-    private List<ProductCharacteristic> GetCharacteristicsRelatedToProduct(Product product)
+    private async Task<List<ProductCharacteristic>> GetSearchStringAbbreviationsRelatedToProductsAsync(IEnumerable<int>? categoryIds)
     {
         List<int> categoriesToSearchIds = new() { -1 };
 
-        if (product.CategoryId is not null)
+        if (categoryIds is not null)
         {
-            categoriesToSearchIds.Add((int)product.CategoryId);
+            categoriesToSearchIds.AddRange(categoryIds);
         }
 
-        IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsForProductCategoriesInGroups
-            = _productCharacteristicService.GetAllForSelectionOfCategoryIds(categoriesToSearchIds);
-
-        List<ProductCharacteristic> characteristicsForProductCategories = new();
-
-        foreach (IGrouping<int, ProductCharacteristic> characteristicsForGivenCategories in characteristicsForProductCategoriesInGroups)
-        {
-            characteristicsForProductCategories.AddRange(characteristicsForGivenCategories);
-        }
-
-        return characteristicsForProductCategories;
+        return await GetSearchStringAbbreviationsForCategoriesAsync(categoriesToSearchIds);
     }
 
-    public static List<ProductCharacteristic>? GetCharacteristicsForSearchStringPart(
-        IEnumerable<ProductCharacteristic> characteristicsAndSearchStringAbbreviationsForProduct,
-        string searchStringPart)
+    private async Task<List<ProductCharacteristic>> GetSearchStringAbbreviationsRelatedToProductAsync(int? categoryId)
     {
-        ProductCharacteristic? output = characteristicsAndSearchStringAbbreviationsForProduct
-             .FirstOrDefault(x => x.Name == searchStringPart);
+        List<int> categoriesToSearchIds = new() { -1 };
 
-        if (output is not null) return new() { output };
-
-        output = characteristicsAndSearchStringAbbreviationsForProduct
-            .FirstOrDefault(x => string.Equals(x.Name, searchStringPart, StringComparison.OrdinalIgnoreCase));
-
-        if (output is not null) return new() { output };
-
-        IEnumerable<ProductCharacteristic> characteristicsContainingInput = characteristicsAndSearchStringAbbreviationsForProduct
-            .Where(x => x.Name?.Contains(searchStringPart) ?? false);
-
-        if (characteristicsContainingInput.Any())
+        if (categoryId is not null)
         {
-            return characteristicsContainingInput.ToList();
+            categoriesToSearchIds.Add(categoryId.Value);
         }
 
-        return null;
+        return await GetSearchStringAbbreviationsForCategoriesAsync(categoriesToSearchIds);
+    }
+
+    private async Task<List<ProductCharacteristic>> GetSearchStringAbbreviationsForCategoriesAsync(List<int> categoriesToSearchIds)
+    {
+        List<ProductCharacteristic> characteristicsForProductCategories
+            = await _productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(categoriesToSearchIds, [ProductCharacteristicType.SearchStringAbbreviation], true);
+
+        return characteristicsForProductCategories;
     }
 }

@@ -1,45 +1,51 @@
-﻿using MOSTComputers.Models.FileManagement.Models;
-using MOSTComputers.Services.TransactionalFileManagement.Contracts;
+﻿using OneOf;
 using OneOf.Types;
-using OneOf;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.TransactionalFileManagement.Contracts;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
-
 internal sealed class RenameImageFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult>>
 {
     public RenameImageFileOperation(
         string imageDirectoryPath,
-        string fileNameWithoutExtension,
-        string newFileNameWithoutExtension,
-        AllowedImageFileType allowedImageFileType)
+        string fullFileName,
+        string newFileNameWithoutExtension)
     {
         _imageDirectoryPath = imageDirectoryPath;
-        _fileNameWithoutExtension = fileNameWithoutExtension;
+        _fullFileName = fullFileName;
         _newFileNameWithoutExtension = newFileNameWithoutExtension;
-        _allowedImageFileType = allowedImageFileType;
     }
 
     private readonly string _imageDirectoryPath;
-    private readonly string _fileNameWithoutExtension;
+    private readonly string _fullFileName;
     private readonly string _newFileNameWithoutExtension;
-    private readonly AllowedImageFileType _allowedImageFileType;
 
     private bool _succeeded = false;
 
     public OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> Execute()
     {
-        string fullFileName = $"{_fileNameWithoutExtension}.{_allowedImageFileType.FileExtension}";
+        string fileExtension = Path.GetExtension(_fullFileName);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        if (string.IsNullOrWhiteSpace(fileExtension))
+        {
+            return new FileDoesntExistResult() { FileName = _fullFileName };
+        }
 
-        if (!File.Exists(filePath)) return new FileDoesntExistResult() { FileName = fullFileName };
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
-        string newFullFileName = $"{_newFileNameWithoutExtension}.{_allowedImageFileType.FileExtension}";
+        if (!File.Exists(filePath))
+        {
+            return new FileDoesntExistResult() { FileName = _fullFileName };
+        }
+
+        string newFullFileName = $"{_newFileNameWithoutExtension}{fileExtension}";
 
         string newFilePath = Path.Combine(_imageDirectoryPath, newFullFileName);
 
-        if (File.Exists(newFilePath)) return new FileAlreadyExistsResult() { FileName = newFullFileName };
+        if (File.Exists(newFilePath))
+        {
+            return new FileAlreadyExistsResult() { FileName = newFullFileName };
+        }
 
         File.Move(filePath, newFilePath);
 
@@ -52,15 +58,18 @@ internal sealed class RenameImageFileOperation : IRollbackableOperation<OneOf<Su
     {
         if (!_succeeded) return;
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_allowedImageFileType.FileExtension}";
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        string fileExtension = Path.GetExtension(_fullFileName);
 
-        string newFullFileName = $"{_newFileNameWithoutExtension}.{_allowedImageFileType.FileExtension}";
+        string newFullFileName = $"{_newFileNameWithoutExtension}{fileExtension}";
 
         string newFilePath = Path.Combine(_imageDirectoryPath, newFullFileName);
 
-        if (!File.Exists(newFilePath)) throw new FileNotFoundException($"Inconsistent state: Cannot rollback, because file is missing: {filePath}");
+        if (!File.Exists(newFilePath))
+        {
+            throw new FileNotFoundException($"Inconsistent state: Cannot rollback, because file is missing: {filePath}");
+        }
 
         File.Move(newFilePath, filePath);
     }

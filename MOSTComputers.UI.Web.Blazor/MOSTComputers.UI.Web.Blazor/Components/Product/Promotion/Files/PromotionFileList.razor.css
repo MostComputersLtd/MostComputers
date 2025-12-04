@@ -1,0 +1,36 @@
+﻿.promotion-file-list {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.promotion-file-list-item {
+    display: flex;
+    padding: 0.25em 0px;
+}
+
+.promotion-file-selected-list-item {
+    background-color: #F7C0BC;
+}
+    .promotion-file-list-item:not(.promotion-file-selected-list-item):hover {
+        background-color: antiquewhite;
+    }
+
+.promotion-file-data-entry {
+    max-height: 4em;
+}
+
+.promotion-file-data-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+::deep .promotion-file {
+    max-width: 100%;
+}

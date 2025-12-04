@@ -1,0 +1,86 @@
+﻿@using MOSTComputers.Models.Product.Models
+
+@using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
+
+@model MOSTComputers.UI.Web.Pages.Shared.Index.ProductsTablePartialModel
+@{
+	Layout = null;
+}
+
+<table class="full-parent-width full-parent-height table-with-small-horizontal-padding-on-cells" style="font-size: smaller;">
+	<thead>
+		<tr>
+			<th>Stat</th>
+			<th>CSTID</th>
+			<th>Name</th>
+			<th>Mfr</th>
+			<th>Part No. 1</th>
+			<th>Part No. 2</th>
+			<th>SStr</th>
+			<th>Promo</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		@if (Model.Products?.Count > 0)
+		{
+			@for (int i = 0; i < Model.Products.Count; i++)
+			{
+				Product product = Model.Products[i];
+
+				bool hasPidPromotion = (product.PromotionPid is not null);
+				bool hasRidPromotion = (product.PromotionRid is not null);
+
+				<tr id="productsTableRow-@i">
+
+					<td>
+						@(product.Status is not null ? GetStatusStringFromStatusEnum(product.Status.Value) : "-")
+					</td>
+					<td>
+						<p class="link-info m-0" onclick="showProductFullDisplayPopup(
+							@product.Id,
+							'@Model.ProductFullDisplayPartialModalData.ModalId',
+							'@Model.ProductFullDisplayPartialModalData.ModalDialogId',
+							'@Model.ProductFullDisplayPartialModalData.ModalContentId')">
+							@product.Id
+						</p>
+					</td>
+					<td>
+						<p class="link-info m-0" onclick="showProductHtmlAndImagesPopup(
+							@product.Id,
+							'@Model.ProductHtmlAndImagesPartialModelData.ModalId',
+							'@Model.ProductHtmlAndImagesPartialModelData.ModalDialogId',
+							'@Model.ProductHtmlAndImagesPartialModelData.ModalContentId')">
+							@(string.IsNullOrEmpty(product.Name) ? "-" : product.Name)
+						</p>
+					</td>
+					<td>
+						<p class="link-info m-0">
+							@(string.IsNullOrEmpty(product.Manufacturer?.RealCompanyName) ? "-" : product.Manufacturer.RealCompanyName)
+						</p>
+					</td>
+					<td>
+						<p class="m-0">
+							@(string.IsNullOrEmpty(product.PartNumber1) ? "-" : product.PartNumber1)
+						</p>
+					</td>
+					<td>
+						<p class="m-0">
+							@(string.IsNullOrEmpty(product.PartNumber2) ? "-" : product.PartNumber2)
+						</p>
+					</td>
+					<td>
+						<p class="m-0">
+							@(string.IsNullOrEmpty(product.SearchString) ? "-" : product.SearchString)
+						</p>
+					</td>
+					<td>
+						<p class="link-info m-0">
+							@(hasPidPromotion || hasRidPromotion ? "Yes" : "No")
+						</p>
+					</td>
+				</tr>
+			}
+		}
+	</tbody>
+</table>

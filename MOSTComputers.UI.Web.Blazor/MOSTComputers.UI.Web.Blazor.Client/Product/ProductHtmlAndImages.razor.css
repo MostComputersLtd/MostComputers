@@ -1,0 +1,33 @@
+﻿.product-id-heading {
+    color: darkgray;
+}
+
+.product-images-list {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+}
+
+.product-images-list-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 20%;
+}
+
+.product-image-active-button-container {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    left: 0px;
+    top: 0;
+    bottom: 0px;
+    pointer-events: none;
+    user-select: none;
+}
+
+.product-image-active-button {
+    pointer-events: none;
+    user-select: none;
+}

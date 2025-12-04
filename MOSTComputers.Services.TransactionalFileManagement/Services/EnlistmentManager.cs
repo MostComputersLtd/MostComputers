@@ -1,8 +1,7 @@
-﻿using System.Collections.Concurrent;
-using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
+﻿using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
+using System.Collections.Concurrent;
 
 namespace MOSTComputers.Services.TransactionalFileManagement.Services;
-
 public class EnlistmentManager : IEnlistmentManager
 {
     private readonly ConcurrentDictionary<Guid, TransactionalFileManagementEnlistmentNotification> _enlistmentNotificationDictionary = new();

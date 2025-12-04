@@ -1,0 +1,85 @@
+﻿@page
+
+@using MOSTComputers.UI.Web.Models.Documents;
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils;
+
+@model MOSTComputers.UI.Web.Pages.DocumentsModel
+@{
+	ViewData["Text"] = "Documents";
+}
+
+@section Styles {
+	<link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
+
+	<link rel="stylesheet" href="~/css/Pages/Documents.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Data/StandardDataConversions.js"></script>
+
+    <script src="~/js/Data/Retrieval/StorageComplexDataRetrieve.js"></script>
+
+	<script src="~/js/Display/RedirectionHandling.js"></script>
+	<script src="~/js/Display/ElementSorting.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+    <script src="~/js/Display/DisplayDataInNewWindow.js"></script>
+
+    <script src="~/js/Display/GetElementFromText.js"></script>
+
+	<script src="~/js/Pages/Shared/PopupCommonElements.js"></script>
+
+	<script src="~/js/Pages/Documents.js"></script>
+}
+
+<div>
+	<div class="full-parent-width d-flex flex-row flex-wrap flex-lg-nowrap">
+
+		<select id="documentTypeSelect" class="me-2"
+			asp-items="GetDisplayDocumentTypeSelectListItems(
+				[
+					DisplayDocumentType.Invoice,
+					DisplayDocumentType.WarrantyCard,
+				],
+				DisplayDocumentType.Invoice)">
+		</select>
+
+		<input id="documentFromDateSearchInput" type="date" placeholder="From" class="me-2" />
+		<input id="documentToDateSearchInput" type="date" placeholder="To" />
+
+		<input id="documentSearchInput" type="text" placeholder="Search..." class="flex-grow-1" />
+
+		<button id="documentSearchButton" class="btn btn-outline-primary ms-2"
+			onclick="getSearchedDocumentsAndDisplayChanges()">
+			Search
+		</button>
+
+		<div id="documentSearchButtonLoader" class="round-loader-default" style="display: none;"></div>
+	</div> 
+
+	<div id="documentSearchResultsContainer" class="full-parent-width flex-grow-1">
+
+	</div>
+
+	<dialog id="documentPdfDialog" class="document-pdf-dialog">
+		<div class="full-parent-width full-parent-height d-flex flex-column">
+			<header>
+				<div class="full-parent-width full-parent-height d-flex flex-row">
+
+					<div class="flex-grow-1 d-flex justify-content-end">
+						<button type="button" class="btn-close m-2" data-dismiss="documentPdfDialog"
+							onclick="closeDialog('documentPdfDialog')">
+						</button>
+					</div>
+				</div>
+			</header>
+			<div id="documentPdfDialogPdfContainer" class="flex-grow-1 full-parent-width">
+
+			</div>
+		</div>
+
+	</dialog>
+</div>
+
+@Html.AntiForgeryToken()

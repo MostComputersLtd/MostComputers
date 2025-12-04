@@ -1,17 +1,18 @@
 ﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
-using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using System.Numerics;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
+using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
+using System.Numerics;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 internal static class CommonTestElements
 {
     internal const int UseRequiredValuePlaceholder = -1366748;
@@ -44,12 +45,12 @@ internal static class CommonTestElements
         StandardWarrantyPrice = "0.00",
         StandardWarrantyTermMonths = 36,
         DisplayOrder = 12324,
-        Status = ProductStatusEnum.Call,
+        Status = ProductStatus.Call,
         PlShow = 0,
         Price1 = 123.4M,
         DisplayPrice = 123.99M,
         Price3 = 122.5M,
-        Currency = CurrencyEnum.EUR,
+        Currency = Currency.EUR,
         RowGuid = Guid.NewGuid(),
         PromotionId = null,
         PromRid = null,
@@ -90,12 +91,12 @@ internal static class CommonTestElements
         StandardWarrantyPrice = "0.00",
         StandardWarrantyTermMonths = 36,
         DisplayOrder = 12324,
-        Status = ProductStatusEnum.Call,
+        Status = ProductStatus.Call,
         PlShow = 0,
         Price1 = 123.4M,
         DisplayPrice = 123.99M,
         Price3 = 122.5M,
-        Currency = CurrencyEnum.EUR,
+        Currency = Currency.EUR,
         RowGuid = Guid.NewGuid(),
         PromotionId = null,
         PromRid = null,
@@ -119,7 +120,7 @@ internal static class CommonTestElements
         },
         ImageFileNames = new List<CurrentProductImageFileNameInfoCreateRequest>()
         {
-            
+
         },
 
         CategoryId = 7,
@@ -137,12 +138,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -211,12 +212,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -287,12 +288,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -344,12 +345,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -395,7 +396,7 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = _randomWarranties[Random.Shared.Next(0, _randomWarranties.Count)],
             DisplayOrder = Random.Shared.Next(1_000, 50_000_000),
-            Status = (ProductStatusEnum)Random.Shared.Next(0, 3),
+            Status = (ProductStatus)Random.Shared.Next(0, 3),
             PlShow = Random.Shared.Next(0, 2),
             Price1 = Random.Shared.NextInt64(100, 900_000) / 100,
             DisplayPrice = Random.Shared.NextInt64(100, 900_000) / 100,
@@ -459,7 +460,7 @@ internal static class CommonTestElements
 
     private static readonly List<int?> _randomWarranties = new() { null, 12, 18, 36, 45, 72, 144 };
 
-    private static readonly List<CurrencyEnum> _randomCurrencies = new() { CurrencyEnum.USD, CurrencyEnum.BGN, CurrencyEnum.EUR };
+    private static readonly List<Currency> _randomCurrencies = new() { Currency.USD, Currency.BGN, Currency.EUR };
 
     public static string RandomString(int length)
     {
@@ -484,12 +485,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -539,12 +540,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -624,12 +625,12 @@ internal static class CommonTestElements
             StandardWarrantyPrice = "0.00",
             StandardWarrantyTermMonths = 36,
             DisplayOrder = 12324,
-            Status = ProductStatusEnum.Call,
+            Status = ProductStatus.Call,
             PlShow = 0,
             Price1 = 123.4M,
             DisplayPrice = 123.99M,
             Price3 = 122.5M,
-            Currency = CurrencyEnum.EUR,
+            Currency = Currency.EUR,
             RowGuid = Guid.NewGuid(),
             PromotionId = null,
             PromRid = null,
@@ -705,7 +706,7 @@ internal static class CommonTestElements
     internal static ProductCharacteristicCreateRequest GetValidCharacteristicCreateRequest(
         int categoryId,
         string name = "Name",
-        ProductCharacteristicTypeEnum type = ProductCharacteristicTypeEnum.ProductCharacteristic)
+        ProductCharacteristicType type = ProductCharacteristicType.ProductCharacteristic)
     {
         return new()
         {

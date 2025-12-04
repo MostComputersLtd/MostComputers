@@ -1,18 +1,8 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
-using OneOf;
-using OneOf.Types;
+﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
-
 public interface ICategoryService
 {
-    IEnumerable<Category> GetAll();
-    Category? GetById(int id);
-    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServiceCategoryCreateRequest createRequest, IValidator<ServiceCategoryCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> Update(ServiceCategoryUpdateRequest updateRequest, IValidator<ServiceCategoryUpdateRequest>? validator = null);
-    bool Delete(int id);
+    Task<List<Category>> GetAllAsync();
+    Task<Category?> GetByIdAsync(int id);
 }

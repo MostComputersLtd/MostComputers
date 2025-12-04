@@ -1,0 +1,116 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductImages;
+@using MOSTComputers.UI.Web.Controllers;
+@using MOSTComputers.UI.Web.Controllers.Images
+
+@model MOSTComputers.UI.Web.Pages.Shared.Index.ProductHtmlAndImagesPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <ul class="product-changes-popup-header-list product-changes-popup-header-name-and-id-display-list full-parent-width">
+        <li>
+            <h5 class="modal-title modal-title">Product state:</h5>
+        </li>
+
+        <li>
+            <h4 class="modal-title modal-product-name">@(Model.Product.Name ?? "-")</h4>
+        </li>
+
+        <li>
+            <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">ID: @(Model.Product.Id)</h4>
+        </li>
+        <li class="product-changes-popup-header-close-button-li flex-grow-1 flex-shrink-0">
+            <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div id="ProductFullHtmlBased_popup" class="modal-body full-parent-width bg-white product-changes-popup">
+
+    <div class="container border-2 full-parent-width full-parent-height">
+        <div class="container product-changes-popup-container full-parent-width full-parent-height">
+
+            <div>
+                <h1 class="align-text-center">@Model.Product.Name</h1>
+
+                <h5 class="align-text-center product-changes-popup-inner-id-label">ID: @Model.Product.Id</h5>
+            </div>
+
+            <div id="ProductFullHtmlBased_modal_ImagesContainer">
+
+                <ul class="product-changes-popup-image-list">
+
+                    @if (Model.ProductImages is not null)
+                    {   
+                        @for (int i = 0; i < Model.ProductImages.Count; i++)
+                        {
+                            ProductImageData image = Model.ProductImages[i];
+
+                            ProductImageFileData? imageFileNameInfo = Model.ProductImageFileNames?
+                                .FirstOrDefault(x => x.FileName?.StartsWith($"{image.Id}.") ?? false);
+
+                            string imageSrc = $"/{ProductImageDataController.ControllerRoute}/{image.Id}";
+
+                            bool isImageFileNameInfoActive = (imageFileNameInfo?.Active ?? true);
+
+                            string imageFileNameInfoName = imageFileNameInfo?.FileName ?? string.Empty;
+
+                            int imageFileNameInfoDisplayOrder = imageFileNameInfo?.DisplayOrder ?? -1;
+
+                            float opacityOfLi = isImageFileNameInfoActive ? 1.0F : 0.35F;
+
+                            <li id="ProductFullHtmlBased_modal_ul_li-@(i)"
+                                name="ProductFullHtmlBased_modal_ul_li"
+                                class="product-changes-popup-image-list-item"
+                                style="opacity: @(opacityOfLi);">
+
+                                @if (isImageFileNameInfoActive)
+                                {
+                                    <div class="product-changes-popup-image-active-button-container">
+                                        <input id="ProductFullHtmlBased_modal_ul_li_activityStatusCheckbox-@i"
+                                            type="checkbox" aria-label="Close" checked
+                                            class="product-changes-popup-image-active-button" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="product-changes-popup-image-active-button-container">
+                                        <input id="ProductFullHtmlBased_modal_ul_li_activityStatusCheckbox-@i"
+                                            type="checkbox" aria-label="Close"
+                                            class="product-changes-popup-image-active-button" />
+                                    </div>
+                                }
+
+                                <button class="btn bg-white" name="Image #@i">
+                                    <img src="@imageSrc" title="Image #@i" draggable="false"
+                                        class="product-changes-popup-image" />
+                                </button>
+
+                                <div class="product-changes-popup-image-delete-button-container">
+                                    <button type="button"
+                                        aria-label="Close"
+                                        class="btn-close product-changes-popup-image-delete-button" />
+                                </div>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+
+            <div>
+                @if (Model.ProductHtml is not null)
+                {
+                    <div>
+                        @Html.Raw(Model.ProductHtml)
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer full-parent-width product-changes-popup-footer_buttons-container">
+</div>

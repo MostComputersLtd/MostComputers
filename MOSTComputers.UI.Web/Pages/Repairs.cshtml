@@ -1,0 +1,34 @@
+﻿@page
+@model MOSTComputers.UI.Web.Pages.RepairsModel
+@{
+	ViewData["Title"] = "Repair Service";
+}
+
+@section Styles {
+}
+
+@section Scripts {
+	<script src="~/js/PromiseLogic.js"></script>
+
+	<script src="~/js/Data/StandardDataConversions.js"></script>
+
+	<script src="~/js/Display/RedirectionHandling.js"></script>
+}
+
+<div id="repairs_container" class="full-parent-width full-parent-height flex-column display-flex-not-important">
+	<ul class="full-parent-width d-flex flex-column list-unstyled">
+		<li class="row">
+			<div class="col-3">
+				REALME Repair Service
+			</div>
+
+			<div class="col-9 d-flex flex-row flex-nowrap">
+				<p class="m-0">IMEI:</p>
+				<input id="repairsSearchInput" type="text" class="flex-grow-1 ms-2 me-2" placeholder="Search..." />
+				<button id="repairsSearchButton" type="button" class="btn btn-primary" style="font-size: x-small;">
+					Search
+				</button>
+			</div>
+		</li>
+	</ul>
+</div>

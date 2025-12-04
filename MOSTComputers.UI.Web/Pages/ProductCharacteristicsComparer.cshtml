@@ -1,0 +1,76 @@
+﻿@page
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.Models.ProductCharacteristicsComparer
+@using MOSTComputers.UI.Web.Pages.Shared.ProductCharacteristicsComparer
+
+@model ProductCharacteristicsComparerModel
+@{
+    ViewData["Title"] = "Product Characteristics Comparer";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/CustomElements/NotificationBox.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/ProductCharacteristicsComparer.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+    <script src="~/js/Display/RandomColorGeneration.js"></script>
+    <script src="~/js/Display/ElementSorting.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+
+    <script src="~/js/Display/CustomElements/NotificationBox.js"></script>
+
+    <script src="~/js/Pages/ProductCharacteristicsComparer.js"></script>
+}
+
+<div id="characteristics_comparer_local_and_external_table_container"
+    class="full-parent-width full-parent-height flex-column display-flex-not-important">
+    
+    <header class="full-parent-width">
+        <ul class="d-flex list-style-none ps-0 mb-2">
+            
+            <li class="display-flex-not-important justify-content-center align-content-center flex-wrap flex-grow-1 me-2">
+                <button id="local_xml_data_container_compare_in_category_button" type="button"
+                        class="btn btn-outline-primary full-parent-width"
+                        onclick="compareExternalAndLocalDataForCategory(
+                            'local_product_characteristics_category_to_compare_select',
+                            'characteristics_comparer_relationships_table_view_container',
+                            'product_characteristics_compare_relationships_table',
+                            'local_xml_data_container_compare_in_category_button',
+                            'local_xml_data_container_compare_in_category_loader')">
+                    Compare All In Category
+
+                </button>
+
+                <div id="local_xml_data_container_compare_in_category_loader" class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="local_product_characteristics_category_to_compare_select">
+                    @foreach (Category category in await Model.GetAllCategoriesAsync())
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+        </ul>
+    </header>
+
+    <div id="characteristics_comparer_relationships_table_view_container" class="flex-shrink-0 flex-grow-1">
+    </div>
+
+    <ul id="@ProductCharacteristicsComparerModel.TopNotificationBoxElementId" class="top-notification-box"></ul>
+</div>
+
+<!--
+<div id="characteristics_comparer_relationships_table_xml_view_container" class="full-parent-height" style="display: none;">
+</div>
+-->
+
+@Html.AntiForgeryToken()

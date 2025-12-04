@@ -1,0 +1,393 @@
+﻿@page "/productBarcodeScanner"
+@rendermode InteractiveServer
+
+@attribute [Authorize]
+
+@implements IAsyncDisposable
+
+@using FluentValidation.Results
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductIdentifiers.ProductGTINCode
+@using MOSTComputers.Services.ProductRegister.Services.ProductIdentifiers.Contracts
+
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+@inject IProductGTINCodeService _productGTINCodeService
+
+<PageTitle>Barcode Scanner</PageTitle>
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+
+    <div class="full-parent-width d-flex flex-row mb-2">
+        <p class="me-2 mb-0">Product ID:</p>
+        <input id="productBarcodeReaderProductIdInput" type="number" class="flex-grow-1" @bind="ProductId" />
+    </div>
+
+    <div class="full-parent-width d-flex flex-column">
+
+        <div id="productBarcodeReaderGTINCodeResultsContainer" class="full-parent-width d-flex flex-column"
+            data-insert-element-index="0">
+            
+            @foreach (ProductBarcodeReaderGTINCodeResultModel gtinCodeItemModel in ProductBarcodeReaderGTINCodeResults)
+            {
+                <div id="productBarcodeReaderGTINCodeResultsItem-@gtinCodeItemModel.Index"
+                    name="productBarcodeReaderGTINCodeResultsItem"
+                    class="full-parent-width mb-1 d-flex flex-row align-items-center">
+
+                    @if (gtinCodeItemModel.Value is not null)
+                    {
+                        <p class="me-3 mb-0 flex-grow-1">@gtinCodeItemModel.Value</p>
+                    }
+                    else
+                    {
+                        <p>EAN: -</p>
+                    }
+
+                    @if (gtinCodeItemModel.AllowedGTINCodeTypesSelectListItems?.Count > 0)
+                    {
+                        <select id="productBarcodeReaderGTINCodeSelect-@gtinCodeItemModel.Index" class="me-2">
+
+                            @foreach (ProductGTINCodeType codeType in gtinCodeItemModel.AllowedGTINCodeTypesSelectListItems)
+                            {
+                                <option value="@codeType.Value">@GetStringFromProductGTINCodeType(codeType)</option>
+                            }
+
+                        </select>
+                    }
+
+                    @if (gtinCodeItemModel.AllowedGTINCodeTypesSelectListItems is not null
+                        && gtinCodeItemModel.AllowedGTINCodeTypesSelectListItems.Count > 0)
+                    {
+                        <button id="productBarcodeReaderGTINCodeSaveButton-@gtinCodeItemModel.Index" class="btn btn-outline-secondary me-2"
+                            @onclick="() => UpsertGTINCodeToProduct(gtinCodeItemModel)">
+                            Save
+                        </button>
+                    }
+
+                    <button id="productBarcodeReaderGTINCodeDeleteButton-@gtinCodeItemModel.Index" class="btn btn-close"
+                        @onclick="() => DeleteProductGTINCodeAsync(gtinCodeItemModel)">
+                    </button>
+                </div>
+            }
+        </div>
+
+        <p>S/N: -</p>
+    </div>
+
+    <div id="productBarcodeReaderVideoAndOverlayContainer" class="full-parent-width flex-grow-1 product-barcode-reader-video-and-overlay-container">
+
+        <div id="productBarcodeReaderVideoContainer"
+            class="full-parent-width full-parent-height product-barcode-reader-video-container"
+            style="display: none;">
+
+            <video id="productBarcodeReaderVideo" class="product-barcode-reader-video">
+            </video>
+        </div>
+
+        <div id="productBarcodeReaderScanOverlay" class="product-barcode-reader-scan-overlay">
+            <div id="productBarcodeReaderScanOverlayVisiblePart" class="product-barcode-reader-scan-overlay-visible-part">
+                <div class="product-barcode-reader-scan-overlay-visible-part-content">
+                    <button class="btn btn-outline-primary mb-3"
+                        @onclick="DecodeProductGTINCodeAndDisplayChanges">
+                        Scan
+                    </button>
+
+                    <p class="full-parent-width mb-0 align-text-center">or</p>
+
+                    <button class="btn btn-outline-secondary"
+                        @onclick='() => ForceFileInputClickAsync("productBarcodeReaderDecodeImageFileInput")'>
+                        Scan from file
+                    </button>
+
+                    <input id="productBarcodeReaderDecodeImageFileInput" type="file" accept="image/*"
+                        @onchange="DecodeProductGTINCodeFromFileAndDisplayChanges"
+                        style="display: none;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class ProductBarcodeReaderGTINCodeResultModel
+    {
+        public required int Index { get; set; }
+        public string? Value { get; set; }
+        public ProductGTINCodeType? CodeType { get; set; }
+        public List<ProductGTINCodeType>? AllowedGTINCodeTypesSelectListItems { get; set; }
+        public required bool IncludedInDatabase { get; set; }
+    }
+
+    private IJSObjectReference? _jsModule;
+
+    public int? ProductId { get; set; } = null;
+
+    public List<ProductBarcodeReaderGTINCodeResultModel> ProductBarcodeReaderGTINCodeResults { get; set; } = new();
+
+    public List<string> ValidationMessages { get; set; } = new();
+
+    public static string? GetStringFromProductGTINCodeType(ProductGTINCodeType productGTINCodeType)
+    {
+        if (productGTINCodeType == ProductGTINCodeType.EAN8) return "EAN-8";
+        else if (productGTINCodeType == ProductGTINCodeType.EAN13) return "EAN-13";
+        else if (productGTINCodeType == ProductGTINCodeType.UPC) return "UPC";
+        else if (productGTINCodeType == ProductGTINCodeType.JAN) return "JAN";
+
+        return null;
+    }
+
+    private async Task<ClaimsPrincipal> GetCurrentUserAsync()
+    {
+        AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        return authenticationState.User;
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        ClaimsPrincipal user = await GetCurrentUserAsync();
+
+        return user.Identity?.Name;
+    }
+
+    public List<ProductGTINCodeType> GetAllowedGTINCodeTypes(string eanCode)
+    {
+        List<ProductGTINCodeType> allowedGTINCodeTypes = ProductGTINCodeType.AllTypes
+            .Where(x => x.IsValid(eanCode))
+            .ToList();
+
+        return allowedGTINCodeTypes;
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductBarcodeScanner.razor.js");
+        }
+    }
+
+    public async Task DecodeProductGTINCodeAndDisplayChanges()
+    {
+        if (_jsModule is null) return;
+
+        try
+        {
+            string? productGTINCode = await _jsModule.InvokeAsync<string?>("decodeProductGTINCodeAndDisplayChanges");
+
+            if (productGTINCode is null) return;
+
+            UpsertProductGTINCodeInDisplayList(productGTINCode);
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    public async Task DecodeProductGTINCodeFromFileAndDisplayChanges()
+    {
+        if (_jsModule is null) return;
+
+        try
+        {
+            string? productGTINCode = await _jsModule.InvokeAsync<string?>("decodeProductGTINCodeFromFileAndDisplayChanges");
+
+            if (productGTINCode is null) return;
+
+            UpsertProductGTINCodeInDisplayList(productGTINCode);
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private async Task ForceFileInputClickAsync(string fileInputElementId)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("forceFileInputClick", fileInputElementId);
+    }
+
+    public void UpsertProductGTINCodeInDisplayList(string gtinCode, int? index = null)
+    {
+        if (index is not null)
+        {
+            ProductBarcodeReaderGTINCodeResultModel? existingModel = ProductBarcodeReaderGTINCodeResults
+                .FirstOrDefault(x => x.Index == index.Value);
+
+            if (existingModel is not null)
+            {
+                List<ProductGTINCodeType> productGTINCodeTypesInner = GetAllowedGTINCodeTypes(gtinCode);
+
+                ProductGTINCodeType? newCodeType = null;
+
+                if (existingModel.CodeType is not null
+                    && productGTINCodeTypesInner.Contains(existingModel.CodeType))
+                {
+                    newCodeType = existingModel.CodeType;
+                }
+
+                existingModel.Value = gtinCode;
+                existingModel.CodeType = newCodeType;
+                existingModel.AllowedGTINCodeTypesSelectListItems = productGTINCodeTypesInner;
+
+                return;
+            }
+        }
+
+        List<ProductGTINCodeType> productGTINCodeTypes = GetAllowedGTINCodeTypes(gtinCode);
+
+        ProductBarcodeReaderGTINCodeResultModel model = new()
+        {
+            Index = ProductBarcodeReaderGTINCodeResults.Count,
+            Value = gtinCode,
+            CodeType = productGTINCodeTypes.FirstOrDefault(),
+            AllowedGTINCodeTypesSelectListItems = productGTINCodeTypes,
+            IncludedInDatabase = false,
+        };
+
+        ProductBarcodeReaderGTINCodeResults.Add(model);
+    }
+
+    public async Task UpsertGTINCodeToProduct(ProductBarcodeReaderGTINCodeResultModel gtinCodeModel)
+    {
+        string? currentUserName = await GetCurrentUserNameAsync();
+
+        if (currentUserName is null)
+        {
+            NavigationManager.NavigateTo($"accounts/login?returnUrl={Uri.EscapeDataString(NavigationManager.BaseUri)}", true);
+
+            return;
+        }
+
+        if (gtinCodeModel.CodeType is null || gtinCodeModel.Value is null || ProductId == null)
+        {
+            return;
+        }
+
+        if (gtinCodeModel.CodeType is null)
+        {
+            ValidationMessages.Add("Invalid GTIN code type specified.");
+
+            return;
+        }
+
+        bool isValidFormat = gtinCodeModel.CodeType.IsValid(gtinCodeModel.Value);
+
+        if (!isValidFormat)
+        {
+            ValidationMessages.Add("Invalid barcode format.");
+
+            return;
+        }
+
+        ServiceProductGTINCodeUpsertRequest upsertRequest = new()
+        {
+            ProductId = ProductId.Value,
+            CodeType = gtinCodeModel.CodeType,
+            CodeTypeAsText = GetStringFromProductGTINCodeType(gtinCodeModel.CodeType)!,
+            Value = gtinCodeModel.Value,
+            UpsertUserName = currentUserName,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> createProductGTINCodeResult
+            = await _productGTINCodeService.UpsertAsync(upsertRequest);
+
+        createProductGTINCodeResult.Switch(
+            success =>
+            {
+                ProductBarcodeReaderGTINCodeResultModel? existingModel =
+                    ProductBarcodeReaderGTINCodeResults.FirstOrDefault(x => x.Index == gtinCodeModel.Index);
+
+                if (existingModel is not null)
+                {
+                    existingModel.CodeType = gtinCodeModel.CodeType;
+                    existingModel.Value = gtinCodeModel.Value;
+                    existingModel.AllowedGTINCodeTypesSelectListItems = gtinCodeModel.AllowedGTINCodeTypesSelectListItems;
+                    existingModel.IncludedInDatabase = true;
+
+                    return;
+                }
+
+                List<ProductGTINCodeType> allowedGTINCodeTypesSelectListItems = GetAllowedGTINCodeTypes(gtinCodeModel.Value);
+
+                ProductBarcodeReaderGTINCodeResultModel model = new()
+                {
+                    Index = ProductBarcodeReaderGTINCodeResults.Count,
+                    Value = gtinCodeModel.Value,
+                    CodeType = gtinCodeModel.CodeType,
+                    AllowedGTINCodeTypesSelectListItems = allowedGTINCodeTypesSelectListItems,
+                    IncludedInDatabase = true,
+                };
+
+                ProductBarcodeReaderGTINCodeResults.Add(model);
+            },
+            validationResult =>
+            {
+
+            },
+            unexpectedFailure =>
+            {
+
+            });
+    }
+
+
+    public async Task DeleteProductGTINCodeAsync(ProductBarcodeReaderGTINCodeResultModel gtinCodeModel)
+    {
+        if (!gtinCodeModel.IncludedInDatabase)
+        {
+            ProductBarcodeReaderGTINCodeResults.Remove(gtinCodeModel);
+
+            return;
+        }
+
+        if (ProductId is null)
+        {
+            ValidationMessages.Add("Please specify product id.");
+
+            return;
+        }
+
+        if (gtinCodeModel.CodeType is null)
+        {
+            ValidationMessages.Add("Invalid GTIN code type specified.");
+
+            return;
+        }
+
+        OneOf<Success, NotFound> deleteResult = await _productGTINCodeService.DeleteAsync(ProductId.Value, gtinCodeModel.CodeType);
+
+        deleteResult.Switch(
+            success =>
+            {
+                ProductBarcodeReaderGTINCodeResults.Remove(gtinCodeModel);
+            },
+            notFound =>
+            {
+                ValidationMessages.Add("Not found");
+            });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

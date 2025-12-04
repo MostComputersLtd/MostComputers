@@ -1,8 +1,10 @@
 ﻿using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
@@ -10,7 +12,6 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -82,7 +83,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForAllProducts();
+        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForAllProductsAsync();
 
         Assert.NotEmpty(productFirstImages);
 
@@ -122,7 +123,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => true,
             _ => false));
 
-        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForAllProducts();
+        IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForAllProductsAsync();
 
         Assert.DoesNotContain(productFirstImages, x =>
         x.Id == productId1
@@ -161,7 +162,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false));
 
         IEnumerable<ProductImage> productFirstImages = _productImageService.GetAllFirstImagesForSelectionOfProducts(
-            new List<int> { productId1, productId2 } );
+            new List<int> { productId1, productId2 });
 
         Assert.NotEmpty(productFirstImages);
 
@@ -271,7 +272,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
+        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProductAsync(productId);
 
         Assert.Equal(2, productImages.Count());
 
@@ -315,7 +316,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => true,
             _ => false));
 
-        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
+        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProductAsync(productId);
 
         Assert.Empty(productImages);
     }
@@ -345,7 +346,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(id > 0);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
         Assert.NotNull(productImage);
 
@@ -379,7 +380,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(id > 0);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(999999999);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(999999999);
 
         Assert.Null(productImage);
     }
@@ -471,7 +472,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.True(id > 0);
 
-            ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+            ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
             Assert.NotNull(productImage);
 
@@ -581,7 +582,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
             Assert.True(id > 0);
 
-            ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+            ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
             Assert.NotNull(productImage);
 
@@ -813,7 +814,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             _ => false,
             _ => false));
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
         Assert.NotNull(productImage);
 
@@ -1072,7 +1073,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
 
         OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
-            = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductId(productIdToUse, htmlData);
+            = _productImageService.UpdateHtmlDataInFirstAndAllImagesByProductIdAsync(productIdToUse, htmlData);
 
         Assert.Equal(expected, updateImagesHtmlResult.Match(
             isSuccessful => isSuccessful,
@@ -1080,7 +1081,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             unexpectedFailureResult => false));
 
         ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(imageId);
 
         Assert.NotNull(firstImage);
         Assert.NotNull(productImage);
@@ -1155,7 +1156,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
 
         OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
-            = _productImageService.UpdateHtmlDataInFirstImagesByProductId(productIdToUse, htmlData);
+            = _productImageService.UpdateHtmlDataInFirstImagesByProductIdAsync(productIdToUse, htmlData);
 
         Assert.Equal(expected, updateImagesHtmlResult.Match(
             isSuccessful => isSuccessful,
@@ -1163,7 +1164,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             unexpectedFailureResult => false));
 
         ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(imageId);
 
         Assert.NotNull(firstImage);
         Assert.NotNull(productImage);
@@ -1238,7 +1239,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
         }
 
         OneOf<bool, ValidationResult, UnexpectedFailureResult> updateImagesHtmlResult
-            = _productImageService.UpdateHtmlDataInAllImagesById(imageIdToUse, htmlData);
+            = _productImageService.UpdateHtmlDataInAllImagesByIdAsync(imageIdToUse, htmlData);
 
         Assert.Equal(expected, updateImagesHtmlResult.Match(
             isSuccessful => isSuccessful,
@@ -1246,7 +1247,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
             unexpectedFailureResult => false));
 
         ProductImage? firstImage = _productImageService.GetFirstImageForProduct(productId);
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(imageId);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(imageId);
 
         Assert.NotNull(firstImage);
         Assert.NotNull(productImage);
@@ -1300,7 +1301,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
         Assert.Null(productImage);
     }
@@ -1334,7 +1335,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id.Value);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id.Value);
 
         Assert.NotNull(productImage);
     }
@@ -1366,7 +1367,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id);
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id);
 
         Assert.Null(productImage);
     }
@@ -1400,8 +1401,8 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(success);
 
-        ProductImage? productImage = _productImageService.GetByIdInAllImages(id.Value);
-        ProductImageFileNameInfo? productImageFileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
+        ProductImage? productImage = _productImageService.GetByIdInAllImagesAsync(id.Value);
+        ProductImageFileData? productImageFileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId.Value)
             .FirstOrDefault(x => x.FileName?[x.FileName.IndexOf('.')..] == id.ToString());
 
         Assert.NotNull(productImage);
@@ -1443,7 +1444,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.True(success);
 
-        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
+        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProductAsync(productId);
 
         Assert.Empty(productImages);
     }
@@ -1480,7 +1481,7 @@ public sealed class ProductImageServiceTests : IntegrationTestBaseForNonWebProje
 
         Assert.False(success);
 
-        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProduct(productId);
+        IEnumerable<ProductImage> productImages = _productImageService.GetAllInProductAsync(productId);
 
         Assert.Empty(productImages);
     }

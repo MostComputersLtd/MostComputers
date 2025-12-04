@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,24 +7,45 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\css\ProductXmlPopupControl.js" />
+    <Folder Include="wwwroot\img\PromotionFiles\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\js\Pages\Shared\ProductImagesPopupControl.js" />
+    <PackageReference Include="FluentValidation" Version="12.1.0" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MOSTComputers.Services.Authentication\MOSTComputers.Services.Identity.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.Identity\MOSTComputers.Services.Identity.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.PDF\MOSTComputers.Services.PDF.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
+    <ProjectReference Include="..\MOSTComputers.UI.Web.Blazor\MOSTComputers.UI.Web.Blazor\MOSTComputers.UI.Web.Blazor.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.FileContentType\MOSTComputers.Utils.Files.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Conventions\" />
-    <Folder Include="wwwroot\js\Pages\CreatePages\" />
-    <Folder Include="wwwroot\js\Pages\Accounts\" />
-  </ItemGroup>
+	<ItemGroup>
+		<PdfDocumentTemplates Include="..\PdfDocumentTemplates\**\*" />
+		<ProductHtmlFileTemplates Include="..\ProductHtmlFileTemplates\**\*" />
+	</ItemGroup>
+
+	<Target Name="CopyPdfDocumentTemplatesOnBuild" AfterTargets="Build">
+		<Copy SourceFiles="@(PdfDocumentTemplates)" DestinationFolder="$(OutputPath)PdfDocumentTemplates\" />
+	</Target>
+
+	<Target Name="CopyPdfDocumentTemplatesOnPublish" AfterTargets="Publish">
+		<Copy SourceFiles="@(PdfDocumentTemplates)" DestinationFolder="$(PublishDir)PdfDocumentTemplates\" />
+	</Target>
+
+	<Target Name="CopyProductHtmlFileTemplatesOnBuild" AfterTargets="Build">
+		<Copy SourceFiles="@(ProductHtmlFileTemplates)" DestinationFolder="$(OutputPath)ProductHtmlFileTemplates\" />
+	</Target>
+
+	<Target Name="CopyProductHtmlFileTemplatesOnPublish" AfterTargets="Publish">
+		<Copy SourceFiles="@(ProductHtmlFileTemplates)" DestinationFolder="$(PublishDir)ProductHtmlFileTemplates\" />
+	</Target>
 
 </Project>

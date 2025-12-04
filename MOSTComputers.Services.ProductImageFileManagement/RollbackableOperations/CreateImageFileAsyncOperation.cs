@@ -1,59 +1,83 @@
-﻿using MOSTComputers.Models.FileManagement.Models;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
-using MOSTComputers.Services.TransactionalFileManagement.Contracts;
-using OneOf;
+﻿using OneOf;
 using OneOf.Types;
 using SixLabors.ImageSharp;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.TransactionalFileManagement.Contracts;
+
+using static MOSTComputers.Utils.Files.ContentTypeUtils;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
-
-internal sealed class CreateImageFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, DirectoryNotFoundResult, FileAlreadyExistsResult>>
+internal sealed class CreateImageFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult>>
 {
-    public CreateImageFileAsyncOperation(string imageDirectoryPath, string fileNameWithoutExtension, byte[] imageData, AllowedImageFileType imageFileType)
+    public CreateImageFileAsyncOperation(string imageDirectoryPath, string fullFileName, byte[] imageData)
     {
         _imageDirectoryPath = imageDirectoryPath;
-        _fileNameWithoutExtension = fileNameWithoutExtension;
+        _fullFileName = fullFileName;
         _imageData = imageData;
-        _imageFileType = imageFileType;
     }
 
     private readonly string _imageDirectoryPath;
-    private readonly string _fileNameWithoutExtension;
+    private readonly string _fullFileName;
     private readonly byte[] _imageData;
-    private readonly AllowedImageFileType _imageFileType;
 
-    private bool _succeeeded = false;
+    private bool _succeeded = false;
 
-    public async Task<OneOf<Success, DirectoryNotFoundResult, FileAlreadyExistsResult>> ExecuteAsync()
+    public async Task<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult>> ExecuteAsync()
     {
+        string? contentType = GetContentTypeFromExtension(_fullFileName);
+
+        if (!IsImageContentType(contentType))
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
+
         if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
-
-        if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = fullFileName };
+        if (File.Exists(filePath))
+        {
+            return new FileAlreadyExistsResult() { FileName = _fullFileName };
+        }
 
         using MemoryStream memoryStream = new(_imageData);
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        try
+        {
+            using Image image = await Image.LoadAsync(memoryStream);
 
-        await image.SaveAsync(filePath);
+            await image.SaveAsync(filePath);
 
-        _succeeeded = true;
+            _succeeded = true;
 
-        return new Success();
+            return new Success();
+        }
+        catch (UnknownImageFormatException)
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
+        catch (InvalidImageContentException)
+        {
+            return FileSaveFailureResult.FromInvalidContent(new());
+        }
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
+        if (!_succeeded) return;
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
-
-        if (!File.Exists(filePath)) throw new FileNotFoundException($"Cannot rollback, because file is missing: {filePath}");
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Cannot rollback, because file is missing: {filePath}");
+        }
 
         File.Delete(filePath);
     }

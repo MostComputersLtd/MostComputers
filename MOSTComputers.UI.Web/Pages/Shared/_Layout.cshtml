@@ -1,43 +1,104 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using MOSTComputers.UI.Web.Models.Authentication
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MOSTComputers.UI.Web</title>
+    <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/MOSTComputers.UI.Web.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/Pages/Shared/Layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3-not-important">
-            <div class="container">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container ms-4 me-3" style="max-width: 100%;">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">MOSTComputers</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                    aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
+
 
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/ProductDisplay">Show Products</a>
+                            <a class="nav-link text-dark" asp-page="Barcodes/ProductBarcodeReader">Barcodes</a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/CreatePages/ProductCreate">Create Product</a>
-                        </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/CreatePages/XmlProductCreate">Create Product From XML</a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Products</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/DownloadFullXml">Full XML</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/XmlDownload">Download XML</a>
                         </li>
 
+                        @{
+                            bool isUserLoggedIn = User.Identity?.IsAuthenticated ?? false;
+                        }
+
+                        @if (isUserLoggedIn)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Documents">Documents</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/ProductCharacteristicsComparer">Compare Characteristics</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/ProductEditor">Product Editor</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/PromotionFiles">Promotion Files</a>
+                            </li>
+                        }
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/ProductCompareEditor">Compare &amp; edit Products</a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Repairs">Repair Service</a>
+                        </li>
+
+                        @{
+                            Claim? adminClaim = User?.FindFirst(
+                                claim => (claim.Type == ClaimTypes.Role) && (claim.Value == UserRoles.Admin.RoleName));
+
+                            bool shouldDisplayAdminPanelButton = (adminClaim is not null);
+
+                            Claim? nameClaim = User?.FindFirst(
+                                claim => (claim.Type == ClaimTypes.Name));
+
+                            string userNameDisplayStretchClass = (adminClaim is null) ? "flex-grow-1" : string.Empty;
+                        }
+
+                        <li class="nav-item d-flex flex-grow-1 justify-content-end">
+
+                            @if (shouldDisplayAdminPanelButton)
+                            {
+                                <a class="nav-link text-dark" asp-page="Accounts/Admin/AdminPanel">Admin Panel</a>
+
+                                <a class="nav-link text-dark" asp-page="__TEMP_Tests">Tests</a>
+                            }
+
+                            @if (nameClaim?.Value is not null)
+                            {
+                                <p class="text-dark ms-2 align-self-center m-0" style="height: min-content;">
+                                    @nameClaim!.Value
+                                </p>
+                            }
+
+                            @if (!isUserLoggedIn)
+                            {
+                                <a class="btn btn-primary" asp-page="Accounts/Login">
+                                    Login
+                                </a>
+                            }
                         </li>
                     </ul>
                 </div>
@@ -45,14 +106,14 @@
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3-not-important">
+        <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            2024 - MOSTComputers - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            &copy; 2024 - MOSTComputers - <a asp-area="" asp-page="/Privacy">Privacy</a>
         </div>
     </footer>
 

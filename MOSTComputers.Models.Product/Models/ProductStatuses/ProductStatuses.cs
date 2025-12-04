@@ -2,7 +2,7 @@
 
 public sealed class ProductStatuses
 {
-    public int ProductId { get; set; }
-    public bool IsProcessed { get; set; }
-    public bool NeedsToBeUpdated { get; set; }
+    public int ProductId { get; init; }
+    public bool IsProcessed { get; init; }
+    public bool NeedsToBeUpdated { get; init; }
 }

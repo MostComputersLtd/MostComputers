@@ -1,0 +1,26 @@
+﻿@using MOSTComputers.Services.SearchStringOrigin.Models
+@model SearchStringPartsTablePartialModel
+@{
+}
+
+<table id="imageFileNameInfosDisplay_ul" class="full-parent-width table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @for (int i = 0; i < Model.SearchStringParts.Count; i++)
+        {
+            SearchStringPartOriginData searchStringPartOriginData = Model.SearchStringParts[i];
+
+            <tr id="propertiesDisplay_ul_li-@i">
+                <td>@searchStringPartOriginData.SearchStringPart</td>
+                <td>@(searchStringPartOriginData.Characteristic.Meaning ?? "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>

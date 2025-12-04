@@ -1,0 +1,25 @@
+﻿@page "/repairs"
+@rendermode InteractiveServer
+
+<PageTitle>Repairs</PageTitle>
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+	<div class="full-parent-width d-flex flex-row align-items-center">
+		<input type="text" class="me-4" @bind="_imeiNumber" placeholder="IMEI number..." />
+
+		<button type="button" class="btn btn-primary" @onclick="Search">
+			Search
+		</button>
+	</div>
+
+	<p class="m-0">After entering an existing IMEI number, you can see the repair status.</p>
+</div>
+
+@code {
+	private string? _imeiNumber { get; set; }
+
+	private void Search()
+	{
+
+	}
+}

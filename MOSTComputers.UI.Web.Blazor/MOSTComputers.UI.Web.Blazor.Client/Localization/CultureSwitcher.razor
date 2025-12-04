@@ -1,0 +1,34 @@
+﻿@*  @implements IDisposable
+
+@inject CultureService CultureService
+
+<select @onchange="ChangeCulture">
+    @foreach (string culture in UICulturesInSelect)
+    {
+        <option value="@culture">@culture</option>
+    }
+</select>
+
+@code {
+    [Parameter, EditorRequired] public string[] UICulturesInSelect { get; set; }
+
+    protected override void OnInitialized()
+    {
+        
+    }
+
+    private void ChangeCulture(ChangeEventArgs e)
+    {
+        string? newCulture = e.Value?.ToString();
+
+        if (!string.IsNullOrWhiteSpace(newCulture))
+        {
+            CultureService.SetCultureAsync(newCulture);
+        }
+    }
+
+    public void Dispose()
+    {
+        CultureService.OnCultureChanged -= OnCultureChanged;
+    }
+}  *@

@@ -1,29 +1,21 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
-using OneOf;
-using OneOf.Types;
+﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
-
 public interface IProductCharacteristicService
 {
-    IEnumerable<ProductCharacteristic> GetAllByCategoryId(int categoryId);
-    IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(int categoryId);
-    IEnumerable<ProductCharacteristic> GetSearchStringAbbreviationsOnlyByCategoryId(int categoryId);
-    IEnumerable<IGrouping<int, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
-    IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
-    IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds);
-    ProductCharacteristic? GetById(int id);
-    ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name);
-    ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(int categoryId, string name, ProductCharacteristicTypeEnum productCharacteristicType);
-    IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names);
-    IEnumerable<ProductCharacteristic> GetSelectionByCharacteristicIds(IEnumerable<int> ids);
-    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByIdUpdateRequest>? validator = null);
-    OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? validator = null);
-    bool Delete(int id);
-    bool DeleteAllForCategory(int categoryId);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAsync(int categoryId);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAsync(int categoryId, bool active);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdsAsync(IEnumerable<int> categoryIds);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdsAsync(IEnumerable<int> categoryIds, bool active);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypeAsync(int categoryId, ProductCharacteristicType productCharacteristicType);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypeAsync(int categoryId, ProductCharacteristicType productCharacteristicType, bool active);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypesAsync(int categoryId, IEnumerable<ProductCharacteristicType> productCharacteristicTypes);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypesAsync(int categoryId, IEnumerable<ProductCharacteristicType> productCharacteristicTypes, bool active);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdsAndTypesAsync(IEnumerable<int> categoryIds, IEnumerable<ProductCharacteristicType> productCharacteristicTypes);
+    Task<List<ProductCharacteristic>> GetAllByCategoryIdsAndTypesAsync(IEnumerable<int> categoryIds, IEnumerable<ProductCharacteristicType> productCharacteristicTypes, bool active);
+    Task<List<ProductCharacteristic>> GetSelectionByCharacteristicIdsAsync(IEnumerable<int> ids);
+    Task<List<ProductCharacteristic>> GetSelectionByCategoryIdAndNamesAsync(int categoryId, List<string> names);
+    Task<ProductCharacteristic?> GetByIdAsync(int id);
+    Task<ProductCharacteristic?> GetByCategoryIdAndNameAsync(int categoryId, string name);
+    Task<ProductCharacteristic?> GetByCategoryIdAndNameAndCharacteristicTypeAsync(int categoryId, string name, ProductCharacteristicType productCharacteristicType);
 }

@@ -1,0 +1,1518 @@
+﻿@page "/productEditor"
+@rendermode InteractiveServer
+
+@using System.Text
+@using FluentValidation.Results
+@using MOSTComputers.Models.FileManagement.Models
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ExternalXmlImport
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.ProductStatuses
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.Legacy.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.UI.Web.Blazor.Client.Product
+@using MOSTComputers.UI.Web.Blazor.Client.Product.Image
+@using MOSTComputers.UI.Web.Blazor.Client.Product.Property
+@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Product
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
+@using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
+@using MOSTComputers.UI.Web.Blazor.Utils
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+@using static MOSTComputers.Utils.Files.ContentTypeUtils
+
+@attribute [Authorize]
+
+@inject ICategoryService CategoryService
+
+@inject IProductService ProductService
+@inject IProductSearchService ProductSearchService
+@inject IProductPropertyService ProductPropertyService
+@inject IProductCharacteristicAndExternalXmlDataRelationService ProductCharacteristicAndExternalXmlDataRelationService
+@inject IProductImageService ProductImageService
+@inject IProductImageAndPromotionFileSaveService ProductImageAndPromotionFileSaveService
+@inject IPromotionProductFileService PromotionProductFileService
+@inject IProductXmlProvidingService ProductXmlProvidingService
+@inject ILegacyProductXmlService LegacyProductXmlService
+@inject IProductEditorDataService ProductEditorDataService
+@inject ITransactionExecuteService TransactionExecuteService
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Product Editor</PageTitle>
+
+<HeadContent>
+	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="product-editor-page product-data-table-scrollable-container">
+
+    <header class="product-editor-page-header">
+        <ul class="header-list">
+
+            <li class="header-list-item">
+                <select @bind="SelectedProductNewStatus">
+
+                    <option value="">All</option>
+
+                    @foreach (ProductEditorProductNewStatusSearchOptions productNewStatus in ProductNewStatusesInSelect)
+                    {
+                        <option value="@((int)productNewStatus)">
+                            @GetStringFromProductEditorNewStatusSearchOptions(productNewStatus)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item header-user-input-list-item">
+                <input type="text" class="user-input" placeholder="Search..." @bind="UserInputString" />
+            </li>
+
+            <li class="header-list-item header-search-button-list-item">
+                <button id="productEditorSearchButton" type="button"
+                    class="btn btn-outline-primary search-button"
+                    @onclick="@SearchProductsAsync">
+                    Search
+                </button>
+
+                <div id="productEditorSearchLoader" class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="header-list-item">
+                <select @bind="SelectedCategoryId">
+
+                    <option value="">All</option>
+
+                    @foreach (Category category in CategoriesInSelect)
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select @bind="SelectedProductStatus">
+
+                    <option value="">All</option>
+
+                    @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
+                    {
+                        <option value="@((int)productStatus)">@GetStringFromProductStatusSearchOptions(productStatus)</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select @bind="SelectedPromotionSearchOptions">
+
+                    <option value="">All</option>
+
+                    @foreach (PromotionSearchOptions promotionSearchOptions in PromotionSearchOptionsInSelect)
+                    {
+                        <option value="@((int)promotionSearchOptions)">
+                            @GetStringFromPromotionSearchOptions(promotionSearchOptions)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="resultsCountSelect" @bind="SelectedResultCount">
+
+                    @foreach (int resultCount in ResultCountsInSelect)
+                    {
+                        <option value="@resultCount">
+                            @resultCount
+                        </option>
+                    }
+                </select>
+            </li>
+        </ul>
+    </header>
+
+	<div class="product-data-table-scrollable-container">
+		<table class="product-data-table table-with-small-horizontal-padding-on-cells">
+			<thead class="product-data-table-head">
+				<tr>
+                    <th>Work Stat</th>
+                    <th @onclick="OrderByImagesCount">P</th>
+					<th>Stat</th>
+					<th>CSTID</th>
+					<th>Name</th>
+					<th>SStr</th>
+					<th>PID</th>
+					<th>RID</th>
+					<th>IID</th>
+					<th>Promo</th>
+					<th>N XML</th>
+					@* <th>O XML</th>
+					<th>O Img XML</th> *@
+					<th>Upload</th>
+					<th>Img</th>
+					<th>RImg</th>
+					@* <th>
+                        <button id="productEditorChangeSelectedPropertiesAndImagesButton" type="button" class="btn btn-outline-primary"
+                            @onclick='() => OnChangeAllButtonPressed(
+                            "productEditorChangeSelectedPropertiesAndImagesButton",
+                            "productEditorChangeSelectedPropertiesAndImagesLoader")'>
+							S Old All
+						</button>
+
+                        <div id="productEditorChangeSelectedPropertiesAndImagesLoader" class="round-loader-default" style="display: none;"></div>
+					</th>
+					<th></th> *@
+				</tr>
+			</thead>
+
+			<tbody>
+
+                @for (int i = 0; i < ProductDatas.Count; i++)
+                {
+                    ProductEditorProductData productData = ProductDatas[i];
+
+	                IEnumerable<Promotion>? orderedPromotions = productData.ProductPromotions?
+		                .OrderBy(x => (x.Active ?? false) ? 1 : 0);
+
+	                Promotion? promotionPID = orderedPromotions?
+		                .FirstOrDefault(x => x.Id == productData.Product.PromotionPid);
+
+	                Promotion? promotionRID = orderedPromotions?
+		                .FirstOrDefault(x => x.Id == productData.Product.PromotionRid);
+
+                    int currentIndex = i;
+
+                    int? promotionPictureId = productData.Product.AlertPictureId;
+
+                    if (promotionPictureId is null || promotionPictureId <= 0)
+                    {
+                        promotionPictureId = productData.Product.PromotionPictureId;
+                    }
+
+                    @* string isSelectedClass = productData.IsSelected ? "product-item-selected-for-change" : string.Empty; *@
+
+                    <tr class="product-data-table-entry">
+
+	                    <td>
+                            <p>
+		                        @(productData.ProductStatuses?.ProductNewStatus is not null
+			                        ? GetStringFromProductNewStatus(productData.ProductStatuses.ProductNewStatus)
+		                            : "-")
+                            </p>
+	                    </td>
+                        <td>
+                            <p>
+                                @(productData.OriginalImagesCount > 0 ? "Y" : "N")
+                            </p>
+                        </td>
+	                    <td>
+                            <p>
+                                @(productData.Product.Status is not null
+                                    ? GetStringFromProductStatus(productData.Product.Status.Value)
+                                    : "-")
+                            </p>
+                        </td>
+	                    <td>
+                            <p class="link-info" @onclick='() => ShowProductXmlPopup(productData)'>
+			                    @productData.Product.Id
+		                    </p>
+	                    </td>
+	                    <td>
+		                    <p class="link-info" @onclick="() => ShowSingleProductEditorPopupAsync(productData)">
+			                    @productData.Product.Name
+		                    </p>
+	                    </td>
+	                    <td>
+		                    <p class="link-info" @onclick="() => ShowProductSearchStringOriginDataPopup(productData)">
+			                    @(productData.SearchStringParts?.Count ?? 0)
+		                    </p>
+	                    </td>
+	                    <td>
+		                    @if (promotionPID is not null)
+		                    {
+                                <p class="link-info" @onclick='() => ShowProductPromotionPopup(productData, promotionPID)'>
+				                    @(promotionPID is not null ? "Yes" : "No")
+			                    </p>
+		                    }
+		                    else
+		                    {
+                                <p>@(promotionPID is not null ? "Yes" : "No")</p>
+		                    }
+	                    </td>
+	                    <td>
+		                    @if (promotionRID is not null)
+		                    {
+                                <p class="link-info" @onclick='() => ShowProductPromotionPopup(productData, promotionRID)'>
+				                    Yes
+			                    </p>
+		                    }
+		                    else
+		                    {
+                                <p>No</p>
+		                    }
+	                    </td>
+	                    <td>
+                            @if (promotionPictureId > 0)
+		                    {
+                                <p class="link-info" @onclick="() => ShowProductInfoPromotionPopup(productData)">
+				                    Yes
+			                    </p>
+		                    }
+		                    else
+		                    {
+                                <p>No</p>
+		                    }
+	                    </td>
+	                    <td>
+                            <p class="link-info" @onclick="() => ShowPromotionProductFilePopupAsync(productData)">
+			                    @(productData.PromotionFilesCount > 0 ? "Yes" : "No")
+		                    </p>
+	                    </td>
+	                    <td>
+                            <p class="link-info" @onclick="() => ShowProductPropertiesPopupAsync(productData)">
+			                    @(productData.ProductPropertiesCount)
+		                    </p>
+	                    </td>
+	                    @* <td>
+                            @if (productData.LegacyXmlProductLoadState == LoadState.Loading && productData.LegacyXmlProduct is null)
+                            {
+                                <div class="round-loader-default legacy-xml-product-loader"></div>
+                            }
+                            else if (productData.LegacyXmlProductLoadState == LoadState.FailedToLoad)
+                            {
+                                <p>Err</p>
+                            }
+                            else
+                            {
+                                <p class="link-info" @onclick="() => ShowProductLegacyXmlPropertiesPopupAsync(productData)">
+                                    @(productData.LegacyXmlProduct?.Properties?.Count ?? 0)
+                                </p>
+                            }
+	                    </td>
+	                    <td>
+                            @if (productData.LegacyXmlProductLoadState == LoadState.Loading && productData.LegacyXmlProduct is null)
+                            {
+                                <div class="round-loader-default legacy-xml-product-loader"></div>
+                            }
+                            else if (productData.LegacyXmlProductLoadState == LoadState.FailedToLoad)
+                            {
+                                <p>Err</p>
+                            }
+                            else
+                            {
+                                <p class="link-info" @onclick='() => ShowProductLegacyXmlInNewWindow(productData)'>
+                                    @(productData.LegacyXmlProduct?.Images.Count ?? 0)
+                                </p>
+                            }
+	                    </td> *@
+	                    <td>
+                            <p class="link-info" @onclick='() => ShowProductImageFilesPopup(productData)'>
+			                    @(productData.DirectoryImagesCount)
+		                    </p>
+	                    </td>
+	                    <td>
+                            <p>
+                                @(productData.OriginalFirstImageExists ? "Yes" : "No")
+                            </p>
+                        </td>
+	                    <td>
+                            <p class="link-info" @onclick="() => ShowProductImagesPopupAsync(productData)">
+			                    @(productData.OriginalImagesCount)
+		                    </p>
+	                    </td>
+	                    
+	                    @* <td>
+                            <button id="productEditorChangePropertiesAndImagesButton-@i" type="button" class="btn btn-outline-primary"
+                                @onclick='() => OnChangeButtonForProductPressed(productData,
+                                $"productEditorChangePropertiesAndImagesButton-{currentIndex}",
+                                $"productEditorChangePropertiesAndImagesLoader-{currentIndex}")'>
+			                    S Old
+		                    </button>
+
+                            <div id="productEditorChangePropertiesAndImagesLoader-@i" class="round-loader-default" style="display: none;"></div>
+	                    </td>
+
+	                    <td>
+		                    <input type="checkbox" @bind="productData.IsSelected" />
+	                    </td> *@
+                    </tr>
+                }
+			</tbody>
+		</table>
+	</div>
+</div>
+
+@if (ProductToDisplay is not null)
+{
+    <SingleProductEditorPopup Product="ProductToDisplay.Product"
+        @bind-IsVisible="IsSingleProductEditorPopupVisible"
+        PopupMarginOptions='new() { Left = "1vw", Right = "1vw", Top = "1vh", Bottom = "1vh" }' />
+
+    <Popup @bind-IsVisible="IsProductXmlPopupVisible"
+        PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">XML:</h5>
+
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
+            </div>
+        </HeaderContent>
+        <ChildContent>
+            <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+            {
+                ProductIds = [ProductToDisplay!.Product.Id]
+            }" />
+        </ChildContent>
+    </Popup>
+
+    <Popup @bind-IsVisible="IsProductSearchStringOriginDataPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                @if (ProductToDisplay.Product.Manufacturer is not null)
+                {
+                    <h4 class="popup-header-text mb-0 me-3">Manufacturer: @ProductToDisplay.Product.Manufacturer.RealCompanyName</h4>
+                }
+
+                @if (ProductToDisplay.Product.Category is not null)
+                {
+                    <h4 class="popup-header-text mb-0 me-3">Category: @ProductToDisplay.Product.Category?.Description</h4>
+                }
+
+                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Product.Id)</h4>
+                <h4 class="popup-header-text me-3">@(ProductToDisplay.Product.Name ?? "-")</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <ProductSearchStringOriginTable SearchStringOriginDataList="ProductToDisplay.SearchStringParts" />
+        </ChildContent>
+    </Popup>
+
+    <Popup @bind-IsVisible="IsProductPropertiesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">New XML:</h5>
+
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product?.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.Product?.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <ProductPropertiesTable Product="@ProductToDisplay.Product"
+                ProductProperties="@ProductToDisplayProperties">
+            </ProductPropertiesTable>
+        </ChildContent>
+    </Popup>
+
+    @* <Popup @bind-IsVisible="IsProductLegacyXmlPropertiesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">Old XML:</h5>
+
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.LegacyXmlProduct?.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.LegacyXmlProduct?.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <div class="d-flex flex-column p-2 full-parent-width">
+
+                <table class="full-parent-width table-with-all-borders table-with-small-horizontal-padding-on-cells">
+                    <thead>
+                        <tr>
+                            <td>ID</td>
+                            <td class="whitespace-nowrap">Old S</td>
+                            <td class="whitespace-nowrap">Old Name</td>
+                            <td class="whitespace-nowrap">Old Value</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @if (ProductToDisplay.LegacyXmlProduct?.Properties is not null
+                            && ProductToDisplay.LegacyXmlProduct.Properties.Count > 0)
+                        {
+                            for (int i = 0; i < ProductToDisplay.LegacyXmlProduct.Properties.Count; i++)
+                            {
+                                LegacyXmlProductProperty xmlProperty = ProductToDisplay.LegacyXmlProduct.Properties[i];
+
+                                bool isOrderAnInteger = int.TryParse(xmlProperty.Order, out int xmlDisplayOrder);
+
+                                ProductCharacteristicAndExternalXmlDataRelation? matchingPropertyRelation = null;
+
+                                if (isOrderAnInteger)
+                                {
+                                    matchingPropertyRelation = ProductToDisplayPropertyRelations?
+                                        .FirstOrDefault(x => x.XmlName == xmlProperty.Name && x.XmlDisplayOrder == xmlDisplayOrder);
+                                }
+
+                                <tr>
+                                    <td>@(matchingPropertyRelation?.ProductCharacteristicId.ToString() ?? "-")</td>
+                                    <td>@xmlProperty.Order</td>
+                                    <td>@xmlProperty.Name</td>
+                                    <td class="ps-3">@xmlProperty.Value</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </Popup> *@
+
+    <Popup @bind-IsVisible="IsProductImageFilesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+                <h5 class="popup-header-text me-3">Upload:</h5>
+
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <div class="d-flex flex-column p-2 full-parent-width">
+
+                <ul class="full-parent-width list-unstyled d-flex mb-0" style="height: 13em;">
+
+                    @if (ProductToDisplay.FileNameData is not null
+                        && ProductToDisplay.FileNameData.Count > 0)
+                    {
+                        for (int i = 0; i < ProductToDisplay.FileNameData.Count; i++)
+                        {
+                            ProductImageFileData imageFileNameInfo = ProductToDisplay.FileNameData[i];
+
+                            string? imageDataRoute = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{imageFileNameInfo.FileName}";
+
+                            float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.3F;
+
+                            <li style="position: relative; min-width: 20%; opacity: @opacityOfLi;">
+
+                                <div class="product-image-file-active-button-container">
+
+                                    @if (imageFileNameInfo.Active)
+                                    {
+                                        <input type="checkbox" aria-label="Close" checked class="product-image-file-active-button" />
+									}
+                                    else
+                                    {
+                                        <input type="checkbox" aria-label="Close" class="product-image-file-active-button" />
+                                    }
+                                </div>
+
+                                <button name="Image #@i" class="btn full-parent-width full-parent-height"
+                                    @ondblclick="() => OpenDataUrlInNewWindowAsync(imageDataRoute)"
+                                    style="background: url('@imageDataRoute') no-repeat center; background-size: contain; background-origin: content-box;">
+                                </button>
+
+                                <div class="d-flex flex-column justify-content-center">
+                                    <p class="align-text-center mb-0">
+                                        @imageFileNameInfo.FileName
+                                    </p>
+                                </div>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        </ChildContent>
+    </Popup>
+
+    if (CurrentProductImagesPopupData is not null)
+    {
+        <Popup @bind-IsVisible="CurrentProductImagesPopupData.IsVisible"
+            PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+            <HeaderContent>
+                <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+                    <h5 class="popup-header-text me-3">Images:</h5>
+                    <h4 class="popup-header-text me-3">CSTID: @CurrentProductImagesPopupData.Product.Id</h4>
+                    <h4 class="popup-header-text me-3">@CurrentProductImagesPopupData.Product.Name</h4>
+                </div>
+            </HeaderContent>
+            <ChildContent>
+                <ProductImagesList Images="CurrentProductImagesPopupData.ImageDatas"/>
+			</ChildContent>
+        </Popup>
+    }
+
+    <Popup @bind-IsVisible="IsProductPromotionPopupVisible"
+        PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">Promotion:</h5>
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
+            </div>
+        </HeaderContent>
+        
+        <ChildContent>
+            @if (ProductToDisplayCurrentPromotion is not null)
+            {
+                <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
+
+                    <div class="col-4 d-flex flex-row">
+                        <p>ID: @(ProductToDisplayCurrentPromotion.Id.ToString())</p>
+                    </div>
+
+                    <div class="col-8">
+                        <p>Name: @(ProductToDisplayCurrentPromotion.Name ?? "-")</p>
+                    </div>
+
+                    <div class="col-12">
+                        <p>Type: @(ProductToDisplayCurrentPromotion.Type?.ToString() ?? "-")</p>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="col-6 col-md-12">
+                            <p>Start Date: @(ProductToDisplayCurrentPromotion.StartDate?.ToString() ?? "-")</p>
+                        </div>
+
+                        <div class="col-6 col-md-12">
+                            <p>Expire Date: @(ProductToDisplayCurrentPromotion.ExpirationDate?.ToString() ?? "-")</p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Discount €: @(ProductToDisplayCurrentPromotion.DiscountEUR ?? 0M)</p>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Discount $: @(ProductToDisplayCurrentPromotion.DiscountUSD ?? 0M)</p>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="col-6 col-md-12">
+                            <p>Min Quantity: @(ProductToDisplayCurrentPromotion.MinimumQuantity ?? 0)</p>
+                        </div>
+
+                        <div class="col-6 col-md-12">
+                            <p>Max Quantity: @(ProductToDisplayCurrentPromotion.MaximumQuantity ?? 0)</p>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <p>Expire Quantity: @(ProductToDisplayCurrentPromotion.ExpQuantity ?? 0)</p>
+                    </div>
+
+                    <div class="col-12">
+
+                        @if (ProductToDisplayCurrentPromotion.RequiredProductIds?.Count > 0)
+                        {
+                            <ul class="d-inline-flex list-style-none">
+                                @foreach (int requiredProductId in ProductToDisplayCurrentPromotion.RequiredProductIds)
+                                {
+                                    <li class="ms-2 me-2">
+                                        <p>@requiredProductId</p>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <p>Promotion not found</p>
+				</div>
+            }
+        </ChildContent>
+    </Popup>
+
+    <Popup @bind-IsVisible="IsProductInfoPromotionPopupVisible"
+        PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">Promotion:</h5>
+                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
+
+                @{
+                    int? promotionPictureId = ProductToDisplay.Product.AlertPictureId;
+
+                    if (promotionPictureId is null || promotionPictureId <= 0)
+                    {
+                        promotionPictureId = ProductToDisplay.Product.PromotionPictureId;
+                    }
+                }
+
+                <div class="col-12">
+                    <div class="col-6 col-md-12">
+                        <p>Picture Id: @(promotionPictureId?.ToString() ?? "-")</p>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Expire Date: @(ProductToDisplay.Product.PromotionExpireDate?.ToString() ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        </ChildContent>
+    </Popup>
+
+    @if (ProductToDisplayPromotionProductFiles is not null)
+    {
+        <PromotionProductFileEditorPopup
+            @bind-IsVisible="IsPromotionProductFilePopupVisible"
+            PopupMarginOptions='new() { Left = "5%", Right = "5%", Top = "5%", Bottom = "5%" }'
+            Product="ProductToDisplay.Product"
+            PromotionProductFiles="ProductToDisplayPromotionProductFiles"
+            ShouldDisplaySaveButtonInSingleEditor="false"
+            ShouldDisplayAddButton="false"
+            ShouldDisplayDeleteButton="false"/>
+    }
+
+    @* <Popup @bind-IsVisible="IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible"
+        PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
+        DisplayHeader="false">
+        <ChildContent>
+            <div class="full-parent-width full-parent-height d-flex flex-column justify-content-center align-items-center">
+                <p class="mb-3">The save operation failed:</p>
+
+                <div class="d-flex flex-row">
+
+                </div>
+
+                <div class="d-flex flex-row">
+                    <button type="button" class="btn btn-danger" @onclick="CloseSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopup">
+                        Exit
+                    </button>
+                </div>
+            </div>
+        </ChildContent>
+    </Popup> *@
+}
+
+@code {
+    public sealed class ProductEditorProductData
+    {
+        public required Product Product { get; set; }
+
+        // public LegacyXmlProduct? LegacyXmlProduct { get; set; }
+        // public LoadState LegacyXmlProductLoadState { get; set; } = LoadState.Loading;
+
+        public ProductWorkStatuses? ProductStatuses { get; set; }
+
+        public required int ProductPropertiesCount { get; set; }
+        public required int DirectoryImagesCount { get; set; }
+        public required List<ProductImageFileData>? FileNameData { get; set; }
+        public required int OriginalImagesCount { get; set; }
+        public required bool OriginalFirstImageExists { get; set; }
+        public List<Promotion>? ProductPromotions { get; set; }
+        public List<SearchStringPartOriginData>? SearchStringParts { get; set; }
+        public int? PromotionFilesCount { get; set; }
+
+        // public bool IsSelected { get; set; } = false;
+    }
+
+    private sealed class ProductImagesPopupData
+    {
+        public bool IsVisible { get; set; } = false;
+        public required Product Product { get; set; }
+        public required List<ProductImageData> ImageDatas { get; set; }
+    }
+
+    public enum ProductEditorProductNewStatusSearchOptions
+    {
+        New = 0,
+        WorkInProgress = 1,
+        ReadyForUse = 2,
+        Postponed1 = 3,
+        Postponed2 = 4,
+        NewAndWorkInProgress = 5,
+        LastAdded = 6,
+        LastAddedNew = 7,
+    }
+
+    public enum LoadState
+    {
+        Loading = 0,
+        Loaded = 1,
+        FailedToLoad = 2,
+    }
+
+    public enum ProductOrderByImages
+    {
+        None = 0,
+        FirstWithImages = 1,
+        FirstWithNoImages = 2,
+    }
+
+    public const int LastAddedProductsSearchCount = 200;
+
+    public string? UserInputString { get; set; }
+
+    public List<Category> CategoriesInSelect { get; set; } = new();
+
+    public string SelectedCategoryId { get; set; } = string.Empty;
+
+    public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
+        ProductStatusSearchOptions.AvailableAndCall,
+        ProductStatusSearchOptions.Available,
+        ProductStatusSearchOptions.Call,
+    ];
+
+    public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
+
+    public List<ProductEditorProductNewStatusSearchOptions> ProductNewStatusesInSelect { get; set; } = [
+        ProductEditorProductNewStatusSearchOptions.New,
+        ProductEditorProductNewStatusSearchOptions.WorkInProgress,
+        ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress,
+        ProductEditorProductNewStatusSearchOptions.ReadyForUse,
+        ProductEditorProductNewStatusSearchOptions.Postponed1,
+        ProductEditorProductNewStatusSearchOptions.Postponed2,
+        ProductEditorProductNewStatusSearchOptions.LastAdded,
+        ProductEditorProductNewStatusSearchOptions.LastAddedNew,
+    ];
+
+    public string SelectedProductNewStatus { get; set; }
+        = ((int)ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress).ToString();
+
+    public List<PromotionSearchOptions> PromotionSearchOptionsInSelect { get; set; } = [
+        PromotionSearchOptions.None,
+        PromotionSearchOptions.P,
+        PromotionSearchOptions.R,
+        PromotionSearchOptions.I,
+        PromotionSearchOptions.Discount
+    ];
+
+    public string SelectedPromotionSearchOptions { get; set; } = string.Empty;
+
+    public string SelectedResultCount { get; set; } = (50).ToString();
+
+    public List<int> ResultCountsInSelect { get; set; } = [
+        50,
+        100,
+        200,
+        300,
+    ];
+
+    private ProductOrderByImages _productOrder = ProductOrderByImages.None;
+
+    private List<ProductEditorProductData> ProductDatas { get; set; } = new();
+
+    public ProductEditorProductData? ProductToDisplay { get; set; }
+
+    private bool IsSingleProductEditorPopupVisible { get; set; } = false;
+
+    private bool IsProductXmlPopupVisible { get; set; } = false;
+
+    private bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
+
+    private bool IsProductPropertiesPopupVisible { get; set; } = false;
+    private List<ProductProperty>? ProductToDisplayProperties { get; set; }
+
+    private bool IsProductLegacyXmlPropertiesPopupVisible { get; set; } = false;
+    private List<ProductCharacteristicAndExternalXmlDataRelation>? ProductToDisplayPropertyRelations { get; set; }
+
+    private bool IsProductImageFilesPopupVisible { get; set; } = false;
+
+    private ProductImagesPopupData? CurrentProductImagesPopupData { get; set; } = null;
+
+    private bool IsProductPromotionPopupVisible { get; set; } = false;
+    private Promotion? ProductToDisplayCurrentPromotion { get; set; }
+
+    private bool IsProductInfoPromotionPopupVisible { get; set; } = false;
+
+    private bool IsPromotionProductFilePopupVisible { get; set; } = false;
+    private List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData>? ProductToDisplayPromotionProductFiles { get; set; } = null;
+
+    private IJSObjectReference? _jsModule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        List<Category> allCategories = await CategoryService.GetAllAsync();
+
+        CategoriesInSelect = allCategories
+            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ToList();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductEditor.razor.js");
+        }
+    }
+
+    private void OrderByImagesCount()
+    {
+        if (_productOrder == ProductOrderByImages.None || _productOrder == ProductOrderByImages.FirstWithImages)
+        {
+            ProductDatas = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 1 : 0)
+                .ToList();
+
+            _productOrder = ProductOrderByImages.FirstWithNoImages;
+
+            return;
+        }
+
+        ProductDatas = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 0 : 1)
+            .ToList();
+
+        _productOrder = ProductOrderByImages.FirstWithImages;
+    }
+
+    private async Task ShowSingleProductEditorPopupAsync(ProductEditorProductData productData)
+    {
+        List<PromotionProductFileInfo> promotionProductFiles = await PromotionProductFileService.GetAllForProductAsync(productData.Product.Id);
+
+        ProductToDisplayPromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles);
+
+        ProductToDisplay = productData;
+
+        IsSingleProductEditorPopupVisible = true;
+    }
+
+    private void ShowProductXmlPopup(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        IsProductXmlPopupVisible = true;
+    }
+
+    private void ShowProductSearchStringOriginDataPopup(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        IsProductSearchStringOriginDataPopupVisible = true;
+    }
+
+    private async Task ShowProductPropertiesPopupAsync(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        ProductToDisplayProperties = await ProductPropertyService.GetAllInProductAsync(ProductToDisplay.Product.Id);
+
+        IsProductPropertiesPopupVisible = true;
+    }
+
+    private async Task ShowProductLegacyXmlPropertiesPopupAsync(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        List<int> relatedCategoryIds = [-1];
+
+        if (ProductToDisplay.Product.CategoryId is not null)
+        {
+            relatedCategoryIds.Add(ProductToDisplay.Product.CategoryId.Value);
+        }
+
+        ProductToDisplayPropertyRelations
+            = await ProductCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdsAsync(relatedCategoryIds);
+
+        IsProductLegacyXmlPropertiesPopupVisible = true;
+    }
+
+    // private async Task ShowProductLegacyXmlInNewWindow(ProductEditorProductData productData)
+    // {
+    //     ProductToDisplay = productData;
+
+    //     if (_jsModule is null) return;
+
+    //     LegacyXmlObjectData legacyXmlObjectData = new()
+    //     {
+    //         Products = [ProductToDisplay.LegacyXmlProduct],
+    //         DateOfExport = DateTime.Today,
+    //     };
+
+    //     OneOf<string, InvalidXmlResult> getProductXmlResult = LegacyProductXmlService.TrySerializeProductsXml(legacyXmlObjectData, true);
+
+    //     string xmlData = getProductXmlResult.IsT0 ? getProductXmlResult.AsT0 : $"An error has occured";
+
+    //     string xmlContentType = getProductXmlResult.IsT0 ? "application/xml" : "text/plain";
+
+    //     string xmlWindowTitle = $"Legacy XML (ID = {ProductToDisplay.Product.Id})";
+
+    //     await _jsModule.InvokeVoidAsync("openFileDataInNewWindow", xmlData, xmlContentType, xmlWindowTitle);
+    // }
+
+    private void ShowProductImageFilesPopup(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        IsProductImageFilesPopupVisible = true;
+    }
+
+    private async Task ShowProductImagesPopupAsync(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        List<ProductImageData> productToDisplayImageDatas;
+
+        productToDisplayImageDatas = await ProductImageService.GetAllInProductWithoutFileDataAsync(productData.Product.Id);
+
+        CurrentProductImagesPopupData = new ProductImagesPopupData()
+        {
+			IsVisible = true,
+            Product = productData.Product,
+            ImageDatas = productToDisplayImageDatas,
+		};
+    }
+
+    private void ShowProductPromotionPopup(ProductEditorProductData productData, Promotion promotion)
+    {
+        ProductToDisplayCurrentPromotion = promotion;
+
+        ProductToDisplay = productData;
+
+        IsProductPromotionPopupVisible = true;
+    }
+
+    private void ShowProductInfoPromotionPopup(ProductEditorProductData productData)
+    {
+        ProductToDisplay = productData;
+
+        IsProductInfoPromotionPopupVisible = true;
+    }
+
+    private async Task ShowPromotionProductFilePopupAsync(ProductEditorProductData productData)
+    {
+        List<PromotionProductFileInfo> promotionProductFiles = await PromotionProductFileService.GetAllForProductAsync(productData.Product.Id);
+
+        ProductToDisplayPromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles);
+
+        ProductToDisplay = productData;
+
+        IsPromotionProductFilePopupVisible = true;
+    }
+
+    private async Task SearchProductsAsync()
+    {
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("alternateElementsDisplay", "productEditorSearchButton", "productEditorSearchLoader");
+        }
+
+        try
+        {
+            int? selectedCategoryId = int.TryParse(SelectedCategoryId, out int categoryId) ? categoryId : null;
+
+            ProductStatusSearchOptions? selectedProductStatus = ProductStatusSearchOptions.TryParse(
+                SelectedProductStatus, out ProductStatusSearchOptions productStatus)
+                    ? productStatus
+                    : null;
+
+            bool parsedSelectedProductNewStatus = Enum.TryParse<ProductEditorProductNewStatusSearchOptions>(
+                SelectedProductNewStatus, out ProductEditorProductNewStatusSearchOptions productEditorNewStatus);
+
+            ProductEditorProductNewStatusSearchOptions? selectedProductEditorNewStatus = parsedSelectedProductNewStatus
+                ? productEditorNewStatus
+                : null;
+
+            PromotionSearchOptions? selectedPromotionSearchOptions = PromotionSearchOptions.TryParse(
+                SelectedPromotionSearchOptions, out PromotionSearchOptions promotionSearchOptions)
+                    ? promotionSearchOptions
+                    : null;
+
+            int selectedResultCount = int.TryParse(
+                SelectedResultCount, out int resultCount)
+                    ? resultCount
+                    : ResultCountsInSelect.Min();
+
+            selectedResultCount = Math.Min(selectedResultCount, ResultCountsInSelect.Max());
+
+            List<Product> products = await GetProductsFromSearchOptionsAsync(UserInputString, selectedCategoryId,
+                selectedProductStatus, selectedProductEditorNewStatus, selectedPromotionSearchOptions, selectedResultCount);
+
+            List<ProductEditorProductData> productDatas = await ProductEditorDataService.GetProductEditorProductDatasAsync(products);
+
+            // if (productDatas.Count > 0)
+            // {
+            //     Task _ = FetchProductsLegacyXmlDataAsync(productDatas);
+            // }
+
+            ProductDatas.Clear();
+
+            ProductDatas.AddRange(productDatas);
+
+        }
+        finally
+        {
+            if (_jsModule is not null)
+            {
+                await _jsModule.InvokeVoidAsync("alternateElementsDisplay", "productEditorSearchButton", "productEditorSearchLoader");
+            }
+        }
+    }
+
+    private async Task<List<Product>> GetProductsFromSearchOptionsAsync(
+        string? userInputString = null,
+        int? categoryId = null,
+        ProductStatusSearchOptions? productStatusSearchOptions = null,
+        ProductEditorProductNewStatusSearchOptions? productEditorNewStatusSearchOptions = null,
+        PromotionSearchOptions? promotionSearchOptions = null,
+        int? maxResultCount = null)
+    {
+        List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
+            = GetSearchOptionsFromEditorSearchOptions(productEditorNewStatusSearchOptions);
+
+        bool filterByLastAdded = productNewStatusSearchOptions?.Contains(ProductNewStatusSearchOptions.LastAdded) ?? false;
+
+        int? maxResultCountInner = maxResultCount;
+
+        if (filterByLastAdded && maxResultCount is not null)
+        {
+            maxResultCountInner = Math.Min(maxResultCount.Value, LastAddedProductsSearchCount);
+        }
+
+        ProductSearchRequest productSearchRequest = new()
+        {
+            OnlyVisibleByEndUsers = false,
+            UserInputString = userInputString,
+            CategoryId = categoryId,
+            ProductNewStatuses = productNewStatusSearchOptions,
+            ProductStatus = productStatusSearchOptions,
+            PromotionSearchOptions =  promotionSearchOptions,
+            MaxResultCount = maxResultCountInner,
+        };
+
+        return await ProductSearchService.SearchProductsAsync(productSearchRequest);
+    }
+
+    private static List<ProductNewStatusSearchOptions>? GetSearchOptionsFromEditorSearchOptions(
+        ProductEditorProductNewStatusSearchOptions? productEditorProductNewStatusSearchOptions)
+    {
+        return productEditorProductNewStatusSearchOptions switch
+        {
+            ProductEditorProductNewStatusSearchOptions.New => [ProductNewStatusSearchOptions.New],
+            ProductEditorProductNewStatusSearchOptions.WorkInProgress => [ProductNewStatusSearchOptions.WorkInProgress],
+            ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress => [ProductNewStatusSearchOptions.New, ProductNewStatusSearchOptions.WorkInProgress],
+            ProductEditorProductNewStatusSearchOptions.ReadyForUse => [ProductNewStatusSearchOptions.ReadyForUse],
+            ProductEditorProductNewStatusSearchOptions.Postponed1 => [ProductNewStatusSearchOptions.Postponed1],
+            ProductEditorProductNewStatusSearchOptions.Postponed2 => [ProductNewStatusSearchOptions.Postponed2],
+            ProductEditorProductNewStatusSearchOptions.LastAdded => [ProductNewStatusSearchOptions.LastAdded],
+            ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.LastAdded, ProductNewStatusSearchOptions.New],
+            _ => null
+        };
+    }
+
+    private static string? GetStringFromProductEditorNewStatusSearchOptions(ProductEditorProductNewStatusSearchOptions productStatusEnum)
+    {
+        return productStatusEnum switch
+        {
+            ProductEditorProductNewStatusSearchOptions.New => "New",
+            ProductEditorProductNewStatusSearchOptions.WorkInProgress => "Work",
+            ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress => "New & Work",
+            ProductEditorProductNewStatusSearchOptions.ReadyForUse => "Ready",
+            ProductEditorProductNewStatusSearchOptions.Postponed1 => "Post1",
+            ProductEditorProductNewStatusSearchOptions.Postponed2 => "Post2",
+            ProductEditorProductNewStatusSearchOptions.LastAdded => "Last Added",
+            ProductEditorProductNewStatusSearchOptions.LastAddedNew => "Last Added & New",
+            _ => null
+        };
+    }
+
+    // private async Task FetchProductsLegacyXmlDataAsync(List<ProductEditorProductData> productDatas)
+    // {
+    //     try
+    //     {
+    //         OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getLegacyProductXmlTask
+    //             = await ProductXmlProvidingService.GetProductXmlParsedAsync();
+
+    //         if (!getLegacyProductXmlTask.IsT0)
+    //         {
+    //             foreach (ProductEditorProductData productData in productDatas)
+    //             {
+    //                 productData.LegacyXmlProductLoadState = LoadState.FailedToLoad;
+    //             }
+
+    //             await InvokeAsync(StateHasChanged);
+
+    //             return;
+    //         }
+
+    //         LegacyXmlObjectData legacyXmlObjectData = getLegacyProductXmlTask.AsT0;
+
+    //         foreach (ProductEditorProductData productData in productDatas)
+    //         {
+    //             productData.LegacyXmlProduct = legacyXmlObjectData.Products?
+    //                 .FirstOrDefault(x => x.Id == productData.Product.Id);
+
+    //             productData.LegacyXmlProductLoadState = LoadState.Loaded;
+    //         }
+
+    //         await InvokeAsync(StateHasChanged);
+    //     }
+    //     catch (HttpRequestException)
+    //     {
+    //         foreach (ProductEditorProductData productData in productDatas)
+    //         {
+    //             productData.LegacyXmlProductLoadState = LoadState.FailedToLoad;
+    //         }
+
+    //         await InvokeAsync(StateHasChanged);
+    //     }
+    // }
+
+    private async Task OpenDataUrlInNewWindowAsync(string dataUrl)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("openDataUrlInNewWindow", dataUrl);
+    }
+
+    #region Save From Legacy XML and Original Images
+
+    // private const int _defaultLinkCharacteristicId = 1693;
+
+    // private bool IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible { get; set; } = false;
+
+    // private void CloseSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopup()
+    // {
+    //     IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible = false;
+    // }
+
+    // private async Task OnChangeAllButtonPressed(
+    //     string? searchButtonElementId = null,
+    //     string? searchButtonLoaderElementId = null)
+    // {
+    //     List<ProductEditorProductData> selectedProductDatas = ProductDatas.Where(x => x.IsSelected)
+    //         .ToList();
+
+    //     if (selectedProductDatas.Count > 0)
+    //     {
+    //         await ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesForProductsAsync(
+    //             selectedProductDatas, searchButtonElementId, searchButtonLoaderElementId);
+
+    //         return;
+    //     }
+
+    //     await ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesForProductsAsync(
+    //         ProductDatas, searchButtonElementId, searchButtonLoaderElementId);
+    // }
+
+    // private async Task OnChangeButtonForProductPressed(
+    //     ProductEditorProductData productDataRelatedToButton,
+    //     string? searchButtonElementId = null,
+    //     string? searchButtonLoaderElementId = null)
+    // {
+    //     List<ProductEditorProductData> selectedProductDatas = ProductDatas.Where(x => x.IsSelected)
+    //         .ToList();
+
+    //     if (selectedProductDatas.Count > 0)
+    //     {
+    //         if (!selectedProductDatas.Contains(productDataRelatedToButton))
+    //         {
+    //             productDataRelatedToButton.IsSelected = true;
+
+    //             selectedProductDatas.Add(productDataRelatedToButton);
+    //         }
+
+    //         await ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesForProductsAsync(
+    //             selectedProductDatas, searchButtonElementId, searchButtonLoaderElementId);
+
+    //         return;
+    //     }
+
+    //     await ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesForProductsAsync(
+    //         [productDataRelatedToButton], searchButtonElementId, searchButtonLoaderElementId);
+    // }
+
+    // private async Task ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesForProductsAsync(
+    //     List<ProductEditorProductData> productDatas,
+    //     string? searchButtonElementId = null,
+    //     string? searchButtonLoaderElementId = null)
+    // {
+    //     AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+    //     string? currentUserName = authenticationState.User.Identity?.Name;
+
+    //     if (currentUserName is null)
+    //     {
+    //         NavigationManager.NavigateTo($"accounts/login?returnUrl={Uri.EscapeDataString(NavigationManager.BaseUri)}", true);
+
+    //         return;
+    //     }
+
+    //     if (searchButtonElementId is not null && searchButtonLoaderElementId is not null && _jsModule is not null)
+    //     {
+    //         await _jsModule.InvokeVoidAsync("alternateElementsDisplay", searchButtonElementId, searchButtonLoaderElementId);
+    //     }
+
+    //     try
+    //     {
+    //         List<int> productIds = productDatas.Select(x => x.Product.Id)
+    //             .ToList();
+
+    //         List<Product> products = await ProductService.GetByIdsAsync(productIds);
+
+    //         List<IGrouping<int, ProductImage>> originalImages = await ProductImageService.GetAllInProductsAsync(productIds);
+
+    //         OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getProductXmlDataResult = await ProductXmlProvidingService.GetProductXmlParsedAsync();
+
+    //         if (!getProductXmlDataResult.IsT0)
+    //         {
+    //             IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible = true;
+
+    //             return;
+    //         }
+
+    //         LegacyXmlObjectData productXmlData = getProductXmlDataResult.AsT0;
+
+    //         foreach (ProductEditorProductData productData in productDatas)
+    //         {
+    //             Product? product = products.FirstOrDefault(x => x.Id == productData.Product.Id);
+
+    //             if (product is null) continue;
+
+    //             LegacyXmlProduct? xmlProduct = productXmlData.Products.FirstOrDefault(x => x.Id == productData.Product.Id);
+
+    //             List<ProductImage>? originalImagesForProduct = originalImages.FirstOrDefault(x => x.Key == productData.Product.Id)?
+    //                 .ToList();
+
+    //             bool changePropertiesAndImagesOfProductResult
+    //                 = await TransactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //                     () => ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesAsync(product, originalImagesForProduct ?? new(), currentUserName, xmlProduct),
+    //                     result => result == true);
+
+    //             if (!changePropertiesAndImagesOfProductResult)
+    //             {
+    //                 IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible = true;
+
+    //                 return;
+    //             }
+    //         }
+        
+    //         List<ProductEditorProductData> newProductDatas = await ProductEditorDataService.GetProductEditorProductDatasAsync(products);
+
+    //         if (newProductDatas.Count > 0)
+    //         {
+    //             Task _ = FetchProductsLegacyXmlDataAsync(newProductDatas);
+    //         }
+
+    //         for (int i = 0; i < ProductDatas.Count; i++)
+    //         {
+    //             ProductEditorProductData currentProductData = ProductDatas[i];
+
+    //             ProductEditorProductData? alteredProductData = newProductDatas.FirstOrDefault(x => x.Product.Id == currentProductData.Product.Id);
+
+    //             if (alteredProductData is null) continue;
+
+    //             ProductDatas[i] = alteredProductData;
+    //         }
+    //     }
+    //     finally
+    //     {
+    //         if (searchButtonElementId is not null && searchButtonLoaderElementId is not null && _jsModule is not null)
+    //         {
+    //             await _jsModule.InvokeVoidAsync("alternateElementsDisplay", searchButtonElementId, searchButtonLoaderElementId);
+    //         }
+    //     }
+    // }
+
+    // private async Task<bool> ChangeProductPropertiesToLegacyXmlAndImagesToOriginalImagesAsync(
+    //     Product product, List<ProductImage> images, string currentUserName, LegacyXmlProduct? xmlProduct = null)
+    // {
+    //     AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+    //     if (xmlProduct is not null)
+    //     {
+    //         bool saveMatchedXmlPropertiesResult = await ChangeProductPropertiesToMatchThoseInLegacyXmlAsync(product, xmlProduct, currentUserName);
+
+    //         if (!saveMatchedXmlPropertiesResult) return false;
+    //     }
+
+    //     bool saveAllImagesResult = await ChangeProductImagesToMatchNewImagesAsync(product.Id, images, currentUserName);
+
+    //     return saveAllImagesResult;
+    // }
+
+    // private async Task<bool> ChangeProductPropertiesToMatchThoseInLegacyXmlAsync(
+    //     Product product,
+    //     LegacyXmlProduct xmlProduct,
+    //     string upsertUserName)
+    // {
+    //     if (product.CategoryId is null)
+    //     {
+    //         return false;
+    //     }
+
+    //     List<ProductCharacteristicAndExternalXmlDataRelation> propertyRelationshipsFromProductCategory
+    //         = await ProductCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdAsync(product.CategoryId.Value);
+
+    //     List<ProductPropertyForProductUpsertRequest> productPropertyUpsertRequests = new();
+
+    //     foreach (LegacyXmlProductProperty xmlProperty in xmlProduct.Properties)
+    //     {
+    //         ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
+    //             .FirstOrDefault(x => x.XmlName == xmlProperty.Name && x.XmlDisplayOrder.ToString() == xmlProperty.Order);
+
+    //         if (propertyRelationship is null
+    //             || propertyRelationship.ProductCharacteristicId is null)
+    //         {
+    //             continue;
+    //         }
+
+    //         ProductPropertyForProductUpsertRequest productPropertyUpsertRequest = new()
+    //         {
+    //             ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
+    //             XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+    //             Value = xmlProperty.Value,
+    //         };
+
+    //         productPropertyUpsertRequests.Add(productPropertyUpsertRequest);
+    //     }
+
+    //     if (!string.IsNullOrWhiteSpace(xmlProduct.VendorUrl))
+    //     {
+    //         ProductPropertyForProductUpsertRequest defaultLinkProductPropertyUpsertRequest = new()
+    //         {
+    //             ProductCharacteristicId = _defaultLinkCharacteristicId,
+    //             XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+    //             Value = xmlProduct.VendorUrl,
+    //         };
+
+    //         productPropertyUpsertRequests.Add(defaultLinkProductPropertyUpsertRequest);
+    //     }
+
+    //     ProductPropertyUpsertAllForProductRequest productPropertyUpsertAllRequest = new()
+    //     {
+    //         ProductId = product.Id,
+    //         NewProperties = productPropertyUpsertRequests,
+    //     };
+
+    //     OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertAllResult
+    //         = await ProductPropertyService.UpsertAllProductPropertiesAsync(productPropertyUpsertAllRequest, upsertUserName);
+
+    //     return upsertAllResult.Match(
+    //         success => true,
+    //         validationResult =>
+    //         {
+    //             return false;
+    //         },
+    //         unexpectedFailureResult =>
+    //         {
+    //             return false;
+    //         });
+    // }
+
+    // private async Task<bool> ChangeProductImagesToMatchNewImagesAsync(
+    //     int productId, List<ProductImage> newImages, string upsertUserName)
+    // {
+    //     ProductImagesAndPromotionFilesForProductUpsertRequest upsertAllRequest = new()
+    //     {
+    //         ProductId = productId,
+    //         UpsertUserName = upsertUserName,
+    //     };
+
+    //     List<ProductImageWithFileForProductUpsertRequest> imageUpsertRequests = new();
+
+    //     foreach (ProductImage image in newImages)
+    //     {
+    //         if (image.ImageData is null)
+    //         {
+    //             ValidationFailure validationFailure = new(nameof(ProductImage.ImageData), "Image Data cannot be empty");
+
+    //             ValidationResult validationResult = new([validationFailure]);
+
+    //             return false;
+    //         }
+
+    //         if (image.ImageContentType is null)
+    //         {
+    //             ValidationFailure validationFailure = new(nameof(ProductImage.ImageContentType), "Image content type cannot be empty");
+
+    //             ValidationResult validationResult = new([validationFailure]);
+
+    //             return false;
+    //         }
+
+    //         List<string> possibleFileExtensions
+    //             = GetPossibleExtensionsFromContentType(image.ImageContentType);
+
+    //         string imageFileExtension = possibleFileExtensions.First();
+
+    //         ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest = new()
+    //         {
+    //             ExistingImageId = null,
+    //             FileExtension = imageFileExtension,
+    //             ImageData = image.ImageData,
+    //             HtmlData = image.HtmlData,
+    //             FileUpsertRequest = new()
+    //             {
+    //                 Active = true,
+    //                 CustomDisplayOrder = null,
+    //             }
+    //         };
+
+    //         upsertAllRequest.Add(productImageWithFileUpsertRequest);
+    //     }
+
+    //     OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertAllResult
+    //         = await ProductImageAndPromotionFileSaveService.UpsertAllImagesAndFilesForProductAsync(upsertAllRequest);
+
+    //     return upsertAllResult.Match(
+    //         success => true,
+    //         validationResult =>
+    //         {
+    //             return false;
+    //         },
+    //         fileDoesntExistResult =>
+    //         {
+    //             return false;
+    //         },
+    //         fileAlreadyExistsResult =>
+    //         {
+    //             return false;
+    //         },
+    //         unexpectedFailureResult =>
+    //         {
+    //             return false;
+    //         });
+    // }
+#endregion Save From Legacy XML and Original Images
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

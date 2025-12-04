@@ -1,0 +1,73 @@
+﻿@using MOSTComputers.Models.Product.Models.ExternalXmlImport
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models;
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
+
+@model XmlPropertiesPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Old XML:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.XmlProduct?.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.XmlProduct?.Name</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="xmlProperties_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <table id="xmlPropertiesDisplay_ul" class="full-parent-width bg-white table-with-all-borders table-with-small-horizontal-padding-on-cells">
+            <thead>
+                <tr>
+                    <td>ID</td>
+                    <td style="white-space: nowrap;">Old S</td>
+                    <td style="white-space: nowrap;">Old Name</td>
+                    <td style="white-space: nowrap;">Old Value</td>
+                </tr>
+            </thead>
+            <tbody>
+
+                @if (Model.XmlProduct?.Properties is not null
+                    && Model.XmlProduct.Properties.Count > 0)
+                {
+                    for (int i = 0; i < Model.XmlProduct.Properties.Count; i++)
+                    {
+                        LegacyXmlProductProperty xmlProperty = Model.XmlProduct.Properties[i];
+
+                        bool isOrderAnInteger = int.TryParse(xmlProperty.Order, out int xmlDisplayOrder);
+
+                        ProductCharacteristicAndExternalXmlDataRelation? matchingPropertyRelation = null;
+
+                        if (isOrderAnInteger)
+                        {
+                            matchingPropertyRelation = Model.PropertyRelations?
+                                .FirstOrDefault(x => x.XmlName == xmlProperty.Name && x.XmlDisplayOrder == xmlDisplayOrder);
+                        }
+
+                        string savePropertyButtonDisplay = matchingPropertyRelation is not null ? "" : "none";
+
+                        <tr id="xmlPropertiesDisplay_ul_li-@i">
+                            <td>@(matchingPropertyRelation?.ProductCharacteristicId.ToString() ?? "-")</td>
+                            <td>@xmlProperty.Order</td>
+							<td>@xmlProperty.Name</td>
+                            <td class="ps-3 pe-3">@xmlProperty.Value</td>
+                            <td>
+                                <button id="xmlPropertiesDisplay_savePropertyButton-@(i)"
+                                    onclick="saveXmlPropertyForProductToLocalProperties(
+                                        @Model.XmlProduct.Id,
+                                        @matchingPropertyRelation?.Id,
+                                        '@Model.ImagesCompareTableContainerElementId')"
+                                    style="display: @savePropertyButtonDisplay">
+                                    Save
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

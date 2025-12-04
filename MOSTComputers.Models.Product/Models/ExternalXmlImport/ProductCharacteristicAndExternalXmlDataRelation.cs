@@ -2,12 +2,9 @@
 
 public sealed class ProductCharacteristicAndExternalXmlDataRelation
 {
-    public int Id { get; set; }
-    public int CategoryId { get; set; }
-    public string? CategoryName { get; set; }
-    public int? ProductCharacteristicId { get; set; }
-    public string? ProductCharacteristicName { get; set; }
-    public string? ProductCharacteristicMeaning { get; set; }
-    public required string XmlName { get; set; }
-    public int XmlDisplayOrder { get; set; }
+    public int Id { get; init; }
+    public int CategoryId { get; init; }
+    public int? ProductCharacteristicId { get; init; }
+    public required string XmlName { get; init; }
+    public int XmlDisplayOrder { get; init; }
 }

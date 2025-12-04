@@ -1,15 +1,15 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -60,8 +60,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -78,8 +78,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -93,7 +93,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId2 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.True(workStatuses.Count() >= 2);
 
@@ -121,8 +121,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -139,8 +139,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = -1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -154,7 +154,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.Equal(-1, workStatusId2);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.NotEmpty(workStatuses);
 
@@ -182,8 +182,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -200,8 +200,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -218,8 +218,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -233,7 +233,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductNewStatus(ProductNewStatusEnum.New);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductNewStatusAsync(ProductNewStatus.New);
 
         Assert.True(workStatuses.Count() >= 2);
 
@@ -269,8 +269,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -287,8 +287,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = -1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -305,8 +305,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -320,7 +320,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductNewStatus(ProductNewStatusEnum.New);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductNewStatusAsync(ProductNewStatus.New);
 
         Assert.NotEmpty(workStatuses);
 
@@ -355,8 +355,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -373,8 +373,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -391,8 +391,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.WorkInProgress,
             ReadyForImageInsert = false,
         };
 
@@ -406,7 +406,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductXmlStatus(ProductXmlStatusEnum.NotReady);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductXmlStatusAsync(ProductXmlStatus.NotReady);
 
         Assert.True(workStatuses.Count() >= 2);
 
@@ -442,8 +442,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -460,8 +460,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = -1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -478,8 +478,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.WorkInProgress,
             ReadyForImageInsert = false,
         };
 
@@ -493,7 +493,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductXmlStatus(ProductXmlStatusEnum.NotReady);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithProductXmlStatusAsync(ProductXmlStatus.NotReady);
 
         Assert.NotEmpty(workStatuses);
 
@@ -528,8 +528,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -546,8 +546,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -564,8 +564,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -579,7 +579,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithReadyForImageInsert(false);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithReadyForImageInsertAsync(false);
 
         Assert.True(workStatuses.Count() >= 2);
 
@@ -615,8 +615,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -633,8 +633,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = -1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -651,8 +651,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -666,7 +666,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithReadyForImageInsert(false);
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllWithReadyForImageInsertAsync(false);
 
         Assert.NotEmpty(workStatuses);
 
@@ -699,8 +699,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -714,7 +714,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductIdAsync(productId);
 
         Assert.NotNull(productWorkStatuses);
 
@@ -733,8 +733,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -748,7 +748,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(-1);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductIdAsync(-1);
 
         Assert.Null(productWorkStatuses);
     }
@@ -761,8 +761,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -776,7 +776,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatuses);
 
@@ -795,8 +795,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -810,7 +810,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(-1);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(-1);
 
         Assert.Null(productWorkStatuses);
     }
@@ -836,7 +836,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.Equal(expected, workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.Equal(expected, productWorkStatuses is not null);
 
@@ -856,8 +856,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             true
@@ -867,8 +867,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = false,
             },
             true
@@ -878,8 +878,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -889,8 +889,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = true,
             },
             true
@@ -900,8 +900,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.WorkInProgress,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -911,8 +911,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = 0,
-                ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.WorkInProgress,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -922,8 +922,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesCreateRequest()
             {
                 ProductId = -1,
-                ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.WorkInProgress,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -936,8 +936,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = 0,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -962,8 +962,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -990,7 +990,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.Equal(expected, isUpdateSuccessful);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatuses);
 
@@ -1018,8 +1018,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             true
@@ -1029,8 +1029,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = false,
             },
             true
@@ -1040,8 +1040,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -1051,8 +1051,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = true,
             },
             true
@@ -1062,8 +1062,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.WorkInProgress,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -1073,8 +1073,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = 0,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -1084,8 +1084,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByProductIdRequest()
             {
                 ProductId = -1,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -1102,8 +1102,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -1130,7 +1130,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.Equal(expected, isUpdateSuccessful);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatuses);
 
@@ -1158,8 +1158,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             true
@@ -1169,8 +1169,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = false,
             },
             true
@@ -1180,8 +1180,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -1191,8 +1191,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.WorkInProgress,
                 ReadyForImageInsert = true,
             },
             true
@@ -1202,8 +1202,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = UseRequiredValuePlaceholder,
-                ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.WorkInProgress,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = true,
             },
             true
@@ -1213,8 +1213,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = 0,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -1224,8 +1224,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             new ProductWorkStatusesUpdateByIdRequest()
             {
                 Id = -1,
-                ProductNewStatus = ProductNewStatusEnum.New,
-                ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+                ProductNewStatus = ProductNewStatus.New,
+                ProductXmlStatus = ProductXmlStatus.NotReady,
                 ReadyForImageInsert = false,
             },
             false
@@ -1242,8 +1242,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1260,8 +1260,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1278,8 +1278,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -1293,15 +1293,15 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> productWorkStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> productWorkStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.True(productWorkStatuses.Count() >= 3);
 
-        bool isDeleteAllSuccessful = _productWorkStatusesService.DeleteAll();
+        bool isDeleteAllSuccessful = _productWorkStatusesService.DeleteAllAsync();
 
         Assert.True(isDeleteAllSuccessful);
 
-        IEnumerable<ProductWorkStatuses> productWorkStatusesAfterDelete = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> productWorkStatusesAfterDelete = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(productWorkStatusesAfterDelete, x =>
             x.Id == workStatusId1
@@ -1333,8 +1333,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = 0,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1348,11 +1348,11 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.Equal(-1, workStatusId);
 
-        bool isDeleteAllSuccessful = _productWorkStatusesService.DeleteAll();
+        bool isDeleteAllSuccessful = _productWorkStatusesService.DeleteAllAsync();
 
         Assert.False(isDeleteAllSuccessful);
 
-        IEnumerable<ProductWorkStatuses> productWorkStatusesAfterDelete = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> productWorkStatusesAfterDelete = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(productWorkStatusesAfterDelete, x =>
             x.Id == workStatusId
@@ -1372,8 +1372,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1390,8 +1390,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1408,8 +1408,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1423,7 +1423,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1446,9 +1446,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductNewStatus(ProductNewStatusEnum.New);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductNewStatusAsync(ProductNewStatus.New);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -1482,8 +1482,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1500,8 +1500,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = 0,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1518,8 +1518,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1533,7 +1533,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1556,9 +1556,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductNewStatus(ProductNewStatusEnum.New);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductNewStatusAsync(ProductNewStatus.New);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -1592,8 +1592,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1610,8 +1610,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1628,8 +1628,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.WorkInProgress,
             ReadyForImageInsert = false,
         };
 
@@ -1643,7 +1643,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1666,9 +1666,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductXmlStatus(ProductXmlStatusEnum.NotReady);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductXmlStatusAsync(ProductXmlStatus.NotReady);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -1702,8 +1702,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1720,8 +1720,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = 0,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1738,8 +1738,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.WorkInProgress,
             ReadyForImageInsert = false,
         };
 
@@ -1753,7 +1753,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1776,9 +1776,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductXmlStatus(ProductXmlStatusEnum.NotReady);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithProductXmlStatusAsync(ProductXmlStatus.NotReady);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -1812,8 +1812,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1830,8 +1830,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = productId2,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1848,8 +1848,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.WorkInProgress,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.WorkInProgress,
             ReadyForImageInsert = true,
         };
 
@@ -1863,7 +1863,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1886,9 +1886,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithReadyForImageInsert(false);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithReadyForImageInsertAsync(false);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -1922,8 +1922,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest1 = new()
         {
             ProductId = productId1,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1940,8 +1940,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest2 = new()
         {
             ProductId = 0,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -1958,8 +1958,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest3 = new()
         {
             ProductId = productId3,
-            ProductNewStatus = ProductNewStatusEnum.WorkInProgress,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.WorkInProgress,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = true,
         };
 
@@ -1973,7 +1973,7 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId3 > 0);
 
-        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatuses = _productWorkStatusesService.GetAllAsync();
 
         Assert.Contains(workStatuses, x =>
             x.Id == workStatusId1
@@ -1996,9 +1996,9 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
             && x.ProductXmlStatus == workStatusesCreateRequest3.ProductXmlStatus
             && x.ReadyForImageInsert == workStatusesCreateRequest3.ReadyForImageInsert);
 
-        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithReadyForImageInsert(false);
+        bool isDeleteByProductNewStatusSuccessful = _productWorkStatusesService.DeleteAllWithReadyForImageInsertAsync(false);
 
-        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAll();
+        IEnumerable<ProductWorkStatuses> workStatusesAfterUpdate = _productWorkStatusesService.GetAllAsync();
 
         Assert.DoesNotContain(workStatusesAfterUpdate, x =>
             x.Id == workStatusId1
@@ -2030,8 +2030,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -2045,15 +2045,15 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductIdAsync(productId);
 
         Assert.NotNull(productWorkStatuses);
 
-        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByProductId(productId);
+        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByProductIdAsync(productId);
 
         Assert.True(isDeleteByProductIdSuccessful);
 
-        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByProductIdAsync(productId);
 
         Assert.Null(productWorkStatusesAfterDelete);
     }
@@ -2066,8 +2066,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -2081,15 +2081,15 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByProductIdAsync(productId);
 
         Assert.NotNull(productWorkStatuses);
 
-        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByProductId(-1);
+        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByProductIdAsync(-1);
 
         Assert.False(isDeleteByProductIdSuccessful);
 
-        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByProductId(productId);
+        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByProductIdAsync(productId);
 
         Assert.NotNull(productWorkStatusesAfterDelete);
     }
@@ -2102,8 +2102,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -2117,15 +2117,15 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatuses);
 
-        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteById(workStatusId);
+        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByIdAsync(workStatusId);
 
         Assert.True(isDeleteByProductIdSuccessful);
 
-        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.Null(productWorkStatusesAfterDelete);
     }
@@ -2138,8 +2138,8 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
         ProductWorkStatusesCreateRequest workStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.New,
-            ProductXmlStatus = ProductXmlStatusEnum.NotReady,
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
             ReadyForImageInsert = false,
         };
 
@@ -2153,15 +2153,15 @@ public sealed class ProductWorkStatusesServiceTests : IntegrationTestBaseForNonW
 
         Assert.True(workStatusId > 0);
 
-        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatuses = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatuses);
 
-        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteById(-1);
+        bool isDeleteByProductIdSuccessful = _productWorkStatusesService.DeleteByIdAsync(-1);
 
         Assert.False(isDeleteByProductIdSuccessful);
 
-        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetById(workStatusId);
+        ProductWorkStatuses? productWorkStatusesAfterDelete = _productWorkStatusesService.GetByIdAsync(workStatusId);
 
         Assert.NotNull(productWorkStatusesAfterDelete);
     }

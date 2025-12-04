@@ -7,15 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.4" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MOSTComputers.Models.FileManagement\MOSTComputers.Models.FileManagement.csproj" />
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.TransactionalFileManagement\MOSTComputers.Services.TransactionalFileManagement.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.FileContentType\MOSTComputers.Utils.Files.csproj" />
   </ItemGroup>
 
 </Project>

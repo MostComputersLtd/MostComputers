@@ -1,0 +1,7 @@
+﻿.promotion-product-file-single-editor-promotion-file:not(.promotion-product-file-single-editor-selected-promotion-file):hover {
+    background-color: antiquewhite;
+}
+
+.promotion-product-file-single-editor-selected-promotion-file {
+    background-color: #F7C0BC
+}

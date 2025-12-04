@@ -1,0 +1,77 @@
+﻿@page
+@using static MOSTComputers.UI.Web.Utils.StandardInputValueUtils
+@using MOSTComputers.UI.Web.Pages.Shared.PromotionFiles
+@model PromotionFilesModel
+@{
+    ViewData["Title"] = "Promotion Files";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/CustomElements/NotificationBox.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Data/Retrieval/FileInputCommon.js"></script>
+    <script src="~/js/Data/Retrieval/FileDataRetrieve.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+
+    <script src="~/js/Display/CustomElements/NotificationBox.js"></script>
+
+    <script src="~/js/Pages/Shared/PopupCommonElements.js"></script>
+
+    <script src="~/js/Pages/PromotionFiles.js"></script>
+}
+
+<div class="full-parent-width full-parent-height">
+    <div class="full-parent-width mb-2 d-flex flex-row">
+        <label for="promotion-files-valid-on-input" style="height: min-content; align-self: center;">Active on:</label>
+        <input id="promotion-files-valid-on-input" class="ms-1 me-2" type="date" placeholder="From"
+            value="@GetDateTimeAsStringForDateInput(Model.SearchOptions?.ValidOnDate)" />
+
+        <input id="promotion-files-search-input" type="text" placeholder="Search..."
+            class="flex-shrink-0 flex-grow-1 me-2" 
+            value="@Model.SearchOptions?.UserInputString"/>
+
+        <button id="promotion-files-search-button" type="button" class="btn btn-info ms-4"
+            onclick="searchFilesAsync(
+                'promotion-files-search-input',
+                'promotion-files-valid-on-input',
+                '@Model.PromotionFilesTableContainerElementId')">
+            Search
+        </button>
+
+        <button id="promotionFilesAddButton" class="btn btn-primary ms-2"
+            onclick="openPromotionFileSingleEditorPartial(null,
+                '@Model.PromotionFileSingleEditorModalData.ModalId',
+                '@Model.PromotionFileSingleEditorModalData.ModalDialogId',
+                '@Model.PromotionFileSingleEditorModalData.ModalContentId')">
+            +
+        </button>
+    </div>
+
+    <div id="@Model.PromotionFilesTableContainerElementId" class="full-parent-width flex-shrink-0 flex-grow-1 mb-2">
+        <partial name="PromotionFiles/_PromotionFileViewPartial" model="new PromotionFileViewPartialModel()
+        {
+            ContainerElementId = Model.PromotionFilesTableContainerElementId,
+            PromotionFiles = Model.PromotionFiles,
+            PromotionFileSingleEditorModalData = Model.PromotionFileSingleEditorModalData,
+            NotificationBoxId = Model.NotificationBoxId,
+        }" />
+    </div>
+
+    <div id="@Model.PromotionFileSingleEditorModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+        <div id="@Model.PromotionFileSingleEditorModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+            <div id="@Model.PromotionFileSingleEditorModalData.ModalContentId"
+                class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+            </div>
+        </div>
+    </div>
+
+    <ul id="@Model.NotificationBoxId" class="top-notification-box"></ul>
+</div>
+
+@Html.AntiForgeryToken()

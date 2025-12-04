@@ -1,51 +1,50 @@
 ﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Models.Product.MappingUtils;
-
 public static class ProductStatusMapping
 {
-    public static string? GetStatusStringFromStatusEnum(ProductStatusEnum productStatusEnum)
+    public static string? GetStatusStringFromStatusEnum(ProductStatus productStatusEnum)
     {
         return productStatusEnum switch
         {
-            ProductStatusEnum.Unavailable => "Unavailable",
-            ProductStatusEnum.Available => "Available",
-            ProductStatusEnum.Call => "Call",
+            ProductStatus.Unavailable => "Old",
+            ProductStatus.Available => "Avl",
+            ProductStatus.Call => "Call",
             _ => null
         };
     }
 
-    public static ProductStatusEnum? GetStatusEnumFromStatusString(string statusString)
+    public static ProductStatus? GetStatusEnumFromStatusString(string statusString)
     {
         return statusString switch
         {
-            "Unavailable" => ProductStatusEnum.Unavailable,
-            "Available" => ProductStatusEnum.Available,
-            "Call" => ProductStatusEnum.Call,
+            "Old" => ProductStatus.Unavailable,
+            "Avl" => ProductStatus.Available,
+            "Call" => ProductStatus.Call,
             _ => null
         };
     }
 
-    public static string? GetBGStatusStringFromStatusEnum(ProductStatusEnum? productStatusEnum)
+    public static string? GetBGStatusStringFromStatusEnum(ProductStatus? productStatusEnum)
     {
         if (productStatusEnum is null) return null;
 
         return productStatusEnum switch
         {
-            ProductStatusEnum.Unavailable => "Не е в наличност",
-            ProductStatusEnum.Available => "В наличност",
-            ProductStatusEnum.Call => "Обадете се",
+            ProductStatus.Unavailable => "Не е в наличност",
+            ProductStatus.Available => "В наличност",
+            ProductStatus.Call => "Обадете се",
             _ => null
         };
     }
 
-    public static ProductStatusEnum? GetStatusEnumFromBGStatusString(string statusString)
+    public static ProductStatus? GetStatusEnumFromBGStatusString(string statusString)
     {
         return statusString switch
         {
-            "Не е в наличност" => ProductStatusEnum.Unavailable,
-            "В наличност" => ProductStatusEnum.Available,
-            "Обадете се" => ProductStatusEnum.Call,
+            "Не е в наличност" => ProductStatus.Unavailable,
+            "В наличност" => ProductStatus.Available,
+            "Обадете се" => ProductStatus.Call,
             _ => null
         };
     }

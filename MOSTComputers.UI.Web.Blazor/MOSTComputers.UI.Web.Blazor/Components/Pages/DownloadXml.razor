@@ -1,0 +1,360 @@
+﻿@page "/downloadXml"
+@rendermode InteractiveServer
+
+@implements IAsyncDisposable
+
+<PageTitle>Download Xml</PageTitle>
+
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
+@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
+@using Microsoft.Extensions.Caching.Memory
+@using System.Text.Json
+
+@using static MOSTComputers.Utils.Files.FilePathUtils;
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+@inject ICategoryService CategoryService
+@inject IManufacturerService ManufacturerService
+@inject IProductSearchService ProductSearchService
+@inject IPromotionGroupsRepository PromotionGroupsRepository
+@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<div class="download-xml-page">
+    @* <a class="btn btn-secondary mb-2" href="api/product/xml/all" target="_blank" rel="noopener noreferrer" download="MOST_XML_(@DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss"))">
+		Download XML
+	</a> *@
+
+    <div class="download-xml-option-container">
+
+        <select id="xmlCurrencySelect" @bind="_selectedCurrency">
+
+            @foreach (string currencyOption in _currencySelectOptions)
+            {
+                <option value="@currencyOption">@currencyOption</option>
+            }
+        </select>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+
+		<button class="btn btn-secondary me-2" @onclick="OnDownloadClick">
+			Download XML
+		</button>
+
+        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlUrlAndCopyToClipboard(_downloadAllUri)">Copy Url</button>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+
+        <select id="downloadXmlCategorySelect" @bind="_selectedCategoryId" class="download-xml-option-category-select me-2">
+
+            @foreach (Category category in _categoriesInSelect)
+            {
+                <option value="@category.Id">@category.Description</option>
+            }
+        </select>
+
+        <button class="btn btn-secondary me-2" @onclick="OnDownloadAllInCategoryClick">
+            Download XML from category
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlByCategoryUrlAndCopyToClipboard(_downloadAllInCategoryUri)">Copy Url</button>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+
+        <select id="downloadXmlManufacturerSelect" @bind="_selectedManufacturerId" class="download-xml-option-manufacturer-select me-2">
+
+            @foreach (Manufacturer manufacturer in _manufacturersInSelect)
+            {
+                <option value="@manufacturer.Id">@manufacturer.RealCompanyName</option>
+            }
+        </select>
+
+        <button class="btn btn-secondary me-2" @onclick="OnDownloadAllByManufacturerClick">
+            Download XML with manufacturer
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlUrlAndCopyToClipboard(_downloadAllByManufacturerUri)">Copy Url</button>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+
+        <button class="btn btn-secondary me-2" @onclick="OnDownloadXmlWithAllPromotionsClick">
+            Download XML for products with promotions
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlUrlAndCopyToClipboard(_downloadAllWithPromotionsUri)">Copy Url</button>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+
+        <button class="btn btn-secondary me-2" @onclick="OnDownloadGroupPromotionXmlClick">
+            Download promo group XML
+        </button>
+
+        <button class="btn btn-outline-secondary" @onclick="() => CopyFullUrlToClipboardFromUri(_downloadPromotionGroupXmlUri)">Copy Url</button>
+    </div>
+
+    <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
+        <p class="mb-0">The 'Copy url' buttons copy the url for api or browser read purposes, and include the selected currency option at the top.</p>
+    </div>
+
+	<div class="round-loader-default download-xml-loader @(_isLoading ? "loading" : "")"></div>
+</div>
+
+@code {
+
+    private const string _downloadAllUri = $"api/product/xml/all";
+    private const string _downloadAllWithPromotionsUri = $"api/product/xml/promotions";
+    private const string _downloadAllInCategoryUri = $"api/product/xml/categoryId=";
+    private const string _downloadAllByManufacturerUri = $"api/product/xml/manufacturerId=";
+
+    private const string _downloadWithCurrencyQueryValue = $"?currency=";
+
+    private const string _downloadPromotionGroupXmlUri = $"api/promotionGroup/xml/all";
+
+    private readonly List<string> _currencySelectOptions = ["Base currency", "BGN", "EUR", "USD"];
+    private string _selectedCurrency = "Base currency";
+
+    private List<Category> _categoriesInSelect { get; set; } = new();
+    private string _selectedCategoryId { get; set; } = string.Empty;
+
+    private List<Manufacturer> _manufacturersInSelect { get; set; } = new();
+    private string _selectedManufacturerId { get; set; } = string.Empty;
+
+    private bool _isLoading = false;
+
+    private IJSObjectReference? _jsModule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categoriesInSelect = await CategoryService.GetAllAsync();
+
+        _selectedCategoryId = _categoriesInSelect.FirstOrDefault()?.Id.ToString() ?? string.Empty;
+
+        _manufacturersInSelect = await ManufacturerService.GetAllWithActiveProductsAsync();
+
+        _selectedManufacturerId = _manufacturersInSelect.FirstOrDefault()?.Id.ToString() ?? string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/DownloadXml.razor.js");
+        }
+    }
+
+    private async Task OnDownloadClick()
+    {
+        if (_jsModule is null) return;
+
+        _isLoading = true;
+
+        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("fetchAndDownloadXmlFile",
+                _downloadAllUri + GetQueryValueForSelectedCurrency(),
+                fileName);
+
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnDownloadAllInCategoryClick()
+    {
+        if (_jsModule is null) return;
+
+        _isLoading = true;
+
+        int? selectedCategoryId = int.TryParse(_selectedCategoryId, out int categoryId) ? categoryId : null;
+
+        if (selectedCategoryId is null)
+        {
+            _isLoading = false;
+
+            return;
+        }
+
+        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+
+        Category? selectedCategory = _categoriesInSelect.FirstOrDefault(x => x.Id == selectedCategoryId);
+
+        if (selectedCategory?.Description is not null)
+        {
+            string categoryNameInFileName = selectedCategory.Description.Replace(' ', '_');
+
+            foreach (char invalidChar in Path.GetInvalidFileNameChars())
+            {
+                categoryNameInFileName.Replace(invalidChar.ToString(), string.Empty);
+            }
+
+            fileName = $"MOST_XML_{categoryNameInFileName}_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        }
+
+        string url = _downloadAllInCategoryUri + selectedCategoryId + GetQueryValueForSelectedCurrency();
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("fetchAndDownloadXmlFile", url, fileName);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnDownloadAllByManufacturerClick()
+    {
+        if (_jsModule is null) return;
+
+        _isLoading = true;
+
+        int? selectedManufacturerId = int.TryParse(_selectedManufacturerId, out int categoryId) ? categoryId : null;
+
+        if (selectedManufacturerId is null)
+        {
+            _isLoading = false;
+
+            return;
+        }
+
+        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+
+        Manufacturer? selectedManufacturer = _manufacturersInSelect.FirstOrDefault(x => x.Id == selectedManufacturerId);
+
+        if (selectedManufacturer?.RealCompanyName is not null)
+        {
+            string manufacturerNameInFileName = selectedManufacturer.RealCompanyName.Replace(' ', '_');
+
+            foreach (char invalidChar in Path.GetInvalidFileNameChars())
+            {
+                manufacturerNameInFileName.Replace(invalidChar.ToString(), string.Empty);
+            }
+
+            fileName = $"MOST_XML_{manufacturerNameInFileName}_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        }
+
+        string url = _downloadAllByManufacturerUri + selectedManufacturerId + GetQueryValueForSelectedCurrency();
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("fetchAndDownloadXmlFile", url, fileName);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnDownloadXmlWithAllPromotionsClick()
+    {
+        if (_jsModule is null) return;
+
+        _isLoading = true;
+
+        string fileName = $"MOST_XML_ALL_PROMOTIONS_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync(
+                "fetchAndDownloadXmlFile",
+                _downloadAllWithPromotionsUri + GetQueryValueForSelectedCurrency(),
+                fileName);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnDownloadGroupPromotionXmlClick()
+    {
+        if (_jsModule is null) return;
+
+        _isLoading = true;
+
+        string fileName = $"MOST_XML_PROMOTION_GROUPS_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+
+        try
+        {
+            await _jsModule.InvokeVoidAsync("fetchAndDownloadXmlFile", _downloadPromotionGroupXmlUri, fileName);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string? GetQueryValueForSelectedCurrency()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedCurrency)) return null;
+
+        return _selectedCurrency switch
+        {
+            "BGN" => _downloadWithCurrencyQueryValue + "BGN",
+            "EUR" => _downloadWithCurrencyQueryValue + "EUR",
+            "USD" => _downloadWithCurrencyQueryValue + "USD",
+            _ => null
+        };
+    }
+
+    private async Task GenerateProductXmlUrlAndCopyToClipboard(string uri)
+    {
+        string uriWithQueryString = uri + GetQueryValueForSelectedCurrency();
+
+        await CopyFullUrlToClipboardFromUri(uriWithQueryString);
+    }
+
+    private async Task GenerateProductXmlByCategoryUrlAndCopyToClipboard(string uri)
+    {
+        int? selectedCategoryId = int.TryParse(_selectedCategoryId, out int categoryId) ? categoryId : null;
+
+        if (selectedCategoryId is null) return;
+
+        string uriWithQueryString = uri + selectedCategoryId.ToString() + GetQueryValueForSelectedCurrency();
+
+        await CopyFullUrlToClipboardFromUri(uriWithQueryString);
+    }
+
+    private async Task CopyFullUrlToClipboardFromUri(string uri)
+    {
+        if (_jsModule is null) return;
+
+        string url = CombinePathsWithSeparator('/', NavigationManager.BaseUri, uri);
+
+        await _jsModule.InvokeVoidAsync("copyTextToClipboard", url);
+    }
+
+    public async ValueTask DisposeAsync()
+	{
+		if (_jsModule is not null)
+		{
+			try
+			{
+				await _jsModule.DisposeAsync();
+			}
+			catch (JSDisconnectedException)
+			{
+			}
+		}
+	}
+}

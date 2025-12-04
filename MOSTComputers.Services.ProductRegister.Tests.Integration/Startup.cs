@@ -1,16 +1,15 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using MOSTComputers.Services.ProductRegister.Configuration;
-using Respawn.Graph;
-using Respawn;
-using System.Configuration;
 using Microsoft.Extensions.Hosting;
 using MOSTComputers.Services.Caching.Configuration;
+using MOSTComputers.Services.ProductRegister.Configuration;
+using Respawn;
+using Respawn.Graph;
+using System.Configuration;
 using static MOSTComputers.Services.Caching.Configuration.ConfigureServices;
-using static MOSTComputers.Services.ProductImageFileManagement.Configuration.ConfigureServices;
 using static MOSTComputers.Services.HTMLAndXMLDataOperations.Configuration.ConfigureServices;
+using static MOSTComputers.Services.ProductImageFileManagement.Configuration.ConfigureServices;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 public class Startup
 {
 #pragma warning disable CA1822 // Mark members as static
@@ -18,7 +17,9 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
 #pragma warning restore CA1822 // Mark members as static
     {
-        services.AddMemoryCachingServices();
+        //services.AddMemoryCachingServices();
+
+        services.AddFusionCachingServices();
 
         ServiceProvider serviceProvider = services.BuildServiceProvider();
 
@@ -52,11 +53,11 @@ public class Startup
 
         TestingImageFileFullPath = testingImageFilePath;
 
-        services.AddProductImageFileManagement(productImageFolderFilePath);
+        services.AddProductImageFileManager(productImageFolderFilePath);
 
         services.AddProductHtmlService();
 
-        services.AddCachedProductServices(ConnectionString);
+        services.AddCachedProductServices(false, ConnectionString);
     }
 
     internal const string tableNameOfProductCharacteristicsTable = "ProductKeyword";

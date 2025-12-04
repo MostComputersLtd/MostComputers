@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MOSTComputers.Services.PDF.Utils;
+﻿namespace MOSTComputers.Services.PDF.Utils;
 internal static class CurrencyToWordsConversionUtils
 {
     private readonly static string[] _unitsMap = {
@@ -65,7 +59,7 @@ internal static class CurrencyToWordsConversionUtils
         "деветстотин"
     };
 
-    internal static string ConvertPriceToWordsInLeva(double amount)
+    internal static string ConvertPriceToWordsInLeva(decimal amount)
     {
         int leva = (int)amount;
         int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
@@ -82,14 +76,31 @@ internal static class CurrencyToWordsConversionUtils
         return $"{levaPart} лева и {stotinkiPart} стотинки";
     }
 
-    private static string ConvertNumberToWordsInLeva(int number, PriceConvertScaleEnum priceConvertScale, string[] unitsMap, string[] teensMap, string[] tensMap, string[] hundredsMap)
+    internal static string ConvertPriceToWordsInLeva(double amount)
+    {
+        long leva = (long)amount;
+        int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
+
+        string levaPart = ConvertNumberToWordsInLeva(leva, PriceConvertScaleEnum.Leva, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+
+        if (stotinki == 0)
+        {
+            return $"{levaPart} лева";
+        }
+
+        string stotinkiPart = ConvertNumberToWordsInLeva(stotinki, PriceConvertScaleEnum.Stotinki, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+
+        return $"{levaPart} лева и {stotinkiPart} стотинки";
+    }
+
+    private static string ConvertNumberToWordsInLeva(long number, PriceConvertScaleEnum priceConvertScale, string[] unitsMap, string[] teensMap, string[] tensMap, string[] hundredsMap)
     {
         if (number == 0) return "нула";
         if (number < 0) return "минус " + ConvertNumberToWordsInLeva(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap);
 
         string words = "";
 
-        int billionsInNumber = number / 1_000_000_000;
+        long billionsInNumber = number / 1_000_000_000;
 
         if (billionsInNumber > 0)
         {
@@ -105,7 +116,7 @@ internal static class CurrencyToWordsConversionUtils
             number %= 1_000_000_000;
         }
 
-        int millionsInNumber = number / 1000000;
+        long millionsInNumber = number / 1000000;
 
         if (millionsInNumber > 0)
         {
@@ -121,7 +132,7 @@ internal static class CurrencyToWordsConversionUtils
             number %= 1000000;
         }
 
-        int thousandsInNumber = number / 1000;
+        long thousandsInNumber = number / 1000;
 
         if (thousandsInNumber > 0)
         {
@@ -164,7 +175,7 @@ internal static class CurrencyToWordsConversionUtils
             {
                 words += tensMap[number / 10];
 
-                int tensInNumber = (number % 10);
+                long tensInNumber = (number % 10);
 
                 if (tensInNumber > 0)
                 {

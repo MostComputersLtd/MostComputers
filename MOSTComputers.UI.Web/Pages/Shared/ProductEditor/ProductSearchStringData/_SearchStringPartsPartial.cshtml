@@ -1,0 +1,29 @@
+﻿@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.UI.Web.Pages.Shared.ProductSearchString
+@model SearchStringPartsPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Search String Properties:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.ProductId</h4>
+    <h4 class="modal-title modal-product-name">@Model.ProductName</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="searchStringParts_popup" class="modal-body full-parent-width overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        @if (Model.SearchStringParts is not null
+        && Model.SearchStringParts.Count > 0)
+        {
+            <partial name="ProductSearchString/_SearchStringPartsTablePartial" model="new SearchStringPartsTablePartialModel()
+            {
+                SearchStringParts = Model.SearchStringParts,
+            }" />
+        }
+    </div>
+</div>

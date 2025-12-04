@@ -1,23 +1,26 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductStatuses;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
+using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
-using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
-using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Requests.ProductWorkStatuses;
-using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
+using static MOSTComputers.Utils.FileContentType.ContentTypeUtils;
+using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -73,7 +76,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -83,11 +86,11 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
-        IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
+        IEnumerable<Product> allProducts = _productService.GetAllAsync();
 
         Product product1 = allProducts.Single(x => x.Id == productId1);
         Product product2 = allProducts.Single(x => x.Id == productId2);
@@ -110,7 +113,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -120,7 +123,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
@@ -147,7 +150,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -157,7 +160,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
@@ -184,7 +187,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -194,7 +197,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> insertResult2 = _productService.Insert(invalidCreateRequest);
 
-        IEnumerable<Product> allProducts = _productService.GetAllWithoutImagesAndProps();
+        IEnumerable<Product> allProducts = _productService.GetAllAsync();
 
         Product product1 = allProducts.Single(x => x.Id == productId1);
 
@@ -216,7 +219,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -254,7 +257,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -291,7 +294,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -301,13 +304,13 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
+        IEnumerable<Product> insertedProducts = _productService.GetByIdsAsync(productIds);
 
         Assert.Equal(2, insertedProducts.Count());
 
@@ -332,7 +335,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -342,13 +345,13 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
         List<int> productIds = new() { productId1.Value, productId2.Value, 0 };
 
-        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithoutImagesAndProps(productIds);
+        IEnumerable<Product> insertedProducts = _productService.GetByIdsAsync(productIds);
 
         Assert.Equal(2, insertedProducts.Count());
 
@@ -373,7 +376,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -383,7 +386,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
@@ -418,7 +421,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -428,7 +431,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
@@ -463,7 +466,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -473,13 +476,13 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
+        IEnumerable<Product> insertedProducts = _productService.GetByIdsAsync(productIds);
 
         Assert.Equal(2, insertedProducts.Count());
 
@@ -506,7 +509,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId1);
         Assert.True(productId1 > 0);
 
@@ -516,13 +519,13 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             id => id,
             validationResult => null,
             unexpectedFailureResult => null);
-        
+
         Assert.NotNull(productId2);
         Assert.True(productId2 > 0);
 
         List<int> productIds = new() { productId1.Value, productId2.Value, 0 };
 
-        IEnumerable<Product> insertedProducts = _productService.GetSelectionWithProps(productIds);
+        IEnumerable<Product> insertedProducts = _productService.GetByIdsAsync(productIds);
 
         Assert.Equal(2, insertedProducts.Count());
 
@@ -563,7 +566,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             productIds.Add(productId.Value);
         }
 
-        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+        List<Product> allProductsRanged = _productService.GetAllAsync()
             .Skip(10)
             .Take(10)
             .ToList();
@@ -613,7 +616,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             productIds.Add(productId.Value);
         }
 
-        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+        List<Product> allProductsRanged = _productService.GetAllAsync()
             .Where(x => x.SearchString == searchStringOfData)
             .Skip(10)
             .Take(10)
@@ -662,7 +665,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             productIds.Add(productId.Value);
         }
 
-        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+        List<Product> allProductsRanged = _productService.GetAllAsync()
             .Where(x => x.Name == nameOfData)
             .Skip(10)
             .Take(10)
@@ -688,7 +691,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
     {
         const string nameOfData = "hic opriwopirvoppi og /df3243";
         const string searchStringOfData = "hic opriwopirvoprjsdsvopi og otioiok/df3243";
-        const ProductStatusEnum statusOfData = ProductStatusEnum.Available;
+        const ProductStatus statusOfData = ProductStatus.Available;
 
         const string nameOfProductThatDoesntFollowCondition = "not the name in the condition";
 
@@ -732,7 +735,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
-        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+        List<Product> allProductsRanged = _productService.GetAllAsync()
             .Where(x =>
             {
                 return (x.Name == nameOfData
@@ -771,7 +774,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
     {
         const string nameOfData = "hic opriwopirvoppi og /df3243";
         const string searchStringOfData = "hic opri3rcrwopirvoprjvopi og iok/df3243";
-        const ProductStatusEnum statusOfData = ProductStatusEnum.Available;
+        const ProductStatus statusOfData = ProductStatus.Available;
         const string nameOfProductThatDoesntFollowCondition = "not the name in the condition";
         const bool isProcessedForData = false;
         const bool needsToBeUpdatedForData = true;
@@ -830,7 +833,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         productIds.Add(productIdForProductThatDoesntMatchConditions.Value);
 
-        List<Product> allProductsRanged = _productService.GetAllWithoutImagesAndProps()
+        List<Product> allProductsRanged = _productService.GetAllAsync()
             .Where(x =>
             {
                 return (x.Name == nameOfData
@@ -927,7 +930,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        Product? insertedProduct = _productService.GetByIdWithProps(productId.Value);
+        Product? insertedProduct = _productService.GetByIdAsync(productId.Value);
 
         Assert.NotNull(insertedProduct);
 
@@ -951,7 +954,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.NotNull(productId);
         Assert.True(productId > 0);
 
-        Product? insertedProduct = _productService.GetByIdWithProps(0);
+        Product? insertedProduct = _productService.GetByIdAsync(0);
 
         Assert.Null(insertedProduct);
     }
@@ -1007,7 +1010,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
 
-        Product? insertedProduct = _productService.GetProductFull(productId);
+        Product? insertedProduct = _productService.GetByIdAsync(productId);
 
         Assert.NotNull(insertedProduct);
 
@@ -1026,7 +1029,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         int productId = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
 
-        Product? insertedProduct = _productService.GetProductFull(0);
+        Product? insertedProduct = _productService.GetByIdAsync(0);
 
         Assert.Null(insertedProduct);
     }
@@ -1039,10 +1042,10 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         int _ = InsertProductAndGetIdOrThrow(_productService, validProductCreateRequest);
 
-        Product? productWithHighestId = _productService.GetProductWithHighestId();
+        Product? productWithHighestId = _productService.GetProductWithHighestIdAsync();
 
         Assert.NotNull(productWithHighestId);
-         
+
         Assert.True(CompareProductAndRequestWithoutPropsOrImages(productWithHighestId, validProductCreateRequest));
 
         Assert.True(ComparePropertiesInRequestAndProduct(validProductCreateRequest.Properties, productWithHighestId.Properties));
@@ -1053,7 +1056,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
     [Fact]
     public void GetProductWithHighestId_ShouldFailToGetWithHighestId_WhenNoProductsExist()
     {
-        Product? productWithHighestId = _productService.GetProductWithHighestId();
+        Product? productWithHighestId = _productService.GetProductWithHighestIdAsync();
 
         Assert.Null(productWithHighestId);
     }
@@ -1073,7 +1076,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         if (expected)
         {
-            Product? insertedProduct = _productService.GetProductFull(productId!.Value);
+            Product? insertedProduct = _productService.GetByIdAsync(productId!.Value);
 
             Assert.NotNull(insertedProduct);
 
@@ -1107,12 +1110,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1157,12 +1160,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1209,12 +1212,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1261,12 +1264,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1322,7 +1325,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         if (expected)
         {
-            Product? insertedProduct = _productService.GetProductFull(productId!.Value);
+            Product? insertedProduct = _productService.GetByIdAsync(productId!.Value);
 
             Assert.NotNull(insertedProduct);
 
@@ -1356,12 +1359,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1441,12 +1444,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1516,12 +1519,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1591,12 +1594,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1666,12 +1669,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1730,12 +1733,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1795,8 +1798,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         ProductWorkStatusesCreateRequest productStatusesCreateRequest = new()
         {
             ProductId = productId,
-            ProductNewStatus = ProductNewStatusEnum.ReadyForUse,
-            ProductXmlStatus = ProductXmlStatusEnum.ReadyForUse,
+            ProductNewStatus = ProductNewStatus.ReadyForUse,
+            ProductXmlStatus = ProductXmlStatus.ReadyForUse,
             ReadyForImageInsert = false,
         };
 
@@ -1818,7 +1821,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             directoryNotFoundResult => false,
             fileDoesntExistResult => false));
 
-        Product? updatedProduct = _productService.GetProductFull(productId);
+        Product? updatedProduct = _productService.GetByIdAsync(productId);
 
         Assert.NotNull(updatedProduct);
 
@@ -1862,12 +1865,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -1947,12 +1950,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2022,12 +2025,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2097,12 +2100,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2172,12 +2175,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2236,12 +2239,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2318,7 +2321,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             validationResult => false,
             unexpectedFailureResult => false));
 
-        Product? updatedProduct = _productService.GetProductFull(productId.Value);
+        Product? updatedProduct = _productService.GetByIdAsync(productId.Value);
 
         Assert.NotNull(updatedProduct);
 
@@ -2353,12 +2356,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
                 StandardWarrantyPrice = "0.00",
                 StandardWarrantyTermMonths = 36,
                 DisplayOrder = 12324,
-                Status = ProductStatusEnum.Call,
+                Status = ProductStatus.Call,
                 PlShow = 0,
                 Price1 = 123.4M,
                 DisplayPrice = 123.99M,
                 Price3 = 122.5M,
-                Currency = CurrencyEnum.EUR,
+                Currency = Currency.EUR,
                 RowGuid = Guid.NewGuid(),
                 PromotionId = null,
                 PromRid = null,
@@ -2467,8 +2470,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(createRequest.Currency, insertedProduct.Currency);
         Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionId);
-        Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionPid);
+        Assert.Equal(createRequest.PromRid, insertedProduct.PromotionRid);
         Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
         Assert.Equal(createRequest.AlertPictureId, insertedProduct.AlertPictureId);
@@ -2479,7 +2482,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
 
         Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryId);
-        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManufacturerId);
         Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
@@ -2496,8 +2499,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(createRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(createRequest.Currency, insertedProduct.Currency);
         Assert.Equal(createRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionId);
-        Assert.Equal(createRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(createRequest.PromotionId, insertedProduct.PromotionPid);
+        Assert.Equal(createRequest.PromRid, insertedProduct.PromotionRid);
         Assert.Equal(createRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(createRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
         Assert.Equal(createRequest.AlertPictureId, insertedProduct.AlertPictureId);
@@ -2508,7 +2511,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(createRequest.SearchString, insertedProduct.SearchString);
 
         Assert.Equal(createRequest.CategoryId, insertedProduct.CategoryId);
-        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(createRequest.ManifacturerId, insertedProduct.ManufacturerId);
         Assert.Equal(createRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
@@ -2525,8 +2528,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(updateRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(updateRequest.Currency, insertedProduct.Currency);
         Assert.Equal(updateRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionId);
-        Assert.Equal(updateRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionPid);
+        Assert.Equal(updateRequest.PromRid, insertedProduct.PromotionRid);
         Assert.Equal(updateRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(updateRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
         Assert.Equal(updateRequest.AlertPictureId, insertedProduct.AlertPictureId);
@@ -2537,7 +2540,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(updateRequest.SearchString, insertedProduct.SearchString);
 
         Assert.Equal(updateRequest.CategoryId, insertedProduct.CategoryId);
-        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManufacturerId);
         Assert.Equal(updateRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
@@ -2554,8 +2557,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(updateRequest.DisplayPrice, insertedProduct.Price);
         Assert.Equal(updateRequest.Currency, insertedProduct.Currency);
         Assert.Equal(updateRequest.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionId);
-        Assert.Equal(updateRequest.PromRid, insertedProduct.PromRid);
+        Assert.Equal(updateRequest.PromotionId, insertedProduct.PromotionPid);
+        Assert.Equal(updateRequest.PromRid, insertedProduct.PromotionRid);
         Assert.Equal(updateRequest.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(updateRequest.PromotionExpireDate, insertedProduct.PromotionExpireDate);
         Assert.Equal(updateRequest.AlertPictureId, insertedProduct.AlertPictureId);
@@ -2566,7 +2569,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(updateRequest.SearchString, insertedProduct.SearchString);
 
         Assert.Equal(updateRequest.CategoryId, insertedProduct.CategoryId);
-        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(updateRequest.ManifacturerId, insertedProduct.ManufacturerId);
         Assert.Equal(updateRequest.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
@@ -2583,8 +2586,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(product.Price, insertedProduct.Price);
         Assert.Equal(product.Currency, insertedProduct.Currency);
         Assert.Equal(product.RowGuid, insertedProduct.RowGuid);
-        Assert.Equal(product.PromotionId, insertedProduct.PromotionId);
-        Assert.Equal(product.PromRid, insertedProduct.PromRid);
+        Assert.Equal(product.PromotionPid, insertedProduct.PromotionPid);
+        Assert.Equal(product.PromotionRid, insertedProduct.PromotionRid);
         Assert.Equal(product.PromotionPictureId, insertedProduct.PromotionPictureId);
         Assert.Equal(product.PromotionExpireDate, insertedProduct.PromotionExpireDate);
         Assert.Equal(product.AlertPictureId, insertedProduct.AlertPictureId);
@@ -2595,7 +2598,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         Assert.Equal(product.SearchString, insertedProduct.SearchString);
 
         Assert.Equal(product.CategoryId, insertedProduct.CategoryId);
-        Assert.Equal(product.ManifacturerId, insertedProduct.ManifacturerId);
+        Assert.Equal(product.ManufacturerId, insertedProduct.ManufacturerId);
         Assert.Equal(product.SubCategoryId, insertedProduct.SubCategoryId);
     }
 
@@ -2612,8 +2615,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             && createRequest.DisplayPrice == insertedProduct.Price
             && createRequest.Currency == insertedProduct.Currency
             && createRequest.RowGuid == insertedProduct.RowGuid
-            && createRequest.PromotionId == insertedProduct.PromotionId
-            && createRequest.PromRid == insertedProduct.PromRid
+            && createRequest.PromotionId == insertedProduct.PromotionPid
+            && createRequest.PromRid == insertedProduct.PromotionRid
             && createRequest.PromotionPictureId == insertedProduct.PromotionPictureId
             && createRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
             && createRequest.AlertPictureId == insertedProduct.AlertPictureId
@@ -2624,7 +2627,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             && createRequest.SearchString == insertedProduct.SearchString
 
             && createRequest.CategoryId == insertedProduct.CategoryId
-            && createRequest.ManifacturerId == insertedProduct.ManifacturerId
+            && createRequest.ManifacturerId == insertedProduct.ManufacturerId
             && createRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
@@ -2642,8 +2645,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         && updateRequest.DisplayPrice == insertedProduct.Price
         && updateRequest.Currency == insertedProduct.Currency
         && updateRequest.RowGuid == insertedProduct.RowGuid
-        && updateRequest.PromotionId == insertedProduct.PromotionId
-        && updateRequest.PromRid == insertedProduct.PromRid
+        && updateRequest.PromotionId == insertedProduct.PromotionPid
+        && updateRequest.PromRid == insertedProduct.PromotionRid
         && updateRequest.PromotionPictureId == insertedProduct.PromotionPictureId
         && updateRequest.PromotionExpireDate == insertedProduct.PromotionExpireDate
         && updateRequest.AlertPictureId == insertedProduct.AlertPictureId
@@ -2654,7 +2657,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         && updateRequest.SearchString == insertedProduct.SearchString
 
         && updateRequest.CategoryId == insertedProduct.CategoryId
-        && updateRequest.ManifacturerId == insertedProduct.ManifacturerId
+        && updateRequest.ManifacturerId == insertedProduct.ManufacturerId
         && updateRequest.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
@@ -2671,8 +2674,8 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         && product.Price == insertedProduct.Price
         && product.Currency == insertedProduct.Currency
         && product.RowGuid == insertedProduct.RowGuid
-        && product.PromotionId == insertedProduct.PromotionId
-        && product.PromRid == insertedProduct.PromRid
+        && product.PromotionPid == insertedProduct.PromotionPid
+        && product.PromotionRid == insertedProduct.PromotionRid
         && product.PromotionPictureId == insertedProduct.PromotionPictureId
         && product.PromotionExpireDate == insertedProduct.PromotionExpireDate
         && product.AlertPictureId == insertedProduct.AlertPictureId
@@ -2683,7 +2686,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         && product.SearchString == insertedProduct.SearchString
 
         && product.CategoryId == insertedProduct.CategoryId
-        && product.ManifacturerId == insertedProduct.ManifacturerId
+        && product.ManufacturerId == insertedProduct.ManufacturerId
         && product.SubCategoryId == insertedProduct.SubCategoryId);
     }
 
@@ -2831,7 +2834,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         return true;
     }
 
-    private static bool CompareImageFileNamesInRequestAndProduct(List<CurrentProductImageFileNameInfoCreateRequest>? imageFileNamesInRequest, List<ProductImageFileNameInfo>? imageFileNamesInObject)
+    private static bool CompareImageFileNamesInRequestAndProduct(List<CurrentProductImageFileNameInfoCreateRequest>? imageFileNamesInRequest, List<ProductImageFileData>? imageFileNamesInObject)
     {
         if (imageFileNamesInRequest is null && imageFileNamesInObject is null) return true;
 
@@ -2840,12 +2843,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         if (imageFileNamesInRequest.Count != imageFileNamesInObject.Count) return false;
 
         List<CurrentProductImageFileNameInfoCreateRequest> orderedImageFileNamesInRequest = imageFileNamesInRequest.OrderBy(x => x.DisplayOrder).ToList();
-        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = imageFileNamesInObject.OrderBy(x => x.DisplayOrder).ToList();
+        List<ProductImageFileData> orderedImageFileNamesInObject = imageFileNamesInObject.OrderBy(x => x.DisplayOrder).ToList();
 
         for (int i = 0; i < orderedImageFileNamesInRequest.Count; i++)
         {
             CurrentProductImageFileNameInfoCreateRequest imageFileNameInRequest = orderedImageFileNamesInRequest[i];
-            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i];
+            ProductImageFileData imageFileNameInObject = orderedImageFileNamesInObject[i];
 
             if (imageFileNameInRequest.FileName != imageFileNameInObject.FileName
                 || imageFileNameInRequest.DisplayOrder != imageFileNameInObject.DisplayOrder
@@ -2861,7 +2864,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
     private static bool CompareImageFileNamesAndImageFilesInRequestAndProduct(
         int productId,
         List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameUpsertRequests,
-        List<ProductImageFileNameInfo>? imageFileNamesInObject)
+        List<ProductImageFileData>? imageFileNamesInObject)
     {
         if (imageFileAndFileNameUpsertRequests is null && imageFileNamesInObject is null) return true;
 
@@ -2872,12 +2875,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         List<ImageFileAndFileNameInfoUpsertRequest> orderedImageFileUpsertRequests
             = OrderImageFileAndFileNameInfoUpsertRequests(imageFileAndFileNameUpsertRequests);
 
-        List<ProductImageFileNameInfo> orderedImageFileNamesInObject = OrderImageFileNameInfos(imageFileNamesInObject);
+        List<ProductImageFileData> orderedImageFileNamesInObject = OrderImageFileNameInfos(imageFileNamesInObject);
 
         for (int i = 0; i < orderedImageFileUpsertRequests.Count; i++)
         {
             ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = orderedImageFileUpsertRequests[i];
-            ProductImageFileNameInfo imageFileNameInObject = orderedImageFileNamesInObject[i]!;
+            ProductImageFileData imageFileNameInObject = orderedImageFileNamesInObject[i]!;
 
             if (!CompareFileNameData(productId, orderedImageFileUpsertRequests, i, imageFileNameInObject)
                 || imageFileUpsertRequest.DisplayOrder != imageFileNameInObject.DisplayOrder
@@ -2912,7 +2915,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         int productId,
         List<CurrentProductImageFileNameInfoCreateRequest>? createRequestData,
         List<ImageAndImageFileNameUpsertRequest>? upsertRequests,
-        List<ProductImageFileNameInfo>? imageFileNamesInObject)
+        List<ProductImageFileData>? imageFileNamesInObject)
     {
         if (upsertRequests is null)
         {
@@ -2929,7 +2932,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         if (imageFileNamesInObject!.Count != upsertRequests.Count) return false;
 
-        foreach (ProductImageFileNameInfo productImageFileNameInfo in imageFileNamesInObject)
+        foreach (ProductImageFileData productImageFileNameInfo in imageFileNamesInObject)
         {
             ImageAndImageFileNameUpsertRequest? relatedUpsertRequest = GetRelatedUpsertRequest(productId, productImageFileNameInfo, upsertRequests);
 
@@ -2950,11 +2953,11 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
     private static ImageAndImageFileNameUpsertRequest? GetRelatedUpsertRequest(
         int productId,
-        ProductImageFileNameInfo productImageFileNameInfo,
+        ProductImageFileData productImageFileNameInfo,
         List<ImageAndImageFileNameUpsertRequest> upsertRequests)
     {
         ImageAndImageFileNameUpsertRequest? relatedUpsertRequest = upsertRequests.FirstOrDefault(
-            x => productImageFileNameInfo.ImageNumber == x.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber);
+            x => productImageFileNameInfo.Id == x.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber);
 
         if (relatedUpsertRequest is not null) return relatedUpsertRequest;
 
@@ -2981,7 +2984,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         int productId,
         List<ImageFileAndFileNameInfoUpsertRequest> upsertRequests,
         int indexOfItem,
-        ProductImageFileNameInfo productImageFileNameInfo)
+        ProductImageFileData productImageFileNameInfo)
     {
         ImageFileAndFileNameInfoUpsertRequest imageFileUpsertRequest = upsertRequests[indexOfItem];
 
@@ -2989,7 +2992,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         if (fileName is null) return false;
 
-        string? expectedFileExtension = GetImageFileExtensionFromContentType(imageFileUpsertRequest.ImageContentType);
+        string? expectedFileExtension = GetExtensionFromContentType(imageFileUpsertRequest.ImageContentType);
 
         if (expectedFileExtension is null) return false;
 
@@ -3005,7 +3008,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         }
         else
         {
-            string? fileNameFromData = GetTemporaryFileNameWithoutExtension(productId, productImageFileNameInfo.ImageNumber);
+            string? fileNameFromData = GetTemporaryFileNameWithoutExtension(productId, productImageFileNameInfo.Id);
 
             if (fileNameFromData is null) return false;
 
@@ -3019,7 +3022,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         int productId,
         List<ImageAndImageFileNameUpsertRequest> upsertRequests,
         int indexOfItem,
-        ProductImageFileNameInfo productImageFileNameInfo)
+        ProductImageFileData productImageFileNameInfo)
     {
         ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest = upsertRequests[indexOfItem];
 
@@ -3032,7 +3035,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
 
         if (fileName is null) return false;
 
-        string? expectedFileExtension = GetImageFileExtensionFromContentType(imageAndImageFileNameUpsertRequest.ImageContentType);
+        string? expectedFileExtension = GetExtensionFromContentType(imageAndImageFileNameUpsertRequest.ImageContentType);
 
         if (expectedFileExtension is null) return false;
 
@@ -3048,7 +3051,7 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         }
         else
         {
-            int? expectedImageNumber = productImageFileNameInfo.ImageNumber;
+            int? expectedImageNumber = productImageFileNameInfo.Id;
 
             if (expectedImageNumber is null) return false;
 
@@ -3145,17 +3148,17 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
         return output.ToList();
     }
 
-    private static List<ProductImageFileNameInfo> OrderImageFileNameInfos(
-        List<ProductImageFileNameInfo> productImageFileNameInfos)
+    private static List<ProductImageFileData> OrderImageFileNameInfos(
+        List<ProductImageFileData> productImageFileNameInfos)
     {
         productImageFileNameInfos = new(productImageFileNameInfos);
 
-        ProductImageFileNameInfo[] output
-            = new ProductImageFileNameInfo[productImageFileNameInfos.Count];
+        ProductImageFileData[] output
+            = new ProductImageFileData[productImageFileNameInfos.Count];
 
         for (int i = 0; i < productImageFileNameInfos.Count; i++)
         {
-            ProductImageFileNameInfo imageFileNameInfo = productImageFileNameInfos[i];
+            ProductImageFileData imageFileNameInfo = productImageFileNameInfos[i];
 
             if (imageFileNameInfo is null
                 || imageFileNameInfo.DisplayOrder is null) continue;
@@ -3167,12 +3170,12 @@ public sealed class ProductServiceTests : IntegrationTestBaseForNonWebProjectsWi
             i--;
         }
 
-        foreach (ProductImageFileNameInfo productImageFileNameInfo in productImageFileNameInfos
+        foreach (ProductImageFileData productImageFileNameInfo in productImageFileNameInfos
             .OrderBy(x => GetImageIdFromFileName(x.FileName) ?? int.MaxValue))
         {
             for (int i = 0; i < output.Length; i++)
             {
-                ProductImageFileNameInfo outputFileNameInfo = output[i];
+                ProductImageFileData outputFileNameInfo = output[i];
 
                 if (outputFileNameInfo != null) continue;
 

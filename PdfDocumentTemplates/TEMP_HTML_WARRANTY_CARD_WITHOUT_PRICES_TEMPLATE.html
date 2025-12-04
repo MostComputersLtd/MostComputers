@@ -1,0 +1,197 @@
+<!DOCTYPE>
+<html>
+<head>
+    <style>
+
+        body {
+            padding: 0px;
+            margin: 0px;
+            color: #000000;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            font-size: 16px;
+            text-decoration: none;
+            text-align: left;
+        }
+
+        .warrantyCardTemplateBodyBackgroundDarker {
+            background-color: #ebebeb;
+        }
+
+        .warrantyCardTemplate {
+            width: 1240px;
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            position: relative;
+            background-color: white;
+        }
+
+        .warrantyCardTemplateMarginContainer {
+            flex-shrink: 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 0.6in 0in;
+        }
+
+        .war_holder {
+            padding: 20px 40px 20px 40px;
+        }
+
+        td {
+            font-size: 16px;
+        }
+
+        .war_h1, .war_title {
+            text-align: center;
+        }
+
+        .war_title {
+            font-size: 16px;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .war_top_info {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 0px 3%;
+        }
+
+        .war_objects {
+            margin-top: 20px;
+            margin-bottom: 60px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+        }
+
+            .war_objects tr th {
+                border-bottom: 2px solid #ccc;
+                border-top: 2px solid #ccc;
+                padding-top: 3px;
+                padding-bottom: 3px;
+                font-weight: normal;
+                text-align: left;
+            }
+
+            .war_objects tr td.wo_sep {
+                height: 13px;
+                border-bottom: none;
+            }
+
+            .war_objects tr td {
+                border-bottom: 1px solid #ccc;
+            }
+
+        .war_bottom_elements_container {
+            display: flex;
+            flex-shrink: 0;
+            flex-grow: 1;
+            padding: 0.4in;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .war_bottom_small_text {
+            font-size: 14px;
+        }
+
+        .war_bottom_signatures {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 3% 0px 0px 0px;
+        }
+
+        .war_bottom_signature_container {
+            flex-shrink: 0;
+            flex-grow: 1;
+        }
+
+        .war_bottom_signature_label {
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body id="warrantyCardTemplateBody" class="warrantyCardTemplateBodyBackgroundDarker">
+    <div id="warrantyCardTemplateContainer_original" class="warrantyCardTemplate">
+        <div class="warrantyCardTemplateMarginContainer">
+            <div class="war_holder">
+                <h1 id="warrantyCardTemplateHeaderFirmName" class="war_h1"><span id="warrantyCardTemplateTopFirmName">MOST COMPUTERS</span></h1>
+
+                <div class="war_title"><span id="warrantyCardTemplateCardPurposeText">Гаранционна карта</span> No <span id="warrantyCardTemplateCardIdInTitle">5356505</span></div>
+
+                <div class="war_top_info">
+                    <p>
+                        Купувач: <span id="warrantyCardTemplateTopCustomerName">ЕТ РАДКА МИХАЙЛОВА-СИТИМЕДИЯ</span>
+                    </p>
+
+                    <p>
+                        Дата: <span id="warrantyCardTemplateTopDate">13-Dec-2024</span>
+                    </p>
+                </div>
+
+                <table class="war_objects">
+                    <tbody id="warObjectsTBody">
+                        <tr>
+                            <th width="600">Компонент</th>
+                            <th>Сериен номер</th>
+                            <th>Гар. срок</th>
+                        </tr>
+
+                        <tr>
+                            <td class="wo_sep"></td>
+                            <td class="wo_sep"></td>
+                            <td class="wo_sep"></td>
+                        </tr>
+
+                        <tr id="warrantyCardTemplateItem-0">
+                            <td id="warrantyCardTemplateItemName-0">ADATA GAMMIX S5 512G M2 PCIE</td>
+                            <td id="warrantyCardTemplateItemSerialNumber-0">2M322L2BG6DR</td>
+                            <td id="warrantyCardTemplateItemWarrantyCardTerm-0">60 м.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="war_bottom_elements_container">
+                <p class="war_bottom_small_text">
+                    Гаранционният срок на настолно компютърни системи марка "MOST" е <span id="warrantyCardTemplateTermInMonths">24</span> месеца от датата на покупка.
+                    Гаранционното обслужване се извършва само при представяне но оригинална гаранционна карта в оторизираните сервизи на фирмата
+                    (тел. <span id="warrantyCardTemplateWarrantyRepairServicesNumber"></span>). Независимо от търговската гаранция
+                    продавачът отговаря за съответствие на потребителската стока с договора за продажба съгласно чл. 112 - 115 от ЗЗП.
+                    Получих стоката, запознат съм с Общите Гаранционни условия (ОГУ) на фирма "<span id="warrantyCardTemplateBottomFirmName">Мост Компютърс</span>" и ги приемам.
+                </p>
+
+                <div class="war_bottom_signatures">
+                    <div class="war_bottom_signature_container">
+                        <label class="war_bottom_signature_label">ПРИЕЛ:</label>
+                    </div>
+                    <div class="war_bottom_signature_container">
+                        <label class="war_bottom_signature_label">ПРЕДАЛ:</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function snapElementHeight(element, snapHeight)
+            {
+                var elementHeightRelativeToSnapHeight = element.clientHeight / snapHeight;
+
+                var numberOfSnapsNeeded = Math.ceil(elementHeightRelativeToSnapHeight);
+
+                element.style.height = snapHeight * numberOfSnapsNeeded;
+            }
+
+            var warrantyCardTemplateElement = document.getElementById("warrantyCardTemplateContainer_original");
+
+            snapElementHeight(warrantyCardTemplateElement, 1754)
+
+        </script>
+    </div>
+</body>
+</html>

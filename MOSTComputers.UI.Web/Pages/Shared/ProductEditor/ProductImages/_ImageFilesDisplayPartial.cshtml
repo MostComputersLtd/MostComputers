@@ -1,0 +1,125 @@
+﻿@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Models.Product.Models.ProductImages;
+@using MOSTComputers.UI.Web.Controllers.Images
+@using MOSTComputers.UI.Web.Models;
+@using MOSTComputers.UI.Web.Models.ProductEditor;
+@using static MOSTComputers.UI.Web.Controllers.Images.ProductImageFileDataController
+
+@model ImageFilesDisplayPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Upload:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.ProductId</h4>
+    <h4 class="modal-title modal-product-name">@Model.ProductName</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="ProductImages_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <ul id="productImageDisplay_ul"
+            class="full-parent-width bg-white"
+            onmousewheel="scrollHorizontally(event, 'productImageDisplay_ul')">
+
+            @if (Model.ImageFileNames is not null
+            && Model.ImageFileNames.Count > 0)
+            {
+                for (int i = 0; i < Model.ImageFileNames.Count; i++)
+                {
+                    ProductImageFileData imageFileNameInfo = Model.ImageFileNames[i];
+
+                    string? imageSrc = $"{ControllerRoute}/{imageFileNameInfo.FileName}";
+
+                    float opacityOfLi = 1.0F;
+
+                    <li id="productImageDisplay_ul_li-@i"
+                        style="opacity: @opacityOfLi;">
+
+                        @if (imageFileNameInfo.Active)
+                        {
+                            <!--
+                            <div class="product-image-popup-image-active-button-container">
+                                <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
+                                    type="checkbox" aria-label="Close" checked
+                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li-@i',
+                                        'productImageDisplay_ul_li_activityStatusCheckbox-@i',
+                                        @Model.ProductId,
+                                        @imageFileNameInfo.DisplayOrder,
+                                        '@imageFileNameInfo.FileName')"
+                                    class="product-image-popup-image-active-button" />
+                            </div>
+                            -->
+                        }
+                        else
+                        {
+                            <!--
+                            <div class="product-image-popup-image-active-button-container">
+                                <input id="productImageDisplay_ul_li_activityStatusCheckbox-@i"
+                                    type="checkbox" aria-label="Close"
+                                    onchange="update_productImageDisplay_ul_li_activeState('productImageDisplay_ul_li-@i',
+                                        'productImageDisplay_ul_li_activityStatusCheckbox-@i',
+                                        @Model.ProductId,
+                                        @imageFileNameInfo.DisplayOrder,
+                                        '@imageFileNameInfo.FileName')"
+                                    class="product-image-popup-image-active-button" />
+                            </div>
+                            -->
+                        }
+
+                        <button name="Image #@i" class="btn bg-white"
+                            onclick="changeSelectedImageFile('imageFile-@i')"
+                            ondblclick="openDataUrlInNewWindow('@imageSrc')">
+
+                            <img id="imageFile-@i" src="@imageSrc" title="Image #@i" draggable="false"
+                                data-image-file-name="@imageFileNameInfo.FileName" />
+                        </button>
+
+                        <div class="product-image-popup-image-file-name-display-container">
+
+                            <p class="align-text-center mb-0">
+                                @imageFileNameInfo.FileName
+                            </p>
+                        </div>
+                    </li>
+                }
+            }
+
+            <!--
+            <li id="addButtonLi"
+                class="product-image-popup-image-add-button-list-item">
+                <input id="imageFilesDisplayAddFileInput" class="btn bg-white product-image-popup-image-add-input"
+                    type="file" accept="image/*"
+                    onchange="addNewImageFileToProduct(@Model.ProductId, 'imageFilesDisplayAddFileInput', @Model.ModalData.ModalContentId)" />
+
+                <label class="product-image-popup-image-add-label">+</label>
+            </li>
+            -->
+            
+        </ul>
+    </div>
+</div>
+
+<div class="modal-footer full-parent-width product-image-popup-footer_buttons-container">
+    <table id="ProductImages_modal_footer_buttons_table"
+           class="full-parent-width full-parent-height product-image_modal_footer_buttons_table">
+        <tr class="full-parent-width full-parent-height">
+            <td>
+                <button id="copyImageButton"
+                    class="full-parent-width footer-button btn btn-primary"
+                    onclick="copySelectedImageFileDataToClipboard('@Model.NotificationBoxId')">
+
+                    <h7 class="footer-button-main-text">Copy to clipboard</h7>
+
+                    <!--
+                        <p class="footer-button-small-text">(Or just press Ctrl + S)</p>
+                    -->
+                </button>
+            </td>
+        </tr>
+    </table>
+</div>

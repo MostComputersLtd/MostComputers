@@ -1,0 +1,220 @@
+﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using OneOf
+
+@inject IPromotionGroupsRepository PromotionGroupsRepository
+@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+
+<div class="promotion-group-images-viewer">
+    <div class="promotion-groups-list col-2">
+        @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageDisplayData>> kvp in _promotionGroups)
+        {
+            bool isSelected = kvp.Key == _selectedPromotionGroup;
+
+            <div class="promotion-group-item @(isSelected ? "selected" : string.Empty)" @onclick="() => SelectGroup(kvp.Key)">
+
+                @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
+                {
+                    <div class="promotion-group-item-image-div"
+                         style="background-image: url(data:@kvp.Key.LogoContentType;base64,@Convert.ToBase64String(kvp.Key.LogoImage))">
+                    </div>
+                }
+                else
+                {
+
+                    <div class="promotion-group-item-group-name">
+                        <h3>@kvp.Key.Name</h3>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="promotion-images-container">
+        <PromotionGroupImages ImageFiles="_currentImages" />
+    </div>
+</div>
+
+@code {
+    public readonly struct GetDataFromServer { }
+
+    public class GroupPromotionImageDisplayData
+    {
+        public required int Id { get; init; }
+        public required string FileName { get; init; }
+        public int? DisplayOrder { get; init; }
+    }
+
+    private const int _alwaysIncludedPromotionGroupId = 65;
+
+    [Parameter, EditorRequired] public required OneOf<Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>>, GetDataFromServer> DataOptions { get; set; }
+    private OneOf<Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>>, GetDataFromServer> _currentDataOptions { get; set; }
+
+    private Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>> _promotionGroups { get; set; } = new();
+
+    private List<PromotionGroupImages.GroupPromotionImageFileDisplayData> _currentImages = new();
+
+    [Parameter, EditorRequired] public Func<Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>>, int> GetSelectedIndexFunc { get; set; }
+
+    private PromotionGroup? _selectedPromotionGroup = null;
+
+    private PromotionGroup? _alwaysIncludedPromotionGroup = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DataOptions.IsT0)
+        {
+            _currentDataOptions = DataOptions;
+
+            _promotionGroups = DataOptions.AsT0;
+
+            @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageDisplayData>> kvp in _promotionGroups)
+            {
+                if (kvp.Key.Id == _alwaysIncludedPromotionGroupId)
+                {
+                    _alwaysIncludedPromotionGroup = kvp.Key;
+
+                    break;
+                }
+            }
+
+            SetStartingSelectedGroup();
+
+            return;
+        }
+
+        if (_currentDataOptions.IsT1)
+        {
+            _currentDataOptions = DataOptions;
+
+            SetStartingSelectedGroup();
+
+            return;
+        }
+
+        _currentDataOptions = DataOptions;
+
+        _promotionGroups.Clear();
+
+        List<PromotionGroup> promotionGroups = await PromotionGroupsRepository.GetAllAsync();
+
+        promotionGroups = promotionGroups.OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ToList();
+
+        List<int> promotionGroupIds = promotionGroups.Select(x => x.Id).ToList();
+
+        List<IGrouping<int, GroupPromotionContent>> promotionGroupContents
+            = await GroupPromotionContentsRepository.GetAllActiveInGroupsAsync(promotionGroupIds);
+
+        promotionGroupContents = promotionGroupContents
+            .SelectMany(x => x)
+            .Where(x => (x.StartDate is null || x.StartDate <= DateTime.Now)
+                && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now))
+            .GroupBy(x => x.GroupId!.Value)
+            .ToList();
+
+        List<int> promotionIds = promotionGroupContents
+            .SelectMany(x => x)
+            .Select(x => x.Id)
+            .ToList();
+
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+
+        foreach (PromotionGroup promotionGroup in promotionGroups)
+        {
+            if (promotionGroup.Id == _alwaysIncludedPromotionGroupId)
+            {
+                _alwaysIncludedPromotionGroup = promotionGroup;
+            }
+
+            List<GroupPromotionContent>? promotionsInGroup = promotionGroupContents
+                .FirstOrDefault(x => x.Key == promotionGroup.Id)?
+                .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+                .ToList();
+
+            if (promotionsInGroup is null || promotionsInGroup.Count <= 0)
+            {
+                _promotionGroups.Add(promotionGroup, new());
+
+                continue;
+            }
+
+            List<GroupPromotionImageDisplayData> imagesForGroup = new();
+
+            foreach (GroupPromotionContent groupPromotionContent in promotionsInGroup)
+            {
+                IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.FirstOrDefault(x => x.Key == groupPromotionContent.Id);
+
+                if (imageFilesForPromotion is null) continue;
+
+                foreach (GroupPromotionImageFileData imageFileForPromotion in imageFilesForPromotion)
+                {
+                    GroupPromotionImageDisplayData xmlGroupPromotion = new()
+                    {
+                        Id = imageFileForPromotion.Id,
+                        FileName = imageFileForPromotion.FileName,
+                    };
+
+                    imagesForGroup.Add(xmlGroupPromotion);
+                }
+            }
+
+            _promotionGroups.Add(promotionGroup, imagesForGroup);
+        }
+
+        SetStartingSelectedGroup();
+    }
+
+    private void SetStartingSelectedGroup()
+    {
+        int selectedIndex = GetSelectedIndexFunc(_promotionGroups);
+
+        if (selectedIndex < 0 || selectedIndex >= _promotionGroups.Count)
+        {
+            selectedIndex = _promotionGroups.Count > 0 ? 0 : -1;
+        }
+
+        if (_promotionGroups.Count > 0)
+        {
+            PromotionGroup selectedPromotionGroup = _promotionGroups.Keys.ElementAt(selectedIndex);
+
+            SelectGroup(selectedPromotionGroup);
+        }
+    }
+
+    private void SelectGroup(PromotionGroup promotionGroup)
+    {
+        if (!_promotionGroups.ContainsKey(promotionGroup)) return;
+
+        _selectedPromotionGroup = promotionGroup;
+
+        _currentImages.Clear();
+
+        List<GroupPromotionImageDisplayData> selectedImages = _promotionGroups[promotionGroup];
+
+        foreach (GroupPromotionImageDisplayData selectedImage in selectedImages)
+        {
+            _currentImages.Add(new()
+            {
+                Id = selectedImage.Id,
+                FileName = selectedImage.FileName,
+            });
+        }
+
+        if (_alwaysIncludedPromotionGroup is null || promotionGroup == _alwaysIncludedPromotionGroup) return;
+
+        List<GroupPromotionImageDisplayData> alwaysIncludedSelectedImages = _promotionGroups[_alwaysIncludedPromotionGroup];
+
+        foreach (GroupPromotionImageDisplayData selectedImage in alwaysIncludedSelectedImages)
+        {
+            _currentImages.Add(new()
+            {
+                Id = selectedImage.Id,
+                FileName = selectedImage.FileName,
+            });
+        }
+    }
+}

@@ -1,0 +1,51 @@
+﻿@using MOSTComputers.Models.Product.Models.ProductImages
+
+@model ProductImageFileNameInfoViewPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Files:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.ProductId</h4>
+    <h4 class="modal-title modal-product-name">@Model.ProductName</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="imageFileNameInfos_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <table id="imageFileNameInfosDisplay_table" class="full-parent-width bg-white table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>File Name</th>
+                    <th>S</th>
+                    <th>Active</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (Model.ImageFileNameInfos is not null
+                && Model.ImageFileNameInfos.Count > 0)
+                {
+                    for (int i = 0; i < Model.ImageFileNameInfos.Count; i++)
+                    {
+                        ProductImageFileData imageFileNameInfo = Model.ImageFileNameInfos[i];
+
+                        <tr id="imageFileNameInfosDisplay_td-@i">
+                            <td>@imageFileNameInfo.Id</td>
+                            <td>@imageFileNameInfo.FileName</td>
+                            <td>@imageFileNameInfo.DisplayOrder</td>
+                            <td>@imageFileNameInfo.Active</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

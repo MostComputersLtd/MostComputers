@@ -1,0 +1,114 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Services.Xml
+@using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
+@using OneOf
+@using static MOSTComputers.Utils.Files.FilePathUtils;
+
+@inject IProductXmlService ProductXmlService
+@inject IProductToXmlProductMappingService ProductToXmlProductMappingService
+@inject IProductToXmlService ProductToXmlService
+
+@inject NavigationManager NavigationManager
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+
+    @if (_productXmlData is not null)
+    {
+        @if (_productXmlData.Value.IsT0)
+        {
+            <textarea class="flex-shrink-0 flex-grow-1" spellcheck="false" resize="none" readonly>
+                @_productXmlData.Value.AsT0
+            </textarea>
+        }
+        else
+        {
+            <textarea class="text-danger flex-shrink-0 flex-grow-1" spellcheck="false" resize="none" readonly>
+                @_productXmlData.Value.AsT1.Text
+            </textarea>
+        }
+    }
+    else
+    {
+        <p>No XML Found</p>
+    }
+</div>
+
+@code {
+
+    public class GetDataFromServer
+    {
+        public required List<int> ProductIds { get; init; }
+    }
+
+    public class ProductXmlRelatedData
+    {
+        public required Product Product { get; init; }
+        public List<ProductProperty>? ProductProperties { get; init; }
+        public List<XmlProductImage>? XmlProductImages { get; init; }
+        public List<Promotion>? ProductPromotions { get; init; }
+        public SubCategory? ProductSubCategory { get; init; }
+        public List<XmlSearchStringPartInfo>? SearchStringPartInfos { get; init; }
+    }
+
+    [Parameter] public required OneOf<List<ProductXmlRelatedData>, GetDataFromServer> DataOptions { get; set; }
+
+    private OneOf<string, InvalidXmlResult>? _productXmlData { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SetProductXmlFromDataOptionsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await SetProductXmlFromDataOptionsAsync();
+    }
+
+    private async Task SetProductXmlFromDataOptionsAsync()
+    {
+        if (DataOptions.IsT0)
+        {
+            List<ProductXmlRelatedData> productXmlRelatedDatas = DataOptions.AsT0;
+
+            List<XmlProduct> xmlProducts = new();
+
+            foreach (ProductXmlRelatedData productXmlRelatedData in productXmlRelatedDatas)
+            {
+                XmlProduct xmlProduct = ProductToXmlProductMappingService.MapProductDataToXmlProduct(
+                    product: productXmlRelatedData.Product,
+                    productProperties: productXmlRelatedData.ProductProperties,
+                    xmlProductImages: productXmlRelatedData.XmlProductImages,
+                    productSubCategory: productXmlRelatedData.ProductSubCategory,
+                    productPromotions: productXmlRelatedData.ProductPromotions,
+                    searchStringPartInfos: productXmlRelatedData.SearchStringPartInfos);
+
+                xmlProducts.Add(xmlProduct);
+            }
+
+            ProductsXmlFullData xmlObjectData = await ProductToXmlService.GetXmlObjectDataForProductsAsync(xmlProducts);
+
+            _productXmlData = await ProductXmlService.TrySerializeProductsXmlAsync(xmlObjectData);
+
+            return;
+        }
+
+        ProductToXmlService.ProductXmlOptions productXmlOptions = new()
+        {
+            ApplicationRootPath = NavigationManager.BaseUri,
+        };
+
+        _productXmlData = await ProductToXmlService.TryGetXmlForProductsAsync(DataOptions.AsT1.ProductIds, productXmlOptions);
+    }
+}

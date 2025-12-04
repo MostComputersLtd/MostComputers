@@ -1,0 +1,40 @@
+﻿@using MOSTComputers.UI.Web.Models.Documents.WarrantyCards
+@model WarrantyCardTablePartialModel
+@{
+}
+
+<table class="full-parent-width full-parent-height sticky-head-table">
+    <thead>
+        <tr>
+            <th>Export Id</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Term (months)</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @if (Model.WarrantyCards is not null)
+        {
+            foreach (WarrantyCardDisplayData warrantyCard in Model.WarrantyCards)
+            {
+                string warrantyCardExportIdAsString = warrantyCard.ExportId.ToString();
+                string warrantyCardDate = warrantyCard.WarrantyCardDate?.ToString("yyyy/MM/dd") ?? "-";
+                string customerName = warrantyCard.CustomerName ?? "-";
+                string warrantyCardTermAsString = warrantyCard.WarrantyCardTerm?.ToString() ?? "-";
+
+                <tr>
+                    <td>
+                        <button class="btn link-info" onclick="getWarrantyCardPdfAndOpenInDialog(@warrantyCard.ExportId)">
+                            @warrantyCardExportIdAsString
+                        </button>
+                    </td>
+                    <td>@warrantyCardDate</td>
+                    <td>@customerName</td>
+                    <td>@warrantyCardTermAsString</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

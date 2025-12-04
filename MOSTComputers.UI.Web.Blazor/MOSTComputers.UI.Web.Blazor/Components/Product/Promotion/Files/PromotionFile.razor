@@ -1,0 +1,409 @@
+﻿@using OneOf
+@using System.Diagnostics.CodeAnalysis
+@rendermode InteractiveAuto
+
+@inject NavigationManager NavigationManager
+
+@using static MOSTComputers.Utils.Files.ContentTypeUtils;
+@using static MOSTComputers.Utils.Files.FileExtensionUtils;
+
+@if (!string.IsNullOrWhiteSpace(_fileUrl))
+{
+    switch (_promotionFileDisplayType)
+    {
+        case PromotionFileDisplayTypeEnum.Image:
+        {
+            <img @attributes="AdditionalAttributes" src="@_fileUrl" alt="@_fileUrl" loading="lazy"/>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Video:
+        {
+            <video @attributes="AdditionalAttributes" controls preload="none">
+                <source src="@_fileUrl" />
+                Your browser does not support displaying this video.
+            </video>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Audio:
+        {
+            <audio @attributes="AdditionalAttributes" controls preload="none">
+                <source src="@_fileUrl" />
+                Your browser does not support displaying this audio.
+            </audio>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.PdfDocument:
+        {
+            <iframe @attributes="AdditionalAttributes" src="@_fileUrl"></iframe>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.WordDocument:
+        case PromotionFileDisplayTypeEnum.OtherDocument:
+        case PromotionFileDisplayTypeEnum.ExcelSpreadsheet:
+        case PromotionFileDisplayTypeEnum.OtherSpreadsheet:
+        {
+            string fullPathToFile;
+
+            if (FileOptions.FilePathOption.IsT0)
+            {
+                fullPathToFile = Path.Combine(NavigationManager.BaseUri, _fileUrl[1..]);
+            }
+            else
+            {
+                fullPathToFile = _fileUrl;
+            }
+
+            string officeOnlineViewerLink = $"https://view.officeapps.live.com/op/view.aspx?src={Uri.EscapeDataString(fullPathToFile)}";
+
+            <iframe @attributes="AdditionalAttributes" src="@officeOnlineViewerLink" alt="View File">
+                Your browser does not support displaying this document.
+            </iframe>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Unhandled:
+        default:
+        {
+            bool doAdditionalClassesExist = AdditionalAttributes.TryGetValue("class", out object? additionalClasses);
+
+            <a @attributes='AdditionalAttributes.Where(x => x.Key != "class")'
+                href="@_fileUrl" class="text-decoration-none @additionalClasses">
+                Cannot Display File
+            </a>
+
+            break;
+        }
+    }
+}
+else
+{
+    <p style="color: red;">-</p>
+}
+
+@code {
+    internal enum PromotionFileDisplayTypeEnum
+    {
+        Unhandled = 0,
+        Image = 1,
+        Video = 2,
+        Audio = 3,
+        PdfDocument = 4,
+        WordDocument = 5,
+        OtherDocument = 6,
+        ExcelSpreadsheet = 7,
+        OtherSpreadsheet = 8,
+    }
+
+    public readonly struct FilePathOptions : IEquatable<FilePathOptions>
+    {
+        internal OneOf<FromExistingFile, FromOtherFile> FilePathOption { get; private init; }
+
+        public struct FromExistingFile
+        {
+            public required string ExistingFileName { get; set; }
+        }
+
+        public struct FromOtherFile
+        {
+            public required string NewFileUrl { get; set; }
+            public required string NewFileContentType { get; set; }
+        }
+
+        public static FilePathOptions CreateForExistingFile(string existingFileName)
+        {
+            return new FilePathOptions()
+            {
+                FilePathOption = new FromExistingFile()
+                {
+                    ExistingFileName = existingFileName,
+                },
+            };
+        }
+
+        public static FilePathOptions CreateForOtherFile(string newFileUrl, string newFileContentType)
+        {
+            return new FilePathOptions()
+            {
+                FilePathOption = new FromOtherFile()
+                {
+                    NewFileUrl = newFileUrl,
+                    NewFileContentType = newFileContentType,
+                },
+            };
+        }
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            if (obj is not FilePathOptions other) return false;
+
+            return Equals(other);
+        }
+
+        public bool Equals(FilePathOptions other)
+        {
+            if (FilePathOption.IsT0 != other.FilePathOption.IsT0) return false;
+
+            return FilePathOption.Match(
+                fromExistingFile =>
+                {
+                    return fromExistingFile.ExistingFileName == other.FilePathOption.AsT0.ExistingFileName;
+                },
+                fromOtherFile =>
+                {
+                    return fromOtherFile.NewFileUrl == other.FilePathOption.AsT1.NewFileUrl
+                        && fromOtherFile.NewFileContentType == other.FilePathOption.AsT1.NewFileContentType;
+                });
+        }
+
+        public override int GetHashCode()
+        {
+            return FilePathOption.Match(
+                fromExistingFile => fromExistingFile.ExistingFileName.GetHashCode(StringComparison.OrdinalIgnoreCase),
+                fromOtherFile => 
+                {
+                    return HashCode.Combine(
+                        fromOtherFile.NewFileUrl.GetHashCode(StringComparison.OrdinalIgnoreCase),
+                        fromOtherFile.NewFileContentType.GetHashCode(StringComparison.OrdinalIgnoreCase));
+                });
+        }
+    }
+
+    [Parameter, EditorRequired] public required FilePathOptions FileOptions { get; set; }
+
+    private FilePathOptions? _previousFileOptions { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+
+    private string? _fileUrl;
+    private PromotionFileDisplayTypeEnum _promotionFileDisplayType;
+
+    override protected void OnInitialized()
+    {
+        SetPromotionFileData();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_previousFileOptions is not null && !_previousFileOptions.Equals(FileOptions))
+        {
+            SetPromotionFileData();
+        }
+
+        _previousFileOptions = FileOptions;
+    }
+
+    private void SetPromotionFileData()
+    {
+        _fileUrl = FileOptions.FilePathOption.Match(
+            fromExistingFile => $"/api/images/promotionFileData/{fromExistingFile.ExistingFileName}",
+            fromOtherFile => fromOtherFile.NewFileUrl);
+        
+        _promotionFileDisplayType = GetPromotionFileDisplayTypeFromOptions(FileOptions);
+    }
+
+    private const string _pdfFileContentType = "application/pdf";
+
+    private static readonly string[] _wordDocumentContentTypes =
+    {
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-word.document.macroenabled.12",
+        "application/vnd.ms-word.template.macroenabled.12",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+    };
+
+    private static readonly string[] _otherDocumentContentTypes =
+    {
+        "text/plain",
+        "application/rtf",
+        "application/vnd.oasis.opendocument.text",
+        "application/vnd.oasis.opendocument.text-template"
+    };
+
+    private static readonly string[] _excelFileContentTypes =
+    {
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel.sheet.macroenabled.12",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+        "application/vnd.ms-excel.template.macroenabled.12"
+    };
+
+    private static readonly string[] _otherSpreadsheetContentTypes =
+    {
+        "application/vnd.oasis.opendocument.spreadsheet",
+        "application/vnd.oasis.opendocument.spreadsheet-template",
+        "text/csv",
+        "application/x-dbf"
+    };
+
+    private const string _pdfFileExtension = "pdf";
+
+    private static readonly string[] _wordDocumentExtensions = new string[]
+    {
+        "doc",
+        "docx",
+        "dot",
+        "dotx",
+        "docm",
+        "dotm",
+    };
+
+    private static readonly string[] _otherDocumentExtensions = new string[]
+    {
+        "txt",
+        "rtf",
+        "odt",
+        "ott",
+    };
+
+    private static readonly string[] _excelFileExtensions = new string[]
+    {
+        "xlsx",
+        "xls",
+        "xlt",
+        "xltx",
+        "xlsm",
+        "xltm",
+        "xlsb",
+    };
+
+    private static readonly string[] _otherSpreadsheetExtensions = new string[]
+    {
+        "ods",
+        "ots",
+        "csv",
+        "tsv",
+        "dbf",
+    };
+
+    private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromOptions(FilePathOptions filePathOptions)
+    {
+        return filePathOptions.FilePathOption.Match(
+            fromExistingFile => GetPromotionFileDisplayTypeFromExtension(fromExistingFile.ExistingFileName),
+			fromOtherFile => GetPromotionFileDisplayTypeFromContentType(fromOtherFile.NewFileContentType));
+    }
+
+    private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromContentType(string contentType)
+    {
+        bool isElementAPdfDocument = contentType == _pdfFileContentType;
+
+        if (isElementAPdfDocument) return PromotionFileDisplayTypeEnum.PdfDocument;
+
+        bool isElementAWordDocument = _wordDocumentContentTypes.Contains(contentType);
+
+        if (isElementAWordDocument) return PromotionFileDisplayTypeEnum.WordDocument;
+
+        bool isElementADocument = _otherDocumentContentTypes.Contains(contentType);
+
+        if (isElementADocument) return PromotionFileDisplayTypeEnum.OtherDocument;
+
+        bool isElementAnExcelSpreadsheet = _excelFileContentTypes.Contains(contentType);
+
+        if (isElementAnExcelSpreadsheet) return PromotionFileDisplayTypeEnum.ExcelSpreadsheet;
+
+        bool isElementASpreadsheet = _otherSpreadsheetContentTypes.Contains(contentType);
+
+        if (isElementASpreadsheet) return PromotionFileDisplayTypeEnum.OtherSpreadsheet;
+
+        if (IsImageContentType(contentType))
+        {
+            return PromotionFileDisplayTypeEnum.Image;
+        }
+        else if (IsVideoContentType(contentType))
+        {
+            return PromotionFileDisplayTypeEnum.Video;
+        }
+        else if (IsAudioContentType(contentType))
+        {
+            return PromotionFileDisplayTypeEnum.Audio;
+        }
+
+        return PromotionFileDisplayTypeEnum.Unhandled;
+    }
+
+    private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromExtension(string fullFileNameOrExtension)
+    {
+        bool isElementAPdfDocument = DoesFileNameMatchExtension(fullFileNameOrExtension, _pdfFileExtension);
+
+        if (isElementAPdfDocument) return PromotionFileDisplayTypeEnum.PdfDocument;
+
+        bool isElementAWordDocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _wordDocumentExtensions);
+
+        if (isElementAWordDocument) return PromotionFileDisplayTypeEnum.WordDocument;
+
+        bool isElementADocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherDocumentExtensions);
+
+        if (isElementADocument) return PromotionFileDisplayTypeEnum.OtherDocument;
+
+        bool isElementAnExcelSpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _excelFileExtensions);
+
+        if (isElementAnExcelSpreadsheet) return PromotionFileDisplayTypeEnum.ExcelSpreadsheet;
+
+        bool isElementASpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherSpreadsheetExtensions);
+
+        if (isElementASpreadsheet) return PromotionFileDisplayTypeEnum.OtherSpreadsheet;
+
+        string? contentTypeFromFileExtension = GetContentTypeFromExtension(fullFileNameOrExtension);
+
+        if (contentTypeFromFileExtension is null)
+        {
+            return PromotionFileDisplayTypeEnum.Unhandled;
+        }
+
+        if (IsImageContentType(contentTypeFromFileExtension))
+        {
+            return PromotionFileDisplayTypeEnum.Image;
+        }
+        else if (IsVideoContentType(contentTypeFromFileExtension))
+        {
+            return PromotionFileDisplayTypeEnum.Video;
+        }
+        else if (IsAudioContentType(contentTypeFromFileExtension))
+        {
+            return PromotionFileDisplayTypeEnum.Audio;
+        }
+
+        return PromotionFileDisplayTypeEnum.Unhandled;
+    }
+
+    private static bool DoesFileNameMatchAnyExtension(string fullFileName, IEnumerable<string> extensions)
+    {
+        string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileName);
+
+        if (fileExtensionWithoutDot is null)
+        {
+            return false;
+        }
+
+        fileExtensionWithoutDot = fileExtensionWithoutDot[1..];
+
+        foreach (string extension in extensions)
+        {
+            if (extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool DoesFileNameMatchExtension(string fullFileNameOrExtension, string extension)
+    {
+        string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileNameOrExtension);
+
+        if (fileExtensionWithoutDot is null)
+        {
+            return false;
+        }
+
+        fileExtensionWithoutDot = fileExtensionWithoutDot[1..];
+
+        return extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase);
+    }
+}

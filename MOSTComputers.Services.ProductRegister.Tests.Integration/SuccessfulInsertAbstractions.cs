@@ -1,6 +1,6 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using OneOf;
@@ -34,7 +34,7 @@ internal static class SuccessfulInsertAbstractions
         IToDoLocalChangesService toDoLocalChangesService,
         ServiceToDoLocalChangeCreateRequest toDoLocalChangeCreateRequest)
     {
-        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoChangesInsertResult = toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoChangesInsertResult = toDoLocalChangesService.InsertAsync(toDoLocalChangeCreateRequest);
 
         int? toDoChangesId1 = toDoChangesInsertResult.Match<int?>(
             id => id,

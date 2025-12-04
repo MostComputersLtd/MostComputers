@@ -5,7 +5,6 @@ using Respawn;
 using System.Data.Common;
 
 namespace MOSTComputers.Tests.Integration.Common;
-
 public abstract class WebApplicationFactoryWithContainer<TEntryPoint> : WebApplicationFactory<TEntryPoint>
     where TEntryPoint : class
 {

@@ -1,0 +1,177 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.PromotionFiles
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Controllers;
+@using MOSTComputers.UI.Web.Models.ProductEditor
+@using MOSTComputers.UI.Web.Models.ProductEditor.ProductImages
+@using static MOSTComputers.UI.Web.Utils.ProductImages.ProductImagesDisplayOrderUtils;
+
+@model ProductPropertiesEditorImagesListPartialModel
+@{
+    Layout = null;
+
+    int totalListItemsCount = 0;
+
+    List<ProductPropertiesEditorImagesListItemPartialModel> listItemPartialModels = new();
+
+    if (Model.Images is not null)
+    {
+        string? firstModelHtmlData = Model.Images.FirstOrDefault()?.HtmlData;
+
+        for (int i = 0; i < Model.Images.Count; i++)
+        {
+            ProductImageDisplayData image = Model.Images[i];
+
+            ProductImageFileDisplayData? relatedImageFileNameInfo = null;
+
+            PromotionProductFileInfo? relatedProductFileInfo = null;
+
+            if (image.ExistingImageId is not null)
+            {
+                relatedImageFileNameInfo = Model.RelatedImageFileData?
+                    .FirstOrDefault(x => x.FileName?.StartsWith($"{image.ExistingImageId}.") ?? false);
+
+                if (relatedImageFileNameInfo is not null)
+                {
+                    Model.RelatedImageFileData!.Remove(relatedImageFileNameInfo);
+                }
+
+                relatedProductFileInfo = Model.PromotionProductFileInfos?
+                    .FirstOrDefault(x => x.ProductImageId == image.ExistingImageId);
+            }
+
+            ProductPropertiesEditorImagesListItemPartialModel listItemPartialModel = new()
+            {
+                ElementIndex = totalListItemsCount,
+                ImageData = image,
+                ImageFileData = relatedImageFileNameInfo,
+                IncludeHtmlDataView = Model.IncludeHtmlDataView,
+                RelatedPromotionProductFile = relatedProductFileInfo,
+                ProductPropertiesEditorContainerElementId = Model.ProductPropertiesEditorContainerElementId,
+                ProductTableContainerElementId = Model.ProductTableContainerElementId,
+				RelatedProductTableRowElementId = Model.RelatedProductTableRowElementId,
+            };
+
+            listItemPartialModels.Add(listItemPartialModel);
+
+            totalListItemsCount++;
+        }
+    }
+
+    @if (Model.RelatedImageFileData is not null)
+    {
+        for (int i = 0; i < Model.RelatedImageFileData.Count; i++)
+        {
+            ProductImageFileDisplayData remainingImageFileInfo = Model.RelatedImageFileData[i];
+
+            ProductPropertiesEditorImagesListItemPartialModel listItemPartialModel = new()
+            {
+                ElementIndex = totalListItemsCount,
+                ImageData = null,
+                RelatedPromotionProductFile = null,
+                ImageFileData = remainingImageFileInfo,
+                IncludeHtmlDataView = Model.IncludeHtmlDataView,
+                ProductPropertiesEditorContainerElementId = Model.ProductPropertiesEditorContainerElementId,
+                ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                RelatedProductTableRowElementId = Model.RelatedProductTableRowElementId,
+            };
+
+            listItemPartialModels.Add(listItemPartialModel);
+
+            totalListItemsCount++;
+        }
+    }
+
+    List<ProductPropertiesEditorImagesListItemPartialModel> orderedListItemPartialModels = OrderImagesAndImageFileNameInfos(
+        listItemPartialModels,
+        listItemPartialModel => listItemPartialModel.ImageFileData?.DisplayOrder,
+        listItemPartialModel => listItemPartialModel.ImageData?.ExistingImageId);
+}
+
+<div class="d-flex flex-column">
+    <ul id="productImageDisplayList"
+        class="full-parent-width p-2 d-flex flex-row flex-nowrap list-unstyled"
+        style="overflow-x: auto"
+        ondragover="onDragOverImageList(event, 'productImageDisplayList')"
+        ondrop="event.preventDefault()">
+
+        @foreach (ProductPropertiesEditorImagesListItemPartialModel listItemPartialModel in orderedListItemPartialModels)
+        {
+            <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorImagesListItemPartial" model="@listItemPartialModel" />
+        }
+
+         <!--
+         @if (Model.Images is not null)
+         {
+             string? firstModelHtmlData = Model.Images.FirstOrDefault()?.HtmlData;
+
+             for (int i = 0; i < Model.Images.Count; i++)
+             {
+                 ProductImageDisplayData image = Model.Images[i];
+
+                 ProductImageFileDisplayData? relatedImageFileNameInfo = null;
+
+                 PromotionProductFileInfo? relatedProductFileInfo = null;
+
+                 if (image.ExistingImageId is not null)
+                 {
+                     relatedImageFileNameInfo = Model.RelatedImageFileData?
+                         .FirstOrDefault(x => x.FileName?.StartsWith($"{image.ExistingImageId}.") ?? false);
+
+                     if (relatedImageFileNameInfo is not null)
+                     {
+                         Model.RelatedImageFileData!.Remove(relatedImageFileNameInfo);
+                     }
+
+                     relatedProductFileInfo = Model.PromotionProductFileInfos?
+                         .FirstOrDefault(x => x.ProductImageId == image.ExistingImageId);
+                 }
+
+                 <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorImagesListItemPartial"
+                     model="new ProductPropertiesEditorImagesListItemPartialModel()
+                     {
+                         ElementIndex = totalListItemsCount,
+                         ImageData = image,
+                         ImageFileData = relatedImageFileNameInfo,
+                         IncludeHtmlDataView = Model.IncludeHtmlDataView,
+                         RelatedPromotionProductFile = relatedProductFileInfo,
+                         ProductPropertiesEditorContainerElementId = Model.ProductPropertiesEditorContainerElementId,
+                         ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                     }" />
+
+                 totalListItemsCount++;
+             }
+         }
+        
+         @if (Model.RelatedImageFileData is not null)
+         {
+             for (int i = 0; i < Model.RelatedImageFileData.Count; i++)
+             {
+                 ProductImageFileDisplayData remainingImageFileInfo = Model.RelatedImageFileData[i];
+
+                 <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorImagesListItemPartial"
+                     model="new ProductPropertiesEditorImagesListItemPartialModel()
+                     {
+                         ElementIndex = totalListItemsCount,
+                         ImageData = null,
+                         RelatedPromotionProductFile = null,
+                         ImageFileData = remainingImageFileInfo,
+                         IncludeHtmlDataView = Model.IncludeHtmlDataView,
+                         ProductPropertiesEditorContainerElementId = Model.ProductPropertiesEditorContainerElementId,
+                         ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                     }" />
+
+                 totalListItemsCount++;
+             }
+         }
+         -->
+
+        <li style="position: relative; width: 10%;">
+            <button class="btn full-parent-width full-parent-height border-2"
+                onclick="copyFileFromClipboard('productPropertyEditorAddImageFileInput')"
+                style="border-color: black">
+                +
+            </button>
+        </li>
+    </ul>
+</div>

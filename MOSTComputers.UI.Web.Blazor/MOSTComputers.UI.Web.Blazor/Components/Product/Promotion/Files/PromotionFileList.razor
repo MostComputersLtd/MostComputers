@@ -1,0 +1,153 @@
+﻿@rendermode InteractiveAuto
+
+<ul class="promotion-file-list">
+
+    @for (int i = 0; i < PromotionFiles.Count; i++)
+    {
+        PromotionFileInfoListItem promotionFileInfoListItem = PromotionFiles[i];
+
+        string selectedListItemClassName = string.Empty;
+
+        if (promotionFileInfoListItem.IsSelected)
+        {
+            selectedListItemClassName = "promotion-file-selected-list-item";
+        }
+
+        <li class="promotion-file-list-item @selectedListItemClassName"
+            @onclick='() => ToggleItemSelection(promotionFileInfoListItem)'>
+
+            <div class="col-2 pe-2">
+                <p>@promotionFileInfoListItem.Id</p>
+            </div>
+            <div class="col-4 pe-2">
+                <p>@promotionFileInfoListItem.Name</p>
+            </div>
+            <div class="col-6 pe-2 promotion-file-data-entry">
+                <div class="promotion-file-data-container">
+                    <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfoListItem.FileName)" class="promotion-file" />
+                </div>
+            </div>
+        </li>
+    }
+</ul>
+
+@code {
+    public enum SelectionMode
+    {
+        None,
+        Single,
+        Multiple
+    }
+
+    public sealed class PromotionFileInfoListItem
+    {
+        public required int Id { get; set; }
+        public required string FileName { get; set; }
+        public required bool Active { get; set; }
+        public string? Name { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+        public required string CreateUserName { get; set; }
+        public required DateTime CreateDate { get; set; }
+        public required string LastUpdateUserName { get; set; }
+        public required DateTime LastUpdateDate { get; set; }
+
+        public bool IsSelected { get; set; } = false;
+    }
+
+    [Parameter] public List<PromotionFileInfoListItem> PromotionFiles { get; init; } = new();
+
+    [Parameter] public SelectionMode ItemSelectionMode { get; set; } = SelectionMode.None;
+    private SelectionMode? _previousItemSelectionMode;
+
+    public IReadOnlyList<PromotionFileInfoListItem> GetSelectedPromotionFiles()
+    {
+        return PromotionFiles.Where(x => x.IsSelected)
+            .ToList();
+    }
+
+    [Parameter] public EventCallback<IReadOnlyList<PromotionFileInfoListItem>> SelectionChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (_previousItemSelectionMode is not null && _previousItemSelectionMode != ItemSelectionMode)
+        {
+            bool hasSelectionChanged = false;
+
+            if (ItemSelectionMode == SelectionMode.None)
+            {
+                foreach (PromotionFileInfoListItem promotionFile in PromotionFiles)
+                {
+                    if (!promotionFile.IsSelected) continue;
+
+                    promotionFile.IsSelected = false;
+
+                    hasSelectionChanged = true;
+                }
+            }
+            else if (ItemSelectionMode == SelectionMode.Single)
+            {
+                bool foundFirstSelectedItem = false;
+
+                foreach (PromotionFileInfoListItem promotionFile in PromotionFiles)
+                {
+                    if (!promotionFile.IsSelected) continue;
+
+                    if (!foundFirstSelectedItem)
+                    {
+                        foundFirstSelectedItem = true;
+
+                        continue;
+                    }
+
+                    promotionFile.IsSelected = false;
+
+                    hasSelectionChanged = true;
+                }
+            }
+
+            if (hasSelectionChanged)
+            {
+                IReadOnlyList<PromotionFileInfoListItem> selectedPromotionFiles = GetSelectedPromotionFiles();
+
+                SelectionChanged.InvokeAsync(selectedPromotionFiles);
+            }
+        }
+
+        _previousItemSelectionMode = ItemSelectionMode;
+    }
+
+    private void ToggleItemSelection(PromotionFileInfoListItem promotionFileInfoListItem)
+    {
+        if (ItemSelectionMode == SelectionMode.None) return;
+
+        if (ItemSelectionMode == SelectionMode.Single)
+        {
+            if (promotionFileInfoListItem.IsSelected)
+            {
+                promotionFileInfoListItem.IsSelected = false;
+
+                SelectionChanged.InvokeAsync(GetSelectedPromotionFiles());
+
+                return;
+            }
+
+            foreach (PromotionFileInfoListItem promotionFile in PromotionFiles)
+            {
+                promotionFile.IsSelected = false;
+            }
+
+            promotionFileInfoListItem.IsSelected = true;
+
+            SelectionChanged.InvokeAsync(GetSelectedPromotionFiles());
+
+            return;
+        }
+
+        promotionFileInfoListItem.IsSelected = !promotionFileInfoListItem.IsSelected;
+
+        SelectionChanged.InvokeAsync(GetSelectedPromotionFiles());
+    }
+}

@@ -1,0 +1,115 @@
+﻿@page
+@using MOSTComputers.UI.Web.Models.ProductSearch
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils;
+
+@model MOSTComputers.UI.Web.Pages.XmlDownloadModel
+@{
+	ViewData["Title"] = "Download XML";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Data/StandardDataConversions.js"></script>
+
+    <script src="~/js/Data/Requests/Product/GetProductNewSearchStatusesFromSelect.js"></script>
+    <script src="~/js/Data/Requests/Product/ProductSearchRequestCreator.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+    <script src="~/js/Display/DisplayDataInNewWindow.js"></script>
+
+    <script src="~/js/Pages/XmlDownload.js"></script>
+}
+
+<div class="full-parent-width">
+    <header class="full-parent-width">
+        <ul class="d-flex list-style-none ps-0 mb-2">
+
+            @{
+                List<ProductNewStatusSearchOptions> options = new()
+                {
+                    ProductNewStatusSearchOptions.New,
+                    ProductNewStatusSearchOptions.WorkInProgress,
+                    ProductNewStatusSearchOptions.ReadyForUse,
+                    ProductNewStatusSearchOptions.Postponed1,
+                    ProductNewStatusSearchOptions.Postponed2
+                };
+
+                List<SelectListItem> selectListItems = GetProductNewSearchStatusSelectListItems(
+                    options: options,
+                    defaultSelectListItem: new("All", "", false, false));
+
+                SelectListItem newAndWorkInProgressSelectListItem = new(
+                    "New & Work",
+                    $"{(int)ProductNewStatusSearchOptions.New},{(int)ProductNewStatusSearchOptions.WorkInProgress}",
+                    true);
+
+                selectListItems.Insert(3, newAndWorkInProgressSelectListItem);
+            }
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="xmlDownloadProductNewStatusSelect" asp-items='@selectListItems'
+                        >
+                </select>
+            </li>
+
+            <li class="flex-grow-1 d-flex align-content-center flex-wrap ms-2 me-2">
+                <input id="xmlDownloadProductIdInput" type="text" class="full-parent-width"
+                    placeholder="Search..." />
+            </li>
+
+            <li class="display-flex-not-important justify-content-center align-content-center flex-wrap me-2">
+                <button id="xmlDownloadSearchButton" type="button"
+                    class="btn btn-outline-primary full-parent-width"
+                    onclick="openXmlFromOptionsInNewWindow(
+                        'xmlDownloadSearchButton',
+                        'xmlDownloadSearchLoader')">
+                    Search
+                </button>
+
+                <div id="xmlDownloadSearchLoader" class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="xmlDownloadCategorySelect"
+                    asp-items="await Model.GetAllCategorySelectListItemsAsync()">
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="xmlDownloadProductStatusSelect"
+                        asp-items='GetProductSearchStatusSelectListItems(
+                        [
+                            ProductStatusSearchOptions.Unavailable,
+                            ProductStatusSearchOptions.Call,
+                            ProductStatusSearchOptions.Available,
+                            ProductStatusSearchOptions.AvailableAndCall
+                        ],
+                        selected: ProductStatusSearchOptions.AvailableAndCall,
+                        defaultSelectListItem: new("Всички", "", false, false))'>
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="xmlDownloadPromotionStatusSelect"
+                    asp-items='GetProductPromotionSearchEnumSelectListItems(
+                        [
+                            PromotionSearchOptions.None,
+                            PromotionSearchOptions.P,
+                            PromotionSearchOptions.R,
+                            PromotionSearchOptions.I,
+                            PromotionSearchOptions.Discount,
+                        ],
+                    defaultSelectListItem: new("Всички", "", true, false))'>
+                </select>
+            </li>
+        </ul>
+    </header>
+</div>
+
+@Html.AntiForgeryToken()

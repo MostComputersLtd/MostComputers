@@ -1,0 +1,133 @@
+﻿@{
+    AdditionalHeaderAttributes.TryGetValue("class", out object? headerAdditionalClasses);
+    AdditionalBodyAttributes.TryGetValue("class", out object? bodyAdditionalClasses);
+    AdditionalFooterAttributes.TryGetValue("class", out object? footerAdditionalClasses);
+}
+
+<div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="Close">
+    <div class="popup-content"
+        style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
+            margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);
+            width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
+            height: calc(100vh - @PopupMarginOptions.Top - @PopupMarginOptions.Bottom);"
+         @onclick:stopPropagation>
+
+        @if (DisplayHeader)
+        {
+            <div @attributes='AdditionalHeaderAttributes' class='popup-header @headerAdditionalClasses'>
+                <div class="popup-header-content">
+                    @if (HeaderContent is not null)
+                    {
+                        @HeaderContent(new PopupContext(this))
+                    }
+                </div>
+
+                @if (AddFullScreenButtonToHeader)
+                {
+                    <PopupFullScreenButton PopupContext="new PopupContext(this)" />
+				}
+
+                <button class="btn-close ms-2" @onclick="Close"></button>
+            </div>
+        }
+
+        <div @attributes='AdditionalBodyAttributes' class="popup-body @bodyAdditionalClasses">
+
+            @if (ChildContent is not null)
+            {
+                @ChildContent(new PopupContext(this))
+            }
+        </div>
+
+        @if (FooterContent is not null)
+        {
+            <div @attributes='AdditionalFooterAttributes' class="popup-footer @footerAdditionalClasses">
+                @FooterContent(new PopupContext(this))
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public class MarginOptions
+    {
+        public string Top { get; set; } = "0px";
+        public string Right { get; set; } = "0px";
+        public string Bottom { get; set; } = "0px";
+        public string Left { get; set; } = "0px";
+    }
+
+    public sealed class PopupContext
+    {
+        private readonly Popup _popup;
+
+        public PopupContext(Popup popup)
+        {
+            _popup = popup;
+        }
+
+        public MarginOptions MarginOptions => _popup.PopupMarginOptions;
+
+        public void SetMarginOptions(MarginOptions marginOptions)
+        {
+            _popup.SetPopupMarginOptions(marginOptions);
+        }
+
+        public bool IsVisible => _popup.IsVisible;
+
+        public void SetIsVisible(bool isVisible)
+        {
+            _popup.SetIsVisible(isVisible);
+        }
+    }
+
+    [Parameter] public bool DisplayHeader { get; set; } = true;
+
+    [Parameter] public bool AddFullScreenButtonToHeader { get; set; } = false;
+
+    [Parameter] public RenderFragment<PopupContext>? HeaderContent { get; set; }
+
+    [Parameter] public RenderFragment<PopupContext>? ChildContent { get; set; }
+    [Parameter] public RenderFragment<PopupContext>? FooterContent { get; set; }
+
+    [Parameter] public Dictionary<string, object> AdditionalHeaderAttributes { get; set; } = new();
+    [Parameter] public Dictionary<string, object> AdditionalBodyAttributes { get; set; } = new();
+    [Parameter] public Dictionary<string, object> AdditionalFooterAttributes { get; set; } = new();
+
+    [Parameter] public MarginOptions PopupMarginOptions { get; set; } = new();
+
+    private void SetPopupMarginOptions(MarginOptions marginOptions)
+    {
+        PopupMarginOptions = marginOptions;
+
+        StateHasChanged();
+    }
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private void SetIsVisible(bool isVisible)
+    {
+        IsVisible = isVisible;
+
+        IsVisibleChanged.InvokeAsync(IsVisible);
+
+        StateHasChanged();
+    }
+
+    [Parameter] public EventCallback CloseHandler { get; set; }
+
+    private async Task Close()
+    {
+        if (CloseHandler.HasDelegate)
+        {
+            await CloseHandler.InvokeAsync();
+
+            return;
+        }
+
+        IsVisible = false;
+
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+}

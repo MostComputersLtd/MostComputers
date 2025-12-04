@@ -1,0 +1,919 @@
+﻿@page "/legacyXmlCharacteristicsMatch"
+@rendermode InteractiveServer
+
+@attribute [Authorize]
+
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ExternalXmlImport
+@using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.DataAccess.Products.Models.Requests.ExternalXmlImport
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+@using System.Drawing
+
+@inject IProductXmlProvidingService ProductXmlProvidingService
+@inject ICategoryService CategoryService
+@inject IProductCharacteristicService ProductCharacteristicService
+@inject IProductCharacteristicAndExternalXmlDataRelationService ProductCharacteristicAndExternalXmlDataRelationService
+@inject ITransactionExecuteService TransactionExecuteService
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+    <header class="full-parent-width">
+        <ul class="d-flex list-style-none ps-0 mb-2">
+
+            <li class="d-flex justify-content-center align-content-center flex-wrap flex-grow-1 me-2">
+                <button type="button" class="btn btn-outline-primary full-parent-width"
+                    @onclick="() => GetLocalAndLegacyXmlDataAndDisplayAsync(_selectedCategoryId)">
+                    Search
+                </button>
+
+                <div class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select @bind="_selectedCategoryId">
+                    @foreach (Category category in _categoriesInSelect)
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+        </ul>
+    </header>
+
+    <div class="flex-shrink-0 flex-grow-1" style="overflow-y: auto;">
+        @if (_xmlError is not null)
+        {
+            <p class="text-danger mb-0">@_xmlError</p>
+        }
+        else
+        {
+            <div class="full-parent-width flex-grow-1 d-flex flex-column" style="overflow-y: auto;">
+
+                @if (_selectedCategory is not null)
+                {
+                    <h2 class="align-text-center">Category: @_selectedCategory.Description (ID: @_selectedCategory.Id)</h2>
+                }
+
+                <table class="full-parent-width full-parent-height mb-3" style="overflow-y: auto;">
+
+                    <thead>
+                        <tr>
+                            <th class="align-text-center">
+                                <h4>Local:</h4>
+                            </th>
+                            <th class="align-text-center">
+                                <h4>Old XML:</h4>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <colgroup>
+                        <col style="border-right: 0.1rem black solid;">
+                        <col>
+                    </colgroup>
+
+                    <tr>
+                        <td class="pe-2" style="width: 50%;">
+                            <div class="full-parent-width d-flex" style="font-weight: bold; unicode-bidi: isolate;">
+
+                                <label style="width: 15%;">
+                                    Id
+                                </label>
+                                <label style="width: 20%;">
+                                    S
+                                </label>
+                                <label style="flex-grow: 1;">
+                                    Name
+                                </label>
+                                <label style="width: 20%;">
+                                    Meaning
+                                </label>
+                            </div>
+                        </td>
+
+                        <td class="ps-2" style="width: 50%;">
+                            <div class="full-parent-width d-flex" style="font-weight: bold; unicode-bidi: isolate;">
+
+                                <label style="flex-grow: 1;">
+                                    Name
+                                </label>
+                                <label style="width: 20%;">
+                                    Order
+                                </label>
+                                <label style="width: 20%;">
+                                    Value
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    @for (int i = 0; i < Relations.Count; i++)
+                    {
+                        LocalAndLegacyXmlCharacteristicRelationDisplayData relation = Relations[i];
+
+                        <tr class="full-parent-width"
+                            @ondragenter="() => OnDragEnterItem(relation)"
+                            ondragover="event.preventDefault();"
+                            @ondragleave="() => OnDragLeaveItem(relation)"
+                            @ondrop="() => OnDropItems(relation)"
+                            style="border-width: 1px;">
+
+                            <td class="pe-2" style="width: 50%;">
+
+                                @if (relation.MatchingLocalCharacteristic is null)
+                                {
+                                    <div class="full-parent-width full-parent-height" style="background-color: lightgray;"></div>
+                                }
+                                else
+                                {
+                                    LocalCharacteristicDisplayData characteristic = relation.MatchingLocalCharacteristic;
+
+                                    <table class="full-parent-width @characteristic.CustomCssClasses"
+                                           draggable="true"
+                                           @ondragstart="() => SelectLocalItemToDrag(relation)"
+                                           @onclick="() => SelectLocalItemToDrag(relation)"
+                                           style="border-width: 0;">
+
+                                        <tr class="full-parent-width">
+
+                                            <td style="width: 15%;">
+                                                <label>@characteristic.Id</label>
+                                            </td>
+                                            <td style="width: 20%;">
+                                                <label>@characteristic.DisplayOrder</label>
+                                            </td>
+                                            <td>
+                                                <label>@characteristic.Name</label>
+                                            </td>
+                                            <td style="width: 20%;">
+                                                <label>@(characteristic.Meaning ?? "-")</label>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                }
+                            </td>
+
+                            <td class="ps-2" style="width: 50%;">
+
+                                @if (relation.MatchingExternalProperties is null
+                                    || relation.MatchingExternalProperties.Count <= 0)
+                                {
+                                    <div class="full-parent-width full-parent-height" style="background-color: lightgray;"></div>
+                                }
+                                else if (relation.MatchingExternalProperties.Count == 1)
+                                {
+                                    LegacyXmlPropertyDisplayData property = relation.MatchingExternalProperties[0];
+
+                                    string propertyValueText = "-";
+
+                                    <table class="full-parent-width @property.CustomCssClasses"
+                                           draggable="true"
+                                           @ondragstart="() => AddLegacyXmlItemsToDrag(relation, [0])"
+                                           @onclick="() => AddLegacyXmlItemsToDrag(relation, [0])"
+                                           style="border-width: 0;">
+
+                                        <tr class="full-parent-width">
+                                            <td>
+                                                <label>@property.Name</label>
+                                            </td>
+                                            <td style="width: 20%;">
+                                                <label>@(property.Order?.ToString() ?? "-")</label>
+                                            </td>
+                                            <td style="width: 20%;">
+                                                <label title="@("-")">@(propertyValueText)</label>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                }
+                                else if (relation.MatchingExternalProperties.Count > 1)
+                                {
+                                    <table class="full-parent-width" style="border: black 0px solid;">
+
+                                        @for (int j = 0; j < relation.MatchingExternalProperties.Count; j++)
+                                        {
+                                            int currentIndex = j;
+
+                                            LegacyXmlPropertyDisplayData property = relation.MatchingExternalProperties[j];
+
+                                            string propertyValueText = "-";
+
+                                            <tr class="full-parent-width @property.CustomCssClasses"
+                                                draggable="true"
+                                                @ondragstart="() => AddLegacyXmlItemsToDrag(relation, [currentIndex])"
+                                                @onclick="() => AddLegacyXmlItemsToDrag(relation, [currentIndex])">
+
+                                                <td>
+                                                    <label>@property.Name</label>
+                                                </td>
+                                                <td style="width: 20%;">
+                                                    <label>@(property.Order?.ToString() ?? "-")</label>
+                                                </td>
+
+                                                <td style="width: 20%;">
+                                                    <label title="@("-")">@(propertyValueText)</label>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </table>
+                                }
+
+                            </td>
+                        </tr>
+                    }
+                </table>
+
+                <div class="full-parent-width d-flex flex-row">
+
+                    @if (_selectedCategory is not null)
+                    {
+                        <button type="button" class="flex-grow-1 btn btn-primary me-3"
+                            @onclick="() => SaveRelationsAsync(Relations)">
+                            Save
+                        </button>
+
+                        <button type="button" class="flex-grow-1 btn btn-danger"
+                            @onclick="() => DeleteRelationsForCategory(_selectedCategory.Id)">
+                            Delete all for category
+                        </button>
+                    }
+
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    public sealed class LocalCharacteristicDisplayData
+    {
+        public required int Id { get; set; }
+        public int? CategoryId { get; set; }
+        public string? Name { get; set; }
+        public string? Meaning { get; set; }
+        public int? DisplayOrder { get; set; }
+        public ProductCharacteristicType? KWPrCh { get; set; }
+        public string? CustomCssClasses { get; set; }
+    }
+
+    public sealed class LegacyXmlPropertyDisplayData
+    {
+        public required int CategoryId { get; set; }
+        public required string Name { get; set; }
+        public required int? Order { get; set; }
+        public string? Value { get; set; }
+        public string? CustomCssClasses { get; set; }
+    }
+
+    public sealed class LocalAndLegacyXmlCharacteristicRelationDisplayData
+    {
+        private LocalCharacteristicDisplayData? _matchingLocalCharacteristics;
+        public LocalCharacteristicDisplayData? MatchingLocalCharacteristic => _matchingLocalCharacteristics;
+
+        private List<LegacyXmlPropertyDisplayData>? _matchingExternalProperties;
+        public IReadOnlyList<LegacyXmlPropertyDisplayData>? MatchingExternalProperties => _matchingExternalProperties;
+
+        public string CustomCssClasses { get; set; } = string.Empty;
+
+        public void AddCharacteristic(LocalCharacteristicDisplayData productCharacteristic)
+        {
+            _matchingLocalCharacteristics ??= productCharacteristic;
+        }
+
+        public void AddProperties(IEnumerable<LegacyXmlPropertyDisplayData> externalXmlProperties)
+        {
+            _matchingExternalProperties ??= new List<LegacyXmlPropertyDisplayData>();
+
+            foreach (LegacyXmlPropertyDisplayData externalXmlPropertyToAdd in externalXmlProperties)
+            {
+                bool hasADuplicate = false;
+
+                for (int i = 0; i < _matchingExternalProperties.Count; i++)
+                {
+                    LegacyXmlPropertyDisplayData externalXmlProperty = _matchingExternalProperties[i];
+
+                    if (IsValueEqual(externalXmlProperty, externalXmlPropertyToAdd))
+                    {
+                        hasADuplicate = true;
+
+                        break;
+                    }
+                }
+
+                if (hasADuplicate) continue;
+
+                _matchingExternalProperties.Add(externalXmlPropertyToAdd);
+            }
+        }
+
+        public void AddProperties(params LegacyXmlPropertyDisplayData[] externalXmlProperties)
+        {
+            _matchingExternalProperties ??= new List<LegacyXmlPropertyDisplayData>();
+
+            foreach (LegacyXmlPropertyDisplayData externalXmlPropertyToAdd in externalXmlProperties)
+            {
+                bool hasADuplicate = false;
+
+                for (int i = 0; i < _matchingExternalProperties.Count; i++)
+                {
+                    LegacyXmlPropertyDisplayData externalXmlProperty = _matchingExternalProperties[i];
+
+                    if (IsValueEqual(externalXmlProperty, externalXmlPropertyToAdd))
+                    {
+                        hasADuplicate = true;
+
+                        break;
+                    }
+                }
+
+                if (hasADuplicate) continue;
+
+                _matchingExternalProperties.Add(externalXmlPropertyToAdd);
+            }
+        }
+
+        public bool RemoveCharacteristic()
+        {
+            _matchingLocalCharacteristics = null;
+
+            return true;
+        }
+
+        public bool RemoveProperty(LegacyXmlPropertyDisplayData externalXmlProperty)
+        {
+            if (_matchingExternalProperties is null) return false;
+
+            int indexOfExternalXmlProperty = _matchingExternalProperties.IndexOf(externalXmlProperty);
+
+            if (indexOfExternalXmlProperty == -1) return false;
+
+            _matchingExternalProperties.RemoveAt(indexOfExternalXmlProperty);
+
+            return true;
+        }
+
+        public bool RemovePropertyAt(int indexOfExternalXmlProperty)
+        {
+            if (_matchingExternalProperties is null
+                || indexOfExternalXmlProperty < 0
+                || indexOfExternalXmlProperty >= _matchingExternalProperties.Count)
+            {
+                return false;
+            }
+
+            _matchingExternalProperties.RemoveAt(indexOfExternalXmlProperty);
+
+            return true;
+        }
+
+        internal static bool IsValueEqual(LocalCharacteristicDisplayData localCharacteristicDisplayData1, LocalCharacteristicDisplayData localCharacteristicDisplayData2)
+        {
+            return localCharacteristicDisplayData1.Id == localCharacteristicDisplayData2.Id
+                && localCharacteristicDisplayData1.CategoryId == localCharacteristicDisplayData2.CategoryId
+                && localCharacteristicDisplayData1.Name == localCharacteristicDisplayData2.Name
+                && localCharacteristicDisplayData1.Meaning == localCharacteristicDisplayData2.Meaning
+                && localCharacteristicDisplayData1.DisplayOrder == localCharacteristicDisplayData2.DisplayOrder;
+        }
+
+        internal static bool IsValueEqual(LegacyXmlPropertyDisplayData externalXmlPropertyDisplayData1, LegacyXmlPropertyDisplayData externalXmlPropertyDisplayData2)
+        {
+            return externalXmlPropertyDisplayData1.CategoryId == externalXmlPropertyDisplayData2.CategoryId
+                && externalXmlPropertyDisplayData1.Name == externalXmlPropertyDisplayData2.Name
+                && externalXmlPropertyDisplayData1.Order == externalXmlPropertyDisplayData2.Order;
+        }
+    }
+
+    private List<Category> _categoriesInSelect = [];
+
+    private int? _selectedCategoryId
+    {
+        get => _selectedCategory?.Id;
+        set
+        {
+            if (value is null)
+            {
+                _selectedCategory = null;
+
+                return;
+            }
+
+            _selectedCategory = _categoriesInSelect.First(category => category.Id == value);
+        }
+    }
+    private Category? _selectedCategory { get; set; }
+
+    private string? _xmlError;
+
+    private const string _manufacturerCharacteristicName = "Manufacturer";
+
+    private List<LocalAndLegacyXmlCharacteristicRelationDisplayData> Relations = [];
+
+    private const string _selectedDragItemClassname = "selected-drag-item";
+    private const string _missingDragItemClassname = "missing-drag-item";
+    private const string _relationshipDragEnterClassname = "relationship-drop-target";
+
+    private OneOf<LocalCharacteristicDisplayData, List<LegacyXmlPropertyDisplayData>>? _draggedItems;
+    private LocalAndLegacyXmlCharacteristicRelationDisplayData? _draggedItemsRelation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categoriesInSelect = await CategoryService.GetAllAsync();
+    }
+
+    private void SelectLocalItemToDrag(LocalAndLegacyXmlCharacteristicRelationDisplayData itemToDragRelation)
+    {
+        if (itemToDragRelation.MatchingLocalCharacteristic is null) return;
+
+        bool isInDifferentRelation = _draggedItemsRelation is not null && _draggedItemsRelation != itemToDragRelation;
+
+        if (_draggedItems is not null && (isInDifferentRelation || _draggedItems.Value.IsT1))
+        {
+            RemoveCustomCssFromSelectedItems(_draggedItems.Value);
+
+            _draggedItems = null;
+        }
+
+        _draggedItems = itemToDragRelation.MatchingLocalCharacteristic;
+
+        itemToDragRelation.MatchingLocalCharacteristic.CustomCssClasses = _selectedDragItemClassname;
+
+        _draggedItemsRelation = itemToDragRelation;
+    }
+
+    private void AddLegacyXmlItemsToDrag(LocalAndLegacyXmlCharacteristicRelationDisplayData itemsToDragRelation, List<int> itemsToDragIndexes)
+    {
+        if (itemsToDragRelation.MatchingExternalProperties is null) return;
+
+        bool isInDifferentRelation = _draggedItemsRelation is not null && _draggedItemsRelation != itemsToDragRelation;
+
+        if (_draggedItems is not null && (isInDifferentRelation || _draggedItems.Value.IsT0))
+        {
+            RemoveCustomCssFromSelectedItems(_draggedItems.Value);
+
+            _draggedItems = null;
+        }
+
+        if (_draggedItems is null || _draggedItems.Value.IsT0)
+        {
+            _draggedItems = new List<LegacyXmlPropertyDisplayData>();
+        }
+
+        for (int i = 0; i < itemsToDragIndexes.Count; i++)
+        {
+            int index = itemsToDragIndexes[i];
+
+            if (index < 0 || index >= itemsToDragRelation.MatchingExternalProperties.Count) continue;
+
+            LegacyXmlPropertyDisplayData legacyXmlData = itemsToDragRelation.MatchingExternalProperties[index];
+
+            if (_draggedItems.Value.AsT1.Contains(legacyXmlData)) continue;
+
+            legacyXmlData.CustomCssClasses = _selectedDragItemClassname;
+
+            _draggedItems.Value.AsT1.Add(legacyXmlData);
+        }
+
+        _draggedItemsRelation = itemsToDragRelation;
+    }
+
+    private void RemoveCustomCssFromSelectedItems(OneOf<LocalCharacteristicDisplayData, List<LegacyXmlPropertyDisplayData>> selectedItems)
+    {
+        selectedItems.Switch(
+        localData => localData.CustomCssClasses = string.Empty,
+        legacyXmlDatas =>
+        {
+            foreach (LegacyXmlPropertyDisplayData legacyXmlData in legacyXmlDatas)
+            {
+                legacyXmlData.CustomCssClasses = string.Empty;
+            }
+        });
+    }
+
+    private void OnDragEnterItem(LocalAndLegacyXmlCharacteristicRelationDisplayData localAndLegacyXmlCharacteristicRelationDisplayData)
+    {
+        localAndLegacyXmlCharacteristicRelationDisplayData.CustomCssClasses = _relationshipDragEnterClassname;
+    }
+
+    private void OnDragLeaveItem(LocalAndLegacyXmlCharacteristicRelationDisplayData localAndLegacyXmlCharacteristicRelationDisplayData)
+    {
+        localAndLegacyXmlCharacteristicRelationDisplayData.CustomCssClasses = string.Empty;
+    }
+
+    private void OnDropItems(LocalAndLegacyXmlCharacteristicRelationDisplayData dropLocation)
+    {
+        if (_draggedItems is null || _draggedItemsRelation is null) return;
+
+        if (_draggedItems.Value.IsT0)
+        {
+            LocalCharacteristicDisplayData localData = _draggedItems.Value.AsT0;
+
+            if (dropLocation.MatchingLocalCharacteristic is not null)
+            {
+                _draggedItemsRelation.RemoveCharacteristic();
+                _draggedItemsRelation.AddCharacteristic(dropLocation.MatchingLocalCharacteristic);
+
+                dropLocation.RemoveCharacteristic();
+                dropLocation.AddCharacteristic(localData);
+            }
+            else
+            {
+                _draggedItemsRelation.RemoveCharacteristic();
+
+                dropLocation.AddCharacteristic(localData);
+            }
+
+            localData.CustomCssClasses = string.Empty;
+            dropLocation.CustomCssClasses = string.Empty;
+
+            if (_draggedItemsRelation.MatchingLocalCharacteristic is null
+                && (_draggedItemsRelation.MatchingExternalProperties is null
+                || _draggedItemsRelation.MatchingExternalProperties.Count <= 0))
+            {
+                Relations.Remove(_draggedItemsRelation);
+            }
+
+            _draggedItems = null;
+            _draggedItemsRelation = null;
+
+            return;
+        }
+
+        List<LegacyXmlPropertyDisplayData> legacyXmlProperties = _draggedItems.Value.AsT1;
+
+        foreach (LegacyXmlPropertyDisplayData legacyXmlProperty in legacyXmlProperties)
+        {
+            _draggedItemsRelation.RemoveProperty(legacyXmlProperty);
+
+            legacyXmlProperty.CustomCssClasses = string.Empty;
+        }
+
+        dropLocation.AddProperties(legacyXmlProperties);
+
+        dropLocation.CustomCssClasses = string.Empty;
+
+        if (_draggedItemsRelation.MatchingLocalCharacteristic is null
+            && (_draggedItemsRelation.MatchingExternalProperties is null
+            || _draggedItemsRelation.MatchingExternalProperties.Count <= 0))
+        {
+            Relations.Remove(_draggedItemsRelation);
+        }
+
+        _draggedItems = null;
+        _draggedItemsRelation = null;
+    }
+
+    private async Task<OneOf<Success, UnexpectedFailureResult>> SaveRelationsAsync(List<LocalAndLegacyXmlCharacteristicRelationDisplayData> relations)
+    {
+        return await TransactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+            () => SaveRelationsInternalAsync(relations),
+            result => result.IsT0);
+    }
+
+    private async Task<OneOf<Success, UnexpectedFailureResult>> SaveRelationsInternalAsync(List<LocalAndLegacyXmlCharacteristicRelationDisplayData> relations)
+    {
+        IEnumerable<int> matchedCategoryIds = relations
+            .Where(x => x.MatchingLocalCharacteristic?.CategoryId is not null)
+            .Select(x => (int)x.MatchingLocalCharacteristic!.CategoryId!)
+            .Distinct();
+
+        foreach (int categoryId in matchedCategoryIds)
+        {
+            await ProductCharacteristicAndExternalXmlDataRelationService.DeleteAllWithSameCategoryIdAsync(categoryId);
+        }
+
+        foreach (LocalAndLegacyXmlCharacteristicRelationDisplayData relationDisplayData in relations)
+        {
+            if (relationDisplayData.MatchingLocalCharacteristic is null
+                || relationDisplayData.MatchingExternalProperties is null
+                || relationDisplayData.MatchingExternalProperties.Count <= 0)
+            {
+                continue;
+            }
+
+            LocalCharacteristicDisplayData characteristicDataInRelation = relationDisplayData.MatchingLocalCharacteristic;
+
+            foreach (LegacyXmlPropertyDisplayData externalXmlProperty in relationDisplayData.MatchingExternalProperties)
+            {
+                ProductCharacteristicAndExternalXmlDataRelationUpsertRequest productCharacteristicAndExternalXmlDataRelationUpsertRequest = new()
+                {
+                    CategoryId = externalXmlProperty.CategoryId,
+                    ProductCharacteristicId = characteristicDataInRelation.Id,
+                    XmlName = externalXmlProperty.Name,
+                    XmlDisplayOrder = externalXmlProperty.Order
+                };
+
+                OneOf<Success, UnexpectedFailureResult> upsertRelationResult
+                    = await ProductCharacteristicAndExternalXmlDataRelationService.UpsertByCharacteristicIdAsync(productCharacteristicAndExternalXmlDataRelationUpsertRequest);
+
+                if (!upsertRelationResult.IsT0) return upsertRelationResult;
+            }
+        }
+
+        return new Success();
+    }
+
+    private async Task DeleteRelationsForCategory(int categoryId)
+    {
+        bool success = await ProductCharacteristicAndExternalXmlDataRelationService.DeleteAllWithSameCategoryIdAsync(categoryId);
+
+        if (!success || _selectedCategoryId != categoryId) return;
+
+        Relations = await GetLocalAndLegacyXmlDataAsync(categoryId);
+    }
+
+    private async Task GetLocalAndLegacyXmlDataAndDisplayAsync(int? categoryId)
+    {
+        if (categoryId is null) return;
+
+        Relations = await GetLocalAndLegacyXmlDataAsync(categoryId.Value);
+    }
+
+    private async Task<List<LocalAndLegacyXmlCharacteristicRelationDisplayData>> GetLocalAndLegacyXmlDataAsync(int categoryId)
+    {
+        OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getProductXmlResult = await ProductXmlProvidingService.GetProductXmlParsedAsync();
+
+        if (!getProductXmlResult.IsT0)
+        {
+            getProductXmlResult.Switch(
+                success => {},
+                invalidXmlResult =>
+                {
+                    _xmlError = invalidXmlResult.Text;
+                },
+                notFound =>
+                {
+                    _xmlError = "Legacy XML was not found";
+                });
+
+            return [];
+        }
+
+        List<LegacyXmlProduct> neededProducts = getProductXmlResult.AsT0.Products
+            .Where(product => product.Category?.Id == categoryId)
+            .ToList();
+
+        List<ProductCharacteristicAndExternalXmlDataRelation>? existingRelations
+            = await ProductCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdAsync(categoryId);
+
+        return await GetLocalAndLegacyXmlDataAsync(neededProducts, false, false, existingRelations);
+    }
+
+    private async Task<List<LocalAndLegacyXmlCharacteristicRelationDisplayData>> GetLocalAndLegacyXmlDataAsync(
+        List<LegacyXmlProduct> xmlProducts,
+        bool excludeLocalCharacteristicsWithNoMatches,
+        bool addBaseCategoryCharacteristics,
+        List<ProductCharacteristicAndExternalXmlDataRelation>? existingRelations = null)
+    {
+        List<LegacyXmlPropertyDisplayData> externalPropsToCompare = GetExternalDistinctProperties(xmlProducts);
+
+        List<int> categoryIds = new();
+
+        if (addBaseCategoryCharacteristics)
+        {
+            categoryIds.Add(-1);
+        }
+
+        foreach (LegacyXmlProduct xmlProduct in xmlProducts)
+        {
+            int categoryId = xmlProduct.Category.Id;
+
+            if (!categoryIds.Contains(categoryId))
+            {
+                categoryIds.Add(categoryId);
+            }
+        }
+
+        List<LocalCharacteristicDisplayData> localDistinctCharacteristics = await GetLocalDataAsync(
+            categoryIds, externalPropsToCompare, excludeLocalCharacteristicsWithNoMatches);
+
+        List<LocalAndLegacyXmlCharacteristicRelationDisplayData> externalAndLocalCharacteristicRelations = GetCharacteristicRelations(
+            localDistinctCharacteristics,
+            externalPropsToCompare,
+            excludeLocalCharacteristicsWithNoMatches,
+            existingRelations);
+
+        return externalAndLocalCharacteristicRelations;
+    }
+
+    private async Task<List<LocalCharacteristicDisplayData>> GetLocalDataAsync(
+        List<int> categoryIds,
+        IEnumerable<LegacyXmlPropertyDisplayData> externalProperties,
+        bool excludeLocalCharacteristicsWithNoMatches)
+    {
+        List<ProductCharacteristic> characteristicsForAllRelevantCategories
+            = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(categoryIds, [ProductCharacteristicType.ProductCharacteristic]);
+
+        if (characteristicsForAllRelevantCategories.Count <= 0) return new();
+
+        IEnumerable<ProductCharacteristic> matchingCharacteristics;
+
+        if (!excludeLocalCharacteristicsWithNoMatches)
+        {
+            matchingCharacteristics = characteristicsForAllRelevantCategories
+                .Where(characteristic => characteristic.Active == true)
+                .OrderBy(characteristic => characteristic.CategoryId)
+                .ThenBy(characteristic => characteristic.Name)
+                .ThenBy(characteristic => characteristic.DisplayOrder);
+
+            return MapManyToLocalCharacteristicDisplayData(matchingCharacteristics);
+        }
+
+        matchingCharacteristics = characteristicsForAllRelevantCategories
+            .Where(characteristic =>
+            {
+                if (characteristic.Active != true) return false;
+
+                LegacyXmlPropertyDisplayData? matchingPropertyData = externalProperties.FirstOrDefault(externalProperty =>
+                    externalProperty.CategoryId == characteristic.CategoryId
+                        && externalProperty.Name == characteristic.Name);
+
+                return matchingPropertyData is not null;
+            })
+            .OrderBy(characteristic => characteristic.CategoryId)
+            .ThenBy(characteristic => characteristic.Name)
+            .ThenBy(characteristic => characteristic.DisplayOrder);
+
+        return MapManyToLocalCharacteristicDisplayData(matchingCharacteristics);
+    }
+
+    private static List<LegacyXmlPropertyDisplayData> GetExternalDistinctProperties(IEnumerable<LegacyXmlProduct> xmlProducts)
+    {
+        List<LegacyXmlPropertyDisplayData> output = new();
+
+        foreach (LegacyXmlProduct xmlProduct in xmlProducts)
+        {
+            foreach (LegacyXmlProductProperty xmlProperty in xmlProduct.Properties)
+            {
+                if (xmlProperty.Name == _manufacturerCharacteristicName) continue;
+
+                LegacyXmlPropertyDisplayData externalPropertyData = MapToExternalXmlPropertyDisplayData(xmlProduct.Category.Id, xmlProperty);
+
+                LegacyXmlPropertyDisplayData? existingData = output.FirstOrDefault(x =>
+                {
+                    return x.CategoryId == externalPropertyData.CategoryId
+                        && x.Name == externalPropertyData.Name
+                        && x.Order == externalPropertyData.Order;
+                });
+
+                if (existingData is not null) continue;
+
+                output.Add(externalPropertyData);
+            }
+        }
+
+        output = output
+            .OrderBy(x => x.CategoryId)
+            .ThenBy(x => x.Order)
+            .ToList();
+
+        return output;
+    }
+
+    private static List<LocalAndLegacyXmlCharacteristicRelationDisplayData> GetCharacteristicRelations(
+        List<LocalCharacteristicDisplayData> localDistinctCharacteristics,
+        List<LegacyXmlPropertyDisplayData> externalDistinctProperties,
+        bool excludeLocalCharacteristicsWithNoMatches,
+        IEnumerable<ProductCharacteristicAndExternalXmlDataRelation>? productCharacteristicAndExternalXmlPropertyRelations = null)
+    {
+        List<LocalAndLegacyXmlCharacteristicRelationDisplayData> output = new();
+
+        Dictionary<Tuple<int, string?>, List<LegacyXmlPropertyDisplayData>> externalPropertiesGrouped
+            = GroupExternalProperties(externalDistinctProperties);
+
+        foreach (LocalCharacteristicDisplayData localCharacteristic in localDistinctCharacteristics)
+        {
+            LocalAndLegacyXmlCharacteristicRelationDisplayData relationToAddDataTo = new();
+
+            output.Add(relationToAddDataTo);
+
+            relationToAddDataTo.AddCharacteristic(localCharacteristic);
+
+            IEnumerable<ProductCharacteristicAndExternalXmlDataRelation>? matchingRelations
+                = productCharacteristicAndExternalXmlPropertyRelations?.Where(
+                    x => x.ProductCharacteristicId == localCharacteristic.Id);
+
+            if (matchingRelations is null) continue;
+
+            foreach (ProductCharacteristicAndExternalXmlDataRelation relation in matchingRelations)
+            {
+                bool propertiesWithSameNameExist = externalPropertiesGrouped
+                    .TryGetValue(new(relation.CategoryId, relation.XmlName), out List<LegacyXmlPropertyDisplayData>? matchingExternalProperties);
+
+                if (propertiesWithSameNameExist)
+                {
+                    int externalPropertyForRelationIndex = matchingExternalProperties!
+                        .FindIndex(x => x.Order == relation.XmlDisplayOrder);
+
+                    if (externalPropertyForRelationIndex >= 0)
+                    {
+                        relationToAddDataTo.AddProperties(matchingExternalProperties[externalPropertyForRelationIndex]);
+
+                        matchingExternalProperties.RemoveAt(externalPropertyForRelationIndex);
+                    }
+                    else
+                    {
+                        LegacyXmlPropertyDisplayData missingExternalPropertyMarkedInRelations = new()
+                        {
+                            CategoryId = relation.CategoryId,
+                            Name = relation.XmlName,
+                            Order = relation.XmlDisplayOrder,
+                            CustomCssClasses = _missingDragItemClassname,
+                        };
+
+                        relationToAddDataTo.AddProperties(missingExternalPropertyMarkedInRelations);
+                    }
+                }
+            }
+        }
+
+        if (!excludeLocalCharacteristicsWithNoMatches)
+        {
+            foreach (KeyValuePair<Tuple<int, string?>, List<LegacyXmlPropertyDisplayData>> externalGrouping in externalPropertiesGrouped)
+            {
+                if (externalGrouping.Value.Count <= 0) continue;
+
+                LocalAndLegacyXmlCharacteristicRelationDisplayData item = new();
+
+                item.AddProperties(externalGrouping.Value);
+
+                output.Add(item);
+            }
+        }
+
+        return output
+            .OrderBy(x => x.MatchingLocalCharacteristic?.DisplayOrder ?? int.MaxValue)
+            .ToList();
+    }
+
+    private static Dictionary<Tuple<int, string?>, List<LegacyXmlPropertyDisplayData>> GroupExternalProperties(
+        List<LegacyXmlPropertyDisplayData> externalDistinctProperties)
+    {
+        Dictionary<Tuple<int, string?>, List<LegacyXmlPropertyDisplayData>> output = new();
+
+        foreach (LegacyXmlPropertyDisplayData externalDistinctProperty in externalDistinctProperties)
+        {
+            Tuple<int, string?> key = new(externalDistinctProperty.CategoryId, externalDistinctProperty.Name);
+
+            bool success = output.TryGetValue(key, out List<LegacyXmlPropertyDisplayData>? matchingExternalProperties);
+
+            if (success)
+            {
+                matchingExternalProperties!.Add(externalDistinctProperty);
+
+                continue;
+            }
+
+            output.Add(key, new() { externalDistinctProperty });
+        }
+
+        return output;
+    }
+
+    private static LocalCharacteristicDisplayData MapToLocalCharacteristicDisplayData(ProductCharacteristic productCharacteristic)
+    {
+        return new()
+        {
+            CategoryId = productCharacteristic.CategoryId,
+            Id = productCharacteristic.Id,
+            Name = productCharacteristic.Name,
+            Meaning = productCharacteristic.Meaning,
+            DisplayOrder = productCharacteristic.DisplayOrder,
+            KWPrCh = productCharacteristic.KWPrCh,
+        };
+    }
+
+    private static List<LocalCharacteristicDisplayData> MapManyToLocalCharacteristicDisplayData(IEnumerable<ProductCharacteristic> productCharacteristics)
+    {
+        List<LocalCharacteristicDisplayData> output = new();
+
+        foreach (ProductCharacteristic productCharacteristic in productCharacteristics)
+        {
+            LocalCharacteristicDisplayData localCharacteristicDisplayData = MapToLocalCharacteristicDisplayData(productCharacteristic);
+
+            output.Add(localCharacteristicDisplayData);
+        }
+
+        return output;
+    }
+
+    private static LegacyXmlPropertyDisplayData MapToExternalXmlPropertyDisplayData(int categoryId, LegacyXmlProductProperty xmlProperty)
+    {
+        bool parseOrderSucceeded = int.TryParse(xmlProperty.Order, out int order);
+
+        int? orderToUse = (parseOrderSucceeded) ? order : null;
+
+        return new()
+        {
+            CategoryId = categoryId,
+            Name = xmlProperty.Name,
+            Order = orderToUse,
+            Value = xmlProperty.Value,
+        };
+    }
+}

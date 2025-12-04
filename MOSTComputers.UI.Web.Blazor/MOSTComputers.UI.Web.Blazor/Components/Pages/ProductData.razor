@@ -1,0 +1,172 @@
+﻿@page "/product/productData/{ProductId:int}"
+
+@rendermode InteractiveServer
+
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+
+@using static MOSTComputers.UI.Web.Blazor.Client.Product.ProductData;
+@using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion;
+
+@inject IProductService ProductService
+@inject IProductPropertyService ProductPropertyService
+@inject IProductCharacteristicService ProductCharacteristicService
+@inject IProductImageService ProductImageService
+@inject IProductImageFileService ProductImageFileService
+@inject ISearchStringOriginService SearchStringOriginService
+
+<PageTitle>@(Product?.Name ?? "Product Data")</PageTitle>
+
+@if (Product is null)
+{
+    <p class="text-danger">Product not found.</p>
+
+    return;
+}
+
+<div class="full-parent-width full-parent-height d-flex flex-row flex-wrap red-and-white-theme">
+
+    @if (Product.Manufacturer is not null)
+    {
+        <h4 class="popup-header-text me-2 mb-0">Manufacturer: @Product.Manufacturer.RealCompanyName</h4>
+    }
+
+    @if (Product.Category is not null)
+    {
+        <h4 class="popup-header-text me-2 mb-0">Category: @Product.Category?.Description</h4>
+    }
+
+    <h4 class="popup-header-text me-2">ID: @(Product.Id)</h4>
+    <h4 class="popup-header-text me-2">@(Product.Name ?? "-")</h4>
+    <h4 class="popup-header-text me-2">
+        @(Product.Status is not null ? GetStringFromProductStatus(Product.Status.Value) : "-")
+    </h4>
+</div>
+
+<MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
+    Product="Product" ProductProperties="ProductProperties"
+    ProductImages="ProductImages" ProductSearchStringParts="ProductSearchStringParts"/>
+
+@code {
+
+    [Parameter] public required int? ProductId { get; set; }
+    private int? _previousProductId { get; set; }
+
+    private Product? Product { get; set; }
+
+    private List<ProductPropertyDisplayData> ProductProperties { get; set; } = new();
+    private List<ProductImageDisplayData> ProductImages { get; set; } = new();
+    private List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SetProductDataAsync();
+
+        StateHasChanged();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_previousProductId is not null
+            && _previousProductId != ProductId)
+        {
+            await SetProductDataAsync();
+
+            StateHasChanged();
+        }
+
+        _previousProductId = ProductId;
+    }
+
+    private async Task SetProductDataAsync()
+    {
+        if (ProductId is null) return;
+
+        Product = await ProductService.GetByIdAsync(ProductId.Value);
+
+        if (Product is null) return;
+
+        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(Product.Id);
+
+        List<int> relatedCategoryIds = [-1];
+
+        if (Product.CategoryId is not null)
+        {
+            relatedCategoryIds.Add(Product.CategoryId.Value);
+        }
+
+        IEnumerable<ProductCharacteristicType> productCharacteristicTypes = [
+            ProductCharacteristicType.ProductCharacteristic,
+            ProductCharacteristicType.Link
+        ];
+
+        List<ProductCharacteristic> productCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+            relatedCategoryIds, productCharacteristicTypes, true);
+
+        foreach (ProductProperty property in productProperties)
+        {
+            ProductCharacteristic? productCharacteristic = productCharacteristics?
+                .FirstOrDefault(characteristic => characteristic.Name == property.Characteristic);
+
+            if (productCharacteristic is null) continue;
+
+            ProductPropertyDisplayData productPropertyDisplayData = new()
+            {
+                ProductCharacteristic = new ProductCharacteristicDisplayData
+                {
+                    Id = productCharacteristic!.Id,
+                    CategoryId = productCharacteristic.CategoryId,
+                    Active = productCharacteristic.Active,
+                    KWPrCh = productCharacteristic.KWPrCh
+                },
+                Name = property.Characteristic,
+                Value = property.Value,
+                DisplayOrder = property.DisplayOrder
+            };
+
+            ProductProperties.Add(productPropertyDisplayData);
+        }
+
+        List<ProductImage> productImages = await ProductImageService.GetAllInProductAsync(Product.Id);
+
+        List<ProductImageFileData> productImageFileNameInfos = await ProductImageFileService.GetAllInProductAsync(Product.Id);
+
+        foreach (ProductImage image in productImages)
+        {
+            ProductImageFileData? productImageFileNameInfo = productImageFileNameInfos
+                .FirstOrDefault(imageFile => imageFile.ImageId == image.Id);
+
+            if (productImageFileNameInfo is not null)
+            {
+                productImageFileNameInfos.Remove(productImageFileNameInfo);
+            }
+
+            ProductImageDisplayData productImageDisplayData = new()
+            {
+                ImageSrc = $"/api/images/originalImageData/{image.Id}",
+            };
+
+            ProductImages.Add(productImageDisplayData);
+        }
+
+        foreach (ProductImageFileData imageFileNameInfo in productImageFileNameInfos)
+        {
+            if (imageFileNameInfo.FileName is null) continue;
+
+            ProductImageDisplayData productImageDisplayData = new()
+            {
+                ImageSrc = $"/api/images/imageFileData/{imageFileNameInfo.FileName}",
+            };
+
+            ProductImages.Add(productImageDisplayData);
+        }
+
+        ProductSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+            Product.SearchString, Product.CategoryId);
+    }
+}

@@ -24,10 +24,6 @@ dotnet_naming_rule.method_should_be_pascal_case.severity = warning
 dotnet_naming_rule.method_should_be_pascal_case.symbols = method
 dotnet_naming_rule.method_should_be_pascal_case.style = pascal_case
 
-dotnet_naming_rule.enum_should_be_ends_with_enum.severity = warning
-dotnet_naming_rule.enum_should_be_ends_with_enum.symbols = enum
-dotnet_naming_rule.enum_should_be_ends_with_enum.style = ends_with_enum
-
 # Symbol specifications
 
 dotnet_naming_symbols.interface.applicable_kinds = interface
@@ -81,10 +77,6 @@ dotnet_naming_style.pascal_case.required_suffix =
 dotnet_naming_style.pascal_case.word_separator = 
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-dotnet_naming_style.ends_with_enum.required_prefix = 
-dotnet_naming_style.ends_with_enum.required_suffix = Enum
-dotnet_naming_style.ends_with_enum.word_separator = 
-dotnet_naming_style.ends_with_enum.capitalization = pascal_case
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
@@ -189,7 +181,7 @@ tab_width = 4
 indent_size = 4
 end_of_line = crlf
 dotnet_style_prefer_inferred_tuple_names = true:suggestion
-dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = false:suggestion
 dotnet_style_namespace_match_folder = true:suggestion
 dotnet_style_explicit_tuple_names = true:suggestion
 dotnet_style_coalesce_expression = true:suggestion

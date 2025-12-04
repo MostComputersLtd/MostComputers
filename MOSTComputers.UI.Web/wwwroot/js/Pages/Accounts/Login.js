@@ -1,26 +1,71 @@
-function redirectToSignInPage(returnUrlInputId)
+﻿async function login(
+    usernameInputElementId,
+    passwordInputElementId,
+    returnUrlInputElementId)
 {
-    var returnUrlInput = document.getElementById(returnUrlInputId);
+    const usernameInputElement = document.getElementById(usernameInputElementId);
+    const passwordInputElement = document.getElementById(passwordInputElementId);
 
-    if (returnUrlInput == null) return;
+    const returnUrlInputElement = document.getElementById(returnUrlInputElementId);
 
-    var returnUrl = returnUrlInput.value;
+    if (returnUrlInputElement == null) return;
 
-    const url = "/Accounts/Login" + "?handler=RedirectToSignInPage" + "&returnUrl=" + returnUrl;
+    const returnUrl = returnUrlInputElement.value;
 
-    $.ajax({
-        type: "GET",
-        url: url,
-        contentType: "application/json",
-        data: null,
+    const url = "/Accounts/Login/" + "?handler=LogIn";
+
+    const data =
+    {
+        Username: usernameInputElement.value,
+        Password: passwordInputElement.value,
+        ReturnUrl: returnUrl
+    };
+
+    const response = await fetch(url,
+    {
+        method: "POST",
         headers:
         {
+            'Content-Type': 'application/json',
             RequestVerificationToken:
                 $('input:hidden[name="__RequestVerificationToken"]').val()
         },
-    })
-        .done(function (result)
-        {
-            window.location.href = result.redirectUrl;
-        });
+        body: JSON.stringify(data)
+    });
+
+
+    return await handleLoginResult(
+        response, usernameInputElement, passwordInputElement);
+}
+
+async function handleLoginResult(
+    response,
+    usernameInputElement,
+    passwordInputElement)
+{
+    clearFields(usernameInputElement, passwordInputElement);
+    clearValidationFields();
+
+    const responseJson = await response.json();
+
+    if (response.status !== 200)
+    {
+        displayValidationMessages(responseJson);
+
+        return response;
+    }
+
+    if (responseJson.redirectUrl == null
+        || responseJson.redirectUrl.length <= 0)
+    {
+        return;
+    }
+
+    window.location.href = responseJson.redirectUrl;
+}
+
+function clearFields(usernameInputElement, passwordInputElement)
+{
+    usernameInputElement.value = "";
+    passwordInputElement.value = "";
 }

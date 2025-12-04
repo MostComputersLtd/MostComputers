@@ -1,85 +1,75 @@
-﻿using FluentValidation;
-using OneOf.Types;
-using OneOf;
-using FluentValidation.Results;
-using MOSTComputers.Services.DAL.DAL.Repositories.Contracts;
+﻿using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Validation;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-
 internal sealed class ProductCharacteristicService : IProductCharacteristicService
 {
-    public ProductCharacteristicService(
-        IProductCharacteristicsRepository productCharacteristicsRepository,
-        IValidator<ProductCharacteristicCreateRequest>? createRequestValidator = null,
-        IValidator<ProductCharacteristicByIdUpdateRequest>? updateByIdRequestValidator = null,
-        IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? updateByNameAndCategoryIdRequestValidator = null)
+    public ProductCharacteristicService(IProductCharacteristicsRepository productCharacteristicsRepository)
     {
         _productCharacteristicsRepository = productCharacteristicsRepository;
-        _createRequestValidator = createRequestValidator;
-        _updateByIdRequestValidator = updateByIdRequestValidator;
-        _updateByNameAndCategoryIdRequestValidator = updateByNameAndCategoryIdRequestValidator;
     }
 
     private readonly IProductCharacteristicsRepository _productCharacteristicsRepository;
-    private readonly IValidator<ProductCharacteristicCreateRequest>? _createRequestValidator;
-    private readonly IValidator<ProductCharacteristicByIdUpdateRequest>? _updateByIdRequestValidator;
-    private readonly IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? _updateByNameAndCategoryIdRequestValidator;
 
-    public IEnumerable<ProductCharacteristic> GetAllByCategoryId(int categoryId)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAsync(int categoryId)
     {
-        return _productCharacteristicsRepository.GetAllCharacteristicsAndSearchStringAbbreviationsByCategoryId(categoryId);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAsync(categoryId);
     }
 
-    public IEnumerable<ProductCharacteristic> GetCharacteristicsOnlyByCategoryId(int categoryId)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAsync(int categoryId, bool active)
     {
-        return _productCharacteristicsRepository.GetAllCharacteristicsByCategoryId(categoryId);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAsync(categoryId, active);
     }
 
-    public IEnumerable<ProductCharacteristic> GetSearchStringAbbreviationsOnlyByCategoryId(int categoryId)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdsAsync(IEnumerable<int> categoryIds)
     {
-        return _productCharacteristicsRepository.GetAllSearchStringAbbreviationsByCategoryId(categoryId);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdsAsync(categoryIds);
     }
 
-    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetAllForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdsAsync(IEnumerable<int> categoryIds, bool active)
     {
-        return _productCharacteristicsRepository.GetCharacteristicsAndSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdsAsync(categoryIds, active);
     }
 
-    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetCharacteristicsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypeAsync(int categoryId, ProductCharacteristicType productCharacteristicType)
     {
-        return _productCharacteristicsRepository.GetCharacteristicsForSelectionOfCategoryIds(categoryIds);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAndTypeAsync(categoryId, productCharacteristicType);
     }
 
-    public IEnumerable<IGrouping<int, ProductCharacteristic>> GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(IEnumerable<int> categoryIds)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypeAsync(int categoryId, ProductCharacteristicType productCharacteristicType, bool active)
     {
-        return _productCharacteristicsRepository.GetSearchStringAbbreviationsForSelectionOfCategoryIds(categoryIds);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAndTypeAsync(categoryId, productCharacteristicType, active);
     }
 
-    public ProductCharacteristic? GetById(int id)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypesAsync(int categoryId, IEnumerable<ProductCharacteristicType> productCharacteristicTypes)
     {
-        if (id <= 0) return null;
-
-        return _productCharacteristicsRepository.GetById(id);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAndTypesAsync(categoryId, productCharacteristicTypes);
     }
 
-    public ProductCharacteristic? GetByCategoryIdAndName(int categoryId, string name)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdAndTypesAsync(int categoryId, IEnumerable<ProductCharacteristicType> productCharacteristicTypes, bool active)
     {
-        return _productCharacteristicsRepository.GetByCategoryIdAndName(categoryId, name);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdAndTypesAsync(categoryId, productCharacteristicTypes, active);
     }
 
-    public IEnumerable<ProductCharacteristic> GetSelectionByCategoryIdAndNames(int categoryId, List<string> names)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdsAndTypesAsync(IEnumerable<int> categoryIds, IEnumerable<ProductCharacteristicType> productCharacteristicTypes)
     {
-        return _productCharacteristicsRepository.GetSelectionByCategoryIdAndNames(categoryId, names);
+        return await _productCharacteristicsRepository.GetAllByCategoryIdsAndTypesAsync(categoryIds, productCharacteristicTypes);
     }
 
-    public IEnumerable<ProductCharacteristic> GetSelectionByCharacteristicIds(IEnumerable<int> ids)
+    public async Task<List<ProductCharacteristic>> GetAllByCategoryIdsAndTypesAsync(IEnumerable<int> categoryIds, IEnumerable<ProductCharacteristicType> productCharacteristicTypes, bool active)
     {
-        if (!ids.Any()) return Enumerable.Empty<ProductCharacteristic>();
+        return await _productCharacteristicsRepository.GetAllByCategoryIdsAndTypesAsync(categoryIds, productCharacteristicTypes, active);
+    }
+
+    public async Task<List<ProductCharacteristic>> GetSelectionByCategoryIdAndNamesAsync(int categoryId, List<string> names)
+    {
+        return await _productCharacteristicsRepository.GetSelectionByCategoryIdAndNamesAsync(categoryId, names);
+    }
+
+    public async Task<List<ProductCharacteristic>> GetSelectionByCharacteristicIdsAsync(IEnumerable<int> ids)
+    {
+        if (!ids.Any()) return new();
 
         List<int> uniqueIds = new();
 
@@ -90,54 +80,26 @@ internal sealed class ProductCharacteristicService : IProductCharacteristicServi
             uniqueIds.Add(id);
         }
 
-        return _productCharacteristicsRepository.GetSelectionByIds(uniqueIds);
+        return await _productCharacteristicsRepository.GetSelectionByCharacteristicIdsAsync(uniqueIds);
     }
 
-    public ProductCharacteristic? GetByCategoryIdAndNameAndCharacteristicType(
+    public async Task<ProductCharacteristic?> GetByIdAsync(int id)
+    {
+        if (id <= 0) return null;
+
+        return await _productCharacteristicsRepository.GetByIdAsync(id);
+    }
+
+    public async Task<ProductCharacteristic?> GetByCategoryIdAndNameAsync(int categoryId, string name)
+    {
+        return await _productCharacteristicsRepository.GetByCategoryIdAndNameAsync(categoryId, name);
+    }
+
+    public async Task<ProductCharacteristic?> GetByCategoryIdAndNameAndCharacteristicTypeAsync(
         int categoryId,
         string name,
-        ProductCharacteristicTypeEnum productCharacteristicType)
+        ProductCharacteristicType productCharacteristicType)
     {
-        return _productCharacteristicsRepository.GetByCategoryIdAndNameAndCharacteristicType(categoryId, name, productCharacteristicType);
-    }
-
-    public OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCharacteristicCreateRequest createRequest, IValidator<ProductCharacteristicCreateRequest>? validator = null)
-    {
-        ValidationResult validationResult = ValidateTwoValidatorsDefault(createRequest, validator, _createRequestValidator);
-
-        if (!validationResult.IsValid) return validationResult;
-
-        return _productCharacteristicsRepository.Insert(createRequest);
-    }
-
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateById(ProductCharacteristicByIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByIdUpdateRequest>? validator = null)
-    {
-        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateByIdRequestValidator);
-
-        if (!validationResult.IsValid) return validationResult;
-
-        return _productCharacteristicsRepository.UpdateById(updateRequest);
-    }
-
-    public OneOf<Success, ValidationResult, UnexpectedFailureResult> UpdateByNameAndCategoryId(ProductCharacteristicByNameAndCategoryIdUpdateRequest updateRequest, IValidator<ProductCharacteristicByNameAndCategoryIdUpdateRequest>? validator = null)
-    {
-
-        ValidationResult validationResult = ValidateTwoValidatorsDefault(updateRequest, validator, _updateByNameAndCategoryIdRequestValidator);
-
-        if (!validationResult.IsValid) return validationResult;
-
-        return _productCharacteristicsRepository.UpdateByNameAndCategoryId(updateRequest);
-    }
-
-    public bool Delete(int id)
-    {
-        if (id <= 0) return false;
-
-        return _productCharacteristicsRepository.Delete(id);
-    }
-
-    public bool DeleteAllForCategory(int categoryId)
-    {
-        return _productCharacteristicsRepository.DeleteAllForCategory(categoryId);
+        return await _productCharacteristicsRepository.GetByCategoryIdAndNameAndCharacteristicTypeAsync(categoryId, name, productCharacteristicType);
     }
 }

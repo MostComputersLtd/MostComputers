@@ -1,8 +1,7 @@
 ﻿using FluentValidation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductStatuses;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductStatuses;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductStatuses;
-
 internal sealed class ProductStatusesUpdateRequestValidator : AbstractValidator<ProductStatusesUpdateRequest>
 {
     public ProductStatusesUpdateRequestValidator()

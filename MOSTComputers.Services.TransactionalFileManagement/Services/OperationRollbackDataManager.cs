@@ -3,7 +3,6 @@ using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using System.Collections.Concurrent;
 
 namespace MOSTComputers.Services.TransactionalFileManagement.Services;
-
 public class OperationRollbackDataManager<T> : IOperationRollbackDataManager<T>
 {
     private readonly ConcurrentDictionary<IRollbackable, T> _rollbackData = new();

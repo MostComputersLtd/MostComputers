@@ -1,0 +1,176 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.PromotionFiles
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Models.PromotionFiles
+@using MOSTComputers.UI.Web.Pages.Shared.PromotionFiles
+@using static MOSTComputers.UI.Web.Utils.StandardInputValueUtils;
+
+@model PromotionProductFileEditorPartialModel
+@{
+    Layout = null;
+
+    Promotion? pidPromotion = Model.Promotions?.FirstOrDefault(x => x.Id == Model.Product.PromotionPid);
+    Promotion? ridPromotion = Model.Promotions?.FirstOrDefault(x => x.Id == Model.Product.PromotionRid);
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Promotions:</h5>
+
+    <div class="d-flex flex-row">
+        <h4 class="modal-title modal-product-name">CSTID: @Model.Product.Id</h4>
+
+        @if (Model.Product.Manufacturer is not null)
+        {
+            <h4 class="modal-title modal-product-name">Mfr: @Model.Product.Manufacturer.RealCompanyName</h4>
+        }
+        @if (Model.Product.Category is not null)
+        {
+            <h4 class="modal-title modal-product-name">@Model.Product.Category.Description</h4>
+        }
+
+    </div>
+
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+
+    <div class="d-flex flex-row align-items-center ms-1">
+        <button class="full-parent-width btn btn-primary"
+            onclick="getPromotionProductFileSingleEditorPopupData(
+                event,
+                @Model.Product.Id,
+                '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalId',
+                '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalDialogId',
+                '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalContentId',
+                 null,
+                '@Model.RelatedProductTableRowElementId')">
+            +
+        </button>
+
+        <button type="button" class="btn-close ms-2" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+        </button>
+    </div>
+</div>
+<div id="promotionProductFilesEditor_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        @if (Model.Product.AlertPictureId is not null)
+        {
+            <div class="d-flex flex-row">
+                <p>IID: @(Model.Product.AlertPictureId.ToString() ?? "-")</p>
+
+                <p class="ps-2">Expire Date: @(Model.Product.AlertExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+            </div>
+        }
+
+        @if (pidPromotion is not null)
+        {
+            <partial name="ProductEditor/Promotions/_PromotionSingleLinePartial"
+                model="new PromotionSingleLinePartialModel()
+                {
+                    Promotion = pidPromotion
+                }" />
+        }
+
+        @if (ridPromotion is not null)
+        {
+            <partial name="ProductEditor/Promotions/_PromotionSingleLinePartial"
+                model="new PromotionSingleLinePartialModel()
+                {
+                    Promotion = ridPromotion
+                }" />
+        }
+
+        <div class="row flex-grow-1">
+            @if (Model.PromotionProductFileInfos?.Count > 0)
+            {
+                <table class="full-parent-width" style="height: min-content;">
+
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Active</th>
+                            <th>File Id</th>
+                            <th>Img All Id</th>
+                            <th>Valid From</th>
+                            <th>Valid To</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    @for (int i = 0; i < Model.PromotionProductFileInfos.Count; i++)
+                    {
+                        PromotionProductFileInfo promotionProductFileInfo
+                            = Model.PromotionProductFileInfos[i];
+
+                        string validFromValueAsString = string.Empty;
+                        string validToValueAsString = string.Empty;
+
+                        if (promotionProductFileInfo.ValidFrom is not null)
+                        {
+                            validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
+                        }
+
+                        if (promotionProductFileInfo.ValidTo is not null)
+                        {
+                            validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
+                        }
+
+                        string activeAsString = (promotionProductFileInfo.Active) ? "checked" : string.Empty;
+
+                        <tr>
+                            <td>@promotionProductFileInfo.Id</td>
+                            <td>
+                                <input id="promotionProductFilesEditorActiveInput-@i" type="checkbox" tabindex="-1" style="pointer-events: none;" @activeAsString />
+                            </td>
+                            <td>@promotionProductFileInfo.PromotionFileInfoId</td>
+                            <td>@(promotionProductFileInfo.ProductImageId?.ToString() ?? "-")</td>
+                            <td>
+                                <input id="promotionProductFilesEditorValidFromInput-@i" type="date"
+                                    value="@validFromValueAsString" readonly />
+                            </td>
+                            <td>
+                                <input id="promotionProductFilesEditorValidToInput-@i" type="date"
+                                    value="@validToValueAsString" readonly />
+                            </td>
+                            <td class="pe-3" style="max-width: 6em; max-height: 3em;">
+                                <partial name="PromotionFiles/_PromotionFileDataViewPartial"
+                                    model="new PromotionFileDataViewPartialModel()
+                                    {
+                                        FileName = promotionProductFileInfo.PromotionFileInfo.FileName,
+                                    }" />
+                            </td>
+                            <td>
+                                <button class="full-parent-width btn btn-primary"
+                                    onclick="getPromotionProductFileSingleEditorPopupData(
+                                        event,
+                                        @Model.Product.Id,
+                                        '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalId',
+                                        '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalDialogId',
+                                        '@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalContentId',
+                                        @promotionProductFileInfo.Id,
+                                        '@Model.RelatedProductTableRowElementId')"
+                                    style="width: auto; display: flex; padding: 0.3em;">
+                                    <img src="~/img/General/EditIcon.jpg" alt="Edit" style="height: 1em;" />
+                                </button>
+                            </td>
+                            <td>
+                                <button id="promotionFilesDisplayEditButton-@i" type="button"
+                                    class="btn btn-danger"
+                                    style=""
+                                    onclick="deletePromotionProductFile(@promotionProductFileInfo.Id,
+                                        '@Model.ModalData.ModalContentId',
+                                        '@Model.ProductPropertiesEditorContainerElementId',
+                                        '@Model.ProductTableContainerElementId')">
+                                    del
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            }
+        </div>
+    </div>
+</div>

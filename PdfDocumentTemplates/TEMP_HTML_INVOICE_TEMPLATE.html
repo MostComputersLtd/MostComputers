@@ -1,0 +1,510 @@
+<!DOCTYPE>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            border: 0px solid #FFFFFF;
+            color: #000;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .invoiceTemplateBodyBackgroundDarker {
+            background-color: #ebebeb;
+        }
+        .simplebox .invoiceTemplate {
+            margin: 20px auto 40px;
+        }
+
+        .invoiceTemplate {
+            width: 690px;
+            padding: 30px 20px;
+            overflow: hidden;
+            position: relative;
+            page-break-after: always;
+            background-color: #ffffff;
+        }
+
+        .invoiceTemplateConstrainedToPage {
+            height: 880px;
+        }
+
+        .invoiceTemplateWithBorder {
+            border: 1px solid #eeeeee;
+            box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
+            -webkit-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
+            -moz-box-shadow: 0px 0px 20px rgba(50, 50, 50, 1);
+        }
+
+        .invoiceTemplate * {
+            font-family: Verdana, Helvetica, sans-serif !important;
+            font-size: 12px;
+        }
+
+        .invoiceTemplate * {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            font-family: arial, Helvetica, sans-serif;
+            white-space: normal;
+        }
+
+        div {
+            display: block;
+            overflow: hidden;
+            width: auto;
+        }
+
+        div {
+            display: inline-block;
+        }
+
+        div {
+            display: block;
+            unicode-bidi: isolate;
+        }
+
+        #whiterow2 {
+            width: 980px;
+            margin: 0px auto;
+            text-align: left;
+            position: relative;
+        }
+
+        .invoiceTemplateSubHeader .invoiceTemplateTargetData {
+            padding: 10px;
+            border: 1px solid black;
+            background: #e5e5e5;
+            white-space: normal;
+        }
+
+        .invoiceTemplateAddress {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .invoiceTemplateSubHeader .invoiceTemplateAddress {
+            background: #ffffff;
+            padding: 3px;
+            font-weight: bold;
+        }
+
+        .invoiceTemplateTargetData td {
+            padding: 3px;
+        }
+
+        .invoiceTemplateHighlightBg {
+            background: #f5f5f5 !important;
+        }
+
+        .invoiceTemplateWhiteCell {
+            background: #ffffff !important;
+        }
+
+        div.invoiceTemplateInvoiceData {
+            overflow: visible;
+        }
+
+        .invoiceTemplateInvoiceData {
+            border-left: 1px solid black;
+            border-bottom: 1px solid black;
+            border-right: 1px solid black;
+            text-align: right;
+            padding: 10px;
+        }
+
+        .invoiceTemplateOFVisible {
+            overflow: visible !important;
+        }
+
+        .invoiceTemplateOriginalCopy {
+            font-size: 32px;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        .invoiceTemplateLeftColumn {
+            float: left;
+            width: 50%;
+            text-align: left;
+        }
+
+        .invoiceTemplateRightColumn {
+            float: right;
+            width: 50%;
+            text-align: right;
+        }
+
+        .invoiceTemplateInvoiceData table {
+            float: right;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+            .invoiceTemplateInvoiceData table td.invoiceTemplateInvoiceDataHighlight {
+                text-align: left;
+                background: #e5e5e5;
+                font-weight: bold;
+            }
+
+            .invoiceTemplateInvoiceData table td {
+                padding: 3px;
+            }
+
+        .invoiceTemplateObjectsTable {
+            width: 100%;
+            margin-top: 15px;
+            border-right: 1px solid black;
+            border-top: 1px solid black;
+            border-collapse: collapse;
+        }
+
+            .invoiceTemplateObjectsTable thead td {
+                color: #000000;
+                font-weight: bold;
+                background: #e5e5e5;
+                height: 30px;
+            }
+
+            .invoiceTemplateObjectsTable td {
+                padding: 3px;
+                border-left: 1px solid black;
+                border-bottom: 1px solid black;
+                vertical-align: middle;
+                height: 17px;
+                white-space: normal;
+            }
+
+        .invoiceTemplateSummaryData {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .bankdetailsData td {
+            padding: 3px;
+        }
+
+        .invoiceTemplateSummaryDataTable {
+            float: right;
+        }
+
+            .invoiceTemplateSummaryDataTable td {
+                padding: 5px;
+            }
+
+        .summaryHighlight {
+            background: #e5e5e5;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .summaryBig, #pamount_total {
+            font-size: 18px;
+            font-weight: bold;
+            background: #cccccc;
+        }
+
+        .invoiceTemplateTotalPriceInWords {
+        }
+
+        .clearboth {
+            clear: both;
+            line-height: 1px;
+            font-size: 1px !important;
+        }
+
+        .invoiceTemplateExtraDataRow {
+            margin: 0;
+            padding: 0;
+        }
+
+            .invoiceTemplateExtraDataRow p {
+                border-bottom: 1px solid black;
+                background: #e5e5e5;
+                padding: 5px;
+                margin: 0;
+                white-space: normal;
+            }
+
+        .invoiceTemplateBold {
+            font-weight: bold;
+        }
+
+        .invoiceTemplateSignaturesContainer {
+        }
+
+        .invoiceTemplateSignatureTarget {
+            font-size: 13px;
+            margin-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .invoiceTemplateSignature {
+            display: block;
+            margin-top: 30px;
+        }
+
+        .invoiceTemplateNotes {
+            border-top: 1px dashed #e5e5e5;
+        }
+
+            .invoiceTemplateNotes, .invoiceTemplateNotes * {
+                border-top: 1px solid #414141;
+                font-size: 11px;
+                margin-top: 30px;
+                padding-top: 10px;
+                white-space: normal;
+            }
+
+        .invoiceTemplateLeagal {
+            margin-top: 10px;
+            font-size: 10px;
+            color: #c5c5c5;
+            white-space: normal !important;
+        }
+
+            .invoiceTemplateLeagal * {
+                white-space: normal !important;
+            }
+    </style>
+</head>
+<body id="invoiceTemplateBody" class="invoiceTemplateBodyBackgroundDarker">
+    <div id="invoiceTemplateContainer_original" class="invoiceTemplate invoiceTemplateConstrainedToPage invoiceTemplateWithBorder">
+        <div class="invoiceTemplateSubHeader" id="invoiceTemplateSubHeader_original invoiceTemplateBorder">
+            <table cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tbody>
+                    <tr>
+                        <td width="50%" align-content="end"><h2>Получател</h2></td>
+                        <td width="50%" align-content="end"><h2>Доставчик</h2></td>
+                    </tr>
+                    <tr>
+                        <td class="invoiceTemplateTargetData" style="border-right: none;" valign="top">
+                            <table cellpadding="0" cellspacing="1" bgcolor="#cccccc" width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td id="invoiceTemplateLeftFirmAndAddress" colspan="2" class="invoiceTemplateAddress">
+                                            ИКТ ТРЕЙД ЕООД<br>
+                                            СОФИЯ УЛ.ВЕЛЧО АТАНАСОВ, 49
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">ЕИК/Булстат:</td>
+                                        <td id="invoiceTemplateLeftFirmId" width="50%" class="invoiceTemplateWhiteCell">206830617</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">ЗДДС №:</td>
+                                        <td id="invoiceTemplateLeftFirmVatId" width="50%" class="invoiceTemplateWhiteCell">BG206830617</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">М.О.Л.</td>
+                                        <td id="invoiceTemplateLeftFirmMRPerson" width="50%" class="invoiceTemplateWhiteCell">ВАНЯ НОВАКОВА</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                        <td class="invoiceTemplateTargetData" valign="top">
+                            <table cellpadding="0" cellspacing="1" bgcolor="#cccccc" width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td id="invoiceTemplateRightFirmAndAddress" colspan="2" class="invoiceTemplateAddress">
+                                            МОСТ КОМПЮТЪРС ООД<br>
+                                            София, бул. Шипченски проход, бл. 240, вх. Г, ет. 3
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">ЕИК/Булстат:</td>
+                                        <td id="invoiceTemplateRightFirmId" width="50%" class="invoiceTemplateWhiteCell">831210862</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">ЗДДС №:</td>
+                                        <td id="invoiceTemplateRightFirmVatId" width="50%" class="invoiceTemplateWhiteCell">BG831210862</td>
+                                    </tr>
+                                    <tr>
+                                        <td width="50%" class="invoiceTemplateHighlightBg">М.О.Л. </td>
+                                        <td id="invoiceTemplateRightFirmMRPerson" width="50%" class="invoiceTemplateWhiteCell">Христофор Аспарухов</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="invoiceTemplateInvoiceData invoiceTemplateOFVisible" id="invoiceTemplateInvoiceData_original">
+            <h2>ФАКТУРА</h2>
+            <div class="invoiceTemplateLeftColumn invoiceTemplateOriginalCopy" style="width:200px; overflow:visible !important;">
+                Оригинал
+            </div>
+            <table cellspacing="0" cellpadding="0" border="0">
+                <tbody>
+                    <tr>
+                        <td>номер:</td>
+                        <td id="invoiceTemplateInvoiceId" class="invoiceTemplateInvoiceDataHighlight">0003323634</td>
+                    </tr>
+                    <tr>
+                        <td>Дата на издаване:</td>
+                        <td id="invoiceTemplateDateOfIssue" class="invoiceTemplateInvoiceDataHighlight">05.12.2024</td>
+                    </tr>
+                    <tr>
+                        <td>Дата на данъчно събитие:</td>
+                        <td id="invoiceTemplateDateOfTaxEvent" class="invoiceTemplateInvoiceDataHighlight">05.12.2024</td>
+                    </tr>
+                    <tr>
+                        <td>Дата на падеж:</td>
+                        <td id="invoiceTemplateDueDate" class="invoiceTemplateInvoiceDataHighlight">12.12.2024</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="clearboth">&nbsp;</div>
+        </div>
+
+        <table cellpadding="0" cellspacing="0" border="0" class="invoiceTemplateObjectsTable" id="invoiceTemplateObjectsTable_original" maxsize="580">
+            <thead>
+                <tr>
+                    <td align="center">#</td>
+                    <td>Наименование на продукта</td>
+                    <td style="text-align: center">Количество</td>
+                    <td style="text-align: center">Мярка</td>
+                    <td style="text-align: center">Ед. цена</td>
+                    <td colspan="2" style="text-align:center">Стойност</td>
+                </tr>
+            </thead>
+            <tbody id="invoiceTemplateEntriesTBody">
+                <tr id="invoiceTemplateEntry-0">
+                    <td id="invoiceTemplateEntryNumber-0" width="2%" align="center">1</td>
+                    <td id="invoiceTemplateEntryName-0" width="48%">MONITOR 27 LENOVO N27Q (A24270QN0)</td>
+                    <td id="invoiceTemplateEntryQuantity-0" width="13%" align="center">1</td>
+                    <td id="invoiceTemplateEntryUnitOfMeasure-0" width="8%" align="center">бр.</td>
+                    <td id="invoiceTemplateEntryPricePerUnit-0" width="10%" align="right">219.05</td>
+                    <td id="invoiceTemplateEntryTotalPrice-0" width="7%" align="right" style="background: #f5f5f5;">219.05</td>
+                    <td id="invoiceTemplateEntryCurrency-0" width="4%" style="background: #f5f5f5;" align="right">лв</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="invoiceTemplateSummaryData" id="invoiceTemplateSummaryData_original">
+            <div class="invoiceTemplateLeftColumn">
+                <table width="100%" bgcolor="#cccccc" border="0" cellpadding="3" cellspacing="1" class="bankdetailsData">
+                    <tbody>
+                        <tr>
+                            <td colspan="2" bgcolor="#e5e5e5">Банкови детайли на доставчика</td>
+                        </tr>
+                        <tr>
+                            <td width="20%" bgcolor="#f5f5f5">Банка:</td>
+                            <td id="invoiceTemplateSupplierBankId" width="80%" style="white-space:normal" bgcolor="#ffffff">ОББ АД BIC: UBBSBGSF</td>
+                        </tr>
+                        <tr>
+                            <td bgcolor="#f5f5f5">IBAN</td>
+                            <td id="invoiceTemplateSupplierIban" bgcolor="#ffffff">BG29UBBS74281010110202</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="invoiceTemplateRightColumn">
+                <table cellspacing="2" class="invoiceTemplateSummaryDataTable">
+                    <tbody>
+                        <tr>
+                            <td>Сума по фактура:</td>
+                            <td id="invoiceTemplateTotalPriceInInvoice" class="summaryHighlight">219.05 лв</td>
+                        </tr>
+                        <tr>
+                            <td>Данъчна основа:</td>
+                            <td id="invoiceTemplateTaxBase" class="summaryHighlight">219.05 лв</td>
+                        </tr>
+                        <tr>
+                            <td>Процент ДДС:</td>
+                            <td id="invoiceTemplateVatPercent" class="summaryHighlight">20 %</td>
+                        </tr>
+                        <tr>
+                            <td>Начислен ДДС:</td>
+                            <td id="invoiceTemplateVatCharged" class="summaryHighlight">43.81 лв</td>
+                        </tr>
+                        <tr>
+                            <td>Всичко:</td>
+                            <td class="summaryHighlight summaryBig"><span id="invoiceTemplateTotalPriceLeva">262.86 лв</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    Цена в евро<br>
+                                    (курс <span id="invoiceTemplateTotalPriceEuroConversionRate"></span>)
+                                </p>
+                            </td>
+                            <td class="summaryHighlight summaryBig"><span id="invoiceTemplateTotalPriceEuro">262.86 €</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="clearboth">&nbsp;</div>
+        </div>
+
+        <div id="extraRows_original" style="padding-bottom:30px;">
+            <div class="invoiceTemplateExtraDataRow" style="margin-top: 15px; border-top: 1px solid black;">
+                <p>
+                    Словом: <span id="invoiceTemplateTotalPriceInWords" class="invoiceTemplateBold invoiceTemplateTotalPriceInWords">Двеста шестдесет и два лева и осемдесет и шест стотинки</span>
+                </p>
+            </div>
+            <div class="invoiceTemplateExtraDataRow">
+                <p>
+                    Метод на плащане: <span id="invoiceTemplatePaymentMethod" class="invoiceTemplateBold">по банков път</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="invoiceTemplateSignaturesContainer" id="invoiceTemplateSignaturesContainer_original">
+            <div class="invoiceTemplateLeftColumn">
+                <div class="invoiceTemplateSignatureTarget">
+                    <span>Получател: </span><span id="invoiceTemplateLeftFirmMRPersonSignatureInitials" class="invoiceTemplateBold">ВАНЯ НОВАКОВА</span>
+                </div>
+                <span class="invoiceTemplateSignature">Подпис: ................................................</span>
+            </div>
+            <div class="invoiceTemplateRightColumn">
+                <div class="invoiceTemplateSignatureTarget">
+                    <span>Съставил: </span><span id="invoiceTemplateInvoiceCreator" class="invoiceTemplateBold">FES</span>
+                </div>
+                <span class="invoiceTemplateSignature">Подпис: <span id="creator_signature">..................................................</span></span>
+            </div>
+
+            <div class="clearboth">&nbsp;</div>
+
+            <div class="invoiceTemplateNotes" id="invoiceTemplateNotes_original">
+                <span class="invoiceTemplateBold">Забележки:</span>
+            </div>
+
+            <div class="invoiceTemplateLeagal" id="invoiceTemplateLeagal_original">
+                <span id="invoiceTemplateLeagalText" class="">Този документ е създаден с помощта на софтуерен продукт на INV.BG. Той е подписан с електронен подпис и отговаря на всички изисквания на законодателството в България относно електронните документи.</span>
+            </div>
+        </div>
+
+        <!-- <script>
+            var headerElements = new Array();
+            headerElements.push("invoiceTemplateHeader_original");
+            //headerElements.push("invoiceTemplateSubHeader");
+            //headerElements.push("invoiceTemplateInvoiceData");
+
+            var footerElements = new Array();
+            footerElements.push("invoiceTemplateSummaryData_original");
+            footerElements.push("extraRows_original");
+            footerElements.push("invoiceTemplateSignaturesContainer_original");
+
+            var templateContainer = "invoiceTemplateContainer_original";
+            var tableContainer = "invoiceTemplateObjectsTable_original";
+
+            var cloneTH = true;
+            var pageVar = "Стр. ";
+            var invoiceNum = "Фактура № 0003323634";
+        </script>
+
+        <script type="text/javascript" src="http://inv.mostbg.com/js/sizer.js"></script>
+
+        -->
+
+    </div>
+
+</body>
+</html>

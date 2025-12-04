@@ -1,0 +1,1032 @@
+﻿@page "/documents"
+@rendermode InteractiveServer
+
+@attribute [Authorize]
+
+@implements IAsyncDisposable
+
+@using System.Diagnostics.CodeAnalysis
+@using System.Numerics
+@using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts
+@using MOSTComputers.Services.DataAccess.Documents.Models
+@using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Invoice
+@using MOSTComputers.Services.DataAccess.Documents.Models.Requests.WarrantyCard
+@using MOSTComputers.Services.PDF.Models.Invoices
+@using MOSTComputers.Services.PDF.Models.WarrantyCards
+@using MOSTComputers.Services.PDF.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
+@using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using System.Text.Json
+
+@using static MOSTComputers.UI.Web.Blazor.Utils.TransliterationUtils;
+
+@inject IInvoiceRepository InvoiceRepository
+@inject IWarrantyCardRepository WarrantyCardRepository
+
+@inject IPdfInvoiceDataService PdfInvoiceDataService
+@inject IPdfWarrantyCardDataService PdfWarrantyCardDataService
+
+@inject IPdfInvoiceFileGeneratorService PdfInvoiceFileGeneratorService
+@inject IPdfWarrantyCardWithoutPricesFileGeneratorService PdfWarrantyCardWithoutPricesFileGeneratorService
+
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Documents</PageTitle>
+
+<HeadContent>
+	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="documents-page">
+	<div class="documents-page-menus-container">
+
+		<div class="documents-search-menu flex-xl-nowrap">
+
+			<select @bind="SelectedDocumentTypeSearchOptionsValueInSelect" class="me-3">
+				@foreach (DocumentTypeSearchOptions documentTypeSearchOption in _documentTypeSearchOptionsInSelect)
+				{
+					<option value="@documentTypeSearchOption.Value">@documentTypeSearchOption.NameInSelectList</option>
+				}
+			</select>
+
+			<div class="documents-customer-search-container">
+				<div class="documents-customer-search-input-container">
+					<input class="documents-customer-search-input" type="text" @bind="_searchKeyword" />
+
+					<button class="btn btn-outline-secondary documents-customer-search-transliterate-button"
+							@onclick="TransliterateSearchKeywordBasedOnData">
+						C/L
+					</button>
+
+					<button class="btn" @onclick="() => SetCustomerListVisibility(!_isCustomerSearchResultsSelectListOpen)">
+						@(_isCustomerSearchResultsSelectListOpen ? "▼" : "▲")
+					</button>
+				</div>
+
+				<div class="documents-customer-search-results-container">
+
+					@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+					{
+						<DropdownSelect TItem="InvoiceCustomerData"
+							Items="_searchedInvoiceCustomers"
+							ItemSelectionMode="DropdownSelect<InvoiceCustomerData>.SelectionMode.Single"
+							SelectedItemsChanged="items => OnInvoiceCustomerSelectedAsync(items)"
+							@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
+							AdditionalAttributes='new()
+							{
+								{ "class", "documents-customer-search-results" },
+							}'
+							AdditionalDropdownListAttributes='new()
+							{
+								{ "class", "documents-customer-search-results-dropdown-list" },
+							}'>
+							<SelectedItemsTemplate></SelectedItemsTemplate>
+							<ItemTemplate>
+								<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
+									<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
+
+									<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
+								</div>
+							</ItemTemplate>
+							<NoItemsTemplate>
+								<div class="document-customer-no-items-div">
+									<p>No items found.</p>
+								</div>
+							</NoItemsTemplate>
+						</DropdownSelect>
+					}
+					else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+					{
+						<DropdownSelect TItem="WarrantyCardCustomerData"
+							Items="_searchedWarrantyCardCustomers"
+							ItemSelectionMode="DropdownSelect<WarrantyCardCustomerData>.SelectionMode.Single"
+							SelectedItemsChanged="items => OnWarrantyCardCustomerSelectedAsync(items)"
+							@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
+							AdditionalAttributes='new()
+							{
+								{ "class", "documents-customer-search-results" },
+							}'
+							AdditionalDropdownListAttributes='new()
+							{
+								{ "class", "documents-customer-search-results-dropdown-list" },
+							}'>
+							<SelectedItemsTemplate></SelectedItemsTemplate>
+							<ItemTemplate>
+								<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
+									<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
+
+									<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
+								</div>
+							</ItemTemplate>
+							<NoItemsTemplate>
+								<div class="document-customer-no-items-div">
+									<p>No items found.</p>
+								</div>
+							</NoItemsTemplate>
+						</DropdownSelect>
+					}
+				</div>
+			</div>
+
+			<div class="round-loader-default me-3" style='display: @(_isLoadingCustomerSearchResults ? "" : "none");'></div>
+
+			<button class="btn btn-outline-primary me-3" @onclick="SearchDocumentCustomersAsync"
+				style='display: @(_isLoadingCustomerSearchResults ? "none" : "unset");'>
+				Search
+			</button>
+
+			<div class="document-customer-search-date-container me-2">
+				<label for="searchFromDateInput" class="document-customer-search-date-label">From:</label>
+				<InputDate @bind-value="_searchFromDate" id="searchFromDateInput" placeholder="From" />
+			</div>
+
+			<div class="document-customer-search-date-container">
+				<label for="searchToDateInput" class="document-customer-search-date-label">To:</label>
+				<InputDate @bind-value="_searchToDate" id="searchToDateInput" placeholder="To" />
+			</div>
+		</div>
+		
+		<div class="document-search-results-container">
+
+			<div class="document-search-results-list-container">
+
+				<ul class="document-search-results-list" style="display: @(_isLoadingSearchResults ? "none" : "unset");">
+
+					@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+					{
+						if (_searchedInvoices.Count > 0)
+						{
+							foreach (Invoice invoice in _searchedInvoices)
+							{
+								bool isSelected = invoice == _selectedInvoice;
+								bool isInGroupExportSelection = _selectedGroupExportInvoices.Contains(invoice);
+
+								string selectedClass = isSelected ? "document-search-result-list-item-selected" : string.Empty;
+								string selectedForGroupExportClass = isInGroupExportSelection ? "document-search-result-list-item-selected-for-group-export" : string.Empty;
+
+								decimal totalPriceWithoutVat = 0M;
+
+								if (invoice.InvoiceItems is not null)
+								{
+									foreach (InvoiceItem item in invoice.InvoiceItems)
+									{
+										if (item.PriceInLeva is null || item.Quantity is null) continue;
+
+										totalPriceWithoutVat += item.PriceInLeva.Value * item.Quantity.Value;
+									}
+								}
+
+								decimal vatPercent = (invoice.VatPercent is not null) ? (decimal)invoice.VatPercent / 100 : 0M;
+
+								decimal totalPriceChargedFromVat = totalPriceWithoutVat * vatPercent;
+
+								decimal totalPrice = totalPriceWithoutVat + totalPriceChargedFromVat;
+
+								string invoiceNumber = invoice.InvoiceNumber ?? "-";
+								string invoiceDate = invoice.InvoiceDate?.ToString("yyyy/MM/dd") ?? "-";
+								string customerName = invoice.CustomerName ?? "-";
+								string totalPriceAsString = totalPrice.ToString("F2") ?? "-";
+								string paymentStatus = invoice.PaymentStatus ?? "-";
+
+								<li class="document-search-result-list-item @selectedClass @selectedForGroupExportClass"
+									@onclick="(e) => SetPdfFileSourceUrlFromInvoice(invoice, e)">
+
+									<div class="document-search-result-invoice-name-info">
+										<strong>№ @invoiceNumber</strong>
+										<p>@customerName</p>
+										<p>@invoiceDate</p>
+									</div>
+
+									<div class="document-search-result-invoice-payment-info">
+										<p>@totalPriceAsString</p>
+										<p>@paymentStatus</p>
+									</div>
+								</li>
+							}
+						}
+						else
+						{
+							<li class="document-empty-search-result-placeholder-item">
+								<p>No invoices found.</p>
+							</li>
+						}
+					}
+					else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+					{
+						if (_searchWarrantyCards.Count > 0)
+						{
+							foreach (WarrantyCard warrantyCard in _searchWarrantyCards)
+							{
+								bool isSelected = warrantyCard == _selectedWarrantyCard;
+								bool isInGroupExportSelection = _selectedGroupExportWarrantyCards.Contains(warrantyCard);
+
+								string selectedClass = isSelected ? "document-search-result-list-item-selected" : string.Empty;
+								string selectedForGroupExportClass = isInGroupExportSelection ? "document-search-result-list-item-selected-for-group-export" : string.Empty;
+
+								string warrantyCardOrderIdAsString = warrantyCard.OrderId.ToString();
+								string warrantyCardDate = warrantyCard.WarrantyCardDate?.ToString("yyyy/MM/dd") ?? "-";
+								string customerName = warrantyCard.CustomerName ?? "-";
+								string warrantyCardTermAsString = warrantyCard.WarrantyCardTerm?.ToString() ?? "-";
+
+								<li class="document-search-result-list-item @selectedClass @selectedForGroupExportClass"
+									@onclick="(e) => SetPdfFileSourceUrlFromWarrantyCard(warrantyCard, e)">
+
+									<div class="document-search-result-warranty-card-name-info">
+										<strong>№ @warrantyCardOrderIdAsString</strong>
+										<p>@customerName</p>
+										<p>@warrantyCardDate</p>
+									</div>
+
+									<div class="document-search-result-warranty-card-warranty-info">
+										<p>@warrantyCardTermAsString</p>
+										<p>Months</p>
+									</div>
+								</li>
+							}
+						}
+						else
+						{
+							<li class="document-empty-search-result-placeholder-item">
+								<p>No warranty cards found.</p>
+							</li>
+						}
+					}
+				</ul>
+
+				<div class="round-loader-default align-self-center" style="display: @(_isLoadingSearchResults ? "unset" : "none");"></div>
+			</div>
+
+			<div class="document-selected-data-container">
+
+				@if (_pdfFileSourceUrl is null)
+				{
+					<p class="text-center">
+						No document selected.
+					</p>
+				}
+				else
+				{
+					<div id="pdfDisplayLoader" class="round-loader-default" style='display: @(_isLoadingDocument ? "" : "none");'></div>
+
+					<div class="document-view-container" style='@(_isLoadingDocument ? "display: none;" : "")'>
+
+						<div class="document-export-options-container">
+
+							<button class="btn btn-outline-secondary document-export-button-with-loader document-download-pdf-button"
+								@onclick="() => ExportPdf(_pdfFileSourceUrl)">
+
+								<p class="document-export-button-with-loader-text @(_isDownloadingDocumentPdf ? "loading" : "")">Export PDF</p>
+
+								<div id="pdfDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentPdf ? "loading" : "")"></div>
+							</button>
+
+							@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+							{
+								if (_selectedGroupExportInvoices.Count > 0)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => ExportInvoicesXml(_selectedGroupExportInvoices)">
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentXml ? "loading" : "")">Export Xml (@_selectedGroupExportInvoices.Count)</p>
+
+										<div id="xmlDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentXml ? "loading" : "")"></div>
+									</button>
+								}
+								else if (_selectedInvoice is not null)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => ExportInvoiceXml(_selectedInvoice)">
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentXml ? "loading" : "")">Export Xml</p>
+
+										<div id="xmlDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentXml ? "loading" : "")"></div>
+									</button>
+								}
+
+							}
+							else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+							{
+								if (_selectedGroupExportWarrantyCards.Count > 0)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => ExportWarrantyCardsXml(_selectedGroupExportWarrantyCards)">
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentXml ? "loading" : "")">Export Xml (@_selectedGroupExportWarrantyCards.Count)</p>
+
+										<div id="xmlDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentXml ? "loading" : "")"></div>
+									</button>
+								}
+								else if(_selectedWarrantyCard is not null)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => ExportWarrantyCardXml(_selectedWarrantyCard)">
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentXml ? "loading" : "")">Export Xml</p>
+
+										<div id="xmlDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentXml ? "loading" : "")"></div>
+									</button>
+								}
+							}
+						</div>
+
+						<iframe id="pdfDisplayFrame" src="@(_pdfFileSourceUrl)#toolbar=0" class="document-view"
+							@onload="OnDocumentFileLoaded">
+						</iframe>
+					</div>
+
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+@code {
+	public struct DocumentTypeSearchOptions : IEqualityOperators<DocumentTypeSearchOptions, DocumentTypeSearchOptions, bool>
+	{
+		private DocumentTypeSearchOptions(int value, string nameInSelectList)
+		{
+			Value = value;
+			NameInSelectList = nameInSelectList;
+		}
+
+		public int Value { get; }
+
+		public string NameInSelectList { get; }
+
+		public static DocumentTypeSearchOptions Invoice = new(1, "Invoices");
+		public static DocumentTypeSearchOptions WarrantyCard = new(2, "Warranty cards");
+
+		public override bool Equals([NotNullWhen(true)] object? obj)
+		{
+			if (obj is not DocumentTypeSearchOptions other)
+			{
+				return false;
+			}
+
+			return Value == other.Value;
+		}
+
+		public override int GetHashCode()
+		{
+			return Value.GetHashCode();
+		}
+
+		public static bool operator ==(DocumentTypeSearchOptions left, DocumentTypeSearchOptions right)
+		{
+			return left.Value == right.Value;
+		}
+
+		public static bool operator !=(DocumentTypeSearchOptions left, DocumentTypeSearchOptions right)
+		{
+			return left.Value != right.Value;
+		}
+
+		public static DocumentTypeSearchOptions? GetFromValue(int value)
+		{
+			if (value == Invoice.Value) return Invoice;
+			else if (value == WarrantyCard.Value) return WarrantyCard;
+
+			return null;
+		}
+	}
+
+	[Parameter] public DocumentTypeSearchOptions SelectedDocumentTypeSearchOptions { get; set; } = DocumentTypeSearchOptions.Invoice;
+
+	private int SelectedDocumentTypeSearchOptionsValueInSelect
+	{
+		get => SelectedDocumentTypeSearchOptions.Value;
+		set
+		{
+			SelectedDocumentTypeSearchOptions = DocumentTypeSearchOptions.GetFromValue(value) ?? DocumentTypeSearchOptions.Invoice;
+
+			if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+			{
+				_searchedWarrantyCardCustomers.Clear();
+				_selectedWarrantyCardCustomer = null;
+				_searchWarrantyCards.Clear();
+				_selectedWarrantyCard = null;
+				_selectedGroupExportWarrantyCards.Clear();
+			}
+			else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+			{
+				_searchedInvoiceCustomers.Clear();
+				_selectedInvoiceCustomer = null;
+				_searchedInvoices.Clear();
+				_selectedInvoice = null;
+				_selectedGroupExportInvoices.Clear();
+			}
+		}
+	}
+
+	private List<DocumentTypeSearchOptions> _documentTypeSearchOptionsInSelect = new()
+	{
+		DocumentTypeSearchOptions.Invoice,
+		DocumentTypeSearchOptions.WarrantyCard
+	};
+
+	private void OnSelectedDocumentTypeSearchOptionsChanged(List<DocumentTypeSearchOptions> selectedItems)
+	{
+		if (selectedItems.Count == 0)
+		{
+			SelectedDocumentTypeSearchOptions = DocumentTypeSearchOptions.Invoice;
+
+			return;
+		}
+
+		SelectedDocumentTypeSearchOptions = selectedItems.First();
+	}
+
+	private string _searchKeyword { get; set; } = string.Empty;
+
+	private DateTime? _searchFromDate { get; set; } = DateTime.Now.AddMonths(-1);
+	private DateTime? _searchToDate { get; set; } = DateTime.Now;
+
+	private List<InvoiceCustomerData> _searchedInvoiceCustomers = new();
+	private InvoiceCustomerData? _selectedInvoiceCustomer = new();
+
+	private List<Invoice> _searchedInvoices = new();
+	private Invoice? _selectedInvoice = null;
+	private List<Invoice> _selectedGroupExportInvoices = new();
+
+	private List<WarrantyCardCustomerData> _searchedWarrantyCardCustomers = new();
+	private WarrantyCardCustomerData? _selectedWarrantyCardCustomer = new();
+
+	private List<WarrantyCard> _searchWarrantyCards = new();
+	private WarrantyCard? _selectedWarrantyCard = null;
+	private List<WarrantyCard> _selectedGroupExportWarrantyCards = new();
+
+	private bool _isLoadingCustomerSearchResults = false;
+	private bool _isCustomerSearchResultsSelectListOpen { get; set; } = false;
+
+	private bool _isLoadingSearchResults = false;
+
+	private string? _pdfFileSourceUrl = null;
+	private string _pdfDownloadFileNamePrefix = "MOST_PDF";
+
+	private bool _isLoadingDocument = false;
+
+	private bool _isDownloadingDocumentPdf = false;
+	private bool _isDownloadingDocumentXml = false;
+
+	private IJSObjectReference? _jsModule;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			_jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Documents.razor.js");
+		}
+	}
+
+	private string GetCurrentDateTimeInFileNameFormat()
+	{
+		return DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss");
+	}
+
+	private void TransliterateSearchKeywordBasedOnData()
+	{
+		bool isCyrillic = IsCyrillicOnly(_searchKeyword);
+
+		if (isCyrillic)
+		{
+			_searchKeyword = Transliterate(_searchKeyword, TransliterationType.CyrillicToLatin);
+
+			return;
+		}
+
+		_searchKeyword = Transliterate(_searchKeyword, TransliterationType.LatinToCyrillic);
+	}
+
+	private void SetPdfFileSourceUrlFromInvoice(Invoice invoice, MouseEventArgs eventArgs)
+	{
+		if (eventArgs.CtrlKey)
+		{
+			int groupExportIndex = _selectedGroupExportInvoices.IndexOf(invoice);
+
+			if (groupExportIndex >= 0)
+			{
+				_selectedGroupExportInvoices.RemoveAt(groupExportIndex);
+
+				return;
+			}
+			_selectedGroupExportInvoices.Add(invoice);
+
+			return;
+		}
+
+		string newSourceUrl = $"/{PdfInvoiceDataEndpoints.EndpointGroupRoute}/{invoice.InvoiceNumber}";
+
+		if (_pdfFileSourceUrl == newSourceUrl) return;
+
+		_pdfFileSourceUrl = newSourceUrl;
+		_pdfDownloadFileNamePrefix = invoice.InvoiceNumber ?? "MOST_INVOICE";
+
+		_selectedInvoice = invoice;
+
+		_isLoadingDocument = true;
+	}
+
+	private void SetPdfFileSourceUrlFromWarrantyCard(WarrantyCard warrantyCard, MouseEventArgs eventArgs)
+	{
+		if (eventArgs.CtrlKey)
+		{
+			int groupExportIndex = _selectedGroupExportWarrantyCards.IndexOf(warrantyCard);
+
+			if (groupExportIndex >= 0)
+			{
+				_selectedGroupExportWarrantyCards.RemoveAt(groupExportIndex);
+
+				return;
+			}
+
+			_selectedGroupExportWarrantyCards.Add(warrantyCard);
+
+			return;
+		}
+
+		string newSourceUrl = $"/{PdfWarrantyCardDataWithoutPricesEndpoints.EndpointGroupRoute}/{warrantyCard.OrderId}";
+
+		if (_pdfFileSourceUrl == newSourceUrl) return;
+
+		_pdfFileSourceUrl = newSourceUrl;
+		_pdfDownloadFileNamePrefix = warrantyCard?.OrderId.ToString() ?? "MOST_WARRANTY_CARD";
+
+		_selectedWarrantyCard = warrantyCard;
+
+		_isLoadingDocument = true;
+	}
+
+	private void OnDocumentFileLoaded()
+	{
+		_isLoadingDocument = false;
+	}
+
+	private void SetCustomerListVisibility(bool value)
+	{
+		_isCustomerSearchResultsSelectListOpen = value;
+	}
+
+	private async Task OnInvoiceCustomerSelectedAsync(List<InvoiceCustomerData> invoiceCustomers)
+	{
+		InvoiceCustomerData? selectedCustomer = invoiceCustomers.FirstOrDefault();
+
+		if (selectedCustomer is null) return;
+
+		_selectedInvoiceCustomer = selectedCustomer;
+
+		await SearchDocumentsAsync();
+	}
+
+	private async Task OnWarrantyCardCustomerSelectedAsync(List<WarrantyCardCustomerData> warrantyCardCustomers)
+	{
+		WarrantyCardCustomerData? selectedCustomer = warrantyCardCustomers.FirstOrDefault();
+
+		if (selectedCustomer is null) return;
+
+		_selectedWarrantyCardCustomer = selectedCustomer;
+
+		await SearchDocumentsAsync();
+	}
+
+	private async Task ExportPdf(string pdfFileSourceUrl)
+	{
+		if (_jsModule is null) return;
+
+		_isDownloadingDocumentPdf = true;
+
+		string fileName = $"{_pdfDownloadFileNamePrefix}_({GetCurrentDateTimeInFileNameFormat()})";
+
+		try
+		{
+			await _jsModule.InvokeVoidAsync("fetchAndDownloadFile",
+				pdfFileSourceUrl,
+				fileName,
+				"application/pdf");
+		}
+		finally
+		{
+			_isDownloadingDocumentPdf = false;
+		}
+	}
+
+	private async Task ExportInvoiceXml(Invoice invoice)
+	{
+		if (_jsModule is null) return;
+
+		_isDownloadingDocumentXml = true;
+
+		string fileNameStart = invoice.InvoiceNumber ?? "MOST_INVOICE";
+
+		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
+		
+		try
+		{
+			await _jsModule.InvokeVoidAsync("fetchAndDownloadFile",
+				$"api/documents/invoice/xml/id={invoice.InvoiceId}",
+				fileName,
+				"application/xml");
+		}
+		finally
+		{
+			_isDownloadingDocumentXml = false;
+		}
+	}
+
+	private async Task ExportInvoicesXml(List<Invoice> invoices)
+	{
+		if (_jsModule is null) return;
+
+		_isDownloadingDocumentXml = true;
+
+		string fileNameStart = "MOST_INVOICES";
+
+		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
+
+		List<int> invoiceIds = invoices.Select(x => x.InvoiceId)
+			.ToList();
+
+		try
+		{
+			await _jsModule.InvokeVoidAsync("fetchAndDownloadFileWithBody",
+				$"api/documents/invoice/xml/",
+				fileName,
+				"application/xml",
+				"POST",
+				JsonSerializer.Serialize(invoiceIds));
+		}
+		finally
+		{
+			_isDownloadingDocumentXml = false;
+		}
+	}
+
+	private async Task ExportWarrantyCardXml(WarrantyCard warrantyCard)
+	{
+		if (_jsModule is null) return;
+
+		_isDownloadingDocumentXml = true;
+
+		string fileNameStart = "MOST_WARRANTY_CARD";
+
+		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
+
+		try
+		{
+			await _jsModule.InvokeVoidAsync("fetchAndDownloadFile",
+				$"api/documents/warrantyCard/xml/id={warrantyCard.ExportId}",
+				fileName,
+				"application/xml");
+		}
+		finally
+		{
+			_isDownloadingDocumentXml = false;
+		}
+	}
+
+	private async Task ExportWarrantyCardsXml(List<WarrantyCard> invoices)
+	{
+		if (_jsModule is null) return;
+
+		_isDownloadingDocumentXml = true;
+
+		string fileNameStart = "MOST_WARRANTY_CARDS";
+
+		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
+
+		List<int> warrantyCardIds = invoices.Select(x => x.OrderId)
+			.ToList();
+
+		try
+		{
+			await _jsModule.InvokeVoidAsync("fetchAndDownloadFileWithBody",
+				$"api/documents/warrantyCard/xml/",
+				fileName,
+				"application/xml",
+				"POST",
+				JsonSerializer.Serialize(warrantyCardIds));
+		}
+		finally
+		{
+			_isDownloadingDocumentXml = false;
+		}
+	}
+
+	private async Task SearchDocumentCustomersAsync()
+	{
+		if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+		{
+			_isLoadingCustomerSearchResults = true;
+
+			List<InvoiceCustomerData> searchedInvoiceCustomers = await SearchInvoiceCustomersAsync(_searchKeyword, _searchFromDate, _searchToDate);
+
+			IEnumerable<InvoiceCustomerData> orderedInvoiceCustomers = searchedInvoiceCustomers
+				.OrderByDescending(x => x.CustomerName)
+				.ToList();
+
+			_searchedInvoiceCustomers.Clear();
+
+			_searchedInvoiceCustomers.AddRange(orderedInvoiceCustomers);
+
+			_isLoadingCustomerSearchResults = false;
+			_isCustomerSearchResultsSelectListOpen = true;
+
+			return;
+		}
+		else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+		{
+			_isLoadingCustomerSearchResults = true;
+
+			List<WarrantyCardCustomerData> searchedWarrantyCards = await SearchWarrantyCardCustomersAsync(_searchKeyword, _searchFromDate, _searchToDate);
+
+			IEnumerable<WarrantyCardCustomerData> orderedWarrantyCards = searchedWarrantyCards
+				.OrderByDescending(x => x.CustomerName)
+				.ToList();
+
+			_searchedWarrantyCardCustomers.Clear();
+
+			_searchedWarrantyCardCustomers.AddRange(orderedWarrantyCards);
+
+			_isLoadingCustomerSearchResults = false;
+			_isCustomerSearchResultsSelectListOpen = true;
+
+			return;
+		}
+	}
+
+	private async Task SearchDocumentsAsync()
+	{
+		if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+		{
+			_isLoadingSearchResults = true;
+
+			List<Invoice> searchedInvoices = await SearchInvoicesAsync(
+				_selectedInvoiceCustomer?.CustomerBID, null, _searchFromDate, _searchToDate);
+
+			IEnumerable<Invoice> orderedInvoices = searchedInvoices
+				.OrderByDescending(x => x.InvoiceDate ?? DateTime.MinValue)
+				.ToList();
+
+			_searchedInvoices.Clear();
+
+			_searchedInvoices.AddRange(orderedInvoices);
+
+			_isLoadingSearchResults = false;
+
+			return;
+		}
+		else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+		{
+			_isLoadingSearchResults = true;
+
+			List<WarrantyCard> searchedWarrantyCards = await SearchWarrantyCardsAsync(
+				_selectedWarrantyCardCustomer?.CustomerBID, null, _searchFromDate, _searchToDate);
+
+			IEnumerable<WarrantyCard> orderedWarrantyCards = searchedWarrantyCards
+				.OrderByDescending(x => x.WarrantyCardDate ?? DateTime.MinValue)
+				.ToList();
+
+			_searchWarrantyCards.Clear();
+
+			_searchWarrantyCards.AddRange(orderedWarrantyCards);
+
+			_isLoadingSearchResults = false;
+
+			return;
+		}
+	}
+
+	private async Task<List<InvoiceCustomerData>> SearchInvoiceCustomersAsync(string searchKeyword, DateTime? searchFromDate, DateTime? searchToDate)
+	{
+		List<InvoiceByDateFilterRequest>? invoiceByDateSearchRequests = null;
+
+		if (searchFromDate is not null
+			|| searchToDate is not null)
+		{
+			invoiceByDateSearchRequests = new()
+			{
+				new InvoiceByDateFilterRequest()
+				{
+					SearchOption = InvoiceByDateSearchOptions.ByInvoiceDate,
+					FromDate = searchFromDate,
+					ToDate = searchToDate,
+				}
+			};
+		}
+
+		if (int.TryParse(_searchKeyword, out int customerBid))
+		{
+			InvoiceByIdSearchRequest invoiceByDateFilterRequest = new()
+			{
+				SearchOption = InvoiceByIdSearchOptions.ByCustomerBID,
+				Id = customerBid
+			};
+
+			InvoiceSearchRequest byCustomerInvoiceSearchRequest = new()
+			{
+				InvoiceByIdSearchRequests = [invoiceByDateFilterRequest],
+				InvoiceByDateFilterRequests = invoiceByDateSearchRequests,
+			};
+
+			List<InvoiceCustomerData> dataByCustomer = await InvoiceRepository.GetInvoiceCustomerInfosAsync(byCustomerInvoiceSearchRequest);
+
+			if (dataByCustomer.Count > 0) return dataByCustomer;
+		}
+
+		InvoiceSearchRequest? invoiceSearchRequest = null;
+
+		if (invoiceByDateSearchRequests is not null)
+		{
+			invoiceSearchRequest = new()
+			{
+				InvoiceByDateFilterRequests = invoiceByDateSearchRequests
+			};
+		}
+
+		return await InvoiceRepository.GetInvoiceCustomerInfosByNameAsync(searchKeyword, invoiceSearchRequest);
+	}
+
+    private async Task<List<WarrantyCardCustomerData>> SearchWarrantyCardCustomersAsync(string searchKeyword, DateTime? searchFromDate, DateTime? searchToDate)
+    {
+        List<WarrantyCardByDateFilterRequest>? warrantyCardByDateSearchRequests = null;
+
+        if (searchFromDate is not null
+            || searchToDate is not null)
+        {
+            warrantyCardByDateSearchRequests = new()
+			{
+				new WarrantyCardByDateFilterRequest()
+				{
+					SearchOption = WarrantyCardByDateSearchOptions.ByWarrantyCardDate,
+					FromDate = searchFromDate,
+					ToDate = searchToDate,
+				}
+			};
+        }
+
+		if (int.TryParse(_searchKeyword, out int customerBid))
+		{
+			WarrantyCardByIdSearchRequest invoiceByDateFilterRequest = new()
+			{
+				SearchOption = WarrantyCardByIdSearchOptions.ByCustomerBID,
+				Id = customerBid
+			};
+
+			WarrantyCardSearchRequest byCustomerInvoiceSearchRequest = new()
+			{
+				WarrantyCardByIdSearchRequests = [invoiceByDateFilterRequest],
+				WarrantyCardByDateFilterRequests = warrantyCardByDateSearchRequests,
+			};
+
+			List<WarrantyCardCustomerData> dataByCustomer = await WarrantyCardRepository.GetWarrantyCardCustomerInfosAsync(byCustomerInvoiceSearchRequest);
+
+			if (dataByCustomer.Count > 0) return dataByCustomer;
+		}
+
+        WarrantyCardSearchRequest? warrantyCardSearchRequest = null;
+
+        if (warrantyCardByDateSearchRequests is not null)
+        {
+            warrantyCardSearchRequest = new()
+			{
+				WarrantyCardByDateFilterRequests = warrantyCardByDateSearchRequests
+			};
+        }
+
+		return await WarrantyCardRepository.GetWarrantyCardCustomerInfosByNameAsync(searchKeyword, warrantyCardSearchRequest);
+    }
+
+    private async Task<List<Invoice>> SearchInvoicesAsync(
+        int? customerBid, string? searchKeyword, DateTime? searchFromDate, DateTime? searchToDate)
+    {
+		if (int.TryParse(searchKeyword, out int invoiceNumber))
+        {
+            string invoiceNumberToSearchFor = $"C{invoiceNumber}";
+
+            Invoice? invoice = await InvoiceRepository.GetInvoiceByNumberAsync(invoiceNumberToSearchFor);
+
+            return invoice is not null ? [invoice] : [];
+        }
+
+        List<InvoiceByIdSearchRequest>? invoiceByIdSearchRequests = null;
+
+        if (customerBid is not null)
+        {
+            invoiceByIdSearchRequests = new()
+			{
+				new InvoiceByIdSearchRequest()
+				{
+					Id = customerBid.Value,
+					SearchOption = InvoiceByIdSearchOptions.ByCustomerBID
+				},
+			};
+        }
+
+        List<InvoiceByStringSearchRequest>? invoiceByStringSearchRequests = null;
+
+        if (!string.IsNullOrWhiteSpace(searchKeyword))
+        {
+            invoiceByStringSearchRequests = new()
+			{
+				new InvoiceByStringSearchRequest()
+				{
+					Keyword = searchKeyword,
+					SearchOption = InvoiceByStringSearchOptions.ByCustomerName
+				},
+			};
+        }
+
+        List<InvoiceByDateFilterRequest>? invoiceByDateSearchRequests = null;
+
+        if (searchFromDate is not null
+            || searchToDate is not null)
+        {
+            invoiceByDateSearchRequests = new()
+			{
+				new InvoiceByDateFilterRequest()
+				{
+					SearchOption = InvoiceByDateSearchOptions.ByInvoiceDate,
+					FromDate = searchFromDate,
+					ToDate = searchToDate,
+				}
+			};
+        }
+
+        InvoiceSearchRequest invoiceSearchRequest = new()
+		{
+			InvoiceByIdSearchRequests = invoiceByIdSearchRequests,
+			InvoiceByStringSearchRequests = invoiceByStringSearchRequests,
+			InvoiceByDateFilterRequests = invoiceByDateSearchRequests
+		};
+
+        return await InvoiceRepository.GetAllMatchingAsync(invoiceSearchRequest);
+    }
+
+    private async Task<List<WarrantyCard>> SearchWarrantyCardsAsync(
+		int? customerBid, string? searchKeyword, DateTime? searchFromDate, DateTime? searchToDate)
+	{
+		List<WarrantyCardByIdSearchRequest>? warrantyCardByIdSearchRequests = null;
+		
+		if (customerBid is not null)
+		{
+			warrantyCardByIdSearchRequests = new()
+			{
+				new WarrantyCardByIdSearchRequest()
+				{
+					Id = customerBid.Value,
+					SearchOption = WarrantyCardByIdSearchOptions.ByCustomerBID
+				},
+			};
+		}
+
+		List<WarrantyCardByStringSearchRequest>? warrantyCardByStringSearchRequests = null;
+
+		if (!string.IsNullOrWhiteSpace(searchKeyword))
+		{
+			warrantyCardByStringSearchRequests = new()
+			{
+				new WarrantyCardByStringSearchRequest()
+				{
+					Keyword = searchKeyword,
+					SearchOption = WarrantyCardByStringSearchOptions.ByCustomerName
+				},
+			};
+		}
+
+		List<WarrantyCardByDateFilterRequest>? warrantyCardByDateSearchRequests = null;
+
+		if (searchFromDate is not null
+			|| searchToDate is not null)
+		{
+			warrantyCardByDateSearchRequests = new()
+			{
+				new WarrantyCardByDateFilterRequest()
+				{
+					SearchOption = WarrantyCardByDateSearchOptions.ByWarrantyCardDate,
+					FromDate = searchFromDate,
+					ToDate = searchToDate,
+				}
+			};
+		}
+
+		WarrantyCardSearchRequest warrantyCardSearchRequest = new()
+		{
+			WarrantyCardByIdSearchRequests = warrantyCardByIdSearchRequests,
+			WarrantyCardByStringSearchRequests = warrantyCardByStringSearchRequests,
+			WarrantyCardByDateFilterRequests = warrantyCardByDateSearchRequests
+		};
+
+		return await WarrantyCardRepository.GetAllMatchingAsync(warrantyCardSearchRequest);
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		if (_jsModule is not null)
+		{
+			try
+			{
+				await _jsModule.DisposeAsync();
+			}
+			catch (JSDisconnectedException)
+			{
+			}
+		}
+	}
+}

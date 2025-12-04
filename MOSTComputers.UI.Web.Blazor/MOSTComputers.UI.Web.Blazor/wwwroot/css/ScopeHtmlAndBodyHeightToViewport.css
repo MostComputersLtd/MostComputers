@@ -1,0 +1,21 @@
+﻿html, body {
+    height: 100%;
+    margin: 0;
+    overflow-y: auto;
+}
+
+    body > div.page {
+        height: 100%;
+        overflow-y: auto;
+    }
+
+        body > div.page > main {
+            overflow-y: auto;
+        }
+
+            body > div.page > main > article {
+                height: 100%;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+            }

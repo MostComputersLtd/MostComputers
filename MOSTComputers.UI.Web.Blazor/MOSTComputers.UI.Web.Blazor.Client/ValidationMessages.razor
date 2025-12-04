@@ -1,0 +1,23 @@
+﻿@if (Messages is not null && Messages.Any())
+{
+    AdditionalAttributesForList.TryGetValue("class", out object? additionalClasses);
+
+    <ul @attributes="AdditionalAttributesForList" class="validation-list @additionalClasses">
+
+        @foreach (string message in Messages)
+        {
+            <li @attributes="AdditionalAttributesForListItems">@message</li>
+        }
+
+    </ul>
+}
+
+@code {
+    [Parameter] public IEnumerable<string>? Messages { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributesForList { get; set; } = new();
+
+    [Parameter]
+    public Dictionary<string, object> AdditionalAttributesForListItems { get; set; } = new();
+}

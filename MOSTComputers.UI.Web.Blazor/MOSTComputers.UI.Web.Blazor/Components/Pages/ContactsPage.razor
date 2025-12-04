@@ -1,0 +1,213 @@
+﻿@page "/contactUs"
+
+@rendermode InteractiveServer
+
+<PageTitle>Контакти - MOST Computers</PageTitle>
+
+<HeadContent>
+    <link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg-page: #f3f4f6;
+            --bg-card: #ffffff;
+            --border-soft: #e1e1e1;
+            --text-main: #222222;
+            --text-muted: #6b7280;
+            --accent: #c9302c;
+            --link: #0072c6;
+            --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.06);
+            --radius-card: 10px;
+            --radius-input: 6px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-page);
+        }
+
+    </style>
+</HeadContent>
+
+<section class="contact-section">
+    <div class="contact-container">
+
+        <div class="contact-header">
+            <h1>Контакти</h1>
+            <p class="contact-subtitle">
+                Свържете се с Мост Компютърс чрез данните по-долу или изпратете запитване през формата.
+            </p>
+        </div>
+
+        <div class="contact-grid">
+
+            <!-- Офис и търговски отдел -->
+            <div class="contact-card office-card">
+                <div class="card-header">
+                    <span class="icon-wrapper">
+                        <svg viewBox="0 0 12 12">
+                            <path d="M6.5 3.5L9 3l2 4-2 1.5a10.5 10.5 0 005 5l1.5-2 4 2-.5 2.5c-.2.9-1 1.5-1.9 1.5A13 13 0 014.5 5.4c0-.9.6-1.7 1.5-1.9z" />
+                        </svg>
+                    </span>
+                    <h2>Офис и търговски отдел</h2>
+                </div>
+                <p class="contact-row">
+                    <span class="contact-row-label">Телефон:</span>
+                    <a href="tel:+359291823">(+359 2) 91 823</a>
+                </p>
+                <p class="contact-row">
+                    <span class="contact-row-label">Имейл:</span>
+                    <a href="mailto:info@mostbg.com">info@mostbg.com</a>
+                </p>
+                <p class="contact-row">
+                    <span class="contact-row-label">Факс:</span>
+                    <span class="fax-list">
+                        <a href="tel:+35928730037">(+359 2) 873 00 37</a>
+                        <span class="fax-separator"></span>
+                        <a href="tel:+35929712047">(+359 2) 971 20 47</a>
+                    </span>
+                </p>
+            </div>
+
+            <!-- Сервизен център -->
+            <div class="contact-card service-card">
+                <div class="card-header">
+                    <span class="icon-wrapper">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M14.5 3.5a4 4 0 013.9 4.8l-2.4-.6-2.9 2.9 4.2 4.2-1.4 1.4-4.2-4.2-2.9 2.9.6 2.4A4 4 0 015.5 14l.9-2.1 2.3-.6 3.4-3.4-.6-2.3z" />
+                        </svg>
+                    </span>
+                    <h2>Сервизен център</h2>
+                </div>
+                <p class="contact-row">
+                    <span class="contact-row-label">Телефон:</span>
+                    <a href="tel:070014411">0700 144 11</a>
+                </p>
+                <p class="contact-row">
+                    <span class="contact-row-label">Имейл:</span>
+                    <a href="mailto:support@mostbg.com">support@mostbg.com</a>
+                </p>
+            </div>
+
+            <!-- Адрес и работно време -->
+            <div class="contact-card address-card">
+                <div class="card-header">
+                    <span class="icon-wrapper">
+                        <svg viewBox="0 0 24 24">
+                            <rect x="5" y="4" width="8" height="16" rx="1" />
+                            <rect x="13" y="9" width="6" height="11" rx="1" />
+                            <path d="M8 7h2M8 10h2M8 13h2M8 16h2M15 12h2M15 15h2" />
+                        </svg>
+                    </span>
+                    <h2>Адрес и работно време</h2>
+                </div>
+                <p>София, ж.к. „Гео Милев“</p>
+                <p>бул. „Шипченски проход, бл.240“</p>
+                <p>1111 София, България</p>
+                <p><strong>Работно време:</strong> Пон – Пет: 09:30 – 18:30</p>
+            </div>
+
+            <!-- Карта -->
+            <div class="contact-card map-card">
+                <div class="card-header">
+                    <span class="icon-wrapper">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 4.5a5 5 0 015 5c0 3.2-3.1 6.2-4.5 7.5a.8.8 0 01-1 0C10.1 15.7 7 12.7 7 9.5a5 5 0 015-5z" />
+                            <circle cx="12" cy="9.5" r="1.7" />
+                        </svg>
+                    </span>
+                    <h2>Карта</h2>
+                </div>
+
+                <div class="map-links-row">
+                    <a href="https://www.google.com/maps/place/%D0%9C%D0%BE%D1%81%D1%82+%D0%9A%D0%BE%D0%BC%D0%BF%D1%8E%D1%82%D1%8A%D1%80%D1%81/"
+                        target="_blank" rel="noopener noreferrer">
+                        Отвори в Google Maps
+                    </a>
+                    <span>•</span>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=42.6799639,23.3591213"
+                        target="_blank" rel="noopener noreferrer">
+                        Навигирай
+                    </a>
+                </div>
+
+                <div class="map-frame-wrapper">
+                    <iframe class="map-iframe"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d469.39909942232354!2d23.3542504!3d42.6799677!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x40aa85c12073c9b5%3A0x9901041508a64b9d!2z0JzQsNC60YHQsNC0INCQ0YDRgtC-0YDQvtC70LjRjyDQmtC-0LzQtdC90YLRgA!5e0!3m2!1sbg!2sbg!4v1700000000000!5m2!1sbg!2sbg"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Форма -->
+        <div class="contact-form-card">
+            <div class="contact-form-title">
+                <span class="icon-wrapper">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="4" y="6" width="16" height="12" rx="1.2" />
+                        <path d="M5 7l7 6 7-6" />
+                    </svg>
+                </span>
+                <h2>Изпрати запитване</h2>
+            </div>
+
+            <p class="form-required-note">
+                Полетата, отбелязани с <span style="color:#c9302c">*</span>, са задължителни.
+            </p>
+
+            <form class="contact-form">
+                <div class="form-field">
+                    <label for="name">Име*</label>
+                    <input type="text" id="name" name="name" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="email">Имейл*</label>
+                    <input type="email" id="email" name="email" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="subject">Тема*</label>
+                    <input type="text" id="subject" name="subject" required />
+                </div>
+
+                <div class="form-field">
+                    <label for="topic">Тип запитване</label>
+                    <select id="topic" name="topic">
+                        <option value="">Изберете…</option>
+                        <option value="sales">Продажби</option>
+                        <option value="service">Сервиз</option>
+                        <option value="info">Обща информация</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="phone">Телефон</label>
+                    <input type="tel" id="phone" name="phone" />
+                </div>
+
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label for="message">Съобщение*</label>
+                    <textarea id="message" name="message" required></textarea>
+                </div>
+
+                <div class="gdpr-wrapper">
+                    <label class="gdpr-label">
+                        <input type="checkbox" name="gdpr" required>
+                        <span>С изпращането на формата се съгласявам данните ми да бъдат използвани за обработка на запитването.</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="contact-btn">Изпрати запитването</button>
+            </form>
+        </div>
+
+    </div>
+</section>

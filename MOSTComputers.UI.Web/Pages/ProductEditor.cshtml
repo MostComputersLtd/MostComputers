@@ -1,0 +1,273 @@
+﻿@page
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductStatuses
+@using MOSTComputers.UI.Web.Models.ProductEditor.DTOs
+@using MOSTComputers.UI.Web.Models.ProductSearch
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils
+@model ProductEditorModel
+@{
+    ViewData["Title"] = "Product Editor";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/CustomElements/NotificationBox.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Shared/Index/ProductFullDisplayPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Index/ProductHtmlAndImagesPartial.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductEditor/ProductPropertiesEditorPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductEditor/ImageFilesDisplayPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductEditor/PromotionProductFileInfoSingleEditorPartial.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/ProductEditor.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Data/StandardDataConversions.js"></script>
+
+    <script src="~/js/Data/Retrieval/FileInputCommon.js"></script>
+    <script src="~/js/Data/Retrieval/FileDataRetrieve.js"></script>
+
+    <script src="~/js/Data/Retrieval/StorageComplexDataRetrieve.js"></script>
+    <script src="~/js/Data/Requests/Product/GetProductNewSearchStatusesFromSelect.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+    <script src="~/js/Display/ElementSorting.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+    <script src="~/js/Display/DisplayDataInNewWindow.js"></script>
+
+    <script src="~/js/Display/CustomElements/NotificationBox.js"></script>
+    <script src="~/js/Display/GetElementFromText.js"></script>
+
+    <script src="~/js/Pages/Shared/PopupCommonElements.js"></script>
+
+    <script src="~/js/Pages/Shared/Index/ProductFullDisplayPopup.js"></script>
+    <script src="~/js/Pages/Shared/Index/ProductHtmlAndImagesPartial.js"></script>
+
+    <script src="~/js/Pages/Shared/ProductEditor/ProductImages/ImageDisplayPartialsCommon.js"></script>
+    <script src="~/js/Pages/Shared/ProductEditor/ProductImages/ImageFilesDisplayPartial.js"></script>
+    <script src="~/js/Pages/Shared/ProductEditor/ProductImages/ImagesDisplayPartial.js"></script>
+    <script src="~/js/Pages/Shared/ProductEditor/ProductProperties/ProductPropertiesEditorImagesDisplayListPartial.js"></script>
+    <script src="~/js/Pages/Shared/ProductEditor/ProductProperties/ProductPropertiesEditorPartial.js"></script>
+    <script src="~/js/Pages/Shared/ProductEditor/PromotionProductFileEditorPartial.js"></script>
+
+    <script src="~/js/Pages/ProductEditor.js"></script>
+}
+
+<div id="images_comparer_container"
+    class="full-parent-width full-parent-height flex-column display-flex-not-important product-data-table-scrollable-container">
+
+    <header class="full-parent-width">
+        <ul class="d-flex list-style-none ps-0 mb-2">
+
+            @{
+                List<ProductEditorProductNewStatusSearchOptions> options = new()
+                {
+                    ProductEditorProductNewStatusSearchOptions.New,
+                    ProductEditorProductNewStatusSearchOptions.WorkInProgress,
+                    ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress,
+                    ProductEditorProductNewStatusSearchOptions.ReadyForUse,
+                    ProductEditorProductNewStatusSearchOptions.Postponed1,
+                    ProductEditorProductNewStatusSearchOptions.Postponed2,
+					ProductEditorProductNewStatusSearchOptions.LastAdded,
+					ProductEditorProductNewStatusSearchOptions.LastAddedNew,
+                };
+
+                List<SelectListItem> selectListItems = GetProductEditorProductNewSearchStatusSelectListItems(
+                    options: options,
+                    selected: ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress,
+                    defaultSelectListItem: new("All", "", false, false));
+
+                // SelectListItem newAndWorkInProgressSelectListItem = new(
+                //     "New & Work",
+                //     $"{(int)ProductNewStatusSearchOptions.New},{(int)ProductNewStatusSearchOptions.WorkInProgress}",
+                //     true);
+
+                // selectListItems.Insert(3, newAndWorkInProgressSelectListItem);
+            }
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="images_comparer_product_new_status_select" asp-items='@selectListItems'
+                    onchange="onChangeProductNewStatusesSelect()">
+                </select>
+            </li>
+
+            <li class="flex-grow-1 d-flex align-content-center flex-wrap ms-2 me-2">
+                <input id="images_comparer_compare_product_id_input" type="text" class="full-parent-width"
+                    onchange="updateCachedSearchOptionsWithCurrentData()"
+                    placeholder="Search..." />
+            </li>
+
+            <li class="display-flex-not-important justify-content-center align-content-center flex-wrap me-2">
+                <button id="productDataTableContainerSearchButton" type="button"
+                    class="btn btn-outline-primary full-parent-width"
+                    onclick="getAllSearchedProductsAndDisplayChangesAsync(
+                        'productDataTableContainer',
+                        'productEditorDataTableBody',
+                        'productDataTableContainerSearchButton',
+                        'productDataTableContainerSearchLoader')">
+                    Search
+                </button>
+
+                <div id="productDataTableContainerSearchLoader" class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="images_comparer_category_to_compare_select"
+                    asp-items="await Model.GetAllCategorySelectListItemsAsync()"
+                    onchange="updateCachedSearchOptionsWithCurrentData()">
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="images_comparer_product_status_select"
+                    onchange="updateCachedSearchOptionsWithCurrentData()"
+                    asp-items='GetProductSearchStatusSelectListItems(
+                        [
+                            ProductStatusSearchOptions.Unavailable,
+                            ProductStatusSearchOptions.Call,
+                            ProductStatusSearchOptions.Available,
+                            ProductStatusSearchOptions.AvailableAndCall
+                        ],
+                        selected: ProductStatusSearchOptions.AvailableAndCall,
+                        defaultSelectListItem: new("Всички", "", false, false))'>
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="images_comparer_promotion_status_select"
+                    onchange="updateCachedSearchOptionsWithCurrentData()"
+                    asp-items='GetProductPromotionSearchEnumSelectListItems(
+                        [
+                            PromotionSearchOptions.None,
+                            PromotionSearchOptions.P,
+                            PromotionSearchOptions.R,
+                            PromotionSearchOptions.I,
+                            PromotionSearchOptions.Discount,
+                        ],
+                        defaultSelectListItem: new("Всички", "", true, false))'>
+                </select>
+            </li>
+        </ul>
+    </header>
+
+    <div id="@Model.ProductTableContainerElementId" class="product-data-table-scrollable-container">
+        @if (Model.ProductDataTableModel is not null)
+        {
+            <partial name="@ProductEditorModel.ProductDataTablePartialPath" model="Model.ProductDataTableModel" />
+        }
+    </div>
+
+    <ul id="@Model.NotificationBoxId" class="top-notification-box"></ul>
+</div>
+
+<div id="@Model.ProductPropertiesEditorPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductPropertiesEditorPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width"
+        style="left: 0.5em; right: 0.5em; top: 0.5em; bottom: 0.5em;">
+        <div id="@Model.ProductPropertiesEditorPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.SearchStringPartsPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.SearchStringPartsPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.SearchStringPartsPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.XmlViewPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.XmlViewPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.XmlViewPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ProductPropertiesPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductPropertiesPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ProductPropertiesPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.OldXmlPropertiesPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.OldXmlPropertiesPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.OldXmlPropertiesPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ImageFilesPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.ImageFilesPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ImageFilesPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ImagesPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.ImagesPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ImagesPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ImageFileNameInfosPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.ImageFileNameInfosPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ImageFileNameInfosPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.PromotionViewPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.PromotionViewPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.PromotionViewPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.InfoPromotionViewPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.InfoPromotionViewPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.InfoPromotionViewPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.PromotionProductFileEditorPartialModalData.ModalId" class="modal fade" tabindex="-1" role="dialog">
+    <div id="@Model.PromotionProductFileEditorPartialModalData.ModalDialogId" class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.PromotionProductFileEditorPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalId" class="modal bg-dark bg-opacity-50 fade" tabindex="-1" role="dialog">
+    <div id="@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalDialogId"
+            class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.PromotionProductFileInfoSingleEditorPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ProductFullDisplayPartialModalData.ModalId" class="modal bg-dark bg-opacity-50 fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductFullDisplayPartialModalData.ModalDialogId"
+        class="modal-dialog modal-dialog-full-parent-width"
+        style="left: 0.5em; right: 0.5em; top: 0.5em; bottom: 0.5em;">
+        <div id="@Model.ProductFullDisplayPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ProductHtmlAndImagesPartialModelData.ModalId" class="modal bg-dark bg-opacity-50 fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductHtmlAndImagesPartialModelData.ModalDialogId"
+         class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ProductHtmlAndImagesPartialModelData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()

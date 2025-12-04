@@ -1,16 +1,16 @@
 ﻿using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Promotion;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -64,7 +64,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> result = _promotionService.Insert(validCreateRequest);
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAll();
+        IEnumerable<Promotion> promotions = _promotionService.GetAllAsync();
 
         Assert.NotEmpty(promotions);
 
@@ -103,7 +103,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => true,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAll();
+        IEnumerable<Promotion> promotions = _promotionService.GetAllAsync();
 
         Assert.DoesNotContain(promotions, x =>
             ComparePromotionAndCreateRequest(invalidCreateRequest, x));
@@ -140,7 +140,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => false,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllActive();
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveAsync();
 
         Assert.NotEmpty(promotions);
 
@@ -180,7 +180,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => true,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllActive();
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveAsync();
 
         Assert.DoesNotContain(promotions, x =>
             ComparePromotionAndCreateRequest(invalidCreateRequest, x));
@@ -215,7 +215,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => false,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId.Value);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProductAsync(productId.Value);
 
         Assert.Single(promotions);
 
@@ -251,10 +251,10 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         Assert.True(result.Match(
             id => false,
-            validationResult => true, 
+            validationResult => true,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct((int)productId.Value);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProductAsync((int)productId.Value);
 
         Assert.Empty(promotions);
     }
@@ -321,7 +321,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(productIds);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
         Assert.Equal(3, promotions.Count());
 
@@ -400,7 +400,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProducts(productIds);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
         Assert.Equal(2, promotions.Count());
 
@@ -481,7 +481,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProducts(productIds);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
 
         Assert.Equal(2, promotions.Count());
 
@@ -564,7 +564,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         List<int> productIds = new() { productId1.Value, productId2.Value };
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProducts(productIds);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
 
         Assert.Empty(promotions);
     }
@@ -600,7 +600,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => false,
             unexpectedFailureResult => false));
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync(productId.Value);
 
         Assert.NotNull(promotion);
 
@@ -639,7 +639,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => true,
             unexpectedFailureResult => false));
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync(productId.Value);
 
         Assert.Null(promotion);
     }
@@ -677,7 +677,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             _ => false,
             _ => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId.Value);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProductAsync(productId.Value);
 
         if (expected)
         {
@@ -814,7 +814,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
             validationResult => false,
             unexpectedFailureResult => false));
 
-        IEnumerable<Promotion> promotions = _promotionService.GetAllForProduct(productId.Value);
+        IEnumerable<Promotion> promotions = _promotionService.GetAllForProductAsync(productId.Value);
 
         Promotion promotion = promotions.Single();
 
@@ -977,7 +977,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         bool success = _promotionService.Delete(promotionId.Value);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct((int)productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync((int)productId.Value);
 
         Assert.Null(promotion);
     }
@@ -1023,7 +1023,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         bool success = _promotionService.Delete(0);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct((int)productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync((int)productId.Value);
 
         Assert.NotNull(promotion);
     }
@@ -1066,7 +1066,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         bool success = _promotionService.DeleteAllByProductId(productId.Value);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync(productId.Value);
 
         Assert.Null(promotion);
     }
@@ -1105,7 +1105,7 @@ public sealed class PromotionServiceTests : IntegrationTestBaseForNonWebProjects
 
         bool success = _promotionService.DeleteAllByProductId(productId.Value);
 
-        Promotion? promotion = _promotionService.GetActiveForProduct(productId.Value);
+        Promotion? promotion = _promotionService.GetAllActiveForProductAsync(productId.Value);
 
         Assert.Null(promotion);
     }

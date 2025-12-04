@@ -1,0 +1,160 @@
+﻿@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<div class="red-and-white-theme lighter nav-with-scrollable-part-container" onclick="document.getElementById('hidden-navbar-toggler').click()">
+    <nav class="nav-with-scrollable-part">
+
+       
+
+        <div class="navbar-logo-and-toggler-container">
+
+            <a class="navbar-brand inside-toggler-container" href="" onclick="event.stopPropagation();">
+            <div class="navbar-logo" alt="Logo">
+            </div>
+            </a>
+
+            <div class="navbar-toggler-container">
+                <button for="hidden-navbar-toggler" title="Toggle navigation" class="navbar-toggler"
+                    onclick="event.stopPropagation(); document.getElementById('hidden-navbar-toggler').click()" />
+            </div>
+        </div>
+
+        <input id="hidden-navbar-toggler" type="checkbox" class="hidden-navbar-toggler" />
+
+        <div class="nav-scrollable">
+            <div class="nav-item px-1">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    Home
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-1">
+                <NavLink class="nav-link" href="downloadXml">
+                    XML
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-1">
+                <NavLink class="nav-link" href="repairs">
+                    Repairs
+                </NavLink>
+            </div>
+
+            <AuthorizeView>
+                <Authorized>
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="productEditor">
+                            Product Editor
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="promotionFiles">
+                            Promotion Files
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="productBarcodeScanner">
+                            Barcode Scanner
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="_tests/_temp_transferDataTests">
+                            Data Tests
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="_tests/_temp_imagesCreationTests">
+                            Image Tests
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="/legacyXmlCharacteristicsMatch">
+                            Match Characteristics (XML)
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="/imageHtmlCharacteristicsMatch">
+                            Match Characteristics (HTML)
+                        </NavLink>
+                    </div>
+                    
+                    <div class="nav-item px-1">
+                        <NavLink class="nav-link" href="documents">
+                            Documents
+                        </NavLink>
+                    </div>
+
+                </Authorized>
+            </AuthorizeView>
+
+            <div class="nav-end-data-container">
+                <div class="nav-item px-1">
+                    <NavLink class="nav-link" href="contactUs">
+                        Contact us
+                    </NavLink>
+                </div>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="nav-item px-1">
+                            <NavLink class="nav-link" href="Account/Manage">
+                                @context.User.Identity?.Name
+                            </NavLink>
+                        </div>
+                        <div class="nav-item px-1">
+                            <form action="Account/Logout" method="post">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                <button type="submit" class="nav-link">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        @* <div class="nav-item px-1">
+                            <NavLink class="nav-link" href="Account/Register">
+                                Register
+                            </NavLink>
+                        </div> *@
+                        <div class="nav-item px-1">
+                            <NavLink class="nav-link" href="Account/Login">
+                                Login
+                            </NavLink>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

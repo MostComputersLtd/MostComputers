@@ -1,0 +1,15 @@
+﻿.validation-list {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+    .validation-list li {
+        font-size: 0.9rem;
+        color: #dc3545;
+        margin-left: 0px;
+        margin-bottom: 0.25rem;
+        padding: 0px;
+        white-space: break-spaces;
+        position: relative;
+    }

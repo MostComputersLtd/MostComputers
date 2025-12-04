@@ -1,8 +1,8 @@
 ﻿using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileNameInfo;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -11,7 +11,6 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -73,7 +72,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAll();
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAll();
 
         Assert.True(productImageFileNames.Count() >= 2);
 
@@ -119,21 +118,21 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct((int)productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct((int)productId);
 
         Assert.True(productImageFileNames.Count() >= 2);
 
         Assert.Contains(productImageFileNames,
             x =>
             x.ProductId == createRequest1.ProductId
-            && x.ImageNumber > 0
+            && x.Id > 0
             && x.DisplayOrder == createRequest1.DisplayOrder
             && x.FileName == createRequest1.FileName);
 
         Assert.Contains(productImageFileNames,
             x =>
             x.ProductId == createRequest2.ProductId
-            && x.ImageNumber > 0
+            && x.Id > 0
             && x.DisplayOrder == createRequest2.DisplayOrder
             && x.FileName == createRequest2.FileName);
     }
@@ -167,7 +166,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => true,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (ValidProductCreateRequest.ImageFileNames is not null)
         {
@@ -206,12 +205,12 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             lastImageNumber = 1;
         }
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetByProductIdAndImageNumber(productId, lastImageNumber!.Value);
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetByProductIdAndImageNumber(productId, lastImageNumber!.Value);
 
         Assert.NotNull(fileNameInfo);
 
         Assert.Equal(productId, fileNameInfo.ProductId);
-        Assert.Equal(lastImageNumber, fileNameInfo.ImageNumber);
+        Assert.Equal(lastImageNumber, fileNameInfo.Id);
         Assert.Equal(lastFileNameInfoCreateRequest.FileName, fileNameInfo.FileName);
         Assert.Equal(lastFileNameInfoCreateRequest.Active, fileNameInfo.Active);
     }
@@ -221,7 +220,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
     {
         int productId = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetByProductIdAndImageNumber(productId, 1);
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetByProductIdAndImageNumber(productId, 1);
 
         Assert.Null(fileNameInfo);
     }
@@ -253,12 +252,12 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             };
         }
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetByFileName(lastFileNameInfoCreateRequest.FileName!);
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetByFileName(lastFileNameInfoCreateRequest.FileName!);
 
         Assert.NotNull(fileNameInfo);
 
         Assert.Equal(productId, fileNameInfo.ProductId);
-        Assert.Equal(ValidProductCreateRequest.ImageFileNames?.Count ?? 1, fileNameInfo.ImageNumber);
+        Assert.Equal(ValidProductCreateRequest.ImageFileNames?.Count ?? 1, fileNameInfo.Id);
         Assert.Equal(lastFileNameInfoCreateRequest.FileName, fileNameInfo.FileName);
         Assert.Equal(lastFileNameInfoCreateRequest.Active, fileNameInfo.Active);
     }
@@ -291,7 +290,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             };
         }
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetByFileName(fileName);
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetByFileName(fileName);
 
         Assert.Null(fileNameInfo);
     }
@@ -358,7 +357,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (expected)
         {
@@ -367,7 +366,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             Assert.Contains(productImageFileNames,
                 x =>
                 x.ProductId == createRequest.ProductId
-                && x.ImageNumber == (ValidProductCreateRequest.ImageFileNames?.Count ?? 0) + 1
+                && x.Id == (ValidProductCreateRequest.ImageFileNames?.Count ?? 0) + 1
                 && x.DisplayOrder == createRequest.DisplayOrder
                 && x.FileName == createRequest.FileName
                 && x.Active == createRequest.Active);
@@ -418,7 +417,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
     [Theory]
     [MemberData(nameof(UpdateByImageNumber_ShouldSucceedOrFail_InAnExpectedManner_Data))]
-    public void UpdateByImageNumber_ShouldSucceedOrFail_InAnExpectedManner(ServiceProductImageFileNameInfoByImageNumberUpdateRequest updateRequest, bool expected)
+    public void UpdateByImageNumber_ShouldSucceedOrFail_InAnExpectedManner(ProductImageFileUpdateRequest updateRequest, bool expected)
     {
         OneOf<int, ValidationResult, UnexpectedFailureResult> productInsertResult = _productService.Insert(ValidProductCreateRequest);
 
@@ -440,7 +439,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId)
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId)
             .FirstOrDefault(x => x.DisplayOrder == createRequest.DisplayOrder);
 
         Assert.NotNull(fileNameInfo);
@@ -450,9 +449,9 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             updateRequest.ProductId = productId;
         }
 
-        if (updateRequest.ImageNumber == UseRequiredValuePlaceholder)
+        if (updateRequest.Id == UseRequiredValuePlaceholder)
         {
-            updateRequest.ImageNumber = fileNameInfo.ImageNumber;
+            updateRequest.Id = fileNameInfo.Id;
         }
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> updateResult = _productImageFileNameInfoService.UpdateByImageNumber(updateRequest);
@@ -462,15 +461,15 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.True(productImageFileNames.Any());
 
         if (expected)
         {
-            ProductImageFileNameInfo? productImageFileNameInfo = productImageFileNames.FirstOrDefault(x =>
+            ProductImageFileData? productImageFileNameInfo = productImageFileNames.FirstOrDefault(x =>
                 x.ProductId == updateRequest.ProductId
-                && x.ImageNumber == updateRequest.ImageNumber
+                && x.Id == updateRequest.Id
                 && x.FileName == updateRequest.FileName);
 
             Assert.NotNull(productImageFileNameInfo);
@@ -490,13 +489,13 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         }
     }
 
-    public static TheoryData<ServiceProductImageFileNameInfoByImageNumberUpdateRequest, bool> UpdateByImageNumber_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
+    public static TheoryData<ProductImageFileUpdateRequest, bool> UpdateByImageNumber_ShouldSucceedOrFail_InAnExpectedManner_Data => new()
     {
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 1000,
                 FileName = "12342.png",
                 Active = true,
@@ -506,10 +505,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 1000,
                 FileName = "12342.png",
                 Active = true,
@@ -519,10 +518,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 2,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = true,
@@ -531,10 +530,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 2,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = false,
@@ -543,10 +542,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 0,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = false,
@@ -555,10 +554,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 0,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = true,
@@ -567,10 +566,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = 0,
+                Id = 0,
                 NewDisplayOrder = 3,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = true,
@@ -579,10 +578,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = UseRequiredValuePlaceholder,
+                Id = UseRequiredValuePlaceholder,
                 NewDisplayOrder = 1000,
                 FileName = string.Empty,
                 ShouldUpdateDisplayOrder = true,
@@ -591,10 +590,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = UseRequiredValuePlaceholder,
-                ImageNumber = 3,
+                Id = 3,
                 NewDisplayOrder = 1000,
                 FileName = "veryyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy long " +
                 "imaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaage filename",
@@ -604,10 +603,10 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
         },
 
         {
-            new ServiceProductImageFileNameInfoByImageNumberUpdateRequest()
+            new ProductImageFileUpdateRequest()
             {
                 ProductId = 0,
-                ImageNumber = 3,
+                Id = 3,
                 NewDisplayOrder = 1000,
                 FileName = "12342.png",
                 ShouldUpdateDisplayOrder = true,
@@ -640,7 +639,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             _ => false,
             _ => false));
 
-        ProductImageFileNameInfo? fileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId)
+        ProductImageFileData? fileNameInfo = _productImageFileNameInfoService.GetAllInProduct(productId)
             .FirstOrDefault(x => x.DisplayOrder == createRequest.DisplayOrder);
 
         Assert.NotNull(fileNameInfo);
@@ -663,7 +662,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
             validationResult => false,
             unexpectedFailureResult => false));
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.True(productImageFileNames.Any());
 
@@ -678,7 +677,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
                 expectedDisplayOrder = Math.Min(expectedDisplayOrder.Value, maxDisplayOrder ?? 1);
             }
 
-            ProductImageFileNameInfo? productImageFileNameInfo = productImageFileNames.FirstOrDefault(x =>
+            ProductImageFileData? productImageFileNameInfo = productImageFileNames.FirstOrDefault(x =>
                 x.ProductId == updateRequest.ProductId
                 && x.DisplayOrder == expectedDisplayOrder
                 && x.FileName == (updateRequest.NewFileName ?? createRequest.FileName)
@@ -869,7 +868,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.Empty(productImageFileNames);
     }
@@ -907,7 +906,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.False(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         if (ValidProductCreateRequestWithNoImages.ImageFileNames is not null)
         {
@@ -954,11 +953,11 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        List<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId).ToList();
+        List<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId).ToList();
 
         Assert.Equal(lastImageNumber, productImageFileNames.Count);
 
-        Assert.Equal(lastImageNumber, productImageFileNames.Max(x => x.ImageNumber));
+        Assert.Equal(lastImageNumber, productImageFileNames.Max(x => x.Id));
         Assert.Equal(lastDisplayOrder, productImageFileNames.Max(x => x.DisplayOrder));
 
         Assert.DoesNotContain(productImageFileNames, x =>
@@ -1015,11 +1014,11 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.False(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.Equal(lastImageNumber + 1, productImageFileNames.Count());
 
-        Assert.Equal(lastImageNumber + 1, productImageFileNames.Max(x => x.ImageNumber));
+        Assert.Equal(lastImageNumber + 1, productImageFileNames.Max(x => x.Id));
         Assert.Equal(lastDisplayOrder + 1, productImageFileNames.Max(x => x.DisplayOrder));
 
         Assert.Contains(productImageFileNames, x =>
@@ -1066,7 +1065,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.True(deleteSuccess);
 
-        List<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId).ToList();
+        List<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId).ToList();
 
         Assert.DoesNotContain(productImageFileNames, x =>
         x.ProductId == productId
@@ -1121,7 +1120,7 @@ public sealed class ProductImageFileNameInfoServiceTests : IntegrationTestBaseFo
 
         Assert.False(deleteSuccess);
 
-        IEnumerable<ProductImageFileNameInfo> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
+        IEnumerable<ProductImageFileData> productImageFileNames = _productImageFileNameInfoService.GetAllInProduct(productId);
 
         Assert.Contains(productImageFileNames, x =>
         x.ProductId == productId

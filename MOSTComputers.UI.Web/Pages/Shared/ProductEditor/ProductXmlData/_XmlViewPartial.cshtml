@@ -1,0 +1,27 @@
+﻿@model XmlViewPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">XML:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.Product.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="xmlView_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        @if (Model.ProductXml.IsT0)
+        {
+            <textarea class="flex-shrink-0 flex-grow-1" spellcheck="false">@Html.Raw(Model.ProductXml.AsT0)</textarea>
+        }
+        else
+        {
+            <textarea class="text-danger flex-shrink-0 flex-grow-1" spellcheck="false">@Html.Raw(Model.ProductXml.AsT1.Text)</textarea>
+        }
+    </div>
+</div>

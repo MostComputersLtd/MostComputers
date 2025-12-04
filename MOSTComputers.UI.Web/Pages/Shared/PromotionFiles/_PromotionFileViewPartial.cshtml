@@ -1,0 +1,90 @@
+﻿@using MOSTComputers.Models.Product.Models.PromotionFiles
+@using MOSTComputers.UI.Web.Models.PromotionFiles
+
+@using static MOSTComputers.UI.Web.Utils.FilePathUtils
+@using static MOSTComputers.UI.Web.Utils.PromotionFiles.PromotionFileDisplayTypeUtils
+    
+@model PromotionFileViewPartialModel
+@{
+}
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+    <table id="promotionFilesDisplay-table" class="full-parent-width table-with-all-borders table-with-small-horizontal-padding-on-cells">
+        <thead>
+            <tr>
+                <th>Active</th>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Valid From</th>
+                <th>Valid To</th>
+                <th>File Name</th>
+                <th>File</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody style="overflow-y: auto;">
+
+            @if (Model.PromotionFiles is not null
+            && Model.PromotionFiles.Count > 0)
+            {
+                for (int i = 0; i < Model.PromotionFiles.Count; i++)
+                {
+                    PromotionFileInfoEditorDisplayData promotionFileInfo = Model.PromotionFiles[i];
+
+                    string activeCheckboxCheckedString = (promotionFileInfo.Active) ? "checked" : string.Empty;
+
+                    <tr id="promotionFilesDisplay_td-@i">
+                        <td>
+                            <input id="promotionFilesDisplay_active_checkbox-@i" type="checkbox"
+                                tabindex="-1" style="pointer-events: none;"
+                                @activeCheckboxCheckedString>
+                        </td>
+                        <td>@promotionFileInfo.Id</td>
+                        <td>@(promotionFileInfo.Name ?? "-")</td>
+                        <td>@(promotionFileInfo.ValidFrom?.ToString("yyyy.MM.dd") ?? "-")</td>
+                        <td>@(promotionFileInfo.ValidTo?.ToString("yyyy.MM.dd") ?? "-")</td>
+                        <td>@promotionFileInfo.FileName</td>
+                        <td>
+                            <p>
+                                Created:
+                                <span>@promotionFileInfo.CreateUserName</span>
+                                <span>@promotionFileInfo.CreateDate</span>
+                            </p>
+
+                            <p>
+                                Last Update:
+                                <span>@promotionFileInfo.LastUpdateUserName</span>
+                                <span>@promotionFileInfo.LastUpdateDate</span>
+                            </p>
+                        </td>
+                        <td style="max-width: 8em; max-height: 4em;">
+                            <partial name="PromotionFiles/_PromotionFileDataViewPartial"
+                                model="new PromotionFileDataViewPartialModel()
+                                {
+                                    FileName = promotionFileInfo.FileName,
+                                }" />
+                        </td>
+                        <td>
+                            <button id="promotionFilesDisplayEditButton-@i" type="button"
+                                onclick="openPromotionFileSingleEditorPartial(@promotionFileInfo.Id,
+                                    '@Model.PromotionFileSingleEditorModalData.ModalId',
+                                    '@Model.PromotionFileSingleEditorModalData.ModalDialogId',
+                                    '@Model.PromotionFileSingleEditorModalData.ModalContentId')"
+                                style="display: flex; padding: 0.3em;">
+                                <img src="~/img/General/EditIcon.jpg" alt="Edit" style="height: 1em;"/>
+                            </button>
+                        </td>
+                        <td>
+                            <button id="promotionFilesDisplayEditButton-@i" type="button"
+                                class="btn btn-close"
+                                onclick="deleteFile(@promotionFileInfo.Id, '@Model.ContainerElementId', '@Model.NotificationBoxId')">
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

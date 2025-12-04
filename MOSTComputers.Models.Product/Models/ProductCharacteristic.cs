@@ -2,13 +2,13 @@
 
 public sealed class ProductCharacteristic
 {
-    public int Id { get; set; }
-    public int? CategoryId { get; set; }
-    public string? Name { get; set; }
-    public string? Meaning { get; set; }
-    public int? DisplayOrder { get; set; }
-    public bool? Active { get; set; }
-    public short? PKUserId { get; set; }
-    public DateTime? LastUpdate { get; set; }
-    public ProductCharacteristicTypeEnum? KWPrCh { get; set; }
+    public int Id { get; init; }
+    public int? CategoryId { get; init; }
+    public string? Name { get; init; }
+    public string? Meaning { get; init; }
+    public int? DisplayOrder { get; init; }
+    public bool? Active { get; init; }
+    public short? PKUserId { get; init; }
+    public DateTime? LastUpdate { get; init; }
+    public ProductCharacteristicType? KWPrCh { get; init; }
 }

@@ -1,0 +1,78 @@
+﻿@model PromotionViewPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Promotion:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.Product.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="promotionView_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <div class="col-4 d-flex flex-row">
+            <p class="mb-0">ID: @(Model.Promotion.Id.ToString())</p>
+        </div>
+
+        <div class="col-8">
+            <p class="mb-0">Name: @(Model.Promotion.Name ?? "-")</p>
+        </div>
+
+        <div class="col-12">
+            <p class="mb-0">Type: @(Model.Promotion.Type?.ToString() ?? "-")</p>
+        </div>
+
+        <div class="col-12">
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Start Date: @(Model.Promotion.StartDate?.ToString() ?? "-")</p>
+            </div>
+
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Expire Date: @(Model.Promotion.ExpirationDate?.ToString() ?? "-")</p>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-12">
+            <p class="mb-0">Discount €: @(Model.Promotion.DiscountEUR ?? 0M)</p>
+        </div>
+
+        <div class="col-6 col-md-12">
+            <p class="mb-0">Discount $: @(Model.Promotion.DiscountUSD ?? 0M)</p>
+        </div>
+
+        <div class="col-12">
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Min Quantity: @(Model.Promotion.MinimumQuantity ?? 0)</p>
+            </div>
+
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Max Quantity: @(Model.Promotion.MaximumQuantity ?? 0)</p>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <p class="mb-0">Expire Quantity: @(Model.Promotion.ExpQuantity ?? 0)</p>
+        </div>
+
+        <div class="col-12">
+
+            @if (Model.Promotion.RequiredProductIds?.Count > 0)
+            {
+                <ul class="d-inline-flex list-style-none">
+                    @foreach (int requiredProductId in Model.Promotion.RequiredProductIds)
+                    {
+                        <li class="ms-2 me-2">
+                            <p class="mb-0">@requiredProductId</p>
+                        </li>
+                    }
+                </ul>
+            }
+
+        </div>
+    </div>
+</div>

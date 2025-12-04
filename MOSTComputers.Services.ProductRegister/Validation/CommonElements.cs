@@ -1,465 +1,128 @@
 ﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Models.Product.Models.ProductIdentifiers;
 using System.Numerics;
-using static MOSTComputers.Utils.ProductImageFileNameUtils.ProductImageFileNameUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
-
 internal static class CommonElements
 {
-    private static readonly ValidationResult _successResult = new();
-
-    internal static ValidationResult ValidateDefault<T>(IValidator<T>? validator, T model)
+    public static IRuleBuilderOptions<T, TNumber?> NullOrGreaterThan<T, TNumber>(
+        this IRuleBuilder<T, TNumber?> ruleBuilder, TNumber minValue)
+        where TNumber: struct, INumber<TNumber>
     {
-        if (validator is null) return _successResult;
-
-        return validator.Validate(model);
-    }
-
-    internal static ValidationResult ValidateTwoValidatorsDefault<T>(T model, IValidator<T>? validator = null, IValidator<T>? otherValidator = null)
-    {
-        ValidationResult validationResult = ValidateDefault(validator, model);
-
-        if (!validationResult.IsValid) return validationResult;
-
-        ValidationResult validationResultInternal = ValidateDefault(otherValidator, model);
-
-        if (!validationResultInternal.IsValid) return validationResultInternal;
-
-        return _successResult;
-    }
-
-    public static bool NullOrGreaterThanZero(int? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero(decimal? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero(float? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero(short? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero(long? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero(byte? num)
-    {
-        if (num == null) return true;
-
-        return num > 0;
-    }
-
-    public static bool NullOrGreaterThanZero<T>(T? num)
-        where T : INumber<T>
-    {
-        if (num == null) return true;
-        
-        return num.CompareTo(T.Zero) > 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(int? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(decimal? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(short? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(long? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(float? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero(byte? num)
-    {
-        return num == null || num >= 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualToZero<T>(T? num)
-        where T : INumberBase<T>, IComparable<T>
-    {
-        return num == null || num.CompareTo(T.Zero) > 0;
-    }
-
-    public static bool NullOrGreaterThanOrEqualTo<T>(T? num, T comparisonNum)
-        where T : struct, INumberBase<T>, IComparable<T>
-    {
-        return num == null || num.Value.CompareTo(comparisonNum) > 0;
-    }
-
-    public static bool IsNotNullEmptyOrWhiteSpace(string? str)
-    {
-        if (string.IsNullOrEmpty(str)) return false;
-
-        foreach (char character in str)
+        return ruleBuilder.Must((obj, property, validationContext) =>
         {
-            if (!char.IsWhiteSpace(character)) return true;
-        }
+            bool valid = property == null || property > minValue;
 
-        return false;
+            if (valid) return true;
+
+            validationContext.MessageFormatter.AppendArgument("ComparisonValue", minValue);
+
+            return false;
+        })
+            .WithMessage($"Value must be null or greater than {minValue}")
+            .WithErrorCode("NullOrGreaterThan");
     }
 
-    public static bool IsNotEmptyOrWhiteSpace(string? str)
+    public static IRuleBuilderOptions<T, string?> NotNullOrWhiteSpace<T>(
+        this IRuleBuilder<T, string?> ruleBuilder)
     {
-        if (str is null) return true;
+        return ruleBuilder.Must(x => !string.IsNullOrWhiteSpace(x))
+            .WithMessage("Value must be not null or whitespace")
+            .WithErrorCode("NotNullOrWhiteSpace");
+    }
 
-        if (str == string.Empty) return false;
-
-        foreach (char character in str)
+    public static IRuleBuilderOptions<T, string?> NotEmptyOrWhiteSpace<T>(
+        this IRuleBuilder<T, string?> ruleBuilder)
+    {
+        return ruleBuilder.Must(x =>
         {
-            if (!char.IsWhiteSpace(character)) return true;
-        }
+            if (x is null) return true;
 
-        return false;
-    }
+            if (x == string.Empty) return false;
 
-    public static bool IsNotWhiteSpace(string? str)
-    {
-        if (str is null) return true;
-
-        if (str == string.Empty) return true;
-
-        foreach (char character in str)
-        {
-            if (char.IsWhiteSpace(character)) return false;
-        }
-
-        return true;
-    }
-
-    public static bool IsEmpty(string str)
-    {
-        return !(str == string.Empty);
-    }
-
-    public static bool IsNullOrNotEmpty(byte[]? x)
-    {
-        if (x is null) return true;
-
-        return x.Length != 0;
-    }
-
-    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<CurrentProductPropertyCreateRequest>? propertyCreateRequests)
-    {
-        if (propertyCreateRequests is null
-            || propertyCreateRequests.Count <= 0) return true;
-
-        List<int> productCharacteristicIds = new();
-
-        foreach (CurrentProductPropertyCreateRequest propertyCreateRequest in propertyCreateRequests)
-        {
-            int? productCharacteristicId = propertyCreateRequest.ProductCharacteristicId;
-
-            if (productCharacteristicId is null) continue;
-
-            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            foreach (char character in x)
             {
-                return false;
+                if (!char.IsWhiteSpace(character)) return true;
             }
 
-            productCharacteristicIds.Add(productCharacteristicId.Value);
-        }
-
-        return true;
+            return false;
+        })
+            .WithMessage("Value must be not empty or whitespace")
+            .WithErrorCode("NotEmptyOrWhiteSpace");
     }
 
-    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<LocalProductPropertyUpsertRequest>? propertyUpsertRequests)
+    public static IRuleBuilderOptions<T, TItem[]?> NullOrNotEmpty<T, TItem>(
+        this IRuleBuilder<T, TItem[]?> ruleBuilder)
     {
-        if (propertyUpsertRequests is null
-            || propertyUpsertRequests.Count <= 0) return true;
+        return ruleBuilder.Must(x => x is null || x.Length > 0)
+            .WithMessage("Value must be either be null or not empty")
+            .WithErrorCode("NullOrNotEmpty");
+    }
 
-        List<int> productCharacteristicIds = new();
+    public static IRuleBuilderOptions<T, ICollection<TItem>?> NullOrNotEmpty<T, TItem>(
+        this IRuleBuilder<T, ICollection<TItem>?> ruleBuilder)
+    {
+        return ruleBuilder.Must(x => x is null || x.Count > 0)
+            .WithMessage("Value must be either be null or not empty")
+            .WithErrorCode("NullOrNotEmpty");
+    }
 
-        foreach (LocalProductPropertyUpsertRequest propertyUpsertRequest in propertyUpsertRequests)
+    public static IRuleBuilderOptions<T, IEnumerable<TItem>?> NullOrNotEmpty<T, TItem>(
+        this IRuleBuilder<T, IEnumerable<TItem>?> ruleBuilder)
+    {
+        return ruleBuilder.Must(x => x is null || x.Any())
+            .WithMessage("Value must be either be null or not empty")
+            .WithErrorCode("NullOrNotEmpty");
+    }
+
+    public static IRuleBuilderOptions<T, string> ValidGTINCodeForType<T>(
+        this IRuleBuilder<T, string> ruleBuilder, Func<T, ProductGTINCodeType> getCodeTypeFunc)
+    {
+        return ruleBuilder.Must((obj, property, validationContext) =>
         {
-            int? productCharacteristicId = propertyUpsertRequest.ProductCharacteristicId;
+            ProductGTINCodeType codeType = getCodeTypeFunc(obj);
 
-            if (productCharacteristicId is null) continue;
+            bool valid = codeType.IsValid(property);
 
-            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            if (valid) return true;
+
+            validationContext.MessageFormatter.AppendArgument("CodeTypeValue", codeType.Value);
+
+            return false;
+        })
+            .WithMessage("Invalid code format.")
+            .WithErrorCode("ValidGTINCodeFormat");
+    }
+
+    internal static List<TValue> DoesNotHaveNotNullDuplicates<T, TValue>(IEnumerable<T> datas, Func<T, TValue?> getValueFunc)
+    {
+        List<TValue> knownValues = new();
+        List<TValue> repeatedValues = new();
+
+        foreach (T data in datas)
+        {
+            TValue? value = getValueFunc(data);
+
+            if (value is null)
             {
-                return false;
+                continue;
             }
 
-            productCharacteristicIds.Add(productCharacteristicId.Value);
-        }
-
-        return true;
-    }
-
-    internal static bool DoesNotHavePropertiesWithDuplicateCharacteristics(List<CurrentProductPropertyUpdateRequest>? propertyCreateRequests)
-    {
-        if (propertyCreateRequests is null
-            || propertyCreateRequests.Count <= 0) return true;
-
-        List<int> productCharacteristicIds = new();
-
-        foreach (CurrentProductPropertyUpdateRequest propertyUpdateRequest in propertyCreateRequests)
-        {
-            int? productCharacteristicId = propertyUpdateRequest.ProductCharacteristicId;
-
-            if (productCharacteristicId is null) continue;
-
-            if (productCharacteristicIds.Contains(productCharacteristicId.Value))
+            if (knownValues.Contains(value))
             {
-                return false;
+                if (repeatedValues.Contains(value))
+                {
+                    continue;
+                }
+
+                repeatedValues.Add(value);
+
+                continue;
             }
 
-            productCharacteristicIds.Add(productCharacteristicId.Value);
+            knownValues.Add(value);
         }
 
-        return true;
-    }
-
-    public static bool DoesNotHaveImagesWithTheSameId(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
-    {
-        if (imageAndImageFileNameUpsertRequests is null
-            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
-
-        List<int> imageIds = new();
-
-        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
-        {
-            int? imageId = imageAndImageFileNameUpsertRequest.ProductImageUpsertRequest?.OriginalImageId;
-
-            if (imageId is null) continue;
-
-            if (imageIds.Contains(imageId.Value))
-            {
-                return false;
-            }
-
-            imageIds.Add(imageId.Value);
-        }
-
-        return true;
-    }
-
-    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameImageId(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
-    {
-        if (imageFileAndFileNameInfoUpsertRequests is null
-            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
-
-        List<int> imageIds = new();
-
-        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
-        {
-            int? imageId = imageFileAndFileNameInfoUpsertRequest?.RelatedImageId;
-
-            if (imageId is null) continue;
-
-            if (imageIds.Contains(imageId.Value))
-            {
-                return false;
-            }
-
-            imageIds.Add(imageId.Value);
-        }
-
-        return true;
-    }
-
-    public static bool DoesNotHaveImageFileNamesWithTheSameImageNumber(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
-    {
-        if (imageAndImageFileNameUpsertRequests is null
-            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
-
-        List<int> imageFileNameImageNumbers = new();
-
-        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
-        {
-            int? originalImageNumber = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.OriginalImageNumber;
-
-            if (originalImageNumber is null) continue;
-
-            if (imageFileNameImageNumbers.Contains(originalImageNumber.Value))
-            {
-                return false;
-            }
-
-            imageFileNameImageNumbers.Add(originalImageNumber.Value);
-        }
-
-        return true;
-    }
-    
-    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameOldFileName(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
-    {
-        if (imageFileAndFileNameInfoUpsertRequests is null
-            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
-
-        List<string> imageFileNameImageNumbers = new();
-
-        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
-        {
-            string? oldFileName = imageFileAndFileNameInfoUpsertRequest?.OldFileName;
-
-            if (oldFileName is null) continue;
-
-            if (imageFileNameImageNumbers.Contains(oldFileName))
-            {
-                return false;
-            }
-
-            imageFileNameImageNumbers.Add(oldFileName);
-        }
-
-        return true;
-    }
-
-    public static bool DoesNotHaveImageFileNamesWithTheSameDisplayOrder(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
-    {
-        if (imageAndImageFileNameUpsertRequests is null
-            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
-
-        List<int> imageFileNameDisplayOrders = new();
-
-        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
-        {
-            int? displayOrder = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.NewDisplayOrder;
-
-            if (displayOrder is null) continue;
-
-            if (imageFileNameDisplayOrders.Contains(displayOrder.Value))
-            {
-                return false;
-            }
-
-            imageFileNameDisplayOrders.Add(displayOrder.Value);
-        }
-
-        return true;
-    }
-
-    public static bool DoesNotHaveImageFileUpsertRequestsWithTheSameDisplayOrder(List<ImageFileAndFileNameInfoUpsertRequest>? imageFileAndFileNameInfoUpsertRequests)
-    {
-        if (imageFileAndFileNameInfoUpsertRequests is null
-            || imageFileAndFileNameInfoUpsertRequests.Count <= 0) return true;
-
-        List<int> imageFileNameDisplayOrders = new();
-
-        foreach (ImageFileAndFileNameInfoUpsertRequest imageFileAndFileNameInfoUpsertRequest in imageFileAndFileNameInfoUpsertRequests)
-        {
-            int? displayOrder = imageFileAndFileNameInfoUpsertRequest?.DisplayOrder;
-
-            if (displayOrder is null) continue;
-
-            if (imageFileNameDisplayOrders.Contains(displayOrder.Value))
-            {
-                return false;
-            }
-
-            imageFileNameDisplayOrders.Add(displayOrder.Value);
-        }
-
-        return true;
-    }
-
-    public static bool DoesNotHaveImageFileNamesWithOutOfBoundsDisplayOrder(List<ImageAndImageFileNameUpsertRequest>? imageAndImageFileNameUpsertRequests)
-    {
-        if (imageAndImageFileNameUpsertRequests is null
-            || imageAndImageFileNameUpsertRequests.Count <= 0) return true;
-
-        foreach (ImageAndImageFileNameUpsertRequest imageAndImageFileNameUpsertRequest in imageAndImageFileNameUpsertRequests)
-        {
-            int? displayOrder = imageAndImageFileNameUpsertRequest.ProductImageFileNameInfoUpsertRequest?.NewDisplayOrder;
-
-            if (displayOrder is not null
-                && displayOrder > imageAndImageFileNameUpsertRequests.Count) return false;
-        }
-
-        return true;
-    }
-
-    internal static bool IsContentTypeValidAndSupported(string contentType)
-    {
-        string? fileExtension = GetImageFileExtensionFromContentType(contentType);
-
-        if (fileExtension is null) return false;
-
-        return true;
-    }
-
-    internal static bool FileNameLengthIsLessThanMaxLength(string fileName, int maxLength)
-    {
-        return fileName.Length < maxLength;
-    }
-
-    internal static bool FileNameLengthIsLessThanMaxLength(string? fileNameWithoutExtension, string contentType, int maxLength)
-    {
-        if (fileNameWithoutExtension is null) return true;
-
-        string? fileExtension = GetImageFileExtensionFromContentType(contentType);
-
-        if (fileExtension is null) return false;
-
-        string fullFileName = $"{fileNameWithoutExtension}.{fileExtension}";
-
-        return fullFileName.Length < maxLength;
-    }
-
-    internal static bool IsDisplayOrderValidWhenNeeded(int? displayOrder, bool shouldUpdateDisplayOrder)
-    {
-        if (shouldUpdateDisplayOrder)
-        {
-            return NullOrGreaterThanZero(displayOrder);
-        }
-
-        return true;
-    }
-
-    public static List<int> RemoveValuesSmallerThanNumber(IEnumerable<int> intList, int value)
-    {
-        List<int> output = new();
-
-        foreach (int item in intList)
-        {
-            if (item <= value) continue;
-
-            output.Add(item);
-        }
-
-        return output;
-    }
-
-    public static List<int> RemoveValuesSmallerThanOne(IEnumerable<int> intList)
-    {
-        return RemoveValuesSmallerThanNumber(intList, 0);
+        return repeatedValues;
     }
 }

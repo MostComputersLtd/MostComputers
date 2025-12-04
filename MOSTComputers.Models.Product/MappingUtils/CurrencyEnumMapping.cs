@@ -1,31 +1,30 @@
 ﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Models.Product.MappingUtils;
-
 public static class CurrencyEnumMapping
 {
-    public static string? GetStringFromCurrencyEnum(CurrencyEnum? currencyEnum)
+    public static string? GetStringFromCurrencyEnum(Currency? currencyEnum)
     {
         if (currencyEnum is null) return null;
 
         return currencyEnum switch
         {
-            CurrencyEnum.BGN => "BGN",
-            CurrencyEnum.EUR => "EUR",
-            CurrencyEnum.USD => "USD",
+            Currency.BGN => "BGN",
+            Currency.EUR => "EUR",
+            Currency.USD => "USD",
             _ => null
         };
     }
 
-    public static CurrencyEnum? GetCurrencyEnumFromString(string currencyString)
+    public static Currency? GetCurrencyEnumFromString(string currencyString)
     {
         if (currencyString is null) return null;
 
         return currencyString switch
         {
-            "BGN" => CurrencyEnum.BGN,
-            "EUR" => CurrencyEnum.EUR,
-            "USD" => CurrencyEnum.USD,
+            "BGN" => Currency.BGN,
+            "EUR" => Currency.EUR,
+            "USD" => Currency.USD,
             _ => null
         };
     }

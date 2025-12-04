@@ -1,0 +1,194 @@
+﻿@using static MOSTComputers.UI.Web.Utils.StandardInputValueUtils
+
+@model PromotionFileSingleEditorPartialModel
+@{
+    Layout = null;
+
+    bool isEditorUsedForInsert = (Model.ExistingPromotionFileInfo is null);
+
+    string activeCheckboxCheckedString = string.Empty;
+
+    string validFromValueAsString = string.Empty;
+    string validToValueAsString = string.Empty;
+
+    if (Model.ExistingPromotionFileInfo is not null)
+    {
+        activeCheckboxCheckedString = (Model.ExistingPromotionFileInfo.Active) ? "checked" : string.Empty;
+
+        if (Model.ExistingPromotionFileInfo.ValidFrom is not null)
+        {
+            validFromValueAsString = GetDateTimeAsStringForDateInput(Model.ExistingPromotionFileInfo.ValidFrom);
+        }
+
+        if (Model.ExistingPromotionFileInfo.ValidTo is not null)
+        {
+            validToValueAsString = GetDateTimeAsStringForDateInput(Model.ExistingPromotionFileInfo.ValidTo);
+        }
+    }
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title" style="white-space: nowrap;">Promotion File:</h5>
+
+    @if (!isEditorUsedForInsert)
+    {
+        <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">
+            PrId: @Model.ExistingPromotionFileInfo!.Id
+        </h4>
+
+        <div class="full-parent-height d-flex flex-row flex-wrap align-content-center ms-3">
+            <p class="mb-0">
+                Created:
+                <span>@Model.ExistingPromotionFileInfo.CreateUserName</span>
+                <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                    (@Model.ExistingPromotionFileInfo.CreateDate)
+                </span>
+            </p>
+
+            <p class="ms-lg-2 mb-0">
+                Last Update:
+                <span>@Model.ExistingPromotionFileInfo.LastUpdateUserName</span>
+                <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                    (@Model.ExistingPromotionFileInfo.LastUpdateDate)
+                </span>
+            </p>
+        </div>
+    }
+
+    <div class="d-flex flex-row align-items-center ms-1">
+        @if (isEditorUsedForInsert)
+        {
+            <button id="promotionSingleEditorAddOrUpdateButton"
+                class="btn btn-primary"
+                onclick="addNewFileAndDisplayChanges(
+                    'promotionSingleEditorNameInput',
+                    'promotionSingleEditorActiveInput',
+                    'promotionSingleEditorValidFromInput',
+                    'promotionSingleEditorValidToInput',
+                    'promotionSingleEditorDescriptionInput',
+                    'promotionSingleEditorRequiredProductsInput',
+                    'promotionSingleEditorFileInput',
+                    '@Model.PromotionFilesTableContainerElementId',
+                    '@Model.ModalData.ModalContentId',
+                    'promotionSingleEditorAddOrUpdateButton',
+                    'promotionSingleEditorAddOrUpdateButtonLoader')">
+                Add
+            </button>
+
+            <div id="promotionSingleEditorAddOrUpdateButtonLoader" class="round-loader-default"
+                    style="width: 0px; display: none;">
+            </div>
+        }
+        else
+        {
+            <button id="promotionSingleEditorAddOrUpdateButton"
+                class="btn btn-primary"
+                onclick="updateFileAndDisplayChanges(
+                    @Model.ExistingPromotionFileInfo!.Id,
+                    'promotionSingleEditorNameInput',
+                    'promotionSingleEditorActiveInput',
+                    'promotionSingleEditorValidFromInput',
+                    'promotionSingleEditorValidToInput',
+                    'promotionSingleEditorDescriptionInput',
+                    'promotionSingleEditorRequiredProductsInput',
+                    'promotionSingleEditorFileInput',
+                    '@Model.PromotionFilesTableContainerElementId',
+                    '@Model.ModalData.ModalContentId',
+                    'promotionSingleEditorAddOrUpdateButton',
+                    'promotionSingleEditorAddOrUpdateButtonLoader')">
+                Save
+            </button>
+
+            <div id="promotionSingleEditorAddOrUpdateButtonLoader" class="round-loader-default"
+                    style="width: 0px; display: none;">
+            </div>
+        }
+
+        <button type="button" class="btn-close ms-2" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+        </button>
+    </div>
+
+</div>
+<div id="promotionSingleEditor_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container border-2 d-flex flex-column full-parent-width full-parent-height">
+        <div class="row flex-grow-1">
+            <div class="col-12 col-md-6">
+                <div class="mb-2">
+                    <label for="promotionSingleEditorNameInput" class="me-2">Name:</label>
+                    <input id="promotionSingleEditorNameInput"
+                        value="@Model.ExistingPromotionFileInfo?.Name"
+                        placeholder="Promotion File Name" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="promotionSingleEditorActiveInput" class="me-2">Active:</label>
+                    <input id="promotionSingleEditorActiveInput" type="checkbox" @activeCheckboxCheckedString />
+                </div>
+
+                <div class="mb-2">
+                    <label for="promotionSingleEditorValidFromInput" class="me-2">From:</label>
+                    <input id="promotionSingleEditorValidFromInput" type="date"
+                        value="@validFromValueAsString" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="promotionSingleEditorValidToInput" class="me-2">To:</label>
+                    <input id="promotionSingleEditorValidToInput" type="date"
+                        value="@validToValueAsString" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="promotionSingleEditorDescriptionInput" class="me-2">Description:</label>
+                    <input id="promotionSingleEditorDescriptionInput" type="text"
+                        value="@Model.ExistingPromotionFileInfo?.Description" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="promotionSingleEditorRequiredProductsInput" class="me-2">Required CSTIDs:</label>
+                    <input id="promotionSingleEditorRequiredProductsInput" type="text"
+                        value="@Model.ExistingPromotionFileInfo?.RelatedProductsString" />
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6"
+                ondragover="singleEditorFileZoneOnDragOver(event)"
+                ondrop="singleEditorFileZoneOnDrop(event, 'promotionSingleEditorFileInput', 'promotionSingleEditorFileDisplayText')">
+                <div class="d-flex flex-column mb-2">
+                    <button id="promotionSingleEditorFileButton" class="btn btn-secondary mb-2"
+                        onclick="forceFileInputClick('promotionSingleEditorFileInput')">
+                        Select file
+                    </button>
+
+                    <div class="full-parent-width d-flex flex-row">
+                        <p class="m-0">Selected File:&nbsp;</p>
+
+                        <p id="promotionSingleEditorFileDisplayText" class="m-0"></p>
+                    </div>
+
+                    <input id="promotionSingleEditorFileInput" type="file" accept="*" style="width: 0px;"
+                        onchange="singleEditorFileInputOnChange('promotionSingleEditorFileInput', 'promotionSingleEditorFileDisplayText')" />
+                </div>
+
+                @if (Model.ExistingPromotionFileInfo?.FileName is not null)
+                {
+                    <div class="mb-2 me-1" style="word-break: break-all">
+                        Current file: @Model.ExistingPromotionFileInfo.FileName
+                    </div>
+
+                    <div class="flex-grow-1 mb-2">
+                        <partial name="PromotionFiles/_PromotionFileDataViewPartial"
+                            model="new PromotionFileDataViewPartialModel()
+                        {
+                            FileName = Model.ExistingPromotionFileInfo.FileName,
+                        }" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="row justify-content-center align-content-center">
+            
+        </div>
+    </div>
+</div>

@@ -1,72 +1,73 @@
 ﻿@page "{ReturnUrl?}"
-@using Microsoft.AspNetCore.Mvc.ModelBinding
-@model MOSTComputers.UI.Web.Pages.Accounts.LoginModel
+@model LoginModel
 @{
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/HtmlBodyHavePageHeight.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/BodyFullHeight.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Pages/Accounts/LoginAndSignInCommon.css" asp-append-version="true" />
 }
 
 @section Scripts {
+    <script src="~/js/Pages/Accounts/CommonElements.js"></script>
     <script src="~/js/Pages/Accounts/Login.js"></script>
 }
 
-<form method="post" asp-page-handler="LogIn" class="parent-fullscreen-form children-limit-space-with-padding">
+<div class="parent-fullscreen-form children-limit-space-with-padding">
 
-    <div class="container mb-2 bg-white"
-         style="width: 75%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <div class="container login-or-signIn-container mb-2 bg-white">
 
-        <div class="row full-parent-width mb-2" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-2">
 
-            <div class="col-3" style="display: flex; align-items: center; height: 40px;">
-                <label asp-for="@Model.Username">Username</label>
+            <div class="col-3 login-or-signIn-label-column">
+                <label>Username</label>
             </div>
 
-            <div class="col-7" style="height: 40px;">
-                <input asp-for="@Model.Username" type="text" class="full-parent-width full-parent-height" />
+            <div class="col-7 login-or-signIn-input-column">
+                <input id="loginUsernameInput" type="text" class="full-parent-width full-parent-height" />
             </div>
 
-            <span asp-validation-for="@Model.Username" class="text-danger validation-span"></span>
+            <div data-valmsg-for="@(nameof(LoginDTO.Username))" class="text-danger validation-span"></div>
         </div>
 
-        <div class="row full-parent-width mb-3" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-3">
 
-            <div class="col-3" style="height: 40px; display: flex; align-items: center;">
-                <label asp-for="@Model.Password">Password</label>
+            <div class="col-3 login-or-signIn-label-column">
+                <label>Password</label>
             </div>
 
-            <div class="col-7" style="height: 40px;">
-                <input asp-for="@Model.Password" type="password" class="full-parent-width full-parent-height" />
+            <div class="col-7 login-or-signIn-input-column">
+                <input id="loginPasswordInput" type="password" class="full-parent-width full-parent-height" />
             </div>
 
-            @{ModelErrorCollection? passwordErrors = ModelState["Password"]?.Errors;}
-
-            @if (passwordErrors is not null)
-            {
-                @foreach (ModelError error in passwordErrors)
-                {
-                    <span class="text-danger validation-span">@error.ErrorMessage</span>
-                }
-            }
-
+            <div data-valmsg-for="@(nameof(LoginDTO.Password))" class="text-danger validation-span"></div>
         </div>
 
-        <div class="row full-parent-width mb-2" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-2">
             <div class="col-4">
-                <button type="submit" class="btn btn-primary full-parent-width">Log In</button>
+                <button type="button" class="btn btn-primary full-parent-width"
+                    onclick="login('loginUsernameInput', 'loginPasswordInput', '_hidden_returnUrl_input')">
+                    Log In
+                </button>
             </div>
         </div>
 
-        <div class="row full-parent-width mb-3" style="display: flex; justify-content: center;">
-            <div class="col-5" style="display: flex; justify-content: center;">
+        <div class="row login-or-signIn-row mb-3">
+            <div class="col-5 login-or-signIn-other-page-redirect-container">
+                <!--
                 <label>Dont have an account:</label>
-                <button type="button" onclick="redirectToSignInPage('returnUrl')" class="btn btn-secondary" style="margin-left: 1rem;">Sign In</button>
+                <button type="button" class="btn btn-secondary login-or-signIn-other-page-redirect-button"
+                    onclick="redirectToSignInPage(SignInPageUsageOptions.SignIn, '_hidden_returnUrl_input')">
+                    Sign In
+                </button>
+                -->
             </div>
         </div>
+
+        <span data-validation-summary class="text-danger"></span>
     </div>
 
-    <input id="returnUrl" type="hidden" asp-for="ReturnUrl" />
+    <input id="_hidden_returnUrl_input" asp-for="ReturnUrl" type="hidden" />
 
-</form>
+</div>
+@Html.AntiForgeryToken()

@@ -1,0 +1,17 @@
+﻿@using MOSTComputers.UI.Web.Controllers.Documents
+
+@model MOSTComputers.UI.Web.Pages.Shared.Documents.PdfDisplayPartialModel
+@{
+    Layout = null;
+
+    
+}
+
+<div class="full-parent-width full-parent-height d-flex flex-column align-items-center justify-content-center">
+    <div id="pdfDisplayLoader" class="round-loader-default"></div>
+
+    <iframe id="pdfDisplayFrame" src="@Model.SourceUrl" class="full-parent-width full-parent-height"
+        onload="toggleViews('pdfDisplayLoader', 'pdfDisplayFrame')"
+        style="display: none;">
+    </iframe>
+</div>

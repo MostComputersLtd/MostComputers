@@ -3,10 +3,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 using MOSTComputers.Services.Caching.Models;
 using MOSTComputers.Services.Caching.Services.Contracts;
+
 using static MOSTComputers.Services.Caching.Mapping.LazyCacheMappingUtils;
 
 namespace MOSTComputers.Services.Caching.Services;
-
 internal sealed class LazyCacheCache : ICache<string>
 {
     public LazyCacheCache(IAppCache appCache)
@@ -35,9 +35,29 @@ internal sealed class LazyCacheCache : ICache<string>
         return _appCache.GetOrAdd(key, addItemFactory);
     }
 
-    public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    public TValue GetOrAdd<TValue>(string key, Func<ICacheEntry, TValue> addItemFactory)
+    {
+        return _appCache.GetOrAdd(key, addItemFactory);
+    }
+
+    public async Task<TValue> GetOrAddAsync<TValue>(string key, Func<Task<TValue>> addItemFactory)
+    {
+        return await _appCache.GetOrAddAsync(key, addItemFactory);
+    }
+
+    public async Task<TValue> GetOrAddAsync<TValue>(string key, Func<ICacheEntry, Task<TValue>> addItemFactory)
+    {
+        return await _appCache.GetOrAddAsync(key, addItemFactory);
+    }
+
+    public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CustomCacheEntryOptions cacheEntryOptions)
     {
         return _appCache.GetOrAdd(key, addItemFactory, Map(cacheEntryOptions));
+    }
+
+    public async Task<TValue> GetOrAddAsync<TValue>(string key, Func<Task<TValue>> addItemFactory, CustomCacheEntryOptions cacheEntryOptions)
+    {
+        return await _appCache.GetOrAddAsync(key, addItemFactory, Map(cacheEntryOptions));
     }
 
     public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory, CancellationToken cancellationToken)
@@ -49,14 +69,33 @@ internal sealed class LazyCacheCache : ICache<string>
         return _appCache.GetOrAdd(key, addItemFactory, options);
     }
 
+    public async Task<TValue> GetOrAddAsync<TValue>(string key, Func<Task<TValue>> addItemFactory, CancellationToken cancellationToken)
+    {
+        MemoryCacheEntryOptions options = new();
+
+        options.AddExpirationToken(new CancellationChangeToken(cancellationToken));
+
+        return await _appCache.GetOrAddAsync(key, addItemFactory, options);
+    }
+
     public TValue GetOrAdd<TValue>(string key, Func<TValue> addItemFactory,
-        CustomMemoryCacheEntryOptions cacheEntryOptions, CancellationToken cancellationToken)
+        CustomCacheEntryOptions cacheEntryOptions, CancellationToken cancellationToken)
     {
         MemoryCacheEntryOptions options = Map(cacheEntryOptions);
 
         options.AddExpirationToken(new CancellationChangeToken(cancellationToken));
 
         return _appCache.GetOrAdd(key, addItemFactory, options);
+    }
+
+    public async Task<TValue> GetOrAddAsync<TValue>(string key, Func<Task<TValue>> addItemFactory,
+        CustomCacheEntryOptions cacheEntryOptions, CancellationToken cancellationToken)
+    {
+        MemoryCacheEntryOptions options = Map(cacheEntryOptions);
+
+        options.AddExpirationToken(new CancellationChangeToken(cancellationToken));
+
+        return await _appCache.GetOrAddAsync(key, addItemFactory, options);
     }
 
     public bool Add<TValue>(string key, TValue value)
@@ -77,7 +116,7 @@ internal sealed class LazyCacheCache : ICache<string>
         return true;
     }
 
-    public bool Add<TValue>(string key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    public bool Add<TValue>(string key, TValue value, CustomCacheEntryOptions cacheEntryOptions)
     {
         _appCache.Add(key, value, Map(cacheEntryOptions));
 
@@ -91,7 +130,7 @@ internal sealed class LazyCacheCache : ICache<string>
         return true;
     }
 
-    public bool AddOrUpdate<TValue>(string key, TValue value, CustomMemoryCacheEntryOptions cacheEntryOptions)
+    public bool AddOrUpdate<TValue>(string key, TValue value, CustomCacheEntryOptions cacheEntryOptions)
     {
         _appCache.CacheProvider.Set(key, value, Map(cacheEntryOptions));
 

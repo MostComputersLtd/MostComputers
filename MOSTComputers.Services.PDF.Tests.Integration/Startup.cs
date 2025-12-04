@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System.Configuration;
 using Microsoft.Extensions.Hosting;
-using static MOSTComputers.Services.PDF.Configuration.ConfigureServices;
+using MOSTComputers.Services.DAL.Documents.Configuration;
 using MOSTComputers.Services.PDF.Configuration;
+using System.Configuration;
+using static MOSTComputers.Services.PDF.Configuration.ConfigureServices;
 
 namespace MOSTComputers.Services.PDF.Tests.Integration;
-
 public class Startup
 {
 #pragma warning disable CA1822 // Mark members as static
@@ -25,52 +25,94 @@ public class Startup
 
         string projectFolderPath = hostEnvironment.ContentRootPath[..afterAppNameIndex];
 
-        string pdfTemplateFilePath = PdfTemplateFileRelativePath;
+        GenerateTemplateFullPaths(projectFolderPath);
 
-        if (!Path.IsPathFullyQualified(pdfTemplateFilePath))
+        services.AddDocumentRepositories(DocumentDBConnectionString);
+
+        services.AddPdfInvoiceGeneratorFromDataServices(HtmlInvoiceTemplateFileFullPath);
+
+        services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(HtmlWarrantyCardWithoutPricesTemplateFileFullPath);
+        services.AddPdfWarrantyCardWithPricesGeneratorFromDataServices(HtmlWarrantyCardWithPricesTemplateFileFullPath);
+
+        GenerateTestResultFolderFullPaths(projectFolderPath);
+    }
+
+    private static void GenerateTemplateFullPaths(string projectFolderPath)
+    {
+        string htmlInvoiceTemplateFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(HtmlInvoiceTemplateFileRelativePath, projectFolderPath);
+
+        HtmlInvoiceTemplateFileFullPath = htmlInvoiceTemplateFullPath;
+
+        string htmlWarrantyCardWithPricesTemplateFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(HtmlWarrantyCardWithPricesTemplateFileRelativePath, projectFolderPath);
+
+        HtmlWarrantyCardWithPricesTemplateFileFullPath = htmlWarrantyCardWithPricesTemplateFullPath;
+
+        string htmlWarrantyCardWithoutPricesTemplateFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(HtmlWarrantyCardWithoutPricesTemplateFileRelativePath, projectFolderPath);
+
+        HtmlWarrantyCardWithoutPricesTemplateFileFullPath = htmlWarrantyCardWithoutPricesTemplateFullPath;
+    }
+
+    private static void GenerateTestResultFolderFullPaths(string projectFolderPath)
+    {
+        string pdfInvoicesTestFolderFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(PdfInvoiceTestFolderRelativePath, projectFolderPath);
+
+        PdfInvoiceTestFolderFullPath = pdfInvoicesTestFolderFullPath;
+
+        string pdfWarrantyCardWithPricesTestFolderFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(PdfWarrantyCardWithPricesTestFolderRelativePath, projectFolderPath);
+
+        PdfWarrantyCardWithPricesTestFolderFullPath = pdfWarrantyCardWithPricesTestFolderFullPath;
+
+        string pdfWarrantyCardWithoutPricesTestFolderFullPath = GetFullPathFromRelativeOneThatStartsFromProjectFolder(PdfWarrantyCardWithoutPricesTestFolderRelativePath, projectFolderPath);
+
+        PdfWarrantyCardWithoutPricesTestFolderFullPath = pdfWarrantyCardWithoutPricesTestFolderFullPath;
+    }
+
+    private static string GetFullPathFromRelativeOneThatStartsFromProjectFolder(string relativePath, string projectFolderPath)
+    {
+        if (!Path.IsPathFullyQualified(relativePath))
         {
-            pdfTemplateFilePath = Path.GetFullPath(pdfTemplateFilePath, projectFolderPath)
+            return Path.GetFullPath(relativePath, projectFolderPath)
                 .Replace('\\', '/');
         }
 
-        PdfTemplateFileFullPath = pdfTemplateFilePath;
-
-        string htmlTemplateFilePath = HtmlTemplateFileRelativePath;
-
-        if (!Path.IsPathFullyQualified(htmlTemplateFilePath))
-        {
-            htmlTemplateFilePath = Path.GetFullPath(htmlTemplateFilePath, projectFolderPath)
-                .Replace('\\', '/');
-        }
-
-        HtmlTemplateFileFullPath = htmlTemplateFilePath;
-
-        //services.AddPdfInvoiceServices(PdfTemplateFileFullPath);
-        services.AddPdfInvoiceServices(HtmlTemplateFileFullPath);
-
-        string pdfInvoicesTestFolderFilePath = PdfInvoiceTestFolderRelativePath;
-
-        if (!Path.IsPathFullyQualified(pdfInvoicesTestFolderFilePath))
-        {
-            pdfInvoicesTestFolderFilePath = Path.GetFullPath(pdfInvoicesTestFolderFilePath, projectFolderPath)
-                .Replace('\\', '/');
-        }
-
-        PdfInvoiceTestFolderFullPath = pdfInvoicesTestFolderFilePath;
+        return relativePath;
     }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-    internal static string PdfTemplateFileRelativePath { get; } = GetConfigurationAppSettingsData("PdfInvoiceTemplate");
-    internal static string PdfTemplateFileFullPath { get; private set; }
+    internal static string DocumentDBConnectionString { get; } = GetConfigurationConnectionStringData("DocumentDBConnectionString");
 
-    internal static string HtmlTemplateFileRelativePath { get; } = GetConfigurationAppSettingsData("HtmlInvoiceTemplate");
-    internal static string HtmlTemplateFileFullPath { get; private set; }
+    internal static string HtmlInvoiceTemplateFileRelativePath { get; } = GetConfigurationAppSettingsData("HtmlInvoiceTemplate");
+    internal static string HtmlInvoiceTemplateFileFullPath { get; private set; }
+
+    internal static string HtmlWarrantyCardWithPricesTemplateFileRelativePath { get; } = GetConfigurationAppSettingsData("HtmlWarrantyCardWithPricesTemplate");
+    internal static string HtmlWarrantyCardWithPricesTemplateFileFullPath { get; private set; }
+
+    internal static string HtmlWarrantyCardWithoutPricesTemplateFileRelativePath { get; } = GetConfigurationAppSettingsData("HtmlWarrantyCardWithoutPricesTemplate");
+    internal static string HtmlWarrantyCardWithoutPricesTemplateFileFullPath { get; private set; }
 
     internal static string PdfInvoiceTestFolderRelativePath { get; } = GetConfigurationAppSettingsData("PdfInvoiceTestFolder");
     internal static string PdfInvoiceTestFolderFullPath { get; private set; }
 
+    internal static string PdfWarrantyCardWithPricesTestFolderRelativePath { get; } = GetConfigurationAppSettingsData("PdfWarrantyCardWithPricesTestFolder");
+    internal static string PdfWarrantyCardWithPricesTestFolderFullPath { get; private set; }
+
+    internal static string PdfWarrantyCardWithoutPricesTestFolderRelativePath { get; } = GetConfigurationAppSettingsData("PdfWarrantyCardWithoutPricesTestFolder");
+    internal static string PdfWarrantyCardWithoutPricesTestFolderFullPath { get; private set; }
+
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+    private static string GetConfigurationConnectionStringData(string key)
+    {
+        ExeConfigurationFileMap configMap = new()
+        {
+            ExeConfigFilename = "./App.config"
+        };
+
+        System.Configuration.Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configMap, ConfigurationUserLevel.None);
+
+        return config.ConnectionStrings.ConnectionStrings[key].ConnectionString;
+    }
 
     private static string GetConfigurationAppSettingsData(string key)
     {

@@ -1,0 +1,71 @@
+﻿@using MOSTComputers.UI.Web.Controllers;
+@using MOSTComputers.UI.Web.Controllers.Images
+@using MOSTComputers.UI.Web.Models.PromotionFiles
+@using static MOSTComputers.UI.Web.Utils.FilePathUtils
+@using static MOSTComputers.UI.Web.Utils.PromotionFiles.PromotionFileDisplayTypeUtils;
+
+@model PromotionFileDataViewPartialModel
+@{
+    Layout = null;
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.FileName))
+{
+    PromotionFileDisplayTypeEnum promotionFileDisplayType = GetPromotionFileDisplayTypeFromFileName(Model.FileName);
+
+    string linkToFile = $"/{PromotionFileDataController.ControllerRoute}/{Model.FileName}";
+
+    switch (promotionFileDisplayType)
+    {
+        case PromotionFileDisplayTypeEnum.Image:
+        {
+            <img src="@linkToFile" alt="@Model.FileName" loading="lazy" style="max-width: 100%; max-height: 100%;" />
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Video:
+        {
+            <video controls preload="none" style="max-width: 100%; max-height: 100%;">
+                <source src="@linkToFile" />
+                Your browser does not support displaying this video.
+            </video>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Audio:
+        {
+            <audio controls preload="none"style="max-width: 100%; max-height: 100%;">
+                <source src="@linkToFile" />
+                Your browser does not support this audio.
+            </audio>
+
+                break;
+        }
+        case PromotionFileDisplayTypeEnum.WordDocument:
+        case PromotionFileDisplayTypeEnum.OtherDocument:
+        case PromotionFileDisplayTypeEnum.ExcelSpreadsheet:
+        case PromotionFileDisplayTypeEnum.OtherSpreadsheet:
+        {
+            string officeOnlineViewerLink = $"https://view.officeapps.live.com/op/view.aspx?src={linkToFile}";
+
+            <a href="@officeOnlineViewerLink" alt="View File In Online Editor"
+                class="btn btn-light"
+                style="max-width: 100%; max-height: 100%;">
+                View File Online
+            </a>
+
+            break;
+        }
+        case PromotionFileDisplayTypeEnum.Unhandled:
+        default:
+        {
+            <a href="@linkToFile">Cannot Display File</a>
+
+            break;
+        }
+    }
+}
+else
+{
+    <p style="color: red;">-</p>
+}

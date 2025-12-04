@@ -1,0 +1,49 @@
+﻿using FluentValidation.Results;
+using OneOf;
+using OneOf.Types;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models.ProductImages;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
+using MOSTComputers.Services.ProductRegister.Models.Responses;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductImages;
+
+namespace MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
+public interface IProductImageService
+{
+    Task<List<IGrouping<int, ProductImage>>> GetAllInProductsAsync(IEnumerable<int> productIds);
+    Task<List<ProductImagesForProductCountData>> GetCountOfAllInProductsAsync(IEnumerable<int> productIds);
+    Task<List<IGrouping<int, ProductImageData>>> GetAllInProductsWithoutFileDataAsync(IEnumerable<int> productIds);
+    Task<List<ProductImage>> GetAllInProductAsync(int productId);
+    Task<List<ProductImageData>> GetAllInProductWithoutFileDataAsync(int productId);
+    Task<int> GetCountOfAllInProductAsync(int productId);
+    Task<ProductImage?> GetByIdInAllImagesAsync(int id);
+    Task<ProductImageData?> GetByIdInAllImagesWithoutFileDataAsync(int id);
+    Task<bool> DoesProductImageExistAsync(int imageId);
+    Task<List<ProductImage>> GetAllFirstImagesForAllProductsAsync();
+    Task<List<ProductImage>> GetFirstImagesForSelectionOfProductsAsync(List<int> productIds);
+    Task<ProductImage?> GetByProductIdInFirstImagesAsync(int productId);
+    Task<List<ProductFirstImageExistsForProductData>> DoProductsHaveImagesInFirstImagesAsync(List<int> productIds);
+    Task<bool> DoesProductHaveImageInFirstImagesAsync(int productId);
+    Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertInAllImagesAsync(ServiceProductImageCreateRequest createRequest, string createUserName);
+    Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertInAllImagesWithFileAsync(ProductImageWithFileCreateRequest productImageWithFileCreateRequest);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInAllImagesAsync(ServiceProductImageUpdateRequest updateRequest, string updateUserName);
+    Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateInAllImagesWithFileAsync(ProductImageWithFileUpdateRequest productImageWithFileUpdateRequest);
+    Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> UpsertInAllImagesAsync(ProductImageUpsertRequest productImageUpsertRequest, string upsertUserName);
+    Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertInAllImagesWithFileAsync(ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> InsertInFirstImagesAsync(ServiceProductFirstImageCreateRequest createRequest, string createUserName);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInFirstImagesAsync(ServiceProductFirstImageUpdateRequest updateRequest, string updateUserName);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertInFirstImagesAsync(ServiceProductFirstImageUpsertRequest productFirstImageUpsertRequest, string upsertUserName);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(int productId, List<ProductImageForProductUpsertRequest> imageUpsertRequests, string upsertUserName);
+    Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductAsync(int productId, List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests, string deleteUserName);
+    Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInAllImagesByIdAsync(int imageId, string htmlData);
+    Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstImagesByProductIdAsync(int productId, string htmlData);
+    Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstAndAllImagesByProductIdAsync(int productId, string htmlData);
+    Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteAllImagesForProductAsync(int productId, string deleteUserName);
+    Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInAllImagesByIdAsync(int id, string deleteUserName);
+    Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(int id, string deleteUserName);
+    Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdAsync(int productId, string deleteUserName);
+    Task<List<IGrouping<int, ProductImageData>>> GetAllWithoutFileDataAsync();
+}

@@ -2,7 +2,6 @@
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 
 namespace MOSTComputers.Services.TransactionalFileManagement.RollbackableOperations;
-
 public abstract class RollbackableOperationWithRollbackData<TOutput, TRollbackData>
     : IRollbackableOperation<TOutput>
 {

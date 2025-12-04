@@ -1,7 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Manifacturer;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Manifacturer;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -9,17 +9,16 @@ using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
-    public ManifacturerServiceTests(IManifacturerService manifacturerService)
+    public ManifacturerServiceTests(IManufacturerService manifacturerService)
         : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
         _manifacturerService = manifacturerService;
     }
 
-    private readonly IManifacturerService _manifacturerService;
+    private readonly IManufacturerService _manifacturerService;
 
     private static readonly ManifacturerCreateRequest _validCreateRequest = new()
     {
@@ -83,7 +82,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(id2);
         Assert.True(id2 > 0);
 
-        IEnumerable<Manifacturer> manifacturers = _manifacturerService.GetAll();
+        List<Manufacturer> manifacturers = _manifacturerService.GetAllAsync();
 
         Assert.True(manifacturers.Count() >= 2);
 
@@ -118,7 +117,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             validationResult => true,
             unexpectedFailureResult => false));
 
-        IEnumerable<Manifacturer> manifacturers = _manifacturerService.GetAll();
+        List<Manufacturer> manifacturers = _manifacturerService.GetAllAsync();
 
         Assert.DoesNotContain(manifacturers,
             x => x.RealCompanyName == _invalidCreateRequest.RealCompanyName
@@ -145,7 +144,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
+        Manufacturer? manifacturer = _manifacturerService.GetByIdAsync(id.Value);
 
         Assert.NotNull(manifacturer);
 
@@ -174,7 +173,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(0);
+        Manufacturer? manifacturer = _manifacturerService.GetByIdAsync(0);
 
         Assert.Null(manifacturer);
     }
@@ -200,7 +199,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             Assert.NotNull(id);
             Assert.True(id > 0);
 
-            Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
+            Manufacturer? manifacturer = _manifacturerService.GetByIdAsync(id.Value);
 
             Assert.Equal(expected, manifacturer is not null);
 
@@ -342,7 +341,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
             validationResult => false,
             unexpectedFailureResult => false));
 
-        Manifacturer? updatedManifacturer = _manifacturerService.GetById(id.Value);
+        Manufacturer? updatedManifacturer = _manifacturerService.GetByIdAsync(id.Value);
 
         Assert.NotNull(updatedManifacturer);
 
@@ -496,7 +495,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
 
         bool success = _manifacturerService.Delete(id.Value);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
+        Manufacturer? manifacturer = _manifacturerService.GetByIdAsync(id.Value);
 
         Assert.Null(manifacturer);
     }
@@ -521,7 +520,7 @@ public sealed class ManifacturerServiceTests : IntegrationTestBaseForNonWebProje
 
         bool success = _manifacturerService.Delete(0);
 
-        Manifacturer? manifacturer = _manifacturerService.GetById(id.Value);
+        Manufacturer? manifacturer = _manifacturerService.GetByIdAsync(id.Value);
 
         Assert.NotNull(manifacturer);
         Assert.False(success);

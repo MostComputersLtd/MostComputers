@@ -19,6 +19,10 @@
     margin-left: 35px;
 }
 
+.overflow-y-auto {
+    overflow-y: auto;
+}
+
 .modal-footer {
     padding: 0px;
 }

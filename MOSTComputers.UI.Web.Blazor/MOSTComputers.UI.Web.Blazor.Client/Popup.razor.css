@@ -1,0 +1,76 @@
+﻿.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 1000;
+}
+
+    .popup-overlay.show {
+        display: flex;
+        flex-direction: column;
+    }
+
+/* Popup container */
+.popup-content {
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    /* margins come from PopupMarginOptions inline style */
+}
+
+/* Header */
+.popup-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-header-content {
+    flex-grow: 1;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Close button */
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Body */
+.popup-body {
+    padding: 1rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Footer */
+.popup-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #ddd;
+    text-align: left;
+}
+
+.popup-header-title {
+    margin-left: 10px;
+}
+
+.popup-header-name {
+    margin-left: 35px;
+}
+
+.popup-footer {
+    padding: 0px;
+}

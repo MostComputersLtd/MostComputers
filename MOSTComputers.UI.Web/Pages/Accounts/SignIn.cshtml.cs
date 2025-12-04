@@ -1,70 +1,158 @@
 using FluentValidation.Results;
+using OneOf;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using MOSTComputers.UI.Web.Authentication;
+using MOSTComputers.Services.Identity.Models;
 using MOSTComputers.UI.Web.Models.Authentication;
-using OneOf;
-using OneOf.Types;
+using MOSTComputers.UI.Web.Services.Authentication;
+
+using static MOSTComputers.UI.Web.Utils.FilePathUtils;
+using static MOSTComputers.UI.Web.Utils.PageCommonElements;
 using static MOSTComputers.UI.Web.Validation.ValidationCommonElements;
-using static MOSTComputers.UI.Web.StaticUtilities.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Pages.Accounts;
-
-public sealed class SignInModel(IAuthenticationService authenticationService) : PageModel
+[Authorize(Roles = "Admin")]
+public sealed class SignInModel : PageModel
 {
-    private readonly IAuthenticationService _authenticationService = authenticationService;
+    private readonly IAuthenticationService<PasswordsTableOnlyUser> _authenticationService;
 
-    [BindProperty]
-    public string Username { get; set; } = string.Empty;
+    public SignInModel(IAuthenticationService<PasswordsTableOnlyUser> authenticationService)
+    {
+        _authenticationService = authenticationService;
+    }
 
-    [BindProperty]
-    public string Password { get; set; } = string.Empty;
+    public SignInPageUsageOptionsEnum UsageEnum { get; set; } = SignInPageUsageOptionsEnum.SignIn;
 
-    [BindProperty]
-    //[ValidateNever]
-    public string? ConfirmPassword { get; set; } = string.Empty;
+    [BindProperty(SupportsGet = true)]
+    public int Usage
+    {
+        get => (int)UsageEnum;
+        set => UsageEnum = (SignInPageUsageOptionsEnum)value;
+    }
 
-    [BindProperty]
+    [BindProperty(SupportsGet = true)]
     public string? ReturnUrl { get; set; } = null;
 
 #pragma warning disable IDE0060 // Remove unused parameter
     // This is used to implicitly load the returnUrl data in the ReturnUrl prop
-    public void OnGet(string? returnUrl = null)
+    public IActionResult OnGet(int usage, string? returnUrl = null)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
+        ModelState.Clear();
+
+        return Page();
     }
 
-    public async Task<IActionResult> OnPostSignInAsync()
+    public async Task<IActionResult> OnPostSignInAsync([FromBody] SignInDTO signInDTO)
     {
         SignInRequest signInRequest = new()
         {
-            Username = Username,
-            Password = Password,
-            ConfirmPassword = ConfirmPassword ?? string.Empty
+            Username = signInDTO.Username,
+            Password = signInDTO.Password,
+            ConfirmPassword = signInDTO.ConfirmPassword ?? string.Empty
         };
 
-        OneOf<Success, ValidationResult, IEnumerable<IdentityError>> signInResult = await _authenticationService.SignInAsync(signInRequest);
-
-        return signInResult.Match<IActionResult>(
-            success =>
+        if (signInDTO.RoleValues is not null)
+        {
+            foreach (int roleValue in signInDTO.RoleValues)
             {
-                if (!string.IsNullOrWhiteSpace(ReturnUrl))
+                UserRoles? roleWithValue = UserRoles.GetRoleWithValue(roleValue);
+
+                if (roleWithValue is null) return BadRequest();
+
+                signInRequest.Roles ??= new();
+
+                signInRequest.Roles.Add(roleWithValue);
+            }
+        }
+
+        string? returnUrl = null;
+
+        if (signInDTO.ReturnUrl is not null)
+        {
+            returnUrl = GetOnlyPagePartOfUrl(signInDTO.ReturnUrl);
+        }
+        else if (ReturnUrl is not null)
+        {
+            returnUrl = GetOnlyPagePartOfUrl(ReturnUrl);
+        }
+
+        if (signInDTO.Usage == (int)SignInPageUsageOptionsEnum.CreateAccount)
+        {
+            return await CreateAccountAsync(signInRequest, returnUrl);
+        }
+
+        return await SignInAsync(signInRequest, returnUrl);
+    }
+
+    private async Task<IActionResult> CreateAccountAsync(SignInRequest signInRequest, string? returnUrl)
+    {
+        OneOf<PasswordsTableOnlyUser, ValidationResult, IEnumerable<IdentityError>> createAccountResult
+            = await _authenticationService.CreateAccountAsync(signInRequest);
+
+        return createAccountResult.Match<IActionResult>(
+            user =>
+            {
+                if (!string.IsNullOrWhiteSpace(returnUrl))
                 {
-                    return LocalRedirect(AddSlashAtTheStart(ReturnUrl)!);
+                    return new JsonResult(new { redirectUrl = AddSlashAtTheStart(returnUrl)! });
                 }
 
-                return RedirectToPage("", new { ReturnUrl = RemoveSlashAtTheStart(ReturnUrl) });
+                return BadRequest();
+            },
+            validationResult => GetBadRequestResultFromValidationResult(validationResult),
+            errors =>
+            {
+                AddIdentityErrorsToModelState(this, errors);
+
+                return BadRequest(ModelState);
+            });
+    }
+
+    private async Task<IActionResult> SignInAsync(SignInRequest signInRequest, string? returnUrl)
+    {
+        OneOf<PasswordsTableOnlyUser, ValidationResult, IEnumerable<IdentityError>> signInResult
+            = await _authenticationService.SignInAsync(signInRequest);
+
+        return signInResult.Match<IActionResult>(
+            user =>
+            {
+                if (!string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    return new JsonResult(new { redirectUrl = AddSlashAtTheStart(returnUrl)! });
+                }
+
+                return new JsonResult(new { redirectUrl = string.Empty });
             },
             validationResult =>
             {
                 AddValidationErrorsToPageModelState(this, validationResult);
 
-                return RedirectToPage("", new { ReturnUrl = RemoveSlashAtTheStart(ReturnUrl) });
+                return new JsonResult(new { redirectUrl = string.Empty });
             },
             errors =>
             {
-                return RedirectToPage("", new { ReturnUrl = RemoveSlashAtTheStart(ReturnUrl) });
+                return new JsonResult(new { redirectUrl = string.Empty });
             });
     }
+
+    public JsonResult OnGetRedirectToLogInPage([FromQuery] string? returnUrl = null)
+    {
+        return new JsonResult(new { redirectUrl = $"/Accounts/Login?ReturnUrl={returnUrl}" });
+    }
+}
+
+public sealed class SignInDTO
+{
+    public string Username { get; set; } = string.Empty;
+
+    public string Password { get; set; } = string.Empty;
+
+    public string? ConfirmPassword { get; set; } = string.Empty;
+    public int Usage { get; set; } = 0;
+
+    public string? ReturnUrl { get; set; } = null;
+    public IEnumerable<int>? RoleValues { get; set; } = null;
 }

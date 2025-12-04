@@ -1,7 +1,7 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductCharacteristic;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
@@ -9,12 +9,11 @@ using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
     public ProductCharacteristicServiceTests(
-        IProductCharacteristicService productCharacteristicService, 
+        IProductCharacteristicService productCharacteristicService,
         ICategoryService categoryService)
         : base(Startup.ConnectionString, Startup.RespawnerOptionsToIgnoreTablesThatShouldntBeWiped)
     {
@@ -99,7 +98,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(id2);
         Assert.True(id2 > 0);
 
-        IEnumerable<ProductCharacteristic> characteristicsInCategory = _productCharacteristicService.GetAllByCategoryId((int)categoryId);
+        IEnumerable<ProductCharacteristic> characteristicsInCategory = _productCharacteristicService.GetAllByCategoryIdAsync((int)categoryId);
 
         Assert.True(characteristicsInCategory.Count() >= 2);
 
@@ -158,7 +157,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(id2);
         Assert.True(id2 > 0);
 
-        IEnumerable<ProductCharacteristic> characteristicsInCategory = _productCharacteristicService.GetAllByCategoryId(-111);
+        IEnumerable<ProductCharacteristic> characteristicsInCategory = _productCharacteristicService.GetAllByCategoryIdAsync(-111);
 
         Assert.Empty(characteristicsInCategory);
     }
@@ -181,8 +180,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -240,9 +239,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId, "Third", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId, "Third", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -315,8 +314,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -371,8 +370,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -429,9 +428,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId, "Third", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId, "Third", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -504,8 +503,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId);
         Assert.True(categoryId > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId, "Second", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -765,9 +764,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -859,9 +858,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -954,9 +953,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.ProductCharacteristic);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -1050,9 +1049,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -1097,7 +1096,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         Assert.NotNull(id3);
         Assert.True(id3 > 0);
-        
+
         List<int> categoryIds = new() { (int)categoryId1, (int)categoryId2 };
 
         IEnumerable<IGrouping<int, ProductCharacteristic>> characteristicsInCategories = _productCharacteristicService.GetSearchStringAbbreviationsOnlyForSelectionOfCategoryIds(categoryIds);
@@ -1145,9 +1144,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.ProductCharacteristic);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.ProductCharacteristic);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -1241,9 +1240,9 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(categoryId2);
         Assert.True(categoryId2 > 0);
 
-        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
-        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicTypeEnum.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest1 = GetValidCharacteristicCreateRequest((int)categoryId1, "First", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest2 = GetValidCharacteristicCreateRequest((int)categoryId1, "Second", ProductCharacteristicType.SearchStringAbbreviation);
+        ProductCharacteristicCreateRequest validCreateRequest3 = GetValidCharacteristicCreateRequest((int)categoryId2, "Third", ProductCharacteristicType.SearchStringAbbreviation);
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult1 = _productCharacteristicService.Insert(validCreateRequest1);
         OneOf<int, ValidationResult, UnexpectedFailureResult> characteristicInsertResult2 = _productCharacteristicService.Insert(validCreateRequest2);
@@ -1340,7 +1339,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetById(characteristicId.Value);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByIdAsync(characteristicId.Value);
 
         Assert.NotNull(characteristic);
 
@@ -1392,7 +1391,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetById(0);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByIdAsync(0);
 
         Assert.Null(characteristic);
     }
@@ -1434,7 +1433,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, nameOfCreateRequest);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync((int)categoryId, nameOfCreateRequest);
 
         Assert.NotNull(characteristic);
 
@@ -1492,7 +1491,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             validationResult => true,
             unexpectedFailureResult => false));
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, invalidNameOfCharacteristc);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync((int)categoryId, invalidNameOfCharacteristc);
 
         Assert.Null(characteristic);
     }
@@ -1535,7 +1534,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, invalidNameOfCategory);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync((int)categoryId, invalidNameOfCategory);
 
         Assert.Null(characteristic);
     }
@@ -1577,7 +1576,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName(categoryId.Value - 1, nameOfCreateRequest);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync(categoryId.Value - 1, nameOfCreateRequest);
 
         Assert.Null(characteristic);
     }
@@ -1619,8 +1618,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
         Assert.NotNull(characteristicId);
         Assert.True(characteristicId > 0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
-            categoryId.Value, nameOfCreateRequest, ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicTypeAsync(
+            categoryId.Value, nameOfCreateRequest, ProductCharacteristicType.ProductCharacteristic);
 
         Assert.NotNull(characteristic);
 
@@ -1673,8 +1672,8 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         Assert.Null(characteristicId);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
-            categoryId.Value, nameOfCreateRequest, ProductCharacteristicTypeEnum.ProductCharacteristic);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicTypeAsync(
+            categoryId.Value, nameOfCreateRequest, ProductCharacteristicType.ProductCharacteristic);
 
         Assert.Null(characteristic);
     }
@@ -1682,7 +1681,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
     [Theory]
     [MemberData(nameof(GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid_Data))]
     public void GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid(
-        int categoryId, string characteristicName, ProductCharacteristicTypeEnum characteristicType)
+        int categoryId, string characteristicName, ProductCharacteristicType characteristicType)
     {
         const string nameOfCreateRequest = "NAME";
 
@@ -1729,21 +1728,21 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             characteristicName = nameOfCreateRequest;
         }
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicType(
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAndCharacteristicTypeAsync(
             categoryId, characteristicName, characteristicType);
 
         Assert.Null(characteristic);
     }
 
 #pragma warning disable CA2211 // Non-constant fields should not be visible
-    public static TheoryData<int, string, ProductCharacteristicTypeEnum> GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid_Data = new()
+    public static TheoryData<int, string, ProductCharacteristicType> GetByCategoryIdAndNameAndCharacteristicType_ShouldFail_WhenDataIsInvalid_Data = new()
     {
-        { 0, _useRequiredNameValue, ProductCharacteristicTypeEnum.ProductCharacteristic },
-        { -1, _useRequiredNameValue, ProductCharacteristicTypeEnum.ProductCharacteristic },
-        { UseRequiredValuePlaceholder, string.Empty, ProductCharacteristicTypeEnum.ProductCharacteristic },
-        { UseRequiredValuePlaceholder, "    ", ProductCharacteristicTypeEnum.ProductCharacteristic },
-        { UseRequiredValuePlaceholder, _invalidCharacteristicName, ProductCharacteristicTypeEnum.ProductCharacteristic },
-        { UseRequiredValuePlaceholder, _useRequiredNameValue, ProductCharacteristicTypeEnum.SearchStringAbbreviation },
+        { 0, _useRequiredNameValue, ProductCharacteristicType.ProductCharacteristic },
+        { -1, _useRequiredNameValue, ProductCharacteristicType.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, string.Empty, ProductCharacteristicType.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, "    ", ProductCharacteristicType.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, _invalidCharacteristicName, ProductCharacteristicType.ProductCharacteristic },
+        { UseRequiredValuePlaceholder, _useRequiredNameValue, ProductCharacteristicType.SearchStringAbbreviation },
     };
 #pragma warning restore CA2211 // Non-constant fields should not be visible
 
@@ -1807,7 +1806,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
             nameOfCreateRequest2
         };
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCategoryIdAndNames(
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCategoryIdAndNamesAsync(
             (int)categoryId, createdProductCharacteristicsNames);
 
         Assert.True(characteristics.Count() >= 2);
@@ -1893,7 +1892,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         List<int> characteristicIds = new() { characteristicId1.Value, characteristicId2.Value };
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIds(characteristicIds);
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIdsAsync(characteristicIds);
 
         Assert.Equal(2, characteristics.Count());
 
@@ -1927,7 +1926,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
     {
         List<int> characteristicIds = new() { 0, -1 };
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIds(characteristicIds);
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetSelectionByCharacteristicIdsAsync(characteristicIds);
 
         Assert.Empty(characteristics);
     }
@@ -2500,7 +2499,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         bool success = _productCharacteristicService.Delete(characteristicId.Value);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, nameOfCreateRequest);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync((int)categoryId, nameOfCreateRequest);
 
         Assert.Null(characteristic);
     }
@@ -2544,7 +2543,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         bool success = _productCharacteristicService.Delete(0);
 
-        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndName((int)categoryId, nameOfCreateRequest);
+        ProductCharacteristic? characteristic = _productCharacteristicService.GetByCategoryIdAndNameAsync((int)categoryId, nameOfCreateRequest);
 
         Assert.NotNull(characteristic);
     }
@@ -2604,7 +2603,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         bool success = _productCharacteristicService.DeleteAllForCategory((int)categoryId);
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryId((int)categoryId);
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryIdAsync((int)categoryId);
 
         Assert.Empty(characteristics);
     }
@@ -2660,7 +2659,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         Assert.False(success);
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryId((int)categoryId);
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryIdAsync((int)categoryId);
 
         Assert.Empty(characteristics);
     }
@@ -2722,7 +2721,7 @@ public sealed class ProductCharacteristicServiceTests : IntegrationTestBaseForNo
 
         Assert.False(success);
 
-        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryId((int)categoryId);
+        IEnumerable<ProductCharacteristic> characteristics = _productCharacteristicService.GetAllByCategoryIdAsync((int)categoryId);
 
         Assert.Equal(2, characteristics.Count());
     }

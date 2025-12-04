@@ -1,0 +1,88 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductImages
+
+@if (Product is null)
+{
+    <p class="text-danger">Product not found.</p>
+
+    return;
+}
+
+<div class="full-parent-width">
+    <div class="container border-2 full-parent-width full-parent-height">
+
+        <div>
+            <h1 class="align-text-center">@Product.Name</h1>
+
+            <h5 class="align-text-center product-id-heading">ID: @Product.Id</h5>
+        </div>
+
+        <div>
+            <ul class="product-images-list" style="height: 13em;">
+
+                @if (ProductImages is not null)
+                {
+                    List<ProductImageDisplayData> orderedProductImages
+                        = ProductImages.OrderBy(image => image.DisplayOrder ?? int.MaxValue)
+                            .ToList();
+
+                    @for (int i = 0; i < orderedProductImages.Count; i++)
+                    {
+                        ProductImageDisplayData image = ProductImages[i];
+
+                        bool isImageFileNameInfoActive = (image?.Active ?? true);
+
+                        float opacityOfLi = isImageFileNameInfoActive ? 1.0F : 0.35F;
+
+                        <li class="product-images-list-item"
+                            style="opacity: @(opacityOfLi);">
+
+                            @if (isImageFileNameInfoActive)
+                            {
+                                <div class="product-image-active-button-container">
+                                    <input type="checkbox" aria-label="Close" checked
+                                        class="product-image-active-button" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="product-image-active-button-container">
+                                    <input type="checkbox" aria-label="Close"
+                                        class="product-image-active-button" />
+                                </div>
+                            }
+
+                            <button class="btn bg-white full-parent-height" name="Image #@i"
+                                style="background: url('@image?.ImageSrc') no-repeat center; background-size: contain; background-origin: content-box;">
+                            </button>
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+
+        <div>
+            @if (ProductHtml is not null)
+            {
+                <div>
+                    @((MarkupString)ProductHtml)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    public sealed class ProductImageDisplayData
+    {
+        public required string ImageSrc { get; set; }
+        public int? DisplayOrder { get; set; }
+        public bool? Active { get; set; }
+    }
+
+    [Parameter] public Product? Product { get; set; }
+
+    [Parameter] public List<ProductImageDisplayData>? ProductImages { get; set; }
+
+    [Parameter] public string? ProductHtml { get; set; }
+}

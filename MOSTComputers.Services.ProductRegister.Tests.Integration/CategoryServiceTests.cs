@@ -1,14 +1,13 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
-using FluentValidation.Results;
-using MOSTComputers.Models.Product.Models.Validation;
 using OneOf;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -74,7 +73,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id2);
         Assert.True(id2 > 0);
 
-        IEnumerable<Category> categories = _categoryService.GetAll();
+        IEnumerable<Category> categories = _categoryService.GetAllAsync();
 
         Assert.True(categories.Count() >= 2);
 
@@ -108,7 +107,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
             validationResult => true,
             unexpectedFailureResult => false));
 
-        IEnumerable<Category> categories = _categoryService.GetAll();
+        IEnumerable<Category> categories = _categoryService.GetAllAsync();
 
         Assert.DoesNotContain(categories,
             x => x.Description == _invalidCategoryCreateRequest.Description
@@ -135,7 +134,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Category? category = _categoryService.GetById(id.Value);
+        Category? category = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(category);
 
@@ -170,7 +169,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Category? category = _categoryService.GetById(id.Value + 1000);
+        Category? category = _categoryService.GetByIdAsync(id.Value + 1000);
 
         Assert.Null(category);
     }
@@ -199,7 +198,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         {
             Assert.True(id > 0);
 
-            category = _categoryService.GetById(id.Value);
+            category = _categoryService.GetByIdAsync(id.Value);
         }
 
         Assert.Equal(expected, category is not null);
@@ -220,7 +219,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
 
     public static TheoryData<ServiceCategoryCreateRequest, bool> Insert_ShouldSucceedOrFail_InExpectedManner_Data => new()
     {
-        
+
         {
             new ServiceCategoryCreateRequest()
             {
@@ -339,7 +338,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Category? categoryInserted = _categoryService.GetById(id.Value);
+        Category? categoryInserted = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(categoryInserted);
 
@@ -347,7 +346,7 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
 
         _categoryService.Update(request);
 
-        Category? updatedCategory = _categoryService.GetById(id.Value);
+        Category? updatedCategory = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(updatedCategory);
 
@@ -472,13 +471,13 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Category? categoryInserted = _categoryService.GetById(id.Value);
+        Category? categoryInserted = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(categoryInserted);
 
         bool success = _categoryService.Delete(id.Value);
 
-        Category? categoriesDelete = _categoryService.GetById(id.Value);
+        Category? categoriesDelete = _categoryService.GetByIdAsync(id.Value);
 
         Assert.Null(categoriesDelete);
         Assert.True(success);
@@ -502,13 +501,13 @@ public sealed class CategoryServiceTests : IntegrationTestBaseForNonWebProjectsW
         Assert.NotNull(id);
         Assert.True(id > 0);
 
-        Category? categoryInserted = _categoryService.GetById(id.Value);
+        Category? categoryInserted = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(categoryInserted);
 
         bool success = _categoryService.Delete(id.Value + 1000);
 
-        Category? categoryToDelete = _categoryService.GetById(id.Value);
+        Category? categoryToDelete = _categoryService.GetByIdAsync(id.Value);
 
         Assert.NotNull(categoryToDelete);
         Assert.False(success);

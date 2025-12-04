@@ -7,7 +7,7 @@ internal class ServiceToDoLocalChangeCreateRequestValidator : AbstractValidator<
 {
     public ServiceToDoLocalChangeCreateRequestValidator()
     {
-        RuleFor(x => x.TableName).Must(IsNotNullEmptyOrWhiteSpace);
+        RuleFor(x => x.TableName).NotNullOrWhiteSpace();
         RuleFor(x => x.TableElementId).GreaterThan(0);
     }
 }

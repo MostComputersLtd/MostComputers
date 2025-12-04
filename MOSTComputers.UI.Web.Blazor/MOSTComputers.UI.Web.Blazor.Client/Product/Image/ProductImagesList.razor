@@ -1,0 +1,83 @@
+﻿@using MOSTComputers.Models.Product.Models.ProductImages
+
+<div class="product-images-list-container">
+
+    <ul class="product-images-list">
+
+        @if (Images is not null && Images.Count > 0)
+        {
+            string? firstModelHtmlData = Images.First()?.HtmlData;
+
+            for (int i = 0; i < Images.Count; i++)
+            {
+                ProductImageData? image = Images[i];
+
+                if (image is null) continue;
+
+                string imageDataRoute;
+
+                imageDataRoute = $"/api/images/originalImageData/{image.Id}";
+
+                bool isHtmlDifferentFromOriginal = (firstModelHtmlData != image.HtmlData);
+
+                <li class="product-images-list-item">
+                    <button name="Image #@i" class="btn product-images-list-item-image-button" ondblclick="window.open('@imageDataRoute', '_blank')"
+                        style="background-image: url('@imageDataRoute')">
+                    </button>
+
+                    <div class="product-images-date-container">
+
+                        @if (image.DateModified is not null)
+                        {
+                            <p class="align-text-center mb-0">
+                                @image.DateModified.Value.ToString("dd.MM.yyyy")
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="align-text-center mb-0">
+                                No date provided
+                            </p>
+                        }
+
+                        <button id="product-image-popup-image-view-html-button-@i"
+                            class="product-images-view-html-button @(isHtmlDifferentFromOriginal ? "unoriginal" : string.Empty)"
+                            @onclick="() => ViewImageHtml(image)">
+                            View Html
+                        </button>
+                    </div>
+                </li>
+            }
+        }
+    </ul>
+
+    <div class="pb-4 mt-3" style="overflow-y: auto;">
+        @((MarkupString)_selectedHtmlData)
+    </div>
+</div>
+
+@code {
+    [Parameter] public required List<ProductImageData> Images { get; set; }
+
+    private string _selectedHtmlData = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _selectedHtmlData = Images.FirstOrDefault()?.HtmlData ?? string.Empty;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _selectedHtmlData = Images.FirstOrDefault()?.HtmlData ?? string.Empty;
+    }
+
+    private void ViewImageHtml(ProductImageData image)
+    {
+        _selectedHtmlData = image.HtmlData ?? string.Empty;
+    }
+
+    public void EmptyImageHtmlData()
+    {
+        _selectedHtmlData = string.Empty;
+    }
+}

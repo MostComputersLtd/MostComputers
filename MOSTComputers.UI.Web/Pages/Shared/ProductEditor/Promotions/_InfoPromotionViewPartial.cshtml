@@ -1,0 +1,28 @@
+﻿@model InfoPromotionViewPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Promotion:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.Product.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="infoPromotionView_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <div class="col-12">
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Alert Picture Id: @(Model.Product.AlertPictureId.ToString() ?? "-")</p>
+            </div>
+
+            <div class="col-6 col-md-12">
+                <p class="mb-0">Alert Expire Date: @(Model.Product.AlertExpireDate?.ToString() ?? "-")</p>
+            </div>
+        </div>
+    </div>
+</div>

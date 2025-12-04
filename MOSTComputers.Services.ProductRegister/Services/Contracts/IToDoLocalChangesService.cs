@@ -7,17 +7,16 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 using OneOf;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
-
 public interface IToDoLocalChangesService
 {
-    IEnumerable<LocalChangeData> GetAll();
-    IEnumerable<LocalChangeData> GetAllForOperationType(ChangeOperationTypeEnum operationType);
-    IEnumerable<LocalChangeData> GetAllForTable(string tableName);
-    LocalChangeData? GetById(int id);
-    LocalChangeData? GetByTableNameAndElementIdAndOperationType(string tableName, int elementId, ChangeOperationTypeEnum changeOperationType);
-    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ServiceToDoLocalChangeCreateRequest createRequest, IValidator<ServiceToDoLocalChangeCreateRequest>? validator = null);
-    bool DeleteRangeByTableNameAndElementIds(string tableName, IEnumerable<int> elementIds);
-    bool DeleteRangeByIds(IEnumerable<int> ids);
-    bool DeleteAllByTableNameAndElementId(string tableName, int elementId);
-    bool DeleteById(int id);
+    Task<List<LocalChangeData>> GetAllAsync();
+    Task<List<LocalChangeData>> GetAllForOperationTypeAsync(ChangeOperationType operationType);
+    Task<List<LocalChangeData>> GetAllForTableAsync(string tableName);
+    Task<LocalChangeData?> GetByIdAsync(int id);
+    Task<LocalChangeData?> GetByTableNameAndElementIdAndOperationTypeAsync(string tableName, int elementId, ChangeOperationType changeOperationType);
+    Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ServiceToDoLocalChangeCreateRequest createRequest);
+    Task<bool> DeleteByIdAsync(int id);
+    Task<bool> DeleteAllByTableNameAndElementIdAsync(string tableName, int elementId);
+    Task<bool> DeleteRangeByIdsAsync(IEnumerable<int> ids);
+    Task<bool> DeleteRangeByTableNameAndElementIdsAsync(string tableName, IEnumerable<int> elementIds);
 }

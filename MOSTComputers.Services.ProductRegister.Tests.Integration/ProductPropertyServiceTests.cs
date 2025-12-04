@@ -1,18 +1,18 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.DAL.Models.Requests.ProductCharacteristic;
-using MOSTComputers.Services.DAL.Models.Requests.ProductProperty;
+using MOSTComputers.Services.DAL.Products.Models.Requests.Product;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductCharacteristic;
+using MOSTComputers.Services.DAL.Products.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Category;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTestElements;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -154,7 +154,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         var propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
         var propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProductAsync((int)productId.Value);
 
         Assert.True(propsInProduct.Count() >= 2);
 
@@ -221,7 +221,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProductAsync((int)productId.Value);
 
         Assert.NotEmpty(propsInProduct);
 
@@ -289,7 +289,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest1);
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(propertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct(invalidProductId);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProductAsync(invalidProductId);
 
         Assert.Empty(propsInProduct);
     }
@@ -352,7 +352,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult1 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest1);
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult2 = _productPropertyService.InsertWithCharacteristicId(invalidPropertyCreateRequest2);
 
-        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProduct((int)productId.Value);
+        IEnumerable<ProductProperty> propsInProduct = _productPropertyService.GetAllInProductAsync((int)productId.Value);
 
         if (productCreateRequest.Properties is not null)
         {
@@ -423,7 +423,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.NotNull(property);
 
@@ -469,7 +469,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => true,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, productId.Value);
 
         Assert.Null(property);
     }
@@ -512,7 +512,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => true,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, invalidProductId);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, invalidProductId);
 
         Assert.Null(property);
     }
@@ -564,7 +564,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => true,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, productId.Value);
 
         Assert.Null(property);
     }
@@ -624,7 +624,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, productId.Value);
 
         Assert.Equal(expected, property is not null);
 
@@ -800,7 +800,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.Equal(expected, property is not null);
 
@@ -1001,7 +1001,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
             validationResult => false,
             unexpectedFailureResult => false));
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.NotNull(property);
 
@@ -1176,7 +1176,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.True(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1223,7 +1223,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.False(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, invalidProductId);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, invalidProductId);
 
         Assert.Null(property);
     }
@@ -1270,7 +1270,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.False(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1326,7 +1326,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.False(success);
 
-        ProductProperty? property = _productPropertyService.GetByNameAndProductId(characteristicName, (int)productId.Value);
+        ProductProperty? property = _productPropertyService.GetByProductIdAndName(characteristicName, (int)productId.Value);
 
         Assert.Null(property);
     }
@@ -1389,7 +1389,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         bool success = _productPropertyService.DeleteAllForProduct(productId.Value);
 
-        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProduct(productId.Value);
+        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProductAsync(productId.Value);
 
         Assert.Empty(characteristicsInCategory);
     }
@@ -1452,7 +1452,7 @@ public sealed class ProductPropertyServiceTests : IntegrationTestBaseForNonWebPr
 
         bool success = _productPropertyService.DeleteAllForCharacteristic(characteristicId1.Value);
 
-        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProduct((int)productId.Value);
+        IEnumerable<ProductProperty> characteristicsInCategory = _productPropertyService.GetAllInProductAsync((int)productId.Value);
 
 
         Assert.NotEmpty(characteristicsInCategory);

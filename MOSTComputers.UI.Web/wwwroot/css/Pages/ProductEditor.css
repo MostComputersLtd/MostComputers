@@ -1,0 +1,43 @@
+﻿body > div {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+}
+    body > div > main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+.product-data-table-scrollable-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.product-data-table {
+    background-color: var(--bs-body-bg);
+    max-height: 100%;
+}
+
+.product-data-table-head {
+    position: sticky;
+    top: 0;
+    background: inherit;
+}
+
+.imagesCompareTableRow:not(.selected-for-image-save):hover {
+    background-color: antiquewhite;
+}
+
+.selected-for-image-save {
+    background-color: #F7C0BC;
+}
+
+.product-data-table p
+{
+    margin: 0px;
+}

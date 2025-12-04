@@ -1,11 +1,10 @@
 ﻿using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Services.TransactionalFileManagement.Contracts;
-using OneOf.Types;
 using OneOf;
+using OneOf.Types;
 using SixLabors.ImageSharp;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
-
 internal sealed class DeleteImageFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult>>
 {
     public DeleteImageFileOperation(string imageDirectoryPath, string fullFileName)

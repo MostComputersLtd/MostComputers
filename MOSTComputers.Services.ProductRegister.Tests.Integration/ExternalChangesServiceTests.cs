@@ -3,7 +3,9 @@ using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.External;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Tests.Integration.Common.DependancyInjection;
 using OneOf;
 using OneOf.Types;
@@ -11,7 +13,6 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -86,12 +87,12 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChanges, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
 
         Assert.Contains(externalChanges, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
     }
 
@@ -143,12 +144,12 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChanges, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
 
         Assert.DoesNotContain(externalChanges, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
     }
 
@@ -212,25 +213,25 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.True(isFirstImageUpdateSuccessful);
 
-        IEnumerable<ExternalChangeData> externalChangesForOperation = _externalChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<ExternalChangeData> externalChangesForOperation = _externalChangesService.GetAllForOperationType(ChangeOperationType.Create);
 
         Assert.True(externalChangesForOperation.Count() >= 2);
 
-        Assert.All(externalChangesForOperation, x => Assert.Equal(ChangeOperationTypeEnum.Create, x.OperationType));
+        Assert.All(externalChangesForOperation, x => Assert.Equal(ChangeOperationType.Create, x.OperationType));
 
         Assert.Contains(externalChangesForOperation, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
 
         Assert.Contains(externalChangesForOperation, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForOperation, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
     }
 
@@ -311,20 +312,20 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.True(isFirstImageUpdateSuccessful);
 
-        IEnumerable<ExternalChangeData> externalChangesForOperation = _externalChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Update);
+        IEnumerable<ExternalChangeData> externalChangesForOperation = _externalChangesService.GetAllForOperationType(ChangeOperationType.Update);
 
         Assert.NotEmpty(externalChangesForOperation);
 
-        Assert.All(externalChangesForOperation, x => Assert.Equal(ChangeOperationTypeEnum.Update, x.OperationType));
+        Assert.All(externalChangesForOperation, x => Assert.Equal(ChangeOperationType.Update, x.OperationType));
 
         Assert.Contains(externalChangesForOperation, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForOperation, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == imageId);
     }
 
@@ -396,17 +397,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
     }
 
@@ -478,17 +479,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
     }
 
@@ -560,17 +561,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
     }
 
@@ -642,17 +643,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTable, x =>
             x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == imageId);
     }
 
@@ -687,7 +688,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         ExternalChangeData? sameExternalChangeDataButUsingGetById = _externalChangesService.GetById(externalChangeData.Id);
 
@@ -696,7 +697,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         Assert.Equal(externalChangeData.Id, sameExternalChangeDataButUsingGetById.Id);
         Assert.Equal(imageId, sameExternalChangeDataButUsingGetById.TableElementId);
         Assert.Equal(_allImagesTableName, sameExternalChangeDataButUsingGetById.TableName);
-        Assert.Equal(ChangeOperationTypeEnum.Create, sameExternalChangeDataButUsingGetById.OperationType);
+        Assert.Equal(ChangeOperationType.Create, sameExternalChangeDataButUsingGetById.OperationType);
     }
 
     [Fact]
@@ -730,7 +731,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         ExternalChangeData? sameExternalChangeDataButUsingGetById = _externalChangesService.GetById(-1);
 
@@ -768,7 +769,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         bool isDeleteSuccessful = _externalChangesService.DeleteById(externalChangeData.Id);
 
@@ -810,7 +811,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         bool isDeleteSuccessful = _externalChangesService.DeleteById(-1);
 
@@ -852,10 +853,10 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         bool isDeleteSuccessful = _externalChangesService.DeleteByTableNameAndElementIdAndOperationType(
-            _allImagesTableName, imageId, ChangeOperationTypeEnum.Create);
+            _allImagesTableName, imageId, ChangeOperationType.Create);
 
         Assert.True(isDeleteSuccessful);
 
@@ -867,7 +868,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
     [Theory]
     [MemberData(nameof(DeleteByTableNameAndElementIdAndOperationType_ShouldOnlyDeleteWithSameTableNameAndElementIdAndOperationType_WhenRecordExists_Data))]
     public void DeleteByTableNameAndElementIdAndOperationType_ShouldOnlyDeleteWithSameTableNameAndElementIdAndOperationType_WhenRecordExists(
-        string tableName, int elementId, ChangeOperationTypeEnum operationType, bool expected)
+        string tableName, int elementId, ChangeOperationType operationType, bool expected)
     {
         int productId = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
@@ -897,7 +898,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         ExternalChangeData externalChangeData = allChangeDataForTable.First(x =>
             x.TableElementId == imageId
             && x.TableName == _allImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create);
+            && x.OperationType == ChangeOperationType.Create);
 
         if (elementId == UseRequiredValuePlaceholder)
         {
@@ -913,13 +914,13 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
         Assert.Equal(expected, externalChangeDataAfterDelete is null);
     }
 
-    public static TheoryData<string, int, ChangeOperationTypeEnum, bool> DeleteByTableNameAndElementIdAndOperationType_ShouldOnlyDeleteWithSameTableNameAndElementIdAndOperationType_WhenRecordExists_Data => new()
+    public static TheoryData<string, int, ChangeOperationType, bool> DeleteByTableNameAndElementIdAndOperationType_ShouldOnlyDeleteWithSameTableNameAndElementIdAndOperationType_WhenRecordExists_Data => new()
     {
-        { _allImagesTableName, UseRequiredValuePlaceholder, ChangeOperationTypeEnum.Create, true },
-        { _firstImagesTableName, UseRequiredValuePlaceholder, ChangeOperationTypeEnum.Create, false },
-        { string.Empty, UseRequiredValuePlaceholder, ChangeOperationTypeEnum.Create, false },
-        { _allImagesTableName, -1, ChangeOperationTypeEnum.Create, false },
-        { _allImagesTableName, UseRequiredValuePlaceholder, ChangeOperationTypeEnum.Update, false },
+        { _allImagesTableName, UseRequiredValuePlaceholder, ChangeOperationType.Create, true },
+        { _firstImagesTableName, UseRequiredValuePlaceholder, ChangeOperationType.Create, false },
+        { string.Empty, UseRequiredValuePlaceholder, ChangeOperationType.Create, false },
+        { _allImagesTableName, -1, ChangeOperationType.Create, false },
+        { _allImagesTableName, UseRequiredValuePlaceholder, ChangeOperationType.Update, false },
     };
 
     [Fact]
@@ -988,12 +989,12 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         bool areAllRecordsWithSameTableNameAndElementIdDeleted
@@ -1004,12 +1005,12 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterDelete, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterDelete, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         IEnumerable<ExternalChangeData> externalChangeDatasOfInsertInAllImagesOperation
@@ -1085,7 +1086,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         bool areAllRecordsWithSameTableNameAndElementIdDeleted
@@ -1096,7 +1097,7 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterDelete, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         IEnumerable<ExternalChangeData> externalChangeDatasOfInsertInAllImagesOperation
@@ -1172,12 +1173,12 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         ExternalChangeData? externalChangeDataForFirstImageInsert = externalChangesForFirstImageTable.First(x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId);
 
         ExternalChangeData? externalChangeDataForFirstImageUpdate = externalChangesForFirstImageTable.First(x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId);
 
         Assert.NotNull(externalChangeDataForFirstImageInsert);
@@ -1286,17 +1287,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId1);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         List<int> elementIds = new() { productId1, productId2 };
@@ -1309,17 +1310,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId1);
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
     }
 
@@ -1409,17 +1410,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId1);
 
         Assert.Contains(externalChangesForFirstImageTable, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
 
         List<int> elementIds = new() { productId1 };
@@ -1432,17 +1433,17 @@ public sealed class ExternalChangesServiceTests : IntegrationTestBaseForNonWebPr
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId1);
 
         Assert.DoesNotContain(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Update
+            && x.OperationType == ChangeOperationType.Update
             && x.TableElementId == productId1);
 
         Assert.Contains(externalChangesForFirstImageTableAfterUpdate, x =>
             x.TableName == _firstImagesTableName
-            && x.OperationType == ChangeOperationTypeEnum.Create
+            && x.OperationType == ChangeOperationType.Create
             && x.TableElementId == productId2);
     }
 }

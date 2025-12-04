@@ -1,0 +1,1064 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+@using System.Text
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.Currencies.Contracts
+@using MOSTComputers.Services.Currencies.Models
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Responses
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Client.Product
+@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
+@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
+@using MOSTComputers.UI.Web.Blazor.Utils
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+@using static MOSTComputers.Utils.Files.FilePathUtils
+
+@inject ICategoryService CategoryService
+
+@inject IProductService ProductService
+@inject IProductSearchService ProductSearchService
+
+@inject IProductPropertyService ProductPropertyService
+@inject IProductCharacteristicService ProductCharacteristicService
+@inject IProductImageService ProductImageService
+@inject IProductImageFileService ProductImageFileService
+@inject IPromotionService PromotionService
+@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+@inject IManufacturerToPromotionGroupRelationService ManufacturerToPromotionGroupRelationService
+@inject IProductHtmlService ProductHtmlService
+@inject ISearchStringOriginService SearchStringOriginService
+@inject ICurrencyConversionService CurrencyConversionService
+
+@inject NavigationManager NavigationManager
+
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Home</PageTitle>
+
+<HeadContent>
+    <link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+    <style>
+        body > div.page > main {
+            min-width: min-content;
+        }
+
+            body > div.page > main > article {
+                min-width: min-content;
+            }
+    </style>
+</HeadContent>
+
+<div class="home-page">
+    <header class="home-page-header">
+
+        <ul class="header-items-list">
+
+            <li class="header-list-item header-search-input-list-item">
+                <input id="productTableSearchInput" type="text" class="search-input"
+                    placeholder="Search..." @bind="UserInputString" />
+
+                <button class="btn header-search-input-help-button" @onclick="ShowSearchHelpPopup">
+                    ?
+                </button>
+            </li>
+
+            <li class="header-search-button-list-item">
+                <button id="productTableSearchCategoryButton" type="button"
+                    class="btn btn-outline-primary search-button"
+                    style="@(_isSearchingForProducts ? "display: none;" : string.Empty)"
+                    @onclick="@SearchProductsAsync">
+                    Search
+                </button>
+
+                <div id="productTableSearchCategoryLoader" class="round-loader-default" style="@(_isSearchingForProducts ? string.Empty : "display: none;")"></div>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableCategorySelect" @bind="SelectedCategoryId">
+
+                    <option value="">All</option>
+
+                    @foreach (Category category in CategoriesInSelect)
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableProductStatusSelect" @bind="SelectedProductStatus">
+
+                    @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
+                    {
+                        <option value="@((int)productStatus)">@GetStringFromProductStatusSearchOptions(productStatus)</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTablePromotionStatusSelect" @bind="SelectedPromotionSearchOptions">
+
+                    <option value="">All</option>
+
+                    @foreach (PromotionSearchOptions promotionSearchOptions in PromotionSearchOptionsInSelect)
+                    {
+                        <option value="@((int)promotionSearchOptions)">
+                            @GetStringFromPromotionSearchOptions(promotionSearchOptions)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableCurrencySelect" @bind="SelectedCurrency">
+
+                    @foreach (Currency currency in CurrenciesInSelect)
+                    {
+                        <option value="@((int)currency)">
+                            @GetPriceSuffixStringFromCurrency(currency)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item header-result-count-list-item">
+                <select id="productTableResultsCountSelect" @bind="SelectedResultCount">
+
+                    @foreach (int resultCount in ResultCountsInSelect)
+                    {
+                        <option value="@resultCount">
+                            @resultCount
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item header-show-images-list-item">
+                <label for="productTableResultsShowImagesCheckbox" class="header-show-images-label">Images:</label>
+
+                <input id="productTableResultsShowImagesCheckbox" type="checkbox" @bind="_showImages" alt="Show Images" />
+            </li>
+
+            <li class="header-list-item header-order-summary-list-item">
+                <button id="productTableResultsShowImagesCheckbox" type="button" class="btn btn-secondary" @onclick="ToggleOrderSummaryProducts">
+                    @(_showOrderSummary ? "Show Search" : "Order Summary")
+                </button>
+            </li>
+        </ul>
+    </header>
+
+    <div class="products-data-container">
+
+        @if (Products?.Count > 0)
+        {
+            List<ProductDisplayData> products = Products;
+
+            if (_showOrderSummary)
+            {
+                products = products.Where(x => x.OrderQuantity > 0).ToList();
+            }
+
+            <table class="products-data-table table-with-small-horizontal-padding-on-cells">
+                <thead class="products-data-table-head">
+                    <tr>
+                        <th>Promo</th>
+                        <th>Stat</th>
+                        <th>Qty</th>
+                        <th>CSTID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Mfr</th>
+                        <th>EAN</th>
+                        <th>Part No. 2</th>
+                        <th>SStr</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @for (int i = 0; i < products.Count; i++)
+                    {
+                        ProductDisplayData productData = products[i];
+
+                        decimal? price = productData.DisplayPrice?.Price ?? productData.Product.Price;
+                        Currency? currency = productData.DisplayPrice?.Currency ?? productData.Product.Currency;
+
+                        bool isValidEAN13Code = false;
+
+                        if (productData.Product.PartNumber1 is not null)
+                        {
+                            isValidEAN13Code = ProductGTINCodeType.EAN13.IsValid(productData.Product.PartNumber1);
+                        }
+
+                        int? promotionPictureId = productData.Product.AlertPictureId;
+
+                        if (promotionPictureId is null || promotionPictureId <= 0)
+                        {
+                            promotionPictureId = productData.Product.PromotionPictureId;
+                        }
+
+                        DateTime? promotionExpireDate = productData.Product.AlertExpireDate;
+
+                        bool isShowingImages = _showImages && productData.ImageUrls is not null && productData.ImageUrls.Count > 0;
+
+                        int rowspanOfPromoColumn = isShowingImages ? 2 : 1;
+                        int colspanOfColumnBeforeImageColumn = isShowingImages ? 3 : 4;
+
+                        <tr style="border-top: 1px gray solid">
+                            <td rowspan="@rowspanOfPromoColumn">
+
+								@if (promotionPictureId > 0
+                                    && (promotionExpireDate is null || promotionExpireDate >= DateTime.Now))
+                                {
+                                    <MOSTComputers.UI.Web.Blazor.Client.Product.Promotion.PromotionImage PromotionPictureId="promotionPictureId.Value"
+                                        class="product-promotions-promotion-status-image" />
+                                }
+
+                                @if (productData.Promotions?.Count > 0)
+                                {
+                                    <div class="product-promotions">
+
+                                        @foreach (Promotion promotion in productData.Promotions)
+                                        {
+                                            string? promotionTypeString = null;
+
+                                            if (promotion.Type is not null)
+                                            {
+                                                promotionTypeString = promotion.Type.Value switch
+                                                {
+                                                    1 => "Promotion",
+                                                    2 => "Consignation",
+                                                    _ => null
+                                                };
+                                            }
+
+                                            string? expirationDateString = null;
+
+                                            if (promotion.ExpirationDate is not null)
+                                            {
+                                                if (promotion.ExpirationDate.Value.TimeOfDay == TimeSpan.Zero)
+                                                {
+                                                    expirationDateString = promotion.ExpirationDate.Value.ToString("d");
+                                                }
+                                                else
+                                                {
+                                                    expirationDateString = promotion.ExpirationDate.Value.ToString();
+                                                }
+                                            }
+
+                                            <div class="product-promotion mt-1">
+                                                <div class="product-promotion-period">
+
+                                                    @if (promotionTypeString is not null)
+                                                    {
+                                                        <p class="mb-0 me-1">@promotionTypeString:</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="mb-0 me-1">Promo:</p>
+                                                    }
+
+                                                    @if (promotion.StartDate is not null)
+                                                    {
+                                                        string startDateString;
+
+                                                        if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
+                                                        {
+                                                            startDateString = promotion.StartDate.Value.ToString("d");
+                                                        }
+                                                        else
+                                                        {
+                                                            startDateString = promotion.StartDate.Value.ToString();
+                                                        }
+
+                                                        if (promotion.ExpirationDate is not null)
+                                                        {
+                                                            <p>@startDateString - @expirationDateString</p>
+                                                        }
+                                                        else
+                                                        {
+                                                            <p>Starts on: @startDateString</p>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <p>Expires on: @expirationDateString</p>
+                                                    }
+                                                </div>
+
+                                                @if (promotion.DiscountEUR is not null && promotion.DiscountEUR > 0.00M)
+                                                {
+                                                    <p class="product-promotion-discount">Discount: @promotion.DiscountEUR @GetPriceSuffixStringFromCurrency(Currency.EUR)</p>
+                                                }
+                                                else if (promotion.DiscountUSD is not null && promotion.DiscountUSD > 0.00M)
+                                                {
+                                                    <p class="product-promotion-discount">Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)</p>
+                                                }
+
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p>
+                                        @(productData.Product.Status is not null ? GetStringFromProductStatus(productData.Product.Status.Value) : "-")
+                                    </p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <input type="number" @bind="productData.OrderQuantity" inputmode="numeric" class="product-list-item-quantity-input" />
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p class="link-info m-0" @onclick="() => ShowProductXmlPopup(productData.Product)">
+                                        @productData.Product.Id
+                                    </p>
+                                </div>
+                                
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p class="link-info m-0" @onclick="() => ShowProductDisplayPopupAsync(productData.Product)">
+                                        @(string.IsNullOrEmpty(productData.Product.Name) ? "-" : productData.Product.Name)
+                                    </p>
+
+
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    @if (price is not null && currency is not null)
+                                    {
+                                        <p class="product-list-item-price">
+                                            @(price.ToString() + " " + GetPriceSuffixStringFromCurrency(currency.Value))
+                                        </p>
+
+                                        @if (productData.SecondaryDisplayPrice is not null)
+                                        {
+                                            <p class="product-list-item-secondary-price">
+                                                (
+                                                    @(productData.SecondaryDisplayPrice.Value.Price.ToString() + " "
+                                                        + GetPriceSuffixStringFromCurrency(productData.SecondaryDisplayPrice.Value.Currency))
+                                                )
+                                            </p>
+										}
+                                    }
+                                    else
+                                    {
+                                        <p>-</p>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+
+                                    @if (productData.ManufacturerPromotionGroupId is not null)
+                                    {
+                                        <p class="m-0 link-info" @onclick="() => ShowPromotionGroupImagesPopup(productData)">
+                                            @(string.IsNullOrEmpty(productData.Product.Manufacturer?.RealCompanyName) ? "-" : productData.Product.Manufacturer.RealCompanyName)
+                                        </p>
+                                    }
+                                    else
+                                    {
+                                        <p>
+                                            @(string.IsNullOrEmpty(productData.Product.Manufacturer?.RealCompanyName) ? "-" : productData.Product.Manufacturer.RealCompanyName)
+                                        </p>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p class="@(isValidEAN13Code ? string.Empty : "product-list-item-invalid-ean-code")">
+                                        @(string.IsNullOrEmpty(productData.Product.PartNumber1) ? "-" : productData.Product.PartNumber1)
+                                    </p>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p>
+                                        @(string.IsNullOrEmpty(productData.Product.PartNumber2) ? "-" : productData.Product.PartNumber2)
+                                    </p>
+                                </div>
+                            </td>
+                            @* <td style="border-left: 1px solid; border-color: inherit;"> *@
+                            <td>
+                                <div class="product-list-item-column">
+                                    <p class="link-info m-0" @onclick="() => ShowProductSearchStringOriginDataPopupAsync(productData.Product)">
+                                        @(string.IsNullOrEmpty(productData.Product.SearchString) ? "-" : productData.Product.SearchString)
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+
+                        @if (_showImages && productData.ImageUrls is not null && productData.ImageUrls.Count > 0)
+                        {
+                            <tr>
+                                <td colspan="@colspanOfColumnBeforeImageColumn"></td>
+                                <td colspan="6">
+                                    <div class="product-list-item-images-container">
+
+                                        @for (int j = 0; j < productData.ImageUrls.Count; j++)
+                                        {
+                                            string imageUrl = productData.ImageUrls[j];
+
+                                            <img src="@imageUrl" alt="Product Image @j" class="product-list-item-image" @ondblclick="() => OpenDataInNewWindow(imageUrl)" />
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+						}
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@if (ProductToDisplay is not null)
+{
+    <Popup @bind-IsVisible='@IsProductDataPopupVisible'
+        PopupMarginOptions='new() { Left = "3vw", Top = "3vh", Right = "3vw", Bottom = "3vh" }'
+        AddFullScreenButtonToHeader="true"
+        AdditionalHeaderAttributes='new()
+        {
+            { "class", "red-and-white-theme" },
+        }'>
+        <HeaderContent>
+
+            <div class="full-parent-width full-parent-height d-flex flex-row flex-wrap red-and-white-theme">
+
+                @if (ProductToDisplay.Manufacturer is not null)
+                {
+                    <h4 class="popup-header-text me-3 mb-0">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                }
+
+                @if (ProductToDisplay.Category is not null)
+                {
+                    <h4 class="popup-header-text me-3 mb-0">Category: @ProductToDisplay.Category.Description</h4>
+                }
+
+                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
+                <h4 class="popup-header-text me-3">@(ProductToDisplay.Name ?? "-")</h4>
+                <h4 class="popup-header-text me-2">
+                    Status: @(ProductToDisplay.Status is not null ? GetStringFromProductStatus(ProductToDisplay.Status.Value) : "-")
+                </h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="ProductToDisplay"
+                PriceData="ProductToDisplayPriceData"
+                ProductProperties="ProductToDisplayProperties?.Select(property =>
+                    {
+                        ProductCharacteristic productCharacteristic = ProductToDisplayCharacteristics!
+                            .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
+
+                        return new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductPropertyDisplayData()
+                        {
+                            ProductCharacteristic = new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductCharacteristicDisplayData
+                            {
+                                Id = productCharacteristic!.Id,
+                                CategoryId = productCharacteristic.CategoryId,
+                                Active = productCharacteristic.Active,
+                                KWPrCh = productCharacteristic.KWPrCh
+                            },
+                            Name = property.Characteristic,
+                            Value = property.Value,
+                            DisplayOrder = property.DisplayOrder
+                        };
+                    })
+                    .ToList()"
+                ProductImages='ProductToDisplayImages?.Select(
+                    x => new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductImageDisplayData()
+                    {
+                        ImageSrc = $"/api/images/originalImageData/{x.Id}"
+                    })
+                    .ToList()'
+                ProductPromotions="ProductToDisplayPromotions"
+                ProductSearchStringParts="ProductToDisplaySearchStringParts" />
+        </ChildContent>
+    </Popup>
+
+    if (IsProductXmlPopupVisible)
+    {
+        <Popup @bind-IsVisible="IsProductXmlPopupVisible"
+            PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh", }'>
+            <HeaderContent>
+                <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                    @if (ProductToDisplay.Manufacturer is not null)
+                    {
+                        <h4 class="popup-header-text me-3 mb-0">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                    }
+
+                    @if (ProductToDisplay.Category is not null)
+                    {
+                        <h4 class="popup-header-text me-3 mb-0">Category: @ProductToDisplay.Category.Description</h4>
+                    }
+
+                    <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
+                    <h4 class="popup-header-text me-3">@(ProductToDisplay.Name ?? "-")</h4>
+                    <h4 class="popup-header-text me-2">
+                        Status: @(ProductToDisplay.Status is not null ? GetStringFromProductStatus(ProductToDisplay.Status.Value) : "-")
+                    </h4>
+                </div>
+            </HeaderContent>
+            <ChildContent>
+                <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+                {
+                    ProductIds = [ProductToDisplay!.Id]
+                }" />
+            </ChildContent>
+        </Popup>
+    }
+
+    <Popup @bind-IsVisible="IsPromotionGroupImagesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                @if (ProductToDisplay.Manufacturer is not null)
+                {
+                    <h4 class="mb-0 me-2">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                }
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <PromotionGroupImagesViewer DataOptions="new PromotionGroupImagesViewer.GetDataFromServer()" GetSelectedIndexFunc="GetSelectedIndexForPromotionGroupImagesPopup" />
+        </ChildContent>
+    </Popup>
+
+    <Popup @bind-IsVisible="IsProductSearchStringOriginDataPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                @if (ProductToDisplay.Manufacturer is not null)
+                {
+                    <h4 class="mb-0 me-3">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                }
+
+                @if (ProductToDisplay.Category is not null)
+                {
+                    <h4 class="mb-0 me-3">Category: @ProductToDisplay.Category?.Description</h4>
+                }
+
+                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
+                <h4 class="popup-header-text me-2">@(ProductToDisplay.Name ?? "-")</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <ProductSearchStringOriginTable SearchStringOriginDataList="ProductToDisplaySearchStringParts ?? []" />
+        </ChildContent>
+    </Popup>
+}
+
+<Popup @bind-IsVisible="IsSearchHelpPopupVisible" PopupMarginOptions='new() { Left = "30vw", Right = "30vw", Top = "20vh", Bottom = "50vh" }'>
+    <ChildContent>
+        <div class="full-parent-width full-parent-height d-flex flex-column align-items-center">
+            <p>65781,71071,68359 - search products by Ids</p>
+            <p>i7 8GB - products with i7 and 8GB RAM</p>
+            <p>[ACER MSI] i7-12 - ACER and MSI products with i7-12 CPU</p>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+
+    public class ProductDisplayData
+    {
+        public required Product Product { get; set; }
+
+        public int? OrderQuantity { get; set; } = null;
+
+        public DisplayPrice? DisplayPrice { get; set; }
+        public DisplayPrice? SecondaryDisplayPrice { get; set; }
+
+        public List<string>? ImageUrls { get; set; }
+        public List<Promotion>? Promotions { get; set; }
+
+        public int? ManufacturerPromotionGroupId { get; set; }
+    }
+
+    public struct DisplayPrice
+    {
+        public required decimal Price { get; set; }
+        public required Currency Currency { get; set; }
+    }
+
+    public string? UserInputString { get; set; }
+    private string? _userInputStringWithoutOrderSummary { get; set; }
+
+    public string SelectedCategoryId { get; set; } = string.Empty;
+
+    public List<Category> CategoriesInSelect { get; set; } = new();
+
+    public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
+
+    public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
+        ProductStatusSearchOptions.AvailableAndCall,
+        ProductStatusSearchOptions.Available,
+        ProductStatusSearchOptions.Call,
+    ];
+
+    public string SelectedPromotionSearchOptions { get; set; } = string.Empty;
+
+    public List<PromotionSearchOptions> PromotionSearchOptionsInSelect { get; set; } = [
+        PromotionSearchOptions.None,
+        PromotionSearchOptions.P,
+        PromotionSearchOptions.R,
+        PromotionSearchOptions.I,
+        PromotionSearchOptions.Discount
+    ];
+
+    public string SelectedCurrency { get; set; } = ((int)Currency.BGN).ToString();
+
+    public List<Currency> CurrenciesInSelect { get; set; } = [
+        Currency.BGN,
+        Currency.EUR,
+        Currency.USD,
+    ];
+
+    public string SelectedResultCount { get; set; } = (50).ToString();
+
+    public List<int> ResultCountsInSelect { get; set; } = [
+        50,
+        100,
+        200,
+        300,
+    ];
+
+    private bool _showImages { get; set; } = false;
+
+    private bool _showOrderSummary { get; set; } = false;
+
+    List<ProductDisplayData> Products { get; set; } = new();
+
+    private bool _isSearchingForProducts { get; set; } = false;
+
+    public Product? ProductToDisplay { get; set; }
+    public ProductDisplayData? ProductToDisplayData { get; set; }
+
+    public string? ProductToDisplayHtml { get; set; }
+    public MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductPriceData? ProductToDisplayPriceData { get; set; }
+    public List<ProductProperty>? ProductToDisplayProperties { get; set; }
+    public List<ProductCharacteristic>? ProductToDisplayCharacteristics { get; set; }
+    public List<ProductImageData>? ProductToDisplayImages { get; set; }
+    public List<ProductImageFileData>? ProductToDisplayImageFileNames { get; set; }
+    public List<Promotion>? ProductToDisplayPromotions { get; set; }
+    public List<SearchStringPartOriginData>? ProductToDisplaySearchStringParts { get; set; }
+
+    public bool IsProductDataPopupVisible { get; set; } = false;
+    public bool IsProductXmlPopupVisible { get; set; } = false;
+    public bool IsPromotionGroupImagesPopupVisible { get; set; } = false;
+    public bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
+    public bool IsSearchHelpPopupVisible { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CategoriesInSelect = await GetAllCategoriesAsync();
+    }
+
+    private async Task<List<Category>> GetAllCategoriesAsync()
+    {
+        return await CategoryService.GetAllAsync();
+    }
+
+    private async Task ShowProductDisplayPopupAsync(Product product)
+    {
+        List<int> relatedCategoryIds = [-1];
+
+        if (product.CategoryId is not null)
+        {
+            relatedCategoryIds.Add(product.CategoryId.Value);
+        }
+
+        IEnumerable<ProductCharacteristicType> productCharacteristicTypes = [
+            ProductCharacteristicType.ProductCharacteristic,
+            ProductCharacteristicType.Link
+        ];
+
+        ProductToDisplayCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+            relatedCategoryIds, productCharacteristicTypes, true);
+
+        ProductToDisplayProperties = await ProductPropertyService.GetAllInProductAsync(product.Id);
+
+        ProductToDisplayImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
+
+        List<Promotion> promotions = await PromotionService.GetAllForProductAsync(product.Id);
+
+        ProductToDisplayPromotions = promotions.Where(x =>
+        {
+            if (x.Id != product.PromotionPid && x.Id != product.PromotionRid) return false;
+
+            return (x.StartDate is null || x.StartDate <= DateTime.Now) && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+        })
+            .ToList();
+
+        ProductToDisplaySearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+            product.SearchString, product.CategoryId);
+
+        if (product.Price is not null && product.Currency is not null)
+        {
+            OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                product.Price.Value, product.Currency.Value, Currency.BGN);
+
+            OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                product.Price.Value, product.Currency.Value, Currency.EUR);
+
+            if (getPriceInBgnResult.IsT0 && getPriceInEurResult.IsT0)
+            {
+                ProductToDisplayPriceData = new()
+                {
+                    PriceInBgn = getPriceInBgnResult.AsT0,
+                    PriceInEur = getPriceInEurResult.AsT0,
+                };
+            }
+        }
+
+        ProductToDisplay = product;
+
+        IsProductDataPopupVisible = true;
+    }
+
+    private async Task OpenDataInNewWindow(string url)
+    {
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
+    private void ShowProductXmlPopup(Product product)
+    {
+        ProductToDisplay = product;
+
+        IsProductXmlPopupVisible = true;
+    }
+
+    private void ShowPromotionGroupImagesPopup(ProductDisplayData productDisplayData)
+    {
+        if (productDisplayData.ManufacturerPromotionGroupId is null) return;
+
+        ProductToDisplay = productDisplayData.Product;
+        ProductToDisplayData = productDisplayData;
+
+        IsPromotionGroupImagesPopupVisible = true;
+    }
+
+    private int GetSelectedIndexForPromotionGroupImagesPopup(
+        Dictionary<PromotionGroup, List<PromotionGroupImagesViewer.GroupPromotionImageDisplayData>> promotionGroupsAndImages)
+    {
+        return promotionGroupsAndImages.Keys.ToList()
+            .FindIndex(x => x.Id == ProductToDisplayData?.ManufacturerPromotionGroupId);
+    }
+
+    private async Task ShowProductSearchStringOriginDataPopupAsync(Product product)
+    {
+        ProductToDisplaySearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+            product.SearchString, product.CategoryId);
+
+        ProductToDisplay = product;
+
+        IsProductSearchStringOriginDataPopupVisible = true;
+    }
+
+    private void ShowSearchHelpPopup()
+    {
+        IsSearchHelpPopupVisible = true;
+    }
+
+    private async Task SearchProductsAsync()
+    {
+        if (_showOrderSummary) return;
+
+        _isSearchingForProducts = true;
+
+        await Task.Delay(1);
+
+        int? selectedCategoryId = int.TryParse(SelectedCategoryId, out int categoryId) ? categoryId : null;
+
+        ProductStatusSearchOptions selectedProductStatus = ProductStatusSearchOptions.TryParse(
+            SelectedProductStatus, out ProductStatusSearchOptions productStatus)
+                ? productStatus
+                : ProductStatusSearchOptions.AvailableAndCall;
+
+        PromotionSearchOptions? selectedPromotionSearchOptions = PromotionSearchOptions.TryParse(
+            SelectedPromotionSearchOptions, out PromotionSearchOptions promotionSearchOptions)
+                ? promotionSearchOptions
+                : null;
+
+        int selectedResultCount = int.TryParse(
+           SelectedResultCount, out int resultCount)
+               ? resultCount
+               : 50;
+
+        selectedResultCount = Math.Min(selectedResultCount, 300);
+
+        List<Product> products = new();
+
+        if (int.TryParse(UserInputString, out int productId))
+        {
+            Product? product = await ProductService.GetByIdAsync(productId);
+
+            if (product is not null)
+            {
+                products.Add(product);
+            }
+        }
+
+        if (products.Count <= 0)
+        {
+            ProductSearchRequest productSearchRequest = new()
+            {
+                OnlyVisibleByEndUsers = true,
+                UserInputString = UserInputString,
+                CategoryId = selectedCategoryId,
+                ProductStatus = selectedProductStatus,
+                PromotionSearchOptions = selectedPromotionSearchOptions,
+                MaxResultCount = selectedResultCount,
+            };
+
+            List<Product> searchedProducts = await ProductSearchService.SearchProductsAsync(productSearchRequest);
+
+            products.AddRange(searchedProducts);
+        }
+        
+        Currency selectedCurrency = Currency.TryParse(
+            SelectedCurrency, out Currency currencyEnum)
+                ? currencyEnum
+                : Currency.BGN;
+
+        Currency? secondaryCurrency = (selectedCurrency == Currency.BGN) ? Currency.EUR : null;
+
+        List<ProductDisplayData> productDisplayDatas = products.Select(product =>
+        {
+            return new ProductDisplayData()
+            {
+                Product = product,
+            };
+        })
+            .ToList();
+
+        await AddCurrenciesToProductDataAsync(productDisplayDatas, selectedCurrency, secondaryCurrency);
+
+        await AddActivePromotionsToProductDataAsync(productDisplayDatas);
+
+        await AddImageUrlsToProductDataAsync(productDisplayDatas);
+
+        await AddManufacturerGroupPromotionIdToProductDataAsync(productDisplayDatas);
+
+        _showImages = false;
+
+        Products.Clear();
+
+        Products.AddRange(productDisplayDatas);
+
+        _isSearchingForProducts = false;
+    }
+
+    private async Task AddCurrenciesToProductDataAsync(List<ProductDisplayData> productDisplayDatas, Currency currency, Currency? secondaryCurrency = null)
+    {
+        Dictionary<ProductDisplayData, ChangeCurrencyRequest> currencyChangeRequests = productDisplayDatas
+            .Where(productData => productData.Product.Price.HasValue && productData.Product.Currency.HasValue)
+            .ToDictionary(product => product, productData =>
+            {
+                return new ChangeCurrencyRequest()
+                {
+                    Value = productData.Product.Price!.Value,
+                    CurrentCurrency = productData.Product.Currency!.Value,
+                    NewCurrency = currency
+                };
+            });
+
+        Dictionary<ProductDisplayData, ChangeCurrencyRequest>? secondaryChangeRequests = null;
+
+        if (secondaryCurrency is not null)
+        {
+            secondaryChangeRequests = productDisplayDatas
+                .Where(productData => productData.Product.Price.HasValue && productData.Product.Currency.HasValue)
+                .ToDictionary(product => product, productData =>
+                {
+                    return new ChangeCurrencyRequest()
+                    {
+                        Value = productData.Product.Price!.Value,
+                        CurrentCurrency = productData.Product.Currency!.Value,
+                        NewCurrency = secondaryCurrency.Value,
+                    };
+                });
+        }
+
+        Dictionary<ChangeCurrencyRequest, OneOf<decimal, NotFound>> currencyChangeResults
+            = await CurrencyConversionService.ChangeCurrenciesAsync(currencyChangeRequests.Values.ToList());
+
+        Dictionary<ChangeCurrencyRequest, OneOf<decimal, NotFound>>? secondaryCurrencyChangeResults = null;
+
+        if (secondaryChangeRequests is not null)
+        {
+            secondaryCurrencyChangeResults = await CurrencyConversionService.ChangeCurrenciesAsync(secondaryChangeRequests.Values.ToList());
+        }
+
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            decimal? displayPrice = null;
+            decimal? secondaryDisplayPrice = null;
+
+            if (productDisplayData.Product.Price is not null && productDisplayData.Product.Currency is not null)
+            {
+                OneOf<decimal, NotFound>? getPriceResult = currencyChangeResults.TryGetValue(
+                    currencyChangeRequests[productDisplayData], out OneOf<decimal, NotFound> result)
+                        ? result
+                        : null;
+
+                if (getPriceResult is not null && getPriceResult.Value.IsT0)
+                {
+                    displayPrice = getPriceResult.Value.AsT0;
+                }
+
+                if (secondaryChangeRequests is not null && secondaryCurrencyChangeResults is not null)
+                {
+                    OneOf<decimal, NotFound>? getSecondaryPriceResult = secondaryCurrencyChangeResults.TryGetValue(
+                        secondaryChangeRequests[productDisplayData], out OneOf<decimal, NotFound> secondaryResult)
+                            ? secondaryResult
+                            : null;
+
+                    if (getSecondaryPriceResult is not null && getSecondaryPriceResult.Value.IsT0)
+                    {
+                        secondaryDisplayPrice = getSecondaryPriceResult.Value.AsT0;
+                    }
+                }
+            }
+
+            if (displayPrice is not null)
+            {
+                productDisplayData.DisplayPrice = new() { Price = displayPrice.Value, Currency = currency };
+            }
+
+            if (secondaryDisplayPrice is not null)
+            {
+                productDisplayData.SecondaryDisplayPrice = new() { Price = secondaryDisplayPrice.Value, Currency = secondaryCurrency!.Value };
+            }
+        }
+    }
+
+    private async Task AddActivePromotionsToProductDataAsync(List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        List<IGrouping<int?, Promotion>> promotions = await PromotionService.GetAllForSelectionOfProductsAsync(productIds);
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            List<Promotion>? activePromotions = promotions
+                .FirstOrDefault(x => x.Key == productDisplayData.Product.Id)?
+                .Where(x =>
+                {
+                    if (x.Id != productDisplayData.Product.PromotionPid && x.Id != productDisplayData.Product.PromotionRid) return false;
+                    return (x.StartDate is null || x.StartDate <= DateTime.Now) && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+                })
+                .ToList();
+
+            productDisplayData.Promotions = activePromotions;
+        }
+    }
+
+    private async Task AddImageUrlsToProductDataAsync(List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        List<IGrouping<int, ProductImageFileData>> imageFiles = await ProductImageFileService.GetAllInProductsAsync(productIds);
+
+        foreach (IGrouping<int, ProductImageFileData> imageFilesForProduct in imageFiles)
+        {
+            ProductDisplayData productData = productDisplayDatas.First(x => x.Product.Id == imageFilesForProduct.Key);
+
+            productData.ImageUrls ??= new();
+
+            foreach (ProductImageFileData imageFile in imageFilesForProduct)
+            {
+                if (string.IsNullOrWhiteSpace(imageFile.FileName)) continue;
+
+                string imageFileUrl = CombinePathsWithSeparator(
+                    '/', NavigationManager.BaseUri ?? string.Empty, ProductImageFileDataEndpoints.EndpointGroupRoute, imageFile.FileName);
+
+                productData.ImageUrls.Add(imageFileUrl);
+            }
+        }
+    }
+
+    private async Task AddManufacturerGroupPromotionIdToProductDataAsync(List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> manufacturerIds = productDisplayDatas
+            .Where(x => x.Product.ManufacturerId is not null)
+            .Select(x => (int)x.Product.ManufacturerId!);
+
+        List<ManufacturerToPromotionGroupRelation> relations = await ManufacturerToPromotionGroupRelationService.GetAllAsync();
+
+        IEnumerable<ManufacturerToPromotionGroupRelation> matchingRelations = relations
+            .Where(x => manufacturerIds.Contains(x.ManufacturerId));
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            ManufacturerToPromotionGroupRelation? matchingRelation = matchingRelations.FirstOrDefault(
+                x => x.ManufacturerId == productDisplayData.Product.ManufacturerId);
+
+            if (matchingRelation is null) continue;
+
+            productDisplayData.ManufacturerPromotionGroupId = matchingRelation.PromotionGroupId;
+        }
+    }
+
+    private void ToggleOrderSummaryProducts()
+    {
+        bool showOrderSummary = !_showOrderSummary;
+
+        if (showOrderSummary)
+        {
+            IEnumerable<string> summaryProductIdsAsStrings = Products
+                .Where(x => x.OrderQuantity > 0)
+                .Select(x => x.Product.Id.ToString());
+
+            string newUserInputString = string.Join(",", summaryProductIdsAsStrings);
+
+            _userInputStringWithoutOrderSummary = UserInputString;
+
+            UserInputString = newUserInputString;
+        }
+        else
+        {
+            UserInputString = _userInputStringWithoutOrderSummary;
+        }
+
+        _showOrderSummary = showOrderSummary;
+    }
+}

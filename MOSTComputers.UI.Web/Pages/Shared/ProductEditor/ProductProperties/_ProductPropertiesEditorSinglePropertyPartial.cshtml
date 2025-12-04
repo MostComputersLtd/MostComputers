@@ -1,0 +1,112 @@
+﻿@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils
+
+@model ProductPropertiesEditorSinglePropertyPartialModel
+@{
+    Layout = null;
+
+    string elementIdsPrefix = Model.PropertyEditorPropertyGroup.ElementIdPrefix;
+
+    SelectListItem? defaultItem = null;
+
+    if (Model.PropertyData.ProductCharacteristic is null)
+    {
+        defaultItem = new()
+        {
+            Text = "-- Select a characteristic --",
+            Value = null,
+            Selected = true,
+            Disabled = true,
+        };
+    }
+
+    List<SelectListItem> remainingCharacteristicSelectListItems = new();
+
+    if (Model.PropertyData.RemainingCharacteristics is not null)
+    {
+        remainingCharacteristicSelectListItems = GetCharacteristicSelectListItems(
+            Model.PropertyData.RemainingCharacteristics, Model.PropertyData.ProductCharacteristic?.Id, defaultItem);
+    }
+}
+
+<tr id="@(elementIdsPrefix)propertytr-@Model.PropertyIndex"
+    data-element-group="@(elementIdsPrefix)propertytr"
+    data-property-group="@Model.PropertyEditorPropertyGroup.Value"
+    data-property-index="@Model.PropertyIndex"
+    data-property-prefix="@(elementIdsPrefix)">
+
+    <td class="property-td-alignedOnTop property-characteristic-td">
+        <select id="@(elementIdsPrefix)productPropertyDisplay_Characteristic_select-@Model.PropertyIndex"
+            data-element-group="@(elementIdsPrefix)productPropertyDisplay_Characteristic_select"
+            asp-items="@remainingCharacteristicSelectListItems"
+            onchange="productPropertyDisplay_Characteristic_select_onchange(
+                @Model.ProductId,
+                @Model.PropertyEditorPropertyGroup.Value,
+                @Model.PropertyIndex,
+                '@(elementIdsPrefix)productPropertyDisplay_Characteristic_select-@Model.PropertyIndex',
+                this.value,
+                '@(elementIdsPrefix)productPropertyDisplay_Characteristic_select',
+                '@Model.PropertyEditorPropertyGroup.ParentElementId',
+                ['propertyEditorProductNewStatusSelect'],
+                '@Model.RelatedProductTableRowElementId',
+                '@Model.NotificationBoxElementId')"
+            data-current-value="@Model.PropertyData.ProductCharacteristic?.Id">
+        </select>
+    </td>
+
+    <td class="property-value-td property-td-alignedOnTop">
+        <div id="@(elementIdsPrefix)productPropertyDisplay_AutoExpandTextareaWrapper_div-@Model.PropertyIndex" class="full-parent-width full-parent-height">
+            <div id="@(elementIdsPrefix)productPropertyDisplay_Value_div-@Model.PropertyIndex"
+                data-element-group="@(elementIdsPrefix)productPropertyDisplay_Value_div"
+                class="element-collection-dataItem full-parent-width full-parent-height property-value-div"
+                contenteditable="true" spellcheck="false">
+                @Model.PropertyData.Value
+            </div>
+        </div>
+    </td>
+        
+    <td class="property-td-alignedOnTop property-characterisricId-td">
+        <p class="mb-0">
+            @(Model.PropertyData.ProductCharacteristic?.Id.ToString() ?? "-")
+        </p>
+    </td>
+
+    <!--
+
+    <td class="property-td-alignedOnTop property-xmlPlacement-td">
+        <select id="@(elementIdsPrefix)productPropertyDisplay_XmlPlacement_select-@Model.PropertyIndex"
+            data-element-group="@(elementIdsPrefix)productPropertyDisplay_XmlPlacement_select"
+            asp-items="@GetXmlPlacementSelectItems(Model.PropertyData.XmlPlacement)"></select>
+    </td>
+
+    -->
+
+    <td class="property-td-alignedOnTop property-Save-button-td">
+        <button id="@(elementIdsPrefix)productPropertyDisplay_Save_button-@Model.PropertyIndex"
+            class="btn btn-outline-secondary"
+            onclick="upsertPropertyInTable(
+                @Model.ProductId,
+                @Model.PropertyIndex,
+                @Model.PropertyEditorPropertyGroup.Value,
+                '@Model.PropertyEditorPropertyGroup.ParentElementId',
+                ['propertyEditorProductNewStatusSelect'],
+                '@Model.RelatedProductTableRowElementId',
+                '@Model.NotificationBoxElementId')">
+            Save
+        </button>
+    </td>
+
+    <td class="property-td-alignedOnTop property-delete-button-td">
+        <button id="@(elementIdsPrefix)productPropertyDisplay_Delete_button-@Model.PropertyIndex"
+            class="btn btn-danger"
+            onclick="deletePropertyInTable(@Model.ProductId,
+                @Model.PropertyData.ProductCharacteristic?.Id,
+                @Model.PropertyEditorPropertyGroup.Value,
+                @Model.PropertyIndex,
+                '@(elementIdsPrefix)productPropertyDisplay_Characteristic_select',
+                ['propertyEditorProductNewStatusSelect'],
+                '@Model.ProductTableContainerElementId',
+                '@Model.NotificationBoxElementId')">
+            X
+        </button>
+    </td>
+</tr>

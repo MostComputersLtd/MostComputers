@@ -2,11 +2,11 @@
 
 public sealed class Category
 {
-    public int Id { get; set; }
-    public string? Description { get; set; }
-    public bool? IsLeaf { get; set; }
-    public int? DisplayOrder { get; set; }
-    public Guid? RowGuid { get; set; }
-    public int? ProductsUpdateCounter { get; set; }
-    public int? ParentCategoryId { get; set; }
+    public int Id { get; init; }
+    public string? Description { get; init; }
+    public bool? IsLeaf { get; init; }
+    public int? DisplayOrder { get; init; }
+    public Guid? RowGuid { get; init; }
+    public int? ProductsUpdateCounter { get; init; }
+    public int? ParentCategoryId { get; init; }
 }

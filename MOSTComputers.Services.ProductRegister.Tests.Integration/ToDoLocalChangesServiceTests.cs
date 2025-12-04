@@ -10,7 +10,6 @@ using static MOSTComputers.Services.ProductRegister.Tests.Integration.CommonTest
 using static MOSTComputers.Services.ProductRegister.Tests.Integration.SuccessfulInsertAbstractions;
 
 namespace MOSTComputers.Services.ProductRegister.Tests.Integration;
-
 [Collection(DefaultTestCollection.Name)]
 public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebProjectsWithDBReset
 {
@@ -58,7 +57,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -69,14 +68,14 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = 1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAll();
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllAsync();
 
         Assert.True(toDoLocalChanges.Count() >= 2);
 
@@ -102,7 +101,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -113,10 +112,10 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = -1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
-        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.InsertAsync(toDoLocalChangeCreateRequest2);
 
         bool hasToDoLocalChangeInsertFailedWithValidationResult = toDoLocalChangeInsertResult.Match(
             id => false,
@@ -125,7 +124,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         Assert.True(hasToDoLocalChangeInsertFailedWithValidationResult);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAll();
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllAsync();
 
         Assert.NotEmpty(toDoLocalChanges);
 
@@ -150,7 +149,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -161,14 +160,14 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = 1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.True(toDoLocalChanges.Count() >= 2);
 
@@ -196,7 +195,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -207,10 +206,10 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = -1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
-        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.InsertAsync(toDoLocalChangeCreateRequest2);
 
         bool hasToDoLocalChangeInsertFailedWithValidationResult = toDoLocalChangeInsertResult.Match(
             id => false,
@@ -219,7 +218,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         Assert.True(hasToDoLocalChangeInsertFailedWithValidationResult);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.NotEmpty(toDoLocalChanges);
 
@@ -246,7 +245,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -257,7 +256,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = 1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -268,18 +267,18 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Update,
+            OperationType = ChangeOperationType.Update,
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
 
         Assert.NotNull(toDoLocalChangeId3);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForOperationTypeAsync(ChangeOperationType.Create);
 
         Assert.True(toDoLocalChanges.Count() >= 2);
 
-        Assert.All(toDoLocalChanges, x => Assert.Equal(ChangeOperationTypeEnum.Create, x.OperationType));
+        Assert.All(toDoLocalChanges, x => Assert.Equal(ChangeOperationType.Create, x.OperationType));
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId1
@@ -309,7 +308,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -320,10 +319,10 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = -1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
+            OperationType = ChangeOperationType.Create,
         };
 
-        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest2);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoLocalChangeInsertResult = _toDoLocalChangesService.InsertAsync(toDoLocalChangeCreateRequest2);
 
         bool hasToDoLocalChangeInsertFailedWithValidationResult = toDoLocalChangeInsertResult.Match(
             id => false,
@@ -337,18 +336,18 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Update,
+            OperationType = ChangeOperationType.Update,
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
 
         Assert.NotNull(toDoLocalChangeId3);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForOperationType(ChangeOperationTypeEnum.Create);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForOperationTypeAsync(ChangeOperationType.Create);
 
         Assert.NotEmpty(toDoLocalChanges);
 
-        Assert.All(toDoLocalChanges, x => Assert.Equal(ChangeOperationTypeEnum.Create, x.OperationType));
+        Assert.All(toDoLocalChanges, x => Assert.Equal(ChangeOperationType.Create, x.OperationType));
 
         Assert.Contains(toDoLocalChanges, x =>
             x.Id == toDoLocalChangeId1
@@ -378,8 +377,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -391,7 +390,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             id = toDoLocalChangeId1.Value;
         }
 
-        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetById(id);
+        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByIdAsync(id);
 
         Assert.Equal(expected, toDoLocalChangeData is not null);
 
@@ -414,7 +413,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     [Theory]
     [MemberData(nameof(GetByTableNameAndElementIdAndOperationType_ShouldSucceedToGetWithSameTableNameAndElementIdAndOperationType_WhenRecordExists_Data))]
     public void GetByTableNameAndElementIdAndOperationType_ShouldSucceedToGetWithSameTableNameAndElementIdAndOperationType_WhenRecordExists(
-        int tableElementId, string tableName, ChangeOperationTypeEnum changeOperationType, bool expected)
+        int tableElementId, string tableName, ChangeOperationType changeOperationType, bool expected)
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
@@ -422,8 +421,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -435,7 +434,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             tableElementId = productId1;
         }
 
-        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByTableNameAndElementIdAndOperationType(
+        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByTableNameAndElementIdAndOperationTypeAsync(
             tableName, tableElementId, changeOperationType);
 
         Assert.Equal(expected, toDoLocalChangeData is not null);
@@ -449,17 +448,17 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         }
     }
 
-    public static TheoryData<int, string, ChangeOperationTypeEnum, bool>
+    public static TheoryData<int, string, ChangeOperationType, bool>
         GetByTableNameAndElementIdAndOperationType_ShouldSucceedToGetWithSameTableNameAndElementIdAndOperationType_WhenRecordExists_Data = new()
     {
-        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationTypeEnum.Create, true },
-        { 0, _productsTableName, ChangeOperationTypeEnum.Create, false },
-        { -1, _productsTableName, ChangeOperationTypeEnum.Create, false },
-        { UseRequiredValuePlaceholder, string.Empty, ChangeOperationTypeEnum.Create, false },
-        { UseRequiredValuePlaceholder, "    ", ChangeOperationTypeEnum.Create, false },
-        { UseRequiredValuePlaceholder, _invalidTableName, ChangeOperationTypeEnum.Create, false },
-        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationTypeEnum.Update, false },
-        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationTypeEnum.Delete, false },
+        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationType.Create, true },
+        { 0, _productsTableName, ChangeOperationType.Create, false },
+        { -1, _productsTableName, ChangeOperationType.Create, false },
+        { UseRequiredValuePlaceholder, string.Empty, ChangeOperationType.Create, false },
+        { UseRequiredValuePlaceholder, "    ", ChangeOperationType.Create, false },
+        { UseRequiredValuePlaceholder, _invalidTableName, ChangeOperationType.Create, false },
+        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationType.Update, false },
+        { UseRequiredValuePlaceholder, _productsTableName, ChangeOperationType.Delete, false },
     };
 
     [Theory]
@@ -474,7 +473,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             toDoLocalChangeCreateRequest.TableElementId = productId1;
         }
 
-        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoChangesInsertResult = _toDoLocalChangesService.Insert(toDoLocalChangeCreateRequest);
+        OneOf<int, ValidationResult, UnexpectedFailureResult> toDoChangesInsertResult = _toDoLocalChangesService.InsertAsync(toDoLocalChangeCreateRequest);
 
         int? toDoLocalChangeId1 = toDoChangesInsertResult.Match<int?>(
             id => id,
@@ -485,7 +484,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         if (toDoLocalChangeId1 is null) return;
 
-        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetById(toDoLocalChangeId1.Value);
+        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.Equal(expected, toDoLocalChangeData is not null);
 
@@ -506,7 +505,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
+                OperationType = ChangeOperationType.Create,
             },
             true
         },
@@ -516,7 +515,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = 1,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,  
+                OperationType = ChangeOperationType.Create,
             },
             true
         },
@@ -526,7 +525,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Update,
+                OperationType = ChangeOperationType.Update,
             },
             true
         },
@@ -536,7 +535,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Delete,
+                OperationType = ChangeOperationType.Delete,
             },
             true
         },
@@ -546,7 +545,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = 0,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
+                OperationType = ChangeOperationType.Create,
             },
             false
         },
@@ -556,7 +555,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = -1,
                 TableName = _productsTableName,
-                OperationType = ChangeOperationTypeEnum.Create,
+                OperationType = ChangeOperationType.Create,
             },
             false
         },
@@ -566,7 +565,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = string.Empty,
-                OperationType = ChangeOperationTypeEnum.Create,
+                OperationType = ChangeOperationType.Create,
             },
             false
         },
@@ -576,7 +575,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             {
                 TableElementId = UseRequiredValuePlaceholder,
                 TableName = "     ",
-                OperationType = ChangeOperationTypeEnum.Create,  
+                OperationType = ChangeOperationType.Create,
             },
             false
         },
@@ -592,8 +591,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -604,15 +603,15 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId2,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.True(toDoLocalChanges.Count() >= 2);
 
@@ -630,11 +629,11 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         List<int> ids = new() { productId1, productId2 };
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIds(_productsTableName, ids);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIdsAsync(_productsTableName, ids);
 
         Assert.True(isDeleteSuccessful);
 
-        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId1
@@ -657,7 +656,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         List<int> ids = new() { productId1, productId2 };
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIds(_productsTableName, ids);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIdsAsync(_productsTableName, ids);
 
         Assert.False(isDeleteSuccessful);
     }
@@ -672,8 +671,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -684,15 +683,15 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId2,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
 
         Assert.NotNull(toDoLocalChangeId2);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.True(toDoLocalChanges.Count() >= 2);
 
@@ -710,11 +709,11 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
 
         List<int> ids = new() { toDoLocalChangeId1.Value, toDoLocalChangeId2.Value };
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByIds(ids);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByIdsAsync(ids);
 
         Assert.True(isDeleteSuccessful);
 
-        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId1
@@ -734,7 +733,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         List<int> ids = new() { 0, -1 };
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIds(_productsTableName, ids);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteRangeByTableNameAndElementIdsAsync(_productsTableName, ids);
 
         Assert.False(isDeleteSuccessful);
     }
@@ -749,8 +748,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
@@ -761,8 +760,8 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Update,
-            
+            OperationType = ChangeOperationType.Update,
+
         };
 
         int? toDoLocalChangeId2 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest2);
@@ -773,15 +772,15 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId2,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId3 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest3);
 
         Assert.NotNull(toDoLocalChangeId3);
 
-        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChanges = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.True(toDoLocalChanges.Count() >= 3);
 
@@ -803,11 +802,11 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
             && x.TableName == toDoLocalChangeCreateRequest3.TableName
             && x.OperationType == toDoLocalChangeCreateRequest3.OperationType);
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteAllByTableNameAndElementId(_productsTableName, productId1);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteAllByTableNameAndElementIdAsync(_productsTableName, productId1);
 
         Assert.True(isDeleteSuccessful);
 
-        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTable(_productsTableName);
+        IEnumerable<LocalChangeData> toDoLocalChangesAfterDelete = _toDoLocalChangesService.GetAllForTableAsync(_productsTableName);
 
         Assert.DoesNotContain(toDoLocalChangesAfterDelete, x =>
             x.Id == toDoLocalChangeId1
@@ -834,7 +833,7 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
     {
         int productId1 = InsertProductAndGetIdOrThrow(_productService, ValidProductCreateRequestWithNoImages);
 
-        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteAllByTableNameAndElementId(_productsTableName, productId1);
+        bool isDeleteSuccessful = _toDoLocalChangesService.DeleteAllByTableNameAndElementIdAsync(_productsTableName, productId1);
 
         Assert.False(isDeleteSuccessful);
     }
@@ -848,23 +847,23 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetById(toDoLocalChangeId1.Value);
+        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.NotNull(toDoLocalChangeData);
 
-        bool isDeleteByIdSuccessful = _toDoLocalChangesService.DeleteById(toDoLocalChangeId1.Value);
+        bool isDeleteByIdSuccessful = _toDoLocalChangesService.DeleteByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.True(isDeleteByIdSuccessful);
 
-        LocalChangeData? toDoLocalChangeDataAfterDelete = _toDoLocalChangesService.GetById(toDoLocalChangeId1.Value);
+        LocalChangeData? toDoLocalChangeDataAfterDelete = _toDoLocalChangesService.GetByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.Null(toDoLocalChangeDataAfterDelete);
     }
@@ -878,23 +877,23 @@ public sealed class ToDoLocalChangesServiceTests : IntegrationTestBaseForNonWebP
         {
             TableElementId = productId1,
             TableName = _productsTableName,
-            OperationType = ChangeOperationTypeEnum.Create,
-            
+            OperationType = ChangeOperationType.Create,
+
         };
 
         int? toDoLocalChangeId1 = InsertToDoLocalChangeAndGetIdOrNull(_toDoLocalChangesService, toDoLocalChangeCreateRequest1);
 
         Assert.NotNull(toDoLocalChangeId1);
 
-        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetById(toDoLocalChangeId1.Value);
+        LocalChangeData? toDoLocalChangeData = _toDoLocalChangesService.GetByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.NotNull(toDoLocalChangeData);
 
-        bool isDeleteByIdSuccessful = _toDoLocalChangesService.DeleteById(0);
+        bool isDeleteByIdSuccessful = _toDoLocalChangesService.DeleteByIdAsync(0);
 
         Assert.False(isDeleteByIdSuccessful);
 
-        LocalChangeData? toDoLocalChangeDataAfterDelete = _toDoLocalChangesService.GetById(toDoLocalChangeId1.Value);
+        LocalChangeData? toDoLocalChangeDataAfterDelete = _toDoLocalChangesService.GetByIdAsync(toDoLocalChangeId1.Value);
 
         Assert.NotNull(toDoLocalChangeDataAfterDelete);
     }

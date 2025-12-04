@@ -1,0 +1,73 @@
+﻿@using MOSTComputers.UI.Web.Models.PromotionFiles
+@using MOSTComputers.UI.Web.Pages.Shared.PromotionFiles
+
+@using static MOSTComputers.UI.Web.Utils.StandardInputValueUtils;
+
+@model PromotionFileSelectableTablePartialModel
+@{
+    Layout = null;
+
+    int? selectedPromotionFileId = null;
+
+    if (Model.SelectedPromotionFileIndex >= 0
+        && Model.SelectedPromotionFileIndex < Model.PromotionFiles.Count)
+    {
+        PromotionFileInfoEditorDisplayData selectedPromotionFileInfo = Model.PromotionFiles[Model.SelectedPromotionFileIndex.Value];
+
+        selectedPromotionFileId = selectedPromotionFileInfo.Id;
+
+        Model.PromotionFiles.RemoveAt(Model.SelectedPromotionFileIndex.Value);
+
+        Model.PromotionFiles.Insert(0, selectedPromotionFileInfo);
+    }
+}
+
+<ul id="productPromotionFileSingleEditorPromotionFileInfoList"
+    class="full-parent-width full-parent-height p-0 m-0 display-flex-not-important flex-column list-style-none"
+    data-promotion-file-selected-id="@selectedPromotionFileId?.ToString()">
+
+    @if (Model.PromotionFiles?.Count > 0)
+    {
+        for (int i = 0; i < Model.PromotionFiles.Count; i++)
+        {
+            PromotionFileInfoEditorDisplayData promotionFileInfo = Model.PromotionFiles[i];
+
+            string selectedPromotionFileInfoItemClassName = string.Empty;
+
+            if (promotionFileInfo.Id == selectedPromotionFileId)
+            {
+                selectedPromotionFileInfoItemClassName = "promotion-product-file-single-editor-selected-promotion-file";
+            }
+
+            <li id="productPromotionFileSingleEditorPromotionFileInfoItem-@i"
+                class="d-flex promotion-product-file-single-editor-promotion-file @selectedPromotionFileInfoItemClassName"
+                onclick="selectItemInPromotionFileList(
+                    'productPromotionFileSingleEditorPromotionFileInfoList',
+                    'productPromotionFileSingleEditorPromotionFileInfoItem-@i',
+                    @(promotionFileInfo.Active ? "true" : "false"),
+                    '@GetDateTimeAsStringForDateInput(promotionFileInfo.ValidFrom)',
+                    '@GetDateTimeAsStringForDateInput(promotionFileInfo.ValidTo)',
+                    'productPromotionFileSingleEditorActiveInput',
+                    'productPromotionFileSingleEditorValidFromInput',
+                    'productPromotionFileSingleEditorValidToInput')"
+                data-promotion-file-id="@promotionFileInfo.Id">
+
+                <div class="col-2 pe-2">
+                    <p>@promotionFileInfo.Id</p>
+                </div>
+                <div class="col-4 pe-2">
+                    <p>@promotionFileInfo.Name</p>
+                </div>
+                <div class="col-6 pe-2"
+                    style="max-height: 4em; display: flex; justify-content: space-evenly;">
+
+                    <partial name="PromotionFiles/_PromotionFileDataViewPartial"
+                        model="new PromotionFileDataViewPartialModel()
+                    {
+                        FileName = promotionFileInfo.FileName,
+                    }" />
+                </div>
+            </li>
+        }
+    }
+</ul>

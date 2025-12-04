@@ -1,0 +1,175 @@
+﻿@using MOSTComputers.Models.Product.Models.PromotionFiles
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Models.PromotionFiles
+@using MOSTComputers.UI.Web.Pages.Shared.PromotionFiles
+@using static MOSTComputers.UI.Web.Utils.StandardInputValueUtils;
+
+@model PromotionProductFileInfoSingleEditorPartialModel
+@{
+    Layout = null;
+
+    PromotionProductFileInfo? promotionProductFileInfo
+        = Model.ExistingPromotionProductFileInfo;
+
+    bool isEditorUsedForInsert = (promotionProductFileInfo is null);
+
+    int? selectPromotionFileId = null;
+
+    string activeCheckboxCheckedString = "checked";
+
+    string validFromValueAsString = string.Empty;
+    string validToValueAsString = string.Empty;
+
+    string shouldAddToImagesCheckboxChecked = "checked";
+
+    if (promotionProductFileInfo is not null)
+    {
+        selectPromotionFileId = promotionProductFileInfo.PromotionFileInfoId;
+
+        activeCheckboxCheckedString = (promotionProductFileInfo.Active) ? "checked" : string.Empty;
+
+        if (promotionProductFileInfo.ValidFrom is not null)
+        {
+            validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
+        }
+
+        if (promotionProductFileInfo.ValidTo is not null)
+        {
+            validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
+        }
+
+        shouldAddToImagesCheckboxChecked = (promotionProductFileInfo?.ProductImageId is not null) ? "checked" : string.Empty;
+    }
+
+    int? selectedPromotionFileIndex = null;
+
+    int? selectedPromotionFileId = Model.ExistingPromotionProductFileInfo?.PromotionFileInfoId;
+
+    @if (Model.PossiblePromotionFileInfos is not null && selectedPromotionFileId is not null)
+    {
+        selectedPromotionFileIndex = Model.PossiblePromotionFileInfos.FindIndex(x => x.Id == selectedPromotionFileId);
+    }
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Promotion Product File:</h5>
+
+    @if (!isEditorUsedForInsert)
+    {
+        <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">
+            PrCID: @promotionProductFileInfo!.Id
+        </h4>
+    }
+
+    <div class="d-flex flex-row align-items-center ms-1">
+        @if (isEditorUsedForInsert)
+        {
+            <button id="productPromotionFileSingleEditorAddOrUpdateButton"
+                class="full-parent-width btn btn-primary"
+                onclick="addNewPromotionProductFileAndDisplayChanges(
+                    @Model.ProductId,
+                    'productPromotionFileSingleEditorActiveInput',
+                    'productPromotionFileSingleEditorValidFromInput',
+                    'productPromotionFileSingleEditorValidToInput',
+                    'productPromotionFileSingleEditorShouldAddToImagesInput',
+                    'productPromotionFileSingleEditorPromotionFileInfoList',
+                    '@Model.PromotionProductFilesTableContainerElementId',
+                    '@Model.ModalData.ModalContentId',
+                    'productPromotionFileSingleEditorAddOrUpdateButton',
+                    'productPromotionFileSingleEditorAddOrUpdateButtonLoader',
+                    '@Model.ModalData.ModalId',
+                    '@Model.ProductPropertiesEditorContainerElementId',
+                    '@Model.RelatedProductTableRowElementId')">
+                Add
+            </button>
+
+            <div id="productPromotionFileSingleEditorAddOrUpdateButtonLoader" class="round-loader-default"
+                 style="width: 0px; display: none;">
+            </div>
+        }
+        else
+        {
+            <button id="productPromotionFileSingleEditorAddOrUpdateButton"
+                class="full-parent-width btn btn-primary"
+                onclick="updatePromotionProductFileAndDisplayChanges(
+                    @promotionProductFileInfo!.Id,
+                    'productPromotionFileSingleEditorActiveInput',
+                    'productPromotionFileSingleEditorValidFromInput',
+                    'productPromotionFileSingleEditorValidToInput',
+                    'productPromotionFileSingleEditorShouldAddToImagesInput',
+                    'productPromotionFileSingleEditorPromotionFileInfoList',
+                    '@Model.PromotionProductFilesTableContainerElementId',
+                    'productPromotionFileSingleEditorAddOrUpdateButton',
+                    'productPromotionFileSingleEditorAddOrUpdateButtonLoader',
+                    '@Model.ProductPropertiesEditorContainerElementId',
+                    '@Model.RelatedProductTableRowElementId')">
+                Save
+            </button>
+
+            <div id="productPromotionFileSingleEditorAddOrUpdateButtonLoader" class="round-loader-default"
+                 style="width: 0px; display: none;">
+            </div>
+        }
+
+        <button type="button" class="btn-close ms-2" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+        </button>
+    </div>
+</div>
+<div id="productPromotionFileSingleEditor_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container border-2 d-flex flex-column full-parent-width full-parent-height">
+        <div class="row flex-grow-1 md overflow-y-auto">
+            <div class="col-12 col-md-6">
+
+                <div class="mb-2">
+                    <label for="productPromotionFileSingleEditorActiveInput" class="me-2">Active:</label>
+                    <input id="productPromotionFileSingleEditorActiveInput" type="checkbox" @activeCheckboxCheckedString />
+                </div>
+
+                <div class="mb-2">
+                    <label for="productPromotionFileSingleEditorValidFromInput" class="me-2">From:</label>
+                    <input id="productPromotionFileSingleEditorValidFromInput" type="date"
+                        value="@validFromValueAsString" />
+                </div>
+
+                <div class="mb-2">
+                    <label for="productPromotionFileSingleEditorValidToInput" class="me-2">To:</label>
+                    <input id="productPromotionFileSingleEditorValidToInput" type="date"
+                        value="@validToValueAsString" />
+                </div>
+
+                @{
+                    
+                }
+
+                <div class="mb-2">
+                    <label for="productPromotionFileSingleEditorShouldAddToImagesInput" class="me-2">Add to images:</label>
+                    <input id="productPromotionFileSingleEditorShouldAddToImagesInput" type="checkbox" @shouldAddToImagesCheckboxChecked />
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 d-flex flex-column" style="max-height: 100%;">
+                <div class="d-flex flex-column" style="max-height: 100%;">
+                    <div class="full-parent-width mb-2 d-flex flex-row flex-wrap">
+                        <label for="promotion-product-files-valid-on-input" style="height: min-content; align-self: center;">Active on:</label>
+                        <input id="promotion-product-files-valid-on-input" type="date" class="ms-1 me-2" placeholder="From" />
+
+                        <input id="promotion-product-files-search-input" type="text" class="flex-shrink-0 flex-grow-1 me-2" placeholder="Search..." />
+
+                        <button id="promotion-product-files-search-button" type="button" class="btn btn-info ms-4"
+                            onclick="searchPromotionFilesAsync(
+                                'promotion-product-files-search-input',
+                                'promotion-product-files-valid-on-input',
+                                'promotion-product-files-promotion-files-table-container',
+                                @selectedPromotionFileId)">
+                            Search
+                        </button>
+                    </div>
+
+                    <div id="promotion-product-files-promotion-files-table-container" class="full-parent-width flex-grow-1 p-0 m-0 overflow-y-auto">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

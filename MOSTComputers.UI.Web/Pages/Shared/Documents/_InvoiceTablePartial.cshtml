@@ -1,0 +1,45 @@
+﻿@using MOSTComputers.UI.Web.Models.Documents
+@using MOSTComputers.UI.Web.Models.Documents.Invoices
+@model MOSTComputers.UI.Web.Pages.Shared.Documents.InvoiceTablePartialModel
+@{
+    Layout = null;
+}
+
+<table class="full-parent-width full-parent-height sticky-head-table">
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Total Price</th>
+            <th>Payment Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @if (Model.Invoices is not null)
+        {
+            foreach (InvoiceDisplayData invoice in Model.Invoices)
+            {
+                string invoiceNumber = invoice.InvoiceNumber ?? "-";
+                string invoiceDate = invoice.InvoiceDate?.ToString("yyyy/MM/dd") ?? "-";
+                string customerName = invoice.CustomerName ?? "-";
+                string totalPriceAsString = invoice.TotalPrice?.ToString("F2") ?? "-";
+                string paymentStatus = invoice.PaymentStatus ?? "-";
+
+                <tr>
+                    <td>
+                        <button class="btn link-info" onclick="getInvoicePdfAndOpenInDialog('@invoiceNumber')">
+                            @invoiceNumber
+                        </button>
+                    </td>
+                    <td>@invoiceDate</td>
+                    <td>@customerName</td>
+                    <td>@totalPriceAsString</td>
+                    <td>@paymentStatus</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>

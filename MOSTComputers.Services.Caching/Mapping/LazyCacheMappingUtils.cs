@@ -5,7 +5,7 @@ using MOSTComputers.Services.Caching.Models;
 namespace MOSTComputers.Services.Caching.Mapping;
 internal static class LazyCacheMappingUtils
 {
-    internal static MemoryCacheEntryOptions Map(CustomMemoryCacheEntryOptions customOptions)
+    internal static MemoryCacheEntryOptions Map(CustomCacheEntryOptions customOptions)
     {
         MemoryCacheEntryOptions output = new()
         {

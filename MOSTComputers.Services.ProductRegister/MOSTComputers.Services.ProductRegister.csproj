@@ -7,16 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Services.DAL\MOSTComputers.Services.DAL.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Utils.OneOf\MOSTComputers.Utils.OneOf.csproj" />
-    <ProjectReference Include="..\MOSTComputers.Utils.ProductImageFileNameUtils\MOSTComputers.Utils.ProductImageFileNameUtils.csproj" />
+    <PackageReference Include="FluentValidation" Version="12.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Riok.Mapperly" Version="3.6.0" />
+    <ProjectReference Include="..\MOSTComputers.Models.FileManagement\MOSTComputers.Models.FileManagement.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Products\MOSTComputers.Services.DataAccess.Products.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.HTMLAndXMLDataOperations\MOSTComputers.Services.HTMLAndXMLDataOperations.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.PromotionFileManagement\MOSTComputers.Services.PromotionFileManagement.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.FileContentType\MOSTComputers.Utils.Files.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Utils.OneOf\MOSTComputers.Utils.OneOf.csproj" />
   </ItemGroup>
 
 </Project>

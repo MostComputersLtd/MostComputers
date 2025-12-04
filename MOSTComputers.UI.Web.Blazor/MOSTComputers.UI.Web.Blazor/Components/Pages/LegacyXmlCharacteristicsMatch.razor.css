@@ -1,0 +1,12 @@
+﻿.selected-drag-item {
+    background-color: #F7C0BC;
+}
+
+.missing-drag-item {
+    background-color: yellow;
+    color: red;
+}
+
+.relationship-drop-target {
+    background-color: #F8D0AD;
+}

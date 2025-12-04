@@ -1,0 +1,1618 @@
+﻿@page "/_tests/_temp_transferDataTests"
+
+@rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Admin")]
+
+@implements IAsyncDisposable
+
+@using System.Reflection
+@using System.Transactions
+@using FluentValidation.Results
+@using MOSTComputers.Models.FileManagement.Models
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ExternalXmlImport
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductProperty
+@using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.Legacy
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.Legacy.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Requests
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Caching.Memory
+@using OneOf
+@using OneOf.Types
+@using SixLabors.ImageSharp
+@using static MOSTComputers.Utils.Files.ContentTypeUtils;
+@using static MOSTComputers.Utils.OneOf.MappingExtensions;
+
+@inject SaveService SaveServiceInstance
+
+@inject IProductService _productService
+@inject IProductImageFileService _productImageFileService
+@inject IProductImageAndPromotionFileSaveService _productImageAndPromotionFileSaveService
+@inject IProductImageService _productImageService
+@inject IProductCharacteristicService _productCharacteristicService
+@inject IProductPropertyCrudService _productPropertyService
+@inject IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService
+@inject ILegacyProductHtmlService _legacyProductHtmlService
+
+@inject IGroupPromotionImagesRepository _groupPromotionImagesRepository
+@inject IGroupPromotionImageFileService _groupPromotionImageFileService
+
+@inject ITransactionExecuteService _transactionExecuteService
+
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="full-parent-width full-parent-height d-flex flex-column">
+    <div class="full-parent-width flex-grow-1 d-flex flex-column">
+
+        @* <a class="btn btn-outline-primary mb-2" @onclick="SaveAllFilesAndPropertiesImgAllAsync" disabled="@_saveOperationRunning">
+            Save files and props from original
+        </a> *@
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedFilesAndPropertiesImgAllAsync" disabled="@_saveOperationRunning">
+            Save Unsaved files and props from original
+        </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveAllPropertiesImgAllAsync" disabled="@_saveOperationRunning">
+            Save All props
+        </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedFilesForGroupImagesAsync" disabled="@_saveOperationRunning">
+            Save Unsaved files for group images
+        </a>
+
+        @*
+        <div class="full-parent-width mb-2 d-flex flex-row align-items-center">
+            <InputDate Type="InputDateType.DateTimeLocal" class="flex-grow-1 me-2" placeholder="Select update date..." @bind-Value="_updateDate" />
+
+            <a class="btn btn-outline-primary" @onclick="SaveFilesAndPropertiesImgAllThatHaveBeenUpdatedAfterDateAsync" disabled="@_saveOperationRunning">
+                Save files and props from original with changes after date
+            </a>
+        </div>
+        *@
+
+        <div class="full-parent-width d-flex flex-row align-items-center mb-2">
+            <p class="mb-0 me-2">CSTID to start from:</p>
+
+            <input type="number" class="flex-grow-1" @bind="_startProductId" />
+        </div>
+
+        <div class="round-loader-default" style="display: @(_saveOperationRunning ? string.Empty : "none")"></div>
+    </div>
+
+    @if (TestResults is null)
+    {
+        <p class="m-0">No Results yet</p>
+    }
+    else if (TestResults.Value.IsT0)
+    {
+        ProductTestMetrics productTestMetrics = TestResults.Value.AsT0;
+
+        int productId = productTestMetrics.ProcessedProductIds.Count > 0 ? productTestMetrics.ProcessedProductIds.Max() : 0;
+        int imageId = productTestMetrics.ProcessedImagesAllIds.Count > 0 ? productTestMetrics.ProcessedImagesAllIds.Max() : 0;
+
+        <div class="full-parent-width d-flex flex-column">
+
+            <div id="productTestMetricsDisplay" class="full-parent-width p-2">
+                <div class="full-parent-width d-flex flex-row mb-2">
+
+                    <p class="mb-0 me-2">
+                        CSTID: 
+                    </p>
+                    
+                    <p class="mb-0">@productId</p>
+                </div>
+
+                <div class="full-parent-width d-flex flex-row mb-4">
+
+                    <p class="mb-0 me-2">
+                        Max Image Id: 
+                    </p>
+                    
+                    <p class="mb-0">@imageId</p>
+                </div>
+
+                <div class="full-parent-width d-flex flex-row mb-2">
+
+                    <p class="mb-0 me-2">
+                        Max CSTID in MOSTPrices: 
+                    </p>
+                    
+                    <p class="mb-0">@_lastProductId</p>
+                </div>
+
+                <div class="full-parent-width d-flex flex-row mb-2">
+
+                    <p class="mb-0 me-2">
+                        Max CSTID In ProductXML:
+                    </p>
+
+                    <p class="mb-0">@_lastProductIdInProperties</p>
+                </div>
+
+                @if (_validationErrorsThatOccuredOvertime.Count > 0)
+                {
+                    <p class="mb-0 me-2">
+                        Validation errors that occured during save:
+                    </p>
+
+                    foreach (ValidationResult validationResultThatOccuredOvertime in _validationErrorsThatOccuredOvertime)
+                    {
+                        <div class="d-flex flex-row full-parent-width" style="white-space: wrap;">
+
+                            @foreach (ValidationFailure validationFailure in validationResultThatOccuredOvertime.Errors)
+                            {
+                                <p class="mb-0">@validationFailure.ErrorMessage</p>
+                            }
+                        </div>
+                    }
+                }
+
+                @if (_errorsThatOccuredOvertime.Count > 0)
+                {
+                    <p class="mb-0 me-2">
+                        Errors that occured during save:
+                    </p>
+
+                    foreach (string errorThatOccuredOvertime in _errorsThatOccuredOvertime)
+                    {
+                        <p class="mb-0">@errorThatOccuredOvertime</p>
+                    }
+                }
+
+                @if (_exceptionsThatOccuredOvertime.Count > 0)
+                {
+                    <p class="mb-0 me-2">
+                        Exceptions that occured during save:
+                    </p>
+
+                    foreach (Exception exceptionThatOccuredOvertime in _exceptionsThatOccuredOvertime)
+                    {
+                        <pre class="mb-0">@exceptionThatOccuredOvertime.Message</pre>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else if (TestResults.Value.IsT1)
+    {
+        ValidationResult validationResult = TestResults.Value.AsT1;
+
+        <div class="full-parent-width d-flex flex-column">
+            <button class="btn btn-primary full-parent-width"
+                @onclick='() => ToggleElementDisplayAsync("productValidationResultDisplay")'>
+                +
+            </button>
+
+            <div id="productValidationResultDisplay" class="full-parent-width p-2 d-flex flex-column">
+
+                @foreach (ValidationFailure validationFailure in validationResult.Errors)
+                {
+                    <div class="full-parent-width d-flex flex-row">
+                        <p class="mb-1 me-2">@validationFailure.PropertyName</p>
+                        <p class="mb-1 flex-grow-1">@validationFailure.ErrorMessage</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (TestResults.Value.IsT2)
+    {
+        List<string> validationErrors = TestResults.Value.AsT2;
+
+        <div class="full-parent-width d-flex flex-column">
+            <button class="btn btn-primary full-parent-width"
+                @onclick='() => ToggleElementDisplayAsync("productValidationErrorsDisplay")'>
+                +
+            </button>
+
+            <div id="productValidationErrorsDisplay" class="full-parent-width p-2">
+                @foreach (string validationError in validationErrors)
+                {
+                    <div class="full-parent-width d-flex flex-row">
+                        <p class="mb-1 flex-grow-1">@validationError</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+    public sealed class ProductTestMetrics
+    {
+        private readonly List<int> _processedProductIds = new();
+        private readonly List<int> _processedImagesIds = new();
+        private readonly List<int> _processedImagesAllIds = new();
+        private readonly List<Tuple<int, List<int>>> _processedProductPropertyData = new();
+        private readonly List<LegacyHtmlProductProperty> _processedHtmlProperties = new();
+
+        public IReadOnlyList<int> ProcessedProductIds => _processedProductIds;
+        public IReadOnlyList<int> ProcessedImagesIds => _processedImagesIds;
+        public IReadOnlyList<int> ProcessedImagesAllIds => _processedImagesAllIds;
+        public IReadOnlyList<Tuple<int, List<int>>> ProcessedProductPropertyData => _processedProductPropertyData;
+        public IReadOnlyList<LegacyHtmlProductProperty> ProcessedHtmlProperties => _processedHtmlProperties;
+
+        public void AddProcessedProductId(int id)
+        {
+            if (!_processedProductIds.Contains(id))
+            {
+                _processedProductIds.Add(id);
+            }
+        }
+
+        public void RemoveProcessedProductId(int id)
+        {
+            _processedProductIds.Remove(id);
+        }
+
+        public void AddProcessedImagesId(int id)
+        {
+            if (!_processedImagesIds.Contains(id))
+            {
+                _processedImagesIds.Add(id);
+            }
+        }
+
+        public void RemoveProcessedImagesId(int id)
+        {
+            _processedImagesIds.Remove(id);
+        }
+
+        public void AddProcessedImagesAllId(int id)
+        {
+            if (!_processedImagesAllIds.Contains(id))
+            {
+                _processedImagesAllIds.Add(id);
+            }
+        }
+
+        public void RemoveProcessedImagesAllId(int id)
+        {
+            _processedImagesAllIds.Remove(id);
+        }
+
+        public void AddProcessedProductPropertyForProduct(int productId, int characteristicId)
+        {
+            Tuple<int, List<int>>? existingEntry = _processedProductPropertyData
+                .FirstOrDefault(x => x.Item1 == productId);
+
+            if (existingEntry is not null
+                && !existingEntry.Item2.Contains(characteristicId))
+            {
+                existingEntry.Item2.Add(characteristicId);
+
+                return;
+            }
+
+            _processedProductPropertyData.Add(new(productId, new List<int> { characteristicId }));
+        }
+
+        public void RemoveProcessedProductPropertyForProduct(int productId, int characteristicId)
+        {
+            Tuple<int, List<int>>? existingEntry = _processedProductPropertyData
+                .FirstOrDefault(x => x.Item1 == productId);
+
+            if (existingEntry is null) return;
+
+            existingEntry.Item2.Remove(characteristicId);
+        }
+
+        public void RemoveAllProcessedProductPropertiesForProduct(int productId)
+        {
+            int existingEntryIndex = _processedProductPropertyData
+                .FindIndex(x => x.Item1 == productId);
+
+            if (existingEntryIndex < 0) return;
+
+            _processedProductPropertyData.RemoveAt(existingEntryIndex);
+        }
+
+        public void AddProcessedHtmlProperty(LegacyHtmlProductProperty property)
+        {
+            if (!_processedHtmlProperties.Contains(property))
+            {
+                _processedHtmlProperties.Add(property);
+            }
+        }
+
+        public void RemoveProcessedHtmlProperty(LegacyHtmlProductProperty property)
+        {
+            _processedHtmlProperties.Remove(property);
+        }
+    }
+
+    private const int _defaultLinkCharacteristicId = 1693;
+
+    private int? _startProductId = null;
+
+    private DateTime? _updateDate = DateTime.Now.AddDays(-7);
+
+    private int? _lastProductId = null;
+    private int? _lastProductIdInProperties = null;
+
+    private bool _saveOperationRunning { get; set; } = false;
+
+    private OneOf<ProductTestMetrics, ValidationResult, List<string>>? TestResults { get; set; }
+
+    private List<ValidationResult> _validationErrorsThatOccuredOvertime { get; set; } = new();
+    private List<string> _errorsThatOccuredOvertime { get; set; } = new();
+    private List<Exception> _exceptionsThatOccuredOvertime { get; set; } = new();
+
+    private IJSObjectReference? _jsModule;
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/_Tests/_Temp_TransferDataTests.razor.js");
+        }
+    }
+
+    private async Task ToggleElementDisplayAsync(string elementId)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("toggleElementDisplay", elementId);
+    }
+
+    private async Task<string?> GetCurrentUserNameAsync()
+    {
+        AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        return authenticationState.User.Identity?.Name;
+    }
+
+    private static void TEMP__AllowTransactionScopesWithLongTimeouts(TimeSpan maxTimeout)
+    {
+        TEMP__SetTransactionManagerField("s_cachedMaxTimeout", true);
+        TEMP__SetTransactionManagerField("s_maximumTimeout", maxTimeout);
+
+        static void TEMP__SetTransactionManagerField(string fieldName, object value)
+        {
+            typeof(TransactionManager).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static)!.SetValue(null, value);
+        }
+    }
+
+    private async Task RerenderNewTestResultsIfUpdatedResultsAreTheSameAsTheOnesDisplayed(ProductTestMetrics updatedTestMetrics)
+    {
+        if (TestResults is null
+            || !TestResults.Value.IsT0
+            || TestResults.Value.AsT0 != updatedTestMetrics)
+        {
+            return;
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1);
+    }
+
+    public async Task SaveAllFilesAndPropertiesImgAllAsync()
+    {
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productImageAndPromotionFileSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveAllFilesAndPropertiesImgAllAsync(
+                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveUnsavedFilesAndPropertiesImgAllAsync()
+    {
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productImageAndPromotionFileSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+
+            await SaveServiceInstance.SaveUnsavedFilesAndPropertiesImgAllAsync(
+                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveFilesAndPropertiesImgAllThatHaveBeenUpdatedAfterDateAsync()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productImageAndPromotionFileSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveFilesAndPropertiesImgAllThatHaveBeenUpdatedAfterDateAsync(
+                neededServices, _updateDate.Value, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveAllPropertiesImgAllAsync()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productImageAndPromotionFileSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveAllPropertiesImgAllAsync(
+                neededServices, _updateDate.Value, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    private async Task OnTestResultsChangedAsync(OneOf<ProductTestMetrics, ValidationResult, List<string>> testResults)
+    {
+        TestResults = testResults;
+
+        if (testResults.IsT1)
+        {
+            _validationErrorsThatOccuredOvertime.Add(testResults.AsT1);
+        }
+        if (testResults.IsT2)
+        {
+            _errorsThatOccuredOvertime.AddRange(testResults.AsT2);
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1);
+    }
+
+    public async Task SaveUnsavedFilesForGroupImagesAsync()
+    {
+        _saveOperationRunning = true;
+
+        try
+        {
+            SaveService.NeededServicesForGroupPromotionSaves neededServices = new(
+                _groupPromotionImagesRepository,
+                _groupPromotionImageFileService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveUnsavedFilesForGroupImagesAsync(neededServices);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    public sealed class SaveService
+    {
+        public sealed class NeededServicesForProductSaves
+        {
+            public IProductService _productService { get; init; }
+            public IProductImageFileService _productImageFileService { get; init; }
+            public IProductImageAndPromotionFileSaveService _productImageAndPromotionFileSaveService { get; init; }
+            public IProductImageService _productImageService { get; init; }
+            public IProductCharacteristicService _productCharacteristicService { get; init; }
+            public IProductPropertyCrudService _productPropertyService { get; init; }
+            public IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService { get; init; }
+            public ILegacyProductHtmlService _legacyProductHtmlService { get; init; }
+            public ITransactionExecuteService _transactionExecuteService { get; init; }
+
+            public NeededServicesForProductSaves(
+                IProductService productService,
+                IProductImageFileService productImageFileService,
+                IProductImageAndPromotionFileSaveService productImageAndPromotionFileSaveService,
+                IProductImageService productImageService,
+                IProductCharacteristicService productCharacteristicService,
+                IProductPropertyCrudService productPropertyService,
+                IProductCharacteristicAndExternalXmlDataRelationService productCharacteristicAndExternalXmlDataRelationService,
+                ILegacyProductHtmlService legacyProductHtmlService,
+                ITransactionExecuteService transactionExecuteService)
+            {
+                _productService = productService;
+                _productImageFileService = productImageFileService;
+                _productImageAndPromotionFileSaveService = productImageAndPromotionFileSaveService;
+                _productImageService = productImageService;
+                _productCharacteristicService = productCharacteristicService;
+                _productPropertyService = productPropertyService;
+                _productCharacteristicAndExternalXmlDataRelationService = productCharacteristicAndExternalXmlDataRelationService;
+                _legacyProductHtmlService = legacyProductHtmlService;
+                _transactionExecuteService = transactionExecuteService;
+            }
+        }
+
+        public sealed class NeededServicesForGroupPromotionSaves
+        {
+            public IGroupPromotionImagesRepository _groupPromotionImagesRepository { get; init; }
+            public IGroupPromotionImageFileService _groupPromotionImageFileService { get; init; }
+            public ITransactionExecuteService _transactionExecuteService { get; init; }
+
+            public NeededServicesForGroupPromotionSaves(
+                IGroupPromotionImagesRepository groupPromotionImagesRepository,
+                IGroupPromotionImageFileService groupPromotionImageFileService,
+                ITransactionExecuteService transactionExecuteService)
+            {
+                _groupPromotionImagesRepository = groupPromotionImagesRepository;
+                _groupPromotionImageFileService = groupPromotionImageFileService;
+                _transactionExecuteService = transactionExecuteService;
+            }
+        }
+
+        private bool _alreadyActive = false;
+
+        public async Task SaveAllFilesAndPropertiesImgAllAsync(
+            NeededServicesForProductSaves neededServices,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            const int productsProcessingAtTheSameTimeBatchSize = 1;
+
+            for (int i = 0; i < products.Count; i += productsProcessingAtTheSameTimeBatchSize)
+            {
+                int batchCount = Math.Min(productsProcessingAtTheSameTimeBatchSize, products.Count - i);
+
+                List<MOSTComputers.Models.Product.Models.Product> currentProductBatch = products.GetRange(i, batchCount);
+
+                OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
+                    = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                        () => SaveAllFilesAndPropertiesImgAllInternalAsync(neededServices, false, currentUserName, currentProductBatch, productTestMetrics, onChanged),
+                        result => result.IsT0,
+                        transactionOptions: new()
+                        {
+                            Timeout = timeout
+                        });
+
+                int startId = currentProductBatch[0].Id;
+                int endId = currentProductBatch[batchCount - 1].Id;
+
+                result.Switch(
+                    success => onChanged(productTestMetrics),
+                    validationResult =>
+                    {
+                        foreach (ValidationFailure validationFailure in validationResult.Errors)
+                        {
+                            validationFailure.ErrorMessage += $" (between {startId} and {endId})";
+                        }
+
+                        onChanged(validationResult);
+                    },
+                    fileSaveFailureResult => onChanged(new List<string>() { $"{fileSaveFailureResult.ToString()}" }),
+                    fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
+                    fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
+                    unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+            }
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveUnsavedFilesAndPropertiesImgAllAsync(
+            NeededServicesForProductSaves neededServices,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
+
+            List<ProductImageFileData> imageFiles = await neededServices._productImageFileService.GetAllAsync();
+
+            List<IGrouping<int, ProductImageFileData>> imageFilesGrouped = imageFiles.GroupBy(x => x.ProductId)
+                .ToList();
+
+            for (int i = 0; i < products.Count; i++)
+            {
+                Product product = products[i];
+
+                IGrouping<int, ProductImageData>? imagesForProduct = images.FirstOrDefault(x => x.Key == product.Id);
+                IGrouping<int, ProductImageFileData>? imageFilesForProduct = imageFilesGrouped.FirstOrDefault(x => x.Key == product.Id);
+
+                if (imagesForProduct is not null && imagesForProduct.Any())
+                {
+                    if (imageFilesForProduct is null || !imageFilesForProduct.Any()) continue;
+
+                    if (imagesForProduct.Count() != imageFilesForProduct.Count()) continue;
+
+                    bool shouldUpdateImages = false;
+
+                    foreach (ProductImageFileData imageFile in imageFilesForProduct)
+                    {
+                        if (imageFile.FileName is null)
+                        {
+                            shouldUpdateImages = true;
+
+                            break;
+                        }
+
+                        string fileName = Path.GetFileNameWithoutExtension(imageFile.FileName);
+
+                        bool isFileNameAnInteger = int.TryParse(fileName, out int fileNameAsInt);
+
+                        if (!isFileNameAnInteger
+                            || imagesForProduct.FirstOrDefault(image => image.Id == fileNameAsInt) is null)
+                        {
+                            shouldUpdateImages = true;
+
+                            break;
+                        }
+                    }
+
+                    if (shouldUpdateImages) continue;
+                }
+                else if (imageFilesForProduct is not null && imageFilesForProduct.Any())
+                {
+                    continue;
+                }
+
+                products.RemoveAt(i);
+
+                i--;
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            IEnumerable<int> productIds = products.Select(x => x.Id);
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            const int productsProcessingAtTheSameTimeBatchSize = 1;
+
+            for (int i = 0; i < products.Count; i += productsProcessingAtTheSameTimeBatchSize)
+            {
+                int batchCount = Math.Min(productsProcessingAtTheSameTimeBatchSize, products.Count - i);
+
+                List<MOSTComputers.Models.Product.Models.Product> currentProductBatch = products.GetRange(i, batchCount);
+
+                OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
+                    = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                        () => SaveAllFilesAndPropertiesImgAllInternalAsync(neededServices, true, currentUserName, currentProductBatch, productTestMetrics, onChanged),
+                        result => result.IsT0,
+                        transactionOptions: new()
+                        {
+                            Timeout = timeout
+                        });
+
+                int startId = currentProductBatch[0].Id;
+                int endId = currentProductBatch[batchCount - 1].Id;
+
+                result.Switch(
+                    success => onChanged(productTestMetrics),
+                    validationResult =>
+                    {
+                        foreach (ValidationFailure validationFailure in validationResult.Errors)
+                        {
+                            validationFailure.ErrorMessage += $" (between {startId} and {endId})";
+                        }
+
+                        onChanged(validationResult);
+                    },
+                    fileSaveFailureResult => onChanged(new List<string>() { $"{fileSaveFailureResult.ToString()}" }),
+                    fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
+                    fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
+                    unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+            }
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveFilesAndPropertiesImgAllThatHaveBeenUpdatedAfterDateAsync(
+            NeededServicesForProductSaves neededServices,
+            DateTime updateDate,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
+
+            for (int i = 0; i < products.Count; i++)
+            {
+                IGrouping<int, ProductImageData>? imageForProduct = images.FirstOrDefault(x => x.Key == products[i].Id);
+
+                if (imageForProduct is not null)
+                {
+                    bool productUpdatedAfterDate = false;
+
+                    foreach (ProductImageData productImageData in imageForProduct)
+                    {
+                        if (productImageData.DateModified >= updateDate)
+                        {
+                            productUpdatedAfterDate = true;
+
+                            break;
+                        }
+                    }
+
+                    if (productUpdatedAfterDate) continue;
+                }
+
+                products.RemoveAt(i);
+
+                i--;
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            const int productsProcessingAtTheSameTimeBatchSize = 1;
+
+            for (int i = 0; i < products.Count; i += productsProcessingAtTheSameTimeBatchSize)
+            {
+                int batchCount = Math.Min(productsProcessingAtTheSameTimeBatchSize, products.Count - i);
+
+                List<MOSTComputers.Models.Product.Models.Product> currentProductBatch = products.GetRange(i, batchCount);
+
+                OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
+                    = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                        () => SaveAllFilesAndPropertiesImgAllInternalAsync(neededServices, false, currentUserName, currentProductBatch, productTestMetrics, onChanged),
+                        result => result.IsT0,
+                        transactionOptions: new()
+                        {
+                            Timeout = timeout
+                        });
+
+                int startId = currentProductBatch[0].Id;
+                int endId = currentProductBatch[batchCount - 1].Id;
+
+                result.Switch(
+                    success => onChanged(productTestMetrics),
+                    validationResult =>
+                    {
+                        foreach (ValidationFailure validationFailure in validationResult.Errors)
+                        {
+                            validationFailure.ErrorMessage += $" (between {startId} and {endId})";
+                        }
+
+                        onChanged(validationResult);
+                    },
+                    fileSaveFailureResult => onChanged(new List<string> () { $"{fileSaveFailureResult.ToString()}" }),
+                    fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
+                    fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
+                    unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+            }
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveAllPropertiesImgAllAsync(
+            NeededServicesForProductSaves neededServices,
+            DateTime updateDate,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            const int productsProcessingAtTheSameTimeBatchSize = 1;
+
+            for (int i = 0; i < products.Count; i += productsProcessingAtTheSameTimeBatchSize)
+            {
+                int batchCount = Math.Min(productsProcessingAtTheSameTimeBatchSize, products.Count - i);
+
+                List<MOSTComputers.Models.Product.Models.Product> currentProductBatch = products.GetRange(i, batchCount);
+
+                OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
+                    = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                        () => SaveAllPropertiesImgAllInternalAsync(neededServices, false, currentUserName, currentProductBatch, productTestMetrics, onChanged),
+                        result => result.IsT0,
+                        transactionOptions: new()
+                        {
+                            Timeout = timeout
+                        });
+
+                int startId = currentProductBatch[0].Id;
+                int endId = currentProductBatch[batchCount - 1].Id;
+
+                result.Switch(
+                    success => onChanged(productTestMetrics),
+                    validationResult =>
+                    {
+                        foreach (ValidationFailure validationFailure in validationResult.Errors)
+                        {
+                            validationFailure.ErrorMessage += $" (between {startId} and {endId})";
+                        }
+
+                        onChanged(validationResult);
+                    },
+                    fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
+                    fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
+                    unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+            }
+
+            _alreadyActive = false;
+        }
+
+        private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+            SaveAllFilesAndPropertiesImgAllInternalAsync(
+                NeededServicesForProductSaves neededServices,
+                bool unsavedOnly,
+                string currentUserName,
+                List<MOSTComputers.Models.Product.Models.Product> products,
+                ProductTestMetrics? productTestMetrics = null,
+                Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            IEnumerable<int> productIds = products.Select(product => product.Id);
+
+            List<IGrouping<int, ProductImage>> images = await neededServices._productImageService.GetAllInProductsAsync(productIds);
+            List<IGrouping<int, ProductImageFileData>> imageFiles = await neededServices._productImageFileService.GetAllInProductsAsync(productIds);
+
+            OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> saveBatchResult
+                = await SaveImgAllFilesForProductsInternalAsync(neededServices, unsavedOnly, images, imageFiles, currentUserName, productTestMetrics, onChanged);
+
+            if (!saveBatchResult.IsT0)
+            {
+                return saveBatchResult;
+            }
+
+            List<IGrouping<Product?, ProductImage>> imagesAndProducts = images
+                .SelectMany(x => x)
+                .GroupBy(x => products.Find(p => p.Id == x.ProductId))
+                .ToList();
+
+            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyService.GetAllInProductsAsync(productIds);
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> savePropertiesResult
+                = await SaveProductPropertiesFromOriginalImageHtmlInternalAsync(
+                    neededServices, unsavedOnly, imagesAndProducts, currentUserName, productTestMetrics, onChanged);
+
+            if (!savePropertiesResult.IsT0)
+            {
+                return savePropertiesResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+            SaveAllPropertiesImgAllInternalAsync(
+                NeededServicesForProductSaves neededServices,
+                bool unsavedOnly,
+                string currentUserName,
+                List<MOSTComputers.Models.Product.Models.Product> products,
+                ProductTestMetrics? productTestMetrics = null,
+                Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            IEnumerable<int> productIds = products.Select(product => product.Id);
+
+            List<IGrouping<int, ProductImage>> images = await neededServices._productImageService.GetAllInProductsAsync(productIds);
+            
+            List<IGrouping<Product?, ProductImage>> imagesAndProducts = images
+                .SelectMany(x => x)
+                .GroupBy(x => products.Find(p => p.Id == x.ProductId))
+                .ToList();
+
+            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyService.GetAllInProductsAsync(productIds);
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> savePropertiesResult
+                = await SaveProductPropertiesFromOriginalImageHtmlInternalAsync(
+                    neededServices, unsavedOnly, imagesAndProducts, currentUserName, productTestMetrics, onChanged);
+
+            if (!savePropertiesResult.IsT0)
+            {
+                return savePropertiesResult.Map<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+            SaveImgAllFilesForProductsInternalAsync(
+                NeededServicesForProductSaves neededServices,
+                bool unsavedOnly,
+                List<IGrouping<int, ProductImage>> originalProductImages,
+                List<IGrouping<int, ProductImageFileData>> existingImageFiles,
+                string upsertUserName,
+                ProductTestMetrics? productTestMetrics = null,
+                Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            foreach (IGrouping<int, ProductImage> originalImagesByProduct in originalProductImages)
+            {
+                IGrouping<int, ProductImageFileData>? imageFilesByProduct = existingImageFiles
+                    .FirstOrDefault(group => group.Key == originalImagesByProduct.Key);
+
+                if (unsavedOnly)
+                {
+                    bool shouldUpdateImages = originalImagesByProduct.Count() != (imageFilesByProduct?.Count() ?? 0);
+
+                    if (!shouldUpdateImages)
+                    {
+                        if (imageFilesByProduct is null) continue;
+
+                        foreach (ProductImageFileData imageFile in imageFilesByProduct)
+                        {
+                            if (imageFile.FileName is null)
+                            {
+                                shouldUpdateImages = true;
+
+                                break;
+                            }
+
+                            string fileName = Path.GetFileNameWithoutExtension(imageFile.FileName);
+
+                            bool isFileNameAnInteger = int.TryParse(fileName, out int fileNameAsInt);
+
+                            if (!isFileNameAnInteger
+                                || originalImagesByProduct.FirstOrDefault(image => image.Id == fileNameAsInt) is null)
+                            {
+                                shouldUpdateImages = true;
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!shouldUpdateImages) continue;
+                }
+
+                OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertAllResult
+                    = await SaveImgAllFilesForProductAsync(neededServices, upsertUserName, originalImagesByProduct, imageFilesByProduct, productTestMetrics, onChanged);
+
+                if (!upsertAllResult.IsT0) return upsertAllResult;
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> SaveImgAllFilesForProductAsync(
+            NeededServicesForProductSaves neededServices,
+            string upsertUserName,
+            IGrouping<int, ProductImage> originalImagesByProduct,
+            IGrouping<int, ProductImageFileData>? existingImageFilesByProduct = null,
+            ProductTestMetrics? productTestMetrics = null,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            foreach (ProductImage originalImage in originalImagesByProduct)
+            {
+                if (originalImage.ImageData is null
+                    || originalImage.ImageData.Length <= 0
+                    || originalImage.ImageContentType is null)
+                {
+                    continue;
+                }
+
+                string contentType = originalImage.ImageContentType.Trim();
+
+                if (contentType == "-?-")
+                {
+                    contentType = "image/jpeg";
+                }
+
+                MemoryStream imageDataStream = new(originalImage.ImageData);
+
+                if (!IsImageDataValid(imageDataStream))
+                {
+                    continue;
+                }
+
+                OneOf<string, ValidationResult> getFileExtensionResult = GetFileExtensionFromImageContentType(contentType);
+
+                if (!getFileExtensionResult.IsT0)
+                {
+                    return getFileExtensionResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        fileExtension => new UnexpectedFailureResult(),
+                        validationResult => validationResult);
+                }
+
+                string fileName = originalImage.Id.ToString();
+                string fullFileName = fileName + getFileExtensionResult.AsT0;
+
+                ProductImageFileData? existingFile = existingImageFilesByProduct?
+                    .FirstOrDefault(file => Path.GetFileNameWithoutExtension(file.FileName)?.Equals(fileName, StringComparison.OrdinalIgnoreCase) ?? false);
+
+                if (existingFile is not null)
+                {
+                    ProductImageFileUpdateRequest productImageFileUpdateRequest = new()
+                    {
+					    Id = existingFile.Id,
+                        UpdateFileDataRequest = new()
+                        {
+                            FileData = new FileData()
+                            {
+                                FileName = fullFileName,
+                                Data = imageDataStream.ToArray(),
+                            }
+                        },
+                        Active = true,
+                        UpdateImageIdRequest = originalImage.Id,
+                        UpdateUserName = upsertUserName,
+                    };
+
+                    OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResult
+                        = await neededServices._productImageFileService.UpdateFileAsync(productImageFileUpdateRequest);
+
+                    if (!updateFileResult.IsT0) return updateFileResult;
+
+                    continue;
+                }
+
+                ProductImageFileCreateRequest productImageFileCreateRequest = new()
+                {
+                    ProductId = originalImagesByProduct.Key,
+                    ImageId = originalImage.Id,
+                    FileData = new()
+                    {
+                        FileName = fullFileName,
+					    Data = imageDataStream.ToArray(),
+                    },
+                    Active = true,
+                    CreateUserName = upsertUserName,
+                };
+
+                OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult> createFileResult
+                    = await neededServices._productImageFileService.InsertFileAsync(productImageFileCreateRequest);
+
+                if (!createFileResult.IsT0)
+                {
+                    return createFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        newFileId => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        fileSaveFailureResult => fileSaveFailureResult,
+                        fileAlreadyExistsResult => fileAlreadyExistsResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+            }
+
+            if (productTestMetrics is not null)
+            {
+                productTestMetrics.AddProcessedProductId(originalImagesByProduct.Key);
+
+                foreach (ProductImage newProductImage in originalImagesByProduct)
+                {
+                    productTestMetrics.AddProcessedImagesAllId(newProductImage.Id);
+                }
+
+                if (onChanged is not null)
+                {
+                    await onChanged(productTestMetrics);
+                }
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> SaveProductPropertiesFromOriginalImageHtmlInternalAsync(
+            NeededServicesForProductSaves neededServices,
+            bool unsavedOnly,
+            List<IGrouping<Product?, ProductImage>> productsWithImages,
+            string currentUserName,
+            ProductTestMetrics? productTestMetrics = null,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            char[] invalidChars = ['\u000B', '\u001B', '\u001E', '\u001F'];
+            const string invalidCharPlaceholder = " ";
+
+            foreach (IGrouping<Product?, ProductImage> imagesByProduct in productsWithImages)
+            {
+                if (imagesByProduct.Key is null) continue;
+
+                ProductImage? imageDataWithHtml = imagesByProduct.FirstOrDefault(image => !string.IsNullOrWhiteSpace(image.HtmlData));
+
+                if (imageDataWithHtml is null) continue;
+
+                string htmlData = imageDataWithHtml.HtmlData!;
+
+                int invalidCharIndex = htmlData!.IndexOfAny(invalidChars);
+
+                if (invalidCharIndex >= 0)
+                {
+                    foreach (char invalidChar in invalidChars)
+                    {
+                        htmlData = htmlData.Replace(invalidChar.ToString(), invalidCharPlaceholder);
+                    }
+                }
+
+                LegacyHtmlProduct htmlProduct = neededServices._legacyProductHtmlService.ParseProductHtml(htmlData);
+
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertProductPropertiesFromHtmlResult
+                    = await UpsertPropertiesFromLegacyHtmlAsync(neededServices, unsavedOnly, imagesByProduct.Key, htmlProduct, currentUserName, productTestMetrics, onChanged);
+
+                if (!upsertProductPropertiesFromHtmlResult.IsT0)
+                {
+                    return upsertProductPropertiesFromHtmlResult;
+                }
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertPropertiesFromLegacyHtmlAsync(
+            NeededServicesForProductSaves neededServices,
+            bool unsavedOnly,
+            Product product,
+            LegacyHtmlProduct htmlProduct,
+            string currentUserName,
+            ProductTestMetrics? productTestMetrics = null,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            if (product.CategoryId is null)
+            {
+                ValidationFailure categoryIdError = new(nameof(product.CategoryId), "Cannot be null");
+
+                return new ValidationResult([categoryIdError]);
+            }
+
+            bool metricsChanged = false;
+
+            if (htmlProduct.Properties is not null)
+            {
+                List<ProductCharacteristicAndExternalXmlDataRelation> propertyRelationshipsFromProductCategory
+                    = await neededServices._productCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdAsync(product.CategoryId.Value);
+
+                foreach (LegacyHtmlProductProperty htmlProperty in htmlProduct.Properties)
+                {
+                    if (htmlProperty.Value is not null
+                        && string.IsNullOrWhiteSpace(htmlProperty.Value))
+                    {
+                        continue;
+                    }
+
+                    ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
+                        .FirstOrDefault(x => x.XmlName == htmlProperty.Name);
+
+                    if (propertyRelationship?.ProductCharacteristicId is null)
+                    {
+                        continue;
+                    }
+
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> insertPropertyActionResult
+                        = await UpsertXmlPropertyInPropertiesAsync(neededServices, product.Id, htmlProperty, propertyRelationship, currentUserName);
+
+                    if (!insertPropertyActionResult.IsT0) return insertPropertyActionResult;
+
+                    if (productTestMetrics is not null)
+                    {
+                        productTestMetrics.AddProcessedProductId(product.Id);
+                        productTestMetrics.AddProcessedHtmlProperty(htmlProperty);
+                        productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, propertyRelationship.ProductCharacteristicId.Value);
+
+                        metricsChanged = true;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(htmlProduct.VendorUrl))
+            {
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> saveLinkResult
+                    = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, htmlProduct.VendorUrl, currentUserName);
+
+                if (!saveLinkResult.IsT0) return saveLinkResult;
+
+                if (productTestMetrics is not null)
+                {
+                    productTestMetrics.AddProcessedProductId(product.Id);
+                    productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, _defaultLinkCharacteristicId);
+
+                    metricsChanged = true;
+                }
+            }
+
+            if (productTestMetrics is not null && metricsChanged && onChanged is not null)
+            {
+                await onChanged(productTestMetrics);
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
+            NeededServicesForProductSaves neededServices,
+            int productId,
+            LegacyHtmlProductProperty htmlProperty,
+            ProductCharacteristicAndExternalXmlDataRelation propertyRelationship,
+            string upsertUserName)
+        {
+            if (propertyRelationship.ProductCharacteristicId is null)
+            {
+                ValidationFailure productCharacteristicIdError = new(
+                    nameof(ProductCharacteristicAndExternalXmlDataRelation.ProductCharacteristicId),
+                    "Cannot be null");
+
+                return new ValidationResult([productCharacteristicIdError]);
+            }
+
+            ProductPropertyUpdateRequest productPropertyUpdateRequest = new()
+            {
+                ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
+                ProductId = productId,
+                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
+                Value = htmlProperty.Value,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertPropertyResult
+                = await neededServices._productPropertyService.UpsertAsync(productPropertyUpdateRequest);
+
+            return upsertPropertyResult;
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> SaveVendorUrlLinkFromXmlProductAsync(
+            NeededServicesForProductSaves neededServices,
+            int productId,
+            string? vendorUrl,
+            string upsertUserName)
+        {
+            if (vendorUrl is null)
+            {
+                ValidationFailure emptyUrlError = new(nameof(vendorUrl), "Cannot be empty");
+
+                return new ValidationResult([emptyUrlError]);
+            }
+
+            ProductCharacteristic? defaultLinkCharacteristic = await neededServices._productCharacteristicService.GetByIdAsync(_defaultLinkCharacteristicId);
+
+            if (defaultLinkCharacteristic is null) return new UnexpectedFailureResult();
+
+            ProductPropertyUpdateRequest updateRequest = new()
+            {
+                ProductId = productId,
+                ProductCharacteristicId = defaultLinkCharacteristic.Id,
+                Value = vendorUrl,
+                XmlPlacement = null,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> createLinkResult
+                = await neededServices._productPropertyService.UpsertAsync(updateRequest);
+
+            return createLinkResult;
+        }
+
+
+
+
+
+        public async Task SaveUnsavedFilesForGroupImagesAsync(NeededServicesForGroupPromotionSaves neededServices)
+        {
+            List<int> imageIdsThatFailedSave = await SaveUnsavedFilesForGroupImagesInternalAsync(neededServices);
+        }
+
+        public async Task<List<int>> SaveUnsavedFilesForGroupImagesInternalAsync(NeededServicesForGroupPromotionSaves neededServices)
+        {
+            List<int> imageIdsThatFailedSave = new();
+
+            List<GroupPromotionImageWithoutFile> images = await neededServices._groupPromotionImagesRepository.GetAllWithoutFilesAsync();
+
+            List<GroupPromotionImageFileData> imageFiles = await neededServices._groupPromotionImageFileService.GetAllAsync();
+
+            foreach (GroupPromotionImageWithoutFile image in images)
+            {
+                GroupPromotionImageFileData? matchingFile = imageFiles.FirstOrDefault(x => x.ImageId == image.Id);
+
+                if (matchingFile != null) continue;
+
+                if (image.ContentType is null) continue;
+
+                int indexOfDotInBadFormattedContentType = image.ContentType.IndexOf('.');
+
+                string fileExtension = indexOfDotInBadFormattedContentType > 0
+                    ? image.ContentType.Substring(indexOfDotInBadFormattedContentType)
+                    : string.Empty;
+
+                if (string.IsNullOrEmpty(fileExtension)) continue;
+
+                string fileName = image.Id.ToString() + fileExtension;
+
+                GroupPromotionImageFileDataCreateRequest createRequest = new()
+                {
+                    ImageId = image.Id,
+                    PromotionId = image.PromotionId,
+                    FileName = fileName,
+                };
+
+                OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> result
+                    = await neededServices._groupPromotionImageFileService.InsertAsync(createRequest);
+
+                if (!result.IsT0)
+                {
+                    imageIdsThatFailedSave.Add(image.Id);
+                }
+            }
+
+            return imageIdsThatFailedSave;
+        }
+
+
+
+        public OneOf<string, ValidationResult> GetFileExtensionFromImageContentType(string? imageContentType)
+        {
+            if (!IsImageContentType(imageContentType))
+            {
+                ValidationFailure validationFailure = new(nameof(ProductImage.ImageContentType), "Image content type is invalid");
+
+                return new ValidationResult([validationFailure]);
+            }
+
+            string? fileName = TEMP__GetImageFileExtensionFromImageData(imageContentType);
+
+            if (fileName is null)
+            {
+                ValidationFailure validationFailure = new(nameof(ProductImage.ImageContentType), "File name is invalid");
+
+                return new ValidationResult([validationFailure]);
+            }
+
+            string fileExtension = Path.GetExtension(fileName);
+
+            if (fileExtension is null)
+            {
+                ValidationFailure validationFailure = new(nameof(ProductImage.ImageContentType), "File name is invalid");
+
+                return new ValidationResult([validationFailure]);
+            }
+
+            return fileExtension;
+        }
+
+        private static string? TEMP__GetImageFileExtensionFromImageData(string imageContentType)
+        {
+            if (imageContentType == "image/jpeg") return ".jpeg";
+
+            List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(imageContentType);
+
+            string? extensionToUse = possibleFileExtensions.FirstOrDefault();
+
+            return extensionToUse;
+        }
+    
+        private static bool IsImageDataValid(Stream imageDataStream)
+        {
+            try
+            {
+                Image.Load(imageDataStream);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
+}

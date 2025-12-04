@@ -1,0 +1,40 @@
+﻿@using MOSTComputers.Models.Product.Models
+
+<div class="d-flex flex-column full-parent-width full-parent-height">
+
+    <table id="propertiesDisplay_ul" class="full-parent-width bg-white table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>S</th>
+                    <th>Name</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+        <tbody>
+
+            @if (ProductProperties is not null
+                && ProductProperties.Count > 0)
+            {
+                for (int i = 0; i < ProductProperties.Count; i++)
+                {
+                    ProductProperty productProperty = ProductProperties[i];
+
+                    <tr id="propertiesDisplay_ul_li-@i">
+                        <td>@productProperty.ProductCharacteristicId</td>
+                        <td>@productProperty.DisplayOrder</td>
+                        <td>@productProperty.Characteristic</td>
+                        <td>@productProperty.Value</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public required Product Product { get; set; }
+    [Parameter] public List<ProductProperty>? ProductProperties { get; set; }
+}

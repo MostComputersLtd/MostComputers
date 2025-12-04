@@ -1,0 +1,294 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductStatuses
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.UI.Web.Models.ProductEditor
+@using MOSTComputers.UI.Web.Models.ProductEditor.ProductProperties
+@using MOSTComputers.UI.Web.Pages.Shared.ProductEditor.ProductImages
+@using MOSTComputers.UI.Web.Pages.Shared.ProductEditor.ProductSearchStringData
+@using MOSTComputers.UI.Web.Pages.Shared.ProductEditor.Promotions
+@using MOSTComputers.UI.Web.Pages.Shared.ProductSearchString
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils;
+
+@model ProductPropertiesEditorPartialModel
+@{
+    Layout = null;
+
+    Promotion? pidPromotion = Model.Promotions?.FirstOrDefault(x => x.Id == Model.Product.PromotionPid);
+    Promotion? ridPromotion = Model.Promotions?.FirstOrDefault(x => x.Id == Model.Product.PromotionRid);
+
+    List<ProductNewStatus> availableProductNewStatuses =
+    [
+        ProductNewStatus.New,
+        ProductNewStatus.ReadyForUse,
+        ProductNewStatus.Postponed1,
+        ProductNewStatus.Postponed2
+    ];
+
+    if (Model.ProductStatuses?.ProductNewStatus is not null
+        && !availableProductNewStatuses.Contains(Model.ProductStatuses.ProductNewStatus))
+    {
+        availableProductNewStatuses.Add(Model.ProductStatuses.ProductNewStatus);
+    }
+
+    SelectListItem? defaultSelectListItem = (Model.ProductStatuses?.ProductNewStatus is null) ? new("-", "", true, true) : null;
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">Status:</h5>
+
+    <select id="propertyEditorProductNewStatusSelect"
+        class="ms-2"
+        asp-items='GetProductNewStatusSelectListItems(
+        options: availableProductNewStatuses,
+        selected: Model.ProductStatuses?.ProductNewStatus,
+        defaultSelectListItem: defaultSelectListItem)'
+        onchange="updateProductNewStatusFromSelect(
+            @Model.Product.Id,
+            'propertyEditorProductNewStatusSelect',            
+            '@Model.ModalData.ModalContentId',
+            '@Model.RelatedProductTableRowElementId')">
+    </select>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.Product.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product.Name</h4>
+
+    <button class="btn btn-outline-success ms-2"
+        onclick="showProductFullDisplayPopup(
+			@Model.Product.Id,
+			'@Model.ProductFullDisplayPartialModalData.ModalId',
+			'@Model.ProductFullDisplayPartialModalData.ModalDialogId',
+			'@Model.ProductFullDisplayPartialModalData.ModalContentId')">
+        Info 1
+    </button>
+
+    <button class="btn btn-outline-success ms-2"
+        onclick="showProductHtmlAndImagesPopup(
+			@Model.Product.Id,
+			'@Model.ProductHtmlAndImagesPartialModelData.ModalId',
+			'@Model.ProductHtmlAndImagesPartialModelData.ModalDialogId',
+			'@Model.ProductHtmlAndImagesPartialModelData.ModalContentId')">
+        Info 2
+    </button>
+
+    <a class="btn btn-outline-success ms-2" target="_blank" asp-page="/ProductFullDisplay" asp-route-productId="@Model.Product.Id">
+        Info 3
+    </a>
+
+    <button class="btn btn-outline-success ms-2"
+        onclick="getPromotionProductFileEditorPopupData(
+            null,
+			@Model.Product.Id,
+			'@Model.PromotionProductFileEditorPartialModalData.ModalId',
+			'@Model.PromotionProductFileEditorPartialModalData.ModalDialogId',
+			'@Model.PromotionProductFileEditorPartialModalData.ModalContentId',
+            '@Model.RelatedProductTableRowElementId')">
+        Promo
+    </button>
+
+    <button class="btn btn-outline-success ms-2"
+        onclick="getSearchStringPartsPopupData(
+            null,
+            @Model.Product.Id,
+            '@Model.SearchStringPartsPartialModalData.ModalId',
+            '@Model.SearchStringPartsPartialModalData.ModalDialogId',
+            '@Model.SearchStringPartsPartialModalData.ModalContentId')">
+        SStr
+    </button>
+
+    <div class="d-flex flex-nowrap">
+
+        <button id="productPropertyEditorAddImageButton" class="btn btn-outline-success ms-2"
+            onclick="forceFileInputClick('productPropertyEditorAddImageFileInput')">
+            Add Image
+        </button>
+
+        <input id="productPropertyEditorAddImageFileInput" type="file" accept="image/*" style="width: 0px;"
+            onchange="upsertImageAndDisplayChanges(
+                true,
+                false,
+                @Model.Product.Id,
+                null,
+                'productPropertyEditorAddImageFileInput',
+                null,
+                null,
+                true,
+                '@Model.ModalData.ModalContentId',
+                '@Model.RelatedProductTableRowElementId')" />
+
+        <button id="productPropertiesEditorAddPropertyButton" class="btn btn-outline-success ms-2"
+            onclick="addPropertyToTableAndDisplayChanges(
+                @Model.Product.Id,
+                @((int)ProductCharacteristicType.ProductCharacteristic),
+                '@ProductPropertyEditorPropertyGroup.Properties.Value',
+                '@ProductPropertyEditorPropertyGroup.Properties.ParentElementId',
+                '@Model.RelatedProductTableRowElementId')">
+            Add Property
+        </button>
+
+        <button id="productPropertiesEditorAddLinkButton" class="btn btn-outline-success ms-2"
+            onclick="addPropertyToTableAndDisplayChanges(
+                @Model.Product.Id,
+                @((int)ProductCharacteristicType.Link),
+                '@ProductPropertyEditorPropertyGroup.Links.Value',
+                '@ProductPropertyEditorPropertyGroup.Links.ParentElementId',
+                '@Model.RelatedProductTableRowElementId')">
+            Add Link
+        </button>
+
+        <button id="productPropertiesEditorSaveAllButton" class="btn btn-primary ms-2"
+            onclick="upsertAllPropertiesInTable(
+                @Model.Product.Id,
+                '@Model.ModalData.ModalContentId',
+                '@Model.RelatedProductTableRowElementId')">
+            Save
+        </button>
+    </div>
+
+    <button type="button" class="btn-close ms-2" data-dismiss="modal" aria-label="Close"
+        onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="productPropertiesEditor_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <div class="full-parent-width d-flex flex-row mb-2">
+            <p class="me-3 mb-0">Category: @Model.Product.Category?.Description</p>
+            <p class="me-3 mb-0">Manufacturer: @Model.Product.Manufacturer?.RealCompanyName</p>
+            <p class="me-3 mb-0">EAN: @Model.Product.PartNumber1</p>
+            <p class="me-3 mb-0">PartNo: @Model.Product.PartNumber2</p>
+        </div>
+
+        <div id="productEditorImagesContainer" class="full-parent-width product-editor-images-container"
+            style="height: 13em;">
+            <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorImagesListPartial"
+                model="@new ProductPropertiesEditorImagesListPartialModel()
+                {
+                    ProductId = Model.Product.Id,
+                    Images = Model.ProductImages,
+                    RelatedImageFileData = Model.ProductImageFileNames,
+                    PromotionProductFileInfos = Model.PromotionProductFileInfos,
+                    IncludeHtmlDataView = false,
+                    ProductPropertiesEditorContainerElementId = Model.ModalData.ModalContentId,
+                    ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                    ContainerElementId = ProductPropertiesEditorPartialModel.ImagesListPartialContainerElementId,
+		            RelatedProductTableRowElementId = Model.RelatedProductTableRowElementId,
+                }" />
+        </div>
+
+        <div class="full-parent-width">
+            @if (Model.Product.AlertPictureId > 0)
+            {
+                <div class="d-flex flex-row">
+                    <p>IID: @(Model.Product.AlertPictureId.ToString() ?? "-")</p>
+
+                    <p class="ps-2">Expire Date: @(Model.Product.AlertExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+                </div>
+            }
+
+            @if (pidPromotion is not null)
+            {
+                <partial name="ProductEditor/Promotions/_PromotionSingleLinePartial"
+                    model="new PromotionSingleLinePartialModel()
+                {
+                    Promotion = pidPromotion
+                }" />
+            }
+
+            @if (ridPromotion is not null)
+            {
+                <partial name="ProductEditor/Promotions/_PromotionSingleLinePartial"
+                    model="new PromotionSingleLinePartialModel()
+                {
+                    Promotion = ridPromotion
+                }" />
+            }
+        </div>
+
+        <div class="full-parent-width d-flex flex-column mb-3">
+            <p class="m-0">Search string: @Model.Product.SearchString</p>
+
+            @if (Model.SearchStringParts is not null
+                && Model.SearchStringParts.Count > 0)
+            {
+                <partial name="ProductSearchString/_SearchStringPartsTablePartial" model="new SearchStringPartsTablePartialModel()
+                {
+                    SearchStringParts = Model.SearchStringParts,
+                }" />
+            }
+        </div>
+
+        @{
+            List<ProductPropertyEditorPropertyData> linkProperties = new();
+        }
+
+        <div class="full-parent-width pb-4">
+            <table class="full-parent-width">
+                <tbody id="@ProductPropertyEditorPropertyGroup.Properties.ParentElementId">
+
+                    @if (Model.PropertyDataList is not null)
+                    {
+                        int propertyIndex = 0;
+
+                        for (int i = 0; i < Model.PropertyDataList.Count; i++)
+                        {
+                            ProductPropertyEditorPropertyData propertyData = Model.PropertyDataList[i];
+
+                            ProductCharacteristic? relatedCharacteristic = propertyData.RemainingCharacteristics?
+                                .FirstOrDefault(x => x.Id == propertyData.ProductCharacteristic?.Id);
+
+                            if (relatedCharacteristic?.KWPrCh == ProductCharacteristicType.Link)
+                            {
+                                linkProperties.Add(propertyData);
+
+                                continue;
+                            }
+
+                            ProductPropertiesEditorSinglePropertyPartialModel singlePropertyPartialModel = new()
+                            {
+                                ProductId = Model.Product.Id,
+                                PropertyData = propertyData,
+                                PropertyIndex = propertyIndex,
+                                PropertyEditorPropertyGroup = ProductPropertyEditorPropertyGroup.Properties,
+                                ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                                RelatedProductTableRowElementId = Model.RelatedProductTableRowElementId,
+                            };
+
+                            propertyIndex++;
+
+                            <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorSinglePropertyPartial" model="singlePropertyPartialModel" />
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="full-parent-width pb-4 d-flex flex-column">
+
+            <table class="full-parent-width">
+                <tbody id="@ProductPropertyEditorPropertyGroup.Links.ParentElementId">
+
+                    @if (linkProperties.Count > 0)
+                    {
+                        @for (int i = 0; i < linkProperties.Count; i++)
+                        {
+                            ProductPropertyEditorPropertyData propertyData = linkProperties[i];
+
+                            ProductPropertiesEditorSinglePropertyPartialModel singlePropertyPartialModel = new()
+                            {
+                                ProductId = Model.Product.Id,
+                                PropertyData = propertyData,
+                                PropertyIndex = i,
+                                PropertyEditorPropertyGroup = ProductPropertyEditorPropertyGroup.Links,
+                                ProductTableContainerElementId = Model.ProductTableContainerElementId,
+                                RelatedProductTableRowElementId = Model.RelatedProductTableRowElementId,
+                            };
+
+                            <partial name="ProductEditor/ProductProperties/_ProductPropertiesEditorSinglePropertyPartial" model="singlePropertyPartialModel" />
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

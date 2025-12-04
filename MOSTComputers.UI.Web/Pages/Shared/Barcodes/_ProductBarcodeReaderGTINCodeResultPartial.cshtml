@@ -1,0 +1,37 @@
+﻿@model ProductBarcodeReaderGTINCodeResultPartialModel
+@{
+    Layout = null;
+}
+
+<div id="productBarcodeReaderGTINCodeResultsItem-@Model.ElementIndex" name="productBarcodeReaderGTINCodeResultsItem"
+    class="full-parent-width mb-1 d-flex flex-row align-items-center">
+
+    @if (Model.GTINCode is not null)
+    {
+        <p class="me-3 mb-0 flex-grow-1">@Model.GTINCode</p>
+    }
+    else
+    {
+        <p>EAN: -</p>
+    }
+
+    @if (Model.AllowedGTINCodeTypesSelectListItems is not null)
+    {
+        <select id="productBarcodeReaderGTINCodeSelect-@Model.ElementIndex"
+            asp-items="Model.AllowedGTINCodeTypesSelectListItems"
+            class="me-2">
+        </select>
+    }
+
+    @if (Model.IncludeSaveButton)
+    {
+        <button id="productBarcodeReaderGTINCodeSaveButton-@Model.ElementIndex" class="btn btn-outline-secondary me-2"
+            onclick="upsertProductGTINCodeAndDisplayChangesFromEditor(@Model.ElementIndex, @Model.GTINCode)">
+            Save
+        </button>
+    }
+
+    <button id="productBarcodeReaderGTINCodeDeleteButton-@Model.ElementIndex" class="btn btn-close"
+        onclick="deleteProductGTINCodeAndDisplayChanges(@Model.ElementIndex)">
+    </button>
+</div>

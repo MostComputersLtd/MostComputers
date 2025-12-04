@@ -1,37 +1,13 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using MOSTComputers.Models.FileManagement.Models;
-using MOSTComputers.Models.Product.Models;
-using MOSTComputers.Models.Product.Models.Validation;
-using MOSTComputers.Services.DAL.Models.Requests.Product;
-using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
-using OneOf;
-using OneOf.Types;
+﻿using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
-
 public interface IProductService
 {
-    IEnumerable<Product> GetAllWithoutImagesAndProps();
-    IEnumerable<Product> GetAllWhereSearchStringMatches(string searchStringParts);
-    IEnumerable<Product> GetAllWhereNameMatches(string subString);
-    IEnumerable<Product> GetFirstItemsBetweenStartAndEnd(ProductRangeSearchRequest rangeSearchRequest);
-    IEnumerable<Product> GetFirstInRangeWhereSearchStringMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString);
-    IEnumerable<Product> GetFirstInRangeWhereNameMatches(ProductRangeSearchRequest productRangeSearchRequest, string subString);
-    IEnumerable<Product> GetFirstInRangeWhereAllConditionsAreMet(ProductRangeSearchRequest productRangeSearchRequest, ProductConditionalSearchRequest productConditionalSearchRequest);
-    IEnumerable<Product> GetSelectionWithFirstImage(List<int> ids);
-    IEnumerable<Product> GetSelectionWithoutImagesAndProps(List<int> ids);
-    IEnumerable<Product> GetSelectionWithProps(List<int> ids);
-    Product? GetByIdWithFirstImage(int id);
-    Product? GetByIdWithProps(int id);
-    Product? GetByIdWithImages(int id);
-    Product? GetProductFull(int productId);
-    Product? GetProductWithHighestId();
-    OneOf<int, ValidationResult, UnexpectedFailureResult> Insert(ProductCreateRequest createRequest, IValidator<ProductCreateRequest>? validator = null);
-    Task<OneOf<int, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> InsertWithImagesOnlyInDirectoryAsync(ProductCreateWithoutImagesInDatabaseRequest productWithoutImagesInDBCreateRequest);
-    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult, DirectoryNotFoundResult, FileDoesntExistResult>> UpdateProductAndUpdateImagesOnlyInDirectoryAsync(ProductUpdateWithoutImagesInDatabaseRequest productUpdateWithoutImagesInDBRequest);
-    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateProductFullAsync(ProductFullUpdateRequest productFullUpdateRequest);
-    bool Delete(int id);
-    Product? GetProductFullWithHighestId();
-    IEnumerable<Product> GetAllInCategoryWithoutImagesAndProps(int categoryId);
+    Task<List<Product>> GetAllAsync();
+    Task<List<Product>> GetAllInCategoriesAsync(List<int> categoryIds);
+    Task<List<Product>> GetAllInCategoryAsync(int categoryId);
+    Task<List<Product>> GetByIdsAsync(List<int> ids);
+    Task<Product?> GetByIdAsync(int productId);
+    Task<Product?> GetProductWithHighestIdAsync();
+    Task<List<Product>> GetAllWithStatusesAsync(List<MOSTComputers.Models.Product.Models.ProductStatus> productStatuses);
 }

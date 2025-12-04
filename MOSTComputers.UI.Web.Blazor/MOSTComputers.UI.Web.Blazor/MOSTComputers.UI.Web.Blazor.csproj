@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-MOSTComputers.UI.Web.Blazor-3225e848-2710-452a-af46-5b21a9ec2929</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.Identity\MOSTComputers.Services.Identity.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.PDF\MOSTComputers.Services.PDF.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.PromotionFileManagement\MOSTComputers.Services.PromotionFileManagement.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
+    <ProjectReference Include="..\MOSTComputers.UI.Web.Blazor.Client\MOSTComputers.UI.Web.Blazor.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.16" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<PdfDocumentTemplates Include="..\..\PdfDocumentTemplates\**\*" />
+	<ProductHtmlFileTemplates Include="..\..\ProductHtmlFileTemplates\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\favicon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="CopyPdfDocumentTemplatesOnBuild" AfterTargets="Build">
+	<Copy SourceFiles="@(PdfDocumentTemplates)" DestinationFolder="$(OutputPath)PdfDocumentTemplates\" />
+  </Target>
+
+  <Target Name="CopyPdfDocumentTemplatesOnPublish" AfterTargets="Publish">
+	<Copy SourceFiles="@(PdfDocumentTemplates)" DestinationFolder="$(PublishDir)PdfDocumentTemplates\" />
+  </Target>
+
+  <Target Name="CopyProductHtmlFileTemplatesOnBuild" AfterTargets="Build">
+	<Copy SourceFiles="@(ProductHtmlFileTemplates)" DestinationFolder="$(OutputPath)ProductHtmlFileTemplates\" />
+  </Target>
+
+  <Target Name="CopyProductHtmlFileTemplatesOnPublish" AfterTargets="Publish">
+	<Copy SourceFiles="@(ProductHtmlFileTemplates)" DestinationFolder="$(PublishDir)ProductHtmlFileTemplates\" />
+  </Target>
+</Project>

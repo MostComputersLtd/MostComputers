@@ -2,7 +2,6 @@
 using Respawn;
 
 namespace MOSTComputers.Tests.Integration.Common;
-
 public abstract class SingleIntegrationTestBaseForWebProjects<TEntryPoint> : IAsyncLifetime
     where TEntryPoint : class
 {

@@ -3,7 +3,6 @@ using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using System.Transactions;
 
 namespace MOSTComputers.Services.TransactionalFileManagement.Services;
-
 public sealed class TransactionalFileManager : ITransactionalFileManager
 {
     public TransactionalFileManager(IEnlistmentManager enlistmentManager)

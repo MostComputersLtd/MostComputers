@@ -1,0 +1,50 @@
+﻿@using MOSTComputers.Models.Product.Models
+@model ProductPropertiesPartialModel
+@{
+}
+
+<div class="modal-header full-parent-width">
+
+    <h5 class="modal-title">New XML:</h5>
+
+    <h4 id="modal_title_productIdShow" class="modal-title modal-product-name">CSTID: @Model.Product?.Id</h4>
+    <h4 class="modal-title modal-product-name">@Model.Product?.Name</h4>
+
+    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeModal('@Model.ModalData.ModalId')">
+    </button>
+</div>
+<div id="properties_popup" class="modal-body full-parent-width bg-white overflow-y-auto">
+    <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
+
+        <table id="propertiesDisplay_ul" class="full-parent-width bg-white table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+               <thead>
+                   <tr>
+                       <th>ID</th>
+                       <th>S</th>
+                       <th>Name</th>
+                       <th>Value</th>
+                   </tr>
+               </thead>
+
+            <tbody>
+
+                @if (Model.ProductProperties is not null
+                    && Model.ProductProperties.Count > 0)
+                {
+                    for (int i = 0; i < Model.ProductProperties.Count; i++)
+                    {
+                        ProductProperty productProperty = Model.ProductProperties[i];
+
+                        <tr id="propertiesDisplay_ul_li-@i">
+                            <td>@productProperty.ProductCharacteristicId</td>
+                            <td>@productProperty.DisplayOrder</td>
+                            <td>@productProperty.Characteristic</td>
+                            <td>@productProperty.Value</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

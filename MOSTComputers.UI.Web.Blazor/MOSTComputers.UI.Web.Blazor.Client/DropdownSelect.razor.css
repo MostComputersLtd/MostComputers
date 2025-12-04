@@ -1,0 +1,22 @@
+﻿.dropdown-select {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.dropdown-select-top-selected-items-container {
+    width: 100%
+}
+
+.dropdown-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    overflow-y: auto;
+    display: none;
+}
+
+.dropdown-select-dropdown.open {
+    display: block;
+}

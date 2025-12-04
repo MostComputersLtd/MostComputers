@@ -1,0 +1,1411 @@
+﻿using Azure.Core;
+using FluentValidation;
+using FluentValidation.Results;
+using FluentValidation.TestHelper;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Product.Models.ProductImages;
+using MOSTComputers.Models.Product.Models.ProductStatuses;
+using MOSTComputers.Models.Product.Models.Promotions.Files;
+using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductImage;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Files.PromotionProductFiles;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Models.Requests;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
+using MOSTComputers.Services.ProductRegister.Models.Responses;
+using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using OneOf;
+using OneOf.Types;
+using System;
+using System.Threading.Tasks;
+using System.Transactions;
+using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils;
+using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using static MOSTComputers.Utils.Files.ContentTypeUtils;
+using static MOSTComputers.Utils.Files.FileExtensionUtils;
+
+namespace MOSTComputers.Services.ProductRegister.Services;
+internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromotionFileSaveService
+{
+    public ProductImageAndPromotionFileSaveService(
+        IProductImageCrudService productImageCrudService,
+        IProductImageAndFileService productImageAndFileService,
+        IProductImageFileService productImageFileService,
+        IProductImageFileManagementService productImageFileManagementService,
+        IPromotionFileService promotionFileService,
+        IPromotionProductFileService promotionProductFileService,
+        IPromotionProductFileInfoService promotionProductFileInfoService,
+        IProductWorkStatusesWorkflowService productWorkStatusesWorkflowService,
+        IProductRepository productRepository,
+        ITransactionExecuteService transactionExecuteService,
+        IValidator<ServiceProductImageCreateRequest>? serviceProductImageCreateRequestValidator = null,
+        IValidator<ServiceProductImageUpdateRequest>? serviceProductImageUpdateRequestValidator = null,
+        IValidator<ProductImageUpsertRequest>? productImageUpsertRequestValidator = null,
+        IValidator<ServicePromotionProductFileInfoCreateRequest>? servicePromotionProductFileInfoCreateRequestValidator = null,
+        IValidator<ServicePromotionProductFileInfoUpdateRequest>? servicePromotionProductFileInfoUpdateRequestValidator = null)
+    {
+        _productImageCrudService = productImageCrudService;
+        _productImageAndFileService = productImageAndFileService;
+        _productImageFileService = productImageFileService;
+        _productImageFileManagementService = productImageFileManagementService;
+        _promotionFileService = promotionFileService;
+        _promotionProductFileService = promotionProductFileService;
+        _promotionProductFileInfoService = promotionProductFileInfoService;
+        _productWorkStatusesWorkflowService = productWorkStatusesWorkflowService;
+        _productRepository = productRepository;
+        _transactionExecuteService = transactionExecuteService;
+        _serviceProductImageCreateRequestValidator = serviceProductImageCreateRequestValidator;
+        _serviceProductImageUpdateRequestValidator = serviceProductImageUpdateRequestValidator;
+        _productImageUpsertRequestValidator = productImageUpsertRequestValidator;
+        _servicePromotionProductFileInfoCreateRequestValidator = servicePromotionProductFileInfoCreateRequestValidator;
+        _servicePromotionProductFileInfoUpdateRequestValidator = servicePromotionProductFileInfoUpdateRequestValidator;
+    }
+
+    private const string _invalidProductIdErrorMessage = "Product id does not correspond to any known product id";
+
+    private const string _invalidImageIdErrorMessage = "Image id does not correspond to any known image id";
+
+    private const string _duplicateImageOrderErrorMessage = "Cannot have 2 image files with the same order";
+    private const string _duplicateImageFileNameErrorMessage = "Cannot have 2 image files with the same name";
+
+    private const string _invalidImageFileIdErrorMessage = "Image File id does not correspond to any known image id";
+    private const string _invalidPromotionFileIdErrorMessage = "Id does not correspond to any known promotion file id";
+    private const string _promotionFileIsNotAnImageErrorMessage = "Promotion file is not an image";
+    private const string _invalidPromotionProductFileIdErrorMessage = "Promotion Product File id does not correspond to any known image id";
+    private const string _invalidFileTypeErrorMessage = "File type not supported";
+
+    private readonly IProductImageCrudService _productImageCrudService;
+    private readonly IProductImageAndFileService _productImageAndFileService;
+    private readonly IProductImageFileService _productImageFileService;
+    private readonly IProductImageFileManagementService _productImageFileManagementService;
+    private readonly IPromotionFileService _promotionFileService;
+    private readonly IPromotionProductFileService _promotionProductFileService;
+    private readonly IPromotionProductFileInfoService _promotionProductFileInfoService;
+    private readonly IProductWorkStatusesWorkflowService _productWorkStatusesWorkflowService;
+    private readonly IProductRepository _productRepository;
+    private readonly ITransactionExecuteService _transactionExecuteService;
+    private readonly IValidator<ServiceProductImageCreateRequest>? _serviceProductImageCreateRequestValidator;
+    private readonly IValidator<ServiceProductImageUpdateRequest>? _serviceProductImageUpdateRequestValidator;
+    private readonly IValidator<ProductImageUpsertRequest>? _productImageUpsertRequestValidator;
+    private readonly IValidator<ServicePromotionProductFileInfoCreateRequest>? _servicePromotionProductFileInfoCreateRequestValidator;
+    private readonly IValidator<ServicePromotionProductFileInfoUpdateRequest>? _servicePromotionProductFileInfoUpdateRequestValidator;
+
+    private sealed class ImageUpsertDataInUpsert
+    {
+        public required ProductImageAndPromotionFileUpsertRequest UpsertRequest { get; init; }
+        public required OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest> ImageCrudOptions { get; set; }
+    }
+
+    public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+        UpsertAllImagesAndFilesForProductAsync(ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+    {
+        Product? product = await _productRepository.GetByIdAsync(updateAllRequest.ProductId);
+
+        if (product is null)
+        {
+            ValidationFailure validationFailure = new(nameof(updateAllRequest.ProductId), _invalidProductIdErrorMessage);
+
+            return CreateValidationResultFromErrors(validationFailure);
+        }
+
+        OneOf<Yes, ValidationResult, UnexpectedFailureResult> validateImageAndPromotionFileDataResult = await ValidateImageAndPromotionFileDataAsync(updateAllRequest);
+
+        if (!validateImageAndPromotionFileDataResult.IsT0)
+        {
+            return validateImageAndPromotionFileDataResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                yes => new UnexpectedFailureResult(),
+                validationResult => validationResult,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+
+        OneOf<Yes, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> validateFileDataResult
+            = await ValidateFileDataAsync(updateAllRequest);
+
+        if (!validateFileDataResult.IsT0)
+        {
+            return validateFileDataResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                yes => new UnexpectedFailureResult(),
+                validationResult => validationResult,
+                fileDoesntExistResult => fileDoesntExistResult,
+                fileAlreadyExistsResult => fileAlreadyExistsResult,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+
+        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+        //    () => UpsertAllImagesAndFilesForProductInternalAsync(updateAllRequest),
+        //    result => result.IsT0);
+
+        return await UpsertAllImagesAndFilesForProductInternalAsync(updateAllRequest);
+    }
+
+    private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+        UpsertAllImagesAndFilesForProductInternalAsync(ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+    {
+        int productId = updateAllRequest.ProductId;
+        string upsertUserName = updateAllRequest.UpsertUserName;
+
+        List<ProductImage> oldProductImages = await _productImageCrudService.GetAllInProductAsync(productId);
+        List<ProductImageFileData> oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
+        List<PromotionProductFileInfo> oldPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
+
+        updateAllRequest.Requests = OrderItemsWithDisplayOrders(updateAllRequest.Requests, oldPromotionProductFileInfos);
+
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        {
+            OneOf<PromotionProductFileInfo?, ValidationResult> getExistingPromotionFileResult
+                = FindExisting(oldPromotionProductFileInfos, upsertRequest);
+
+            if (getExistingPromotionFileResult.IsT1) return getExistingPromotionFileResult.AsT1;
+
+            PromotionProductFileInfo? existingPromotionFile = getExistingPromotionFileResult.AsT0;
+
+            OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult> getExistingImageFileResult
+                = FindExisting(oldProductImageFileInfos, upsertRequest, existingPromotionFile);
+
+            if (!getExistingImageFileResult.IsT0)
+            {
+                return getExistingImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                    productImageFileNameInfo => new UnexpectedFailureResult(),
+                    validationResult => validationResult,
+                    unexpectedFailureResult => unexpectedFailureResult);
+            }
+
+            ProductImageFileData? existingImageFile = getExistingImageFileResult.AsT0;
+
+            OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult> getExistingImageResult
+                = FindExisting(oldProductImages, upsertRequest, existingPromotionFile);
+
+            if (!getExistingImageFileResult.IsT0)
+            {
+                return getExistingImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                    productImageFileNameInfo => new UnexpectedFailureResult(),
+                    validationResult => validationResult,
+                    unexpectedFailureResult => unexpectedFailureResult);
+            }
+
+            ProductImage? existingImage = getExistingImageResult.AsT0;
+
+            if (existingPromotionFile is not null)
+            {
+                oldPromotionProductFileInfos.Remove(existingPromotionFile);
+            }
+
+            if (existingImageFile is not null)
+            {
+                oldProductImageFileInfos.Remove(existingImageFile);
+            }
+
+            if (existingImage is not null)
+            {
+                oldProductImages.Remove(existingImage);
+            }
+        }
+
+        //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+
+        List<ImageUpsertDataInUpsert> imageUpsertDataInUpserts = new();
+
+        ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
+
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        {
+            if (upsertRequest.Request.IsT0)
+            {
+                ProductImageWithFileForProductUpsertRequest request = upsertRequest.Request.AsT0;
+
+                string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(request.FileExtension);
+
+                string? contentTypeFromFileExtension = GetContentTypeFromExtension(request.FileExtension);
+
+                if (contentTypeFromFileExtension is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                if (fileExtensionWithDot is null || contentTypeFromFileExtension is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                ProductImageUpsertRequest productImageUpsertRequest = new()
+                {
+                    ProductId = productId,
+                    ExistingImageId = request.ExistingImageId,
+                    ImageContentType = contentTypeFromFileExtension,
+                    ImageData = request.ImageData,
+                    HtmlData = request.HtmlData,
+                };
+
+                ValidationResult validationResult = ValidateDefault(_productImageUpsertRequestValidator, productImageUpsertRequest);
+
+                if (!validationResult.IsValid) return validationResult;
+
+                imageUpsertDataInUpserts.Add(new()
+                {
+                    UpsertRequest = upsertRequest,
+                    ImageCrudOptions = productImageUpsertRequest,
+                });
+
+                if (productFirstImageUpsertRequest is null)
+                {
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = contentTypeFromFileExtension,
+                        ImageData = request.ImageData,
+                        HtmlData = request.HtmlData,
+                    };
+                }
+
+                continue;
+            }
+            else if (upsertRequest.Request.IsT1)
+            {
+                continue;
+            }
+            else if (upsertRequest.Request.IsT2)
+            {
+                continue;
+            }
+            else
+            {
+                PromotionProductFileForProductUpsertRequest promotionFileRequest = upsertRequest.Request.AsT3;
+
+                if (promotionFileRequest.UpsertInProductImagesRequest is null) continue;
+
+                PromotionFileInfo? promotionFile;
+                byte[] fileData;
+
+                //using (TransactionScope localDBReadSuppressedScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+                //{
+                promotionFile = await _promotionFileService.GetByIdAsync(promotionFileRequest.PromotionFileInfoId);
+
+                using Stream? promotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(promotionFileRequest.PromotionFileInfoId);
+
+                if (promotionFile is null || promotionFileDataStream is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(promotionFileRequest.PromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                using MemoryStream memoryStream = new();
+
+                await promotionFileDataStream.CopyToAsync(memoryStream);
+
+                fileData = memoryStream.ToArray();
+
+                //localDBReadSuppressedScope.Complete();
+                //}
+
+                string? contentType = GetContentTypeFromExtension(promotionFile.FileName);
+
+                if (!IsImageContentType(contentType))
+                {
+                    ValidationFailure validationFailure = new(nameof(PromotionFileInfo.FileName), _promotionFileIsNotAnImageErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                if (promotionFileRequest.Id is null)
+                {
+                    ServiceProductImageCreateRequest productImageCreateRequest = new()
+                    {
+                        ProductId = productId,
+                        HtmlData = promotionFileRequest.UpsertInProductImagesRequest?.HtmlData,
+                        ImageData = fileData,
+                        ImageContentType = contentType,
+                    };
+
+                    ValidationResult createValidationResult = ValidateDefault(_serviceProductImageCreateRequestValidator, productImageCreateRequest);
+
+                    if (!createValidationResult.IsValid) return createValidationResult;
+
+                    imageUpsertDataInUpserts.Add(new()
+                    {
+                        UpsertRequest = upsertRequest,
+                        ImageCrudOptions = productImageCreateRequest,
+                    });
+
+                    if (productFirstImageUpsertRequest is null)
+                    {
+                        productFirstImageUpsertRequest ??= new()
+                        {
+                            ProductId = productId,
+                            ImageContentType = contentType,
+                            ImageData = fileData,
+                            HtmlData = promotionFileRequest.UpsertInProductImagesRequest?.HtmlData,
+                        };
+                    }
+
+                    continue;
+                }
+
+                PromotionProductFileInfo? promotionProductFile;
+
+                //using (TransactionScope localDBReadSuppressedScope2 = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+                //{
+                promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(promotionFileRequest.Id.Value);
+
+                //    localDBReadSuppressedScope2.Complete();
+                //}
+
+                if (promotionProductFile is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(promotionFileRequest.Id), _invalidPromotionProductFileIdErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                ProductImageUpsertRequest productImageUpsertRequest = new()
+                {
+                    ProductId = productId,
+                    ExistingImageId = promotionProductFile.ProductImageId,
+                    ImageContentType = contentType,
+                    ImageData = fileData,
+                    HtmlData = promotionFileRequest.UpsertInProductImagesRequest.HtmlData,
+                };
+
+                ValidationResult validationResult = ValidateDefault(_productImageUpsertRequestValidator, productImageUpsertRequest);
+
+                if (!validationResult.IsValid) return validationResult;
+
+                imageUpsertDataInUpserts.Add(new()
+                {
+                    UpsertRequest = upsertRequest,
+                    ImageCrudOptions = productImageUpsertRequest,
+                });
+
+                if (productFirstImageUpsertRequest is null)
+                {
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = contentType,
+                        ImageData = fileData,
+                        HtmlData = promotionFileRequest.UpsertInProductImagesRequest.HtmlData,
+                    };
+                }
+            }
+        }
+
+        foreach (ProductImage oldImageToBeRemoved in oldProductImages)
+        {
+            bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
+
+            if (!imageDeleteResult) return new UnexpectedFailureResult();
+        }
+
+        Dictionary<ProductImageAndPromotionFileUpsertRequest, int> imageIdsForRequests = new();
+
+        foreach (ImageUpsertDataInUpsert imageUpsertData in imageUpsertDataInUpserts)
+        {
+            OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest> imageCrudOptions
+                = imageUpsertData.ImageCrudOptions;
+
+            if (imageCrudOptions.IsT0)
+            {
+                OneOf<int, ValidationResult, UnexpectedFailureResult> imageCreateResult
+                    = await _productImageCrudService.InsertInAllImagesAsync(imageCrudOptions.AsT0);
+
+                if (!imageCreateResult.IsT0)
+                {
+                    return imageCreateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        id => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+
+                imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageCreateResult.AsT0);
+            }
+            else if (imageCrudOptions.IsT1)
+            {
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
+                    = await _productImageCrudService.UpdateInAllImagesAsync(imageCrudOptions.AsT1);
+
+                if (!imageUpdateResult.IsT0)
+                {
+                    return imageUpdateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+            }
+            else if (imageCrudOptions.IsT2)
+            {
+                OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await _productImageCrudService.UpsertInAllImagesAsync(imageCrudOptions.AsT2);
+
+                if (!imageUpsertResult.IsT0)
+                {
+                    return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        id => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+
+                imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageUpsertResult.AsT0);
+            }
+        }
+
+        //if (productFirstImageUpsertRequest is not null)
+        //{
+        //    OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult
+        //        = await _productImageCrudService.UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+
+        //    if (!productFirstImageUpsertResult.IsT0)
+        //    {
+        //        return productFirstImageUpsertResult.Map<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+        //    }
+        //}
+        //else
+        //{
+        //    ProductImage? oldProductFirstImage = await _productImageCrudService.GetByProductIdInFirstImagesAsync(productId);
+
+        //    if (oldProductFirstImage is null) return new Success();
+
+        //    bool isFirstImageDeleted = await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
+
+        //    if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+        //}
+
+        //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in oldPromotionProductFileInfos)
+        {
+            bool promotionProductFileDeleteResult = await _promotionProductFileInfoService.DeleteAsync(oldPromotionProductFileToBeRemoved.Id);
+
+            if (!promotionProductFileDeleteResult) return new UnexpectedFailureResult();
+        }
+
+        foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
+        {
+            OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> imageFileDeleteResult
+                = await _productImageFileService.DeleteFileAsync(oldImageFileToBeRemoved.Id, upsertUserName);
+
+            if (!imageFileDeleteResult.IsT0) return new UnexpectedFailureResult();
+        }
+
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        {
+            if (upsertRequest.Request.IsT0)
+            {
+                ProductImageWithFileForProductUpsertRequest request = upsertRequest.Request.AsT0;
+
+                int imageId = imageIdsForRequests[upsertRequest];
+
+                string fileExtensionWithDot = Path.GetExtension(request.FileExtension);
+
+                OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertFileResult
+                    = await UpsertImageFileForImageAsync(productId, imageId, request.ImageData, true, null, fileExtensionWithDot, upsertUserName);
+
+                if (!upsertFileResult.IsT0)
+                {
+                    return upsertFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        fileSaveFailureResult => fileSaveFailureResult,
+                        fileDoesntExistResult => fileDoesntExistResult,
+                        fileAlreadyExistsResult => fileAlreadyExistsResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+            }
+            else if (upsertRequest.Request.IsT1)
+            {
+                ProductImageFileForProductCreateRequest request = upsertRequest.Request.AsT1;
+
+                ProductImageFileCreateRequest requestInner = new()
+                {
+                    ProductId = productId,
+                    ImageId = null,
+                    Active = false,
+                    CustomDisplayOrder = null,
+                    FileData = request.FileData,
+                    CreateUserName = upsertUserName,
+                };
+
+                OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult> createFileResult
+                    = await _productImageFileService.InsertFileAsync(requestInner);
+
+                if (!createFileResult.IsT0)
+                {
+                    return createFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        fileSaveFailureResult => fileSaveFailureResult,
+                        fileAlreadyExistsResult => fileAlreadyExistsResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+            }
+            else if (upsertRequest.Request.IsT2)
+            {
+                ProductImageFileForProductUpdateRequest request = upsertRequest.Request.AsT2;
+
+                int? newDisplayOrder = null;
+
+                if (request.UpdateDisplayOrderRequest.IsT0)
+                {
+                    newDisplayOrder = request.UpdateDisplayOrderRequest.AsT0;
+                }
+
+                ProductImageFileUpdateFileDataRequest? updateFileDataRequest = null;
+
+                if (request.UpdateFileDataRequest.IsT0)
+                {
+                    updateFileDataRequest = new() { FileData = request.UpdateFileDataRequest.AsT0 };
+                }
+
+                ProductImageFileUpdateRequest productImageFileUpdateRequest = new()
+                {
+                    Id = request.Id,
+                    Active = request.Active,
+                    NewDisplayOrder = newDisplayOrder,
+                    UpdateImageIdRequest = new No(),
+                    UpdateFileDataRequest = updateFileDataRequest,
+                    UpdateUserName = upsertUserName,
+                };
+
+                OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResult
+                    = await _productImageFileService.UpdateFileAsync(productImageFileUpdateRequest);
+
+                if (!updateFileResult.IsT0) return updateFileResult;
+            }
+            else
+            {
+                PromotionProductFileForProductUpsertRequest request = upsertRequest.Request.AsT3;
+
+                PromotionFileInfo? promotionFile = await _promotionFileService.GetByIdAsync(request.PromotionFileInfoId);
+
+                using Stream? promotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(request.PromotionFileInfoId);
+
+                if (promotionFile is null || promotionFileDataStream is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(request.PromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                string fileExtension = Path.GetExtension(promotionFile.FileName);
+
+                string? contentType = GetContentTypeFromExtension(promotionFile.FileName);
+
+                if (!IsImageContentType(contentType))
+                {
+                    ValidationFailure validationFailure = new(nameof(PromotionFileInfo.FileName), _promotionFileIsNotAnImageErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                int imageId = imageIdsForRequests[upsertRequest];
+
+                if (request.Id is null)
+                {
+                    ServicePromotionProductFileInfoCreateRequest promotionProductFileInfoCreateRequest = new()
+                    {
+                        ProductId = productId,
+                        PromotionFileInfoId = request.PromotionFileInfoId,
+                        Active = request.Active,
+                        ValidFrom = request.ValidFrom,
+                        ValidTo = request.ValidTo,
+                        ProductImageId = imageId,
+                        CreateUserName = upsertUserName,
+                    };
+
+                    OneOf<int, ValidationResult, UnexpectedFailureResult> createPromotionProductFileResult
+                        = await _promotionProductFileInfoService.InsertAsync(promotionProductFileInfoCreateRequest);
+
+                    if (!createPromotionProductFileResult.IsT0)
+                    {
+                        createPromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            id => new UnexpectedFailureResult(),
+                            validationResult => validationResult,
+                            unexpectedFailureResult => unexpectedFailureResult);
+                    }
+
+                    if (request.UpsertInProductImagesRequest is null) continue;
+
+                    string imageFileName = $"{imageId}{fileExtension}";
+
+                    using MemoryStream memoryStreamForInsert = new();
+
+                    await promotionFileDataStream.CopyToAsync(memoryStreamForInsert);
+
+                    byte[] fileDataForInsert = memoryStreamForInsert.ToArray();
+
+                    ProductImageFileCreateRequest productImageFileCreateRequest = new()
+                    {
+                        ProductId = productId,
+                        ImageId = imageId,
+                        FileData = new()
+                        {
+                            FileName = imageFileName,
+                            Data = fileDataForInsert,
+                        },
+                        Active = true,
+                        CustomDisplayOrder = null,
+                        CreateUserName = upsertUserName,
+                    };
+
+                    OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult> createImageFileResult
+                        = await _productImageFileService.InsertFileAsync(productImageFileCreateRequest);
+
+                    if (!createImageFileResult.IsT0)
+                    {
+                        return createImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            success => new UnexpectedFailureResult(),
+                            validationResult => validationResult,
+                            fileSaveFailureResult => fileSaveFailureResult,
+                            fileAlreadyExistsResult => fileAlreadyExistsResult,
+                            unexpectedFailureResult => unexpectedFailureResult);
+                    }
+
+                    continue;
+                }
+
+                ServicePromotionProductFileInfoUpdateRequest promotionProductFileInfoUpdateRequest = new()
+                {
+                    Id = request.Id.Value,
+                    NewPromotionFileInfoId = request.PromotionFileInfoId,
+                    ValidFrom = request.ValidFrom,
+                    ValidTo = request.ValidTo,
+                    Active = request.Active,
+                    ProductImageId = imageId,
+                    UpdateUserName = upsertUserName,
+                };
+
+                OneOf<Success, NotFound, ValidationResult> updatePromotionProductFileResult
+                    = await _promotionProductFileInfoService.UpdateAsync(promotionProductFileInfoUpdateRequest);
+
+                if (!updatePromotionProductFileResult.IsT0)
+                {
+                    return updatePromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => success,
+                        notFound => new UnexpectedFailureResult(),
+                        validationResult => validationResult);
+                }
+
+                if (request.UpsertInProductImagesRequest is null) continue;
+
+                using MemoryStream memoryStream = new();
+
+                await promotionFileDataStream.CopyToAsync(memoryStream);
+
+                byte[] fileData = memoryStream.ToArray();
+
+                OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertFileResult
+                    = await UpsertImageFileForImageAsync(productId, imageId, fileData, false, null, fileExtension, upsertUserName);
+
+                if (!upsertFileResult.IsT0)
+                {
+                    return upsertFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        fileSaveFailureResult => fileSaveFailureResult,
+                        fileDoesntExistResult => fileDoesntExistResult,
+                        fileAlreadyExistsResult => fileAlreadyExistsResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+            }
+        }
+
+        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+           = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+               productId, ProductNewStatus.WorkInProgress, upsertUserName);
+
+        if (!upsertProductStatusResult.IsT0)
+        {
+            return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                statusId => new UnexpectedFailureResult(),
+                validationResult => validationResult,
+                unexpectedFailureResult => unexpectedFailureResult);
+        }
+
+        localDBTransactionScope.Complete();
+
+        //replicationDBTransactionScope.Complete();
+
+        return new Success();
+    }
+
+    private async Task<OneOf<Yes, ValidationResult, UnexpectedFailureResult>> ValidateImageAndPromotionFileDataAsync(
+        ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+    {
+        List<ProductImageData> images = await _productImageCrudService.GetAllInProductWithoutFileDataAsync(updateAllRequest.ProductId);
+        List<PromotionProductFileInfo> promotionProductFiles = await _promotionProductFileInfoService.GetAllForProductAsync(updateAllRequest.ProductId);
+
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        {
+            if (upsertRequest.Request.IsT0)
+            {
+                ProductImageWithFileForProductUpsertRequest request = upsertRequest.Request.AsT0;
+
+                if (request.ExistingImageId is not null && !images.Exists(x => x.Id == request.ExistingImageId))
+                {
+                    return new UnexpectedFailureResult();
+                }
+            }
+            else if (upsertRequest.Request.IsT3)
+            {
+                PromotionProductFileForProductUpsertRequest request = upsertRequest.Request.AsT3;
+
+                if (request.Id is not null && !promotionProductFiles.Exists(x => x.Id == request.Id))
+                {
+                    return new UnexpectedFailureResult();
+                }
+            }
+        }
+
+        return new Yes();
+    }
+
+    private async Task<OneOf<Yes, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> ValidateFileDataAsync(
+        ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+    {
+        List<int?> existingDisplayOrders = new();
+
+        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.Requests)
+        {
+            int? customDisplayOrder = request.Request.Match(
+                x => x.FileUpsertRequest?.CustomDisplayOrder,
+                x => x.CustomDisplayOrder,
+                x => x.UpdateDisplayOrderRequest.IsT0 ? x.UpdateDisplayOrderRequest.AsT0 : null,
+                x => x.UpsertInProductImagesRequest?.ImageFileUpsertRequest?.CustomDisplayOrder);
+
+            if (customDisplayOrder is null) continue;
+
+            if (existingDisplayOrders.Contains(customDisplayOrder.Value))
+            {
+                ValidationFailure validationFailure = new(nameof(FileForImageForProductUpsertRequest.CustomDisplayOrder), _duplicateImageOrderErrorMessage);
+
+                return CreateValidationResultFromErrors(validationFailure);
+            }
+        }
+
+        List<ProductImageFileData> allFileInfos = await _productImageFileService.GetAllAsync();
+
+        List<string?> imageFileNames = new();
+
+        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.Requests)
+        {
+            if (request.Request.IsT1)
+            {
+                string? customFileName = request.Request.AsT1.FileData?.FileName;
+
+                if (customFileName is null) continue;
+
+                if (imageFileNames.Contains(customFileName))
+                {
+                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _duplicateImageFileNameErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                if (allFileInfos.Exists(x => x.FileName == customFileName))
+                {
+                    return new FileAlreadyExistsResult() { FileName = customFileName };
+                }
+
+                imageFileNames.Add(customFileName);
+            }
+            else if (request.Request.IsT2)
+            {
+                OneOf<FileData?, No> updateFileDataRequest = request.Request.AsT2.UpdateFileDataRequest;
+
+                string? customFileName = updateFileDataRequest.IsT0 ? updateFileDataRequest.AsT0!.FileName : null;
+
+                if (customFileName is null) continue;
+
+                if (imageFileNames.Contains(customFileName))
+                {
+                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _duplicateImageFileNameErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
+
+                ProductImageFileData? productImageFileData = allFileInfos.FirstOrDefault(x => x.FileName == customFileName);
+
+                if (productImageFileData is null)
+                {
+                    return new FileDoesntExistResult() { FileName = customFileName };
+                }
+                else if (productImageFileData.ProductId != updateAllRequest.ProductId)
+                {
+                    return new FileAlreadyExistsResult() { FileName = customFileName };
+                }
+
+                imageFileNames.Add(customFileName);
+            }
+        }
+
+        return new Yes();
+    }
+
+    //private async Task<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+    //    UpsertAllImagesAndFilesForProductInternalAsync(ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+    //{
+    //    int productId = updateAllRequest.ProductId;
+    //    string upsertUserName = updateAllRequest.UpsertUserName;
+
+    //    List<ProductImage> oldProductImages = await _productImageCrudService.GetAllInProductAsync(productId);
+    //    List<ProductImageFileData> oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
+    //    List<PromotionProductFileInfo> oldPromotionProductFileInfos = await _promotionProductFileService.GetAllForProductAsync(productId);
+
+    //    updateAllRequest.Requests = OrderItemsWithDisplayOrders(updateAllRequest.Requests, oldPromotionProductFileInfos);
+
+    //    foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+    //    {
+    //        OneOf<PromotionProductFileInfo?, ValidationResult> getExistingPromotionFileResult
+    //            = FindExisting(oldPromotionProductFileInfos, upsertRequest);
+
+    //        if (getExistingPromotionFileResult.IsT1) return getExistingPromotionFileResult.AsT1;
+
+    //        PromotionProductFileInfo? existingPromotionFile = getExistingPromotionFileResult.AsT0;
+
+    //        OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult> getExistingImageFileResult
+    //            = FindExisting(oldProductImageFileInfos, upsertRequest, existingPromotionFile);
+
+    //        if (!getExistingImageFileResult.IsT0)
+    //        {
+    //            return getExistingImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                productImageFileNameInfo => new UnexpectedFailureResult(),
+    //                validationResult => validationResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
+
+    //        ProductImageFileData? existingImageFile = getExistingImageFileResult.AsT0;
+
+    //        OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult> getExistingImageResult
+    //            = FindExisting(oldProductImages, upsertRequest, existingPromotionFile);
+
+    //        if (!getExistingImageFileResult.IsT0)
+    //        {
+    //            return getExistingImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                productImageFileNameInfo => new UnexpectedFailureResult(),
+    //                validationResult => validationResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
+
+    //        ProductImage? existingImage = getExistingImageResult.AsT0;
+
+    //        if (existingPromotionFile is not null)
+    //        {
+    //            oldPromotionProductFileInfos.Remove(existingPromotionFile);
+    //        }
+
+    //        if (existingImageFile is not null)
+    //        {
+    //            oldProductImageFileInfos.Remove(existingImageFile);
+    //        }
+
+    //        if (existingImage is not null)
+    //        {
+    //            oldProductImages.Remove(existingImage);
+    //        }
+    //    }
+
+    //    foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in oldPromotionProductFileInfos)
+    //    {
+    //        OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult> promotionProductFileDeleteResult
+    //            = await _promotionProductFileService.DeleteAsync(oldPromotionProductFileToBeRemoved.Id, upsertUserName);
+
+    //        if (!promotionProductFileDeleteResult.IsT0) return new UnexpectedFailureResult();
+
+    //        int matchingExistingImageIndex = oldProductImages.FindIndex(image => image.Id == oldPromotionProductFileToBeRemoved.ProductImageId);
+
+    //        if (matchingExistingImageIndex >= 0)
+    //        {
+    //            oldProductImages.RemoveAt(matchingExistingImageIndex);
+
+    //            int matchingExistingImageFileIndex = oldProductImageFileInfos.FindIndex(imageFileInfo => imageFileInfo.ImageId == oldPromotionProductFileToBeRemoved.ProductImageId);
+
+    //            oldProductImageFileInfos.RemoveAt(matchingExistingImageFileIndex);
+    //        }
+    //    }
+
+    //    foreach (ProductImage oldImageToBeRemoved in oldProductImages)
+    //    {
+    //        bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
+
+    //        if (!imageDeleteResult) return new UnexpectedFailureResult();
+    //    }
+
+    //    foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
+    //    {
+    //        OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> imageFileDeleteResult
+    //            = await _productImageFileService.DeleteFileAsync(oldImageFileToBeRemoved.Id, upsertUserName);
+
+    //        if (!imageFileDeleteResult.IsT0) return new UnexpectedFailureResult();
+    //    }
+
+    //    ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
+
+    //    foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+    //    {
+    //        if (upsertRequest.Request.IsT0)
+    //        {
+    //            ProductImageWithFileForProductUpsertRequest request = upsertRequest.Request.AsT0;
+
+    //            FileForImageUpsertRequest? fileUpsertRequest = null;
+
+    //            if (request.FileUpsertRequest is not null)
+    //            {
+    //                fileUpsertRequest = new()
+    //                {
+    //                    Active = request.FileUpsertRequest.Active,
+    //                    CustomDisplayOrder = request.FileUpsertRequest.CustomDisplayOrder,
+    //                    UpsertUserName = upsertUserName,
+    //                };
+    //            }
+
+    //            ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest = new()
+    //            {
+    //                ProductId = productId,
+    //                ExistingImageId = request.ExistingImageId,
+    //                FileExtension = request.FileExtension,
+    //                HtmlData = request.HtmlData,
+    //                ImageData = request.ImageData,
+    //                FileUpsertRequest = fileUpsertRequest,
+    //            };
+
+    //            OneOf<ImageAndFileIdsInfo, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertImageWithFileResult
+    //                = await _productImageAndFileService.UpsertInAllImagesWithFileAsync(productImageWithFileUpsertRequest);
+
+    //            if (!upsertImageWithFileResult.IsT0)
+    //            {
+    //                return upsertImageWithFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                    success => new UnexpectedFailureResult(),
+    //                    validationResult => validationResult,
+    //                    fileDoesntExistResult => fileDoesntExistResult,
+    //                    fileAlreadyExistsResult => fileAlreadyExistsResult,
+    //                    unexpectedFailureResult => unexpectedFailureResult);
+    //            }
+
+    //            if (productFirstImageUpsertRequest is null)
+    //            {
+    //                string? contentTypeFromFileExtension = GetContentTypeFromExtension(request.FileExtension);
+
+    //                if (contentTypeFromFileExtension is null)
+    //                {
+    //                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+
+    //                    return CreateValidationResultFromErrors(validationFailure);
+    //                }
+
+    //                productFirstImageUpsertRequest ??= new()
+    //                {
+    //                    ProductId = productId,
+    //                    ImageContentType = contentTypeFromFileExtension,
+    //                    ImageData = request.ImageData,
+    //                    HtmlData = request.HtmlData,
+    //                };
+    //            }
+
+    //            continue;
+    //        }
+    //        else if (upsertRequest.Request.IsT1)
+    //        {
+    //            ProductImageFileForProductCreateRequest request = upsertRequest.Request.AsT1;
+
+    //            ProductImageFileCreateRequest requestInner = new()
+    //            {
+    //                ProductId = productId,
+    //                ImageId = null,
+    //                Active = false,
+    //                CustomDisplayOrder = null,
+    //                FileData = request.FileData,
+    //                CreateUserName = upsertUserName,
+    //            };
+
+    //            OneOf<int, ValidationResult, FileAlreadyExistsResult, UnexpectedFailureResult> createFileResult
+    //                = await _productImageFileService.InsertFileAsync(requestInner);
+
+    //            if (!createFileResult.IsT0)
+    //            {
+    //                return createFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                    success => new UnexpectedFailureResult(),
+    //                    validationResult => validationResult,
+    //                    fileAlreadyExistsResult => fileAlreadyExistsResult,
+    //                    unexpectedFailureResult => unexpectedFailureResult);
+    //            }
+
+    //            continue;
+    //        }
+    //        else if (upsertRequest.Request.IsT2)
+    //        {
+    //            ProductImageFileForProductUpdateRequest request = upsertRequest.Request.AsT2;
+
+    //            int? newDisplayOrder = null;
+
+    //            if (request.UpdateDisplayOrderRequest.IsT0)
+    //            {
+    //                newDisplayOrder = request.UpdateDisplayOrderRequest.AsT0;
+    //            }
+
+    //            ProductImageFileUpdateFileDataRequest? updateFileDataRequest = null;
+
+    //            if (request.UpdateFileDataRequest.IsT0)
+    //            {
+    //                updateFileDataRequest = new() { FileData = request.UpdateFileDataRequest.AsT0 };
+    //            }
+
+    //            ProductImageFileUpdateRequest productImageFileUpdateRequest = new()
+    //            {
+    //                Id = request.Id,
+    //                Active = request.Active,
+    //                NewDisplayOrder = newDisplayOrder,
+    //                UpdateImageIdRequest = new No(),
+    //                UpdateFileDataRequest = updateFileDataRequest,
+    //                UpdateUserName = upsertUserName,
+    //            };
+
+    //            OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResult
+    //                = await _productImageFileService.UpdateFileAsync(productImageFileUpdateRequest);
+
+    //            if (!updateFileResult.IsT0) return updateFileResult;
+
+    //            continue;
+    //        }
+
+    //        PromotionProductFileForProductUpsertRequest promotionFileUpsertRequest = upsertRequest.Request.AsT3;
+
+    //        ServicePromotionProductImageUpsertRequest? upsertInImagesRequest = promotionFileUpsertRequest.UpsertInProductImagesRequest;
+
+    //        if (promotionFileUpsertRequest.Id is null)
+    //        {
+    //            ServicePromotionProductImageCreateRequest? promotionProductImageCreateRequest = null;
+
+    //            if (upsertInImagesRequest is not null)
+    //            {
+    //                promotionProductImageCreateRequest = new()
+    //                {
+    //                    HtmlData = upsertInImagesRequest.HtmlData,
+    //                    ImageFileCreateRequest = new()
+    //                    {
+    //                        Active = upsertInImagesRequest.ImageFileUpsertRequest.Active,
+    //                        CustomDisplayOrder = upsertInImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
+    //                    },
+    //                };
+    //            }
+
+    //            ServicePromotionProductFileCreateRequest promotionProductFileCreateRequest = new()
+    //            {
+    //                ProductId = productId,
+    //                PromotionFileInfoId = promotionFileUpsertRequest.PromotionFileInfoId,
+    //                Active = promotionFileUpsertRequest.Active,
+    //                ValidFrom = promotionFileUpsertRequest.ValidFrom,
+    //                ValidTo = promotionFileUpsertRequest.ValidTo,
+    //                CreateInProductImagesRequest = promotionProductImageCreateRequest,
+    //                CreateUserName = upsertUserName
+    //            };
+
+    //            OneOf<int, ValidationResult, FileAlreadyExistsResult, UnexpectedFailureResult> createPromotionProductFileResult
+    //                = await _promotionProductFileService.InsertAsync(promotionProductFileCreateRequest);
+
+    //            if (!createPromotionProductFileResult.IsT0)
+    //            {
+    //                return createPromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                    success => new UnexpectedFailureResult(),
+    //                    validationResult => validationResult,
+    //                    fileAlreadyExistsResult => fileAlreadyExistsResult,
+    //                    unexpectedFailureResult => unexpectedFailureResult);
+    //            }
+
+    //            continue;
+    //        }
+
+    //        ServicePromotionProductFileUpdateRequest promotionProductFileUpdateRequest = new()
+    //        {
+    //            Id = promotionFileUpsertRequest.Id.Value,
+    //            NewPromotionFileInfoId = promotionFileUpsertRequest.PromotionFileInfoId,
+    //            Active = promotionFileUpsertRequest.Active,
+    //            ValidFrom = promotionFileUpsertRequest.ValidFrom,
+    //            ValidTo = promotionFileUpsertRequest.ValidTo,
+    //            UpsertInProductImagesRequest = promotionFileUpsertRequest.UpsertInProductImagesRequest,
+    //            UpdateUserName = upsertUserName
+    //        };
+
+    //        OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updatePromotionProductFileResult
+    //            = await _promotionProductFileService.UpdateAsync(promotionProductFileUpdateRequest);
+
+    //        if (!updatePromotionProductFileResult.IsT0) return updatePromotionProductFileResult;
+    //    }
+
+    //    if (productFirstImageUpsertRequest is not null)
+    //    {
+    //        OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult
+    //            = await _productImageCrudService.UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+
+    //        if (!productFirstImageUpsertResult.IsT0)
+    //        {
+    //            return productFirstImageUpsertResult.Map<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+    //        }
+    //    }
+    //    else
+    //    {
+    //        ProductImage? oldProductFirstImage = await _productImageCrudService.GetByProductIdInFirstImagesAsync(productId);
+
+    //        if (oldProductFirstImage is null) return new Success();
+
+    //        bool isFirstImageDeleted = await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
+
+    //        if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+    //    }
+
+    //    return new Success();
+    //}
+
+    private async Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertImageFileForImageAsync(
+        int productId,
+        int imageId,
+        byte[] imageData,
+        bool? active,
+        int? customDisplayOrder,
+        string fileExtensionWithDot,
+        string upsertUserName)
+    {
+        string? newImageFileName = $"{imageId}{fileExtensionWithDot}";
+
+        ProductImageFileData? fileNameInfo = await _productImageFileService.GetByProductIdAndImageIdAsync(productId, imageId);
+
+        if (fileNameInfo is null)
+        {
+            ProductImageFileCreateRequest productImageFileCreateRequest = new()
+            {
+                ProductId = productId,
+                ImageId = imageId,
+                FileData = new()
+                {
+                    FileName = newImageFileName,
+                    Data = imageData,
+                },
+                Active = active,
+                CustomDisplayOrder = customDisplayOrder,
+                CreateUserName = upsertUserName,
+            };
+
+            OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult> createImageFileResult
+                = await _productImageFileService.InsertFileAsync(productImageFileCreateRequest);
+
+            OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> createImageFileResultMapped
+                = createImageFileResult.Match<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                    fileInfoId => new ImageAndFileIdsInfo()
+                    {
+                        ImageId = imageId,
+                        FileInfoId = fileInfoId
+                    },
+                    validationResult => validationResult,
+                    fileSaveFailureResult => fileSaveFailureResult,
+                    fileAlreadyExistsResult => fileAlreadyExistsResult,
+                    unexpectedFailureResult => unexpectedFailureResult);
+
+            return createImageFileResultMapped;
+        }
+
+        int fileInfoId = fileNameInfo.Id;
+
+        int? newDisplayOrder = null;
+
+        if (customDisplayOrder is not null
+            && customDisplayOrder != fileNameInfo.DisplayOrder)
+        {
+            newDisplayOrder = customDisplayOrder.Value;
+        }
+
+        ProductImageFileUpdateRequest productImageFileUpdateRequest = new()
+        {
+            Id = fileInfoId,
+            Active = active,
+            NewDisplayOrder = newDisplayOrder,
+            UpdateFileDataRequest = new()
+            {
+                FileData = new()
+                {
+                    FileName = newImageFileName,
+                    Data = imageData,
+                },
+            },
+            UpdateImageIdRequest = new No(),
+            UpdateUserName = upsertUserName,
+        };
+
+        OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResult
+            = await _productImageFileService.UpdateFileAsync(productImageFileUpdateRequest);
+
+        OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResultMapped
+            = updateFileResult.Match<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                success => new ImageAndFileIdsInfo()
+                {
+                    ImageId = imageId,
+                    FileInfoId = fileInfoId
+                },
+                validationResult => validationResult,
+                fileSaveFailureResult => fileSaveFailureResult,
+                fileDoesntExistResult => fileDoesntExistResult,
+                fileAlreadyExistsResult => fileAlreadyExistsResult,
+                unexpectedFailureResult => unexpectedFailureResult);
+
+        return updateFileResultMapped;
+    }
+
+    private static OneOf<PromotionProductFileInfo?, ValidationResult> FindExisting(
+        List<PromotionProductFileInfo> existingPromotionProductFileInfos,
+        ProductImageAndPromotionFileUpsertRequest request)
+    {
+        if (request.Request.IsT3)
+        {
+            int? id = request.Request.AsT3.Id;
+
+            if (id is null) return OneOf<PromotionProductFileInfo?, ValidationResult>.FromT0(null);
+
+            PromotionProductFileInfo? existingPromotionFile
+                = existingPromotionProductFileInfos.Find(x => x.Id == id);
+
+            if (existingPromotionFile is null)
+            {
+                ValidationFailure validationError = new(
+                    nameof(PromotionProductFileForProductUpsertRequest.Id),
+                    _invalidPromotionProductFileIdErrorMessage);
+
+                return CreateValidationResultFromErrors(validationError);
+            }
+
+            return existingPromotionFile;
+        }
+
+        return OneOf<PromotionProductFileInfo?, ValidationResult>.FromT0(null);
+    }
+
+    private static OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult> FindExisting(
+        List<ProductImageFileData> existingProductImageFileInfos,
+        ProductImageAndPromotionFileUpsertRequest request,
+        PromotionProductFileInfo? existingPromotionFile)
+    {
+        return request.Request.Match<OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult>>(
+            imageWithFileUpsertRequest =>
+            {
+                return existingProductImageFileInfos.FirstOrDefault(
+                    x => x.ImageId == imageWithFileUpsertRequest.ExistingImageId);
+            },
+            imageFileCreateRequest => OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult>.FromT0(null),
+            imageFileUpdateRequest =>
+            {
+                ProductImageFileData? existingImageFile = existingProductImageFileInfos.FirstOrDefault(
+                    x => x.Id == imageFileUpdateRequest.Id);
+
+                if (existingImageFile is null)
+                {
+                    ValidationFailure validationError = new(
+                        nameof(ProductImageFileForProductUpdateRequest.Id),
+                        _invalidImageFileIdErrorMessage);
+
+                    return CreateValidationResultFromErrors(validationError);
+                }
+
+                return existingImageFile;
+            },
+            promotionProductFileUpsertRequest =>
+            {
+                if (existingPromotionFile?.ProductImageId is null)
+                {
+                    return OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult>.FromT0(null);
+                }
+
+                ProductImageFileData? existingImageFile = existingProductImageFileInfos.FirstOrDefault(
+                    x => x.ImageId == existingPromotionFile.ProductImageId);
+
+                if (existingImageFile is null)
+                {
+                    return new UnexpectedFailureResult();
+                }
+
+                return OneOf<ProductImageFileData?, ValidationResult, UnexpectedFailureResult>.FromT0(null);
+            });
+    }
+
+    private static OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult> FindExisting(
+       List<ProductImage> existingProductImages,
+       ProductImageAndPromotionFileUpsertRequest request,
+       PromotionProductFileInfo? existingPromotionFile)
+    {
+        return request.Request.Match(
+            imageWithFileUpsertRequest =>
+            {
+                if (imageWithFileUpsertRequest.ExistingImageId is null)
+                {
+                    return OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult>.FromT0(null);
+                }
+
+                ProductImage? existingImage = existingProductImages.FirstOrDefault(
+                    x => x.Id == imageWithFileUpsertRequest.ExistingImageId);
+
+                if (existingImage is null)
+                {
+                    ValidationFailure imageDoesNotExistError = new(
+                        nameof(ProductImageWithFileForProductUpsertRequest.ExistingImageId),
+                        _invalidImageIdErrorMessage);
+
+                    return CreateValidationResultFromErrors(imageDoesNotExistError);
+                }
+
+                return existingImage;
+            },
+            imageFileCreateRequest => OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult>.FromT0(null),
+            imageFileUpdateRequest => OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult>.FromT0(null),
+            promotionProductFileUpsertRequest =>
+            {
+                if (existingPromotionFile?.ProductImageId is null)
+                {
+                    return OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult>.FromT0(null);
+                }
+
+                ProductImage? existingImage = existingProductImages.FirstOrDefault(
+                    x => x.Id == existingPromotionFile.ProductImageId);
+
+                if (existingImage is null)
+                {
+                    return new UnexpectedFailureResult();
+                }
+
+                return existingImage;
+            });
+    }
+
+    private static List<ProductImageAndPromotionFileUpsertRequest> OrderItemsWithDisplayOrders(
+        List<ProductImageAndPromotionFileUpsertRequest> itemsWithDisplayOrders,
+        List<PromotionProductFileInfo> existingPromotionProductFileInfos)
+    {
+        return OrderImageRelatedItems(itemsWithDisplayOrders,
+            request => request.Request.Match(
+                imageWithFileUpsert => imageWithFileUpsert.FileUpsertRequest?.CustomDisplayOrder,
+                imageFileCreate => imageFileCreate.CustomDisplayOrder,
+                imageFileUpdate => imageFileUpdate.UpdateDisplayOrderRequest.IsT0 ? imageFileUpdate.UpdateDisplayOrderRequest.AsT0 : null,
+                promotionProductFileUpsert => promotionProductFileUpsert.UpsertInProductImagesRequest?.ImageFileUpsertRequest.CustomDisplayOrder),
+
+            request => request.Request.Match(
+                imageWithFileUpsert => imageWithFileUpsert.ExistingImageId,
+                imageFileCreate => null,
+                imageFileUpdate => null,
+                promotionProductFileUpsert =>
+                {
+                    PromotionProductFileInfo? existingPromotionFile
+                        = existingPromotionProductFileInfos.Find(x => x.Id == promotionProductFileUpsert.Id);
+
+                    return existingPromotionFile?.ProductImageId;
+                }));
+    }
+}

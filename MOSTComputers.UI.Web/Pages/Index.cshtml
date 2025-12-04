@@ -1,37 +1,136 @@
 ﻿@page
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductStatuses
+@using MOSTComputers.UI.Web.Models.ProductSearch
+@using MOSTComputers.UI.Web.Pages.Shared.Index
+
+@using static MOSTComputers.Models.Product.MappingUtils.ProductStatusMapping;
+@using static MOSTComputers.UI.Web.Utils.SelectListItemUtils;
+
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Products";
 }
 
-<div>
-    <table id="tblList" class="table table-responsive hover">
-    <thead>
-        <tr>
-            <th>Product ID</th>
-            <th>Search String</th>
-            <th>Part No. 1</th>
-            <th>Part No. 2</th>
-            <th>Price</th>
-            <th>Currency</th>
-            <th>Category</th>
-            <th>Manifacturer</th>
-        </tr>
-    </thead>
-    <tbody id="tbody">
-        @foreach (var product in Model.Products)
-        {
-            <tr>
-                <td>@product.Id</td>
-                <td>@product.Name</td>
-                <td>@product.PartNumber1</td>
-                <td>@product.PartNumber2</td>
-                <td>@product.Price</td>
-                <td>@product.Currency</td>
-                <td>@product.Category?.Description</td>
-                <td>@product.Manifacturer?.RealCompanyName</td>
-            </tr>
-        }
-    </tbody>
-    </table>
+@section Styles {
+    <link rel="stylesheet" href="~/css/Pages/Shared/ProductDisplayPopupsCommon.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Shared/Index/ProductFullDisplayPartial.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Index/ProductHtmlAndImagesPartial.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="~/css/Pages/Index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/PromiseLogic.js"></script>
+
+    <script src="~/js/Display/RedirectionHandling.js"></script>
+    <script src="~/js/Display/ElementDisplayToggle.js"></script>
+
+    <script src="~/js/Data/StandardDataConversions.js"></script>
+
+    <script src="~/js/Data/Retrieval/StorageComplexDataRetrieve.js"></script>
+    <script src="~/js/Data/Requests/Product/GetProductNewSearchStatusesFromSelect.js"></script>
+    <script src="~/js/Data/Requests/Product/ProductSearchRequestCreator.js"></script>
+
+    <script src="~/js/Display/SetInputValue.js"></script>
+
+    <script src="~/js/Pages/Shared/PopupCommonElements.js"></script>
+
+    <script src="~/js/Pages/Shared/Index/ProductFullDisplayPopup.js"></script>
+    <script src="~/js/Pages/Shared/Index/ProductHtmlAndImagesPartial.js"></script>
+
+    <script src="~/js/Pages/Index.js"></script>
+}
+
+<div id="product_table_container" class="full-parent-width full-parent-height flex-column display-flex-not-important">
+
+    <header class="full-parent-width">
+        <ul class="d-flex list-style-none ps-0 mb-2">
+
+            <li class="flex-grow-1 d-flex align-content-center flex-wrap me-2">
+                <input id="product_table_search_input" type="text" class="full-parent-width"
+                    placeholder="Search..." />
+            </li>
+
+            <li class="display-flex-not-important justify-content-center align-content-center flex-wrap me-2">
+                <button id="product_table_search_category_button" type="button"
+                    class="btn btn-outline-primary full-parent-width"
+                    onclick="searchProductsAndToggleSearchButtonAsync(
+                        'product_table_search_input',
+                        'product_table_category_select',
+                        'product_table_product_status_select',
+                        'product_table_product_new_status_select',
+                        'product_table_promotion_status_select',
+                        '@Model.ProductTablePartialContainerElementId',
+                        'product_table_search_category_button',
+                        'product_table_search_category_loader')">
+                    Search
+                </button>
+
+                <div id="product_table_search_category_loader" class="round-loader-default" style="display: none;"></div>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="product_table_category_select" asp-items="await Model.GetAllCategorySelectListItemsAsync(null)">
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="product_table_product_status_select"
+                    asp-items='GetProductSearchStatusSelectListItems(
+                        new()
+                        {
+                            ProductStatusSearchOptions.Call,
+                            ProductStatusSearchOptions.Available,
+                            ProductStatusSearchOptions.AvailableAndCall
+                        },
+                        selected: ProductStatusSearchOptions.AvailableAndCall)'>
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="product_table_product_new_status_select"
+                    asp-items='GetProductNewSearchStatusSelectListItems(
+                        [ProductNewStatusSearchOptions.New, ProductNewStatusSearchOptions.WorkInProgress, ProductNewStatusSearchOptions.ReadyForUse],
+                        defaultSelectListItem: new("Всички", "", true, false))'>
+                </select>
+            </li>
+
+            <li class="d-flex align-content-center flex-wrap">
+                <select id="product_table_promotion_status_select"
+                    asp-items='GetProductPromotionSearchEnumSelectListItems(
+                        [
+                            PromotionSearchOptions.None,
+                            PromotionSearchOptions.P,
+                            PromotionSearchOptions.R,
+                            PromotionSearchOptions.I,
+                            PromotionSearchOptions.Discount,
+                        ],
+                        defaultSelectListItem: new("Всички", "", true, false))'>
+                </select>
+            </li>
+        </ul>
+    </header>
+
+    <div id="@Model.ProductTablePartialContainerElementId" class="flex-shrink-0 flex-grow-1">
+    </div>
 </div>
+
+<div id="@Model.ProductFullDisplayPartialModalData.ModalId" class="modal bg-dark bg-opacity-50 fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductFullDisplayPartialModalData.ModalDialogId"
+         class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ProductFullDisplayPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+<div id="@Model.ProductHtmlAndImagesPartialModalData.ModalId" class="modal bg-dark bg-opacity-50 fade" tabindex="-1" role="dialog">
+    <div id="@Model.ProductHtmlAndImagesPartialModalData.ModalDialogId"
+         class="modal-dialog modal-dialog-full-parent-width">
+        <div id="@Model.ProductHtmlAndImagesPartialModalData.ModalContentId" class="modal-content full-parent-width full-parent-height modal-dialog-centered">
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()

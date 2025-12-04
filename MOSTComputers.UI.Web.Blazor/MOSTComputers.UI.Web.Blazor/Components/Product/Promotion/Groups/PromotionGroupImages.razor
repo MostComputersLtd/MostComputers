@@ -1,0 +1,22 @@
+﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.ProductRegister.Models.Responses
+
+<div class="promotion-group-images-container">
+
+	@foreach (GroupPromotionImageFileDisplayData imageData in ImageFiles)
+	{
+		<div class="promotion-group-image-item">
+			<img class="promotion-group-image" src="api/promotionGroup/imageFiles/@imageData.Id" alt="@imageData.FileName" />
+		</div>
+	}
+</div>
+
+@code {
+	public sealed class GroupPromotionImageFileDisplayData
+	{
+		public required int Id { get; init; }
+		public required string FileName { get; init; }
+	}
+
+	[Parameter, EditorRequired] public required List<GroupPromotionImageFileDisplayData> ImageFiles { get; set; }
+}

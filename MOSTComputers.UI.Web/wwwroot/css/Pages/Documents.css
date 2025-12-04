@@ -1,0 +1,17 @@
+﻿.sticky-head-table {
+    background-color: var(--bs-body-bg);
+    max-height: 100%;
+}
+
+    .sticky-head-table thead th {
+        position: sticky;
+        top: 0;
+        background: inherit;
+    }
+
+.document-pdf-dialog {
+    padding: 0;
+    width: auto;
+    height: auto;
+    margin: 9vh;
+}

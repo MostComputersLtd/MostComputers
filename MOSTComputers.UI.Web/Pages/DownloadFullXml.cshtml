@@ -1,0 +1,17 @@
+﻿@page
+@model DownloadFullXmlModel
+@{
+	ViewData["Title"] = "Download Full XML";
+}
+
+@section Styles {
+}
+
+@section Scripts {
+	<script src="~/js/Display/RedirectionHandling.js"></script>
+	<script src="~/js/Display/DisplayDataInNewWindow.js"></script>
+	<script src="~/js/Pages/DownloadFullXml.js"></script>
+}
+
+<button onclick="openFullLegacyXmlInNewWindow()">Download Legacy XML</button>
+<button onclick="openFullXmlInNewWindow()">Download New XML</button>

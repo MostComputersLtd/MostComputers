@@ -1,0 +1,30 @@
+﻿@using MOSTComputers.Services.SearchStringOrigin.Models
+
+<div class="full-parent-width pt-4 pb-5">
+
+    <table class="full-parent-width table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Meaning</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @for (int i = 0; i < SearchStringOriginDataList.Count; i++)
+            {
+                SearchStringPartOriginData searchStringPartOriginData = SearchStringOriginDataList[i];
+
+                <tr id="propertiesDisplay_ul_li-@i">
+                    <td>@searchStringPartOriginData.SearchStringPart</td>
+                    <td>@(searchStringPartOriginData.Characteristic.Meaning ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public required List<SearchStringPartOriginData> SearchStringOriginDataList { get; set; }
+}

@@ -1,42 +1,37 @@
-﻿using MOSTComputers.Models.FileManagement.Models;
-using MOSTComputers.Services.TransactionalFileManagement.Contracts;
+﻿using OneOf;
 using OneOf.Types;
-using OneOf;
-using MOSTComputers.Services.ProductImageFileManagement.Models;
 using SixLabors.ImageSharp;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Services.TransactionalFileManagement.Contracts;
+
+using static MOSTComputers.Utils.Files.ContentTypeUtils;
 
 namespace MOSTComputers.Services.ProductImageFileManagement.RollbackableOperations;
-
-internal sealed class AddOrUpdateImageFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, DirectoryNotFoundResult>>
+internal sealed class AddOrUpdateImageFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult>>
 {
     public AddOrUpdateImageFileAsyncOperation(
         string imageDirectoryPath,
-        string fileNameWithoutExtension,
-        byte[] imageData,
-        AllowedImageFileType imageFileType)
+        string fullFileName,
+        byte[] imageData)
     {
         _imageDirectoryPath = imageDirectoryPath;
-        _fileNameWithoutExtension = fileNameWithoutExtension;
+        _fullFileName = fullFileName;
         _imageData = imageData;
-        _imageFileType = imageFileType;
     }
 
     private readonly string _imageDirectoryPath;
-    private readonly string _fileNameWithoutExtension;
+    private readonly string _fullFileName;
     private readonly byte[] _imageData;
-    private readonly AllowedImageFileType _imageFileType;
 
     private bool _succeeded = false;
     private bool _operationWasUpdate;
     private byte[]? _oldImageData;
 
-    public async Task<OneOf<Success, DirectoryNotFoundResult>> ExecuteAsync()
+    public async Task<OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult>> ExecuteAsync()
     {
         if (!Directory.Exists(_imageDirectoryPath)) return new DirectoryNotFoundResult();
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
-
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
         if (File.Exists(filePath))
         {
@@ -44,25 +39,47 @@ internal sealed class AddOrUpdateImageFileAsyncOperation : IRollbackableOperatio
 
             _oldImageData = await File.ReadAllBytesAsync(filePath);
         }
+       
+        string? contentType = GetContentTypeFromExtension(_fullFileName);
+
+        if (!IsImageContentType(contentType))
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
 
         using MemoryStream memoryStream = new(_imageData);
 
-        using Image image = await Image.LoadAsync(memoryStream);
+        try
+        {
+            using Image image = await Image.LoadAsync(memoryStream);
 
-        await image.SaveAsync(filePath);
+            await image.SaveAsync(filePath);
 
-        _succeeded = true;
+            _succeeded = true;
 
-        return new Success();
+            return new Success();
+        }
+        catch (UnknownImageFormatException)
+        {
+            return FileSaveFailureResult.FromUnsupportedContentType(new()
+            {
+                ContentType = contentType,
+            });
+        }
+        catch (InvalidImageContentException)
+        {
+            return FileSaveFailureResult.FromInvalidContent(new());
+        }
     }
 
     public void Rollback()
     {
         if (!_succeeded) return;
 
-        string fullFileName = $"{_fileNameWithoutExtension}.{_imageFileType.FileExtension}";
-
-        string filePath = Path.Combine(_imageDirectoryPath, fullFileName);
+        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 
         if (!_operationWasUpdate)
         {
