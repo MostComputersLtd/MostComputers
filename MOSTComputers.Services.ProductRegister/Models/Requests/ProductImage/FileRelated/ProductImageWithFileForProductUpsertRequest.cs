@@ -1,4 +1,6 @@
-﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
+﻿using OneOf;
+
+namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 
 public sealed class ProductImageWithFileForProductUpsertRequest
 {
@@ -6,6 +8,9 @@ public sealed class ProductImageWithFileForProductUpsertRequest
     public required string FileExtension { get; init; }
     public required byte[] ImageData { get; init; }
     public string? HtmlData { get; init; }
+    public OneOf<UpdateHtmlDataToMatchCurrentProductData, DoNotUpdateHtmlData, UpdateToCustomHtmlData> HtmlDataOptions { get; init; }
+        = new UpdateHtmlDataToMatchCurrentProductData();
+
     public FileForImageForProductUpsertRequest? FileUpsertRequest { get; init; }
 }
 

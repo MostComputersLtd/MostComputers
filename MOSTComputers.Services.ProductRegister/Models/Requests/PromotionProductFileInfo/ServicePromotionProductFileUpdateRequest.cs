@@ -1,4 +1,7 @@
-﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
+﻿using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
+using OneOf;
+
+namespace MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
 public sealed class ServicePromotionProductFileUpdateRequest
 {
     public required int Id { get; init; }
@@ -14,6 +17,8 @@ public sealed class ServicePromotionProductImageUpsertRequest
 {
     public required ServicePromotionProductImageFileUpsertRequest ImageFileUpsertRequest { get; init; }
     public string? HtmlData { get; init; }
+    public OneOf<UpdateHtmlDataToMatchCurrentProductData, DoNotUpdateHtmlData, UpdateToCustomHtmlData> HtmlDataOptions { get; init; }
+        = new UpdateHtmlDataToMatchCurrentProductData();
 }
 
 public sealed class ServicePromotionProductImageFileUpsertRequest

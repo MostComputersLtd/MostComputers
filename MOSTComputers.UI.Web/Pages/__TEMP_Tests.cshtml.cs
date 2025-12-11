@@ -29,6 +29,7 @@ using SixLabors.ImageSharp;
 using System.Diagnostics;
 using MOSTComputers.Utils.OneOf;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 
 namespace MOSTComputers.UI.Web.Pages;
 
@@ -422,7 +423,7 @@ public class TEMP_TestsModel : PageModel
                 ExistingImageId = null,
                 FileExtension = getFileExtensionResult.AsT0,
                 ImageData = originalImage.ImageData,
-                HtmlData = originalImage.HtmlData,
+                HtmlDataOptions = new UpdateToCustomHtmlData() { HtmlData = originalImage.HtmlData },
                 FileUpsertRequest = new()
                 {
                     Active = true,

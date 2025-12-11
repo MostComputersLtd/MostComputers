@@ -19,6 +19,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
@@ -1328,15 +1329,8 @@ public class ProductEditorModel : PageModel
 
         if (promotionProductFileUpdateData.ShouldAddToImagesAll)
         {
-            OneOf<string, InvalidXmlResult> getProductHtmlResult = await GetProductHtmlFromSavedDataAsync(product);
-
-            if (!getProductHtmlResult.IsT0) return BadRequest();
-
-            string productHtml = getProductHtmlResult.AsT0;
-
             servicePromotionProductImageUpsertRequest = new()
             {
-                HtmlData = productHtml,
                 ImageFileUpsertRequest = new()
                 {
                     Active = promotionProductFileUpdateData.Active,
@@ -1810,7 +1804,7 @@ public class ProductEditorModel : PageModel
                 ExistingImageId = null,
                 FileExtension = getFileExtensionResult.AsT0,
                 ImageData = image.ImageData,
-                HtmlData = image.HtmlData,
+                HtmlDataOptions = new UpdateToCustomHtmlData() { HtmlData = image.HtmlData },
                 FileUpsertRequest = new()
                 {
                     Active = true,
