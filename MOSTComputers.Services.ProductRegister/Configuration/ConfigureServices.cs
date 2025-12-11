@@ -102,7 +102,7 @@ public static class ConfigureServices
         services.AddScoped<IPromotionProductFileInfoService, PromotionProductFileInfoService>();
         services.AddScoped<IPromotionProductFileService, PromotionProductFileService>();
 
-        services.AddScoped<IProductImageAndPromotionFileSaveService, ProductImageAndPromotionFileSaveService>();
+        services.AddScoped<IProductRelatedItemsFullSaveService, ProductRelatedItemsFullSaveService>();
 
         services.AddScoped<IExchangeRateService, ExchangeRateService>();
 
@@ -193,7 +193,7 @@ public static class ConfigureServices
 
         services.AddScoped<IPromotionProductFileService, PromotionProductFileService>();
 
-        services.AddScoped<IProductImageAndPromotionFileSaveService, ProductImageAndPromotionFileSaveService>();
+        services.AddScoped<IProductRelatedItemsFullSaveService, ProductRelatedItemsFullSaveService>();
 
         services.AddScoped<IExchangeRateService, ExchangeRateService>();
 

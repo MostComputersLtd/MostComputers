@@ -17,7 +17,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class ToDoLocalChangesRepository : IToDoLocalChangesRepository
 {
     public ToDoLocalChangesRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

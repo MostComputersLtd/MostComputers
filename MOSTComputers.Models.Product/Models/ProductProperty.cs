@@ -7,5 +7,4 @@ public sealed class ProductProperty
     public int? DisplayOrder { get; init; }
     public string? Characteristic { get; init; }
     public string? Value { get; init; }
-    public XMLPlacementEnum? XmlPlacement { get; init; }
 }

@@ -1,52 +1,52 @@
 ﻿@using MOSTComputers.Models.Product.Models;
 @using MOSTComputers.Models.Product.Models.Promotions
 
-<div class="row full-parent-width">
-    <p style="width: max-content;">PID:</p>
+<div class="promotion-on-one-line">
+    <p class="promotion-text">PID:</p>
 
-    <p style="width: max-content;">@(Promotion.Id.ToString())</p>
+    <p class="promotion-text">@(Promotion.Id.ToString())</p>
 
     @if (Promotion.DiscountEUR > 0)
     {
-        <p style="width: max-content;">Discount: @(Promotion.DiscountEUR ?? 0M)€</p>
+        <p class="promotion-text">Discount: @(Promotion.DiscountEUR ?? 0M)€</p>
     }
 
     @if (Promotion.DiscountUSD > 0)
     {
-        <p style="width: max-content;">Discount: @(Promotion.DiscountUSD ?? 0M)$</p>
+        <p class="promotion-text">Discount: @(Promotion.DiscountUSD ?? 0M)$</p>
     }
 
-    <p style="width: max-content;">Name: @(Promotion.Name ?? "-")</p>
+    <p class="promotion-text">Name: @(Promotion.Name ?? "-")</p>
 
-    <p style="width: max-content;">Type: @(Promotion.Type?.ToString() ?? "-")</p>
+    <p class="promotion-text">Type: @(Promotion.Type?.ToString() ?? "-")</p>
 
-    <p style="width: max-content;">Start Date: @(Promotion.StartDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
-    <p style="width: max-content;">Expire Date: @(Promotion.ExpirationDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+    <p class="promotion-text">Start Date: @(Promotion.StartDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+    <p class="promotion-text">Expire Date: @(Promotion.ExpirationDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
 
     @if (Promotion.MinimumQuantity > 0)
     {
-        <p style="width: max-content;">Min Qty: @(Promotion.MinimumQuantity ?? 0)</p>
+        <p class="promotion-text">Min Qty: @(Promotion.MinimumQuantity ?? 0)</p>
     }
 
     @if (Promotion.MaximumQuantity > 0)
     {
-        <p style="width: max-content;">Max Qty: @(Promotion.MaximumQuantity ?? 0)</p>
+        <p class="promotion-text">Max Qty: @(Promotion.MaximumQuantity ?? 0)</p>
     }
 
     @if (Promotion.ExpQuantity > 0)
     {
-        <p style="width: max-content;">Expire Qty: @(Promotion.ExpQuantity ?? 0)</p>
+        <p class="promotion-text">Expire Qty: @(Promotion.ExpQuantity ?? 0)</p>
     }
 
     @if (Promotion.RequiredProductIds?.Count > 0)
     {
-        <p style="width: max-content;">With:</p>
+        <p class="promotion-text">With:</p>
 
-        <ul class="d-inline-flex list-style-none" style="width: min-content">
+        <ul class="promotion-required-product-ids-list">
             @foreach (int requiredProductId in Promotion.RequiredProductIds)
             {
-                <li class="ms-2 me-2">
-                    <p style="width: min-content;">@requiredProductId</p>
+                <li class="promotion-required-product-id-list-item">
+                    <p class="promotion-required-product-id-text">@requiredProductId</p>
                 </li>
             }
         </ul>

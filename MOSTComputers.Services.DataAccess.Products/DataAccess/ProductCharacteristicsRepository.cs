@@ -14,7 +14,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class ProductCharacteristicsRepository : IProductCharacteristicsRepository
 {
     public ProductCharacteristicsRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

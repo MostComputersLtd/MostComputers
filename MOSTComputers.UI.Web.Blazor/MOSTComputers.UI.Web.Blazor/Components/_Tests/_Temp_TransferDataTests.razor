@@ -691,8 +691,7 @@
             {
                 _productService = productService;
                 _productImageFileService = productImageFileService;
-                _productImageAndPromotionFileSaveService = productImageAndPromotionFileSaveService;
-                _productImageService = productImageService;
+                _productImageAndPromotionFileSaveService = productImageAndPromotionFileSaveSRelatedItemsFull    _productImageService = productImageService;
                 _productCharacteristicService = productCharacteristicService;
                 _productPropertyService = productPropertyService;
                 _productCharacteristicAndExternalXmlDataRelationService = productCharacteristicAndExternalXmlDataRelationService;
@@ -705,9 +704,7 @@
         {
             public IGroupPromotionImagesRepository _groupPromotionImagesRepository { get; init; }
             public IGroupPromotionImageFileService _groupPromotionImageFileService { get; init; }
-            public ITransactionExecuteService _transactionExecuteService { get; init; }
-
-            public NeededServicesForGroupPromotionSaves(
+            public ITransactionExecuteService _transactionExecuteServicRelatedItemsFull           public NeededServicesForGroupPromotionSaves(
                 IGroupPromotionImagesRepository groupPromotionImagesRepository,
                 IGroupPromotionImageFileService groupPromotionImageFileService,
                 ITransactionExecuteService transactionExecuteService)
@@ -1378,24 +1375,20 @@
                 ValidationFailure categoryIdError = new(nameof(product.CategoryId), "Cannot be null");
 
                 return new ValidationResult([categoryIdError]);
-            }
-
-            bool metricsChanged = false;
-
-            if (htmlProduct.Properties is not null)
-            {
-                List<ProductCharacteristicAndExternalXmlDataRelation> propertyRelationshipsFromProductCategory
-                    = await neededServices._productCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdAsync(product.CategoryId.Value);
-
-                foreach (LegacyHtmlProductProperty htmlProperty in htmlProduct.Properties)
-                {
-                    if (htmlProperty.Value is not null
-                        && string.IsNullOrWhiteSpace(htmlProperty.Value))
+               ProductCharacteristicAndExternalXmlDforeach (char invalidChar in invalidChars)
                     {
-                        continue;
-                    }
+                        htmlData = htmlData.Replace(invalidChar.ToString(), invalidCharPlaceholder);
+                    }elationshipsFromProdu
+                LegacyHtmlProduct htmlProduct = neededServices._legacyProductHtmlService.ParseProductHtml(htmlData);
 
-                    ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertProductPropertiesFromHtmlResult
+                    = await UpsertPropertiesFromLegacyHtmlAsync(neededServices, unsavedOnly, imagesByProduct.Key, htmlProduct, currentUserName, productTestMetrics, onChanged);
+
+                if (!upsertProductPropertiesFromHtmlResult.IsT0)
+                {
+                    return upsertProductPropertiesFromHtmlResult;
+                }
+ctCategory
                         .FirstOrDefault(x => x.XmlName == htmlProperty.Name);
 
                     if (propertyRelationship?.ProductCharacteristicId is null)
@@ -1424,26 +1417,19 @@
                 OneOf<Success, ValidationResult, UnexpectedFailureResult> saveLinkResult
                     = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, htmlProduct.VendorUrl, currentUserName);
 
-                if (!saveLinkResult.IsT0) return saveLinkResult;
-
-                if (productTestMetrics is not null)
-                {
-                    productTestMetrics.AddProcessedProductId(product.Id);
-                    productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, _defaultLinkCharacteristicId);
-
-                    metricsChanged = true;
-                }
+                i   }
             }
 
-            if (productTestMetrics is not null && metricsChanged && onChanged is not null)
-            {
-                await onChanged(productTestMetrics);
-            }
+            if (productTestMetrics is not null && metricsChanged && onChanged isProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
+                        .FirstOrDefault x => x.XmlName == htmlProperty.Name);
 
-            return new Success();
-        }
+                    if (propertyRelationship?.ProductCharacteristicId is null)
+                    {
+                        continue;
+                    }
 
-        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> insertPropertyActionResult
+                        = await UpsertXmlPropertyInPropertiesAsync( private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
             NeededServicesForProductSaves neededServices,
             int productId,
             LegacyHtmlProductProperty htmlProperty,
@@ -1463,7 +1449,6 @@
             {
                 ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
                 ProductId = productId,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
                 Value = htmlProperty.Value,
             };
 
@@ -1495,7 +1480,6 @@
                 ProductId = productId,
                 ProductCharacteristicId = defaultLinkCharacteristic.Id,
                 Value = vendorUrl,
-                XmlPlacement = null,
             };
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> createLinkResult
@@ -1541,8 +1525,8 @@
 
                 GroupPromotionImageFileDataCreateRequest createRequest = new()
                 {
-                    ImageId = image.Id,
                     PromotionId = image.PromotionId,
+                    ImageId = image.Id,
                     FileName = fileName,
                 };
 

@@ -7,5 +7,4 @@ public sealed class ProductPropertyEditorPropertyDTO
     public int PropertyGroup { get; set; }
     public int? ProductCharacteristicId { get; set; }
     public string? Value { get; set; }
-    public XMLPlacementEnum? XmlPlacement { get; set; }
 }

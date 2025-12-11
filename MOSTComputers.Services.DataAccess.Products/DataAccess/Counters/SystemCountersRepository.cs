@@ -15,7 +15,7 @@ using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnName
 namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Counters;
 internal class SystemCountersRepository : ISystemCountersRepository
 {
-    public SystemCountersRepository([FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+    public SystemCountersRepository([FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

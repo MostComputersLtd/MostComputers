@@ -17,7 +17,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ProductIdentifie
 internal sealed class ProductSerialNumberRepository : IProductSerialNumberRepository
 {
     public ProductSerialNumberRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

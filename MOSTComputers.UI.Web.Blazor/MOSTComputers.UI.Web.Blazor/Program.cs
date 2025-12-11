@@ -56,70 +56,90 @@ using ZiggyCreatures.Caching.Fusion;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-const string productDBConnectionStringName = "MostDBNew";
-const string readDBConnectionStringName = "MOST4WebDB";
+const string localDBConnectionStringName = "MostDBNew";
+const string most4WebDBConnectionStringName = "MOST4WebDB";
 
-string productDBConnectionString = builder.Configuration.GetConnectionString(productDBConnectionStringName)!;
-string readDBConnectionString = builder.Configuration.GetConnectionString(readDBConnectionStringName)!;
+string productDBConnectionString = builder.Configuration.GetConnectionString(localDBConnectionStringName)!;
+string most4WebDBConnectionString = builder.Configuration.GetConnectionString(most4WebDBConnectionStringName)!;
 
 const string errorLogsTableName = "ErrorLogs";
 
-ColumnOptions columnOptions = new();
-
-columnOptions.Store.Remove(StandardColumn.Properties);
-columnOptions.Store.Remove(StandardColumn.MessageTemplate);
-columnOptions.Store.Remove(StandardColumn.SpanId);
-columnOptions.Store.Remove(StandardColumn.TraceId);
-
-columnOptions.AdditionalColumns = new Collection<SqlColumn>
-{
-    new() { ColumnName = "ExceptionType", DataType = SqlDbType.NVarChar, DataLength = 256 },
-    new() { ColumnName = "UserName", DataType = SqlDbType.NVarChar, DataLength = 256 },
-    new() { ColumnName = "RequestId", DataType = SqlDbType.NVarChar, DataLength = 64 },
-    new() { ColumnName = "Path", DataType = SqlDbType.NVarChar, DataLength = 256 },
-    new() { ColumnName = "ApplicationName", DataType = SqlDbType.NVarChar, DataLength = 256 },
-    new() { ColumnName = "MachineName", DataType = SqlDbType.NVarChar, DataLength = 64 },
-    new() { ColumnName = "LoggerName", DataType = SqlDbType.NVarChar, DataLength = 256 },
-    new() { ColumnName = "ConnectionId", DataType = SqlDbType.NVarChar, DataLength = 64 },
-};
-
 string? projectName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Error()
-    .Filter.ByExcluding(
-        logEvent => logEvent.Exception is JSDisconnectedException
-            || logEvent.Exception is OperationCanceledException
-            || logEvent.Exception is TaskCanceledException)
-    .Enrich.FromLogContext()
-    .Enrich.With(new LoggerNameEnricher("LoggerName"), new ExceptionTypeEnricher("ExceptionType"))
-    .Enrich.WithProperty("ApplicationName", projectName ?? "MOSTComputers.UI.Web.Blazor")
-    .Enrich.WithProperty("MachineName", Environment.MachineName)
-    .WriteTo.MSSqlServer(
-        connectionString: productDBConnectionString,
-        sinkOptions: new MSSqlServerSinkOptions
-        {
-            TableName = errorLogsTableName,
-            AutoCreateSqlTable = false,
-            EnlistInTransaction = false,
-        },
-        columnOptions: columnOptions)
-    .CreateLogger();
+//Log.Logger = new LoggerConfiguration()
+//    .MinimumLevel.Error()
+//    .Filter.ByExcluding(
+//        logEvent => logEvent.Exception is JSDisconnectedException
+//            || logEvent.Exception is OperationCanceledException
+//            || logEvent.Exception is TaskCanceledException)
+//    .Enrich.FromLogContext()
+//    .Enrich.With(new LoggerNameEnricher("LoggerName"), new ExceptionTypeEnricher("ExceptionType"))
+//    .Enrich.WithProperty("ApplicationName", projectName ?? "MOSTComputers.UI.Web.Blazor")
+//    .Enrich.WithProperty("MachineName", Environment.MachineName)
+//    .WriteTo.MSSqlServer(
+//        connectionString: productDBConnectionString,
+//        sinkOptions: new MSSqlServerSinkOptions
+//        {
+//            TableName = errorLogsTableName,
+//            AutoCreateSqlTable = false,
+//            EnlistInTransaction = false,
+//        },
+//        columnOptions: columnOptions)
+//    .CreateLogger();
 
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((_, config) =>
+{
+    ColumnOptions columnOptions = new();
+
+    columnOptions.Store.Remove(StandardColumn.Properties);
+    columnOptions.Store.Remove(StandardColumn.MessageTemplate);
+    columnOptions.Store.Remove(StandardColumn.SpanId);
+    columnOptions.Store.Remove(StandardColumn.TraceId);
+
+    columnOptions.AdditionalColumns = new Collection<SqlColumn>
+    {
+        new() { ColumnName = "ExceptionType", DataType = SqlDbType.NVarChar, DataLength = 256 },
+        new() { ColumnName = "UserName", DataType = SqlDbType.NVarChar, DataLength = 256 },
+        new() { ColumnName = "Path", DataType = SqlDbType.NVarChar, DataLength = 256 },
+        new() { ColumnName = "LoggerName", DataType = SqlDbType.NVarChar, DataLength = 256 },
+        new() { ColumnName = "ApplicationName", DataType = SqlDbType.NVarChar, DataLength = 256 },
+        new() { ColumnName = "MachineName", DataType = SqlDbType.NVarChar, DataLength = 64 },
+        new() { ColumnName = "RequestId", DataType = SqlDbType.NVarChar, DataLength = 64 },
+        new() { ColumnName = "ConnectionId", DataType = SqlDbType.NVarChar, DataLength = 64 },
+    };
+
+    config.MinimumLevel.Error()
+        .Filter.ByExcluding(
+            logEvent => logEvent.Exception is JSDisconnectedException
+                || logEvent.Exception is OperationCanceledException
+                || logEvent.Exception is TaskCanceledException)
+        .Enrich.FromLogContext()
+        .Enrich.With(new LoggerNameEnricher("LoggerName"), new ExceptionTypeEnricher("ExceptionType"))
+        .Enrich.WithProperty("ApplicationName", projectName ?? "MOSTComputers.UI.Web.Blazor")
+        .Enrich.WithProperty("MachineName", Environment.MachineName)
+        .WriteTo.MSSqlServer(
+            connectionString: productDBConnectionString,
+            sinkOptions: new MSSqlServerSinkOptions
+            {
+                TableName = errorLogsTableName,
+                AutoCreateSqlTable = false,
+                EnlistInTransaction = false,
+            },
+            columnOptions: columnOptions);
+});
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddFusionCachingServices();
 
-builder.Services.AddDataAccess(productDBConnectionString, readDBConnectionString)
+builder.Services.AddDataAccess(productDBConnectionString, most4WebDBConnectionString)
     .AddAllRepositories();
 
 //builder.Services.AddProductServices();
 
 builder.Services.AddCachedProductServices();
 
-builder.Services.AddDocumentRepositories(readDBConnectionString);
+builder.Services.AddDocumentRepositories(most4WebDBConnectionString);
 
 string currentDirectory = AppDomain.CurrentDomain.BaseDirectory.Replace('\\', '/');
 

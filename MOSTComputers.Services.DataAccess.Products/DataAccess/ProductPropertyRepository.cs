@@ -12,6 +12,7 @@ using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductPropert
 using OneOf;
 using OneOf.Types;
 using System.Data;
+using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.QueryUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils.PropertiesTable;
@@ -20,7 +21,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class ProductPropertyRepository : IProductPropertyRepository
 {
     public ProductPropertyRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -35,8 +36,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 {ProductCharacteristicIdColumnName},
                 {DisplayOrderColumnName} AS {DisplayOrderColumnAlias},
                 {CharacteristicColumnName},
-                {ValueColumnName},
-                {XmlPlacementColumnName}
+                {ValueColumnName}
             FROM {PropertiesTableName}
             ORDER BY {ProductIdColumnName}, {DisplayOrderColumnName};
             """;
@@ -56,8 +56,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 {ProductCharacteristicIdColumnName},
                 {DisplayOrderColumnName} AS {DisplayOrderColumnAlias},
                 {CharacteristicColumnName},
-                {ValueColumnName},
-                {XmlPlacementColumnName}
+                {ValueColumnName}
             FROM {PropertiesTableName}
             WHERE {ProductIdColumnName} IN @productIds
             ORDER BY {DisplayOrderColumnName};
@@ -118,8 +117,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 {ProductCharacteristicIdColumnName},
                 {DisplayOrderColumnName} AS {DisplayOrderColumnAlias},
                 {CharacteristicColumnName},
-                {ValueColumnName},
-                {XmlPlacementColumnName}
+                {ValueColumnName}
             FROM {PropertiesTableName}
             WHERE {ProductIdColumnName} = @productId
             ORDER BY {DisplayOrderColumnName};
@@ -164,8 +162,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 {ProductCharacteristicIdColumnName},
                 {DisplayOrderColumnName} AS {DisplayOrderColumnAlias},
                 {CharacteristicColumnName},
-                {ValueColumnName},
-                {XmlPlacementColumnName}
+                {ValueColumnName}
             FROM {PropertiesTableName}
             WHERE {ProductIdColumnName} = @productId
             AND {ProductCharacteristicIdColumnName} = @characteristicId;
@@ -190,8 +187,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 {ProductCharacteristicIdColumnName},
                 {DisplayOrderColumnName} AS {DisplayOrderColumnAlias},
                 {CharacteristicColumnName},
-                {ValueColumnName},
-                {XmlPlacementColumnName}
+                {ValueColumnName}
             FROM {PropertiesTableName}
             WHERE {ProductIdColumnName} = @productId
             AND {CharacteristicColumnName} = @Name;
@@ -213,8 +209,8 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
         const string insertQuery =
             $"""
             INSERT INTO {PropertiesTableName} ({ProductIdColumnName}, {ProductCharacteristicIdColumnName}, {DisplayOrderColumnName},
-                {CharacteristicColumnName}, {ValueColumnName}, {XmlPlacementColumnName})
-            SELECT @ProductId, @ProductCharacteristicId, @DisplayOrder, @Name, @Value, @XmlPlacement
+                {CharacteristicColumnName}, {ValueColumnName})
+            SELECT @ProductId, @ProductCharacteristicId, @DisplayOrder, @Name, @Value
 
             WHERE NOT EXISTS (SELECT 1 FROM {PropertiesTableName} WHERE {ProductIdColumnName} = @ProductId
                 AND {ProductCharacteristicIdColumnName} = @ProductCharacteristicId)
@@ -241,7 +237,6 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
             Name = createRequest.Name,
             DisplayOrder = createRequest.DisplayOrder,
             Value = createRequest.Value,
-            XmlPlacement = createRequest.XmlPlacement,
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
@@ -250,11 +245,14 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
 
         if (result is null || result == 0) return new UnexpectedFailureResult();
 
-        if (result > 0) return new Success();
+        if (result < 0)
+        {
+            ValidationResult validationResult = GetInsertValidationResult(result.Value);
 
-        ValidationResult validationResult = GetInsertValidationResult(result.Value);
+            return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+        }
 
-        return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+        return new Success();
     }
 
     public async Task<OneOf<Success, UnexpectedFailureResult>> UpdateAsync(ProductPropertyUpdateRequest updateRequest)
@@ -263,8 +261,7 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
             $"""
             UPDATE {PropertiesTableName}
             SET {ValueColumnName} = @Value,
-                {DisplayOrderColumnName} = ISNULL(@CustomDisplayOrder, {DisplayOrderColumnName}),
-                {XmlPlacementColumnName} = @XmlPlacement
+                {DisplayOrderColumnName} = ISNULL(@CustomDisplayOrder, {DisplayOrderColumnName})
 
             WHERE {ProductIdColumnName} = @productId
             AND {ProductCharacteristicIdColumnName} = @productKeywordId;
@@ -278,7 +275,6 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
             productKeywordId = updateRequest.ProductCharacteristicId,
             Value = updateRequest.Value,
             CustomDisplayOrder = updateRequest.CustomDisplayOrder,
-            XmlPlacement = updateRequest.XmlPlacement,
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
@@ -298,15 +294,14 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
                 AND {ProductCharacteristicIdColumnName} = @productKeywordId)
             BEGIN
                 INSERT INTO {PropertiesTableName} ({ProductIdColumnName}, {ProductCharacteristicIdColumnName}, {DisplayOrderColumnName},
-                    {CharacteristicColumnName}, {ValueColumnName}, {XmlPlacementColumnName})
-                SELECT @productId, @productKeywordId, @DisplayOrder, @Name, @Value, @XmlPlacement
+                    {CharacteristicColumnName}, {ValueColumnName})
+                SELECT @productId, @productKeywordId, @DisplayOrder, @Name, @Value
             END
             ELSE
             BEGIN
                 UPDATE {PropertiesTableName}
                 SET {ValueColumnName} = @Value,
-                    {DisplayOrderColumnName} = @DisplayOrder,
-                    {XmlPlacementColumnName} = @XmlPlacement
+                    {DisplayOrderColumnName} = @DisplayOrder
 
                 WHERE {ProductIdColumnName} = @productId
                 AND {ProductCharacteristicIdColumnName} = @productKeywordId;
@@ -322,7 +317,6 @@ internal sealed class ProductPropertyRepository : IProductPropertyRepository
             DisplayOrder = upsertRequest.DisplayOrder,
             Name = upsertRequest.Name,
             Value = upsertRequest.Value,
-            XmlPlacement = upsertRequest.XmlPlacement,
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);

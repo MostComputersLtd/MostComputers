@@ -15,7 +15,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions;
 internal sealed class PromotionRepository : IPromotionRepository
 {
     public PromotionRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

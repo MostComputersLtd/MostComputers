@@ -53,7 +53,7 @@
 @inject IProductImageService ProductImageService
 @inject IProductImageFileService ProductImageFileService
 @inject IProductImageFileManagementService ProductImageFileManagementService
-@inject IProductImageAndPromotionFileSaveService ProductImageAndPromotionFileSaveService
+@inject IProductRelatedItemsFullSaveService ProductImageAndPromotionFileSaveService
 @inject IProductWorkStatusesService ProductWorkStatusesService
 @inject IPromotionService ProductPromotionService
 @inject IPromotionFileService PromotionFileService
@@ -62,8 +62,6 @@
 
 @inject ISearchStringOriginService SearchStringOriginService
 @inject IProductHtmlService ProductHtmlService
-
-@inject ILogger<SingleProductEditorPopup> Logger
 
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -645,7 +643,6 @@
         public ProductCharacteristic? ProductCharacteristic { get; set; }
         public int? DisplayOrder { get; set; }
         public string? Value { get; set; }
-        public XMLPlacementEnum? XmlPlacement { get; set; }
         public required List<ProductCharacteristic> RemainingCharacteristics { get; set; }
 
         public List<string> ValidationMessages { get; set; } = new();
@@ -1568,7 +1565,6 @@
             ProductCharacteristic = productCharacteristic,
             Value = string.Empty,
             DisplayOrder = null,
-            XmlPlacement = null,
             RemainingCharacteristics = remainingCharacteristics
         };
     }
@@ -1679,11 +1675,13 @@
             return;
         }
 
-        // using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
         List<ProductPropertyDisplayData> propertiesAndLinks = new(ProductProperties);
 
         propertiesAndLinks.AddRange(ProductLinks);
+
+        // using TransactionScope transactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        // using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
         bool updatePropertiesSuccess = await UpdateProductPropertiesAsync(propertiesAndLinks, currentUserName);
 
@@ -1721,6 +1719,8 @@
         // replicationDBTransactionScope.Complete();
 
         // localDBTransactionScope.Complete();
+
+        // transactionScope.Complete();
     }
 
     private async Task<bool> UpdateProductImagesAsync(
@@ -1734,7 +1734,7 @@
 
         // string productHtml = getProductHtmlResult.AsT0;
 
-        ProductImagesAndPromotionFilesForProductUpsertRequest upsertAllImagesAndPromotionFilesRequest = new()
+        ProductRelatedItemsFullSaveRequest upsertAllImagesAndPromotionFilesRequest = new()
         {
             ProductId = Product.Id,
             UpsertUserName = currentUserName,
@@ -1942,64 +1942,22 @@
             },
             validationResult =>
             {
-                string json = JsonSerializer.Serialize(validationResult.Errors);
-
-                Logger.LogCritical("Validation error when updating product images in product editor for product ID {ProductId},\n Full Messages: {ValidationResult}",
-                    Product.Id, json);
-
                 return false;
             },
             fileSaveFailureResult =>
             {
-                if (fileSaveFailureResult.IsUnsupportedContentType)
-                {
-                    NotSupportedContentTypeResult data = fileSaveFailureResult.UnsupportedContentType!.Value;
-
-                    Logger.LogCritical("File save error when updating product images in product editor for product ID {ProductId}, Invalid Content type: {ContentType}",
-                        Product.Id, data.ContentType);
-                }
-                else if (fileSaveFailureResult.IsInvalidContent)
-                {
-                    InvalidContentResult data = fileSaveFailureResult.InvalidContent!.Value;
-
-                    Logger.LogCritical("File save error when updating product images in product editor for product ID {ProductId}, Invalid Content: {Reason}",
-                        Product.Id, data.Reason);
-                }
-                else if (fileSaveFailureResult.IsTooLarge)
-                {
-                    TooLargeResult data = fileSaveFailureResult.TooLarge!.Value;
-
-                    Logger.LogCritical("File save error when updating product images in product editor for product ID {ProductId}, Too Large: Max Allowed Size: {MaxSizeBytes}, Actual Size: {ActualSizeBytes}",
-                        Product.Id, data.MaxSizeBytes, data.ActualSizeBytes);
-                }
-                else if (fileSaveFailureResult.IsUnexpected)
-                {
-                    UnexpectedResult data = fileSaveFailureResult.Unexpected!.Value;
-
-                    Logger.LogCritical("File save error when updating product images in product editor for product ID {ProductId}, Unexpected Error: {ExceptionMessage}",
-                        Product.Id, data.ExceptionMessage);
-                }
-
                 return false;
 			},
             fileDoesntExistResult =>
             {
-                Logger.LogCritical("File doesn't exist when updating product images in product editor for product ID {ProductId}, File Name: {FileName}",
-                    Product.Id, fileDoesntExistResult.FileName);
-
                 return false;
             },
             fileAlreadyExistsResult =>
             {
-                Logger.LogCritical("File already exists when updating product images in product editor for product ID {ProductId}, File Name: {FileName}",
-                    Product.Id, fileAlreadyExistsResult.FileName);
-
                 return false;
             },
             unexpectedFailureResult =>
             {
-                Logger.LogCritical("Unexpected failure when updating product images in product editor for product ID {ProductId}", Product.Id);
-
                 return false;
             });
     }
@@ -2019,7 +1977,6 @@
                 ProductCharacteristicId = productProperty.ProductCharacteristic!.Id,
                 Value = productProperty.Value,
                 CustomDisplayOrder = null,
-                XmlPlacement = productProperty.XmlPlacement
             };
 
             propertyUpsertRequests.Add(upsertRequest);
@@ -2044,17 +2001,10 @@
             },
             validationResult =>
             {
-                string json = JsonSerializer.Serialize(validationResult.Errors);
-
-                Logger.LogCritical("Validation error when updating product properties in product editor for product ID {ProductId},\n Full Messages: {ValidationResult}",
-                    Product.Id, json);
-
                 return false;
             },
             unexpectedFailureResult =>
             {
-                Logger.LogCritical("Unexpected failure when updating product properties in product editor for product ID {ProductId}", Product.Id);
-
                 return false;
             }
         );
@@ -2095,7 +2045,6 @@
                 ProductCharacteristic = productCharacteristic,
                 Value = property.Value,
                 DisplayOrder = property.DisplayOrder,
-                XmlPlacement = property.XmlPlacement,
                 RemainingCharacteristics = remainingCharacteristics
             };
 

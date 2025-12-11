@@ -375,12 +375,15 @@ internal sealed class ProductPropertyService : IProductPropertyService
         ProductPropertyUpsertAllForProductRequest productPropertyChangeAllForProductRequest, string upsertUserName)
     {
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-        using (TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
-        {
+        //using (TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+        //{
             OneOf<Success, ValidationResult, UnexpectedFailureResult> result
                 = await _productPropertyCrudService.UpsertAllProductPropertiesAsync(productPropertyChangeAllForProductRequest);
 
-            if (!result.IsT0) return result;
+            if (!result.IsT0)
+            {
+                return result;
+            }
 
             OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
                = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
@@ -394,8 +397,8 @@ internal sealed class ProductPropertyService : IProductPropertyService
                     unexpectedFailureResult => unexpectedFailureResult);
             }
 
-            localDBTransactionScope.Complete();
-        }
+            //localDBTransactionScope.Complete();
+        //}
 
         HtmlProductsData productHtmlData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productPropertyChangeAllForProductRequest.ProductId]);
 
@@ -415,8 +418,6 @@ internal sealed class ProductPropertyService : IProductPropertyService
             = updateImagesProductHtmlResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
                 isSuccessful =>
                 {
-                    if (!isSuccessful) return new UnexpectedFailureResult();
-
                     return new Success();
                 },
                 validationResult => validationResult,
@@ -466,8 +467,6 @@ internal sealed class ProductPropertyService : IProductPropertyService
     //        = updateImagesProductHtmlResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
     //            isSuccessful =>
     //            {
-    //                if (!isSuccessful) return new UnexpectedFailureResult();
-
     //                return result.AsT0;
     //            },
     //            validationResult => validationResult,

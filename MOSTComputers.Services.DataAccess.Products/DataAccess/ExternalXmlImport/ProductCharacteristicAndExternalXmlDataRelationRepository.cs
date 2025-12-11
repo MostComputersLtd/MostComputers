@@ -11,6 +11,7 @@ using OneOf;
 using OneOf.Types;
 using System.Data;
 using System.Data.Common;
+using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils.ProductCharacteristicAndExternalXmlDataRelationsTable;
 
@@ -18,7 +19,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ExternalXmlImpor
 internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository : IProductCharacteristicAndExternalXmlDataRelationRepository
 {
     public ProductCharacteristicAndExternalXmlDataRelationRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -32,10 +33,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
             SELECT * FROM {ProductCharacteristicAndExternalXmlDataRelationsTableName}
             """;
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndExternalXmlDataRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getAllQuery, new { }, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -50,10 +55,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
 
         var parameters = new { categoryId = categoryId };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndExternalXmlDataRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getAllWithSameCategoryIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -69,10 +78,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
 
         var parameters = new { categoryIds = categoryIds };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndExternalXmlDataRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getAllWithSameCategoryIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -92,10 +105,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
             Name = xmlName
         };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndExternalXmlDataRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getAllWithSameCategoryIdAndXmlNameQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -110,10 +127,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
 
         var parameters = new { characteristicId = characteristicId };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndExternalXmlDataRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getByCharacteristicIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -128,10 +149,14 @@ internal sealed class ProductCharacteristicAndExternalXmlDataRelationRepository 
 
         var parameters = new { id = id };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         ProductCharacteristicAndExternalXmlDataRelation? data = await dbConnection.QueryFirstOrDefaultAsync<ProductCharacteristicAndExternalXmlDataRelation>(
             getByIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data;
     }

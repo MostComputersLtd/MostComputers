@@ -31,16 +31,16 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contra
 namespace MOSTComputers.Services.DataAccess.Products.Configuration;
 public static class ConfigureServices
 {
-    public const string ConnectionStringProviderServiceKey = "MOSTComputers.Services.DataAccess.ConnectionStringProvider";
-    public const string ReadOnlyDBConnectionStringProviderServiceKey = "MOSTComputers.Services.DataAccess.ConnectionStringProvider.ReadonlyDB";
+    public const string LocalDBConnectionStringProviderServiceKey = "MOSTComputers.Services.DataAccess.ConnectionStringProvider.LocalDB";
+    public const string OriginalDBConnectionStringProviderServiceKey = "MOSTComputers.Services.DataAccess.ConnectionStringProvider.OriginalDB";
 
     public static IServiceCollection AddDataAccess(this IServiceCollection services, string connectionString, string? readDBConnectionString = null)
     {
-        services.AddConnectionStringProvider(connectionString, ConnectionStringProviderServiceKey);
+        services.AddConnectionStringProvider(connectionString, LocalDBConnectionStringProviderServiceKey);
 
         if (!string.IsNullOrWhiteSpace(readDBConnectionString))
         {
-            services.AddConnectionStringProvider(readDBConnectionString, ReadOnlyDBConnectionStringProviderServiceKey);
+            services.AddConnectionStringProvider(readDBConnectionString, OriginalDBConnectionStringProviderServiceKey);
         }
 
         AddDapperMappings();

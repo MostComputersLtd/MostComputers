@@ -1665,7 +1665,6 @@ public class ProductEditorModel : PageModel
             ProductPropertyForProductUpsertRequest productPropertyUpsertRequest = new()
             {
                 ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
                 Value = xmlProperty.Value,
             };
 
@@ -1677,7 +1676,6 @@ public class ProductEditorModel : PageModel
             ProductPropertyForProductUpsertRequest defaultLinkProductPropertyUpsertRequest = new()
             {
                 ProductCharacteristicId = _defaultLinkCharacteristicId,
-                XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
                 Value = xmlProduct.VendorUrl,
             };
 
@@ -1761,7 +1759,6 @@ public class ProductEditorModel : PageModel
         {
             ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
             ProductId = productId,
-            XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             Value = xmlProperty.Value,
         };
 
@@ -2318,7 +2315,6 @@ public class ProductEditorModel : PageModel
             ProductId = productId,
             ProductCharacteristicId = characteristicId,
             Value = productPropertyEditorData.Value,
-            XmlPlacement = productPropertyEditorData.XmlPlacement ?? 0,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyUpsertResult
@@ -2387,7 +2383,6 @@ public class ProductEditorModel : PageModel
                 {
                     ProductCharacteristicId = productPropertyEditorData.ProductCharacteristicId.Value,
                     Value = productPropertyEditorData.Value,
-                    XmlPlacement = productPropertyEditorData.XmlPlacement,
                 };
 
                 productPropertyUpsertRequests.Add(productPropertyUpsertRequest);

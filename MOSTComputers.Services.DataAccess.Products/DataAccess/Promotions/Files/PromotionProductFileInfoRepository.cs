@@ -21,7 +21,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Files
 internal sealed class PromotionProductFileInfoRepository : IPromotionProductFileInfoRepository
 {
     public PromotionProductFileInfoRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

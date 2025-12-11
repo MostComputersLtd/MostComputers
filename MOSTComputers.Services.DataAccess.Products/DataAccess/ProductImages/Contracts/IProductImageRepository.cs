@@ -33,4 +33,5 @@ public interface IProductImageRepository
     Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId);
     Task<bool> DeleteInAllImagesByIdAsync(int id);
     Task<bool> DeleteInFirstImagesByProductIdAsync(int id);
+    int GetMinimumImagesAllInsertIdForLocalApplication();
 }

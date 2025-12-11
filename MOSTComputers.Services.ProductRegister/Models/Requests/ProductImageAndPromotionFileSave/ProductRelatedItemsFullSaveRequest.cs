@@ -2,86 +2,89 @@
 using OneOf.Types;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductProperty;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
 
-public sealed class ProductImagesAndPromotionFilesForProductUpsertRequest
+public sealed class ProductRelatedItemsFullSaveRequest
 {
     public required int ProductId { get; set; }
 
-    public List<ProductImageAndPromotionFileUpsertRequest> Requests = new();
+    public List<ProductPropertyForProductUpsertRequest> PropertyRequests = new();
+    public List<ProductImageAndPromotionFileUpsertRequest> ImageRequests = new();
     public required string UpsertUserName { get; set; }
 
     public void Add(ProductImageAndPromotionFileUpsertRequest productImageAndPromotionFileUpsertRequest)
     {
-        Requests.Add(productImageAndPromotionFileUpsertRequest);
+        ImageRequests.Add(productImageAndPromotionFileUpsertRequest);
     }
 
     public void Add(ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest)
     {
-        Requests.Add(new(productImageWithFileUpsertRequest));
+        ImageRequests.Add(new(productImageWithFileUpsertRequest));
     }
 
     public void Add(ProductImageFileForProductCreateRequest productImageFileCreateRequest)
     {
-        Requests.Add(new(productImageFileCreateRequest));
+        ImageRequests.Add(new(productImageFileCreateRequest));
     }
 
     public void Add(ProductImageFileForProductUpdateRequest productImageFileUpdateRequest)
     {
-        Requests.Add(new(productImageFileUpdateRequest));
+        ImageRequests.Add(new(productImageFileUpdateRequest));
     }
 
     public void Add(PromotionProductFileForProductUpsertRequest promotionProductFileUpsertRequest)
     {
-        Requests.Add(new(promotionProductFileUpsertRequest));
+        ImageRequests.Add(new(promotionProductFileUpsertRequest));
     }
 
     public bool Remove(ProductImageAndPromotionFileUpsertRequest productImageAndPromotionFileUpsertRequest)
     {
-        return Requests.Remove(productImageAndPromotionFileUpsertRequest);
+        return ImageRequests.Remove(productImageAndPromotionFileUpsertRequest);
     }
 
     public bool Remove(ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest)
     {
-        int requestIndex = Requests.FindIndex(x => x.Request.Value == productImageWithFileUpsertRequest);
+        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageWithFileUpsertRequest);
 
         if (requestIndex < 0) return false;
 
-        Requests.RemoveAt(requestIndex);
+        ImageRequests.RemoveAt(requestIndex);
 
         return true;
     }
 
     public bool Remove(ProductImageFileForProductCreateRequest productImageFileCreateRequest)
     {
-        int requestIndex = Requests.FindIndex(x => x.Request.Value == productImageFileCreateRequest);
+        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageFileCreateRequest);
 
         if (requestIndex < 0) return false;
 
-        Requests.RemoveAt(requestIndex);
+        ImageRequests.RemoveAt(requestIndex);
 
         return true;
     }
 
     public bool Remove(ProductImageFileForProductUpdateRequest productImageFileUpdateRequest)
     {
-        int requestIndex = Requests.FindIndex(x => x.Request.Value == productImageFileUpdateRequest);
+        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageFileUpdateRequest);
 
         if (requestIndex < 0) return false;
 
-        Requests.RemoveAt(requestIndex);
+        ImageRequests.RemoveAt(requestIndex);
 
         return true;
     }
 
     public bool Remove(PromotionProductFileForProductUpsertRequest promotionProductFileUpsertRequest)
     {
-        int requestIndex = Requests.FindIndex(x => x.Request.Value == promotionProductFileUpsertRequest);
+        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == promotionProductFileUpsertRequest);
 
         if (requestIndex < 0) return false;
 
-        Requests.RemoveAt(requestIndex);
+        ImageRequests.RemoveAt(requestIndex);
 
         return true;
     }

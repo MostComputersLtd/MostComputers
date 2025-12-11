@@ -15,7 +15,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal class ExchangeRateRepository : IExchangeRateRepository
 {
     public ExchangeRateRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

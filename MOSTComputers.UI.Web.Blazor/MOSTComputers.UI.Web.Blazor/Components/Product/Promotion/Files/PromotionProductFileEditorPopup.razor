@@ -17,29 +17,29 @@
 <Popup IsVisible="IsVisible" IsVisibleChanged="OnVisibleChanged" PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
 
-        <div class="full-parent-width d-flex align-items-center justify-content-between">
+        <div class="promotion-product-file-editor-header">
 
-            <div class="d-flex flex-row flex-wrap">
-                <h5 class="popup-header-text me-3">Promotions:</h5>
+            <div class="header-text-container">
+                <h5 class="popup-header-text">Promotions:</h5>
 
-                <h4 class="pouup-header-text me-3">CSTID: @Product.Id</h4>
+                <h4 class="pouup-header-text">CSTID: @Product.Id</h4>
 
                 @if (Product.Manufacturer is not null)
                 {
-                    <h4 class="popup-header-text me-3">Mfr: @Product.Manufacturer.RealCompanyName</h4>
+                    <h4 class="popup-header-text">Mfr: @Product.Manufacturer.RealCompanyName</h4>
                 }
                 @if (Product.Category is not null)
                 {
-                    <h4 class="popup-header-text me-3">@Product.Category.Description</h4>
+                    <h4 class="popup-header-text">@Product.Category.Description</h4>
                 }
 
-                <h4 class="popup-header-text me-3">@Product.Name</h4>
+                <h4 class="popup-header-text">@Product.Name</h4>
             </div>
 
             @if (ShouldDisplayAddButton)
             {
-                <div class="d-flex flex-row align-items-center ms-1">
-                    <button class="full-parent-width btn btn-primary"
+                <div class="add-button-container">
+                    <button class="btn btn-primary add-button"
                         @onclick="() => ShowPromotionProductFileSingleEditorPopupAsync()">
                         +
                     </button>
@@ -49,131 +49,128 @@
     </HeaderContent>
 
     <ChildContent>
-        <div class="full-parent-width">
-            <div class="container d-flex flex-column border-2 full-parent-width full-parent-height">
-                @{
-                    int? promotionPictureId = Product.AlertPictureId;
+        <div class="promotion-product-file-editor-body">
+            @{
+                int? promotionPictureId = Product.AlertPictureId;
 
-                    if (promotionPictureId is null || promotionPictureId <= 0)
-                    {
-                        promotionPictureId = Product.PromotionPictureId;
-                    }
-                }
-
-                @if (promotionPictureId > 0)
+                if (promotionPictureId is null || promotionPictureId <= 0)
                 {
-                    <div class="d-flex flex-row">
-                        <p>IID: @(Product.AlertPictureId.ToString() ?? "-")</p>
-
-                        <p class="ps-2">Expire Date: @(Product.AlertExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
-                    </div>
+                    promotionPictureId = Product.PromotionPictureId;
                 }
+            }
 
-                @if (PidPromotion is not null)
+            @if (promotionPictureId > 0)
+            {
+                <div class="info-promotion-container">
+                    <p>IID: @(Product.AlertPictureId.ToString() ?? "-")</p>
+
+                    <p class="info-promotion-expire-date">Expire Date: @(Product.AlertExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+                </div>
+            }
+
+            @if (PidPromotion is not null)
+            {
+                <PromotionOnOneLine Promotion="PidPromotion" />
+            }
+
+            @if (RidPromotion is not null)
+            {
+                <PromotionOnOneLine Promotion="RidPromotion" />
+            }
+
+            <div class="promotion-product-files-table-container">
+                @if (PromotionProductFiles.Count > 0)
                 {
-                    <PromotionOnOneLine Promotion="PidPromotion" />
-                }
+                    <table class="promotion-product-files-table">
 
-                @if (RidPromotion is not null)
-                {
-                    <PromotionOnOneLine Promotion="RidPromotion" />
-                }
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Active</th>
+                                <th>File Id</th>
+                                <th>Img All Id</th>
+                                <th>Valid From</th>
+                                <th>Valid To</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
 
-                <div class="row flex-grow-1">
-                    @if (PromotionProductFiles.Count > 0)
-                    {
-                        <table class="full-parent-width" style="height: min-content;">
+                        @for (int i = 0; i < PromotionProductFiles.Count; i++)
+                        {
+                            PromotionProductFileInfoDisplayData promotionProductFileInfo = PromotionProductFiles[i];
 
-                            <thead>
-                                <tr>
-                                    <th>Id</th>
-                                    <th>Active</th>
-                                    <th>File Id</th>
-                                    <th>Img All Id</th>
-                                    <th>Valid From</th>
-                                    <th>Valid To</th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                </tr>
-                            </thead>
+                            string validFromValueAsString = string.Empty;
+                            string validToValueAsString = string.Empty;
 
-                            @for (int i = 0; i < PromotionProductFiles.Count; i++)
+                            if (promotionProductFileInfo.ValidFrom is not null)
                             {
-                                PromotionProductFileInfoDisplayData promotionProductFileInfo = PromotionProductFiles[i];
+                                validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
+                            }
 
-                                string validFromValueAsString = string.Empty;
-                                string validToValueAsString = string.Empty;
+                            if (promotionProductFileInfo.ValidTo is not null)
+                            {
+                                validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
+                            }
 
-                                if (promotionProductFileInfo.ValidFrom is not null)
+                            <tr>
+                                <td>@promotionProductFileInfo.Id</td>
+                                <td>
+                                    @if (promotionProductFileInfo.Active)
+                                    {
+                                        <input id="promotionProductFilesEditorActiveInput-@i" type="checkbox"
+                                               tabindex="-1" class="promotion-product-file-active-input" checked />
+                                    }
+                                    else
+                                    {
+                                        <input id="promotionProductFilesEditorActiveInput-@i" type="checkbox"
+                                               tabindex="-1" class="promotion-product-file-active-input" />
+                                    }
+                                </td>
+                                <td>@promotionProductFileInfo.PromotionFileInfoData?.Id</td>
+                                <td>@(promotionProductFileInfo.ProductImageId?.ToString() ?? "-")</td>
+                                <td>
+                                    <input id="promotionProductFilesEditorValidFromInput-@i" type="date"
+                                        value="@validFromValueAsString" readonly />
+                                </td>
+                                <td>
+                                    <input id="promotionProductFilesEditorValidToInput-@i" type="date"
+                                        value="@validToValueAsString" readonly />
+                                </td>
+                                <td class="promotion-product-file-file-column">
+
+                                    @if (promotionProductFileInfo.PromotionFileInfoData is not null)
+                                    {
+                                        <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionProductFileInfo.PromotionFileInfoData.FileName)"
+                                            class="full-parent-width full-parent-height" />
+                                    }
+                                    else
+                                    {
+                                        <p>No File</p>
+                                    }
+                                </td>
+                                <td>
+                                    <button class="btn btn-light promotion-product-file-edit-button"
+                                        @onclick="() => ShowPromotionProductFileSingleEditorPopupAsync(promotionProductFileInfo)">
+                                        <img src="/img/General/EditIcon.jpg" alt="Edit" class="promotion-product-file-edit-button-image" />
+                                    </button>
+                                </td>
+
+								@if (ShouldDisplayDeleteButton)
                                 {
-                                    validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
-                                }
-
-                                if (promotionProductFileInfo.ValidTo is not null)
-                                {
-                                    validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
-                                }
-
-                                <tr>
-                                    <td>@promotionProductFileInfo.Id</td>
                                     <td>
-                                        @if (promotionProductFileInfo.Active)
-                                        {
-                                            <input id="promotionProductFilesEditorActiveInput-@i" type="checkbox"
-                                                tabindex="-1" style="pointer-events: none;" checked />
-                                        }
-                                        else
-                                        {
-                                            <input id="promotionProductFilesEditorActiveInput-@i" type="checkbox"
-                                                tabindex="-1" style="pointer-events: none;" />
-                                        }
-                                    </td>
-                                    <td>@promotionProductFileInfo.PromotionFileInfoData?.Id</td>
-                                    <td>@(promotionProductFileInfo.ProductImageId?.ToString() ?? "-")</td>
-                                    <td>
-                                        <input id="promotionProductFilesEditorValidFromInput-@i" type="date"
-                                            value="@validFromValueAsString" readonly />
-                                    </td>
-                                    <td>
-                                        <input id="promotionProductFilesEditorValidToInput-@i" type="date"
-                                            value="@validToValueAsString" readonly />
-                                    </td>
-                                    <td class="pe-3" style="max-width: 6em; max-height: 3em;">
-
-                                        @if (promotionProductFileInfo.PromotionFileInfoData is not null)
-                                        {
-                                            <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionProductFileInfo.PromotionFileInfoData.FileName)"
-                                                class="full-parent-width full-parent-height" />
-                                        }
-                                        else
-                                        {
-                                            <p>No File</p>
-                                        }
-                                    </td>
-                                    <td>
-                                        <button class="full-parent-width btn btn-light"
-                                            @onclick="() => ShowPromotionProductFileSingleEditorPopupAsync(promotionProductFileInfo)"
-                                            style="width: auto; display: flex; padding: 0.2em;">
-                                            <img src="/img/General/EditIcon.jpg" alt="Edit" style="height: 1em;" />
+                                        <button id="promotionFilesDisplayEditButton-@i" type="button"
+                                            class="btn btn-danger"
+                                            @onclick="() => DeletePromotionProductFile(promotionProductFileInfo)">
+                                            del
                                         </button>
                                     </td>
-
-									@if (ShouldDisplayDeleteButton)
-                                    {
-                                        <td>
-                                            <button id="promotionFilesDisplayEditButton-@i" type="button"
-                                                class="btn btn-danger"
-                                                @onclick="() => DeletePromotionProductFile(promotionProductFileInfo)">
-                                                del
-                                            </button>
-                                        </td>
-                                    }
-                                </tr>
-                            }
-                        </table>
-                    }
-                </div>
+                                }
+                            </tr>
+                        }
+                    </table>
+                }
             </div>
         </div>
     </ChildContent>

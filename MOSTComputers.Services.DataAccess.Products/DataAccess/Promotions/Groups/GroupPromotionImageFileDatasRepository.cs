@@ -19,7 +19,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Group
 internal sealed class GroupPromotionImageFileDatasRepository : IGroupPromotionImageFileDatasRepository
 {
     public GroupPromotionImageFileDatasRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

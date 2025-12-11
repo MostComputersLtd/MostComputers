@@ -22,14 +22,20 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages;
 internal sealed class ProductImageRepository : IProductImageRepository
 {
     public ProductImageRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
 
-    private const string _minimumImagesAllInsertId = "100000";
+    private const int _minimumImagesAllInsertId = 100000;
+    private const string _minimumImagesAllInsertIdString = "100000";
 
     private readonly IConnectionStringProvider _connectionStringProvider;
+
+    public int GetMinimumImagesAllInsertIdForLocalApplication()
+    {
+        return _minimumImagesAllInsertId;
+    }
 
     public async Task<List<IGrouping<int, ProductImageData>>> GetAllWithoutFileDataAsync()
     {
@@ -518,7 +524,7 @@ internal sealed class ProductImageRepository : IProductImageRepository
                 {AllImagesTable.ImageContentTypeColumnName},
                 {AllImagesTable.DateModifiedColumnName})
             OUTPUT INSERTED.{AllImagesTable.IdColumnName} INTO @InsertedIdTable
-            VALUES (ISNULL((SELECT MAX({AllImagesTable.IdColumnName}) + 1 FROM {AllImagesTableName}), {_minimumImagesAllInsertId}),
+            VALUES (ISNULL((SELECT MAX({AllImagesTable.IdColumnName}) + 1 FROM {AllImagesTableName}), {_minimumImagesAllInsertIdString}),
                 @productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
                 
             SELECT TOP 1 Id FROM @InsertedIdTable;

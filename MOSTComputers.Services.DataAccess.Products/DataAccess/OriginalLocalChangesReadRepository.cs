@@ -14,7 +14,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class OriginalLocalChangesReadRepository : IOriginalLocalChangesReadRepository
 {
     public OriginalLocalChangesReadRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

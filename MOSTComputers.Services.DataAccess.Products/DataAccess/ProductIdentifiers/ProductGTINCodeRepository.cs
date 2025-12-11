@@ -18,7 +18,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ProductIdentifie
 internal class ProductGTINCodeRepository : IProductGTINCodeRepository
 {
     public ProductGTINCodeRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

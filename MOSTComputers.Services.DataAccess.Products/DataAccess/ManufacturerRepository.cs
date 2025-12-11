@@ -15,7 +15,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class ManufacturerRepository : IManufacturerRepository
 {
     public ManufacturerRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

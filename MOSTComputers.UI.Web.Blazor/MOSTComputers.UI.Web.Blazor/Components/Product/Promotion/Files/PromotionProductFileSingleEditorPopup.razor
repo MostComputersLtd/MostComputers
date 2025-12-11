@@ -4,33 +4,33 @@
 <Popup IsVisible="IsVisible" IsVisibleChanged="OnVisibleChanged" PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
 
-        <div class="d-flex align-items-center justify-content-between full-parent-width">
+        <div class="promotion-product-file-single-editor-header">
 
-            <h5 class="popup-header-text me-3">Promotion Product File:</h5>
+            <h5 class="popup-header-text header-name-text">Promotion Product File:</h5>
 
             @if (PromotionProductFileInfoData.Id is not null)
             {
-                <h4 class="popup-header-text me-3">
+                <h4 class="popup-header-text header-product-id-text">
                     PrCID: @PromotionProductFileInfoData.Id
                 </h4>
             }
 
-            <div class="full-parent-height d-flex flex-row align-items-center ms-3">
+            <div class="header-modified-container">
 
                 @if (PromotionProductFileInfoData.CreateUserName is not null)
                 {
-                    <p class="mb-0">
+                    <p>
                         Created:
                         <span>@PromotionProductFileInfoData.CreateUserName</span>
-                        <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                        <span class="header-modified-date-text">
                             (@PromotionProductFileInfoData.CreateDate)
                         </span>
                     </p>
 
-                    <p class="ms-lg-2 mb-0">
+                    <p class="ms-lg-2">
                         Last Update:
                         <span>@PromotionProductFileInfoData.LastUpdateUserName</span>
-                        <span style="white-space: nowrap; color: darkgray; font-size: smaller;">
+                        <span class="header-modified-date-text">
                             (@PromotionProductFileInfoData.LastUpdateDate)
                         </span>
                     </p>
@@ -39,7 +39,7 @@
 
             @if (ShouldDisplaySaveButton)
             {
-                <div class="flex-grow-1 d-flex justify-content-end align-items-center">
+                <div class="save-button-container">
                     <button class="btn btn-primary" @onclick='OnSaveButtonClicked'>
                         @SaveButtonText
                     </button>
@@ -49,30 +49,30 @@
     </HeaderContent>
 
     <ChildContent>
-        <div class="container border-2 d-flex flex-column full-parent-width full-parent-height">
-            <div class="row flex-grow-1 md overflow-y-auto">
+        <div class="container promotion-product-file-single-editor-body">
+            <div class="row body-inputs-container">
                 <div class="col-12 col-md-6">
 
-                    <div class="mb-2">
-                        <label for="productPromotionFileSingleEditorActiveInput" class="me-2">Active:</label>
+                    <div class="basic-input-container">
+                        <label for="productPromotionFileSingleEditorActiveInput" class="basic-input-label">Active:</label>
                         <input id="productPromotionFileSingleEditorActiveInput" type="checkbox"
                             @bind="PromotionProductFileInfoData.Active" />
                     </div>
 
-                    <div class="mb-2">
-                        <label for="productPromotionFileSingleEditorValidFromInput" class="me-2">From:</label>
+                    <div class="basic-input-container">
+                        <label for="productPromotionFileSingleEditorValidFromInput" class="basic-input-label">From:</label>
                         <input id="productPromotionFileSingleEditorValidFromInput" type="date"
                             @bind="PromotionProductFileInfoData.ValidFrom" />
                     </div>
 
-                    <div class="mb-2">
-                        <label for="productPromotionFileSingleEditorValidToInput" class="me-2">To:</label>
+                    <div class="basic-input-container">
+                        <label for="productPromotionFileSingleEditorValidToInput" class="basic-input-label">To:</label>
                         <input id="productPromotionFileSingleEditorValidToInput" type="date"
                             @bind="PromotionProductFileInfoData.ValidTo" />
                     </div>
 
-                    <div class="mb-2">
-                        <label for="productPromotionFileSingleEditorShouldAddToImagesInput" class="me-2">Add to images:</label>
+                    <div class="basic-input-container">
+                        <label for="productPromotionFileSingleEditorShouldAddToImagesInput" class="basic-input-label">Add to images:</label>
 
                         @if (_canAddToImages)
                         {
@@ -86,33 +86,29 @@
                     </div>
                 </div>
 
-                <div class="col-12 col-md-6 d-flex flex-column" style="max-height: 100%;">
-                    <div class="d-flex flex-column" style="max-height: 100%;">
-                        <div class="full-parent-width mb-2 d-flex flex-row flex-wrap">
-                            <label for="promotionProductFilesValidOnInput" style="height: min-content; align-self: center;">Active on:</label>
-                            <input id="promotionProductFilesValidOnInput" type="date" class="ms-1 me-2" placeholder="Date"
-                                @bind="_validOnPromotionFileSearchDate"/>
+                <div class="col-12 col-md-6 file-select-container">
+                    <div class="file-search-container">
+                        <label for="promotionProductFilesValidOnInput" class="file-search-active-on-label">Active on:</label>
+                        <input id="promotionProductFilesValidOnInput" type="date" class="file-search-active-on-input" placeholder="Date"
+                            @bind="_validOnPromotionFileSearchDate"/>
 
-                            <input id="promotionProductFilesSearchInput" type="text" class="flex-shrink-0 flex-grow-1"
-                                placeholder="Search..." @bind="_promotionFileSearchString" />
+                        <input id="promotionProductFilesSearchInput" type="text" class="file-search-text-input"
+                            placeholder="Search..." @bind="_promotionFileSearchString" />
 
-                            <div style="flex-grow: 1; display: flex; justify-content: end;">
+                        <div class="file-search-button-container">
 
-                                <button id="promotionProductFilesSearchButton" type="button" class="btn btn-info ms-4"
-                                    @onclick='SearchPromotionFiles'>
-                                    Search
-                                </button>
-                            </div>
-
+                            <button id="promotionProductFilesSearchButton" type="button" class="btn btn-info"
+                                @onclick='SearchPromotionFiles'>
+                                Search
+                            </button>
                         </div>
+                    </div>
 
-                        <div id="promotionProductFilesPromotionFilesContainer"
-                            class="full-parent-width flex-grow-1 p-0 m-0 overflow-y-auto">
+                    <div id="promotionProductFilesPromotionFilesContainer" class="file-search-list-container">
 
-                            <PromotionFileList PromotionFiles="_searchedPromotionFiles"
-                                ItemSelectionMode="PromotionFileList.SelectionMode.Single"
-                                SelectionChanged="OnPromotionFileListSelectionChanged" />
-                        </div>
+                        <PromotionFileList PromotionFiles="_searchedPromotionFiles"
+                            ItemSelectionMode="PromotionFileList.SelectionMode.Single"
+                            SelectionChanged="OnPromotionFileListSelectionChanged" />
                     </div>
                 </div>
             </div>

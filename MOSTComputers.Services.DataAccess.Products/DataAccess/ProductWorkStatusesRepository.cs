@@ -10,6 +10,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
 using OneOf;
 using System.Data;
+using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.QueryUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils.ProductWorkStatusesTable;
@@ -18,7 +19,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesRepository
 {
     public ProductWorkStatusesRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -184,7 +185,9 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        return await dbConnection.QueryFirstOrDefaultAsync<ProductWorkStatuses>(getByIdQuery, parameters, commandType: CommandType.Text);
+        ProductWorkStatuses? data = await dbConnection.QueryFirstOrDefaultAsync<ProductWorkStatuses>(getByIdQuery, parameters, commandType: CommandType.Text);
+
+        return data;
     }
 
     public async Task<ProductWorkStatuses?> GetByProductIdAsync(int productId)
@@ -208,7 +211,9 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        return await dbConnection.QueryFirstOrDefaultAsync<ProductWorkStatuses>(getAllByProductIdQuery, parameters, commandType: CommandType.Text);
+        ProductWorkStatuses? data = await dbConnection.QueryFirstOrDefaultAsync<ProductWorkStatuses>(getAllByProductIdQuery, parameters, commandType: CommandType.Text);
+
+        return data;
     }
 
     public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertIfItDoesntExistAsync(ProductWorkStatusesCreateRequest createRequest)

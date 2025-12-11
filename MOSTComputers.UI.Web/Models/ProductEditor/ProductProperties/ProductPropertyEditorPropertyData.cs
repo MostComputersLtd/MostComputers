@@ -8,6 +8,5 @@ public sealed class ProductPropertyEditorPropertyData
     public ProductCharacteristic? ProductCharacteristic { get; set; }
     public int? DisplayOrder { get; set; }
     public string? Value { get; set; }
-    public XMLPlacementEnum? XmlPlacement { get; set; }
     public List<ProductCharacteristic>? RemainingCharacteristics { get; init; }
 }

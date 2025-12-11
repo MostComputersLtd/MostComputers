@@ -727,7 +727,6 @@ public class TEMP_TestsModel : PageModel
         {
             ProductCharacteristicId = propertyRelationship.ProductCharacteristicId.Value,
             ProductId = productId,
-            XmlPlacement = XMLPlacementEnum.InBottomInThePropertiesList,
             Value = htmlProperty.Value,
         };
 
@@ -756,7 +755,6 @@ public class TEMP_TestsModel : PageModel
             ProductId = productId,
             ProductCharacteristicId = defaultLinkCharacteristic.Id,
             Value = vendorUrl,
-            XmlPlacement = null,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> createLinkResult

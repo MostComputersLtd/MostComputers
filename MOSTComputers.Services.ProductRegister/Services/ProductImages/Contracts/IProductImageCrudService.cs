@@ -37,4 +37,5 @@ internal interface IProductImageCrudService
     Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId);
     Task<bool> DeleteInAllImagesByIdAsync(int id);
     Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
+    int GetMinimumImagesAllInsertIdForLocalApplication();
 }

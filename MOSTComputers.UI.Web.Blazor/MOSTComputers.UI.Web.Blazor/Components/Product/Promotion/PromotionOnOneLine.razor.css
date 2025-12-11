@@ -1,0 +1,23 @@
+﻿.promotion-on-one-line {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0em 1em;
+}
+
+.promotion-text {
+    width: max-content;
+}
+
+.promotion-required-product-ids-list {
+    width: min-content;
+    display: inline-flex;
+    list-style: none;
+}
+
+.promotion-required-product-id-list-item {
+    margin: 0em 0.5em;
+}
+
+.promotion-required-product-id-text {
+    width: min-content;
+}

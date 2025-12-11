@@ -12,6 +12,5 @@ internal sealed class ProductPropertyEntityMap : EntityMap<ProductProperty>
         Map(x => x.DisplayOrder).ToColumn(DisplayOrderColumnAlias);
         Map(x => x.Characteristic).ToColumn(CharacteristicColumnName);
         Map(x => x.Value).ToColumn(ValueColumnName);
-        Map(x => x.XmlPlacement).ToColumn(XmlPlacementColumnName);
     }
 }

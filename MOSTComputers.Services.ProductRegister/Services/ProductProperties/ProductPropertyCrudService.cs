@@ -111,7 +111,6 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
             Name = matchingCharacteristic!.Name,
             DisplayOrder = createRequest.CustomDisplayOrder ?? matchingCharacteristic.DisplayOrder,
             Value = createRequest.Value,
-            XmlPlacement = createRequest.XmlPlacement,
         };
 
         return await _productPropertyRepository.InsertAsync(createRequestInternal);
@@ -162,7 +161,6 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
             Name = matchingCharacteristic!.Name,
             DisplayOrder = upsertRequest.CustomDisplayOrder ?? matchingCharacteristic.DisplayOrder,
             Value = upsertRequest.Value,
-            XmlPlacement = upsertRequest.XmlPlacement,
         };
 
         OneOf<Success, UnexpectedFailureResult> result = await _productPropertyRepository.UpsertAsync(upsertRequestInternal);
@@ -199,63 +197,11 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
             ProductCharacteristicId = newCharacteristicId,
             Value = currentProperty.Value,
             CustomDisplayOrder = currentProperty.DisplayOrder,
-            XmlPlacement = currentProperty.XmlPlacement,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> propertyInsertResult = await InsertAsync(propertyInsertRequest);
 
         return propertyInsertResult.Map<Success, NotFound, ValidationResult, UnexpectedFailureResult>();
-    }
-
-    private static ValidationResult CheckIfProductExistsAndHasValidCategory(Product? product)
-    {
-        ValidationResult productExistsValidationResult = new();
-
-        if (product is null)
-        {
-            productExistsValidationResult.Errors.Add(new(nameof(ServiceProductPropertyByCharacteristicNameCreateRequest.ProductId),
-                "Id does not correspond to any known product"));
-
-            return productExistsValidationResult;
-        }
-
-        if (product.CategoryId is null)
-        {
-            productExistsValidationResult.Errors.Add(new(nameof(ServiceProductPropertyByCharacteristicNameCreateRequest.ProductId),
-                "Product is not a part of any known category"));
-
-            return productExistsValidationResult;
-        }
-
-        return productExistsValidationResult;
-    }
-
-    private static ValidationResult CheckIfCorrectCharacteristicForPropertyExists(int productCategoryId, ProductCharacteristic? matchingCharacteristic)
-    {
-        ValidationResult noMatchingCharacteristicValidationResult = new();
-
-        if (matchingCharacteristic is null)
-        {
-            ValidationFailure validationFailure = new(nameof(ServiceProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId),
-                "No characteristic was found with the given id");
-
-            noMatchingCharacteristicValidationResult.Errors.Add(validationFailure);
-
-            return noMatchingCharacteristicValidationResult;
-        }
-
-        if (matchingCharacteristic.CategoryId != productCategoryId
-            && matchingCharacteristic.CategoryId != _sharedProductCategoryId)
-        {
-            ValidationFailure validationFailure = new(nameof(ServiceProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId),
-                "Characteristic is not from the correct category");
-
-            noMatchingCharacteristicValidationResult.Errors.Add(validationFailure);
-
-            return noMatchingCharacteristicValidationResult;
-        }
-
-        return noMatchingCharacteristicValidationResult;
     }
 
     public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertAllProductPropertiesAsync(
@@ -310,8 +256,7 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
 
             if (existingProductProperty is not null
                 && existingProductProperty.DisplayOrder == (productPropUpsertRequest.CustomDisplayOrder ?? productCharacteristic.DisplayOrder)
-                && existingProductProperty.Value == productPropUpsertRequest.Value
-                && existingProductProperty.XmlPlacement == productPropUpsertRequest.XmlPlacement)
+                && existingProductProperty.Value == productPropUpsertRequest.Value)
             {
                 continue;
             }
@@ -327,7 +272,6 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
                 ProductCharacteristicId = productPropUpsertRequest.ProductCharacteristicId,
                 CustomDisplayOrder = productPropUpsertRequest.CustomDisplayOrder,
                 Value = productPropUpsertRequest.Value,
-                XmlPlacement = productPropUpsertRequest.XmlPlacement,
             };
 
             ValidationResult validationResult = ValidateDefault(_updateRequestValidator, propUpsertRequest);
@@ -376,5 +320,56 @@ internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
         if (characteristicId <= 0) return false;
 
         return await _productPropertyRepository.DeleteAllForCharacteristicAsync(characteristicId);
+    }
+
+    private static ValidationResult CheckIfProductExistsAndHasValidCategory(Product? product)
+    {
+        ValidationResult productExistsValidationResult = new();
+
+        if (product is null)
+        {
+            productExistsValidationResult.Errors.Add(new(nameof(ServiceProductPropertyByCharacteristicNameCreateRequest.ProductId),
+                "Id does not correspond to any known product"));
+
+            return productExistsValidationResult;
+        }
+
+        if (product.CategoryId is null)
+        {
+            productExistsValidationResult.Errors.Add(new(nameof(ServiceProductPropertyByCharacteristicNameCreateRequest.ProductId),
+                "Product is not a part of any known category"));
+
+            return productExistsValidationResult;
+        }
+
+        return productExistsValidationResult;
+    }
+
+    private static ValidationResult CheckIfCorrectCharacteristicForPropertyExists(int productCategoryId, ProductCharacteristic? matchingCharacteristic)
+    {
+        ValidationResult noMatchingCharacteristicValidationResult = new();
+
+        if (matchingCharacteristic is null)
+        {
+            ValidationFailure validationFailure = new(nameof(ServiceProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId),
+                "No characteristic was found with the given id");
+
+            noMatchingCharacteristicValidationResult.Errors.Add(validationFailure);
+
+            return noMatchingCharacteristicValidationResult;
+        }
+
+        if (matchingCharacteristic.CategoryId != productCategoryId
+            && matchingCharacteristic.CategoryId != _sharedProductCategoryId)
+        {
+            ValidationFailure validationFailure = new(nameof(ServiceProductPropertyByCharacteristicIdCreateRequest.ProductCharacteristicId),
+                "Characteristic is not from the correct category");
+
+            noMatchingCharacteristicValidationResult.Errors.Add(validationFailure);
+
+            return noMatchingCharacteristicValidationResult;
+        }
+
+        return noMatchingCharacteristicValidationResult;
     }
 }

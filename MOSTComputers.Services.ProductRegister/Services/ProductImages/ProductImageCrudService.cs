@@ -50,6 +50,11 @@ internal class ProductImageCrudService : IProductImageCrudService
     private readonly IProductImageRepository _productImageRepository;
     private readonly ProductMapper _productMapper;
 
+    public int GetMinimumImagesAllInsertIdForLocalApplication()
+    {
+        return _productImageRepository.GetMinimumImagesAllInsertIdForLocalApplication();
+    }
+
     public async Task<List<IGrouping<int, ProductImageData>>> GetAllWithoutFileDataAsync()
     {
         return await _productImageRepository.GetAllWithoutFileDataAsync();

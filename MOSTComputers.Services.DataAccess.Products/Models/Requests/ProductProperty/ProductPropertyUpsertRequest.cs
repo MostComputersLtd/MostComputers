@@ -8,5 +8,4 @@ public sealed class ProductPropertyUpsertRequest
     public string? Name { get; set; }
     public int? DisplayOrder { get; set; }
     public string? Value { get; set; }
-    public XMLPlacementEnum? XmlPlacement { get; set; }
 }

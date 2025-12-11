@@ -11,6 +11,7 @@ using OneOf;
 using OneOf.Types;
 using System.Data;
 using System.Data.Common;
+using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils.ProductCharacteristicAndImageHtmlRelationsTable;
 
@@ -18,7 +19,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ExternalXmlImpor
 public sealed class ProductCharacteristicAndImageHtmlRelationRepository
 {
     public ProductCharacteristicAndImageHtmlRelationRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -32,10 +33,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
             SELECT * FROM {ProductCharacteristicAndImageHtmlRelationsTableName}
             """;
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndImageHtmlRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndImageHtmlRelation>(
             getAllQuery, new { }, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -50,10 +55,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
 
         var parameters = new { categoryId = categoryId };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndImageHtmlRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndImageHtmlRelation>(
             getAllWithSameCategoryIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -69,10 +78,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
 
         var parameters = new { categoryIds = categoryIds };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndImageHtmlRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndImageHtmlRelation>(
             getAllWithSameCategoryIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -92,10 +105,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
             Name = xmlName
         };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndImageHtmlRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndImageHtmlRelation>(
             getAllWithSameCategoryIdAndXmlNameQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -110,10 +127,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
 
         var parameters = new { characteristicId = characteristicId };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         IEnumerable<ProductCharacteristicAndImageHtmlRelation> data = await dbConnection.QueryAsync<ProductCharacteristicAndImageHtmlRelation>(
             getByCharacteristicIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data.AsList();
     }
@@ -128,10 +149,14 @@ public sealed class ProductCharacteristicAndImageHtmlRelationRepository
 
         var parameters = new { id = id };
 
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
         ProductCharacteristicAndImageHtmlRelation? data = await dbConnection.QueryFirstOrDefaultAsync<ProductCharacteristicAndImageHtmlRelation>(
             getByIdQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
 
         return data;
     }

@@ -428,23 +428,6 @@ internal static class SelectListItemUtils
         return currencySelectListItems;
     }
 
-    public static List<SelectListItem> GetXmlPlacementSelectItems(XMLPlacementEnum? xmlPlacement)
-    {
-        List<SelectListItem> output = new()
-        {
-            new("At the top", ((int)XMLPlacementEnum.AtTheTop).ToString(), xmlPlacement == XMLPlacementEnum.AtTheTop),
-            new("At the bottom", ((int)XMLPlacementEnum.InBottomInThePropertiesList).ToString(), xmlPlacement == XMLPlacementEnum.InBottomInThePropertiesList),
-            new("As a site url", ((int)XMLPlacementEnum.AsSiteUrl).ToString(), xmlPlacement == XMLPlacementEnum.AsSiteUrl),
-        };
-
-        if (xmlPlacement == null)
-        {
-            output.Add(new("-- Please select a status for the product --", "-1", true, true));
-        }
-
-        return output;
-    }
-
     public static List<SelectListItem> GetCharacteristicSelectListItems(
         IEnumerable<ProductCharacteristic> options,
         int? selectedId = null,

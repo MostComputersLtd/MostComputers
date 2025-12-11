@@ -59,7 +59,6 @@ public class PropertyEditorCharacteristicsService : IPropertyEditorCharacteristi
                 ProductCharacteristic = productCharacteristic,
                 Value = property.Value,
                 DisplayOrder = property.DisplayOrder,
-                XmlPlacement = property.XmlPlacement,
                 RemainingCharacteristics = remainingCharacteristics
             };
 
@@ -111,7 +110,6 @@ public class PropertyEditorCharacteristicsService : IPropertyEditorCharacteristi
                 ProductCharacteristic = existingCharacteristic,
                 DisplayOrder = existingProperty.DisplayOrder,
                 Value = existingProperty.Value,
-                XmlPlacement = existingProperty.XmlPlacement,
                 RemainingCharacteristics = await GetRemainingCharacteristicsForPropertyAsync(product.Id, characteristicId, relatedCategoryIds, productCharacteristicTypes),
             };
         }

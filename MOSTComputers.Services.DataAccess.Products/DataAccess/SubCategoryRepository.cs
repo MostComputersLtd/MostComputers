@@ -16,7 +16,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess;
 internal sealed class SubCategoryRepository : ISubCategoryRepository
 {
     public SubCategoryRepository(
-        [FromKeyedServices(ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

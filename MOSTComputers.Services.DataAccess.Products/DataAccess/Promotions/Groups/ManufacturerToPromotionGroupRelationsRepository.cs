@@ -18,7 +18,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Group
 internal sealed class ManufacturerToPromotionGroupRelationsRepository : IManufacturerToPromotionGroupRelationsRepository
 {
     public ManufacturerToPromotionGroupRelationsRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

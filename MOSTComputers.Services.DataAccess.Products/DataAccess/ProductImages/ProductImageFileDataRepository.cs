@@ -20,7 +20,7 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages;
 internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepository
 {
     public ProductImageFileDataRepository(
-        [FromKeyedServices(ConfigureServices.ConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -39,7 +39,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         IEnumerable<ProductImageFileData> data = await dbConnection.QueryAsync<ProductImageFileData>(
             getAllQuery, new { }, commandType: CommandType.Text);
-            
+           
         return data.AsList();
     }
     
@@ -82,7 +82,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            productId
+            productId = productId,
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
@@ -103,13 +103,15 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            id
+            id = id,
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        return await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
+        ProductImageFileData? data = await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
             getByIdQuery, parameters, commandType: CommandType.Text);
+
+        return data;
     }
 
     public async Task<ProductImageFileData?> GetByProductIdAndImageIdAsync(int productId, int imageId)
@@ -123,14 +125,16 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            productId,
-            imageId
+            productId = productId,
+            imageId = imageId
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        return await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
+        ProductImageFileData? data = await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
             getByProductIdAndImageIdQuery, parameters, commandType: CommandType.Text);
+
+        return data;
     }
 
     public async Task<ProductImageFileData?> GetByFileNameAsync(string fileName)
@@ -143,13 +147,15 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            fileName
+            fileName = fileName
         };
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        return await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
+        ProductImageFileData? data = await dbConnection.QueryFirstOrDefaultAsync<ProductImageFileData>(
             getAllForProductQuery, parameters, commandType: CommandType.Text);
+
+        return data;
     }
 
     public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ProductImageFileNameInfoCreateRequest createRequest)
@@ -197,14 +203,14 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
         {
             productId = createRequest.ProductId,
             imageId = createRequest.ImageId,
-            createRequest.FileName,
-            createRequest.CustomDisplayOrder,
-            createRequest.Active,
+            FileName = createRequest.FileName,
+            CustomDisplayOrder = createRequest.CustomDisplayOrder,
+            Active = createRequest.Active,
 
-            createRequest.CreateUserName,
-            createRequest.CreateDate,
-            createRequest.LastUpdateUserName,
-            createRequest.LastUpdateDate,
+            CreateUserName = createRequest.CreateUserName,
+            CreateDate = createRequest.CreateDate,
+            LastUpdateUserName = createRequest.LastUpdateUserName,
+            LastUpdateDate = createRequest.LastUpdateDate,
         };
 
         using TransactionScope transactionScope = new(TransactionScopeAsyncFlowOption.Enabled);
@@ -284,11 +290,11 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
             {
                 id = updateRequest.Id,
                 imageId = updateRequest.ImageId,
-                updateRequest.FileName,
-                updateRequest.Active,
+                FileName = updateRequest.FileName,
+                Active = updateRequest.Active,
 
-                updateRequest.LastUpdateUserName,
-                updateRequest.LastUpdateDate,
+                LastUpdateUserName = updateRequest.LastUpdateUserName,
+                LastUpdateDate = updateRequest.LastUpdateDate,
             };
 
             using SqlConnection dbConnectionInner = new(_connectionStringProvider.ConnectionString);
@@ -305,12 +311,12 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
         {
             id = updateRequest.Id,
             imageId = updateRequest.ImageId,
-            updateRequest.FileName,
-            updateRequest.Active,
-            updateRequest.NewDisplayOrder,
+            FileName = updateRequest.FileName,
+            Active = updateRequest.Active,
+            NewDisplayOrder = updateRequest.NewDisplayOrder,
 
-            updateRequest.LastUpdateUserName,
-            updateRequest.LastUpdateDate,
+            LastUpdateUserName = updateRequest.LastUpdateUserName,
+            LastUpdateDate = updateRequest.LastUpdateDate,
         };
 
         using TransactionScope transactionScope = new(TransactionScopeAsyncFlowOption.Enabled);
@@ -336,7 +342,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            productId
+            productId = productId,
         };
 
         try
@@ -376,7 +382,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
 
         var parameters = new
         {
-            id
+            id = id,
         };
 
         try

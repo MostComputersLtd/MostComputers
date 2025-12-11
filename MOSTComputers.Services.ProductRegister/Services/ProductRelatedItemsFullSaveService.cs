@@ -2,6 +2,7 @@
 using FluentValidation;
 using FluentValidation.Results;
 using FluentValidation.TestHelper;
+using Microsoft.Extensions.Logging;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
@@ -22,11 +23,13 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFil
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
 using OneOf;
 using OneOf.Types;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Transactions;
 using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils;
@@ -36,9 +39,10 @@ using static MOSTComputers.Utils.Files.ContentTypeUtils;
 using static MOSTComputers.Utils.Files.FileExtensionUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromotionFileSaveService
+internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSaveService
 {
-    public ProductImageAndPromotionFileSaveService(
+    public ProductRelatedItemsFullSaveService(
+        IProductPropertyCrudService productPropertyCrudService,
         IProductImageCrudService productImageCrudService,
         IProductImageAndFileService productImageAndFileService,
         IProductImageFileService productImageFileService,
@@ -53,8 +57,10 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
         IValidator<ServiceProductImageUpdateRequest>? serviceProductImageUpdateRequestValidator = null,
         IValidator<ProductImageUpsertRequest>? productImageUpsertRequestValidator = null,
         IValidator<ServicePromotionProductFileInfoCreateRequest>? servicePromotionProductFileInfoCreateRequestValidator = null,
-        IValidator<ServicePromotionProductFileInfoUpdateRequest>? servicePromotionProductFileInfoUpdateRequestValidator = null)
+        IValidator<ServicePromotionProductFileInfoUpdateRequest>? servicePromotionProductFileInfoUpdateRequestValidator = null,
+        ILogger<ProductRelatedItemsFullSaveService>? logger = null)
     {
+        _productPropertyCrudService = productPropertyCrudService;
         _productImageCrudService = productImageCrudService;
         _productImageAndFileService = productImageAndFileService;
         _productImageFileService = productImageFileService;
@@ -70,6 +76,7 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
         _productImageUpsertRequestValidator = productImageUpsertRequestValidator;
         _servicePromotionProductFileInfoCreateRequestValidator = servicePromotionProductFileInfoCreateRequestValidator;
         _servicePromotionProductFileInfoUpdateRequestValidator = servicePromotionProductFileInfoUpdateRequestValidator;
+        _logger = logger;
     }
 
     private const string _invalidProductIdErrorMessage = "Product id does not correspond to any known product id";
@@ -85,6 +92,8 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
     private const string _invalidPromotionProductFileIdErrorMessage = "Promotion Product File id does not correspond to any known image id";
     private const string _invalidFileTypeErrorMessage = "File type not supported";
 
+    private const string _unsupportedIdForDeleteErrorMessage = "Currently, we only support removing the images that were initially created from this application (to avoid conflicts)";
+    private readonly IProductPropertyCrudService _productPropertyCrudService;
     private readonly IProductImageCrudService _productImageCrudService;
     private readonly IProductImageAndFileService _productImageAndFileService;
     private readonly IProductImageFileService _productImageFileService;
@@ -100,15 +109,16 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
     private readonly IValidator<ProductImageUpsertRequest>? _productImageUpsertRequestValidator;
     private readonly IValidator<ServicePromotionProductFileInfoCreateRequest>? _servicePromotionProductFileInfoCreateRequestValidator;
     private readonly IValidator<ServicePromotionProductFileInfoUpdateRequest>? _servicePromotionProductFileInfoUpdateRequestValidator;
+    private readonly ILogger<ProductRelatedItemsFullSaveService>? _logger;
 
     private sealed class ImageUpsertDataInUpsert
     {
         public required ProductImageAndPromotionFileUpsertRequest UpsertRequest { get; init; }
-        public required OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest> ImageCrudOptions { get; set; }
+        public OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest, No> ImageCrudOptions { get; set; }
     }
 
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertAllImagesAndFilesForProductAsync(ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+        UpsertAllImagesAndFilesForProductAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
         Product? product = await _productRepository.GetByIdAsync(updateAllRequest.ProductId);
 
@@ -150,7 +160,7 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
     }
 
     private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertAllImagesAndFilesForProductInternalAsync(ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+        UpsertAllImagesAndFilesForProductInternalAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
         int productId = updateAllRequest.ProductId;
         string upsertUserName = updateAllRequest.UpsertUserName;
@@ -159,9 +169,9 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
         List<ProductImageFileData> oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
         List<PromotionProductFileInfo> oldPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
 
-        updateAllRequest.Requests = OrderItemsWithDisplayOrders(updateAllRequest.Requests, oldPromotionProductFileInfos);
+        updateAllRequest.ImageRequests = OrderItemsWithDisplayOrders(updateAllRequest.ImageRequests, oldPromotionProductFileInfos);
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
         {
             OneOf<PromotionProductFileInfo?, ValidationResult> getExistingPromotionFileResult
                 = FindExisting(oldPromotionProductFileInfos, upsertRequest);
@@ -186,9 +196,9 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
             OneOf<ProductImage?, ValidationResult, UnexpectedFailureResult> getExistingImageResult
                 = FindExisting(oldProductImages, upsertRequest, existingPromotionFile);
 
-            if (!getExistingImageFileResult.IsT0)
+            if (!getExistingImageResult.IsT0)
             {
-                return getExistingImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                return getExistingImageResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                     productImageFileNameInfo => new UnexpectedFailureResult(),
                     validationResult => validationResult,
                     unexpectedFailureResult => unexpectedFailureResult);
@@ -212,13 +222,23 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
             }
         }
 
+        foreach (ProductImage oldProductImage in oldProductImages)
+        {
+            if (oldProductImage.Id < _productImageCrudService.GetMinimumImagesAllInsertIdForLocalApplication())
+            {
+                ValidationFailure validationFailure = new(nameof(ProductImage.Id), _unsupportedIdForDeleteErrorMessage);
+
+                return new ValidationResult([validationFailure]);
+            }
+        }
+
         //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
         List<ImageUpsertDataInUpsert> imageUpsertDataInUpserts = new();
 
         ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
             {
@@ -404,62 +424,72 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
             }
         }
 
-        foreach (ProductImage oldImageToBeRemoved in oldProductImages)
-        {
-            bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
-
-            if (!imageDeleteResult) return new UnexpectedFailureResult();
-        }
-
         Dictionary<ProductImageAndPromotionFileUpsertRequest, int> imageIdsForRequests = new();
 
-        foreach (ImageUpsertDataInUpsert imageUpsertData in imageUpsertDataInUpserts)
+        using (TransactionScope imagesTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
         {
-            OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest> imageCrudOptions
-                = imageUpsertData.ImageCrudOptions;
-
-            if (imageCrudOptions.IsT0)
+            foreach (ProductImage oldImageToBeRemoved in oldProductImages)
             {
-                OneOf<int, ValidationResult, UnexpectedFailureResult> imageCreateResult
-                    = await _productImageCrudService.InsertInAllImagesAsync(imageCrudOptions.AsT0);
+                bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
 
-                if (!imageCreateResult.IsT0)
+                if (!imageDeleteResult)
                 {
-                    return imageCreateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                        id => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
-                }
+                    UnexpectedFailureResult result = new();
 
-                imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageCreateResult.AsT0);
-            }
-            else if (imageCrudOptions.IsT1)
-            {
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
-                    = await _productImageCrudService.UpdateInAllImagesAsync(imageCrudOptions.AsT1);
-
-                if (!imageUpdateResult.IsT0)
-                {
-                    return imageUpdateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                        success => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
+                    return LogUnexpectedFailureResult(result, productId, $"deleting image (ID: {oldImageToBeRemoved.Id})");
                 }
             }
-            else if (imageCrudOptions.IsT2)
+
+            foreach (ImageUpsertDataInUpsert imageUpsertData in imageUpsertDataInUpserts)
             {
-                OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await _productImageCrudService.UpsertInAllImagesAsync(imageCrudOptions.AsT2);
+                OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest, No> imageCrudOptions
+                    = imageUpsertData.ImageCrudOptions;
 
-                if (!imageUpsertResult.IsT0)
+                if (imageCrudOptions.IsT0)
                 {
-                    return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                        id => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
-                }
+                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageCreateResult
+                        = await _productImageCrudService.InsertInAllImagesAsync(imageCrudOptions.AsT0);
 
-                imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageUpsertResult.AsT0);
+                    if (!imageCreateResult.IsT0)
+                    {
+                        return imageCreateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            id => new UnexpectedFailureResult(),
+                            validationResult => LogValidationResult(validationResult, productId, "creating image"),
+                            unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "creating image"));
+                    }
+
+                    imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageCreateResult.AsT0);
+                }
+                else if (imageCrudOptions.IsT1)
+                {
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
+                        = await _productImageCrudService.UpdateInAllImagesAsync(imageCrudOptions.AsT1);
+
+                    if (!imageUpdateResult.IsT0)
+                    {
+                        return imageUpdateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            success => new UnexpectedFailureResult(),
+                            validationResult => LogValidationResult(validationResult, productId, "updating image"),
+                            unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "updating image"));
+                    }
+                }
+                else if (imageCrudOptions.IsT2)
+                {
+                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await _productImageCrudService.UpsertInAllImagesAsync(imageCrudOptions.AsT2);
+
+                    if (!imageUpsertResult.IsT0)
+                    {
+                        return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            id => new UnexpectedFailureResult(),
+                            validationResult => LogValidationResult(validationResult, productId, "upserting image"),
+                            unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "upserting image"));
+                    }
+
+                    imageIdsForRequests.Add(imageUpsertData.UpsertRequest, imageUpsertResult.AsT0);
+                }
             }
+
+            imagesTransactionScope.Complete();
         }
 
         //if (productFirstImageUpsertRequest is not null)
@@ -484,13 +514,20 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
         //}
 
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+        //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        using TransactionScope transactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
         foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in oldPromotionProductFileInfos)
         {
             bool promotionProductFileDeleteResult = await _promotionProductFileInfoService.DeleteAsync(oldPromotionProductFileToBeRemoved.Id);
 
-            if (!promotionProductFileDeleteResult) return new UnexpectedFailureResult();
+            if (!promotionProductFileDeleteResult)
+            {
+                UnexpectedFailureResult result = new();
+
+                return LogUnexpectedFailureResult(result, productId, $"deleting promotion product file (ID: {oldPromotionProductFileToBeRemoved.Id})");
+            }
         }
 
         foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
@@ -498,31 +535,45 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
             OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> imageFileDeleteResult
                 = await _productImageFileService.DeleteFileAsync(oldImageFileToBeRemoved.Id, upsertUserName);
 
-            if (!imageFileDeleteResult.IsT0) return new UnexpectedFailureResult();
+            if (!imageFileDeleteResult.IsT0)
+            {
+                UnexpectedFailureResult result = new();
+
+                return LogUnexpectedFailureResult(result, productId, $"deleting product image file (ID: {oldImageFileToBeRemoved.Id})");
+            }
         }
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
             {
                 ProductImageWithFileForProductUpsertRequest request = upsertRequest.Request.AsT0;
+
+                if (request.FileUpsertRequest is null) continue;
 
                 int imageId = imageIdsForRequests[upsertRequest];
 
                 string fileExtensionWithDot = Path.GetExtension(request.FileExtension);
 
                 OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertFileResult
-                    = await UpsertImageFileForImageAsync(productId, imageId, request.ImageData, true, null, fileExtensionWithDot, upsertUserName);
+                    = await UpsertImageFileForImageAsync(
+                        productId,
+                        imageId,
+                        request.ImageData,
+                        request.FileUpsertRequest.Active,
+                        request.FileUpsertRequest.CustomDisplayOrder,
+                        fileExtensionWithDot,
+                        upsertUserName);
 
                 if (!upsertFileResult.IsT0)
                 {
                     return upsertFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                         success => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        fileSaveFailureResult => fileSaveFailureResult,
-                        fileDoesntExistResult => fileDoesntExistResult,
-                        fileAlreadyExistsResult => fileAlreadyExistsResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
+                        validationResult => LogValidationResult(validationResult, productId, "upserting image file"),
+                        fileSaveFailureResult => LogFileSaveFailureResult(fileSaveFailureResult, productId, "upserting image file"),
+                        fileDoesntExistResult => LogFileDoesntExistResult(fileDoesntExistResult, productId, "upserting image file"),
+                        fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "upserting image file"),
+                        unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "upserting image file"));
                 }
             }
             else if (upsertRequest.Request.IsT1)
@@ -533,8 +584,8 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                 {
                     ProductId = productId,
                     ImageId = null,
-                    Active = false,
-                    CustomDisplayOrder = null,
+                    Active = request.Active,
+                    CustomDisplayOrder = request.CustomDisplayOrder,
                     FileData = request.FileData,
                     CreateUserName = upsertUserName,
                 };
@@ -546,10 +597,10 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                 {
                     return createFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                         success => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        fileSaveFailureResult => fileSaveFailureResult,
-                        fileAlreadyExistsResult => fileAlreadyExistsResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
+                        validationResult => LogValidationResult(validationResult, productId, "creating image file"),
+                        fileSaveFailureResult => LogFileSaveFailureResult(fileSaveFailureResult, productId, "creating image file"),
+                        fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "creating image file"),
+                        unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "creating image file"));
                 }
             }
             else if (upsertRequest.Request.IsT2)
@@ -583,7 +634,18 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                 OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateFileResult
                     = await _productImageFileService.UpdateFileAsync(productImageFileUpdateRequest);
 
-                if (!updateFileResult.IsT0) return updateFileResult;
+                if (!updateFileResult.IsT0)
+                {
+                    updateFileResult.Switch(
+                        success => { },
+                        validationResult => LogValidationResult(validationResult, productId, "updating image file"),
+                        fileSaveFailureResult => LogFileSaveFailureResult(fileSaveFailureResult, productId, "updating image file"),
+                        fileDoesntExistResult => LogFileDoesntExistResult(fileDoesntExistResult, productId, "updating image file"),
+                        fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "updating image file"),
+                        unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "updating image file"));
+
+                    return updateFileResult;
+                }
             }
             else
             {
@@ -633,8 +695,8 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                     {
                         createPromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                             id => new UnexpectedFailureResult(),
-                            validationResult => validationResult,
-                            unexpectedFailureResult => unexpectedFailureResult);
+                            validationResult => LogValidationResult(validationResult, productId, "creating promotion product file"),
+                            unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "creating promotion product file"));
                     }
 
                     if (request.UpsertInProductImagesRequest is null) continue;
@@ -656,7 +718,7 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                             FileName = imageFileName,
                             Data = fileDataForInsert,
                         },
-                        Active = true,
+                        Active = request.Active,
                         CustomDisplayOrder = null,
                         CreateUserName = upsertUserName,
                     };
@@ -668,10 +730,10 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                     {
                         return createImageFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                             success => new UnexpectedFailureResult(),
-                            validationResult => validationResult,
-                            fileSaveFailureResult => fileSaveFailureResult,
-                            fileAlreadyExistsResult => fileAlreadyExistsResult,
-                            unexpectedFailureResult => unexpectedFailureResult);
+                            validationResult => LogValidationResult(validationResult, productId, "creating image file"),
+                            fileSaveFailureResult => LogFileSaveFailureResult(fileSaveFailureResult, productId, "creating image file"),
+                            fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "creating image file"),
+                            unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "creating image file"));
                     }
 
                     continue;
@@ -695,8 +757,13 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                 {
                     return updatePromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                         success => success,
-                        notFound => new UnexpectedFailureResult(),
-                        validationResult => validationResult);
+                        notFound =>
+                        {
+                            LogNotFound(notFound, promotionProductFileInfoUpdateRequest.Id.ToString(), productId, "updating image file");
+
+                            return new UnexpectedFailureResult();
+                        },
+                        validationResult => LogValidationResult(validationResult, productId, "updating image file"));
                 }
 
                 if (request.UpsertInProductImagesRequest is null) continue;
@@ -708,17 +775,17 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
                 byte[] fileData = memoryStream.ToArray();
 
                 OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertFileResult
-                    = await UpsertImageFileForImageAsync(productId, imageId, fileData, false, null, fileExtension, upsertUserName);
+                    = await UpsertImageFileForImageAsync(productId, imageId, fileData, request.Active, null, fileExtension, upsertUserName);
 
                 if (!upsertFileResult.IsT0)
                 {
                     return upsertFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                         success => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        fileSaveFailureResult => fileSaveFailureResult,
-                        fileDoesntExistResult => fileDoesntExistResult,
-                        fileAlreadyExistsResult => fileAlreadyExistsResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
+                        validationResult => LogValidationResult(validationResult, productId, "upserting image file"),
+                        fileSaveFailureResult => LogFileSaveFailureResult(fileSaveFailureResult, productId, "upserting image file"),
+                        fileDoesntExistResult => LogFileDoesntExistResult(fileDoesntExistResult, productId, "upserting image file"),
+                        fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "upserting image file"),
+                        unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "upserting image file"));
                 }
             }
         }
@@ -731,24 +798,26 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
         {
             return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
                 statusId => new UnexpectedFailureResult(),
-                validationResult => validationResult,
-                unexpectedFailureResult => unexpectedFailureResult);
+                validationResult => LogValidationResult(validationResult, productId, "upserting product status"),
+                unexpectedFailureResult => LogUnexpectedFailureResult(unexpectedFailureResult, productId, "upserting product status"));
         }
 
-        localDBTransactionScope.Complete();
+        //localDBTransactionScope.Complete();
 
         //replicationDBTransactionScope.Complete();
+
+        transactionScope.Complete();
 
         return new Success();
     }
 
     private async Task<OneOf<Yes, ValidationResult, UnexpectedFailureResult>> ValidateImageAndPromotionFileDataAsync(
-        ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+        ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
         List<ProductImageData> images = await _productImageCrudService.GetAllInProductWithoutFileDataAsync(updateAllRequest.ProductId);
         List<PromotionProductFileInfo> promotionProductFiles = await _promotionProductFileInfoService.GetAllForProductAsync(updateAllRequest.ProductId);
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
             {
@@ -774,11 +843,11 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
     }
 
     private async Task<OneOf<Yes, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> ValidateFileDataAsync(
-        ProductImagesAndPromotionFilesForProductUpsertRequest updateAllRequest)
+        ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
         List<int?> existingDisplayOrders = new();
 
-        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.ImageRequests)
         {
             int? customDisplayOrder = request.Request.Match(
                 x => x.FileUpsertRequest?.CustomDisplayOrder,
@@ -800,7 +869,7 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
 
         List<string?> imageFileNames = new();
 
-        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.Requests)
+        foreach (ProductImageAndPromotionFileUpsertRequest request in updateAllRequest.ImageRequests)
         {
             if (request.Request.IsT1)
             {
@@ -1407,5 +1476,87 @@ internal class ProductImageAndPromotionFileSaveService : IProductImageAndPromoti
 
                     return existingPromotionFile?.ProductImageId;
                 }));
+    }
+
+    private NotFound LogNotFound(NotFound notFound, string searchedItemId, int productId, string operation)
+    {
+        _logger?.LogCritical("Item (ID: {searchedItemId}) not found when {operation} for product ID {ProductId}", searchedItemId, operation, productId);
+
+        return notFound;
+    }
+
+    private ValidationResult LogValidationResult(ValidationResult validationResult, int productId, string operation)
+    {
+        if (_logger is not null)
+        {
+            string json = JsonSerializer.Serialize(validationResult.Errors);
+
+            _logger.LogCritical("Validation error when {operation} images for product ID {ProductId},\n Full Messages: {ValidationResult}",
+                operation, productId, json);
+        }
+
+        return validationResult;
+    }
+
+    private FileSaveFailureResult LogFileSaveFailureResult(FileSaveFailureResult fileSaveFailureResult, int productId, string operation)
+    {
+        if (_logger is null)
+        {
+            return fileSaveFailureResult;
+        }
+
+        if (fileSaveFailureResult.IsUnsupportedContentType)
+        {
+            NotSupportedContentTypeResult data = fileSaveFailureResult.UnsupportedContentType!.Value;
+
+            _logger.LogCritical("File save error when {operation} for product ID {ProductId}, Invalid Content type: {ContentType}",
+                operation, productId, data.ContentType);
+        }
+        else if (fileSaveFailureResult.IsInvalidContent)
+        {
+            InvalidContentResult data = fileSaveFailureResult.InvalidContent!.Value;
+
+            _logger.LogCritical("File save error when {operation} for product ID {ProductId}, Invalid Content: {Reason}",
+                operation, productId, data.Reason);
+        }
+        else if (fileSaveFailureResult.IsTooLarge)
+        {
+            TooLargeResult data = fileSaveFailureResult.TooLarge!.Value;
+
+            _logger.LogCritical("File save error when {operation} for product ID {ProductId}, Too Large: Max Allowed Size (bytes): {MaxSizeBytes}, Actual Size: {ActualSizeBytes}",
+                operation, productId, data.MaxSizeBytes, data.ActualSizeBytes);
+        }
+        else if (fileSaveFailureResult.IsUnexpected)
+        {
+            UnexpectedResult data = fileSaveFailureResult.Unexpected!.Value;
+
+            _logger.LogCritical("File save error when {operation} for product ID {ProductId}, Unexpected Error: {ExceptionMessage}",
+                operation, productId, data.ExceptionMessage);
+        }
+
+        return fileSaveFailureResult;
+    }
+
+    private FileDoesntExistResult LogFileDoesntExistResult(FileDoesntExistResult fileDoesntExistResult, int productId, string operation)
+    {
+        _logger?.LogCritical("File doesn't exist when {operation} for product ID {ProductId}, File Name: {FileName}",
+            operation, productId, fileDoesntExistResult.FileName);
+
+        return fileDoesntExistResult;
+    }
+
+    private FileAlreadyExistsResult LogFileAlreadyExistsResult(FileAlreadyExistsResult fileAlreadyExistsResult, int productId, string operation)
+    {
+        _logger?.LogCritical("File already exists when {operation} for product ID {ProductId}, File Name: {FileName}",
+            operation, productId, fileAlreadyExistsResult.FileName);
+
+        return fileAlreadyExistsResult;
+    }
+
+    private UnexpectedFailureResult LogUnexpectedFailureResult(UnexpectedFailureResult unexpectedFailureResult, int productId, string operation)
+    {
+        _logger?.LogCritical("Unexpected failure when {operation} for product ID {ProductId}", operation, productId);
+
+        return unexpectedFailureResult;
     }
 }

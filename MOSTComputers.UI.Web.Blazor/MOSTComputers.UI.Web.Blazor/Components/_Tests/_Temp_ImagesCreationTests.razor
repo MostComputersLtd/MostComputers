@@ -154,7 +154,7 @@
 	protected override void OnInitialized()
 	{
 		_connectionStringProvider = KeyedServices.GetKeyedService<IConnectionStringProvider>(
-			ConfigureServices.ReadOnlyDBConnectionStringProviderServiceKey);
+			ConfigureServices.OriginalDBConnectionStringProviderServiceKey);
 	}
 
 	private void StartAutoSearch()
