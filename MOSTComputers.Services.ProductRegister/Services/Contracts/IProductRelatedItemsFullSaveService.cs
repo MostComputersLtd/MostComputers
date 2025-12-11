@@ -8,5 +8,5 @@ using OneOf.Types;
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IProductRelatedItemsFullSaveService
 {
-    Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertAllImagesAndFilesForProductAsync(ProductRelatedItemsFullSaveRequest updateAllRequest);
+    Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> SaveProductRelatedItemsAsync(ProductRelatedItemsFullSaveRequest updateAllRequest);
 }

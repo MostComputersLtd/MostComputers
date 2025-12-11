@@ -12,6 +12,9 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductImage;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Files.PromotionProductFiles;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
 using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
@@ -19,13 +22,17 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRe
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
 using System;
@@ -52,6 +59,8 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         IPromotionProductFileInfoService promotionProductFileInfoService,
         IProductWorkStatusesWorkflowService productWorkStatusesWorkflowService,
         IProductRepository productRepository,
+        IProductToHtmlProductService productToHtmlProductService,
+        IProductHtmlService productHtmlService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<ServiceProductImageCreateRequest>? serviceProductImageCreateRequestValidator = null,
         IValidator<ServiceProductImageUpdateRequest>? serviceProductImageUpdateRequestValidator = null,
@@ -70,6 +79,8 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         _promotionProductFileInfoService = promotionProductFileInfoService;
         _productWorkStatusesWorkflowService = productWorkStatusesWorkflowService;
         _productRepository = productRepository;
+        _productToHtmlProductService = productToHtmlProductService;
+        _productHtmlService = productHtmlService;
         _transactionExecuteService = transactionExecuteService;
         _serviceProductImageCreateRequestValidator = serviceProductImageCreateRequestValidator;
         _serviceProductImageUpdateRequestValidator = serviceProductImageUpdateRequestValidator;
@@ -103,6 +114,8 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private readonly IPromotionProductFileInfoService _promotionProductFileInfoService;
     private readonly IProductWorkStatusesWorkflowService _productWorkStatusesWorkflowService;
     private readonly IProductRepository _productRepository;
+    private readonly IProductToHtmlProductService _productToHtmlProductService;
+    private readonly IProductHtmlService _productHtmlService;
     private readonly ITransactionExecuteService _transactionExecuteService;
     private readonly IValidator<ServiceProductImageCreateRequest>? _serviceProductImageCreateRequestValidator;
     private readonly IValidator<ServiceProductImageUpdateRequest>? _serviceProductImageUpdateRequestValidator;
@@ -115,10 +128,11 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     {
         public required ProductImageAndPromotionFileUpsertRequest UpsertRequest { get; init; }
         public OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest, No> ImageCrudOptions { get; set; }
+        public bool ReplaceRequestHtmlWithPropertyHtml { get; set; } = false;
     }
 
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertAllImagesAndFilesForProductAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
+        SaveProductRelatedItemsAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
         Product? product = await _productRepository.GetByIdAsync(updateAllRequest.ProductId);
 
@@ -156,22 +170,22 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         //    () => UpsertAllImagesAndFilesForProductInternalAsync(updateAllRequest),
         //    result => result.IsT0);
 
-        return await UpsertAllImagesAndFilesForProductInternalAsync(updateAllRequest);
+        return await SaveProductRelatedItemsInternalAsync(updateAllRequest);
     }
 
     private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertAllImagesAndFilesForProductInternalAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
+        SaveProductRelatedItemsInternalAsync(ProductRelatedItemsFullSaveRequest upsertAllRequest)
     {
-        int productId = updateAllRequest.ProductId;
-        string upsertUserName = updateAllRequest.UpsertUserName;
+        int productId = upsertAllRequest.ProductId;
+        string upsertUserName = upsertAllRequest.UpsertUserName;
 
         List<ProductImage> oldProductImages = await _productImageCrudService.GetAllInProductAsync(productId);
         List<ProductImageFileData> oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
         List<PromotionProductFileInfo> oldPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
 
-        updateAllRequest.ImageRequests = OrderItemsWithDisplayOrders(updateAllRequest.ImageRequests, oldPromotionProductFileInfos);
+        upsertAllRequest.ImageRequests = OrderItemsWithDisplayOrders(upsertAllRequest.ImageRequests, oldPromotionProductFileInfos);
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in upsertAllRequest.ImageRequests)
         {
             OneOf<PromotionProductFileInfo?, ValidationResult> getExistingPromotionFileResult
                 = FindExisting(oldPromotionProductFileInfos, upsertRequest);
@@ -238,7 +252,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
         ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in upsertAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
             {
@@ -268,7 +282,15 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     ExistingImageId = request.ExistingImageId,
                     ImageContentType = contentTypeFromFileExtension,
                     ImageData = request.ImageData,
-                    HtmlData = request.HtmlData,
+                    HtmlData = request.HtmlDataOptions.Match(
+                        useCurrentData => null,
+                        doNotUpdate =>
+                        {
+                            ProductImage? existingImage = oldProductImages.FirstOrDefault(x => x.Id == request.ExistingImageId);
+
+                            return existingImage?.HtmlData;
+                        },
+                        updateToCustomHtmlData => updateToCustomHtmlData.HtmlData),
                 };
 
                 ValidationResult validationResult = ValidateDefault(_productImageUpsertRequestValidator, productImageUpsertRequest);
@@ -279,6 +301,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 {
                     UpsertRequest = upsertRequest,
                     ImageCrudOptions = productImageUpsertRequest,
+                    ReplaceRequestHtmlWithPropertyHtml = request.HtmlDataOptions.IsT0,
                 });
 
                 if (productFirstImageUpsertRequest is null)
@@ -288,7 +311,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                         ProductId = productId,
                         ImageContentType = contentTypeFromFileExtension,
                         ImageData = request.ImageData,
-                        HtmlData = request.HtmlData,
+                        HtmlData = productImageUpsertRequest.HtmlData,
                     };
                 }
 
@@ -304,22 +327,22 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             }
             else
             {
-                PromotionProductFileForProductUpsertRequest promotionFileRequest = upsertRequest.Request.AsT3;
+                PromotionProductFileForProductUpsertRequest request = upsertRequest.Request.AsT3;
 
-                if (promotionFileRequest.UpsertInProductImagesRequest is null) continue;
+                if (request.UpsertInProductImagesRequest is null) continue;
 
                 PromotionFileInfo? promotionFile;
                 byte[] fileData;
 
                 //using (TransactionScope localDBReadSuppressedScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
                 //{
-                promotionFile = await _promotionFileService.GetByIdAsync(promotionFileRequest.PromotionFileInfoId);
+                promotionFile = await _promotionFileService.GetByIdAsync(request.PromotionFileInfoId);
 
-                using Stream? promotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(promotionFileRequest.PromotionFileInfoId);
+                using Stream? promotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(request.PromotionFileInfoId);
 
                 if (promotionFile is null || promotionFileDataStream is null)
                 {
-                    ValidationFailure validationFailure = new(nameof(promotionFileRequest.PromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
+                    ValidationFailure validationFailure = new(nameof(request.PromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
 
                     return CreateValidationResultFromErrors(validationFailure);
                 }
@@ -342,12 +365,15 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     return CreateValidationResultFromErrors(validationFailure);
                 }
 
-                if (promotionFileRequest.Id is null)
+                if (request.Id is null)
                 {
                     ServiceProductImageCreateRequest productImageCreateRequest = new()
                     {
                         ProductId = productId,
-                        HtmlData = promotionFileRequest.UpsertInProductImagesRequest?.HtmlData,
+                        HtmlData = request.UpsertInProductImagesRequest.HtmlDataOptions.Match(
+                            useCurrentData => null,
+                            doNotUpdate => null,
+                            updateToCustomHtmlData => updateToCustomHtmlData.HtmlData),
                         ImageData = fileData,
                         ImageContentType = contentType,
                     };
@@ -360,6 +386,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     {
                         UpsertRequest = upsertRequest,
                         ImageCrudOptions = productImageCreateRequest,
+                        ReplaceRequestHtmlWithPropertyHtml = request.UpsertInProductImagesRequest.HtmlDataOptions.IsT0,
                     });
 
                     if (productFirstImageUpsertRequest is null)
@@ -369,8 +396,10 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                             ProductId = productId,
                             ImageContentType = contentType,
                             ImageData = fileData,
-                            HtmlData = promotionFileRequest.UpsertInProductImagesRequest?.HtmlData,
+                            HtmlData = productImageCreateRequest.HtmlData,
                         };
+
+                        
                     }
 
                     continue;
@@ -380,14 +409,14 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
                 //using (TransactionScope localDBReadSuppressedScope2 = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
                 //{
-                promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(promotionFileRequest.Id.Value);
+                promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(request.Id.Value);
 
                 //    localDBReadSuppressedScope2.Complete();
                 //}
 
                 if (promotionProductFile is null)
                 {
-                    ValidationFailure validationFailure = new(nameof(promotionFileRequest.Id), _invalidPromotionProductFileIdErrorMessage);
+                    ValidationFailure validationFailure = new(nameof(request.Id), _invalidPromotionProductFileIdErrorMessage);
 
                     return CreateValidationResultFromErrors(validationFailure);
                 }
@@ -398,7 +427,20 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     ExistingImageId = promotionProductFile.ProductImageId,
                     ImageContentType = contentType,
                     ImageData = fileData,
-                    HtmlData = promotionFileRequest.UpsertInProductImagesRequest.HtmlData,
+                    HtmlData = request.UpsertInProductImagesRequest.HtmlDataOptions.Match(
+                        useCurrentData => null,
+                        doNotUpdate =>
+                        {
+                            PromotionProductFileInfo? existingPromotionProductFile
+                                = oldPromotionProductFileInfos.FirstOrDefault(x => x.Id == request.Id);
+
+                            if (existingPromotionProductFile?.ProductImageId is null) return null;
+
+                            ProductImage? existingImage = oldProductImages.FirstOrDefault(x => x.Id == existingPromotionProductFile.ProductImageId);
+
+                            return existingImage?.HtmlData;
+                        },
+                        updateToCustomHtmlData => updateToCustomHtmlData.HtmlData),
                 };
 
                 ValidationResult validationResult = ValidateDefault(_productImageUpsertRequestValidator, productImageUpsertRequest);
@@ -409,6 +451,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 {
                     UpsertRequest = upsertRequest,
                     ImageCrudOptions = productImageUpsertRequest,
+                    ReplaceRequestHtmlWithPropertyHtml = request.UpsertInProductImagesRequest.HtmlDataOptions.IsT0,
                 });
 
                 if (productFirstImageUpsertRequest is null)
@@ -418,13 +461,37 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                         ProductId = productId,
                         ImageContentType = contentType,
                         ImageData = fileData,
-                        HtmlData = promotionFileRequest.UpsertInProductImagesRequest.HtmlData,
+                        HtmlData = productImageUpsertRequest.HtmlData,
                     };
                 }
             }
         }
 
         Dictionary<ProductImageAndPromotionFileUpsertRequest, int> imageIdsForRequests = new();
+
+        using TransactionScope transactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        ProductPropertyUpsertAllForProductRequest productPropertyChangeAllForProductRequest = new()
+        {
+            ProductId = productId,
+            NewProperties = upsertAllRequest.PropertyRequests,
+        };
+
+        OneOf<Success, ValidationResult, UnexpectedFailureResult> updatePropertiesResult
+            = await _productPropertyCrudService.UpsertAllProductPropertiesAsync(productPropertyChangeAllForProductRequest);
+
+        if (!updatePropertiesResult.IsT0)
+        {
+            return updatePropertiesResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+        }
+
+        HtmlProductsData productHtmlData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productId]);
+
+        OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(productHtmlData);
+
+        if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
+
+        string productHtml = getProductHtmlResult.AsT0;
 
         using (TransactionScope imagesTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
         {
@@ -447,8 +514,15 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
                 if (imageCrudOptions.IsT0)
                 {
+                    ServiceProductImageCreateRequest request = imageCrudOptions.AsT0;
+
+                    if (imageUpsertData.ReplaceRequestHtmlWithPropertyHtml)
+                    {
+                        request.HtmlData = productHtml;
+                    }
+
                     OneOf<int, ValidationResult, UnexpectedFailureResult> imageCreateResult
-                        = await _productImageCrudService.InsertInAllImagesAsync(imageCrudOptions.AsT0);
+                        = await _productImageCrudService.InsertInAllImagesAsync(request);
 
                     if (!imageCreateResult.IsT0)
                     {
@@ -462,8 +536,15 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 }
                 else if (imageCrudOptions.IsT1)
                 {
+                    ServiceProductImageUpdateRequest request = imageCrudOptions.AsT1;
+
+                    if (imageUpsertData.ReplaceRequestHtmlWithPropertyHtml)
+                    {
+                        request.HtmlData = productHtml;
+                    }
+
                     OneOf<Success, ValidationResult, UnexpectedFailureResult> imageUpdateResult
-                        = await _productImageCrudService.UpdateInAllImagesAsync(imageCrudOptions.AsT1);
+                        = await _productImageCrudService.UpdateInAllImagesAsync(request);
 
                     if (!imageUpdateResult.IsT0)
                     {
@@ -475,7 +556,14 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 }
                 else if (imageCrudOptions.IsT2)
                 {
-                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await _productImageCrudService.UpsertInAllImagesAsync(imageCrudOptions.AsT2);
+                    ProductImageUpsertRequest request = imageCrudOptions.AsT2;
+
+                    if (imageUpsertData.ReplaceRequestHtmlWithPropertyHtml)
+                    {
+                        request.HtmlData = productHtml;
+                    }
+
+                    OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await _productImageCrudService.UpsertInAllImagesAsync(request);
 
                     if (!imageUpsertResult.IsT0)
                     {
@@ -516,8 +604,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
-        using TransactionScope transactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
         foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in oldPromotionProductFileInfos)
         {
             bool promotionProductFileDeleteResult = await _promotionProductFileInfoService.DeleteAsync(oldPromotionProductFileToBeRemoved.Id);
@@ -543,7 +629,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             }
         }
 
-        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in updateAllRequest.ImageRequests)
+        foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in upsertAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
             {

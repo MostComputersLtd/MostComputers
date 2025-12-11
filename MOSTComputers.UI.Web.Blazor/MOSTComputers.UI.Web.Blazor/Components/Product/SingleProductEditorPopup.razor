@@ -1779,8 +1779,6 @@
                     ExistingImageId = imageListItem.RelatedImage?.ExistingImageId,
                     FileExtension = imageFileExtension,
                     ImageData = imageFileData,
-                    HtmlData = productHtml,
-
                     FileUpsertRequest = new FileForImageForProductUpsertRequest()
                     {
                         Active = imageListItem.RelatedImageFile?.Active ?? true,
@@ -1809,7 +1807,6 @@
                 {
                     servicePromotionProductImageUpsertRequest = new()
                     {
-                        HtmlData = productHtml,
                         ImageFileUpsertRequest = new()
                         {
                             Active = imageListItem.RelatedImageFile?.Active ?? false,
@@ -1871,7 +1868,6 @@
                     ExistingImageId = imageListItem.RelatedImage?.ExistingImageId,
                     FileExtension = imageFileExtension,
                     ImageData = imageFileData,
-                    HtmlData = productHtml,
                     FileUpsertRequest = imageFileUpsertRequest,
                 };
 
@@ -1930,7 +1926,7 @@
         }
 
         OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
-            = await ProductImageAndPromotionFileSaveService.UpsertAllImagesAndFilesForProductAsync(upsertAllImagesAndPromotionFilesRequest);
+            = await ProductImageAndPromotionFileSaveService.SaveProductRelatedItemsAsync(upsertAllImagesAndPromotionFilesRequest);
 
         return result.Match(
             success =>
