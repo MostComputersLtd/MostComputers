@@ -8,6 +8,8 @@
 .product-images-list {
     height: 13em;
     width: 100%;
+    padding: 0px;
+    margin: 0px;
     list-style: none;
     display: flex;
     flex-direction: row;
@@ -38,6 +40,12 @@
     align-items: center;
 }
 
-.product-images-view-html-button .unoriginal {
-    background-color: #F7B9B9;
+
+.product-images-view-html-button {
+    box-shadow: none !important;
 }
+
+    .product-images-view-html-button.unoriginal {
+        background-color: #F7B9B9;
+        border-color: #F7B9B9;
+    }
