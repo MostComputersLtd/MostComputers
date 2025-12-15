@@ -18,7 +18,7 @@ using MOSTComputers.Utils.OneOf;
 
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageFileNameInfoConstraints;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageFileDataConstraints;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
 
