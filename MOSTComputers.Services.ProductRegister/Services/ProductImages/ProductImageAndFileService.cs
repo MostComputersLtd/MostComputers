@@ -1,9 +1,13 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductImages;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
@@ -11,6 +15,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstI
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
@@ -27,6 +32,8 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
     public ProductImageAndFileService(
         IProductImageCrudService productImageCrudService,
         IProductImageFileService productImageFileService,
+        IProductToHtmlProductService productToHtmlProductService,
+        IProductHtmlService productHtmlService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<ProductImageWithFileCreateRequest>? createWithFileRequestValidator = null,
         IValidator<ProductImageWithFileUpdateRequest>? updateWithFileRequestValidator = null,
@@ -36,7 +43,8 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
     {
         _productImageCrudService = productImageCrudService;
         _productImageFileService = productImageFileService;
-
+        _productToHtmlProductService = productToHtmlProductService;
+        _productHtmlService = productHtmlService;
         _transactionExecuteService = transactionExecuteService;
 
         _createWithFileRequestValidator = createWithFileRequestValidator;
@@ -51,6 +59,8 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
 
     private readonly IProductImageCrudService _productImageCrudService;
     private readonly IProductImageFileService _productImageFileService;
+    private readonly IProductToHtmlProductService _productToHtmlProductService;
+    private readonly IProductHtmlService _productHtmlService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
     private readonly IValidator<ProductImageWithFileCreateRequest>? _createWithFileRequestValidator;
@@ -1043,86 +1053,105 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
             oldProductImageFileInfos.RemoveAt(imageFileNameIndex);
         }
 
+        HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productId]);
+
+        OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
+
+        if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
+
+        string productHtml = getProductHtmlResult.AsT0;
+
         ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
 
-        using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
-        foreach (ProductImage oldImageToBeRemoved in oldProductImages)
-        {
-            bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
-
-            if (!imageDeleteResult) return new UnexpectedFailureResult();
-        }
+        //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
         Dictionary<ProductImageWithFileForProductUpsertRequest, int> imageIdsForRequests = new();
 
-        foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
+        using (TransactionScope imagesTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
         {
-            string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
-
-            string? contentTypeFromFileExtension = GetContentTypeFromExtension(productImageWithFileUpsertRequest.FileExtension);
-
-            if (fileExtensionWithDot is null || contentTypeFromFileExtension is null)
+            foreach (ProductImage oldImageToBeRemoved in oldProductImages)
             {
-                ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+                bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
 
-                return CreateValidationResultFromErrors(validationFailure);
+                if (!imageDeleteResult) return new UnexpectedFailureResult();
             }
 
-            ProductImageUpsertRequest productImageUpsertRequest = new()
+            foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
             {
-                ProductId = productId,
-                ExistingImageId = productImageWithFileUpsertRequest.ExistingImageId,
-                ImageContentType = contentTypeFromFileExtension,
-                ImageData = productImageWithFileUpsertRequest.ImageData,
-                HtmlData = productImageWithFileUpsertRequest.HtmlData,
-            };
+                string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
 
-            OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await UpsertInAllImagesAsync(productImageUpsertRequest);
+                string? contentTypeFromFileExtension = GetContentTypeFromExtension(productImageWithFileUpsertRequest.FileExtension);
 
-            if (!imageUpsertResult.IsT0)
-            {
-                return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                    id => new UnexpectedFailureResult(),
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
+                if (fileExtensionWithDot is null || contentTypeFromFileExtension is null)
+                {
+                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
 
-            imageIdsForRequests.Add(productImageWithFileUpsertRequest, imageUpsertResult.AsT0);
+                    return CreateValidationResultFromErrors(validationFailure);
+                }
 
-            if (productFirstImageUpsertRequest is null)
-            {
-                productFirstImageUpsertRequest ??= new()
+                ProductImageUpsertRequest productImageUpsertRequest = new()
                 {
                     ProductId = productId,
+                    ExistingImageId = productImageWithFileUpsertRequest.ExistingImageId,
                     ImageContentType = contentTypeFromFileExtension,
                     ImageData = productImageWithFileUpsertRequest.ImageData,
-                    HtmlData = productImageWithFileUpsertRequest.HtmlData,
+                    HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
+                        useCurrentData => productHtml,
+                        doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
+                        useCustomData => useCustomData.HtmlData),
                 };
+
+                OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await UpsertInAllImagesAsync(productImageUpsertRequest);
+
+                if (!imageUpsertResult.IsT0)
+                {
+                    return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        id => new UnexpectedFailureResult(),
+                        validationResult => validationResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+
+                imageIdsForRequests.Add(productImageWithFileUpsertRequest, imageUpsertResult.AsT0);
+
+                if (productFirstImageUpsertRequest is null)
+                {
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = contentTypeFromFileExtension,
+                        ImageData = productImageWithFileUpsertRequest.ImageData,
+                        HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
+                            useCurrentData => productHtml,
+                            doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
+                            useCustomData => useCustomData.HtmlData),
+                    };
+                }
             }
-        }
 
-        if (productFirstImageUpsertRequest is not null)
-        {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
-
-            if (!productFirstImageUpsertResult.IsT0)
+            if (productFirstImageUpsertRequest is not null)
             {
-                return productFirstImageUpsertResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+
+                if (!productFirstImageUpsertResult.IsT0)
+                {
+                    return productFirstImageUpsertResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+                }
             }
+            else
+            {
+                ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
+
+                if (oldProductFirstImage is null) return new Success();
+
+                bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
+
+                if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+            }
+
+            imagesTransactionScope.Complete();
         }
-        else
-        {
-            ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
 
-            if (oldProductFirstImage is null) return new Success();
-
-            bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
-
-            if (!isFirstImageDeleted) return new UnexpectedFailureResult();
-        }
-
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+        //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
         foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
         {
@@ -1169,9 +1198,9 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
             }
         }
 
-        localDBTransactionScope.Complete();
+        //localDBTransactionScope.Complete();
 
-        replicationDBTransactionScope.Complete();
+        //replicationDBTransactionScope.Complete();
 
         return new Success();
     }

@@ -7,7 +7,6 @@ public sealed class ProductImageWithFileForProductUpsertRequest
     public required int? ExistingImageId { get; init; }
     public required string FileExtension { get; init; }
     public required byte[] ImageData { get; init; }
-    public string? HtmlData { get; init; }
     public OneOf<UpdateHtmlDataToMatchCurrentProductData, DoNotUpdateHtmlData, UpdateToCustomHtmlData> HtmlDataOptions { get; init; }
         = new UpdateHtmlDataToMatchCurrentProductData();
 

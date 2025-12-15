@@ -16,7 +16,6 @@ public sealed class ServicePromotionProductFileUpdateRequest
 public sealed class ServicePromotionProductImageUpsertRequest
 {
     public required ServicePromotionProductImageFileUpsertRequest ImageFileUpsertRequest { get; init; }
-    public string? HtmlData { get; init; }
     public OneOf<UpdateHtmlDataToMatchCurrentProductData, DoNotUpdateHtmlData, UpdateToCustomHtmlData> HtmlDataOptions { get; init; }
         = new UpdateHtmlDataToMatchCurrentProductData();
 }

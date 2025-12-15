@@ -11,6 +11,7 @@ using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.Pro
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
@@ -26,6 +27,7 @@ using OneOf.Types;
 using System.Transactions;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 using static MOSTComputers.Utils.Files.ContentTypeUtils;
+using static MOSTComputers.Utils.OneOf.AsyncMatchingExtensions;
 using static MOSTComputers.Utils.OneOf.MappingExtensions;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles;
@@ -38,6 +40,7 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
         //IProductImageFileService productImageFileService,
         IProductRepository productRepository,
         IProductToHtmlProductService productToHtmlProductService,
+        IProductHtmlService productHtmlService,
         IProductWorkStatusesWorkflowService productWorkStatusesWorkflowService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<ServicePromotionProductFileCreateRequest>? createRequestValidator = null,
@@ -49,6 +52,7 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
         //_productImageFileService = productImageFileService;
         _productRepository = productRepository;
         _productToHtmlProductService = productToHtmlProductService;
+        _productHtmlService = productHtmlService;
         _productWorkStatusesWorkflowService = productWorkStatusesWorkflowService;
         _transactionExecuteService = transactionExecuteService;
         _createRequestValidator = createRequestValidator;
@@ -70,6 +74,7 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
 
     private readonly IProductRepository _productRepository;
     private readonly IProductToHtmlProductService _productToHtmlProductService;
+    private readonly IProductHtmlService _productHtmlService;
     private readonly IProductWorkStatusesWorkflowService _productWorkStatusesWorkflowService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
@@ -372,15 +377,41 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
                 return CreateValidationResultFromErrors(validationFailure);
             }
 
-            HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync(product);
+            OneOf<string?, UnexpectedFailureResult> getHtmlResult = await updateRequest.UpsertInProductImagesRequest.HtmlDataOptions.MatchAsync(
+                async useCurrentData =>
+                {
+                    HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync(product);
 
+                    OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
+
+                    if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
+
+                    return getProductHtmlResult.AsT0;
+                },
+                async doNotUpdate =>
+                {
+                    if (promotionProductFile.ProductImageId is null) return null;
+
+                    ProductImage? existingImage = await _productImageAndFileService.GetByIdInAllImagesAsync(promotionProductFile.ProductImageId.Value);
+
+                    return OneOf<string?, UnexpectedFailureResult>.FromT0(existingImage?.HtmlData);
+                },
+                useCustomData => useCustomData.HtmlData);
+
+            if (!getHtmlResult.IsT0)
+            {
+                return getHtmlResult.Match(
+                    productHtml => new UnexpectedFailureResult(),
+                    unexpectedFailureResult => unexpectedFailureResult);
+            }
+                    
             ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest = new()
             {
                 ProductId = promotionProductFile.ProductId,
                 ExistingImageId = promotionProductFile.ProductImageId,
                 FileExtension = fileExtension,
                 ImageData = fileData,
-                HtmlData = updateRequest.UpsertInProductImagesRequest.HtmlData,
+                HtmlData = getHtmlResult.AsT0,
                 FileUpsertRequest = new()
                 {
                     Active = updateRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active ?? false,
