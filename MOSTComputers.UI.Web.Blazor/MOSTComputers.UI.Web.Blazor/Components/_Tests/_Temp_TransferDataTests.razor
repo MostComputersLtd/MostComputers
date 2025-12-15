@@ -42,7 +42,7 @@
 
 @inject IProductService _productService
 @inject IProductImageFileService _productImageFileService
-@inject IProductImageAndPromotionFileSaveService _productImageAndPromotionFileSaveService
+@inject IProductRelatedItemsFullSaveService _productRelatedItemsFullSaveService
 @inject IProductImageService _productImageService
 @inject IProductCharacteristicService _productCharacteristicService
 @inject IProductPropertyCrudService _productPropertyService
@@ -434,7 +434,7 @@
             SaveService.NeededServicesForProductSaves neededServices = new(
                 _productService,
                 _productImageFileService,
-                _productImageAndPromotionFileSaveService,
+                _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
                 _productPropertyService,
@@ -485,7 +485,7 @@
             SaveService.NeededServicesForProductSaves neededServices = new(
                 _productService,
                 _productImageFileService,
-                _productImageAndPromotionFileSaveService,
+                _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
                 _productPropertyService,
@@ -539,7 +539,7 @@
             SaveService.NeededServicesForProductSaves neededServices = new(
                 _productService,
                 _productImageFileService,
-                _productImageAndPromotionFileSaveService,
+                _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
                 _productPropertyService,
@@ -592,7 +592,7 @@
             SaveService.NeededServicesForProductSaves neededServices = new(
                 _productService,
                 _productImageFileService,
-                _productImageAndPromotionFileSaveService,
+                _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
                 _productPropertyService,
@@ -670,7 +670,7 @@
         {
             public IProductService _productService { get; init; }
             public IProductImageFileService _productImageFileService { get; init; }
-            public IProductImageAndPromotionFileSaveService _productImageAndPromotionFileSaveService { get; init; }
+            public IProductRelatedItemsFullSaveService _productRelatedItemsFullSaveService { get; init; }
             public IProductImageService _productImageService { get; init; }
             public IProductCharacteristicService _productCharacteristicService { get; init; }
             public IProductPropertyCrudService _productPropertyService { get; init; }
@@ -681,7 +681,7 @@
             public NeededServicesForProductSaves(
                 IProductService productService,
                 IProductImageFileService productImageFileService,
-                IProductImageAndPromotionFileSaveService productImageAndPromotionFileSaveService,
+                IProductRelatedItemsFullSaveService productRelatedItemsFullSaveService,
                 IProductImageService productImageService,
                 IProductCharacteristicService productCharacteristicService,
                 IProductPropertyCrudService productPropertyService,
@@ -691,7 +691,8 @@
             {
                 _productService = productService;
                 _productImageFileService = productImageFileService;
-                _productImageAndPromotionFileSaveService = productImageAndPromotionFileSaveSRelatedItemsFull    _productImageService = productImageService;
+                _productRelatedItemsFullSaveService = productRelatedItemsFullSaveService;
+                _productImageService = productImageService;
                 _productCharacteristicService = productCharacteristicService;
                 _productPropertyService = productPropertyService;
                 _productCharacteristicAndExternalXmlDataRelationService = productCharacteristicAndExternalXmlDataRelationService;
@@ -704,7 +705,9 @@
         {
             public IGroupPromotionImagesRepository _groupPromotionImagesRepository { get; init; }
             public IGroupPromotionImageFileService _groupPromotionImageFileService { get; init; }
-            public ITransactionExecuteService _transactionExecuteServicRelatedItemsFull           public NeededServicesForGroupPromotionSaves(
+            public ITransactionExecuteService _transactionExecuteService { get; init; }
+
+            public NeededServicesForGroupPromotionSaves(
                 IGroupPromotionImagesRepository groupPromotionImagesRepository,
                 IGroupPromotionImageFileService groupPromotionImageFileService,
                 ITransactionExecuteService transactionExecuteService)
@@ -1121,7 +1124,7 @@
             IEnumerable<int> productIds = products.Select(product => product.Id);
 
             List<IGrouping<int, ProductImage>> images = await neededServices._productImageService.GetAllInProductsAsync(productIds);
-            
+
             List<IGrouping<Product?, ProductImage>> imagesAndProducts = images
                 .SelectMany(x => x)
                 .GroupBy(x => products.Find(p => p.Id == x.ProductId))
@@ -1375,20 +1378,20 @@
                 ValidationFailure categoryIdError = new(nameof(product.CategoryId), "Cannot be null");
 
                 return new ValidationResult([categoryIdError]);
-               ProductCharacteristicAndExternalXmlDforeach (char invalidChar in invalidChars)
-                    {
-                        htmlData = htmlData.Replace(invalidChar.ToString(), invalidCharPlaceholder);
-                    }elationshipsFromProdu
-                LegacyHtmlProduct htmlProduct = neededServices._legacyProductHtmlService.ParseProductHtml(htmlData);
+            }
 
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertProductPropertiesFromHtmlResult
-                    = await UpsertPropertiesFromLegacyHtmlAsync(neededServices, unsavedOnly, imagesByProduct.Key, htmlProduct, currentUserName, productTestMetrics, onChanged);
+            List<int> categoryIds = [-1, product.CategoryId.Value];
 
-                if (!upsertProductPropertiesFromHtmlResult.IsT0)
+            List<ProductCharacteristicAndExternalXmlDataRelation> propertyRelationshipsFromProductCategory
+                = await neededServices._productCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdsAsync(categoryIds);
+
+            bool metricsChanged = false;
+
+            if (htmlProduct.Properties is not null)
+            {
+                foreach (LegacyHtmlProductProperty htmlProperty in htmlProduct.Properties)
                 {
-                    return upsertProductPropertiesFromHtmlResult;
-                }
-ctCategory
+                    ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
                         .FirstOrDefault(x => x.XmlName == htmlProperty.Name);
 
                     if (propertyRelationship?.ProductCharacteristicId is null)
@@ -1417,19 +1420,31 @@ ctCategory
                 OneOf<Success, ValidationResult, UnexpectedFailureResult> saveLinkResult
                     = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, htmlProduct.VendorUrl, currentUserName);
 
-                i   }
+                if (!saveLinkResult.IsT0) return saveLinkResult;
+
+                if (productTestMetrics is not null)
+                {
+                    productTestMetrics.AddProcessedProductId(product.Id);
+                    productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, _defaultLinkCharacteristicId);
+
+                    metricsChanged = true;
+                }
             }
 
-            if (productTestMetrics is not null && metricsChanged && onChanged isProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
-                        .FirstOrDefault x => x.XmlName == htmlProperty.Name);
+            if (metricsChanged && productTestMetrics is not null)
+            {
+                productTestMetrics.AddProcessedProductId(product.Id);
 
-                    if (propertyRelationship?.ProductCharacteristicId is null)
-                    {
-                        continue;
-                    }
+                if (onChanged is not null)
+                {
+                    await onChanged(productTestMetrics);
+                }
+            }
 
-                    OneOf<Success, ValidationResult, UnexpectedFailureResult> insertPropertyActionResult
-                        = await UpsertXmlPropertyInPropertiesAsync( private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
+            return new Success();
+        }
+                   
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
             NeededServicesForProductSaves neededServices,
             int productId,
             LegacyHtmlProductProperty htmlProperty,
@@ -1488,10 +1503,6 @@ ctCategory
             return createLinkResult;
         }
 
-
-
-
-
         public async Task SaveUnsavedFilesForGroupImagesAsync(NeededServicesForGroupPromotionSaves neededServices)
         {
             List<int> imageIdsThatFailedSave = await SaveUnsavedFilesForGroupImagesInternalAsync(neededServices);
@@ -1541,8 +1552,6 @@ ctCategory
 
             return imageIdsThatFailedSave;
         }
-
-
 
         public OneOf<string, ValidationResult> GetFileExtensionFromImageContentType(string? imageContentType)
         {
