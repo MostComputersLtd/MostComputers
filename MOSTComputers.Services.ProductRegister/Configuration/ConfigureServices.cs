@@ -13,6 +13,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductIdentifiers.
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
@@ -45,6 +46,7 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contract
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Cached;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using MOSTComputers.Services.ProductRegister.Validation;
 using MOSTComputers.Services.ProductRegister.Validation.ProductIdentifiers.ProductGTINCode;
 using MOSTComputers.Services.ProductRegister.Validation.ProductIdentifiers.ProductSerialNumber;
 using MOSTComputers.Services.ProductRegister.Validation.ProductImage;
@@ -255,6 +257,8 @@ public static class ConfigureServices
 
         services.AddScoped<IValidator<ProductStatusesCreateRequest>, ProductStatusesCreateRequestValidator>();
         services.AddScoped<IValidator<ProductStatusesUpdateRequest>, ProductStatusesUpdateRequestValidator>();
+
+        services.AddScoped<IValidator<ProductRelatedItemsFullSaveRequest>, ProductRelatedItemsFullSaveRequestValidator>();
 
         services.AddScoped<IValidator<ManufacturerToPromotionGroupRelationUpsertRequest>, ManufacturerToPromotionGroupRelationUpsertRequestValidator>();
 

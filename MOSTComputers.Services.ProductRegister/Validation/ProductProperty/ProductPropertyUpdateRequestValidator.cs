@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductProperty;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductProperty;
 internal sealed class ProductPropertyUpdateRequestValidator : AbstractValidator<ProductPropertyUpdateRequest>
