@@ -92,10 +92,10 @@ internal sealed class CachedProductImageFileService : IProductImageFileService
                 await SetByIdAndByImageIdCacheEntriesAsync(productImageFile);
             }
 
-            productIdsList.Remove(newProductImageFilesGroup.Key);
+            productIdsListMissingInCache.Remove(newProductImageFilesGroup.Key);
         }
 
-        foreach (int productIdWithoutImageFiles in productIdsList)
+        foreach (int productIdWithoutImageFiles in productIdsListMissingInCache)
         {
             List<ProductImageFileData> productImageFiles = new();
 
