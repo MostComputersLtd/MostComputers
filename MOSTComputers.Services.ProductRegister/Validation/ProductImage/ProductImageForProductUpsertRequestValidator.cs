@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageConstraints;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductImage;
 
@@ -14,6 +15,6 @@ internal sealed class ProductImageForProductUpsertRequestValidator : AbstractVal
         RuleFor(x => x).Must(x => x.ImageData is not null == x.ImageContentType is not null);
 
         RuleFor(x => x.ImageData).NullOrNotEmpty();
-        RuleFor(x => x.ImageContentType).NotEmptyOrWhiteSpace().MaximumLength(50);
+        RuleFor(x => x.ImageContentType).NotEmptyOrWhiteSpace().MaximumLength(ContentTypeMaxLength);
     }
 }

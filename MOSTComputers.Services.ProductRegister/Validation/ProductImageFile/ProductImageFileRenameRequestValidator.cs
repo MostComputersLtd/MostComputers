@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageFileNameInfoConstraints;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageFileDataConstraints;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductImageFile;
 

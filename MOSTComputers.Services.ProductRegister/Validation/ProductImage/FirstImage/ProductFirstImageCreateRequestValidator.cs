@@ -2,6 +2,7 @@
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
 
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductFirstImageConstraints;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.ProductImage.FirstImage;
 internal sealed class ProductFirstImageCreateRequestValidator : AbstractValidator<ServiceProductFirstImageCreateRequest>
@@ -14,6 +15,6 @@ internal sealed class ProductFirstImageCreateRequestValidator : AbstractValidato
         RuleFor(x => x).Must(x => x.ImageData is not null == x.ImageContentType is not null);
 
         RuleFor(x => x.ImageData).NullOrNotEmpty();
-        RuleFor(x => x.ImageContentType).NotEmptyOrWhiteSpace().MaximumLength(50);
+        RuleFor(x => x.ImageContentType).NotEmptyOrWhiteSpace().MaximumLength(ContentTypeMaxLength);
     }
 }

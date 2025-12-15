@@ -4,7 +4,17 @@ internal static class CommonValueConstraints
     internal const int CreateUserNameMaxLength = 256;
     internal const int LastUpdateUserNameMaxLength = 256;
 
-    internal static class ProductImageFileNameInfoConstraints
+    internal static class ProductImageConstraints
+    {
+        internal const int ContentTypeMaxLength = 50;
+    }
+
+    internal static class ProductFirstImageConstraints
+    {
+        internal const int ContentTypeMaxLength = 50;
+    }
+
+    internal static class ProductImageFileDataConstraints
     {
         internal const int FileNameMaxLength = 50;
     }
