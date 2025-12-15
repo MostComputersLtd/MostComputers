@@ -11,83 +11,9 @@ public sealed class ProductRelatedItemsFullSaveRequest
 {
     public required int ProductId { get; set; }
 
-    public List<ProductPropertyForProductUpsertRequest> PropertyRequests = new();
-    public List<ProductImageAndPromotionFileUpsertRequest> ImageRequests = new();
+    public List<ProductPropertyForProductUpsertRequest> PropertyRequests { get; set; } = new();
+    public List<ProductImageAndPromotionFileUpsertRequest> ImageRequests { get; set; } = new();
     public required string UpsertUserName { get; set; }
-
-    public void Add(ProductImageAndPromotionFileUpsertRequest productImageAndPromotionFileUpsertRequest)
-    {
-        ImageRequests.Add(productImageAndPromotionFileUpsertRequest);
-    }
-
-    public void Add(ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest)
-    {
-        ImageRequests.Add(new(productImageWithFileUpsertRequest));
-    }
-
-    public void Add(ProductImageFileForProductCreateRequest productImageFileCreateRequest)
-    {
-        ImageRequests.Add(new(productImageFileCreateRequest));
-    }
-
-    public void Add(ProductImageFileForProductUpdateRequest productImageFileUpdateRequest)
-    {
-        ImageRequests.Add(new(productImageFileUpdateRequest));
-    }
-
-    public void Add(PromotionProductFileForProductUpsertRequest promotionProductFileUpsertRequest)
-    {
-        ImageRequests.Add(new(promotionProductFileUpsertRequest));
-    }
-
-    public bool Remove(ProductImageAndPromotionFileUpsertRequest productImageAndPromotionFileUpsertRequest)
-    {
-        return ImageRequests.Remove(productImageAndPromotionFileUpsertRequest);
-    }
-
-    public bool Remove(ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest)
-    {
-        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageWithFileUpsertRequest);
-
-        if (requestIndex < 0) return false;
-
-        ImageRequests.RemoveAt(requestIndex);
-
-        return true;
-    }
-
-    public bool Remove(ProductImageFileForProductCreateRequest productImageFileCreateRequest)
-    {
-        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageFileCreateRequest);
-
-        if (requestIndex < 0) return false;
-
-        ImageRequests.RemoveAt(requestIndex);
-
-        return true;
-    }
-
-    public bool Remove(ProductImageFileForProductUpdateRequest productImageFileUpdateRequest)
-    {
-        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == productImageFileUpdateRequest);
-
-        if (requestIndex < 0) return false;
-
-        ImageRequests.RemoveAt(requestIndex);
-
-        return true;
-    }
-
-    public bool Remove(PromotionProductFileForProductUpsertRequest promotionProductFileUpsertRequest)
-    {
-        int requestIndex = ImageRequests.FindIndex(x => x.Request.Value == promotionProductFileUpsertRequest);
-
-        if (requestIndex < 0) return false;
-
-        ImageRequests.RemoveAt(requestIndex);
-
-        return true;
-    }
 }
 
 public sealed class ProductImageAndPromotionFileUpsertRequest

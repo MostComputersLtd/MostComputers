@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Results;
 using FluentValidation.TestHelper;
 using Microsoft.Extensions.Logging;
@@ -32,6 +31,7 @@ using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using MOSTComputers.Services.ProductRegister.Validation;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
@@ -62,6 +62,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         IProductToHtmlProductService productToHtmlProductService,
         IProductHtmlService productHtmlService,
         ITransactionExecuteService transactionExecuteService,
+        IValidator<ProductRelatedItemsFullSaveRequest>? productRelatedItemsFullSaveRequestValidator = null,
         IValidator<ServiceProductImageCreateRequest>? serviceProductImageCreateRequestValidator = null,
         IValidator<ServiceProductImageUpdateRequest>? serviceProductImageUpdateRequestValidator = null,
         IValidator<ProductImageUpsertRequest>? productImageUpsertRequestValidator = null,
@@ -82,6 +83,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         _productToHtmlProductService = productToHtmlProductService;
         _productHtmlService = productHtmlService;
         _transactionExecuteService = transactionExecuteService;
+        _productRelatedItemsFullSaveRequestValidator = productRelatedItemsFullSaveRequestValidator;
         _serviceProductImageCreateRequestValidator = serviceProductImageCreateRequestValidator;
         _serviceProductImageUpdateRequestValidator = serviceProductImageUpdateRequestValidator;
         _productImageUpsertRequestValidator = productImageUpsertRequestValidator;
@@ -104,6 +106,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private const string _invalidFileTypeErrorMessage = "File type not supported";
 
     private const string _unsupportedIdForDeleteErrorMessage = "Currently, we only support removing the images that were initially created from this application (to avoid conflicts)";
+
     private readonly IProductPropertyCrudService _productPropertyCrudService;
     private readonly IProductImageCrudService _productImageCrudService;
     private readonly IProductImageAndFileService _productImageAndFileService;
@@ -117,6 +120,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private readonly IProductToHtmlProductService _productToHtmlProductService;
     private readonly IProductHtmlService _productHtmlService;
     private readonly ITransactionExecuteService _transactionExecuteService;
+    private readonly IValidator<ProductRelatedItemsFullSaveRequest>? _productRelatedItemsFullSaveRequestValidator;
     private readonly IValidator<ServiceProductImageCreateRequest>? _serviceProductImageCreateRequestValidator;
     private readonly IValidator<ServiceProductImageUpdateRequest>? _serviceProductImageUpdateRequestValidator;
     private readonly IValidator<ProductImageUpsertRequest>? _productImageUpsertRequestValidator;
@@ -134,6 +138,10 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
         SaveProductRelatedItemsAsync(ProductRelatedItemsFullSaveRequest updateAllRequest)
     {
+        ValidationResult validationResult = ValidateDefault(_productRelatedItemsFullSaveRequestValidator, updateAllRequest);
+
+        if (!validationResult.IsValid) return validationResult;
+
         Product? product = await _productRepository.GetByIdAsync(updateAllRequest.ProductId);
 
         if (product is null)
@@ -398,8 +406,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                             ImageData = fileData,
                             HtmlData = productImageCreateRequest.HtmlData,
                         };
-
-                        
                     }
 
                     continue;
@@ -712,7 +718,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     Id = request.Id,
                     Active = request.Active,
                     NewDisplayOrder = newDisplayOrder,
-                    UpdateImageIdRequest = new No(),
                     UpdateFileDataRequest = updateFileDataRequest,
                     UpdateUserName = upsertUserName,
                 };
@@ -804,8 +809,8 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                             FileName = imageFileName,
                             Data = fileDataForInsert,
                         },
-                        Active = request.Active,
-                        CustomDisplayOrder = null,
+                        Active = request.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active,
+                        CustomDisplayOrder = request.UpsertInProductImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
                         CreateUserName = upsertUserName,
                     };
 
@@ -861,7 +866,14 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 byte[] fileData = memoryStream.ToArray();
 
                 OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertFileResult
-                    = await UpsertImageFileForImageAsync(productId, imageId, fileData, request.Active, null, fileExtension, upsertUserName);
+                    = await UpsertImageFileForImageAsync(
+                        productId,
+                        imageId,
+                        fileData,
+                        request.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active,
+                        request.UpsertInProductImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
+                        fileExtension,
+                        upsertUserName);
 
                 if (!upsertFileResult.IsT0)
                 {
