@@ -369,6 +369,7 @@
 {
     <SingleProductEditorPopup Product="ProductToDisplay.Product"
         @bind-IsVisible="IsSingleProductEditorPopupVisible"
+        OnSaveSuccessful="OnSingleProductEditorSaveAsync"
         PopupMarginOptions='new() { Left = "1vw", Right = "1vw", Top = "1vh", Bottom = "1vh" }' />
 
     <Popup @bind-IsVisible="IsProductXmlPopupVisible"
@@ -1124,6 +1125,21 @@
             ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.LastAdded, ProductNewStatusSearchOptions.New],
             _ => null
         };
+    }
+
+    private async Task OnSingleProductEditorSaveAsync()
+    {
+        if (ProductToDisplay is null) return;
+
+        int productToDisplayIndexInList = ProductDatas.FindIndex(x => x.Product.Id == ProductToDisplay.Product.Id);
+
+        if (productToDisplayIndexInList < 0) return;
+
+        ProductEditorProductData productEditorProductData = await ProductEditorDataService.GetProductEditorProductDataAsync(ProductToDisplay.Product);
+
+        ProductToDisplay = productEditorProductData;
+
+        ProductDatas[productToDisplayIndexInList] = ProductToDisplay;
     }
 
     private static string? GetStringFromProductEditorNewStatusSearchOptions(ProductEditorProductNewStatusSearchOptions productStatusEnum)
