@@ -7,4 +7,8 @@ public class PurchaseInvoiceData
     public required string UnitOfMeasurement { get; set; }
     public required string Currency { get; set; }
     public required decimal? PricePerUnit { get; set; }
+    public required decimal? LineNetPrice { get; set; }
+    public required decimal? LineVatPrice { get; set; }
+    public required decimal? LineTotalPrice { get; set; }
+    public required decimal? LineTotalPriceEuro { get; set; }
 }

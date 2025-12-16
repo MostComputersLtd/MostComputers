@@ -6,5 +6,5 @@ public interface IPdfInvoiceDataService
 {
     Task<InvoiceData?> GetInvoiceDataByIdAsync(int invoiceId);
     Task<InvoiceData?> GetInvoiceDataByNumberAsync(string invoiceNumber);
-    InvoiceData GetPdfInvoiceDataFromInvoice(Invoice invoice);
+    Task<InvoiceData> GetPdfInvoiceDataFromInvoiceAsync(Invoice invoice);
 }

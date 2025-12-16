@@ -7,5 +7,6 @@ namespace MOSTComputers.Services.Currencies.Contracts;
 public interface ICurrencyConversionService
 {
     Task<Dictionary<ChangeCurrencyRequest, OneOf<decimal, NotFound>>> ChangeCurrenciesAsync(List<ChangeCurrencyRequest> changeCurrencyRequest);
+    decimal ChangeCurrency(decimal price, decimal rate);
     Task<OneOf<decimal, NotFound>> ChangeCurrencyAsync(decimal value, Currency currentCurrency, Currency newCurrency);
 }

@@ -67,15 +67,18 @@ public sealed class CurrencyConversionService : ICurrencyConversionService
 
     public async Task<OneOf<decimal, NotFound>> ChangeCurrencyAsync(decimal value, Currency currentCurrency, Currency newCurrency)
     {
-        decimal priceInNewCurrency = value;
-
         if (currentCurrency == newCurrency) return value;
 
         ExchangeRate? exchangeRate = await _exchangeRateService.GetForCurrenciesAsync(currentCurrency, newCurrency);
 
         if (exchangeRate is null) return new NotFound();
 
-        priceInNewCurrency = Math.Round(priceInNewCurrency * exchangeRate.Rate, 2, MidpointRounding.AwayFromZero);
+        return ChangeCurrency(value, exchangeRate.Rate);
+    }
+
+    public decimal ChangeCurrency(decimal price, decimal rate)
+    {
+        decimal priceInNewCurrency = Math.Round(price * rate, 2, MidpointRounding.AwayFromZero);
 
         return priceInNewCurrency;
     }
