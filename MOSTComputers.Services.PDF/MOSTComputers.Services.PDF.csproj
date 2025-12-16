@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
   </ItemGroup>
 

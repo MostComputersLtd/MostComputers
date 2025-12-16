@@ -60,6 +60,7 @@
 @inject IPromotionFileService PromotionFileService
 @inject IPromotionProductFileService PromotionProductFileService
 @inject ICurrencyConversionService CurrencyConversionService
+@inject ICurrencyVATService CurrencyVATService
 
 @inject ISearchStringOriginService SearchStringOriginService
 @inject IProductHtmlService ProductHtmlService
@@ -1119,10 +1120,13 @@
 
         if (!getPriceInBgnResult.IsT0 || !getPriceInEurResult.IsT0) return null;
 
+        decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
+        decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
+
         return new()
         {
-            PriceInBgn = getPriceInBgnResult.AsT0,
-            PriceInEur = getPriceInEurResult.AsT0,
+            PriceInBgn = priceInBgn,
+            PriceInEur = priceInEur,
         };
     }
 

@@ -66,27 +66,6 @@ const string errorLogsTableName = "ErrorLogs";
 
 string? projectName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
 
-//Log.Logger = new LoggerConfiguration()
-//    .MinimumLevel.Error()
-//    .Filter.ByExcluding(
-//        logEvent => logEvent.Exception is JSDisconnectedException
-//            || logEvent.Exception is OperationCanceledException
-//            || logEvent.Exception is TaskCanceledException)
-//    .Enrich.FromLogContext()
-//    .Enrich.With(new LoggerNameEnricher("LoggerName"), new ExceptionTypeEnricher("ExceptionType"))
-//    .Enrich.WithProperty("ApplicationName", projectName ?? "MOSTComputers.UI.Web.Blazor")
-//    .Enrich.WithProperty("MachineName", Environment.MachineName)
-//    .WriteTo.MSSqlServer(
-//        connectionString: productDBConnectionString,
-//        sinkOptions: new MSSqlServerSinkOptions
-//        {
-//            TableName = errorLogsTableName,
-//            AutoCreateSqlTable = false,
-//            EnlistInTransaction = false,
-//        },
-//        columnOptions: columnOptions)
-//    .CreateLogger();
-
 builder.Host.UseSerilog((_, config) =>
 {
     ColumnOptions columnOptions = new();
@@ -149,6 +128,10 @@ if (!Path.IsPathFullyQualified(productXslTemplateFilePath!))
 {
     productXslTemplateFilePath = Path.Combine(currentDirectory, productXslTemplateFilePath!);
 }
+
+builder.Services.AddScoped<ICurrencyVATPercentageProvider, CurrencyVATPercentageProvider>();
+builder.Services.AddScoped<ICurrencyVATService, CurrencyVATService>();
+builder.Services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();
 
 builder.Services.AddLegacyXmlServices();
 
@@ -241,8 +224,6 @@ builder.Services.TryAddScoped<IInvoiceToXmlService, InvoiceToXmlService>();
 builder.Services.TryAddScoped<IWarrantyCardToXmlService, WarrantyCardToXmlService>();
 
 builder.Services.TryAddScoped<IProductEditorDataService, ProductEditorDataService>();
-
-builder.Services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()

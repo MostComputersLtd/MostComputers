@@ -4,11 +4,14 @@
 
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Services.Currencies.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using OneOf
+@using OneOf.Types
 
 @using static MOSTComputers.UI.Web.Blazor.Client.Product.ProductData;
 @using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion;
@@ -19,6 +22,8 @@
 @inject IProductImageService ProductImageService
 @inject IProductImageFileService ProductImageFileService
 @inject ISearchStringOriginService SearchStringOriginService
+@inject ICurrencyVATService CurrencyVATService
+@inject ICurrencyConversionService CurrencyConversionService
 
 <PageTitle>@(Product?.Name ?? "Product Data")</PageTitle>
 
@@ -49,7 +54,7 @@
 </div>
 
 <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
-    Product="Product" ProductProperties="ProductProperties"
+    Product="Product" PriceData="ProductPriceData" ProductProperties="ProductProperties"
     ProductImages="ProductImages" ProductSearchStringParts="ProductSearchStringParts"/>
 
 @code {
@@ -62,6 +67,7 @@
     private List<ProductPropertyDisplayData> ProductProperties { get; set; } = new();
     private List<ProductImageDisplayData> ProductImages { get; set; } = new();
     private List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
+    private ProductPriceData? ProductPriceData { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -168,5 +174,26 @@
 
         ProductSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             Product.SearchString, Product.CategoryId);
+
+        if (Product.Price is not null && Product.Currency is not null)
+        {
+            OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                Product.Price.Value, Product.Currency.Value, Currency.BGN);
+
+            OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                Product.Price.Value, Product.Currency.Value, Currency.EUR);
+
+            if (getPriceInBgnResult.IsT0 && getPriceInEurResult.IsT0)
+            {
+                decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
+                decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
+
+                ProductPriceData = new()
+                {
+                    PriceInBgn = priceInBgn,
+                    PriceInEur = priceInEur,
+                };
+            }
+        }
     }
 }
