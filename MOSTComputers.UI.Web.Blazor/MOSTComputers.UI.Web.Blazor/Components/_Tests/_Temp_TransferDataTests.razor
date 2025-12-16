@@ -20,8 +20,11 @@
 @using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups
 @using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.Legacy
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.Legacy.Contracts
 @using MOSTComputers.Services.ProductRegister.Models.Requests
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData
@@ -30,6 +33,7 @@
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Caching.Memory
 @using OneOf
@@ -47,6 +51,7 @@
 @inject IProductCharacteristicService _productCharacteristicService
 @inject IProductPropertyCrudService _productPropertyService
 @inject IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService
+@inject IProductXmlProvidingService _productXmlProvidingService
 @inject ILegacyProductHtmlService _legacyProductHtmlService
 
 @inject IGroupPromotionImagesRepository _groupPromotionImagesRepository
@@ -439,6 +444,7 @@
                 _productCharacteristicService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
@@ -490,6 +496,7 @@
                 _productCharacteristicService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
@@ -544,6 +551,7 @@
                 _productCharacteristicService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
@@ -597,6 +605,7 @@
                 _productCharacteristicService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
@@ -675,6 +684,8 @@
             public IProductCharacteristicService _productCharacteristicService { get; init; }
             public IProductPropertyCrudService _productPropertyService { get; init; }
             public IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService { get; init; }
+
+            public IProductXmlProvidingService _productXmlProvidingService { get; init; }
             public ILegacyProductHtmlService _legacyProductHtmlService { get; init; }
             public ITransactionExecuteService _transactionExecuteService { get; init; }
 
@@ -686,6 +697,7 @@
                 IProductCharacteristicService productCharacteristicService,
                 IProductPropertyCrudService productPropertyService,
                 IProductCharacteristicAndExternalXmlDataRelationService productCharacteristicAndExternalXmlDataRelationService,
+                IProductXmlProvidingService productXmlProvidingService,
                 ILegacyProductHtmlService legacyProductHtmlService,
                 ITransactionExecuteService transactionExecuteService)
             {
@@ -698,6 +710,7 @@
                 _productCharacteristicAndExternalXmlDataRelationService = productCharacteristicAndExternalXmlDataRelationService;
                 _legacyProductHtmlService = legacyProductHtmlService;
                 _transactionExecuteService = transactionExecuteService;
+                _productXmlProvidingService = productXmlProvidingService;
             }
         }
 
@@ -1066,6 +1079,150 @@
                     fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
                     fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
                     unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+            }
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveUnsavedImagesAndFilesFromLegacyXmlAsync(
+            NeededServicesForProductSaves neededServices,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            Task<OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound>> getLegacyXmlObjectDataTask = neededServices._productXmlProvidingService.GetProductXmlParsedAsync();
+
+            List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
+
+            List<ProductImageFileData> imageFiles = await neededServices._productImageFileService.GetAllAsync();
+
+            List<IGrouping<int, ProductImageFileData>> imageFilesGrouped = imageFiles.GroupBy(x => x.ProductId)
+                .ToList();
+
+            OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getLegacyXmlObjectDataResult = await getLegacyXmlObjectDataTask;
+
+            if (getLegacyXmlObjectDataResult.IsT0) return;
+
+            LegacyXmlObjectData legacyXmlObjectData = getLegacyXmlObjectDataResult.AsT0;
+
+            Dictionary<int, Tuple<LegacyXmlProductImage, int>> imageIdsInLegacyXml = new();
+            Dictionary<LegacyXmlProductImage, Tuple<string, int>> mismatchedImageUrlsInLegacyXml = new();
+
+            foreach (LegacyXmlProduct legacyXmlProduct in legacyXmlObjectData.Products)
+            {
+                if (legacyXmlProduct.Images is null) continue;
+
+                foreach (LegacyXmlProductImage legacyXmlProductImage in legacyXmlProduct.Images)
+                {
+                    if (string.IsNullOrWhiteSpace(legacyXmlProductImage.PictureUrl))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    string? fileName = Path.GetFileName(legacyXmlProductImage.PictureUrl);
+
+                    if (string.IsNullOrWhiteSpace(fileName))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    string fileNameIdPart = Path.GetFileNameWithoutExtension(fileName);
+
+                    if (!int.TryParse(fileNameIdPart, out int imageId))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    imageIdsInLegacyXml.Add(imageId, new(legacyXmlProductImage, legacyXmlProduct.Id));
+                }
+            }
+
+            for (int i = 0; i < products.Count; i++)
+            {
+                Product product = products[i];
+
+                IGrouping<int, ProductImageData>? imagesForProduct = images.FirstOrDefault(x => x.Key == product.Id);
+
+                if (imagesForProduct is null) continue;
+
+                foreach (ProductImageData imageData in imagesForProduct)
+                {
+                    if (!imageIdsInLegacyXml.ContainsKey(imageData.Id)) continue;
+
+                    imageIdsInLegacyXml.Remove(imageData.Id);
+                }
+
+                i--;
+            }
+
+            Dictionary<int, Tuple<byte[], LegacyXmlProductImage, int>> imageDataFromLegacyXml = new();
+
+            using (HttpClient httpClient = new())
+            {
+                foreach (KeyValuePair<int, Tuple<LegacyXmlProductImage, int>> imageKvp in imageIdsInLegacyXml)
+                {
+                    byte[] bytes = await httpClient.GetByteArrayAsync(imageKvp.Value.Item1.PictureUrl);
+
+                    imageDataFromLegacyXml.Add(imageKvp.Key, new(bytes, imageKvp.Value.Item1, imageKvp.Value.Item2));
+                }
+            }
+
+            IEnumerable<int> productIds = products.Select(x => x.Id);
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            for (int i = 0; i < imageDataFromLegacyXml.Count; i++)
+            {
+                KeyValuePair<int, Tuple<byte[], LegacyXmlProductImage, int>> current = imageDataFromLegacyXml.ElementAt(i);
+
+                ServiceProductImageCreateRequest serviceProductImageCreateRequest = new()
+                {
+                    ProductId = current.Value.Item3,
+                    HtmlData = null,
+                    ImageContentType = GetContentTypeFromExtension(current.Value.Item2.PictureUrl),
+                    ImageData = current.Value.Item1,
+                };
+
+                OneOf<int, ValidationResult, UnexpectedFailureResult> result
+                    = await neededServices._productImageService.InsertInAllImagesAsync(serviceProductImageCreateRequest, currentUserName);
+
+                int startId = current.Key;
+                int endId = current.Key;
+
+                result.Switch(
+                    success => onChanged(productTestMetrics),
+                    validationResult =>
+                    {
+                        foreach (ValidationFailure validationFailure in validationResult.Errors)
+                        {
+                            validationFailure.ErrorMessage += $" (between images {startId} and {endId})";
+                        }
+
+                        onChanged(validationResult);
+                    },
+                    unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between images {startId} and {endId})" }));
             }
 
             _alreadyActive = false;
