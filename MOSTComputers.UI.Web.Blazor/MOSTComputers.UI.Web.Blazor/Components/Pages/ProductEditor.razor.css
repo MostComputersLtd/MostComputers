@@ -23,6 +23,10 @@ p {
     margin-bottom: 0px;
 }
 
+button {
+    box-shadow: none !important;
+}
+
 ::deep .whitespace-nowrap {
     white-space: nowrap;
 }
