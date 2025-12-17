@@ -36,6 +36,8 @@ button {
     height: 100%;
     display: flex;
     flex-direction: column;
+
+    --products-table-header-background-color: #FFFFFF;
 }
 
 .product-editor-page-header {
@@ -83,8 +85,8 @@ button {
 
 .product-data-table {
     width: 100%;
-    background-color: var(--bs-body-bg);
     max-height: 100%;
+    background-color: var(--products-table-header-background-color);
 }
 
 .product-data-table-head {
