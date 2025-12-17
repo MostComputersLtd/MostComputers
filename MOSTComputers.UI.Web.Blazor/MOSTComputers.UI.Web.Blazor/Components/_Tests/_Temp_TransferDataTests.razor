@@ -73,6 +73,10 @@
             Save Unsaved files and props from original
         </a>
 
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedImagesAndFilesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
+            Save Unsaved IMAGES FROM HTML
+        </a>
+
         <a class="btn btn-outline-primary mb-2" @onclick="SaveAllPropertiesImgAllAsync" disabled="@_saveOperationRunning">
             Save All props
         </a>
@@ -611,6 +615,60 @@
 
             await SaveServiceInstance.SaveAllPropertiesImgAllAsync(
                 neededServices, _updateDate.Value, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveUnsavedImagesAndFilesFromLegacyXmlAsync()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productRelatedItemsFullSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveUnsavedImagesAndFilesFromLegacyXmlAsync(
+                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
         }
         catch (Exception e)
         {
