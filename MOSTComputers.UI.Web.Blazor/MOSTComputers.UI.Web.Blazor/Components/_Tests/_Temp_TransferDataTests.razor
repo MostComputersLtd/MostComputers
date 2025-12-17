@@ -73,8 +73,12 @@
             Save Unsaved files and props from original
         </a>
 
-        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedImagesAndFilesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
-            Save Unsaved IMAGES FROM HTML
+        <a class="btn btn-outline-primary mb-2" @onclick="CheckForUnsavedImagesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
+            Check for Unsaved Images From XML
+        </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedImagesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
+            Save Unsaved Images From XML
         </a>
 
         <a class="btn btn-outline-primary mb-2" @onclick="SaveAllPropertiesImgAllAsync" disabled="@_saveOperationRunning">
@@ -171,30 +175,6 @@
                         </div>
                     }
                 }
-
-                @if (_errorsThatOccuredOvertime.Count > 0)
-                {
-                    <p class="mb-0 me-2">
-                        Errors that occured during save:
-                    </p>
-
-                    foreach (string errorThatOccuredOvertime in _errorsThatOccuredOvertime)
-                    {
-                        <p class="mb-0">@errorThatOccuredOvertime</p>
-                    }
-                }
-
-                @if (_exceptionsThatOccuredOvertime.Count > 0)
-                {
-                    <p class="mb-0 me-2">
-                        Exceptions that occured during save:
-                    </p>
-
-                    foreach (Exception exceptionThatOccuredOvertime in _exceptionsThatOccuredOvertime)
-                    {
-                        <pre class="mb-0">@exceptionThatOccuredOvertime.Message</pre>
-                    }
-                }
             </div>
         </div>
     }
@@ -239,6 +219,30 @@
                 }
             </div>
         </div>
+    }
+
+    @if (_errorsThatOccuredOvertime.Count > 0)
+    {
+        <p class="mb-0 me-2">
+            Errors that occured during save:
+        </p>
+
+        foreach (string errorThatOccuredOvertime in _errorsThatOccuredOvertime)
+        {
+            <p class="mb-0">@errorThatOccuredOvertime</p>
+        }
+    }
+
+    @if (_exceptionsThatOccuredOvertime.Count > 0)
+    {
+        <p class="mb-0 me-2">
+            Exceptions that occured during save:
+        </p>
+
+        foreach (Exception exceptionThatOccuredOvertime in _exceptionsThatOccuredOvertime)
+        {
+            <pre class="mb-0">@exceptionThatOccuredOvertime.Message</pre>
+        }
     }
 </div>
 
@@ -626,7 +630,7 @@
         }
     }
 
-    public async Task SaveUnsavedImagesAndFilesFromLegacyXmlAsync()
+    public async Task CheckForUnsavedImagesFromLegacyXmlAsync()
     {
         if (_updateDate is null) return;
 
@@ -667,7 +671,61 @@
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
-            await SaveServiceInstance.SaveUnsavedImagesAndFilesFromLegacyXmlAsync(
+            await SaveServiceInstance.CheckForUnsavedImagesFromLegacyXmlAsync(
+                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveUnsavedImagesFromLegacyXmlAsync()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productRelatedItemsFullSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _productXmlProvidingService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveUnsavedImagesFromLegacyXmlAsync(
                 neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
         }
         catch (Exception e)
@@ -1142,7 +1200,129 @@
             _alreadyActive = false;
         }
 
-        public async Task SaveUnsavedImagesAndFilesFromLegacyXmlAsync(
+        public async Task CheckForUnsavedImagesFromLegacyXmlAsync(
+            NeededServicesForProductSaves neededServices,
+            string? currentUserName,
+            int? startProductId,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
+
+            if (startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= startProductId).ToList();
+            }
+
+            Task<OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound>> getLegacyXmlObjectDataTask = neededServices._productXmlProvidingService.GetProductXmlParsedAsync();
+
+            List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
+
+            List<ProductImageFileData> imageFiles = await neededServices._productImageFileService.GetAllAsync();
+
+            List<IGrouping<int, ProductImageFileData>> imageFilesGrouped = imageFiles.GroupBy(x => x.ProductId)
+                .ToList();
+
+            OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getLegacyXmlObjectDataResult = await getLegacyXmlObjectDataTask;
+
+            if (!getLegacyXmlObjectDataResult.IsT0)
+            {
+                _alreadyActive = false;
+
+                return;
+            }
+
+            LegacyXmlObjectData legacyXmlObjectData = getLegacyXmlObjectDataResult.AsT0;
+
+            Dictionary<int, List<Tuple<LegacyXmlProductImage, int>>> imageIdsInLegacyXml = new();
+
+            Dictionary<LegacyXmlProductImage, Tuple<string, int>> mismatchedImageUrlsInLegacyXml = new();
+
+            foreach (LegacyXmlProduct legacyXmlProduct in legacyXmlObjectData.Products)
+            {
+                if (legacyXmlProduct.Images is null) continue;
+
+                foreach (LegacyXmlProductImage legacyXmlProductImage in legacyXmlProduct.Images)
+                {
+                    if (string.IsNullOrWhiteSpace(legacyXmlProductImage.PictureUrl))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    string? fileName = Path.GetFileName(legacyXmlProductImage.PictureUrl);
+
+                    if (string.IsNullOrWhiteSpace(fileName))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    string fileNameIdPart = Path.GetFileNameWithoutExtension(fileName);
+
+                    if (!int.TryParse(fileNameIdPart, out int imageId))
+                    {
+                        mismatchedImageUrlsInLegacyXml.Add(legacyXmlProductImage, new(legacyXmlProductImage.PictureUrl, legacyXmlProduct.Id));
+
+                        continue;
+                    }
+
+                    if (imageIdsInLegacyXml.TryGetValue(imageId, out var value))
+                    {
+                        value.Add(new(legacyXmlProductImage, legacyXmlProduct.Id));
+                    }
+                    else
+                    {
+                        imageIdsInLegacyXml.Add(imageId, [new(legacyXmlProductImage, legacyXmlProduct.Id)]);
+                    }
+                }
+            }
+
+            IEnumerable<ProductImageData> allImagesFlattened = images.SelectMany(x => x);
+
+            Dictionary<int, int?> missedImageIdsInLegacyXml = imageIdsInLegacyXml
+                .Where(imageInXmlData => allImagesFlattened.FirstOrDefault(image => image.Id == imageInXmlData.Key) is null)
+                .Select(imageInXmlData => new Tuple<int, int?>(imageInXmlData.Key, imageInXmlData.Value.First().Item2))
+                .ToDictionary(tuple => tuple.Item1, tuple => tuple.Item2);
+
+            // for (int i = 0; i < products.Count; i++)
+            // {
+            //     Product product = products[i];
+
+            //     IGrouping<int, ProductImageData>? imagesForProduct = images.FirstOrDefault(x => x.Key == product.Id);
+
+            //     if (imagesForProduct is null) continue;
+
+            //     foreach (ProductImageData imageData in imagesForProduct)
+            //     {
+            //         if (imageIdsInLegacyXml.TryGetValue(imageData.Id, out List<Tuple<LegacyXmlProductImage, int>>? tuple)) continue;
+
+            //         missedImageIdsInLegacyXml.Add(imageData.Id, imageData.ProductId);
+            //     }
+            // }
+
+            IEnumerable<int> productIds = products.Select(x => x.Id);
+
+            ProductTestMetrics productTestMetrics = new();
+
+            // TimeSpan timeout = TimeSpan.FromDays(2);
+
+            // TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            string sqlConvinientCopy = $"({string.Join(", ", missedImageIdsInLegacyXml.Keys)})";
+
+            _ = onChanged(new List<string>() { $"{sqlConvinientCopy}" });
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveUnsavedImagesFromLegacyXmlAsync(
             NeededServicesForProductSaves neededServices,
             string? currentUserName,
             int? startProductId,
