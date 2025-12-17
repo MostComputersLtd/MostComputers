@@ -90,6 +90,7 @@ builder.Host.UseSerilog((_, config) =>
     config.MinimumLevel.Error()
         .Filter.ByExcluding(
             logEvent => logEvent.Exception is JSDisconnectedException
+                || logEvent.Exception is JSException
                 || logEvent.Exception is OperationCanceledException
                 || logEvent.Exception is TaskCanceledException)
         .Enrich.FromLogContext()
