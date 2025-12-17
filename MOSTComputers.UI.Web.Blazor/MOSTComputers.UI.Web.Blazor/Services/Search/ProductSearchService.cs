@@ -455,20 +455,23 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             filteredProducts = products.ToList();
         }
-
-        foreach (Product product in products)
+        else
         {
-            ProductWorkStatuses? productWorkStatuses = productStatuses.FirstOrDefault(x => x.ProductId == product.Id);
+            Dictionary<int, ProductWorkStatuses> statusByProductId = productStatuses.ToDictionary(x => x.ProductId);
 
-            if (productWorkStatuses is null) continue;
+            HashSet<ProductNewStatus> allowedBasicProductNewStatuses = productNewStatuses
+                .Select(x => GetProductNewStatusFromSearchOptions(x))
+                .Where(x => x is not null)
+                .Select(x => (ProductNewStatus)x!)
+                .ToHashSet();
 
-            foreach (ProductNewStatusSearchOptions productNewSearchStatus in productNewStatuses)
+            foreach (Product product in products)
             {
-                if (!DoesProductNewSearchStatusMatch(productNewSearchStatus, productWorkStatuses.ProductNewStatus)) continue;
+                if (!statusByProductId.TryGetValue(product.Id, out ProductWorkStatuses? productWorkStatuses)) continue;
+
+                if (!allowedBasicProductNewStatuses.Contains(productWorkStatuses.ProductNewStatus)) continue;
 
                 filteredProducts.Add(product);
-
-                break;
             }
         }
 
@@ -483,17 +486,17 @@ internal sealed class ProductSearchService : IProductSearchService
         return filteredProducts;
     }
 
-    private static bool DoesProductNewSearchStatusMatch(ProductNewStatusSearchOptions searchedStatus, ProductNewStatus? productNewStatus)
+    private static ProductNewStatus? GetProductNewStatusFromSearchOptions(ProductNewStatusSearchOptions searchedStatus)
     {
         return searchedStatus switch
         {
-            ProductNewStatusSearchOptions.New => productNewStatus == ProductNewStatus.New,
-            ProductNewStatusSearchOptions.WorkInProgress => productNewStatus == ProductNewStatus.WorkInProgress,
-            ProductNewStatusSearchOptions.ReadyForUse => productNewStatus == ProductNewStatus.ReadyForUse,
-            ProductNewStatusSearchOptions.Postponed1 => productNewStatus == ProductNewStatus.Postponed1,
-            ProductNewStatusSearchOptions.Postponed2 => productNewStatus == ProductNewStatus.Postponed2,
-            ProductNewStatusSearchOptions.LastAdded => false,
-            _ => false
+            ProductNewStatusSearchOptions.New => ProductNewStatus.New,
+            ProductNewStatusSearchOptions.WorkInProgress => ProductNewStatus.WorkInProgress,
+            ProductNewStatusSearchOptions.ReadyForUse => ProductNewStatus.ReadyForUse,
+            ProductNewStatusSearchOptions.Postponed1 => ProductNewStatus.Postponed1,
+            ProductNewStatusSearchOptions.Postponed2 => ProductNewStatus.Postponed2,
+            ProductNewStatusSearchOptions.LastAdded => null,
+            _ => null
         };
     }
 
