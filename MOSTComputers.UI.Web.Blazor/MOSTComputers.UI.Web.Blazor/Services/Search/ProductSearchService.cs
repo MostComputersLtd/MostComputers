@@ -528,17 +528,23 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
+            Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
+                .Where(group => group.Key.HasValue)
+                .ToDictionary(group => group.Key!.Value, group => group.ToList());
+
             foreach (Product product in products)
             {
-                if (product.PromotionPid is null) continue;
+                if (!promotionsByProductId.TryGetValue(product.Id, out List<Promotion>? promotions)) continue;
 
-                IGrouping<int?, Promotion>? promotionsForProduct = promotionsForProducts.FirstOrDefault(x => x.Key == product.Id);
-
-                Promotion? pidPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionPid);
-
-                if (pidPromotion is null || !IsPromotionActive(pidPromotion)) continue;
-
-                filteredProducts.Add(product);
+                foreach (Promotion promotion in promotions)
+                {
+                    if (promotion.Id == product.PromotionPid && IsPromotionActive(promotion))
+                    {
+                        filteredProducts.Add(product);
+                        
+                        break;
+                    }
+                }
             }
 
             return filteredProducts;
@@ -547,17 +553,23 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
+            Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
+               .Where(group => group.Key.HasValue)
+               .ToDictionary(group => group.Key!.Value, group => group.ToList());
+
             foreach (Product product in products)
             {
-                if (product.PromotionRid is null) continue;
+                if (!promotionsByProductId.TryGetValue(product.Id, out List<Promotion>? promotions)) continue;
 
-                IGrouping<int?, Promotion>? promotionsForProduct = promotionsForProducts.FirstOrDefault(x => x.Key == product.Id);
+                foreach (Promotion promotion in promotions)
+                {
+                    if (promotion.Id == product.PromotionRid && IsPromotionActive(promotion))
+                    {
+                        filteredProducts.Add(product);
 
-                Promotion? ridPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionRid);
-
-                if (ridPromotion is null || !IsPromotionActive(ridPromotion)) continue;
-
-                filteredProducts.Add(product);
+                        break;
+                    }
+                }
             }
 
             return filteredProducts;
@@ -582,35 +594,30 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
+            Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
+                .Where(group => group.Key.HasValue)
+                .ToDictionary(group => group.Key!.Value, group => group.ToList());
+
             foreach (Product product in products)
             {
-                bool hasInfoPromotion = DoesProductHaveInfoPromotion(product);
-
-                if (hasInfoPromotion)
+                if (DoesProductHaveInfoPromotion(product))
                 {
                     filteredProducts.Add(product);
 
                     continue;
                 }
 
-                IGrouping<int?, Promotion>? promotionsForProduct = promotionsForProducts.FirstOrDefault(x => x.Key == product.Id);
+                if (!promotionsByProductId.TryGetValue(product.Id, out List<Promotion>? promotions)) continue;
 
-                Promotion? pidPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionPid);
-
-                if (pidPromotion is not null && IsPromotionActive(pidPromotion))
+                foreach (Promotion? promotion in promotions)
                 {
-                    filteredProducts.Add(product);
+                    if ((promotion.Id == product.PromotionPid || promotion.Id == product.PromotionRid)
+                        && IsPromotionActive(promotion))
+                    {
+                        filteredProducts.Add(product);
 
-                    continue;
-                }
-
-                Promotion? ridPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionRid);
-
-                if (ridPromotion is not null && IsPromotionActive(ridPromotion))
-                {
-                    filteredProducts.Add(product);
-
-                    continue;
+                        break;
+                    }
                 }
             }
 
@@ -619,6 +626,10 @@ internal sealed class ProductSearchService : IProductSearchService
         else if (promotionSearchEnum == PromotionSearchOptions.None)
         {
             List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
+
+            Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
+                .Where(group => group.Key.HasValue)
+                .ToDictionary(group => group.Key!.Value, group => group.ToList());
 
             foreach (Product product in products)
             {
@@ -633,14 +644,20 @@ internal sealed class ProductSearchService : IProductSearchService
 
                 if (promotionPictureId > 0 && infoPromotionIsActive) continue;
 
-                IGrouping<int?, Promotion>? promotionsForProduct = promotionsForProducts.FirstOrDefault(x => x.Key == product.Id);
+                if (promotionsByProductId.TryGetValue(product.Id, out List<Promotion>? promotions))
+                {
+                    if (product.PromotionPid is not null
+                        && promotions.Any(promotion => promotion.Id == product.PromotionPid.Value && IsPromotionActive(promotion)))
+                    {
+                        continue;
+                    }
 
-                Promotion? pidPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionPid);
-                Promotion? ridPromotion = promotionsForProduct?.FirstOrDefault(x => x.Id == product.PromotionRid);
-
-                if (pidPromotion is not null && IsPromotionActive(pidPromotion)) continue;
-
-                if (ridPromotion is not null && IsPromotionActive(ridPromotion)) continue;
+                    if (product.PromotionRid is not null
+                        && promotions.Any(promotion => promotion.Id == product.PromotionRid.Value && IsPromotionActive(promotion)))
+                    {
+                        continue;
+                    }
+                }
 
                 filteredProducts.Add(product);
             }
@@ -651,15 +668,18 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
+            Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
+                .Where(g => g.Key.HasValue)
+                .ToDictionary(g => g.Key!.Value, g => g.ToList());
+
             foreach (Product product in products)
             {
-                IGrouping<int?, Promotion>? promotionsForProduct = promotionsForProducts.FirstOrDefault(x => x.Key == product.Id);
+                if (!promotionsByProductId.TryGetValue(product.Id, out List<Promotion>? promotions)) continue;
 
-                if (promotionsForProduct is null) continue;
-
-                foreach (Promotion promotion in promotionsForProduct)
+                foreach (Promotion promotion in promotions)
                 {
-                    if (promotion.Id != product.PromotionPid && promotion.Id != product.PromotionRid)
+                    if (promotion.Id != product.PromotionPid
+                        && promotion.Id != product.PromotionRid)
                     {
                         continue;
                     }
