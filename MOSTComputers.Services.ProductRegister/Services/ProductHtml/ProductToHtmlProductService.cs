@@ -1,5 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductHtml;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
@@ -32,26 +33,42 @@ internal sealed class ProductToHtmlProductService : IProductToHtmlProductService
 
     public async Task<HtmlProductsData> GetHtmlProductDataFromProductsAsync(IEnumerable<Product> products)
     {
-        List<HtmlProduct> htmlProducts = new();
-
         IEnumerable<int> productIds = products.Select(x => x.Id);
 
         List<IGrouping<int, ProductProperty>> productProperties = await _productPropertyCrudService.GetAllInProductsAsync(productIds);
 
+        List<GetHtmlDataForProductRequest> requests = new();
+
         foreach (Product product in products)
+        {
+            List<ProductProperty>? propertiesForProduct = productProperties.FirstOrDefault(x => x.Key == product.Id)?.ToList();
+
+            requests.Add(new GetHtmlDataForProductRequest
+            {
+                Product = product,
+                ProductProperties = propertiesForProduct
+            });
+        }
+
+        return GetHtmlProductDataFromProducts(requests);
+    }
+
+    public HtmlProductsData GetHtmlProductDataFromProducts(List<GetHtmlDataForProductRequest> requests)
+    {
+        List<HtmlProduct> htmlProducts = new();
+
+        foreach (GetHtmlDataForProductRequest request in requests)
         {
             HtmlProduct htmlProduct = new()
             {
-                Id = product.Id,
-                Name = product.Name,
+                Id = request.Product.Id,
+                Name = request.Product.Name,
                 Properties = new(),
             };
 
-            IGrouping<int, ProductProperty>? propertiesForProduct = productProperties.FirstOrDefault(x => x.Key == product.Id);
-
-            if (propertiesForProduct is not null)
+            if (request.ProductProperties is not null)
             {
-                foreach (ProductProperty property in propertiesForProduct)
+                foreach (ProductProperty property in request.ProductProperties)
                 {
                     HtmlProductProperty htmlProductProperty = new()
                     {
