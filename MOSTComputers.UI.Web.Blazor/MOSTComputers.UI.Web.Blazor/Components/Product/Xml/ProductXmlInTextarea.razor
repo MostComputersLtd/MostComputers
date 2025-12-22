@@ -22,19 +22,20 @@
 
 @inject NavigationManager NavigationManager
 
-<div class="full-parent-width full-parent-height d-flex flex-column">
+<div class="product-xml-text-area-container">
 
     @if (_productXmlData is not null)
     {
         @if (_productXmlData.Value.IsT0)
         {
-            <textarea class="flex-shrink-0 flex-grow-1" spellcheck="false" resize="none" readonly>
+            <textarea id="productXmlTextarea" class="product-xml-text-area" spellcheck="false" resize="none" readonly aria-readonly="true" aria-label="Product XML">
                 @_productXmlData.Value.AsT0
             </textarea>
         }
         else
         {
-            <textarea class="text-danger flex-shrink-0 flex-grow-1" spellcheck="false" resize="none" readonly>
+            <textarea id="productXmlErrorTextarea" class="product-xml-text-area text-danger" spellcheck="false" resize="none" readonly
+                aria-readonly="true" aria-label="Product XML Error">
                 @_productXmlData.Value.AsT1.Text
             </textarea>
         }

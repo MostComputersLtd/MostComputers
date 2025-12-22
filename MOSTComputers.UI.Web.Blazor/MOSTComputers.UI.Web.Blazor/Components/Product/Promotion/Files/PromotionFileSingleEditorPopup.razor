@@ -108,7 +108,8 @@
 
                                     <p class="mb-0 me-2">Change file name:</p>
 
-                                    <input type="text" style="flex-grow: 1; text-align: end;" placeholder="New file name" @bind="_preferredFileNameWithoutExtension" />
+                                    <input id="newFileNameInput" type="text" style="flex-grow: 1; text-align: end;" placeholder="New file name" @bind="_preferredFileNameWithoutExtension"
+                                        aria-label="New file name"/>
 
                                     <p class="mb-0">@Path.GetExtension(currentFileName)</p>
                                 </div>

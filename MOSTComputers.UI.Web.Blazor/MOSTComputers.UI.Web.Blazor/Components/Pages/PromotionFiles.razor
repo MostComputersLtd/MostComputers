@@ -40,7 +40,8 @@
 
         <input id="promotionFilesSearchInput" type="text" placeholder="Search..."
             class="flex-shrink-0 flex-grow-1 me-2"
-            @bind="@_userInputString" />
+            @bind="@_userInputString"
+            aria-label="Text Search" />
 
         <button id="promotionFilesSearchButton" type="button" class="btn btn-info ms-4" @onclick="SearchAndDisplayFilesAsync">
             Search
@@ -81,11 +82,13 @@
                             <td>
                                 @if (promotionFileInfo.Active)
                                 {
-                                    <input type="checkbox" tabindex="-1" style="pointer-events: none;" checked />
+                                    <input id="promotionFileActiveInput-@i" type="checkbox" tabindex="-1" style="pointer-events: none;" checked
+                                        aria-readonly="true" aria-label="Active" />
                                 }
                                 else
                                 {
-                                    <input type="checkbox" tabindex="-1" style="pointer-events: none;" />
+                                    <input id="promotionFileActiveInput-@i" type="checkbox" tabindex="-1" style="pointer-events: none;"
+                                        aria-readonly="true" aria-label="Active" />
 								}
                             </td>
                             <td>@promotionFileInfo.Id</td>

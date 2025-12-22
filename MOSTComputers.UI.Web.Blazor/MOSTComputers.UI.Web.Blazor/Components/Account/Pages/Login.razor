@@ -47,18 +47,20 @@
         </div>
 
         <StatusMessage Message="@errorMessage" />
-        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" autocomplete="off" class="login-form">
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login" class="login-form">
 
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-field">
                 <label for="username">Username</label>
-                <InputText @bind-value="Input.Username" class="form-field-input" autocomplete="off" aria-required="true" placeholder="Username" />
+                <InputText id="username" @bind-value="Input.Username" class="form-field-input"
+                    autocomplete="username" aria-required="true" placeholder="Username" />
                 <ValidationMessage For="() => Input.Username" class="text-danger" />
             </div>
             <div class="form-field">
                 <label for="password">Password</label>
-                <InputText type="password" @bind-value="Input.Password" class="form-field-input" autocomplete="off" aria-required="true" placeholder="Password" />
+                <InputText id="password" type="password" @bind-value="Input.Password" class="form-field-input"
+                    autocomplete="current-password" aria-required="true" placeholder="Password" />
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
             <div class="login-remember-row">
