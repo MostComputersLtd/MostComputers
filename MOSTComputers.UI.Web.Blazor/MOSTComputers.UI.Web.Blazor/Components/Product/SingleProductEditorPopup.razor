@@ -1247,7 +1247,7 @@
 
         string? previewUrl = await CreateImagePreviewUrlForBrowserFileAsync(file);
 
-        using Stream stream = file.OpenReadStream(20 * 1024 * 1024);
+        using Stream stream = file.OpenReadStream(30 * 1024 * 1024);
 
         using MemoryStream memoryStream = new();
 
@@ -1296,7 +1296,7 @@
     {
         if (_jsModule is null || browserFile is null) return null;
 
-        Stream streamFromFile = browserFile.OpenReadStream(20 * 1024 * 1024);
+        Stream streamFromFile = browserFile.OpenReadStream(30 * 1024 * 1024);
 
         DotNetStreamReference streamFromFileRef = new(streamFromFile);
 
