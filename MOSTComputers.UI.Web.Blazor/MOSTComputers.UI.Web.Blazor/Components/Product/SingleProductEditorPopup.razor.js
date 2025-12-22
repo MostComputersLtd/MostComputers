@@ -16,30 +16,30 @@ export async function changeFileInputDataToImageFromClipboardAndForceChangeEvent
 
     if (!fileInputElement) return;
 
-    changeFileInputDataToImageFromClipboard(fileInputElementId);
+    const success = await changeFileInputDataToImageFromClipboard(fileInputElement);
+
+    if (!success) return;
 
     const changeEvent = new Event('change');
 
     fileInputElement.dispatchEvent(changeEvent);
 }
 
-async function changeFileInputDataToImageFromClipboard(fileInputElementId)
+async function changeFileInputDataToImageFromClipboard(fileInputElement)
 {
     const clipboardItems = await navigator.clipboard.read();
 
     const file = await getFirstImageFileFromClipboard(clipboardItems);
 
-    if (!file) return;
+    if (file == null) return false;
 
-    await changeFileInputData(fileInputElementId, file);
+    changeFileInputData(fileInputElement, file);
+
+    return true;
 }
 
-async function changeFileInputData(fileInputElementId, file)
+function changeFileInputData(fileInputElement, file)
 {
-    const fileInputElement = document.getElementById(fileInputElementId);
-
-    if (!fileInputElement) return;
-
     const dataTransfer = new DataTransfer()
 
     dataTransfer.items.add(file);
@@ -61,14 +61,14 @@ async function getFirstImageFileFromClipboard(clipboardItems)
 
             const blob = await clipboardItem.getType(type);
 
-            const fileFromBlob = new File([blob], "unusedFileNameOfImageFile." + newImageExtension);
+            const fileFromBlob = new File([blob], "unusedFileNameOfImageFile." + newImageExtension, { type: blob.type, lastModified: Date.now() });
 
             file = fileFromBlob;
 
             break;
         }
 
-        if (file) break;
+        if (file != null) break;
     }
 
     return file;
