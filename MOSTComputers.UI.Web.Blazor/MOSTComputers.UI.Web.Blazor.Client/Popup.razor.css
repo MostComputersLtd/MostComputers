@@ -42,12 +42,22 @@
 }
 
 /* Close button */
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
+.popup-close-button {
+    min-width: 1em;
+    min-height: 1em;
+    width: 1em;
+    height: 1em;
+    font-size: 1em;
+    border-radius: .25rem;
+    padding: 0.25em 0.25em;
     cursor: pointer;
+    box-shadow: none !important;
 }
+
+    .popup-close-button:focus-visible {
+        outline: 2px solid #000000;
+        outline-offset: 2px;
+    }
 
 /* Body */
 .popup-body {
