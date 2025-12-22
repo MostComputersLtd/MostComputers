@@ -8,25 +8,36 @@
 
 <div @attributes="AdditionalAttributes" class="dropdown-select @dropdownSelectAdditionalClasses">
     <div @attributes="AdditionalTopSelectedItemsContainerAttributes"
-         class="dropdown-select-top-selected-items-container @topSelectedItemsContainerAdditionalClasses"
+             class="dropdown-select-top-selected-items-container @topSelectedItemsContainerAdditionalClasses"
          @onclick="ToggleDropdown">
         @SelectedItemsTemplate(SelectedItems)
     </div>
 
     <div @attributes="AdditionalDropdownListAttributes"
-        class="@dropdownListAdditionalClasses dropdown-select-dropdown @(IsOpen ? "open" : string.Empty)">
+        class="@dropdownListAdditionalClasses dropdown-select-dropdown @(IsOpen ? "open" : string.Empty)"
+         role="listbox"
+         aria-expanded="@(IsOpen ? "true" : "false")"
+         aria-multiselectable="@(ItemSelectionMode == SelectionMode.Multiple ? "true" : "false")"
+         aria-activedescendant="@_lastUsedItemId">
 
         @if (Items.Count > 0)
         {
-            @foreach (TItem item in Items)
+            @for (int i = 0; i < Items.Count; i++)
             {
+                TItem item = Items[i];
+
+                int currentIndex = i;
+
                 DropdownSelectItem dropdownItem = new()
                 {
                     Item = item,
                     IsSelected = SelectedItems?.Contains(item) ?? false
                 };
 
-                <div @onclick="() => ToggleItemSelection(item)">
+                <div id="dropdown-select-option-@currentIndex" @onclick='() => ToggleItemSelection(item, $"dropdown-select-option-{currentIndex}")'
+                    role="option"
+                    aria-label="Select option @(currentIndex + 1)"
+                    aria-selected="@(dropdownItem.IsSelected ? "true" : "false")">
                     @ItemTemplate(dropdownItem)
                 </div>
             }
@@ -49,8 +60,8 @@
     public sealed class DropdownSelectItem
     {
         public required TItem Item { get; init; }
-		public required bool IsSelected { get; init; }
-	}
+        public required bool IsSelected { get; init; }
+    }
 
     public readonly struct NoItemsResult {}
 
@@ -79,6 +90,8 @@
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
 
+    private string? _lastUsedItemId = null;
+
     protected override void OnParametersSet()
     {
         if (_previousItems is not null && _previousItems != Items)
@@ -93,7 +106,7 @@
             SetSelectedItemsFromIndexes(SelectedItemIndexes);
         }
 
-		_previousSelectedItemIndexes = SelectedItemIndexes;
+        _previousSelectedItemIndexes = SelectedItemIndexes;
 
         if (_previousItemSelectionMode is not null && _previousItemSelectionMode != ItemSelectionMode)
         {
@@ -106,6 +119,8 @@
                 if (!hadAnySeletedItems) return;
 
                 SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+                _lastUsedItemId = null;
             }
             else if (ItemSelectionMode == SelectionMode.Single)
             {
@@ -116,6 +131,13 @@
                 if (!hadMoreThanOneSeletedItems) return;
 
                 SelectedItems.RemoveRange(1, SelectedItems.Count - 1);
+
+                int selectedItemIndex = Items.IndexOf(SelectedItems[0]);
+
+                if (selectedItemIndex >= 0)
+                {
+                    _lastUsedItemId = GetItemId(selectedItemIndex);
+                }
 
                 SelectedItemsChanged.InvokeAsync(SelectedItems);
             }
@@ -142,6 +164,8 @@
         {
             SelectedItems.Clear();
 
+            _lastUsedItemId = null;
+
             if (hadAnySeletedItems)
             {
                 SelectedItemsChanged.InvokeAsync(SelectedItems);
@@ -160,7 +184,11 @@
 
             SelectedItems.Add(firstSelectedItem);
 
+            _lastUsedItemId = GetItemId(selectedItemIndexes[0]);
+
             SelectedItemsChanged.InvokeAsync(SelectedItems);
+
+            return;
         }
 
         List<TItem> itemsToBeSelected = [];
@@ -191,26 +219,39 @@
             }
         }
 
-		if (!isNewSelectionDifferent) return;
+        if (!isNewSelectionDifferent) return;
 
-		SelectedItems.Clear();
+        SelectedItems.Clear();
 
-		SelectedItems.AddRange(itemsToBeSelected);
+        SelectedItems.AddRange(itemsToBeSelected);
+
+        _lastUsedItemId = GetItemId(selectedItemIndexes[selectedItemIndexes.Count - 1]);
 
         SelectedItemsChanged.InvokeAsync(SelectedItems);
-	}
+    }
 
-    private void ToggleItemSelection(TItem item)
+    public void ToggleItemSelection(TItem item)
+    {
+        int itemIndex = Items.IndexOf(item);
+
+        if (itemIndex < 0) return;
+
+        ToggleItemSelection(item, $"dropdown-select-option-{itemIndex}");
+    }
+
+    private void ToggleItemSelection(TItem item, string itemId)
     {
         if (ItemSelectionMode == SelectionMode.None) return;
 
-		bool isSelected = SelectedItems.Contains(item);
+        bool isSelected = SelectedItems.Contains(item);
+
+        _lastUsedItemId = itemId;
 
         if (ItemSelectionMode == SelectionMode.Single)
         {
             if (isSelected)
             {
-				SelectedItems.Remove(item);
+                SelectedItems.Remove(item);
 
                 SelectedItemsChanged.InvokeAsync(SelectedItems);
 
@@ -233,8 +274,13 @@
         else
         {
             SelectedItems.Add(item);
-		}
+        }
 
         SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private string GetItemId(int index)
+    {
+        return $"dropdown-select-option-{index}";
     }
 }

@@ -26,7 +26,11 @@
 
     <div @attributes='AdditionalIndicatorsListContainerAttributes' class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
 
-        <div @attributes='AdditionalIndicatorsListAttributes' class="custom-carousel-indicators @_additionalIndicatorsListClasses">
+        <div @attributes='AdditionalIndicatorsListAttributes'
+            class="custom-carousel-indicators @_additionalIndicatorsListClasses"
+             role="listbox"
+             aria-multiselectable="false"
+             aria-activedescendant="carousel-option-@(_activeItemIndex)">
 
             @for (int i = 0; i < _carouselIndicators.Count; i++)
             {
@@ -38,7 +42,12 @@
                 }
                 else
                 {
-                    <button class="custom-dot @(_carouselIndicators[i].IsActive ? "active" : null)" @onclick="() => GoTo(currentIndex)"></button>
+                    <button id="carousel-option-@i"
+                        class="custom-dot @(_carouselIndicators[i].IsActive ? "active" : null)"
+                        role="option"
+                        aria-label="Go to slide @(currentIndex + 1)"
+					    aria-selected="@(_carouselIndicators[i].IsActive ? "true" : "false")"
+                        @onclick="() => GoTo(currentIndex)"></button>
                 }
             }
         </div>
