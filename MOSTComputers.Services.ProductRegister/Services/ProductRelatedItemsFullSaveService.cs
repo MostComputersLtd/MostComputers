@@ -1,6 +1,8 @@
-﻿using FluentValidation;
+﻿using Azure.Core;
+using FluentValidation;
 using FluentValidation.Results;
 using FluentValidation.TestHelper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models;
@@ -15,7 +17,9 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
 using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.ProductRegister.Models.Requests;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductHtml;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FirstImage;
@@ -48,8 +52,12 @@ using static MOSTComputers.Utils.Files.FileExtensionUtils;
 namespace MOSTComputers.Services.ProductRegister.Services;
 internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSaveService
 {
+    /// <remarks>
+    /// notCachedProductPropertyCrudService is used for fetching updated product properties in scenarios where they might have changed during the transaction.
+    /// </remarks>
     public ProductRelatedItemsFullSaveService(
         IProductPropertyCrudService productPropertyCrudService,
+        [FromKeyedServices(ConfigureServices.ProductPropertyCrudServiceKey)] IProductPropertyCrudService notCachedProductPropertyCrudService,
         IProductImageCrudService productImageCrudService,
         IProductImageAndFileService productImageAndFileService,
         IProductImageFileService productImageFileService,
@@ -71,6 +79,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         ILogger<ProductRelatedItemsFullSaveService>? logger = null)
     {
         _productPropertyCrudService = productPropertyCrudService;
+        _notCachedProductPropertyCrudService = notCachedProductPropertyCrudService;
         _productImageCrudService = productImageCrudService;
         _productImageAndFileService = productImageAndFileService;
         _productImageFileService = productImageFileService;
@@ -108,6 +117,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private const string _unsupportedIdForDeleteErrorMessage = "Currently, we only support removing the images that were initially created from this application (to avoid conflicts)";
 
     private readonly IProductPropertyCrudService _productPropertyCrudService;
+    private readonly IProductPropertyCrudService _notCachedProductPropertyCrudService;
     private readonly IProductImageCrudService _productImageCrudService;
     private readonly IProductImageAndFileService _productImageAndFileService;
     private readonly IProductImageFileService _productImageFileService;
@@ -260,8 +270,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
         List<ImageUpsertDataInUpsert> imageUpsertDataInUpserts = new();
 
-        ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
-
         foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in upsertAllRequest.ImageRequests)
         {
             if (upsertRequest.Request.IsT0)
@@ -313,17 +321,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     ImageCrudOptions = productImageUpsertRequest,
                     ReplaceRequestHtmlWithPropertyHtml = request.HtmlDataOptions.IsT0,
                 });
-
-                if (productFirstImageUpsertRequest is null)
-                {
-                    productFirstImageUpsertRequest ??= new()
-                    {
-                        ProductId = productId,
-                        ImageContentType = contentTypeFromFileExtension,
-                        ImageData = request.ImageData,
-                        HtmlData = productImageUpsertRequest.HtmlData,
-                    };
-                }
 
                 continue;
             }
@@ -399,17 +396,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                         ReplaceRequestHtmlWithPropertyHtml = request.UpsertInProductImagesRequest.HtmlDataOptions.IsT0,
                     });
 
-                    if (productFirstImageUpsertRequest is null)
-                    {
-                        productFirstImageUpsertRequest ??= new()
-                        {
-                            ProductId = productId,
-                            ImageContentType = contentType,
-                            ImageData = fileData,
-                            HtmlData = productImageCreateRequest.HtmlData,
-                        };
-                    }
-
                     continue;
                 }
 
@@ -461,17 +447,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     ImageCrudOptions = productImageUpsertRequest,
                     ReplaceRequestHtmlWithPropertyHtml = request.UpsertInProductImagesRequest.HtmlDataOptions.IsT0,
                 });
-
-                if (productFirstImageUpsertRequest is null)
-                {
-                    productFirstImageUpsertRequest ??= new()
-                    {
-                        ProductId = productId,
-                        ImageContentType = contentType,
-                        ImageData = fileData,
-                        HtmlData = productImageUpsertRequest.HtmlData,
-                    };
-                }
             }
         }
 
@@ -493,7 +468,19 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             return updatePropertiesResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
         }
 
-        HtmlProductsData productHtmlData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productId]);
+        Product? product = await _productRepository.GetByIdAsync(productId);
+
+        if (product is null) return new UnexpectedFailureResult();
+
+        List<ProductProperty> productProperties = await _notCachedProductPropertyCrudService.GetAllInProductAsync(productId);
+
+        GetHtmlDataForProductRequest getHtmlDataRequest = new()
+        {
+            Product = product,
+            ProductProperties = productProperties,
+        };
+
+        HtmlProductsData productHtmlData = _productToHtmlProductService.GetHtmlProductDataFromProducts([getHtmlDataRequest]);
 
         OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(productHtmlData);
 
@@ -517,6 +504,8 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 allExistingProductImages.Remove(oldImageToBeRemoved);
             }
 
+            ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
+
             foreach (ImageUpsertDataInUpsert imageUpsertData in imageUpsertDataInUpserts)
             {
                 OneOf<ServiceProductImageCreateRequest, ServiceProductImageUpdateRequest, ProductImageUpsertRequest, No> imageCrudOptions
@@ -530,6 +519,14 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     {
                         request.HtmlData = productHtml;
                     }
+
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = request.ImageContentType,
+                        ImageData = request.ImageData,
+                        HtmlData = request.HtmlData,
+                    };
 
                     OneOf<int, ValidationResult, UnexpectedFailureResult> imageCreateResult
                         = await _productImageCrudService.InsertInAllImagesAsync(request);
@@ -557,6 +554,14 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
                     if (existingProductImage is null) return new UnexpectedFailureResult();
 
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = request.ImageContentType,
+                        ImageData = request.ImageData,
+                        HtmlData = request.HtmlData,
+                    };
+
                     if (IsRequestEqualToExistingData(request, existingProductImage))
                     {
                         continue;
@@ -581,6 +586,16 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                     {
                         request.HtmlData = productHtml;
                     }
+
+                    int? id = request.ExistingImageId;
+
+                    productFirstImageUpsertRequest ??= new()
+                    {
+                        ProductId = productId,
+                        ImageContentType = request.ImageContentType,
+                        ImageData = request.ImageData,
+                        HtmlData = request.HtmlData,
+                    };
 
                     if (request.ExistingImageId is not null)
                     {
@@ -610,29 +625,35 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
                 }
             }
 
+            if (productFirstImageUpsertRequest is not null)
+            {
+                ProductImage? existingFirstImage = await _productImageCrudService.GetByProductIdInFirstImagesAsync(productId);
+
+                if (existingFirstImage is null || !IsRequestEqualToExistingData(productFirstImageUpsertRequest, existingFirstImage))
+                {
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult
+                        = await _productImageCrudService.UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+
+                    if (!productFirstImageUpsertResult.IsT0)
+                    {
+                        return productFirstImageUpsertResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+                    }
+                }
+            }
+            else
+            {
+                //ProductImage? oldProductFirstImage = await _productImageCrudService.GetByProductIdInFirstImagesAsync(productId);
+
+                //if (oldProductFirstImage is null) return new Success();
+
+                //bool isFirstImageDeleted = await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
+
+                //if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+            }
+
             imagesTransactionScope.Complete();
         }
 
-        //if (productFirstImageUpsertRequest is not null)
-        //{
-        //    OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult
-        //        = await _productImageCrudService.UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
-
-        //    if (!productFirstImageUpsertResult.IsT0)
-        //    {
-        //        return productFirstImageUpsertResult.Map<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
-        //    }
-        //}
-        //else
-        //{
-        //    ProductImage? oldProductFirstImage = await _productImageCrudService.GetByProductIdInFirstImagesAsync(productId);
-
-        //    if (oldProductFirstImage is null) return new Success();
-
-        //    bool isFirstImageDeleted = await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
-
-        //    if (!isFirstImageDeleted) return new UnexpectedFailureResult();
-        //}
 
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
         //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
@@ -955,6 +976,22 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private static bool IsRequestEqualToExistingData(ProductImageUpsertRequest request, ProductImage existingProductImage)
     {
         if (existingProductImage.Id != request.ExistingImageId
+            || existingProductImage.ImageContentType != request.ImageContentType
+            || existingProductImage.HtmlData != request.HtmlData)
+        {
+            return false;
+        }
+
+        if (existingProductImage.ImageData is null != request.ImageData is null) return false;
+
+        if (existingProductImage.ImageData is null) return true;
+
+        return existingProductImage.ImageData.AsSpan().SequenceEqual(request.ImageData!.AsSpan());
+    }
+
+    private static bool IsRequestEqualToExistingData(ServiceProductFirstImageUpsertRequest request, ProductImage existingProductImage)
+    {
+        if (existingProductImage.ProductId != request.ProductId
             || existingProductImage.ImageContentType != request.ImageContentType
             || existingProductImage.HtmlData != request.HtmlData)
         {
