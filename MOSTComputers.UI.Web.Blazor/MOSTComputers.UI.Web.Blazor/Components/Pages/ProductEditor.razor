@@ -75,7 +75,7 @@
         <ul class="header-list">
 
             <li class="header-list-item">
-                <select @bind="SelectedProductNewStatus">
+                <select id="productNewStatusSelect" @bind="SelectedProductNewStatus">
 
                     <option value="">All</option>
 
@@ -89,7 +89,7 @@
             </li>
 
             <li class="header-list-item header-user-input-list-item">
-                <input type="text" class="user-input" placeholder="Search..." @bind="UserInputString" />
+                <input id="userInput" type="text" class="user-input" placeholder="Search..." @bind="UserInputString" />
             </li>
 
             <li class="header-list-item header-search-button-list-item">
@@ -103,7 +103,7 @@
             </li>
 
             <li class="header-list-item">
-                <select @bind="SelectedCategoryId">
+                <select id="categorySelect" @bind="SelectedCategoryId">
 
                     <option value="">All</option>
 
@@ -115,7 +115,7 @@
             </li>
 
             <li class="header-list-item">
-                <select @bind="SelectedProductStatus">
+                <select id="productStatusSelect" @bind="SelectedProductStatus">
 
                     <option value="">All</option>
 
@@ -127,7 +127,7 @@
             </li>
 
             <li class="header-list-item">
-                <select @bind="SelectedPromotionSearchOptions">
+                <select id="promotionStatusSelect" @bind="SelectedPromotionSearchOptions">
 
                     <option value="">All</option>
 
@@ -241,7 +241,7 @@
 		                    </p>
 	                    </td>
 	                    <td>
-		                    <p class="link-info" @onclick="() => ShowSingleProductEditorPopupAsync(productData)">
+		                    <p class="link-info" @onclick="() => ShowSingleProductEditorPopup(productData)">
 			                    @productData.Product.Name
 		                    </p>
 	                    </td>
@@ -365,13 +365,16 @@
 	</div>
 </div>
 
-@if (ProductToDisplay is not null)
+@if (_productSingleEditorPopupData is not null)
 {
-    <SingleProductEditorPopup Product="ProductToDisplay.Product"
+    <SingleProductEditorPopup Product="_productSingleEditorPopupData.ProductData.Product"
         @bind-IsVisible="IsSingleProductEditorPopupVisible"
         OnSaveSuccessful="OnSingleProductEditorSaveAsync"
         PopupMarginOptions='new() { Left = "1vw", Right = "1vw", Top = "1vh", Bottom = "1vh" }' />
+}
 
+@if (_productXmlPopupData is not null)
+{
     <Popup @bind-IsVisible="IsProductXmlPopupVisible"
         PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh" }'>
         <HeaderContent>
@@ -379,42 +382,52 @@
 
                 <h5 class="popup-header-text me-3">XML:</h5>
 
-                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
-                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
+                <h4 class="popup-header-text me-3">CSTID: @_productXmlPopupData.ProductData.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@_productXmlPopupData.ProductData.Product.Name</h4>
             </div>
         </HeaderContent>
         <ChildContent>
             <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
             {
-                ProductIds = [ProductToDisplay!.Product.Id]
+                ProductIds = [_productXmlPopupData.ProductData.Product.Id]
             }" />
         </ChildContent>
     </Popup>
+}
+
+@if (_productSearchStringPopupData is not null)
+{
+    Product product = _productSearchStringPopupData.ProductData.Product;
 
     <Popup @bind-IsVisible="IsProductSearchStringOriginDataPopupVisible"
         PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
         <HeaderContent>
             <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
 
-                @if (ProductToDisplay.Product.Manufacturer is not null)
+                @if (product.Manufacturer is not null)
                 {
-                    <h4 class="popup-header-text mb-0 me-3">Manufacturer: @ProductToDisplay.Product.Manufacturer.RealCompanyName</h4>
+                    <h4 class="popup-header-text mb-0 me-3">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
                 }
 
-                @if (ProductToDisplay.Product.Category is not null)
+                @if (product.Category is not null)
                 {
-                    <h4 class="popup-header-text mb-0 me-3">Category: @ProductToDisplay.Product.Category?.Description</h4>
+                    <h4 class="popup-header-text mb-0 me-3">Category: @product.Category?.Description</h4>
                 }
 
-                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Product.Id)</h4>
-                <h4 class="popup-header-text me-3">@(ProductToDisplay.Product.Name ?? "-")</h4>
+                <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+                <h4 class="popup-header-text me-3">@(product.Name ?? "-")</h4>
             </div>
         </HeaderContent>
 
         <ChildContent>
-            <ProductSearchStringOriginTable SearchStringOriginDataList="ProductToDisplay.SearchStringParts" />
+            <ProductSearchStringOriginTable SearchStringOriginDataList="_productSearchStringPopupData.ProductData.SearchStringParts" />
         </ChildContent>
     </Popup>
+}
+
+@if (_productPropertiesPopupData is not null)
+{
+    Product product = _productPropertiesPopupData.ProductData.Product;
 
     <Popup @bind-IsVisible="IsProductPropertiesPopupVisible"
         PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
@@ -423,19 +436,247 @@
 
                 <h5 class="popup-header-text me-3">New XML:</h5>
 
-                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product?.Id</h4>
-                <h4 class="popup-header-text me-3">@ProductToDisplay.Product?.Name</h4>
+                <h4 class="popup-header-text me-3">CSTID: @product?.Id</h4>
+                <h4 class="popup-header-text me-3">@product?.Name</h4>
             </div>
         </HeaderContent>
 
         <ChildContent>
-            <ProductPropertiesTable Product="@ProductToDisplay.Product"
-                ProductProperties="@ProductToDisplayProperties">
+            <ProductPropertiesTable Product="@product"
+                ProductProperties="@_productPropertiesPopupData.ProductProperties">
             </ProductPropertiesTable>
         </ChildContent>
     </Popup>
+}
 
-    @* <Popup @bind-IsVisible="IsProductLegacyXmlPropertiesPopupVisible"
+@if (_productImageFilesPopupData is not null)
+{
+    ProductEditorProductData productData = _productImageFilesPopupData.ProductData;
+
+    <Popup @bind-IsVisible="IsProductImageFilesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+                <h5 class="popup-header-text me-3">Upload:</h5>
+
+                <h4 class="popup-header-text me-3">CSTID: @productData.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@productData.Product.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <div class="d-flex flex-column p-2 full-parent-width">
+
+                <ul class="full-parent-width list-unstyled d-flex mb-0" style="height: 13em;">
+
+                    @if (productData.FileNameData is not null
+                        && productData.FileNameData.Count > 0)
+                    {
+                        for (int i = 0; i < productData.FileNameData.Count; i++)
+                        {
+                            ProductImageFileData imageFileNameInfo = productData.FileNameData[i];
+
+                            string? imageDataRoute = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{imageFileNameInfo.FileName}";
+
+                            float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.3F;
+
+                            <li style="position: relative; min-width: 20%; opacity: @opacityOfLi;">
+
+                                <div class="product-image-file-active-button-container">
+
+                                    @if (imageFileNameInfo.Active)
+                                    {
+                                        <input type="checkbox" aria-label="Close" checked class="product-image-file-active-button" />
+                                    }
+                                    else
+                                    {
+                                        <input type="checkbox" aria-label="Close" class="product-image-file-active-button" />
+                                    }
+                                </div>
+
+                                <button name="Image #@i" class="btn full-parent-width full-parent-height"
+                                        @ondblclick="() => OpenDataUrlInNewWindowAsync(imageDataRoute)"
+                                        style="background: url('@imageDataRoute') no-repeat center; background-size: contain; background-origin: content-box;">
+                                </button>
+
+                                <div class="d-flex flex-column justify-content-center">
+                                    <p class="align-text-center mb-0">
+                                        @imageFileNameInfo.FileName
+                                    </p>
+                                </div>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        </ChildContent>
+    </Popup>
+}
+
+@if (_productImagesPopupData is not null)
+{
+    <Popup @bind-IsVisible="IsProductImagesPopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+                <h5 class="popup-header-text me-3">Images:</h5>
+                <h4 class="popup-header-text me-3">CSTID: @_productImagesPopupData.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@_productImagesPopupData.Product.Name</h4>
+            </div>
+        </HeaderContent>
+        <ChildContent>
+            <ProductImagesList Images="_productImagesPopupData.ImageDatas"/>
+		</ChildContent>
+    </Popup>
+}
+
+@if (_productPromotionPopupData is not null)
+{
+    ProductEditorProductData productData = _productPromotionPopupData.ProductData;
+    Promotion? promotion = _productPromotionPopupData.Promotion;
+
+    <Popup @bind-IsVisible="IsProductPromotionPopupVisible"
+        PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">Promotion:</h5>
+                <h4 class="popup-header-text me-3">CSTID: @productData.Product.Id</h4>
+                <h4 class="popup-header-text me-3">@productData.Product.Name</h4>
+            </div>
+        </HeaderContent>
+        
+        <ChildContent>
+            @if (promotion is not null)
+            {
+                <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
+
+                    <div class="col-4 d-flex flex-row">
+                        <p>ID: @(promotion.Id.ToString())</p>
+                    </div>
+
+                    <div class="col-8">
+                        <p>Name: @(promotion.Name ?? "-")</p>
+                    </div>
+
+                    <div class="col-12">
+                        <p>Type: @(promotion.Type?.ToString() ?? "-")</p>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="col-6 col-md-12">
+                            <p>Start Date: @(promotion.StartDate?.ToString() ?? "-")</p>
+                        </div>
+
+                        <div class="col-6 col-md-12">
+                            <p>Expire Date: @(promotion.ExpirationDate?.ToString() ?? "-")</p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Discount €: @(promotion.DiscountEUR ?? 0M)</p>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Discount $: @(promotion.DiscountUSD ?? 0M)</p>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="col-6 col-md-12">
+                            <p>Min Quantity: @(promotion.MinimumQuantity ?? 0)</p>
+                        </div>
+
+                        <div class="col-6 col-md-12">
+                            <p>Max Quantity: @(promotion.MaximumQuantity ?? 0)</p>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <p>Expire Quantity: @(promotion.ExpQuantity ?? 0)</p>
+                    </div>
+
+                    <div class="col-12">
+
+                        @if (promotion.RequiredProductIds?.Count > 0)
+                        {
+                            <ul class="d-inline-flex list-style-none">
+                                @foreach (int requiredProductId in promotion.RequiredProductIds)
+                                {
+                                    <li class="ms-2 me-2">
+                                        <p>@requiredProductId</p>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <p>Promotion not found</p>
+				</div>
+            }
+        </ChildContent>
+    </Popup>
+}
+
+@if (_productInfoPromotionPopupData is not null)
+{
+    Product product = _productInfoPromotionPopupData.ProductData.Product;
+
+    <Popup @bind-IsVisible="IsProductInfoPromotionPopupVisible"
+           PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+                <h5 class="popup-header-text me-3">Promotion:</h5>
+                <h4 class="popup-header-text me-3">CSTID: @product.Id</h4>
+                <h4 class="popup-header-text me-3">@product.Name</h4>
+            </div>
+        </HeaderContent>
+
+        <ChildContent>
+            <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
+
+                @{
+                    int? promotionPictureId = product.AlertPictureId;
+
+                    if (promotionPictureId is null || promotionPictureId <= 0)
+                    {
+                        promotionPictureId = product.PromotionPictureId;
+                    }
+                }
+
+                <div class="col-12">
+                    <div class="col-6 col-md-12">
+                        <p>Picture Id: @(promotionPictureId?.ToString() ?? "-")</p>
+                    </div>
+
+                    <div class="col-6 col-md-12">
+                        <p>Expire Date: @(product.PromotionExpireDate?.ToString() ?? "-")</p>
+                    </div>
+                </div>
+            </div>
+        </ChildContent>
+    </Popup>
+}
+
+@if (_promotionProductFilesPopupData is not null)
+{
+    <PromotionProductFileEditorPopup
+    @bind-IsVisible="IsPromotionProductFilePopupVisible"
+    PopupMarginOptions='new() { Left = "5%", Right = "5%", Top = "5%", Bottom = "5%" }'
+    Product="_promotionProductFilesPopupData.ProductData.Product"
+    PromotionProductFiles="_promotionProductFilesPopupData.PromotionProductFiles"
+    ShouldDisplaySaveButtonInSingleEditor="false"
+    ShouldDisplayAddButton="false"
+    ShouldDisplayDeleteButton="false"/>
+}
+
+@*@if (ProductToDisplay is not null)
+{
+    <Popup @bind-IsVisible="IsProductLegacyXmlPropertiesPopupVisible"
         PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
         <HeaderContent>
             <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
@@ -490,218 +731,10 @@
                 </table>
             </div>
         </ChildContent>
-    </Popup> *@
+    </Popup> 
+}
 
-    <Popup @bind-IsVisible="IsProductImageFilesPopupVisible"
-        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
-        <HeaderContent>
-            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
-                <h5 class="popup-header-text me-3">Upload:</h5>
-
-                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
-                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
-            </div>
-        </HeaderContent>
-
-        <ChildContent>
-            <div class="d-flex flex-column p-2 full-parent-width">
-
-                <ul class="full-parent-width list-unstyled d-flex mb-0" style="height: 13em;">
-
-                    @if (ProductToDisplay.FileNameData is not null
-                        && ProductToDisplay.FileNameData.Count > 0)
-                    {
-                        for (int i = 0; i < ProductToDisplay.FileNameData.Count; i++)
-                        {
-                            ProductImageFileData imageFileNameInfo = ProductToDisplay.FileNameData[i];
-
-                            string? imageDataRoute = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{imageFileNameInfo.FileName}";
-
-                            float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.3F;
-
-                            <li style="position: relative; min-width: 20%; opacity: @opacityOfLi;">
-
-                                <div class="product-image-file-active-button-container">
-
-                                    @if (imageFileNameInfo.Active)
-                                    {
-                                        <input type="checkbox" aria-label="Close" checked class="product-image-file-active-button" />
-									}
-                                    else
-                                    {
-                                        <input type="checkbox" aria-label="Close" class="product-image-file-active-button" />
-                                    }
-                                </div>
-
-                                <button name="Image #@i" class="btn full-parent-width full-parent-height"
-                                    @ondblclick="() => OpenDataUrlInNewWindowAsync(imageDataRoute)"
-                                    style="background: url('@imageDataRoute') no-repeat center; background-size: contain; background-origin: content-box;">
-                                </button>
-
-                                <div class="d-flex flex-column justify-content-center">
-                                    <p class="align-text-center mb-0">
-                                        @imageFileNameInfo.FileName
-                                    </p>
-                                </div>
-                            </li>
-                        }
-                    }
-                </ul>
-            </div>
-        </ChildContent>
-    </Popup>
-
-    if (CurrentProductImagesPopupData is not null)
-    {
-        <Popup @bind-IsVisible="CurrentProductImagesPopupData.IsVisible"
-            PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
-            <HeaderContent>
-                <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
-                    <h5 class="popup-header-text me-3">Images:</h5>
-                    <h4 class="popup-header-text me-3">CSTID: @CurrentProductImagesPopupData.Product.Id</h4>
-                    <h4 class="popup-header-text me-3">@CurrentProductImagesPopupData.Product.Name</h4>
-                </div>
-            </HeaderContent>
-            <ChildContent>
-                <ProductImagesList Images="CurrentProductImagesPopupData.ImageDatas"/>
-			</ChildContent>
-        </Popup>
-    }
-
-    <Popup @bind-IsVisible="IsProductPromotionPopupVisible"
-        PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
-        <HeaderContent>
-            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
-
-                <h5 class="popup-header-text me-3">Promotion:</h5>
-                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
-                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
-            </div>
-        </HeaderContent>
-        
-        <ChildContent>
-            @if (ProductToDisplayCurrentPromotion is not null)
-            {
-                <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
-
-                    <div class="col-4 d-flex flex-row">
-                        <p>ID: @(ProductToDisplayCurrentPromotion.Id.ToString())</p>
-                    </div>
-
-                    <div class="col-8">
-                        <p>Name: @(ProductToDisplayCurrentPromotion.Name ?? "-")</p>
-                    </div>
-
-                    <div class="col-12">
-                        <p>Type: @(ProductToDisplayCurrentPromotion.Type?.ToString() ?? "-")</p>
-                    </div>
-                    
-                    <div class="col-12">
-                        <div class="col-6 col-md-12">
-                            <p>Start Date: @(ProductToDisplayCurrentPromotion.StartDate?.ToString() ?? "-")</p>
-                        </div>
-
-                        <div class="col-6 col-md-12">
-                            <p>Expire Date: @(ProductToDisplayCurrentPromotion.ExpirationDate?.ToString() ?? "-")</p>
-                        </div>
-                    </div>
-
-                    <div class="col-6 col-md-12">
-                        <p>Discount €: @(ProductToDisplayCurrentPromotion.DiscountEUR ?? 0M)</p>
-                    </div>
-
-                    <div class="col-6 col-md-12">
-                        <p>Discount $: @(ProductToDisplayCurrentPromotion.DiscountUSD ?? 0M)</p>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="col-6 col-md-12">
-                            <p>Min Quantity: @(ProductToDisplayCurrentPromotion.MinimumQuantity ?? 0)</p>
-                        </div>
-
-                        <div class="col-6 col-md-12">
-                            <p>Max Quantity: @(ProductToDisplayCurrentPromotion.MaximumQuantity ?? 0)</p>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <p>Expire Quantity: @(ProductToDisplayCurrentPromotion.ExpQuantity ?? 0)</p>
-                    </div>
-
-                    <div class="col-12">
-
-                        @if (ProductToDisplayCurrentPromotion.RequiredProductIds?.Count > 0)
-                        {
-                            <ul class="d-inline-flex list-style-none">
-                                @foreach (int requiredProductId in ProductToDisplayCurrentPromotion.RequiredProductIds)
-                                {
-                                    <li class="ms-2 me-2">
-                                        <p>@requiredProductId</p>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div>
-                    <p>Promotion not found</p>
-				</div>
-            }
-        </ChildContent>
-    </Popup>
-
-    <Popup @bind-IsVisible="IsProductInfoPromotionPopupVisible"
-        PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
-        <HeaderContent>
-            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
-
-                <h5 class="popup-header-text me-3">Promotion:</h5>
-                <h4 class="popup-header-text me-3">CSTID: @ProductToDisplay.Product.Id</h4>
-                <h4 class="popup-header-text me-3">@ProductToDisplay.Product.Name</h4>
-            </div>
-        </HeaderContent>
-
-        <ChildContent>
-            <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
-
-                @{
-                    int? promotionPictureId = ProductToDisplay.Product.AlertPictureId;
-
-                    if (promotionPictureId is null || promotionPictureId <= 0)
-                    {
-                        promotionPictureId = ProductToDisplay.Product.PromotionPictureId;
-                    }
-                }
-
-                <div class="col-12">
-                    <div class="col-6 col-md-12">
-                        <p>Picture Id: @(promotionPictureId?.ToString() ?? "-")</p>
-                    </div>
-
-                    <div class="col-6 col-md-12">
-                        <p>Expire Date: @(ProductToDisplay.Product.PromotionExpireDate?.ToString() ?? "-")</p>
-                    </div>
-                </div>
-            </div>
-        </ChildContent>
-    </Popup>
-
-    @if (ProductToDisplayPromotionProductFiles is not null)
-    {
-        <PromotionProductFileEditorPopup
-            @bind-IsVisible="IsPromotionProductFilePopupVisible"
-            PopupMarginOptions='new() { Left = "5%", Right = "5%", Top = "5%", Bottom = "5%" }'
-            Product="ProductToDisplay.Product"
-            PromotionProductFiles="ProductToDisplayPromotionProductFiles"
-            ShouldDisplaySaveButtonInSingleEditor="false"
-            ShouldDisplayAddButton="false"
-            ShouldDisplayDeleteButton="false"/>
-    }
-
-    @* <Popup @bind-IsVisible="IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible"
+   <Popup @bind-IsVisible="IsSaveProductPropertiesToLegacyXmlAndImagesToOriginalImagesFailedPopupVisible"
         PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
         DisplayHeader="false">
         <ChildContent>
@@ -719,8 +752,9 @@
                 </div>
             </div>
         </ChildContent>
-    </Popup> *@
+    </Popup>
 }
+*@
 
 @code {
     public sealed class ProductEditorProductData
@@ -742,13 +776,6 @@
         public int? PromotionFilesCount { get; set; }
 
         // public bool IsSelected { get; set; } = false;
-    }
-
-    private sealed class ProductImagesPopupData
-    {
-        public bool IsVisible { get; set; } = false;
-        public required Product Product { get; set; }
-        public required List<ProductImageData> ImageDatas { get; set; }
     }
 
     public enum ProductEditorProductNewStatusSearchOptions
@@ -775,6 +802,55 @@
         None = 0,
         FirstWithImages = 1,
         FirstWithNoImages = 2,
+    }
+
+    private sealed class ProductSingleEditorPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+    }
+
+    private sealed class ProductXmlPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+    }
+
+    private sealed class ProductSearchStringPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+    }
+
+    private sealed class ProductPropertiesPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+        public List<ProductProperty>? ProductProperties { get; set; }
+    }
+
+    private sealed class ProductImageFilesPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+    }
+
+    private sealed class ProductImagesPopupData
+    {
+        public required Product Product { get; set; }
+        public required List<ProductImageData> ImageDatas { get; set; }
+    }
+
+    private sealed class ProductPromotionPopupData
+    {
+        public required ProductEditorProductData ProductData { get; set; }
+        public Promotion? Promotion { get; set; }
+    }
+
+    private sealed class ProductInfoPromotionPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+    }
+
+    private sealed class PromotionProductFilesPopupData
+    {
+        public required ProductEditorProductData ProductData { get; init; }
+        public required List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> PromotionProductFiles { get; set; }
     }
 
     public const int LastAddedProductsSearchCount = 200;
@@ -830,31 +906,35 @@
 
     private List<ProductEditorProductData> ProductDatas { get; set; } = new();
 
-    public ProductEditorProductData? ProductToDisplay { get; set; }
-
     private bool IsSingleProductEditorPopupVisible { get; set; } = false;
+    private ProductSingleEditorPopupData? _productSingleEditorPopupData { get; set; } = null;
 
     private bool IsProductXmlPopupVisible { get; set; } = false;
+    private ProductXmlPopupData? _productXmlPopupData { get; set; } = null;
 
     private bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
+    private ProductSearchStringPopupData? _productSearchStringPopupData { get; set; } = null;
 
     private bool IsProductPropertiesPopupVisible { get; set; } = false;
-    private List<ProductProperty>? ProductToDisplayProperties { get; set; }
+    private ProductPropertiesPopupData? _productPropertiesPopupData { get; set; } = null;
 
-    private bool IsProductLegacyXmlPropertiesPopupVisible { get; set; } = false;
-    private List<ProductCharacteristicAndExternalXmlDataRelation>? ProductToDisplayPropertyRelations { get; set; }
+    // private bool IsProductLegacyXmlPropertiesPopupVisible { get; set; } = false;
+    // private List<ProductCharacteristicAndExternalXmlDataRelation>? ProductToDisplayPropertyRelations { get; set; }
 
     private bool IsProductImageFilesPopupVisible { get; set; } = false;
+    private ProductImageFilesPopupData? _productImageFilesPopupData { get; set; } = null;
 
-    private ProductImagesPopupData? CurrentProductImagesPopupData { get; set; } = null;
+    private bool IsProductImagesPopupVisible { get; set; } = false;
+    private ProductImagesPopupData? _productImagesPopupData { get; set; } = null;
 
     private bool IsProductPromotionPopupVisible { get; set; } = false;
-    private Promotion? ProductToDisplayCurrentPromotion { get; set; }
+    private ProductPromotionPopupData? _productPromotionPopupData { get; set; } = null;
 
     private bool IsProductInfoPromotionPopupVisible { get; set; } = false;
+    private ProductInfoPromotionPopupData? _productInfoPromotionPopupData { get; set; } = null;
 
     private bool IsPromotionProductFilePopupVisible { get; set; } = false;
-    private List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData>? ProductToDisplayPromotionProductFiles { get; set; } = null;
+    private PromotionProductFilesPopupData? _promotionProductFilesPopupData { get; set; } = null;
 
     private IJSObjectReference? _jsModule;
 
@@ -893,56 +973,77 @@
         _productOrder = ProductOrderByImages.FirstWithImages;
     }
 
-    private async Task ShowSingleProductEditorPopupAsync(ProductEditorProductData productData)
+    private void ShowSingleProductEditorPopup(ProductEditorProductData productData)
     {
-        List<PromotionProductFileInfo> promotionProductFiles = await PromotionProductFileService.GetAllForProductAsync(productData.Product.Id);
+        // List<PromotionProductFileInfo> promotionProductFiles = await PromotionProductFileService.GetAllForProductAsync(productData.Product.Id);
 
-        ProductToDisplayPromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles);
+        // ProductToDisplayPromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles);
 
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productSingleEditorPopupData = new()
+        {
+            ProductData = productData,
+        };
 
         IsSingleProductEditorPopupVisible = true;
     }
 
     private void ShowProductXmlPopup(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productXmlPopupData = new()
+        {
+            ProductData = productData,
+        };
 
         IsProductXmlPopupVisible = true;
     }
 
     private void ShowProductSearchStringOriginDataPopup(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productSearchStringPopupData = new()
+        {
+            ProductData = productData,
+        };
 
         IsProductSearchStringOriginDataPopupVisible = true;
     }
 
     private async Task ShowProductPropertiesPopupAsync(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
 
-        ProductToDisplayProperties = await ProductPropertyService.GetAllInProductAsync(ProductToDisplay.Product.Id);
+        // ProductToDisplayProperties = await ProductPropertyService.GetAllInProductAsync(ProductToDisplay.Product.Id);
+
+        _productPropertiesPopupData = new()
+        {
+            ProductData = productData,
+            ProductProperties = await ProductPropertyService.GetAllInProductAsync(productData.Product.Id),
+        };
 
         IsProductPropertiesPopupVisible = true;
     }
 
-    private async Task ShowProductLegacyXmlPropertiesPopupAsync(ProductEditorProductData productData)
-    {
-        ProductToDisplay = productData;
+    // private async Task ShowProductLegacyXmlPropertiesPopupAsync(ProductEditorProductData productData)
+    // {
+    //     ProductToDisplay = productData;
 
-        List<int> relatedCategoryIds = [-1];
+    //     List<int> relatedCategoryIds = [-1];
 
-        if (ProductToDisplay.Product.CategoryId is not null)
-        {
-            relatedCategoryIds.Add(ProductToDisplay.Product.CategoryId.Value);
-        }
+    //     if (ProductToDisplay.Product.CategoryId is not null)
+    //     {
+    //         relatedCategoryIds.Add(ProductToDisplay.Product.CategoryId.Value);
+    //     }
 
-        ProductToDisplayPropertyRelations
-            = await ProductCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdsAsync(relatedCategoryIds);
+    //     ProductToDisplayPropertyRelations
+    //         = await ProductCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdsAsync(relatedCategoryIds);
 
-        IsProductLegacyXmlPropertiesPopupVisible = true;
-    }
+    //     IsProductLegacyXmlPropertiesPopupVisible = true;
+    // }
 
     // private async Task ShowProductLegacyXmlInNewWindow(ProductEditorProductData productData)
     // {
@@ -969,39 +1070,54 @@
 
     private void ShowProductImageFilesPopup(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productImageFilesPopupData = new()
+        {
+            ProductData = productData,
+        };
 
         IsProductImageFilesPopupVisible = true;
     }
 
     private async Task ShowProductImagesPopupAsync(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
 
-        List<ProductImageData> productToDisplayImageDatas;
+        List<ProductImageData> productToDisplayImageDatas = await ProductImageService.GetAllInProductWithoutFileDataAsync(productData.Product.Id);
 
-        productToDisplayImageDatas = await ProductImageService.GetAllInProductWithoutFileDataAsync(productData.Product.Id);
-
-        CurrentProductImagesPopupData = new ProductImagesPopupData()
+        _productImagesPopupData = new ProductImagesPopupData()
         {
-			IsVisible = true,
             Product = productData.Product,
             ImageDatas = productToDisplayImageDatas,
 		};
+
+        IsProductImagesPopupVisible = true;
     }
 
     private void ShowProductPromotionPopup(ProductEditorProductData productData, Promotion promotion)
     {
-        ProductToDisplayCurrentPromotion = promotion;
+        // ProductToDisplayCurrentPromotion = promotion;
 
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productPromotionPopupData = new()
+        {
+            ProductData = productData,
+            Promotion = promotion,
+        };
 
         IsProductPromotionPopupVisible = true;
     }
 
     private void ShowProductInfoPromotionPopup(ProductEditorProductData productData)
     {
-        ProductToDisplay = productData;
+        // ProductToDisplay = productData;
+
+        _productInfoPromotionPopupData = new()
+        {
+            ProductData = productData,
+        };
 
         IsProductInfoPromotionPopupVisible = true;
     }
@@ -1010,9 +1126,13 @@
     {
         List<PromotionProductFileInfo> promotionProductFiles = await PromotionProductFileService.GetAllForProductAsync(productData.Product.Id);
 
-        ProductToDisplayPromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles);
+        // ProductToDisplay = productData;
 
-        ProductToDisplay = productData;
+        _promotionProductFilesPopupData = new()
+        {
+            ProductData = productData,
+            PromotionProductFiles = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFiles),
+        };
 
         IsPromotionProductFilePopupVisible = true;
     }
@@ -1129,17 +1249,22 @@
 
     private async Task OnSingleProductEditorSaveAsync()
     {
-        if (ProductToDisplay is null) return;
+        if (_productSingleEditorPopupData is null) return;
 
-        int productToDisplayIndexInList = ProductDatas.FindIndex(x => x.Product.Id == ProductToDisplay.Product.Id);
+        Product product = _productSingleEditorPopupData.ProductData.Product;
+
+        int productToDisplayIndexInList = ProductDatas.FindIndex(x => x.Product.Id == product.Id);
 
         if (productToDisplayIndexInList < 0) return;
 
-        ProductEditorProductData productEditorProductData = await ProductEditorDataService.GetProductEditorProductDataAsync(ProductToDisplay.Product);
+        ProductEditorProductData productEditorProductData = await ProductEditorDataService.GetProductEditorProductDataAsync(product);
 
-        ProductToDisplay = productEditorProductData;
+        _productSingleEditorPopupData = new()
+        {
+            ProductData = productEditorProductData
+        };
 
-        ProductDatas[productToDisplayIndexInList] = ProductToDisplay;
+        ProductDatas[productToDisplayIndexInList] = productEditorProductData;
     }
 
     private static string? GetStringFromProductEditorNewStatusSearchOptions(ProductEditorProductNewStatusSearchOptions productStatusEnum)

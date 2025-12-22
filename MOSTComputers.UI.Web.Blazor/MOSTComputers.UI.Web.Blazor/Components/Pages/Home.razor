@@ -81,6 +81,7 @@
 
             <li class="header-list-item header-search-input-list-item">
                 <input id="productTableSearchInput" type="text" class="search-input"
+                    aria-label="User Input For Search"
                     placeholder="Search..." @bind="UserInputString" />
 
                 <button class="btn header-search-input-help-button" @onclick="ShowSearchHelpPopup">
@@ -91,6 +92,7 @@
             <li class="header-search-button-list-item">
                 <button id="productTableSearchCategoryButton" type="button"
                     class="btn btn-outline-primary search-button"
+                    aria-label="Search"
                     style="@(_isSearchingForProducts ? "display: none;" : string.Empty)"
                     @onclick="@SearchProductsAsync">
                     Search
@@ -100,7 +102,7 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productTableCategorySelect" @bind="SelectedCategoryId">
+                <select id="productTableCategorySelect" @bind="SelectedCategoryId" aria-label="User Input For Search">
 
                     <option value="">All</option>
 
@@ -335,7 +337,8 @@
                             </td>
                             <td>
                                 <div class="product-list-item-column">
-                                    <input type="number" @bind="productData.OrderQuantity" inputmode="numeric" class="product-list-item-quantity-input" />
+                                    <input id="quantityInput-@i" type="number" @bind="productData.OrderQuantity" inputmode="numeric" autocomplete="off" aria-label="Quantity"
+                                        class="product-list-item-quantity-input" />
                                 </div>
                             </td>
                             <td>
@@ -413,7 +416,7 @@
                             @* <td style="border-left: 1px solid; border-color: inherit;"> *@
                             <td>
                                 <div class="product-list-item-column">
-                                    <p class="link-info m-0" @onclick="() => ShowProductSearchStringOriginDataPopupAsync(productData.Product)">
+                                    <p class="link-info m-0" @onclick="() => ShowProductSearchStringOriginDataPopupAsync(productData)">
                                         @(string.IsNullOrEmpty(productData.Product.SearchString) ? "-" : productData.Product.SearchString)
                                     </p>
                                 </div>
@@ -444,8 +447,10 @@
     </div>
 </div>
 
-@if (ProductToDisplay is not null)
+@if (_productDataPopupData is not null)
 {
+    Product product = _productDataPopupData.Product;
+
     <Popup @bind-IsVisible='@IsProductDataPopupVisible'
         PopupMarginOptions='new() { Left = "3vw", Top = "3vh", Right = "3vw", Bottom = "3vh" }'
         AddFullScreenButtonToHeader="true"
@@ -457,99 +462,82 @@
 
             <div class="full-parent-width full-parent-height d-flex flex-row flex-wrap red-and-white-theme">
 
-                @if (ProductToDisplay.Manufacturer is not null)
+                @if (product.Manufacturer is not null)
                 {
-                    <h4 class="popup-header-text me-3 mb-0">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                    <h4 class="popup-header-text me-3 mb-0">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
                 }
 
-                @if (ProductToDisplay.Category is not null)
+                @if (product.Category is not null)
                 {
-                    <h4 class="popup-header-text me-3 mb-0">Category: @ProductToDisplay.Category.Description</h4>
+                    <h4 class="popup-header-text me-3 mb-0">Category: @product.Category.Description</h4>
                 }
 
-                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
-                <h4 class="popup-header-text me-3">@(ProductToDisplay.Name ?? "-")</h4>
+                <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+                <h4 class="popup-header-text me-3">@(product.Name ?? "-")</h4>
                 <h4 class="popup-header-text me-2">
-                    Status: @(ProductToDisplay.Status is not null ? GetStringFromProductStatus(ProductToDisplay.Status.Value) : "-")
+                    Status: @(product.Status is not null ? GetStringFromProductStatus(product.Status.Value) : "-")
                 </h4>
             </div>
         </HeaderContent>
 
         <ChildContent>
-            <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="ProductToDisplay"
-                PriceData="ProductToDisplayPriceData"
-                ProductProperties="ProductToDisplayProperties?.Select(property =>
-                    {
-                        ProductCharacteristic productCharacteristic = ProductToDisplayCharacteristics!
-                            .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
-
-                        return new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductPropertyDisplayData()
-                        {
-                            ProductCharacteristic = new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductCharacteristicDisplayData
-                            {
-                                Id = productCharacteristic!.Id,
-                                CategoryId = productCharacteristic.CategoryId,
-                                Active = productCharacteristic.Active,
-                                KWPrCh = productCharacteristic.KWPrCh
-                            },
-                            Name = property.Characteristic,
-                            Value = property.Value,
-                            DisplayOrder = property.DisplayOrder
-                        };
-                    })
-                    .ToList()"
-                ProductImages='ProductToDisplayImages?.Select(
-                    x => new MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductImageDisplayData()
-                    {
-                        ImageSrc = $"/api/images/originalImageData/{x.Id}"
-                    })
-                    .ToList()'
-                ProductPromotions="ProductToDisplayPromotions"
-                ProductSearchStringParts="ProductToDisplaySearchStringParts" />
+            <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="product"
+                PriceData="_productDataPopupData.ProductDataPopupPriceData"
+                ProductProperties="_productDataPopupData.ProductProperties"
+                ProductImages='_productDataPopupData.ProductImages'
+                ProductPromotions="_productDataPopupData.Promotions"
+                ProductSearchStringParts="_productDataPopupData.ProductSearchStringParts" />
         </ChildContent>
     </Popup>
+}
 
-    if (IsProductXmlPopupVisible)
-    {
-        <Popup @bind-IsVisible="IsProductXmlPopupVisible"
-            PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh", }'>
-            <HeaderContent>
-                <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+@if (_productXmlPopupData is not null)
+{
+    Product product = _productXmlPopupData.Product;
 
-                    @if (ProductToDisplay.Manufacturer is not null)
-                    {
-                        <h4 class="popup-header-text me-3 mb-0">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
-                    }
+    <Popup @bind-IsVisible="IsProductXmlPopupVisible"
+        PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh", }'>
+        <HeaderContent>
+            <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
 
-                    @if (ProductToDisplay.Category is not null)
-                    {
-                        <h4 class="popup-header-text me-3 mb-0">Category: @ProductToDisplay.Category.Description</h4>
-                    }
-
-                    <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
-                    <h4 class="popup-header-text me-3">@(ProductToDisplay.Name ?? "-")</h4>
-                    <h4 class="popup-header-text me-2">
-                        Status: @(ProductToDisplay.Status is not null ? GetStringFromProductStatus(ProductToDisplay.Status.Value) : "-")
-                    </h4>
-                </div>
-            </HeaderContent>
-            <ChildContent>
-                <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+                @if (product.Manufacturer is not null)
                 {
-                    ProductIds = [ProductToDisplay!.Id]
-                }" />
-            </ChildContent>
-        </Popup>
-    }
+                    <h4 class="popup-header-text me-3 mb-0">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+                }
+
+                @if (product.Category is not null)
+                {
+                    <h4 class="popup-header-text me-3 mb-0">Category: @product.Category.Description</h4>
+                }
+
+                <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+                <h4 class="popup-header-text me-3">@(product.Name ?? "-")</h4>
+                <h4 class="popup-header-text me-2">
+                    Status: @(product.Status is not null ? GetStringFromProductStatus(product.Status.Value) : "-")
+                </h4>
+            </div>
+        </HeaderContent>
+        <ChildContent>
+            <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+            {
+                ProductIds = [product.Id]
+            }" />
+        </ChildContent>
+    </Popup>
+}
+
+@if (_productGroupImagesPopupData is not null)
+{
+    Product product = _productGroupImagesPopupData.ProductData.Product;
 
     <Popup @bind-IsVisible="IsPromotionGroupImagesPopupVisible"
         PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
         <HeaderContent>
             <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
 
-                @if (ProductToDisplay.Manufacturer is not null)
+                @if (product.Manufacturer is not null)
                 {
-                    <h4 class="mb-0 me-2">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                    <h4 class="mb-0 me-2">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
                 }
             </div>
         </HeaderContent>
@@ -559,28 +547,34 @@
         </ChildContent>
     </Popup>
 
+}
+
+@if (_productSearchStringPartsPopupData is not null)
+{
+    Product product = _productSearchStringPartsPopupData.ProductData.Product;
+
     <Popup @bind-IsVisible="IsProductSearchStringOriginDataPopupVisible"
         PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
         <HeaderContent>
             <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
 
-                @if (ProductToDisplay.Manufacturer is not null)
+                @if (product.Manufacturer is not null)
                 {
-                    <h4 class="mb-0 me-3">Manufacturer: @ProductToDisplay.Manufacturer.RealCompanyName</h4>
+                    <h4 class="mb-0 me-3">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
                 }
 
-                @if (ProductToDisplay.Category is not null)
+                @if (product.Category is not null)
                 {
-                    <h4 class="mb-0 me-3">Category: @ProductToDisplay.Category?.Description</h4>
+                    <h4 class="mb-0 me-3">Category: @product.Category?.Description</h4>
                 }
 
-                <h4 class="popup-header-text me-3">ID: @(ProductToDisplay.Id)</h4>
-                <h4 class="popup-header-text me-2">@(ProductToDisplay.Name ?? "-")</h4>
+                <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+                <h4 class="popup-header-text me-2">@(product.Name ?? "-")</h4>
             </div>
         </HeaderContent>
 
         <ChildContent>
-            <ProductSearchStringOriginTable SearchStringOriginDataList="ProductToDisplaySearchStringParts ?? []" />
+            <ProductSearchStringOriginTable SearchStringOriginDataList="_productSearchStringPartsPopupData.SearchStringOriginDataList" />
         </ChildContent>
     </Popup>
 }
@@ -616,6 +610,32 @@
     {
         public required decimal Price { get; set; }
         public required Currency Currency { get; set; }
+    }
+
+    private sealed class ProductDataPopupData
+    {
+        public required Product Product { get; set; }
+        public Client.Product.ProductData.ProductPriceData? ProductDataPopupPriceData { get; set; }
+        public List<Client.Product.ProductData.ProductPropertyDisplayData>? ProductProperties { get; set; }
+        public List<Client.Product.ProductData.ProductImageDisplayData>? ProductImages { get; set; }
+        public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
+        public List<MOSTComputers.Models.Product.Models.Promotions.Promotion>? Promotions { get; set; }
+    }
+
+    private sealed class ProductXmlPopupData
+    {
+        public required Product Product { get; set; }
+    }
+
+    private sealed class ProductGroupImagesPopupData
+    {
+        public required ProductDisplayData ProductData { get; set; }
+    }
+
+    private sealed class ProductSearchStringPartsPopupData
+    {
+        public required ProductDisplayData ProductData { get; set; }
+        public required List<SearchStringPartOriginData> SearchStringOriginDataList { get; set; }
     }
 
     public string? UserInputString { get; set; }
@@ -668,22 +688,18 @@
 
     private bool _isSearchingForProducts { get; set; } = false;
 
-    public Product? ProductToDisplay { get; set; }
-    public ProductDisplayData? ProductToDisplayData { get; set; }
-
-    public string? ProductToDisplayHtml { get; set; }
-    public MOSTComputers.UI.Web.Blazor.Client.Product.ProductData.ProductPriceData? ProductToDisplayPriceData { get; set; }
-    public List<ProductProperty>? ProductToDisplayProperties { get; set; }
-    public List<ProductCharacteristic>? ProductToDisplayCharacteristics { get; set; }
-    public List<ProductImageData>? ProductToDisplayImages { get; set; }
-    public List<ProductImageFileData>? ProductToDisplayImageFileNames { get; set; }
-    public List<Promotion>? ProductToDisplayPromotions { get; set; }
-    public List<SearchStringPartOriginData>? ProductToDisplaySearchStringParts { get; set; }
-
     public bool IsProductDataPopupVisible { get; set; } = false;
+    private ProductDataPopupData? _productDataPopupData { get; set; } = null;
+
     public bool IsProductXmlPopupVisible { get; set; } = false;
+    private ProductXmlPopupData? _productXmlPopupData { get; set; } = null;
+
     public bool IsPromotionGroupImagesPopupVisible { get; set; } = false;
+    private ProductGroupImagesPopupData? _productGroupImagesPopupData { get; set; } = null;
+
     public bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
+    private ProductSearchStringPartsPopupData? _productSearchStringPartsPopupData { get; set; } = null;
+
     public bool IsSearchHelpPopupVisible { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
@@ -710,16 +726,52 @@
             ProductCharacteristicType.Link
         ];
 
-        ProductToDisplayCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+        List<ProductCharacteristic> productCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
             relatedCategoryIds, productCharacteristicTypes, true);
 
-        ProductToDisplayProperties = await ProductPropertyService.GetAllInProductAsync(product.Id);
+        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(product.Id);
 
-        ProductToDisplayImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
+        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
+
+        foreach (ProductProperty property in productProperties)
+        {
+            ProductCharacteristic productCharacteristic = productCharacteristics
+                .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
+
+            Client.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
+            {
+                ProductCharacteristic = new()
+                {
+                    Id = productCharacteristic!.Id,
+                    CategoryId = productCharacteristic.CategoryId,
+                    Active = productCharacteristic.Active,
+                    KWPrCh = productCharacteristic.KWPrCh
+                },
+                Name = property.Characteristic,
+                Value = property.Value,
+                DisplayOrder = property.DisplayOrder
+            };
+
+            propertiesInData.Add(mappedProperty);
+        }
+
+        List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
+
+        List<Client.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
+
+        foreach (ProductImageData productImageData in productImages)
+        {
+            Client.Product.ProductData.ProductImageDisplayData imageDisplayData = new()
+            {
+                ImageSrc = $"/api/images/originalImageData/{productImageData.Id}"
+            };
+
+            productImagesInData.Add(imageDisplayData);
+        }
 
         List<Promotion> promotions = await PromotionService.GetAllForProductAsync(product.Id);
 
-        ProductToDisplayPromotions = promotions.Where(x =>
+        List<Promotion> productPromotions = promotions.Where(x =>
         {
             if (x.Id != product.PromotionPid && x.Id != product.PromotionRid) return false;
 
@@ -727,8 +779,10 @@
         })
             .ToList();
 
-        ProductToDisplaySearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+        List<SearchStringPartOriginData>? productSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             product.SearchString, product.CategoryId);
+
+        Client.Product.ProductData.ProductPriceData? productPriceData = null;
 
         if (product.Price is not null && product.Currency is not null)
         {
@@ -743,7 +797,7 @@
                 decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
                 decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
 
-                ProductToDisplayPriceData = new()
+                productPriceData = new()
                 {
                     PriceInBgn = priceInBgn,
                     PriceInEur = priceInEur,
@@ -751,7 +805,15 @@
             }
         }
 
-        ProductToDisplay = product;
+        _productDataPopupData = new()
+        {
+            Product = product,
+            ProductDataPopupPriceData = productPriceData,
+            ProductProperties = propertiesInData,
+            ProductImages = productImagesInData,
+            Promotions = productPromotions,
+            ProductSearchStringParts = productSearchStringParts,
+        };
 
         IsProductDataPopupVisible = true;
     }
@@ -763,7 +825,12 @@
 
     private void ShowProductXmlPopup(Product product)
     {
-        ProductToDisplay = product;
+        // ProductToDisplay = product;
+
+        _productXmlPopupData = new()
+        {
+            Product = product,
+        };
 
         IsProductXmlPopupVisible = true;
     }
@@ -772,8 +839,13 @@
     {
         if (productDisplayData.ManufacturerPromotionGroupId is null) return;
 
-        ProductToDisplay = productDisplayData.Product;
-        ProductToDisplayData = productDisplayData;
+        // ProductToDisplay = productDisplayData.Product;
+        // ProductToDisplayData = productDisplayData;
+
+        _productGroupImagesPopupData = new()
+        {
+            ProductData = productDisplayData,
+        };
 
         IsPromotionGroupImagesPopupVisible = true;
     }
@@ -781,16 +853,24 @@
     private int GetSelectedIndexForPromotionGroupImagesPopup(
         Dictionary<PromotionGroup, List<PromotionGroupImagesViewer.GroupPromotionImageDisplayData>> promotionGroupsAndImages)
     {
+        if (_productGroupImagesPopupData is null) return 0;
+
         return promotionGroupsAndImages.Keys.ToList()
-            .FindIndex(x => x.Id == ProductToDisplayData?.ManufacturerPromotionGroupId);
+            .FindIndex(x => x.Id == _productGroupImagesPopupData.ProductData?.ManufacturerPromotionGroupId);
     }
 
-    private async Task ShowProductSearchStringOriginDataPopupAsync(Product product)
+    private async Task ShowProductSearchStringOriginDataPopupAsync(ProductDisplayData productData)
     {
-        ProductToDisplaySearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
-            product.SearchString, product.CategoryId);
+        List<SearchStringPartOriginData>? searchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+            productData.Product.SearchString, productData.Product.CategoryId);
 
-        ProductToDisplay = product;
+        searchStringParts ??= [];
+
+        _productSearchStringPartsPopupData = new()
+        {
+            ProductData = productData,
+            SearchStringOriginDataList = searchStringParts,
+        };
 
         IsProductSearchStringOriginDataPopupVisible = true;
     }
