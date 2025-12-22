@@ -77,7 +77,6 @@ html {
     -webkit-appearance: none;
 }
 
-/* Firefox */
 .input-number-remove-spinners[type=number] {
     -moz-appearance: textfield;
     appearance: textfield;
@@ -133,17 +132,8 @@ html {
     border-top-color: #BD1105;
     border-radius: 50%;
     aspect-ratio: 1;
+    -webkit-animation: round_loader_default-spin 2s linear infinite;
     animation: round_loader_default-spin 2s linear infinite;
-}
-
-@keyframes round_loader_default-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 /* Safari */
@@ -154,6 +144,16 @@ html {
 
     100% {
         -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes round_loader_default-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
     }
 }
 

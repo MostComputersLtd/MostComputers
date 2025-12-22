@@ -1,8 +1,8 @@
 ﻿.product-barcode-reader-video-and-overlay-container {
     display: flex;
-    flex-direction: column;
     -ms-flex-direction: column;
     -webkit-flex-direction: column;
+    flex-direction: column;
     align-items: center;
     -webkit-justify-content: center;
     justify-content: center;

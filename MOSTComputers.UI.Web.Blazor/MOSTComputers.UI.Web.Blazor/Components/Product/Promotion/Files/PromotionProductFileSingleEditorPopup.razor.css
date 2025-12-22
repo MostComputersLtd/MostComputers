@@ -32,13 +32,13 @@
 }
 
 .save-button-container {
-    flex-grow: 1;
     -webkit-flex-grow: 1;
+    flex-grow: 1;
     display: flex;
-    justify-content: end;
     -webkit-justify-content: end;
-    align-items: center;
+    justify-content: end;
     -webkit-align-items: center;
+    align-items: center;
     margin-right: 0.5em;
 }
 
