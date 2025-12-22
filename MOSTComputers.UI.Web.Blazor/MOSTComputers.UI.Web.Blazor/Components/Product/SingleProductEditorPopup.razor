@@ -196,11 +196,11 @@
                                     style="background-image: url('@imageDataRoute');">
                                 </button>
                             }
-                            else if (listItemData.UploadedImageFilePreviewUrl is not null)
+                            else if (listItemData.UploadedImageFileData?.PreviewUrl is not null)
                             {
                                 <button name="Image #@(i)" class="btn image-button"
-                                    @ondblclick="() => OpenDataUrlInNewWindowAsync(listItemData.UploadedImageFilePreviewUrl)"
-                                    style="background-image: url('@listItemData.UploadedImageFilePreviewUrl');">
+                                    @ondblclick="() => OpenDataUrlInNewWindowAsync(listItemData.UploadedImageFileData.PreviewUrl)"
+                                    style="background-image: url('@listItemData.UploadedImageFileData.PreviewUrl');">
                                 </button>
                             }
                             else
@@ -597,26 +597,34 @@
 
 
 @code {
-    public sealed class ProductImageListItemDisplayData
+    private sealed class ProductImageListItemDisplayData
     {
         public ProductImageDisplayData? RelatedImage { get; set; }
         public ProductImageFileDisplayData? RelatedImageFile { get; set; }
         public PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData? RelatedPromotionFile { get; set; }
 
-        public IBrowserFile? UploadedImageFile { get; set; }
-        public string? UploadedImageFilePreviewUrl { get; set; } = null;
+        public BrowserFileData? UploadedImageFileData { get; set; } = null;
 
         public List<string> ValidationMessages { get; set; } = new();
     }
 
-    public sealed class ProductImageDisplayData
+    private sealed class BrowserFileData
+    {
+        public required string FileName { get; set; }
+        public required string ContentType { get; set; }
+        public required long Size { get; set; }
+        public required byte[] Data { get; set; }
+        public string? PreviewUrl { get; set; } = null;
+	}
+
+    private sealed class ProductImageDisplayData
     {
         public required int? ExistingImageId { get; set; }
         public string? ContentType { get; set; }
         public DateTime? DateModified { get; set; }
     }
 
-    public sealed class ProductImageFileDisplayData
+    private sealed class ProductImageFileDisplayData
     {
         public required int? ExistingFileInfoId { get; set; }
         public required int? ExistingImageId { get; set; }
@@ -625,7 +633,7 @@
         public bool Active { get; set; }
     }
 
-    public sealed class ProductPropertyDisplayData
+    private sealed class ProductPropertyDisplayData
     {
         public ProductCharacteristic? ProductCharacteristic { get; set; }
         public int? DisplayOrder { get; set; }
@@ -997,15 +1005,9 @@
 
     private async Task<byte[]?> GetImageDataFromListItemAsync(ProductImageListItemDisplayData imageListItem)
     {
-        if (imageListItem.UploadedImageFile is not null)
+        if (imageListItem.UploadedImageFileData is not null)
         {
-            using Stream stream = imageListItem.UploadedImageFile.OpenReadStream(20 * 1024 * 1024);
-
-            using MemoryStream memoryStream = new();
-
-            await stream.CopyToAsync(memoryStream);
-
-            return memoryStream.ToArray();
+            return imageListItem.UploadedImageFileData.Data;
         }
 
         int? existingImageId = imageListItem.RelatedImage?.ExistingImageId;
@@ -1245,6 +1247,14 @@
 
         string? previewUrl = await CreateImagePreviewUrlForBrowserFileAsync(file);
 
+        using Stream stream = file.OpenReadStream(20 * 1024 * 1024);
+
+        using MemoryStream memoryStream = new();
+
+        await stream.CopyToAsync(memoryStream);
+        
+        byte[] imageData = memoryStream.ToArray(); // Store the image data
+
         ProductImageFileDisplayData productImageFileDisplayData = new()
         {
             ExistingFileInfoId = null,
@@ -1263,8 +1273,14 @@
 
         ProductImageListItemDisplayData productImageListItemDisplayData = new()
         {
-            UploadedImageFile = file,
-            UploadedImageFilePreviewUrl = previewUrl,
+            UploadedImageFileData = new()
+            {
+                FileName = file.Name,
+				ContentType = file.ContentType,
+				Size = file.Size,
+                Data = imageData,
+				PreviewUrl = previewUrl,
+            },
 
             RelatedImage = productImageDisplayData,
             RelatedImageFile = productImageFileDisplayData,
@@ -1292,8 +1308,8 @@
     private async Task RevokeAllExistingBrowserFilePreviewUrls()
     {
         IEnumerable<string> browserFilePreviewUrls = ProductImages
-            .Where(x => x.UploadedImageFilePreviewUrl is not null)
-            .Select(x => x.UploadedImageFilePreviewUrl!);
+            .Where(x => x.UploadedImageFileData?.PreviewUrl is not null)
+            .Select(x => x.UploadedImageFileData!.PreviewUrl!);
 
         await RevokeImagePreviewUrls(browserFilePreviewUrls);        
     }
@@ -1449,9 +1465,9 @@
         {
             ProductImages.Remove(imageListItem);
 
-            if (imageListItem.UploadedImageFilePreviewUrl is not null)
+            if (imageListItem.UploadedImageFileData?.PreviewUrl is not null)
             {
-                _ = RevokeImagePreviewUrl(imageListItem.UploadedImageFilePreviewUrl);
+                _ = RevokeImagePreviewUrl(imageListItem.UploadedImageFileData.PreviewUrl);
             }
 
             SetDataChanged(imageListItem, ItemChangeState.Deleted);
@@ -1476,9 +1492,9 @@
         {
             ProductImages.Remove(imageListItem);
 
-            if (imageListItem.UploadedImageFilePreviewUrl is not null)
+            if (imageListItem.UploadedImageFileData?.PreviewUrl is not null)
             {
-                _ = RevokeImagePreviewUrl(imageListItem.UploadedImageFilePreviewUrl);
+                _ = RevokeImagePreviewUrl(imageListItem.UploadedImageFileData.PreviewUrl);
             }
 
             SetDataChanged(imageListItem, ItemChangeState.Deleted);
@@ -1589,9 +1605,9 @@
 
         SetDataChanged(productImageListItemDisplayData, ItemChangeState.Deleted);
 
-        if (productImageListItemDisplayData.UploadedImageFilePreviewUrl is not null)
+        if (productImageListItemDisplayData.UploadedImageFileData?.PreviewUrl is not null)
         {
-            _ = RevokeImagePreviewUrl(productImageListItemDisplayData.UploadedImageFilePreviewUrl);
+            _ = RevokeImagePreviewUrl(productImageListItemDisplayData.UploadedImageFileData.PreviewUrl);
         }
 
         if (productImageListItemDisplayData.RelatedPromotionFile is not null)
@@ -1941,9 +1957,9 @@
                 return new No();
             }
 
-            if (imageListItem.UploadedImageFile is not null)
+            if (imageListItem.UploadedImageFileData is not null)
             {
-                if (!IsImageContentType(imageListItem.UploadedImageFile.ContentType))
+                if (!IsImageContentType(imageListItem.UploadedImageFileData.ContentType))
                 {
                     imageListItem.ValidationMessages.Clear();
                     imageListItem.ValidationMessages.Add("File is not in a supported image format");
@@ -1951,7 +1967,7 @@
                     return new No();
                 }
 
-                string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFile.Name);
+                string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFileData.FileName);
 
                 if (imageFileExtension is null)
                 {
@@ -2115,7 +2131,7 @@
         return imageRequests;
     }
 
-    public async Task<List<ProductPropertyDisplayData>> GetProductPropertyEditorDataForProductAsync(
+    private async Task<List<ProductPropertyDisplayData>> GetProductPropertyEditorDataForProductAsync(
         int productId,
         List<ProductCharacteristic> productCharacteristics)
     {

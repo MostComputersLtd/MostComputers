@@ -85,6 +85,26 @@ export async function createUrlFromStreamData(dotNetStreamRef, contentType)
     return url;
 }
 
+export async function displayImageFromFileInput(fileInputElementId, imageElementId)
+{
+    const fileInputElement = document.getElementById(fileInputElementId);
+
+    const imageElement = document.getElementById(imageElementId);
+
+    if (!fileInputElement || fileInputElement.files.length == 0 || !imageElement) return null;
+
+    const url = URL.createObjectURL(fileInputElement.files[0]);
+
+    imageElement.addEventListener('load', () =>
+    {
+        URL.revokeObjectURL(url);
+    }, { once: true });
+
+    imageElement.src = url;
+
+    return url;
+}
+
 export function revokePreviewUrls(urls)
 {
     if (!Array.isArray(urls)) return;
