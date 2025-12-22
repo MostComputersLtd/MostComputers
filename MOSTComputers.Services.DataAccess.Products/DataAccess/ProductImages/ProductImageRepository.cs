@@ -561,7 +561,7 @@ internal sealed class ProductImageRepository : IProductImageRepository
             VALUES (@productId, @HtmlData, @ImageData, @ImageContentType, @DateModified)
             """;
 
-        throw new NotImplementedException($"ImagesAll does not allow modification: {insertInFirstImagesQuery}");
+        //throw new NotImplementedException($"Images does not allow modification: {insertInFirstImagesQuery}");
 
         var parameters = new
         {
@@ -625,7 +625,7 @@ internal sealed class ProductImageRepository : IProductImageRepository
             WHERE {FirstImagesTable.IdColumnName} = @productId;
             """;
 
-        throw new NotImplementedException($"ImagesAll does not allow modification: {updateInFirstImagesQuery}");
+        //throw new NotImplementedException($"Images does not allow modification: {updateInFirstImagesQuery}");
 
         var parameters = new
         {
