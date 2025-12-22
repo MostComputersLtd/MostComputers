@@ -1,4 +1,11 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+﻿@using System.Security.Claims
+@using Microsoft.Extensions.Primitives
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }"
+        OnNavigateAsync="HandleNavigation">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
@@ -8,3 +15,39 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+
+    private async Task HandleNavigation(NavigationContext context)
+    {
+        Uri targetUri = NavigationManager.ToAbsoluteUri(context.Path);
+
+        if (targetUri.AbsolutePath.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase))
+        {
+            AuthenticationState state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            ClaimsPrincipal user = state.User;
+
+            if (user.Identity is null || !user.Identity.IsAuthenticated)
+            {
+                return;
+            }
+
+            Dictionary<string, StringValues> query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(targetUri.Query);
+
+            if (query.TryGetValue("returnUrl", out var returnUrlValues))
+            {
+                string? returnUrl = returnUrlValues.First();
+
+                if (Uri.IsWellFormedUriString(returnUrl, UriKind.Relative))
+                {
+                    NavigationManager.NavigateTo(returnUrl, forceLoad: true);
+
+                    return;
+                }
+            }
+
+            NavigationManager.NavigateTo("/", true);
+        }
+    }
+}
