@@ -2,8 +2,6 @@
 
 @implements IAsyncDisposable
 
-@using System.Security.Claims
-@using System.Transactions
 @using FluentValidation.Results
 @using MOSTComputers.Models.FileManagement.Models
 @using MOSTComputers.Models.Product.Models
@@ -42,8 +40,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
 @using OneOf.Types
-@using System.Text.Json.Serialization
-@using System.Text.Json
+@using SixLabors.ImageSharp
 @using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
@@ -172,6 +169,7 @@
                     {
                         ProductImageListItemDisplayData listItemData = ProductImages[i];
 
+                        BrowserFileData? browserFile = listItemData.UploadedImageFileData;
                         ProductImageDisplayData? relatedImage = listItemData.RelatedImage;
                         ProductImageFileDisplayData? relatedImageFile = listItemData.RelatedImageFile;
                         PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData? relatedPromotionFile = listItemData.RelatedPromotionFile;
@@ -189,18 +187,30 @@
                             @ondragover="() => OnImageItemDragOver(listItemData)"
                             @ondrop="() => OnImageItemDragEnd(listItemData)">
 
-                            @if (imageDataRoute is not null)
+                            @if (browserFile is not null)
+                            {
+                                @if (browserFile.PreviewUrl is not null)
+                                {
+                                    <button name="Image #@(i)" class="btn image-button"
+                                        @ondblclick="() => OpenDataUrlInNewWindowAsync(browserFile.PreviewUrl)"
+                                        style="background-image: url('@browserFile.PreviewUrl');">
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button name="Image #@(i)" class="btn image-button without-image">
+                                    </button>
+                                }
+
+                                <p class="align-text-center">
+                                    @($"{GetByteSizeString((ulong)browserFile.FileSize, ByteSizeStringAccuracy.WithGivenScalesDown(1))} ({browserFile.ImageSize.WidthPixels} X {browserFile.ImageSize.HeightPixels} px)")
+                                </p>
+                            }
+                            else if (imageDataRoute is not null)
                             {
                                 <button name="Image #@(i)" class="btn image-button"
                                     @ondblclick="() => OpenDataUrlInNewWindowAsync(imageDataRoute)"
                                     style="background-image: url('@imageDataRoute');">
-                                </button>
-                            }
-                            else if (listItemData.UploadedImageFileData?.PreviewUrl is not null)
-                            {
-                                <button name="Image #@(i)" class="btn image-button"
-                                    @ondblclick="() => OpenDataUrlInNewWindowAsync(listItemData.UploadedImageFileData.PreviewUrl)"
-                                    style="background-image: url('@listItemData.UploadedImageFileData.PreviewUrl');">
                                 </button>
                             }
                             else
@@ -221,19 +231,19 @@
 
                             <div class="image-delete-button-container">
                                 <button type="button" class="btn-close image-delete-button" @onclick="() => RemoveProductImageListItem(listItemData)"
-                                    aria-label="Close"/>
+                                    aria-label="Delete"/>
                             </div>
 
                             <div>
                                 @if (relatedImage?.DateModified is not null)
                                 {
-                                    <p class="align-text-center">
+                                    <p class="image-date-text">
                                         @relatedImage.DateModified.Value.ToString("MM.dd.yyyy")
                                     </p>
                                 }
-                                else
+                                else if (browserFile is null)
                                 {
-                                    <p class="align-text-center">
+                                    <p class="image-date-text">
                                         No date provided
                                     </p>
                                 }
@@ -385,7 +395,8 @@
 
                                 <td class="property-td-alignedOnTop property-delete-button-td">
                                     <button class="btn btn-danger"
-                                        @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)">
+                                        @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)"
+                                        aria-label="Delete">
                                         X
                                     </button>
                                 </td>
@@ -612,10 +623,17 @@
     {
         public required string FileName { get; set; }
         public required string ContentType { get; set; }
-        public required long Size { get; set; }
+        public required long FileSize { get; set; }
+        public required CustomImageSize ImageSize { get; set; }
         public required byte[] Data { get; set; }
         public string? PreviewUrl { get; set; } = null;
-	}
+    }
+
+    private readonly struct CustomImageSize
+    {
+        public required int WidthPixels { get; init; }
+        public required int HeightPixels { get; init; }
+    }
 
     private sealed class ProductImageDisplayData
     {
@@ -1194,16 +1212,6 @@
 
         OneOf<string, InvalidXmlResult> getProductHtmlResult = GetProductHtmlFromCurrentEditorData(propertiesAndLinks);
 
-        // getProductHtmlResult.Switch(
-        //     html =>
-        //     {
-        //         ProductHtml = html;
-        //     },
-        //     invalidXmlResult =>
-        //     {
-        //         ProductHtml = null;
-        //     });
-
         _productHtmlAndImagesPopupData = new()
         {
             Product = Product,
@@ -1247,13 +1255,41 @@
 
         string? previewUrl = await CreateImagePreviewUrlForBrowserFileAsync(file);
 
-        using Stream stream = file.OpenReadStream(30 * 1024 * 1024);
-
         using MemoryStream memoryStream = new();
 
-        await stream.CopyToAsync(memoryStream);
-        
-        byte[] imageData = memoryStream.ToArray(); // Store the image data
+        using (Stream stream = file.OpenReadStream(30 * 1024 * 1024))
+        {
+            await stream.CopyToAsync(memoryStream);
+        }
+
+        memoryStream.Position = 0;
+
+        ImageInfo imageInfo;
+
+        try
+        {
+            imageInfo = await Image.IdentifyAsync(memoryStream);
+        }
+        catch (UnknownImageFormatException)
+        {
+            if (previewUrl is not null)
+            {
+                await RevokeImagePreviewUrl(previewUrl);
+            }
+
+            return;
+        }
+        catch (InvalidImageContentException)
+        {
+            if (previewUrl is not null)
+            {
+                await RevokeImagePreviewUrl(previewUrl);
+            }
+
+            return;
+        }
+
+        byte[] imageData = memoryStream.ToArray();
 
         ProductImageFileDisplayData productImageFileDisplayData = new()
         {
@@ -1268,7 +1304,7 @@
         {
             ExistingImageId = null,
             ContentType = file.ContentType,
-            DateModified = DateTime.Now,
+            DateModified = null,
         };
 
         ProductImageListItemDisplayData productImageListItemDisplayData = new()
@@ -1277,7 +1313,12 @@
             {
                 FileName = file.Name,
 				ContentType = file.ContentType,
-				Size = file.Size,
+				FileSize = file.Size,
+                ImageSize = new()
+                {
+                    WidthPixels = imageInfo.Size.Width,
+                    HeightPixels = imageInfo.Size.Height,
+				},
                 Data = imageData,
 				PreviewUrl = previewUrl,
             },
@@ -1815,10 +1856,10 @@
             return;
         }
 
+        _isSavingProduct = true;
+
         try
         {
-            _isSavingProduct = true;
-
             List<ProductPropertyDisplayData> propertiesAndLinks = new(ProductProperties);
 
             propertiesAndLinks.AddRange(ProductLinks);
@@ -1839,17 +1880,9 @@
 
                 productImagesAndPromotionFiles.Add(newImageListItem);
             }
-            // using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-
             bool updateImagesSuccess = await SaveAllAsync(propertiesAndLinks, productImagesAndPromotionFiles, currentUserName);
 
             if (!updateImagesSuccess) return;
-
-            // replicationDBTransactionScope.Complete();
-
-            // localDBTransactionScope.Complete();
-
-            // transactionScope.Complete();
         }
         finally
         {
@@ -2225,39 +2258,6 @@
         HtmlProductsData htmlProductsData = new()
         {
             Products = [htmlProduct],
-        };
-
-        return ProductHtmlService.TryGetHtmlFromProducts(htmlProductsData);
-    }
-
-    private async Task<OneOf<string, InvalidXmlResult>> GetProductHtmlFromSavedDataAsync()
-    {
-        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(Product.Id);
-
-        List<HtmlProductProperty> htmlProductProperties = new();
-
-        foreach (ProductProperty productProperty in productProperties)
-        {
-            HtmlProductProperty htmlProductProperty = new()
-            {
-                Name = productProperty.Characteristic,
-                Value = productProperty.Value,
-                Order = productProperty.DisplayOrder?.ToString(),
-            };
-
-            htmlProductProperties.Add(htmlProductProperty);
-        }
-
-        HtmlProduct htmlProduct = new()
-        {
-            Id = Product.Id,
-            Name = Product.Name,
-            Properties = htmlProductProperties,
-        };
-
-        HtmlProductsData htmlProductsData = new()
-        {
-            Products = [htmlProduct]
         };
 
         return ProductHtmlService.TryGetHtmlFromProducts(htmlProductsData);

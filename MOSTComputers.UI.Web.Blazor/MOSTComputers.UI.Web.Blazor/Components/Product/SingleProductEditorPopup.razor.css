@@ -141,10 +141,17 @@ button {
     pointer-events: none;
     user-select: none;
 }
+
 .image-delete-button {
     width: 0.3em;
     height: 0.3em;
     pointer-events: all;
+}
+
+.image-date-text {
+    text-align: center;
+    font-size: 1em;
+    line-height: 1.5em;
 }
 
 .promotion-product-file-name-container {
@@ -175,7 +182,7 @@ button {
 
 .file-empty-placeholder {
     width: 100%;
-    height: 1em;
+    height: 1.5em;
 }
 
 .image-add-button-list-item {
