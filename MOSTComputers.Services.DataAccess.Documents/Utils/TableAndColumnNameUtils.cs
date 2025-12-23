@@ -7,6 +7,8 @@ internal static class TableAndColumnNameUtils
     internal const string WarrantyCardsTableName = "[dbo].[ExportedWarrantyCards]";
     internal const string WarrantyCardItemsTableName = "[dbo].[ExportedWarrantyCardItems]";
 
+    internal const string CustomerDataViewName = "[dbo].[ViewCustomersID]";
+
     internal static class InvoicesTable
     {
         internal const string ExportIdColumn = "ExportID";
@@ -95,5 +97,15 @@ internal static class TableAndColumnNameUtils
         internal const string WarrantyCardItemTermInMonthsAlias = "WarrantyCardItemWCTerm";
 
         internal const string DisplayOrderColumn = "S";
+    }
+
+    internal static class CustomerDataView
+    {
+        internal const string IdColumn = "BID";
+        internal const string NameColumn = "Name";
+        internal const string ContactPersonNameColumn = "ContactPerson";
+        internal const string CountryColumn = "Country";
+        internal const string AddressColumn = "Address";
+        internal const string EmployeeIdColumn = "EmployeeID";
     }
 }
