@@ -1,6 +1,8 @@
 ﻿@page "/productEditor"
 @rendermode InteractiveServer
 
+@attribute [Authorize(Roles = "ProductEditor")]
+
 @using System.Text
 @using FluentValidation.Results
 @using MOSTComputers.Models.FileManagement.Models
@@ -40,10 +42,9 @@
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
 @using OneOf.Types
+
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
-
-@attribute [Authorize]
 
 @inject ICategoryService CategoryService
 

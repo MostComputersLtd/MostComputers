@@ -41,14 +41,18 @@
                 </NavLink>
             </div>
 
-            <AuthorizeView>
+            <AuthorizeView Roles="ProductEditor">
                 <Authorized>
                     <div class="nav-item px-1">
-                        <NavLink class="nav-link" href="productEditor">
+                    <NavLink class="nav-link" href="productEditor">
                             Product Editor
                         </NavLink>
                     </div>
+				</Authorized>
+			</AuthorizeView>
 
+            <AuthorizeView Roles="Admin">
+                <Authorized>
                     <div class="nav-item px-1">
                         <NavLink class="nav-link" href="promotionFiles">
                             Promotion Files
@@ -85,13 +89,15 @@
                         </NavLink>
                     </div>
                     
-                    <div class="nav-item px-1">
-                        <NavLink class="nav-link" href="documents">
-                            Documents
-                        </NavLink>
-                    </div>
-
                 </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Admin">
+                <div class="nav-item px-1">
+                    <NavLink class="nav-link" href="documents">
+                        Documents
+                    </NavLink>
+                </div>
             </AuthorizeView>
 
             <div class="nav-end-data-container">
