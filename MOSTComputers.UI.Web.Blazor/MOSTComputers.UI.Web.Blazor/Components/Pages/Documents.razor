@@ -24,6 +24,7 @@
 
 @inject IInvoiceRepository InvoiceRepository
 @inject IWarrantyCardRepository WarrantyCardRepository
+@inject ICustomerDataRepository CustomerDataRepository
 
 @inject IPdfInvoiceDataService PdfInvoiceDataService
 @inject IPdfWarrantyCardDataService PdfWarrantyCardDataService
@@ -818,7 +819,7 @@
 			InvoiceByIdSearchRequest invoiceByDateFilterRequest = new()
 			{
 				SearchOption = InvoiceByIdSearchOptions.ByCustomerBID,
-				Id = customerBid
+				Id = customerBid,
 			};
 
 			InvoiceSearchRequest byCustomerInvoiceSearchRequest = new()
