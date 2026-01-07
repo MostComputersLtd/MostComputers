@@ -17,7 +17,7 @@ public interface IIdentityService<TUser, TRole>
     Task<OneOf<IdentityResult, NotFound>> ChangePasswordForUserAsync(string userId, string newPassword);
     Task<bool> TryDeleteUserAsync(string userId);
     Task<IdentityResult> TryRemoveUserFromRoleAsync(TUser user, string roleName);
-    PasswordsTableOnlyUser? GetUser(string userId);
     Task<List<PasswordsTableOnlyUser>> GetUsersAsync(List<string> userIds);
     Task<IList<string>> GetUserRoleNamesAsync(PasswordsTableOnlyUser user);
+    Task<IdentityResult> TryRemoveUserFromRolesAsync(PasswordsTableOnlyUser user, IEnumerable<string> roleName);
 }

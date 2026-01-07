@@ -97,39 +97,6 @@ internal sealed class CachedPasswordsTableOnlyIdentityService : IIdentityService
         return notCachedUsers;
     }
 
-    public PasswordsTableOnlyUser? GetUser(string userId)
-    {
-        string key = GetKeyById(userId);
-
-        //return _cache.GetOrAdd(key, () =>
-        //{
-        //    List<PasswordsTableOnlyUser>? cachedUsers = _cache.GetValueOrDefault<List<PasswordsTableOnlyUser>>(_getAllKey);
-
-        //    if (cachedUsers is not null)
-        //    {
-        //        PasswordsTableOnlyUser? cachedUserInAll = cachedUsers.FirstOrDefault(x => x.Id == userId);
-
-        //        return cachedUserInAll;
-        //    }
-
-        //    return _identityService.GetUser(userId);
-        //});
-
-        return _fusionCache.GetOrSet(key, (cancellationToken) =>
-        {
-            MaybeValue<List<PasswordsTableOnlyUser>> cachedUsers = _fusionCache.TryGet<List<PasswordsTableOnlyUser>>(_getAllKey, token: cancellationToken);
-
-            if (cachedUsers.HasValue)
-            {
-                PasswordsTableOnlyUser? cachedUserInAll = cachedUsers.Value.FirstOrDefault(x => x.Id == userId);
-
-                return cachedUserInAll;
-            }
-
-            return _identityService.GetUser(userId);
-        });
-    }
-
     public async Task<PasswordsTableOnlyUser?> GetUserAsync(string userId)
     {
         string key = GetKeyById(userId);
@@ -229,6 +196,11 @@ internal sealed class CachedPasswordsTableOnlyIdentityService : IIdentityService
     public async Task<IdentityResult> TryRemoveUserFromRoleAsync(PasswordsTableOnlyUser user, string roleName)
     {
         return await _identityService.TryRemoveUserFromRoleAsync(user, roleName);
+    }
+
+    public async Task<IdentityResult> TryRemoveUserFromRolesAsync(PasswordsTableOnlyUser user, IEnumerable<string> roleNames)
+    {
+        return await _identityService.TryRemoveUserFromRolesAsync(user, roleNames);
     }
 
     public async Task<bool> TryDeleteUserAsync(string userId)

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.Identity.DAL;
+using MOSTComputers.Services.Identity.DAL.Contracts;
 using MOSTComputers.Services.Identity.Models;
 using MOSTComputers.Services.Identity.Services;
 using MOSTComputers.Services.Identity.Services.Cached;
@@ -13,12 +14,18 @@ public static class Configuration
 
     public static IdentityBuilder AddCustomIdentityWithPasswordsTableOnly(this IServiceCollection services, string authenticationDBConnString)
     {
+        //services.AddDbContextFactory<PasswordsTableOnlyAuthenticationDBContext>(options =>
+        //{
+        //    options.UseSqlServer(authenticationDBConnString);
+        //});
+
         services.AddDbContext<PasswordsTableOnlyAuthenticationDBContext>(options =>
         {
             options.UseSqlServer(authenticationDBConnString);
         });
 
-        IdentityBuilder identityBuilder = services.AddIdentityCore<PasswordsTableOnlyUser>()
+        IdentityBuilder identityBuilder = services
+            .AddIdentityCore<PasswordsTableOnlyUser>()
             .AddRoles<PasswordsTableOnlyRole>()
             .AddEntityFrameworkStores<PasswordsTableOnlyAuthenticationDBContext>();
 
@@ -27,5 +34,13 @@ public static class Configuration
         services.AddScoped<IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole>, CachedPasswordsTableOnlyIdentityService>();
 
         return identityBuilder;
+    }
+
+    public static IServiceCollection AddCustomerUsersRepository(this IServiceCollection services, string connectionString)
+    {
+        services.AddScoped<ICustomersViewLoginDataRepository, CustomersViewLoginDataRepository>(
+            _ => new CustomersViewLoginDataRepository(connectionString));
+
+        return services;
     }
 }
