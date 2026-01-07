@@ -1,30 +1,35 @@
 ﻿@page "/documents"
 @rendermode InteractiveServer
 
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin,Employee,CustomerInvoiceViewer")]
 
 @implements IAsyncDisposable
 
 @using System.Diagnostics.CodeAnalysis
 @using System.Numerics
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Services.Currencies.Contracts
 @using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts
 @using MOSTComputers.Services.DataAccess.Documents.Models
 @using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Invoice
 @using MOSTComputers.Services.DataAccess.Documents.Models.Requests.WarrantyCard
+@using MOSTComputers.Services.Identity.DAL.Contracts
 @using MOSTComputers.Services.PDF.Models.Invoices
 @using MOSTComputers.Services.PDF.Models.WarrantyCards
 @using MOSTComputers.Services.PDF.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
 @using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
 @using System.Text.Json
+@using System.Security.Claims
 
 @using static MOSTComputers.UI.Web.Blazor.Utils.TransliterationUtils;
 
 @inject IInvoiceRepository InvoiceRepository
 @inject IWarrantyCardRepository WarrantyCardRepository
-@inject ICustomerDataRepository CustomerDataRepository
+@inject ICustomersViewLoginDataRepository CustomersViewLoginDataRepository
 
 @inject IPdfInvoiceDataService PdfInvoiceDataService
 @inject IPdfWarrantyCardDataService PdfWarrantyCardDataService
@@ -32,7 +37,12 @@
 @inject IPdfInvoiceFileGeneratorService PdfInvoiceFileGeneratorService
 @inject IPdfWarrantyCardWithoutPricesFileGeneratorService PdfWarrantyCardWithoutPricesFileGeneratorService
 
+@inject ICurrencyVATService CurrencyVATService
+@inject ICurrencyConversionService CurrencyConversionService
+@inject IExchangeRateService ExchangeRateService
+
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Documents</PageTitle>
 
@@ -52,102 +62,143 @@
 				}
 			</select>
 
-			<div class="documents-customer-search-container">
-				<div class="documents-customer-search-input-container">
-					<input class="documents-customer-search-input" type="text" @bind="_searchKeyword" />
+			@{
+				string minDateString = string.Empty;
+			}
 
-					<button class="btn btn-outline-secondary documents-customer-search-transliterate-button"
+			@if (_userType == UserType.DocumentsAdmin || _userType == UserType.AllDocumentsViewer)
+			{
+				if (_userType == UserType.AllDocumentsViewer)
+				{
+					DateTime minDate = DateTime.Now.AddDays(-30);
+
+					minDateString = minDate.ToString("yyyy-MM-dd");
+				}
+
+				<div class="documents-customer-search-container">
+					<div class="documents-customer-search-input-container">
+						<input class="documents-customer-search-input" type="text" @bind="_searchKeyword" />
+
+						<button class="btn btn-outline-secondary documents-customer-search-transliterate-button"
 							@onclick="TransliterateSearchKeywordBasedOnData">
-						C/L
-					</button>
+							C/L
+						</button>
 
-					<button class="btn" @onclick="() => SetCustomerListVisibility(!_isCustomerSearchResultsSelectListOpen)">
-						@(_isCustomerSearchResultsSelectListOpen ? "▼" : "▲")
-					</button>
+						<button class="btn" @onclick="() => SetCustomerListVisibility(!_isCustomerSearchResultsSelectListOpen)">
+							@(_isCustomerSearchResultsSelectListOpen ? "▼" : "▲")
+						</button>
+					</div>
+
+					<div class="documents-customer-search-results-container">
+
+						@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
+						{
+							<DropdownSelect TItem="InvoiceCustomerData"
+								Items="_searchedInvoiceCustomers"
+								ItemSelectionMode="DropdownSelect<InvoiceCustomerData>.SelectionMode.Single"
+								SelectedItemsChanged="items => OnInvoiceCustomerSelectedAsync(items)"
+								@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
+								AdditionalAttributes='new()
+								{
+									{ "class", "documents-customer-search-results" },
+									{ "aria-label", "Invoice Customer Select" },
+								}'
+								AdditionalDropdownListAttributes='new()
+								{
+									{ "class", "documents-customer-search-results-dropdown-list" },
+								}'>
+								<SelectedItemsTemplate></SelectedItemsTemplate>
+								<ItemTemplate>
+									<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
+										<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
+
+										<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
+									</div>
+								</ItemTemplate>
+								<NoItemsTemplate>
+									<div class="document-customer-no-items-div">
+										<p>No items found.</p>
+									</div>
+								</NoItemsTemplate>
+							</DropdownSelect>
+						}
+						else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
+						{
+							<DropdownSelect TItem="WarrantyCardCustomerData"
+								Items="_searchedWarrantyCardCustomers"
+								ItemSelectionMode="DropdownSelect<WarrantyCardCustomerData>.SelectionMode.Single"
+								SelectedItemsChanged="items => OnWarrantyCardCustomerSelectedAsync(items)"
+								@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
+								AdditionalAttributes='new()
+								{
+									{ "class", "documents-customer-search-results" },
+									{ "aria-label", "Warranty Card Customer Select" },
+								}'
+								AdditionalDropdownListAttributes='new()
+								{
+									{ "class", "documents-customer-search-results-dropdown-list" },
+								}'>
+								<SelectedItemsTemplate></SelectedItemsTemplate>
+								<ItemTemplate>
+									<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
+										<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
+
+										<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
+									</div>
+								</ItemTemplate>
+								<NoItemsTemplate>
+									<div class="document-customer-no-items-div">
+										<p>No items found.</p>
+									</div>
+								</NoItemsTemplate>
+							</DropdownSelect>
+						}
+					</div>
 				</div>
 
-				<div class="documents-customer-search-results-container">
+				<button class="btn btn-outline-primary me-3" @onclick="SearchDocumentCustomersAsync"
+					style='display: @(_isLoadingCustomerSearchResults ? "none" : "unset");'>
+					Search
+				</button>
 
-					@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
-					{
-						<DropdownSelect TItem="InvoiceCustomerData"
-							Items="_searchedInvoiceCustomers"
-							ItemSelectionMode="DropdownSelect<InvoiceCustomerData>.SelectionMode.Single"
-							SelectedItemsChanged="items => OnInvoiceCustomerSelectedAsync(items)"
-							@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
-							AdditionalAttributes='new()
-							{
-								{ "class", "documents-customer-search-results" },
-								{ "aria-label", "Invoice Customer Select" },
-							}'
-							AdditionalDropdownListAttributes='new()
-							{
-								{ "class", "documents-customer-search-results-dropdown-list" },
-							}'>
-							<SelectedItemsTemplate></SelectedItemsTemplate>
-							<ItemTemplate>
-								<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
-									<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
+				<div class="round-loader-default me-3" style='display: @(_isLoadingCustomerSearchResults ? "" : "none");'></div>
+			}
+			else if (_userType?.CustomerBID is not null)
+			{
+				<div class="documents-search-container">
+					<div class="documents-search-input-container">
+						<input class="documents-search-input" type="text" @bind="_searchKeyword" />
 
-									<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
-								</div>
-							</ItemTemplate>
-							<NoItemsTemplate>
-								<div class="document-customer-no-items-div">
-									<p>No items found.</p>
-								</div>
-							</NoItemsTemplate>
-						</DropdownSelect>
-					}
-					else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
-					{
-						<DropdownSelect TItem="WarrantyCardCustomerData"
-							Items="_searchedWarrantyCardCustomers"
-							ItemSelectionMode="DropdownSelect<WarrantyCardCustomerData>.SelectionMode.Single"
-							SelectedItemsChanged="items => OnWarrantyCardCustomerSelectedAsync(items)"
-							@bind-IsOpen="_isCustomerSearchResultsSelectListOpen"
-							AdditionalAttributes='new()
-							{
-								{ "class", "documents-customer-search-results" },
-								{ "aria-label", "Warranty Card Customer Select" },
-							}'
-							AdditionalDropdownListAttributes='new()
-							{
-								{ "class", "documents-customer-search-results-dropdown-list" },
-							}'>
-							<SelectedItemsTemplate></SelectedItemsTemplate>
-							<ItemTemplate>
-								<div class="document-customer-list-item @(context.IsSelected ? "selected" : string.Empty)">
-									<p class="mb-0 me-3">@(context.Item.CustomerBID?.ToString() ?? "-")</p>
-
-									<p class="mb-0 flex-grow-1">@(context.Item.CustomerName ?? "-")</p>
-								</div>
-							</ItemTemplate>
-							<NoItemsTemplate>
-								<div class="document-customer-no-items-div">
-									<p>No items found.</p>
-								</div>
-							</NoItemsTemplate>
-						</DropdownSelect>
-					}
+						<button class="btn btn-outline-secondary documents-search-transliterate-button"
+							@onclick="TransliterateSearchKeywordBasedOnData">
+							C/L
+						</button>
+					</div>
 				</div>
-			</div>
 
-			<div class="round-loader-default me-3" style='display: @(_isLoadingCustomerSearchResults ? "" : "none");'></div>
+				<button class="btn btn-outline-primary me-3" @onclick="() => SearchDocumentsAsync(_userType.CustomerBID, _searchKeyword)"
+					style='display: @(_isLoadingCustomerSearchResults ? "none" : "unset");'>
+					Search
+				</button>
 
-			<button class="btn btn-outline-primary me-3" @onclick="SearchDocumentCustomersAsync"
-				style='display: @(_isLoadingCustomerSearchResults ? "none" : "unset");'>
-				Search
-			</button>
+				<div class="round-loader-default me-3" style='display: @(_isLoadingCustomerSearchResults ? "" : "none");'></div>
+			}
+			else
+			{
+				<div class="documents-invalid-user-container">
+					<p class="text-danger">You seem to have a client account with @(_userType?.CustomerBID is null ? "missing" : "invalid") data. </p>
+					<p class="text-danger">Please contact a system administrator. </p>
+				</div>
+			}
 
 			<div class="document-customer-search-date-container me-2">
 				<label for="searchFromDateInput" class="document-customer-search-date-label">From:</label>
-				<InputDate @bind-value="_searchFromDate" id="searchFromDateInput" placeholder="From" />
+				<InputDate @bind-value="_searchFromDate" id="searchFromDateInput" placeholder="From" min="@minDateString" />
 			</div>
 
 			<div class="document-customer-search-date-container">
 				<label for="searchToDateInput" class="document-customer-search-date-label">To:</label>
-				<InputDate @bind-value="_searchToDate" id="searchToDateInput" placeholder="To" />
+				<InputDate @bind-value="_searchToDate" id="searchToDateInput" placeholder="To" min="@minDateString" />
 			</div>
 		</div>
 		
@@ -161,31 +212,17 @@
 					{
 						if (_searchedInvoices.Count > 0)
 						{
-							foreach (Invoice invoice in _searchedInvoices)
+							foreach (InvoiceDisplayData invoiceData in _searchedInvoices)
 							{
+								Invoice invoice = invoiceData.Invoice;
+
 								bool isSelected = invoice == _selectedInvoice;
 								bool isInGroupExportSelection = _selectedGroupExportInvoices.Contains(invoice);
 
 								string selectedClass = isSelected ? "document-search-result-list-item-selected" : string.Empty;
 								string selectedForGroupExportClass = isInGroupExportSelection ? "document-search-result-list-item-selected-for-group-export" : string.Empty;
 
-								decimal totalPriceWithoutVat = 0M;
-
-								if (invoice.InvoiceItems is not null)
-								{
-									foreach (InvoiceItem item in invoice.InvoiceItems)
-									{
-										if (item.PriceInLeva is null || item.Quantity is null) continue;
-
-										totalPriceWithoutVat += item.PriceInLeva.Value * item.Quantity.Value;
-									}
-								}
-
-								decimal vatPercent = (invoice.VatPercent is not null) ? (decimal)invoice.VatPercent / 100 : 0M;
-
-								decimal totalPriceChargedFromVat = totalPriceWithoutVat * vatPercent;
-
-								decimal totalPrice = totalPriceWithoutVat + totalPriceChargedFromVat;
+								decimal totalPrice = invoiceData.TotalPriceInEuroWithVAT;
 
 								string invoiceNumber = invoice.InvoiceNumber ?? "-";
 								string invoiceDate = invoice.InvoiceDate?.ToString("yyyy/MM/dd") ?? "-";
@@ -342,6 +379,71 @@
 </div>
 
 @code {
+
+	private class UserType : IEquatable<UserType>, IEqualityOperators<UserType, UserType, bool>
+	{
+		private UserType(int value, int? customerBID)
+		{
+			_value = value;
+			_customerBID = customerBID;
+		}
+
+		private int _value;
+		private int? _customerBID;
+
+		public int? CustomerBID => _customerBID;
+
+		public static readonly UserType AllDocumentsViewer = new (0, null);
+		public static readonly UserType DocumentsAdmin = new (1, null);
+
+		public static UserType GetCustomerUserType(int? customerBID)
+		{
+			return new(2, customerBID);
+		}
+
+		public override bool Equals(object? obj)
+		{
+			if (obj is null || obj is not UserType other) return false;
+
+			return Equals(other);
+		}
+
+		public bool Equals(UserType? other)
+		{
+			if (other is null)
+			{
+				return false;
+			}
+
+			return _value == other._value && _customerBID == other._customerBID;
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(_value, _customerBID);
+		}
+
+		public static bool operator ==(UserType? left, UserType? right)
+		{
+			if (left is null)
+			{
+				return right is null;
+			}
+
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(UserType? left, UserType? right)
+		{
+			if (left is null)
+			{
+				return right is null;
+			}
+
+			return !left.Equals(right);
+		}
+	}
+
 	public struct DocumentTypeSearchOptions : IEqualityOperators<DocumentTypeSearchOptions, DocumentTypeSearchOptions, bool>
 	{
 		private DocumentTypeSearchOptions(int value, string nameInSelectList)
@@ -389,6 +491,12 @@
 
 			return null;
 		}
+	}
+
+	private sealed class InvoiceDisplayData
+	{
+		public required Invoice Invoice { get; init; }
+		public required decimal TotalPriceInEuroWithVAT { get; init; }
 	}
 
 	[Parameter] public DocumentTypeSearchOptions SelectedDocumentTypeSearchOptions { get; set; } = DocumentTypeSearchOptions.Invoice;
@@ -445,7 +553,7 @@
 	private List<InvoiceCustomerData> _searchedInvoiceCustomers = new();
 	private InvoiceCustomerData? _selectedInvoiceCustomer = new();
 
-	private List<Invoice> _searchedInvoices = new();
+	private List<InvoiceDisplayData> _searchedInvoices = new();
 	private Invoice? _selectedInvoice = null;
 	private List<Invoice> _selectedGroupExportInvoices = new();
 
@@ -469,7 +577,60 @@
 	private bool _isDownloadingDocumentPdf = false;
 	private bool _isDownloadingDocumentXml = false;
 
+	private UserType? _userType;
+
 	private IJSObjectReference? _jsModule;
+
+	protected override async Task OnInitializedAsync()
+	{
+		AuthenticationStateProvider.AuthenticationStateChanged += async (task) => ConfigureAuthState(await task);
+
+		AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+		ConfigureAuthState(authenticationState);
+	}
+
+	private void ConfigureAuthState(AuthenticationState authenticationState)
+	{
+		bool isAdmin = authenticationState.User.IsInRole("Admin");
+
+		if (isAdmin)
+		{
+			_userType = UserType.DocumentsAdmin;
+
+			return;
+		}
+
+		bool isEmployee = authenticationState.User.IsInRole("Employee");
+
+		if (isEmployee)
+		{
+			_userType = UserType.AllDocumentsViewer;
+
+			return;
+		}
+
+		bool isCustomer = authenticationState.User.IsInRole("CustomerInvoiceViewer");
+
+		if (isCustomer)
+		{
+			int? customerBID = null;
+
+			string? customerBIDAsString = authenticationState.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+
+			if (customerBIDAsString is not null)
+			{
+				bool parseSuccess = int.TryParse(customerBIDAsString, out int customerBIDParsed);
+
+				if (parseSuccess)
+				{
+					customerBID = customerBIDParsed;
+				}
+			}
+
+			_userType = UserType.GetCustomerUserType(customerBID);
+		}
+	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -575,7 +736,7 @@
 
 		_selectedInvoiceCustomer = selectedCustomer;
 
-		await SearchDocumentsAsync();
+		await SearchDocumentsAsync(_selectedInvoiceCustomer.CustomerBID, null);
 	}
 
 	private async Task OnWarrantyCardCustomerSelectedAsync(List<WarrantyCardCustomerData> warrantyCardCustomers)
@@ -586,7 +747,7 @@
 
 		_selectedWarrantyCardCustomer = selectedCustomer;
 
-		await SearchDocumentsAsync();
+		await SearchDocumentsAsync(_selectedWarrantyCardCustomer.CustomerBID, null);
 	}
 
 	private async Task ExportPdf(string pdfFileSourceUrl)
@@ -619,7 +780,7 @@
 		string fileNameStart = invoice.InvoiceNumber ?? "MOST_INVOICE";
 
 		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
-		
+
 		try
 		{
 			await _jsModule.InvokeVoidAsync("fetchAndDownloadFile",
@@ -754,14 +915,14 @@
 		}
 	}
 
-	private async Task SearchDocumentsAsync()
+	private async Task SearchDocumentsAsync(int? customerBID = null, string? userSearchInput = null)
 	{
 		if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
 		{
 			_isLoadingSearchResults = true;
 
 			List<Invoice> searchedInvoices = await SearchInvoicesAsync(
-				_selectedInvoiceCustomer?.CustomerBID, null, _searchFromDate, _searchToDate);
+				customerBID, userSearchInput, _searchFromDate, _searchToDate);
 
 			IEnumerable<Invoice> orderedInvoices = searchedInvoices
 				.OrderByDescending(x => x.InvoiceDate ?? DateTime.MinValue)
@@ -769,7 +930,42 @@
 
 			_searchedInvoices.Clear();
 
-			_searchedInvoices.AddRange(orderedInvoices);
+			ExchangeRate? exchangeRate = await ExchangeRateService.GetForCurrenciesAsync(Currency.BGN, Currency.EUR);
+
+			decimal levaToEuroExchangeRate = exchangeRate?.Rate ?? 1.95583M;
+
+			foreach (Invoice invoice in orderedInvoices)
+			{
+				decimal vatPercentageFraction = (invoice.VatPercent is not null) ? (decimal)invoice.VatPercent / 100 : 0M;
+
+				decimal totalPriceInEuroWithVAT = 0M;
+
+				if (invoice.InvoiceItems is not null)
+				{
+					foreach (InvoiceItem invoiceItem in invoice.InvoiceItems)
+					{
+						decimal itemTotalPriceInEuro = 0M;
+
+						if (invoiceItem.PriceInLeva is not null
+							&& invoiceItem.Quantity is not null)
+						{
+							decimal netPrice = invoiceItem.PriceInLeva.Value * invoiceItem.Quantity.Value;
+							decimal vatPrice = CurrencyVATService.CalculateVAT(invoiceItem.PriceInLeva.Value, invoiceItem.Quantity.Value, vatPercentageFraction);
+							decimal totalPrice = netPrice + vatPrice;
+
+							itemTotalPriceInEuro = CurrencyConversionService.ChangeCurrency(totalPrice, levaToEuroExchangeRate);
+						}
+
+						totalPriceInEuroWithVAT += itemTotalPriceInEuro;
+					}
+				}
+
+				_searchedInvoices.Add(new()
+				{
+					Invoice = invoice,
+					TotalPriceInEuroWithVAT = totalPriceInEuroWithVAT
+				});
+			}
 
 			_isLoadingSearchResults = false;
 
@@ -780,7 +976,7 @@
 			_isLoadingSearchResults = true;
 
 			List<WarrantyCard> searchedWarrantyCards = await SearchWarrantyCardsAsync(
-				_selectedWarrantyCardCustomer?.CustomerBID, null, _searchFromDate, _searchToDate);
+				customerBID, userSearchInput, _searchFromDate, _searchToDate);
 
 			IEnumerable<WarrantyCard> orderedWarrantyCards = searchedWarrantyCards
 				.OrderByDescending(x => x.WarrantyCardDate ?? DateTime.MinValue)
