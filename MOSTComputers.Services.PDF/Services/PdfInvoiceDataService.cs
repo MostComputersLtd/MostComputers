@@ -58,7 +58,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
 
         ExchangeRate? levaToEuroExchangeRateObject = await _exchangeRateService.GetForCurrenciesAsync(Currency.BGN, Currency.EUR);
 
-        decimal levaToEuroExchangeRate = levaToEuroExchangeRateObject?.Rate ?? 0M;
+        decimal levaToEuroExchangeRate = levaToEuroExchangeRateObject?.Rate ?? 1.95583M;
 
         return new()
         {
