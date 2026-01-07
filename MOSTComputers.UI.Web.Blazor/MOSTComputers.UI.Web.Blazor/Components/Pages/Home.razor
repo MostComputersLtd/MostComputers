@@ -343,19 +343,17 @@
                             </td>
                             <td>
                                 <div class="product-list-item-column">
-                                    <p class="link-info m-0" @onclick="() => ShowProductXmlPopup(productData.Product)">
+                                    <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowProductXmlPopup(productData.Product)">
                                         @productData.Product.Id
-                                    </p>
+                                    </button>
                                 </div>
                                 
                             </td>
                             <td>
                                 <div class="product-list-item-column">
-                                    <p class="link-info m-0" @onclick="() => ShowProductDisplayPopupAsync(productData.Product)">
+                                    <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowProductDisplayPopupAsync(productData.Product)">
                                         @(string.IsNullOrEmpty(productData.Product.Name) ? "-" : productData.Product.Name)
-                                    </p>
-
-
+                                    </button>
                                 </div>
                             </td>
                             <td>
@@ -387,9 +385,9 @@
 
                                     @if (productData.ManufacturerPromotionGroupId is not null)
                                     {
-                                        <p class="m-0 link-info" @onclick="() => ShowPromotionGroupImagesPopup(productData)">
+                                        <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowPromotionGroupImagesPopup(productData)">
                                             @(string.IsNullOrEmpty(productData.Product.Manufacturer?.RealCompanyName) ? "-" : productData.Product.Manufacturer.RealCompanyName)
-                                        </p>
+                                        </button>
                                     }
                                     else
                                     {
@@ -416,9 +414,9 @@
                             @* <td style="border-left: 1px solid; border-color: inherit;"> *@
                             <td>
                                 <div class="product-list-item-column">
-                                    <p class="link-info m-0" @onclick="() => ShowProductSearchStringOriginDataPopupAsync(productData)">
+                                    <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowProductSearchStringOriginDataPopupAsync(productData)">
                                         @(string.IsNullOrEmpty(productData.Product.SearchString) ? "-" : productData.Product.SearchString)
-                                    </p>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
