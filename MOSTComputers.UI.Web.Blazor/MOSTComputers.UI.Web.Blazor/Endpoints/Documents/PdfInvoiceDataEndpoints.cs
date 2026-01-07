@@ -12,7 +12,8 @@ public static class PdfInvoiceDataEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet("/{invoiceNumber}", GetInvoicePdfFromInvoiceNumberAsync).RequireAuthorization(options => options.RequireRole("Admin"));
+        endpointGroup.MapGet("/{invoiceNumber}", GetInvoicePdfFromInvoiceNumberAsync)
+            .RequireAuthorization(options => options.RequireRole("Admin", "Employee", "CustomerInvoiceViewer"));
 
         return endpointGroup;
     }

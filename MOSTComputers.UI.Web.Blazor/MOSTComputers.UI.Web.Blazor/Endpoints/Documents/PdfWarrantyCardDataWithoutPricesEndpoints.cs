@@ -12,7 +12,8 @@ public static class PdfWarrantyCardDataWithoutPricesEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet("/{orderId}", GetWarrantyCardPdfFromOrderIdAsync).RequireAuthorization();
+        endpointGroup.MapGet("/{orderId}", GetWarrantyCardPdfFromOrderIdAsync)
+            .RequireAuthorization(options => options.RequireRole("Admin", "Employee", "CustomerInvoiceViewer"));
 
         return endpointGroup;
     }
