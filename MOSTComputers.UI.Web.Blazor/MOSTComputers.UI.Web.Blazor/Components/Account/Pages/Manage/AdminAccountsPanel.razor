@@ -1,0 +1,679 @@
+﻿@page "/Account/Manage/AdminPanel"
+
+@rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Admin Accounts Panel</PageTitle>
+
+@using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.Identity.Models
+@using MOSTComputers.Services.Identity.Services
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using OneOf
+@using System.Transactions
+@using System.Security.Claims
+
+@* @inject IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole> IdentityService *@
+@inject UserManager<PasswordsTableOnlyUser> UserManager
+@inject IUserStore<PasswordsTableOnlyUser> UserStore
+@inject SignInManager<PasswordsTableOnlyUser> SignInManager
+@inject ILogger<AdminAccountsPanel> Logger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@inject RoleManager<PasswordsTableOnlyRole> RoleManager
+
+@inject NavigationManager NavigationManager
+
+<div class="admin-accounts-panel">
+	<ul class="accounts-list">
+
+        @foreach (UserDisplayData userDisplayData in userDisplayDataList)
+        {
+            string userRolesString = userDisplayData.UserRoles is not null
+                ? $"{userDisplayData.UserRoles.Count} Roles"
+			    : "No Roles";
+                
+            <li class="account-list-item">
+                <p class="user-id-text">@userDisplayData.User.Id</p>
+                <p class="user-name-text">@userDisplayData.User.UserName</p>
+                <button class="btn btn-primary user-roles-button" @onclick="() => ShowUserRolesPopup(userDisplayData)">@userRolesString</button>
+                <button class="btn btn-success user-change-password-button" @onclick="() => ShowChangePasswordPopup(userDisplayData)">Change Password</button>
+                <button class="btn btn-close red-and-white-theme user-delete-button" @onclick="() => ShowDeleteUserPopup(userDisplayData)" />
+		    </li>
+        }
+
+        <li class="account-list-add-button-item">
+            <button class="btn btn-primary account-add-button" @onclick="() => ShowCreateUserPopup()">Create New User</button>
+        </li>
+	</ul>
+</div>
+
+<!-- This div makes the ::deep style from this component's css file apply to components inside it -->
+<div>
+
+    @if (userDisplayDataInRolesPopup is not null)
+    {
+        <Popup @bind-IsVisible="isRolesPopupVisible"
+               PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "20vh", Bottom = "20vh" }'>
+            <HeaderContent>
+                <div class="standard-popup-header">
+                    <h4 class="standard-popup-header-text">@userDisplayDataInRolesPopup!.User.UserName</h4>
+                    <h4 class="standard-popup-header-text">@userDisplayDataInRolesPopup!.User.Id</h4>
+
+                    <button class="btn btn-primary user-roles-change-button" @onclick="() => ChangeUserRolesAsync(userDisplayDataInRolesPopup)">Save</button>
+                </div>
+
+            </HeaderContent>
+            <ChildContent>
+                <div class="standard-popup-body standard-popup-body-with-centered-content">
+                    <ul class="user-roles-list">
+                        @foreach (UserRolesList role in UserRolesList.GetAllRoles())
+                        {
+                            <li class="user-role-list-item" @onclick="() => ToggleUserRole(userDisplayDataInRolesPopup, role)">
+                                <p class="user-role-text">@role.RoleName</p>
+
+                                <input type="checkbox"
+                                    class="user-role-checkbox"
+							        checked="@(userDisplayDataInRolesPopup!.UserRoles.Contains(role))"/>
+                            </li>
+				        }
+                    </ul>
+                </div>
+            </ChildContent>
+        </Popup>
+    }
+
+    @if (userDisplayDataInChangePasswordPopup is not null)
+    {
+        <Popup @bind-IsVisible="isChangePasswordPopupVisible"
+               PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "20vh", Bottom = "20vh" }'>
+
+            <HeaderContent>
+                <div class="standard-popup-header">
+                    <h4 class="standard-popup-header-text me-4">Change Password</h4>
+                    <h4 class="standard-popup-header-text">@userDisplayDataInChangePasswordPopup.User.UserName</h4>
+                    <h4 class="standard-popup-header-text">@userDisplayDataInChangePasswordPopup.User.Id</h4>
+                </div>
+            </HeaderContent>
+            <ChildContent>
+                <div class="standard-popup-body standard-popup-body-with-centered-content">
+                    <input type="password" placeholder="New Password" @bind-value="@newPasswordInput" />
+                    <button class="btn btn-primary" @onclick="() => ChangePassword(userDisplayDataInChangePasswordPopup)">Change Password</button>
+                </div>
+            </ChildContent>
+        </Popup>
+    }
+
+    @if (userDisplayDataInDeletePopup is not null)
+    {
+        <Popup @bind-IsVisible="isDeletePopupVisible"
+               PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "20vh", Bottom = "20vh" }'>
+
+            <HeaderContent>
+                <div class="standard-popup-header">
+                    <h4 class="standard-popup-header-text me-4">Delete User</h4>
+                    <h4 class="standard-popup-header-text">@userDisplayDataInDeletePopup.User.UserName</h4>
+                    <h4 class="standard-popup-header-text">@userDisplayDataInDeletePopup.User.Id</h4>
+                </div>
+            </HeaderContent>
+            <ChildContent>
+                <div class="standard-popup-body standard-popup-body-with-centered-content">
+                    <p class="delete-popup-confirmation-text">Are you sure you want to delete this user?</p>
+                    <button class="btn btn-danger delete-user-button" @onclick="() => DeleteUser(userDisplayDataInDeletePopup)">Delete User</button>
+                </div>
+            </ChildContent>
+        </Popup>
+    }
+
+    @if (userCreateData is not null)
+    {
+        <Popup @bind-IsVisible="isCreateAccountPopupVisible"
+               PopupMarginOptions='new() { Left = "20vw", Right = "20vw", Top = "20vh", Bottom = "20vh" }'>
+
+            <HeaderContent>
+                <div class="standard-popup-header">
+                    <h4 class="standard-popup-header-text me-4">Create User</h4>
+                </div>
+            </HeaderContent>
+            <ChildContent>
+                <div class="standard-popup-body standard-popup-body-with-centered-content">
+
+                    <div class="create-account-field">
+                        <label for="username">Username</label>
+                        <InputText id="username" @bind-value="userCreateData.Username" class="create-account-field-input"
+                            autocomplete="off" aria-required="true" placeholder="Username" />
+                    </div>
+                    <div class="create-account-field">
+                        <label for="password">Password</label>
+                        <InputText id="password" type="password" @bind-value="userCreateData.Password" class="create-account-field-input"
+                            autocomplete="off" aria-required="true" placeholder="Password" />
+                    </div>
+                    <div class="create-account-remember-row">
+                        <label for="rememberMe">
+                            Remember me
+                        </label>
+
+                        <InputCheckbox id="rememberMe" @bind-value="userCreateData.RememberMe" class="create-account-remember-row-input" />
+                    </div>
+
+                    <div class="create-account-roles-container">
+                        <ul class="user-roles-list">
+                            @foreach (UserRolesList role in UserRolesList.GetAllRoles())
+                            {
+                                <li class="user-role-list-item" @onclick="() => ToggleNewUserRole(userCreateData, role)">
+                                    <p class="user-role-text">@role.RoleName</p>
+
+                                    <input type="checkbox"
+                                        class="user-role-checkbox"
+                                        checked="@(userCreateData.UserRoles.Contains(role))"
+                                        @onchange="() => ToggleNewUserRole(userCreateData, role)" @onclick:stopPropagation />
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="create-account-claims-container">
+
+                        <ul class="user-claims-list">
+                            @for (int i = 0; i < userCreateData.UserClaims.Count; i++)
+                            {
+                                ClaimCreateData claim = userCreateData.UserClaims[i];
+
+                                <li class="user-claim-list-item">
+                                    <input for="userClaimNameInput-@i" @bind="claim.Type" class="user-claim-type-input" />
+                                    <input id="userClaimValueInput-@i" @bind="claim.Value" class="user-claim-value-input" />
+                                </li>
+                            }
+                        </ul>
+
+                        <button class="btn btn-primary add-user-claim-button" @onclick="AddNewClaimToCreateUserPopup">Add New Claim</button>
+                    </div>
+
+                    <button class="btn btn-success create-user-button" @onclick="() => CreateUser()">Create User</button>
+                </div>
+            </ChildContent>
+        </Popup>
+    }
+</div>
+
+@code {
+
+    public sealed class UserRolesList : IEquatable<UserRolesList>
+    {
+        internal const string AdminRoleName = "Admin";
+        internal const string XmlRelationEditorRoleName = "XmlRelationEditor";
+        internal const string ProductEditorRoleName = "ProductEditor";
+        internal const string EmployeeRoleName = "Employee";
+        internal const string UserRoleName = "User";
+        internal const string CustomerInvoiceViewerRoleName = "CustomerInvoiceViewer";
+
+        private UserRolesList(string roleName, int value)
+        {
+            _roleName = roleName;
+            _value = value;
+        }
+
+        private readonly string _roleName;
+        private readonly int _value;
+
+        public string RoleName => _roleName;
+        public int Value => _value;
+
+        public static readonly UserRolesList Admin = new(AdminRoleName, 0);
+        public static readonly UserRolesList XmlRelationEditor = new(XmlRelationEditorRoleName, 1);
+        public static readonly UserRolesList ProductEditor = new(ProductEditorRoleName, 2);
+        public static readonly UserRolesList Employee = new(EmployeeRoleName, 3);
+        public static readonly UserRolesList User = new(UserRoleName, 4);
+        public static readonly UserRolesList CustomerInvoiceViewer = new(CustomerInvoiceViewerRoleName, 5);
+
+        public static UserRolesList? GetRoleWithValue(int value)
+        {
+            return value switch
+            {
+                0 => Admin,
+                1 => XmlRelationEditor,
+                2 => ProductEditor,
+                3 => Employee,
+                4 => User,
+                5 => CustomerInvoiceViewer,
+                _ => null
+            };
+        }
+
+        public static UserRolesList? GetRoleWithName(string name)
+        {
+            return name switch
+            {
+                AdminRoleName => Admin,
+                XmlRelationEditorRoleName => XmlRelationEditor,
+                ProductEditorRoleName => ProductEditor,
+                EmployeeRoleName => Employee,
+                UserRoleName => User,
+                CustomerInvoiceViewerRoleName => CustomerInvoiceViewer,
+                _ => null
+            };
+        }
+
+        public bool Equals(UserRolesList? other)
+        {
+            if (other is null) return false;
+
+            return _value == other._value;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as UserRolesList);
+        }
+
+        public override int GetHashCode()
+        {
+            return _value;
+        }
+
+        public static List<UserRolesList> GetAllRoles()
+        {
+            return new List<UserRolesList>()
+            {
+                Admin,
+                XmlRelationEditor,
+                ProductEditor,
+                Employee,
+                User,
+                CustomerInvoiceViewer,
+            };
+        }
+    }
+
+    public class UserDisplayData
+    {
+        public required PasswordsTableOnlyUser User { get; init; }
+        public required List<UserRolesList> UserRoles { get; init; }
+
+        public List<Claim>? UserClaims { get; set; } = null;
+
+        public bool ContainsInvalidRoles { get; init; } = false;
+    }
+
+    private sealed class ClaimCreateData
+    {
+        public required string Type { get; set; }
+        public required string Value { get; set; }
+    }
+
+    private class UserCreateData
+    {
+        public string? Username { get; set; } = null;
+        public string? Password { get; set; } = null;
+        public bool RememberMe { get; set; } = false;
+
+        public List<UserRolesList> UserRoles { get; init; } = new();
+
+        public List<ClaimCreateData> UserClaims { get; set; } = new();
+    }
+
+    private const string _customerInvoiceViewerBIDClaimName = "BID";
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private List<UserDisplayData> userDisplayDataList = new();
+
+    private bool isRolesPopupVisible { get; set; } = false;
+    private UserDisplayData? userDisplayDataInRolesPopup { get; set; } = null;
+
+    private bool isChangePasswordPopupVisible = false;
+    private UserDisplayData? userDisplayDataInChangePasswordPopup { get; set; } = null;
+    private string? newPasswordInput { get; set; } = null;
+
+    private bool isDeletePopupVisible { get; set; } = false;
+    private UserDisplayData? userDisplayDataInDeletePopup { get; set; } = null;
+
+    private bool isCreateAccountPopupVisible { get; set; } = false;
+    private UserCreateData? userCreateData { get; set; } = null;
+
+    override protected async Task OnInitializedAsync()
+    {
+        userDisplayDataList = await GetUserDataAsync();
+    }
+
+    private void ShowUserRolesPopup(UserDisplayData userDisplayData)
+    {
+        userDisplayDataInRolesPopup = userDisplayData;
+        isRolesPopupVisible = true;
+    }
+
+    private void ShowChangePasswordPopup(UserDisplayData userDisplayData)
+    {
+        userDisplayDataInChangePasswordPopup = userDisplayData;
+        newPasswordInput = string.Empty;
+        isChangePasswordPopupVisible = true;
+    }
+
+    private void ShowDeleteUserPopup(UserDisplayData userDisplayData)
+    {
+        userDisplayDataInDeletePopup = userDisplayData;
+        isDeletePopupVisible = true;
+    }
+
+    private void ShowCreateUserPopup()
+    {
+        userCreateData = new();
+        isCreateAccountPopupVisible = true;
+    }
+
+    private void AddNewClaimToCreateUserPopup()
+    {
+        if (userCreateData is null) return;
+
+        ClaimCreateData claimCreateData = new()
+        {
+            Type = string.Empty,
+            Value = string.Empty,
+        };
+
+        userCreateData.UserClaims.Add(claimCreateData);
+    }
+
+    private async Task<List<UserDisplayData>> GetUserDataAsync()
+    {
+        List<UserDisplayData> userDisplayDataList = new();
+
+        List<PasswordsTableOnlyUser> users = UserManager.Users.ToList();
+
+        foreach (PasswordsTableOnlyUser user in users)
+        {
+            UserDisplayData userDisplayData = await GetUserDisplayDataFromUserAsync(user);
+
+            userDisplayDataList.Add(userDisplayData);
+        }
+
+        return userDisplayDataList;
+    }
+
+    public async Task<UserDisplayData> GetUserDisplayDataFromUserAsync(PasswordsTableOnlyUser user)
+    {
+        List<UserRolesList>? userRoles = new();
+
+        bool containsInvalidRoles = false;
+
+        IList<string> roleNames = await UserManager.GetRolesAsync(user);
+
+        foreach (string roleName in roleNames)
+        {
+            UserRolesList? role = UserRolesList.GetRoleWithName(roleName);
+
+            if (role is null)
+            {
+                containsInvalidRoles = true;
+
+                continue;
+            }
+
+            userRoles.Add(role);
+        }
+
+        IList<Claim> claims = await UserManager.GetClaimsAsync(user);
+
+        UserDisplayData userDisplayData = new()
+        {
+            User = user,
+            UserRoles = userRoles,
+            ContainsInvalidRoles = containsInvalidRoles,
+            UserClaims = claims.ToList(),
+        };
+
+        return userDisplayData;
+    }
+
+    private void ToggleUserRole(UserDisplayData userDisplayData, UserRolesList userRolesData)
+    {
+        if (userDisplayData.UserRoles.Contains(userRolesData))
+        {
+            userDisplayData.UserRoles.Remove(userRolesData);
+
+            return;
+        }
+
+        userDisplayData.UserRoles.Add(userRolesData);
+    }
+
+    private void ToggleNewUserRole(UserCreateData userCreateData, UserRolesList userRolesData)
+    {
+        if (userCreateData.UserRoles.Contains(userRolesData))
+        {
+            userCreateData.UserRoles.Remove(userRolesData);
+
+            return;
+        }
+
+        userCreateData.UserRoles.Add(userRolesData);
+    }
+
+    private async Task ChangeUserRolesAsync(UserDisplayData userDisplayData)
+    {
+        using TransactionScope transactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        PasswordsTableOnlyUser userInData = userDisplayData.User;
+
+        PasswordsTableOnlyUser? user = await UserManager.FindByIdAsync(userInData.Id);
+
+        if (user is null)
+        {
+            string message = $"Unexpected error occurred when changing user roles., Errors: User not found (ID: {userDisplayData.User.Id}).";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        List<string> addedRoles = [];
+        List<string> removedRoles = [];
+
+        IList<string> userRoles = await UserManager.GetRolesAsync(user);
+
+        foreach (string userRole in userRoles)
+        {
+            removedRoles.Add(userRole);
+        }
+
+        foreach (UserRolesList userRoleData in userDisplayData.UserRoles)
+        {
+            bool isUserInRole = userRoles.Contains(userRoleData.RoleName);
+
+            if (!isUserInRole)
+            {
+                addedRoles.Add(userRoleData.RoleName);
+            }
+
+            removedRoles.Remove(userRoleData.RoleName);
+
+            continue;
+        }
+
+        if (removedRoles.Count > 0)
+        {
+            IdentityResult removeUserFromRolesResult = await UserManager.RemoveFromRolesAsync(user, removedRoles);
+
+            if (!removeUserFromRolesResult.Succeeded)
+            {
+                string messageDuringRemove = $"Unexpected error occurred when changing user roles., Errors: {string.Join(',', removeUserFromRolesResult.Errors.Select(error => error.Description))}";
+
+                InvalidOperationException exceptionDuringRemove = new(messageDuringRemove);
+
+                throw exceptionDuringRemove;
+            }
+        }
+
+        if (addedRoles.Count == 0)
+        {
+            transactionScope.Complete();
+
+            return;
+        }
+
+        IdentityResult addUserToRolesResult = await UserManager.AddToRolesAsync(user, addedRoles);
+
+        if (!addUserToRolesResult.Succeeded)
+        {
+            string messageDuringAdd = $"Unexpected error occurred when changing user roles., Errors: {string.Join(',', addUserToRolesResult.Errors.Select(error => error.Description))}";
+
+            InvalidOperationException exceptionDuringAdd = new(messageDuringAdd);
+
+            throw exceptionDuringAdd;
+        }
+
+        transactionScope.Complete();
+    }
+
+    private async Task ChangePassword(UserDisplayData userDisplayData)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordInput)) return;
+
+        string newPassword = newPasswordInput;
+
+        PasswordsTableOnlyUser userInData = userDisplayData.User;
+
+        PasswordsTableOnlyUser? user = await UserManager.FindByIdAsync(userDisplayData.User.Id);
+
+        if (user is null)
+        {
+            string message = $"Unexpected error occurred when changing user password., Errors: User not found";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        string token = await UserManager.GeneratePasswordResetTokenAsync(user);
+
+        IdentityResult result = await UserManager.ResetPasswordAsync(user, token, newPassword);
+
+        if (!result.Succeeded)
+        {
+            string message = $"Unexpected error occurred when changing user password., Errors: {string.Join(',', result.Errors.Select(error => error.Description))}";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (user.Id == authState.User.FindFirst(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value)
+        {
+            NavigationManager.NavigateTo($"Account/Manage/PasswordChanged?returnUrl={Uri.EscapeDataString(NavigationManager.BaseUri)}");
+        }
+    }
+
+    private async Task CreateUser()
+    {
+        if (userCreateData is null
+        || string.IsNullOrWhiteSpace(userCreateData.Username)
+        || string.IsNullOrWhiteSpace(userCreateData.Password))
+        {
+            return;
+        }
+
+        PasswordsTableOnlyUser? user = new()
+        {
+            UserName = userCreateData.Username
+        };
+
+        await UserStore.SetUserNameAsync(user, userCreateData.Username, CancellationToken.None);
+
+        IdentityResult result = await UserManager.CreateAsync(user, userCreateData.Password);
+
+        if (!result.Succeeded)
+        {
+            string message = $"Unexpected error occurred when creating user., Errors: {string.Join(',', result.Errors.Select(error => error.Description))}";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        if (userCreateData.UserRoles.Count > 0)
+        {
+            IEnumerable<string> roleNames = userCreateData.UserRoles.Select(x => x.RoleName);
+
+            IdentityResult addRolesResult = await UserManager.AddToRolesAsync(user, roleNames);
+
+            if (!addRolesResult.Succeeded)
+            {
+                string message = $"Unexpected error occurred when creating user., Errors: {string.Join(',', addRolesResult.Errors.Select(error => error.Description))}";
+
+                InvalidOperationException exception = new(message);
+
+                throw exception;
+            }
+        }
+
+        if (userCreateData.UserClaims.Count > 0)
+        {
+            List<Claim> claims = new();
+
+            foreach (ClaimCreateData claimCreateData in userCreateData.UserClaims)
+            {
+                Claim claim = new(claimCreateData.Type, claimCreateData.Value);
+
+                claims.Add(claim);
+            }
+
+            IdentityResult addClaimsResult = await UserManager.AddClaimsAsync(user, claims);
+
+            if (!addClaimsResult.Succeeded)
+            {
+                string message = $"Unexpected error occurred when creating user., Errors: {string.Join(',', addClaimsResult.Errors.Select(error => error.Description))}";
+
+                InvalidOperationException exception = new(message);
+
+                throw exception;
+            }
+        }
+
+        isCreateAccountPopupVisible = false;
+
+        userDisplayDataList = await GetUserDataAsync();
+    }
+
+    private async Task DeleteUser(UserDisplayData userDisplayData)
+    {
+        PasswordsTableOnlyUser? user = await UserManager.FindByIdAsync(userDisplayData.User.Id);
+
+        if (user is null)
+        {
+            string message = $"Unexpected error occurred when deleting user., Errors: User not found";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        IdentityResult result = await UserManager.DeleteAsync(user);
+
+        if (!result.Succeeded)
+        {
+            string message = $"Unexpected error occurred when deleting user., Errors: {string.Join(',', result.Errors.Select(error => error.Description))}";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        AuthenticationState authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        if (user.Id == authState.User.FindFirst(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value)
+        {
+            NavigationManager.NavigateTo($"Account/Login?returnUrl={Uri.EscapeDataString(NavigationManager.BaseUri)}");
+
+            return;
+        }
+
+        isDeletePopupVisible = false;
+
+        userDisplayDataList = await GetUserDataAsync();
+    }
+}

@@ -1,0 +1,243 @@
+﻿p, h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0px;
+}
+
+button:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+.admin-accounts-panel {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+}
+
+.accounts-list {
+    width: 100%;
+    -ms-flex: 1 1 auto;
+    -webkit-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: 0px;
+    margin: 0px;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    list-style: none;
+}
+
+.account-list-item {
+    width: 100%;
+    border-bottom: 1px solid #ccc;
+    padding: 0.5em 1em;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+    .account-list-item:hover {
+        background-color: #f5f5f5;
+    }
+
+.account-list-add-button-item {
+    width: 100%;
+    padding: 0.5em 1em;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+}
+
+.account-add-button {
+    width: 100%;
+    line-height: 1.5em;
+}
+
+.user-id-text {
+    width: min-content;
+    white-space-collapse: collapse;
+    text-wrap-mode: nowrap;
+    margin-right: 1em;
+}
+
+.user-name-text {
+    min-width: 20%;
+    width: min-content;
+    white-space-collapse: collapse;
+    text-wrap-mode: nowrap;
+    margin-right: 1em;
+}
+
+.user-roles-button {
+    margin: 0.5em 1em;
+}
+
+.user-change-password-button {
+    margin: 0.5em 1em;
+}
+
+.user-delete-button {
+    margin-left: auto;
+    color: white;
+}
+
+::deep .standard-popup-header {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-align-items: center;
+    align-items: center;
+    -ms-flex-wrap: wrap;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+::deep .standard-popup-header-text {
+    height: min-content;
+    color: black;
+    margin-right: 1em;
+    text-align: center;
+    text-wrap: nowrap;
+}
+
+::deep .standard-popup-body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    overflow-y: auto;
+}
+::deep .standard-popup-body-with-centered-content {
+    align-items: center;
+}
+
+::deep .user-roles-change-button {
+    margin-left: auto;
+}
+
+::deep .user-roles-list {
+    width: 100%;
+    overflow-y: auto;
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+}
+
+::deep .user-role-list-item {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+    ::deep .user-role-list-item:hover {
+        background-color: #f5f5f5;
+        cursor: pointer;
+    }
+
+::deep .user-role-text {
+    margin-right: auto;
+}
+
+::deep .user-role-checkbox {
+}
+
+::deep .delete-popup-confirmation-text {
+    margin-bottom: 1em;
+}
+
+::deep .delete-user-button {
+    width: 100%;
+}
+
+::deep.create-account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    ::deep .create-account-field label {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+::deep .create-account-field-input {
+    padding: 6px 9px;
+    font-size: 13px;
+    border-radius: var(--radius-input);
+    border: 1px solid #d1d5db;
+    outline: none;
+}
+
+    ::deep .create-account-field-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(201,48,44,0.25);
+    }
+
+::deep .create-account-remember-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 3px 0 3px;
+    font-size: 12px;
+}
+
+::deep .create-account-roles-container {
+    width: 100%;
+}
+
+::deep .create-user-button {
+    width: calc(100% - 4em);
+    margin: 2em 1em;
+}
+
+::deep .create-account-claims-container {
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    margin: 2em 1em;
+}
+
+::deep .user-claims-list {
+    width: 100%;
+    overflow-y: auto;
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+}
+
+::deep .user-claim-list-item {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+::deep .user-claim-type-input {
+    flex: 1 1 auto;
+    margin-right: 0.5em;
+}
+
+::deep .user-claim-value-input {
+    flex: 1 1 auto;
+}
+
+::deep .add-user-claim-button {
+    width: 100%;
+    margin-top: 1em;
+}
