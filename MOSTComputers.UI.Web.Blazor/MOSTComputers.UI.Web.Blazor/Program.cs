@@ -272,18 +272,11 @@ builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionStri
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
+
+builder.Services.AddScoped<ICustomAuthenticationService, CustomersAndEmployeesAuthenticationService>();
+
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
-
-//builder.Services.Configure<ForwardedHeadersOptions>(options =>
-//{
-//    options.ForwardedHeaders =
-//        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-
-//    options.KnownNetworks.Clear();
-//    options.KnownProxies.Clear();
-
-//    options.KnownProxies.Add(IPAddress.Parse("192.168.4.1"));
-//});
 
 //builder.Services.AddRateLimiter(options =>
 //{
@@ -335,8 +328,6 @@ else
     app.UseHsts();
 }
 
-//app.UseForwardedHeaders();
-
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
@@ -373,21 +364,5 @@ app.MapProductImageDataEndpoints();
 app.MapProductImageFileDataEndpoints();
 app.MapGroupPromotionImageFileDataEndpoints();
 app.MapPromotionFileDataEndpoints();
-
-//app.MapGet("/debug/ip", (HttpContext context) =>
-//{
-//    var remoteIp = context.Connection.RemoteIpAddress?.ToString();
-//    var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
-//    var forwardedProto = context.Request.Headers["X-Forwarded-Proto"].ToString();
-
-//    return new
-//    {
-//        RemoteIpAddress = remoteIp,
-//        XForwardedFor = forwardedFor,
-//        XForwardedProto = forwardedProto
-//    };
-//});
-//{"remoteIpAddress":"192.168.4.1","xForwardedFor":"","xForwardedProto":""}
-//{"remoteIpAddress":"192.168.4.1","xForwardedFor":"","xForwardedProto":""}
 
 app.Run();
