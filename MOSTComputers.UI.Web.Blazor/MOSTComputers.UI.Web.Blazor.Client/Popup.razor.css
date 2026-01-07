@@ -14,17 +14,25 @@
         flex-direction: column;
     }
 
-/* Popup container */
+.popup-dialog {
+    position: fixed !important;
+    inset: 0 !important;
+    max-width: 100%;
+    max-height: 100%;
+    padding: 0;
+    border-radius: 8px;
+    border-width: 0px;
+}
+
 .popup-content {
     background-color: white;
-    border-radius: 8px;
+    padding: 0px;
     display: flex;
     flex-direction: column;
     overflow: auto;
     /* margins come from PopupMarginOptions inline style */
 }
 
-/* Header */
 .popup-header {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #ddd;
@@ -41,7 +49,6 @@
     align-items: center;
 }
 
-/* Close button */
 .popup-close-button {
     min-width: 1em;
     min-height: 1em;
@@ -59,14 +66,12 @@
         outline-offset: 2px;
     }
 
-/* Body */
 .popup-body {
     padding: 1rem;
     flex: 1;
     overflow-y: auto;
 }
 
-/* Footer */
 .popup-footer {
     padding: 0.75rem 1rem;
     border-top: 1px solid #ddd;

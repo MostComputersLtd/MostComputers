@@ -1,14 +1,20 @@
-﻿@{
+﻿@implements IAsyncDisposable
+
+@inject IJSRuntime JSRuntime
+
+@{
     AdditionalHeaderAttributes.TryGetValue("class", out object? headerAdditionalClasses);
     AdditionalBodyAttributes.TryGetValue("class", out object? bodyAdditionalClasses);
     AdditionalFooterAttributes.TryGetValue("class", out object? footerAdditionalClasses);
 }
 
-<div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="Close">
+@* <div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="CloseAsync"> *@
+    @* <div class="popup-content" *@
+<dialog id="@_popupId" class="popup-dialog" closedBy="any"
+    style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
+        margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);">
     <div class="popup-content"
-        style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
-            margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);
-            width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
+        style="width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
             height: calc(100vh - @PopupMarginOptions.Top - @PopupMarginOptions.Bottom);"
          @onclick:stopPropagation>
 
@@ -27,7 +33,7 @@
                     <PopupFullScreenButton PopupContext="new PopupContext(this)" />
 				}
 
-                <button class="btn-close popup-close-button ms-2" @onclick="Close"></button>
+                <button class="btn-close popup-close-button ms-2" @onclick="CloseAsync"></button>
             </div>
         }
 
@@ -46,7 +52,9 @@
             </div>
         }
     </div>
-</div>
+</dialog>
+    @*</div>*@
+@* </div>  *@
 
 @code {
     public class MarginOptions
@@ -75,9 +83,9 @@
 
         public bool IsVisible => _popup.IsVisible;
 
-        public void SetIsVisible(bool isVisible)
+        public async Task SetIsVisibleAsync(bool isVisible)
         {
-            _popup.SetIsVisible(isVisible);
+            await _popup.SetIsVisibleAsync(isVisible);
         }
     }
 
@@ -104,21 +112,88 @@
     }
 
     [Parameter] public bool IsVisible { get; set; }
+    private bool _currentIsVisible = false;
+
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 
-    private void SetIsVisible(bool isVisible)
+    private async Task SetIsVisibleAsync(bool isVisible)
     {
         IsVisible = isVisible;
 
-        IsVisibleChanged.InvokeAsync(IsVisible);
+        bool changed = await ChangeVisibility(IsVisible);
+
+        await IsVisibleChanged.InvokeAsync(IsVisible);
 
         StateHasChanged();
     }
 
     [Parameter] public EventCallback CloseHandler { get; set; }
 
-    private async Task Close()
+    private IJSObjectReference? _jsModule = null;
+    private DotNetObjectReference<Popup> dotNetObjectReference = null!;
+
+    private string _popupId = string.Empty;
+
+    protected override void OnInitialized()
     {
+        dotNetObjectReference = DotNetObjectReference.Create(this);
+        _popupId = $"{DateTime.Now.Ticks}_{Random.Shared.Next(100, 999)}";
+    }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        if (_currentIsVisible == IsVisible) return;
+
+        bool changed = await ChangeVisibility(IsVisible);
+
+        if (changed)
+        {
+            _currentIsVisible = IsVisible;
+        }
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Popup.razor.js");
+
+            await _jsModule.InvokeVoidAsync("attachAutoCloseEvent", _popupId, dotNetObjectReference);
+
+            if (_currentIsVisible == IsVisible) return;
+
+            await ChangeVisibility(IsVisible);
+
+            _currentIsVisible = IsVisible;
+        }
+    }
+
+    private async Task<bool> ChangeVisibility(bool isVisible)
+    {
+        if (_jsModule is null) return false;
+
+        if (isVisible)
+        {
+            await _jsModule.InvokeVoidAsync("openDialog", _popupId, true);
+        }
+        else
+        {
+            await CloseAsync();
+        }
+
+        return true;
+    }
+
+    [JSInvokable("OnDefaultCloseAsync")]
+    public async Task OnDefaultCloseAsync()
+    {
+        await CloseAsync();
+    }
+
+    private async Task CloseAsync()
+    {
+        if (_jsModule is null) return;
+
         if (CloseHandler.HasDelegate)
         {
             await CloseHandler.InvokeAsync();
@@ -128,6 +203,28 @@
 
         IsVisible = false;
 
+        _currentIsVisible = IsVisible;
+
+        await _jsModule.InvokeVoidAsync("closeDialog", _popupId);
+
         await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule is not null)
+        {
+            try
+            {
+                await _jsModule.InvokeVoidAsync("detachAutoCloseEvent", _popupId);
+
+                dotNetObjectReference.Dispose();
+
+                await _jsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
     }
 }
