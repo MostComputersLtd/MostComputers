@@ -1,0 +1,12 @@
+﻿.popup-full-screen-button {
+    border: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: inherit;
+    box-shadow: rgb(255, 255, 255) 0px 0px 0px 1.6px !important;
+}
+
+    .popup-full-screen-button:not(:focus-visible) {
+        box-shadow: none !important
+    }

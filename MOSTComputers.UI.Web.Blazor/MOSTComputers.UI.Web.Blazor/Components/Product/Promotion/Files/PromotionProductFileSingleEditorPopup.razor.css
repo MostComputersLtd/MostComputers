@@ -1,4 +1,8 @@
-﻿p {
+﻿button:not(:focus-visible), .btn:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+p {
     margin-bottom: 0px;
 }
 

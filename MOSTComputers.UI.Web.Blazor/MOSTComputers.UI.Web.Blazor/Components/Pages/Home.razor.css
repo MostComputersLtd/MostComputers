@@ -1,5 +1,5 @@
 ﻿
-button {
+button:not(:focus-visible), .btn:not(:focus-visible) {
     box-shadow: none !important;
 }
 
@@ -169,6 +169,26 @@ input[type=number] {
     flex-direction: row;
     align-items: start;
 }
+
+.product-list-item-column-button {
+    padding: 0px;
+    margin: 0px;
+    line-height: 1.25em;
+    text-align: start;
+    font-size: inherit;
+}
+
+.product-list-item-column-interactable-item {
+    border-width: 0.1em;
+    padding: 0.1em;
+    border-style: solid;
+    border-color: transparent;
+    box-shadow: none !important;
+}
+
+    .product-list-item-column-interactable-item:focus-visible {
+        border-color: black;
+    }
 
 .product-list-item-quantity-input {
     width: 2em;

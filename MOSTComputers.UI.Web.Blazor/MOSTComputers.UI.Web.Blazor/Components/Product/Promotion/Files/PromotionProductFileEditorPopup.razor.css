@@ -1,4 +1,8 @@
-﻿.promotion-product-file-editor-header {
+﻿button:not(:focus-visible), .btn:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+.promotion-product-file-editor-header {
     width: 100%;
     display: flex;
     align-items: center;

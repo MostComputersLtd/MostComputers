@@ -2,7 +2,7 @@
     margin-bottom: 0px;
 }
 
-button {
+button:not(:focus-visible), .btn:not(:focus-visible) {
     box-shadow: none !important;
 }
 
