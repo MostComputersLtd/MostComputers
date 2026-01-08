@@ -33,7 +33,7 @@
                     <PopupFullScreenButton PopupContext="new PopupContext(this)" />
 				}
 
-                <button class="btn-close popup-close-button ms-2" @onclick="CloseAsync"></button>
+                <button class="btn-close popup-close-button ms-2" @onclick="OnButtonCloseAsync"></button>
             </div>
         }
 
@@ -120,8 +120,6 @@
     {
         IsVisible = isVisible;
 
-        bool changed = await ChangeVisibility(IsVisible);
-
         await IsVisibleChanged.InvokeAsync(IsVisible);
 
         StateHasChanged();
@@ -178,7 +176,7 @@
         }
         else
         {
-            await CloseAsync();
+            await CloseUIAsync();
         }
 
         return true;
@@ -187,19 +185,31 @@
     [JSInvokable("OnDefaultCloseAsync")]
     public async Task OnDefaultCloseAsync()
     {
-        await CloseAsync();
-    }
-
-    private async Task CloseAsync()
-    {
-        if (_jsModule is null) return;
-
         if (CloseHandler.HasDelegate)
         {
             await CloseHandler.InvokeAsync();
 
             return;
         }
+
+        await CloseAsync();
+    }
+
+    private async Task OnButtonCloseAsync()
+    {
+        if (CloseHandler.HasDelegate)
+        {
+            await CloseHandler.InvokeAsync();
+
+            return;
+        }
+
+        await CloseAsync();
+    }
+
+    private async Task CloseAsync()
+    {
+        if (_jsModule is null) return;
 
         IsVisible = false;
 
@@ -208,6 +218,13 @@
         await _jsModule.InvokeVoidAsync("closeDialog", _popupId);
 
         await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+
+    private async Task CloseUIAsync()
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("closeDialog", _popupId);
     }
 
     public async ValueTask DisposeAsync()

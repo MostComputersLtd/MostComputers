@@ -24,6 +24,8 @@ export function closeDialog(dialogId) {
 async function overrideDefaultCloseEvent(e) {
     e.preventDefault();
 
+    console.log("Prevented default");
+
     await e.target._customDotNetRef.invokeMethodAsync("OnDefaultCloseAsync");
 }
 
