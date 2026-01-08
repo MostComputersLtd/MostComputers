@@ -1,11 +1,15 @@
-﻿.promotion-on-one-line {
+﻿p, h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0px;
+}
+
+.promotion-on-one-line {
     display: flex;
     flex-wrap: wrap;
-    margin: 0em 1em;
 }
 
 .promotion-text {
     width: max-content;
+    margin-right: 0.75em;
 }
 
 .promotion-required-product-ids-list {
