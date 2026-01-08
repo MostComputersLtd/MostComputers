@@ -127,7 +127,7 @@
                 </button>
 
                 <InputFile OnChange="AddProductImageFromFileChangeAsync" id="singleProductEditorAddImageFileInput" type="file" accept="image/*"
-                    class="image-file-hidden-input" />
+                    class="image-file-hidden-input" tabindex="-1" />
 
                 <button class="btn btn-outline-success single-product-editor-popup-header-item" @onclick="() => AddProductProperty()">
                     Add Property
@@ -327,12 +327,16 @@
 
                 @if (pidPromotion is not null)
                 {
-                    <PromotionOnOneLine Promotion="pidPromotion" />
+                    <div class="promotion-on-one-line-container">
+                        <PromotionOnOneLine Promotion="pidPromotion" />
+                    </div>
                 }
 
                 @if (ridPromotion is not null)
                 {
-                    <PromotionOnOneLine Promotion="ridPromotion" />
+                    <div class="promotion-on-one-line-container">
+                        <PromotionOnOneLine Promotion="ridPromotion" />
+                    </div>
                 }
             </div>
 
@@ -491,7 +495,7 @@
         Product product = _productDataPopupData.Product;
 
         <Popup @bind-IsVisible='@IsProductDataPopupVisible'
-            PopupMarginOptions='new() { Left = "5%", Top = "5%", Right = "5%", Bottom = "5%" }'
+            PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'
             AdditionalHeaderAttributes='new()
             {
                 { "class", "red-and-white-theme" },
@@ -533,7 +537,7 @@
     @if (_productHtmlAndImagesPopupData is not null)
     {
         <Popup @bind-IsVisible="IsProductHtmlAndImagesPopupVisible"
-            PopupMarginOptions='new() { Left = "5%", Top = "5%", Right = "5%", Bottom = "5%" }'
+            PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'
             AddFullScreenButtonToHeader="true">
             <ChildContent>
                 <ProductHtmlAndImages Product="_productHtmlAndImagesPopupData.Product"
@@ -545,7 +549,7 @@
 
     <PromotionProductFileEditorPopup
         @bind-IsVisible="IsPromotionProductFileEditorPopupVisible"
-        PopupMarginOptions='new() { Left = "10%", Top = "10%", Right = "10%", Bottom = "10%" }'
+        PopupMarginOptions='new() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" }'
         Product="Product"
         PromotionProductFiles="PromotionProductFilesInEditor"
         PromotionProductFileAdded="OnPromotionProductFileEditorFileAdded"
@@ -556,7 +560,7 @@
         ShouldDisplayDeleteButton="true" />
 
     <Popup @bind-IsVisible="IsProductSearchStringOriginDataPopupVisible"
-        PopupMarginOptions='new() { Left = "5%", Top = "5%", Right = "5%", Bottom = "5%" }'>
+        PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
         <HeaderContent>
             <div class="search-string-data-popup-header">
 
