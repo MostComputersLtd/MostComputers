@@ -18,16 +18,15 @@
 
                 @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
                 {
-                    <div class="promotion-group-item-image-div"
+                    <button class="promotion-group-item-image-button"
                          style="background-image: url(data:@kvp.Key.LogoContentType;base64,@Convert.ToBase64String(kvp.Key.LogoImage))">
-                    </div>
+                    </button>
                 }
                 else
                 {
-
-                    <div class="promotion-group-item-group-name">
+                    <button class="promotion-group-item-group-name-button">
                         <h3>@kvp.Key.Name</h3>
-                    </div>
+                    </button>
                 }
             </div>
         }

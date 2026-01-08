@@ -12,34 +12,58 @@
 
 .promotion-group-item {
     width: 100%;
+    min-height: 4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
     border: 1px lightgray solid;
 }
 
-    .promotion-group-item:hover {
-        background-color: lightgray;
+    .promotion-group-item:hover .promotion-group-item-image-button {
+        border-color: #878787;
     }
 
-    .promotion-group-item.selected {
-        background-color: gray;
+    .promotion-group-item.selected .promotion-group-item-image-button {
+        border-color: black;
     }
 
-.promotion-group-item-image-div {
+.promotion-group-item-image-button {
     width: 100%;
-    height: 100%;
+    flex-grow: 1;
+    border-width: 3px;
+    border-style: solid;
+    border-radius: 5px;
+    border-color: transparent;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+    background-color: transparent;
     min-height: 3em;
+    box-shadow: none !important;
 }
+    .promotion-group-item-image-button:focus-visible {
+        border-color: black;
+    }
 
-.promotion-group-item-group-name {
+.promotion-group-item-group-name-button {
     width: 100%;
-    height: 100%;
+    flex-grow: 1;
+    background-color: transparent;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 5px;
+    border-color: transparent;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
+    box-shadow: none !important;
 }
+
+    .promotion-group-item-group-name-button:focus-visible {
+        border-color: black;
+    }
 
 .promotion-images-container {
     flex-grow: 1;
