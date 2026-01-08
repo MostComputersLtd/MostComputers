@@ -80,7 +80,7 @@ button:not(:focus-visible) {
     margin: 0.5em 1em;
 }
 
-.user-change-password-button {
+.user-change-password-popup-button {
     margin: 0.5em 1em;
 }
 
@@ -120,10 +120,11 @@ button:not(:focus-visible) {
     flex-direction: column;
     -ms-flex-align: center;
     -webkit-align-items: center;
-    align-items: center;
     overflow-y: auto;
 }
 ::deep .standard-popup-body-with-centered-content {
+    min-height: max-content;
+    justify-content: center;
     align-items: center;
 }
 
@@ -155,6 +156,16 @@ button:not(:focus-visible) {
 }
 
 ::deep .user-role-checkbox {
+}
+
+::deep .user-change-password-input {
+    width: 100%;
+    font-size: medium;
+    margin-bottom: 1em;
+}
+
+::deep .user-change-password-button {
+    width: 100%;
 }
 
 ::deep .delete-popup-confirmation-text {

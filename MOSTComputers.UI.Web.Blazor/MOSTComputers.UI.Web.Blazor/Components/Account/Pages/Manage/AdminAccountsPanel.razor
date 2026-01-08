@@ -39,7 +39,7 @@
                 <p class="user-id-text">@userDisplayData.User.Id</p>
                 <p class="user-name-text">@userDisplayData.User.UserName</p>
                 <button class="btn btn-primary user-roles-button" @onclick="() => ShowUserRolesPopup(userDisplayData)">@userRolesString</button>
-                <button class="btn btn-success user-change-password-button" @onclick="() => ShowChangePasswordPopup(userDisplayData)">Change Password</button>
+                <button class="btn btn-success user-change-password-popup-button" @onclick="() => ShowChangePasswordPopup(userDisplayData)">Change Password</button>
                 <button class="btn btn-close red-and-white-theme user-delete-button" @onclick="() => ShowDeleteUserPopup(userDisplayData)" />
 		    </li>
         }
@@ -76,7 +76,8 @@
 
                                 <input type="checkbox"
                                     class="user-role-checkbox"
-							        checked="@(userDisplayDataInRolesPopup!.UserRoles.Contains(role))"/>
+                                    checked="@(userDisplayDataInRolesPopup.UserRoles.Contains(role))"
+                                    @onchange="() => ToggleUserRole(userDisplayDataInRolesPopup, role)" @onclick:stopPropagation />
                             </li>
 				        }
                     </ul>
@@ -99,8 +100,8 @@
             </HeaderContent>
             <ChildContent>
                 <div class="standard-popup-body standard-popup-body-with-centered-content">
-                    <input type="password" placeholder="New Password" @bind-value="@newPasswordInput" />
-                    <button class="btn btn-primary" @onclick="() => ChangePassword(userDisplayDataInChangePasswordPopup)">Change Password</button>
+                    <input type="password" @bind="@newPasswordInput" placeholder="New Password" aria-label="New Password" class="user-change-password-input" />
+                    <button class="btn btn-primary user-change-password-button" @onclick="() => ChangePassword(userDisplayDataInChangePasswordPopup)">Change Password</button>
                 </div>
             </ChildContent>
         </Popup>
