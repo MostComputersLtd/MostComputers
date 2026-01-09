@@ -24,9 +24,15 @@ export function closeDialog(dialogId) {
 async function overrideDefaultCloseEvent(e) {
     e.preventDefault();
 
-    console.log("Prevented default");
-
     await e.target._customDotNetRef.invokeMethodAsync("OnDefaultCloseAsync");
+}
+
+async function overrideDefaultEscapeKeyEvent(e) {
+    if (e.key !== "Escape") return;
+
+    e.preventDefault();
+
+    await this._customDotNetRef.invokeMethodAsync("OnDefaultCloseAsync");
 }
 
 export async function attachAutoCloseEvent(dialogId, dotNetRef) {
@@ -37,6 +43,7 @@ export async function attachAutoCloseEvent(dialogId, dotNetRef) {
     dialog._customDotNetRef = dotNetRef;
 
     dialog.addEventListener("cancel", overrideDefaultCloseEvent);
+    dialog.addEventListener("keydown", overrideDefaultEscapeKeyEvent);
 }
 
 export async function detachAutoCloseEvent(dialogId) {
@@ -45,6 +52,7 @@ export async function detachAutoCloseEvent(dialogId) {
     if (dialog == null) return;
 
     dialog.removeEventListener("cancel", overrideDefaultCloseEvent);
+    dialog.removeEventListener("keydown", overrideDefaultEscapeKeyEvent);
 
     dialog._customDotNetRef = null;
 }
