@@ -96,7 +96,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
                 {CustomerDataView.EmployeeIdColumn},
                 {CustomerDataView.LoginNameColumn}
             FROM {CustomerDataView.Name} WITH (NOLOCK)
-            WHERE {CustomerDataView.LoginNameColumn} = @username;
+            WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username;
             """;
 
         SqlCommand sqlCommand = new()
@@ -191,7 +191,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
             $"""
             SELECT TOP 1 {CustomerDataView.IdColumn}, {CustomerDataView.LoginNameColumn}
             FROM {CustomerDataView.Name} WITH (NOLOCK)
-            WHERE {CustomerDataView.LoginNameColumn} = @username;
+            WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username;
             """;
 
         SqlCommand sqlCommand = new()
@@ -311,14 +311,17 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
         const string query =
             $"""
-            IF NOT EXISTS (SELECT 1 FROM {CustomerDataView.Name} WITH (NOLOCK) WHERE {CustomerDataView.LoginNameColumn} = @username)
+            IF NOT EXISTS (SELECT 1 FROM {CustomerDataView.Name} WITH (NOLOCK)
+                WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username)
             BEGIN
                 SELECT 2;
             END
             ELSE
             BEGIN
                 SELECT CASE
-                    WHEN (SELECT TOP 1 {CustomerDataView.PasswordColumn} FROM {CustomerDataView.Name} WITH (NOLOCK) WHERE {CustomerDataView.LoginNameColumn} = @username) = @password THEN 0
+                    WHEN (SELECT TOP 1 {CustomerDataView.PasswordColumn} FROM {CustomerDataView.Name} WITH (NOLOCK)
+                        WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username) COLLATE Cyrillic_General_CS_AS = @password
+                        THEN 0
                     ELSE 1
                 END
             END
