@@ -314,16 +314,19 @@
 
 						<div class="document-export-options-container">
 
-							<button class="btn btn-outline-secondary document-export-button-with-loader document-download-pdf-button"
-								@onclick="() => OnExportPdf(_pdfFileSourceUrl)">
-
-								<p class="document-export-button-with-loader-text @(_isDownloadingDocumentPdf ? "loading" : "")">Export PDF</p>
-
-								<div id="pdfDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentPdf ? "loading" : "")"></div>
-							</button>
-
 							@if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.Invoice)
 							{
+								@if (_selectedInvoice is not null)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader document-download-pdf-button"
+										@onclick='() => OnExportPdf(_pdfFileSourceUrl, $"invoice No. {_selectedInvoice.InvoiceNumber}")'>
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentPdf ? "loading" : "")">Export PDF</p>
+
+										<div id="pdfDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentPdf ? "loading" : "")"></div>
+									</button>
+								}
+
 								if (_selectedGroupExportInvoices.Count > 0)
 								{
 									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => OnExportInvoicesXml(_selectedGroupExportInvoices)">
@@ -346,6 +349,17 @@
 							}
 							else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
 							{
+								@if (_selectedWarrantyCard is not null)
+								{
+									<button class="btn btn-outline-secondary document-export-button-with-loader document-download-pdf-button"
+										@onclick='() => OnExportPdf(_pdfFileSourceUrl, $"warranty card No. {_selectedWarrantyCard.OrderId}")'>
+
+										<p class="document-export-button-with-loader-text @(_isDownloadingDocumentPdf ? "loading" : "")">Export PDF</p>
+
+										<div id="pdfDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_isDownloadingDocumentPdf ? "loading" : "")"></div>
+									</button>
+								}
+
 								if (_selectedGroupExportWarrantyCards.Count > 0)
 								{
 									<button class="btn btn-outline-secondary document-export-button-with-loader" @onclick="() => OnExportWarrantyCardsXml(_selectedGroupExportWarrantyCards)">
@@ -387,9 +401,10 @@
 			AddFullScreenButtonToHeader="true">
 			<ChildContent>
 				<div class="download-confirmation-popup-content">
-					<p class="download-confirmation-popup-download-info-text">User @_downloadConfirmationPopupData.Username wants to download file @_downloadConfirmationPopupData.Filename.</p>
-					<p>This download will be recorded. Are you sure you want to proceed?</p>
+					<p class="download-confirmation-popup-download-info-text">A document download of @_downloadConfirmationPopupData.ItemDescription is registered by user @_downloadConfirmationPopupData.Username at @_downloadConfirmationPopupData.DownloadTime.</p>
+					<p class="download-confirmation-popup-download-question-text">This download will be recorded. Are you sure you want to proceed?</p>
 					<div class="download-confirmation-popup-buttons-container">
+
 						<button class="btn btn-primary document-export-button-with-loader download-confirmation-popup-download-button"
 							@onclick="() => {
 								if (_downloadConfirmationPopupData.DownloadTask is not null)
@@ -401,6 +416,7 @@
 
 							<div id="pdfDownloadButtonLoader" class="round-loader-default document-export-buttons-loader @(_downloadConfirmationPopupData.IsLoading ? "loading" : "")"></div>
 						</button>
+
 						<button class="btn btn-danger" @onclick="() => popupContext.SetIsVisibleAsync(false)">Exit</button>
 					</div>
 				</div>
@@ -533,7 +549,8 @@
 	private sealed class DownloadConfirmationPopupData
 	{
 		public required string? Username { get; init; }
-		public required string Filename { get; init; }
+		public required string ItemDescription { get; init; }
+		public required DateTime DownloadTime { get; init; }
 		public Func<Task>? DownloadTask { get; set; }
 		public bool IsLoading { get; set; } = false;
 	}
@@ -802,7 +819,7 @@
 		await SearchDocumentsAsync(_selectedWarrantyCardCustomer.CustomerBID, null);
 	}
 
-	private void OnExportPdf(string pdfFileSourceUrl)
+	private void OnExportPdf(string pdfFileSourceUrl, string itemDescription)
 	{
 		if (_jsModule is null) return;
 
@@ -810,7 +827,8 @@
 
 		DownloadConfirmationPopupData downloadConfirmationPopupData = new()
 		{
-			Filename = fileName,
+			ItemDescription = itemDescription,
+			DownloadTime = DateTime.Now,
 			Username = _username,
 		};
 
@@ -862,7 +880,8 @@
 
 		DownloadConfirmationPopupData downloadConfirmationPopupData = new()
 		{
-			Filename = fileName,
+			ItemDescription = $"invoice No. {invoice.InvoiceNumber}",
+			DownloadTime = DateTime.Now,
 			Username = _username,
 		};
 
@@ -916,7 +935,8 @@
 
 		DownloadConfirmationPopupData downloadConfirmationPopupData = new()
 		{
-			Filename = fileName,
+			ItemDescription = $"{invoices.Count} invoices",
+			DownloadTime = DateTime.Now,
 			Username = _username,
 		};
 
@@ -970,16 +990,17 @@
 
 		DownloadConfirmationPopupData downloadConfirmationPopupData = new()
 		{
-			Filename = fileName,
+			ItemDescription = $"warranty card No. {warrantyCard.OrderId}",
+			DownloadTime = DateTime.Now,
 			Username = _username,
 		};
 
-		downloadConfirmationPopupData.DownloadTask = () => ExportWarrantyCardXmlAsync(warrantyCard.ExportId, fileName, downloadConfirmationPopupData);
+		downloadConfirmationPopupData.DownloadTask = () => ExportWarrantyCardXmlAsync(warrantyCard.OrderId, fileName, downloadConfirmationPopupData);
 
 		ShowDownloadConfirmationPopup(downloadConfirmationPopupData);
 	}
 
-	private async Task ExportWarrantyCardXmlAsync(int warrantyCardExportId, string fileName, DownloadConfirmationPopupData? downloadConfirmationPopupData = null)
+	private async Task ExportWarrantyCardXmlAsync(int warrantyCardOrderId, string fileName, DownloadConfirmationPopupData? downloadConfirmationPopupData = null)
 	{
 		if (_jsModule is null) return;
 
@@ -995,7 +1016,7 @@
 		try
 		{
 			await _jsModule.InvokeVoidAsync("fetchAndDownloadFile",
-			$"api/documents/warrantyCard/xml/id={warrantyCardExportId}",
+			$"api/documents/warrantyCard/xml/id={warrantyCardOrderId}",
 			fileName,
 			"application/xml");
 		}
@@ -1012,7 +1033,7 @@
 		}
 	}
 
-	private void OnExportWarrantyCardsXml(List<WarrantyCard> invoices)
+	private void OnExportWarrantyCardsXml(List<WarrantyCard> warrantyCards)
 	{
 		if (_jsModule is null) return;
 
@@ -1020,21 +1041,21 @@
 
 		string fileName = $"{fileNameStart}_({GetCurrentDateTimeInFileNameFormat()})";
 
-		List<int> warrantyCardExportIds = invoices.Select(x => x.OrderId)
-			.ToList();
+		IEnumerable<int> warrantyCardOrderIds = warrantyCards.Select(x => x.OrderId);
 
 		DownloadConfirmationPopupData downloadConfirmationPopupData = new()
 		{
-			Filename = fileName,
+			ItemDescription = $"{warrantyCards.Count} warranty cards",
+			DownloadTime = DateTime.Now,
 			Username = _username,
 		};
 
-		downloadConfirmationPopupData.DownloadTask = () => ExportWarrantyCardsXmlAsync(warrantyCardExportIds, fileName, downloadConfirmationPopupData);
+		downloadConfirmationPopupData.DownloadTask = () => ExportWarrantyCardsXmlAsync(warrantyCardOrderIds, fileName, downloadConfirmationPopupData);
 
 		ShowDownloadConfirmationPopup(downloadConfirmationPopupData);
 	}
 
-	private async Task ExportWarrantyCardsXmlAsync(IEnumerable<int> warrantyCardExportIds, string fileName, DownloadConfirmationPopupData? downloadConfirmationPopupData = null)
+	private async Task ExportWarrantyCardsXmlAsync(IEnumerable<int> warrantyCardOrderIds, string fileName, DownloadConfirmationPopupData? downloadConfirmationPopupData = null)
 	{
 		if (_jsModule is null) return;
 
@@ -1054,7 +1075,7 @@
 				fileName,
 				"application/xml",
 				"POST",
-				JsonSerializer.Serialize(warrantyCardExportIds));
+				JsonSerializer.Serialize(warrantyCardOrderIds));
 		}
 		finally
 		{
@@ -1240,6 +1261,12 @@
 		{
 			_isLoadingSearchResults = true;
 
+			if (_userType != UserType.AllDocumentsViewer && _userType != UserType.DocumentsAdmin)
+			{
+				_selectedGroupExportInvoices.Clear();
+				_selectedGroupExportWarrantyCards.Clear();
+			}
+
 			List<Invoice> searchedInvoices = await SearchInvoicesAsync(
 				customerBID, userSearchInput, _searchFromDate, _searchToDate);
 
@@ -1293,6 +1320,12 @@
 		else if (SelectedDocumentTypeSearchOptions == DocumentTypeSearchOptions.WarrantyCard)
 		{
 			_isLoadingSearchResults = true;
+
+			if (_userType != UserType.AllDocumentsViewer && _userType != UserType.DocumentsAdmin)
+			{
+				_selectedGroupExportInvoices.Clear();
+				_selectedGroupExportWarrantyCards.Clear();
+			}
 
 			List<WarrantyCard> searchedWarrantyCards = await SearchWarrantyCardsAsync(
 				customerBID, userSearchInput, _searchFromDate, _searchToDate);

@@ -299,13 +299,20 @@ p {
 }
 
 .download-confirmation-popup-download-info-text {
+    font-size: large;
     white-space: normal;
     text-align: center;
     margin-bottom: 0.5em;
 }
 
+.download-confirmation-popup-download-question-text {
+    font-size: medium;
+    white-space: normal;
+    text-align: center;
+}
+
 .download-confirmation-popup-buttons-container {
-    margin-top: 1.25em;
+    margin-top: 2em;
     display: flex;
     -ms-flex-direction: row;
     -webkit-flex-direction: row;
