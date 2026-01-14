@@ -1,16 +1,16 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
-using OneOf;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Utils.OneOf;
-
+using OneOf;
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 
@@ -21,6 +21,7 @@ internal class ProductWorkStatusesService : IProductWorkStatusesService
         IProductRepository productRepository,
         IProductWorkStatusesRepository productWorkStatusesRepository,
         IValidator<ServiceProductWorkStatusesCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceProductWorkStatusesCreateManyWithSameDataRequest>? createManyRequestValidator = null,
         IValidator<ServiceProductWorkStatusesUpdateByIdRequest>? updateByIdRequestValidator = null,
         IValidator<ServiceProductWorkStatusesUpdateByProductIdRequest>? updateByProductIdRequestValidator = null,
         IValidator<ServiceProductWorkStatusesUpsertRequest>? upsertRequestValidator = null)
@@ -28,6 +29,7 @@ internal class ProductWorkStatusesService : IProductWorkStatusesService
         _productRepository = productRepository;
         _productWorkStatusesRepository = productWorkStatusesRepository;
         _createRequestValidator = createRequestValidator;
+        _createManyRequestValidator = createManyRequestValidator;
         _updateByIdRequestValidator = updateByIdRequestValidator;
         _updateByProductIdRequestValidator = updateByProductIdRequestValidator;
         _upsertRequestValidator = upsertRequestValidator;
@@ -37,6 +39,7 @@ internal class ProductWorkStatusesService : IProductWorkStatusesService
     private readonly IProductWorkStatusesRepository _productWorkStatusesRepository;
 
     private readonly IValidator<ServiceProductWorkStatusesCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceProductWorkStatusesCreateManyWithSameDataRequest>? _createManyRequestValidator;
     private readonly IValidator<ServiceProductWorkStatusesUpdateByIdRequest>? _updateByIdRequestValidator;
     private readonly IValidator<ServiceProductWorkStatusesUpdateByProductIdRequest>? _updateByProductIdRequestValidator;
     private readonly IValidator<ServiceProductWorkStatusesUpsertRequest>? _upsertRequestValidator;
@@ -96,6 +99,52 @@ internal class ProductWorkStatusesService : IProductWorkStatusesService
         };
 
         return await _productWorkStatusesRepository.InsertIfItDoesntExistAsync(createRequestInner);
+    }
+
+    public async Task<OneOf<ProductWorkStatusesCreateManyWithSameDataResponse, ValidationResult>> InsertAllIfTheyDontExistAsync(
+        ServiceProductWorkStatusesCreateManyWithSameDataRequest createRequest)
+    {
+        ValidationResult validationResult = ValidateDefault(_createManyRequestValidator, createRequest);
+
+        if (!validationResult.IsValid) return validationResult;
+
+        List<Product> products = await _productRepository.GetByIdsAsync(createRequest.ProductIds);
+
+        ValidationResult productsExistValidationResult = new();
+
+        for (int i = 0; i < createRequest.ProductIds.Count; i++)
+        {
+            int productId = createRequest.ProductIds[i];
+
+            Product? product = products.Find(x => x.Id == productId);
+
+            if (product is not null) continue;
+
+            productsExistValidationResult.Errors.Add(new($"{nameof(ServiceProductWorkStatusesCreateManyWithSameDataRequest.ProductIds)}.[{i}]",
+                "Id does not correspond to any known product"));
+
+            createRequest.ProductIds.Remove(productId);
+
+            i--;
+        }
+
+        if (!productsExistValidationResult.IsValid) return productsExistValidationResult;
+
+        DateTime createDate = DateTime.Now;
+
+        ProductWorkStatusesCreateManyWithSameDataRequest createRequestInner = new()
+        {
+            ProductIds = createRequest.ProductIds,
+            ProductNewStatus = createRequest.ProductNewStatus,
+            ProductXmlStatus = createRequest.ProductXmlStatus,
+            ReadyForImageInsert = createRequest.ReadyForImageInsert,
+            CreateUserName = createRequest.CreateUserName,
+            CreateDate = createDate,
+            LastUpdateUserName = createRequest.CreateUserName,
+            LastUpdateDate = createDate,
+        };
+
+        return await _productWorkStatusesRepository.InsertAllIfTheyDontExistAsync(createRequestInner);
     }
 
     public async Task<OneOf<bool, ValidationResult>> UpdateByIdAsync(ServiceProductWorkStatusesUpdateByIdRequest updateRequest)

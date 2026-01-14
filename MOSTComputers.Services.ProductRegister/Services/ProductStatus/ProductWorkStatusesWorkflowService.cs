@@ -1,9 +1,11 @@
 ﻿using FluentValidation.Results;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using OneOf;
+using OneOf.Types;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductStatus;
 internal sealed class ProductWorkStatusesWorkflowService : IProductWorkStatusesWorkflowService

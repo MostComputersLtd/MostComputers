@@ -10,6 +10,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 using static MOSTComputers.Services.ProductRegister.Utils.Caching.CachingDefaults;
 using static MOSTComputers.Services.ProductRegister.Utils.Caching.CacheKeyUtils.ForProductWorkStatuses;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductWorkStatuses;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductStatus.Cached;
 internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesService
@@ -31,6 +32,8 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
     //private readonly IProductRepository _productRepository;
     //private readonly ICache<string> _cache;
     private readonly IFusionCache _fusionCache;
+
+    private static readonly TimeSpan _emptyValuesCacheAbsoluteExpiration = TimeSpan.FromMinutes(10);
 
     //private readonly CustomCacheEntryOptions _emptyValuesCacheEntryOptions;
 
@@ -124,7 +127,7 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
 
             //_cache.AddOrUpdate(getByProductIdKey, CacheOption<ProductWorkStatuses>.Empty(), _emptyValuesCacheEntryOptions);
 
-            await _fusionCache.SetAsync<ProductWorkStatuses?>(getByProductIdKey, null, options => options.SetDuration(EmptyValuesCacheAbsoluteExpiration));
+            await _fusionCache.SetAsync<ProductWorkStatuses?>(getByProductIdKey, null, options => options.SetDuration(_emptyValuesCacheAbsoluteExpiration));
         }
 
         retrivedProductWorkStatuses.AddRange(cachedProductWorkStatuses);
@@ -171,7 +174,7 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
                     return underlyingData;
                }
 
-               entry.Options.SetDuration(EmptyValuesCacheAbsoluteExpiration);
+               entry.Options.SetDuration(_emptyValuesCacheAbsoluteExpiration);
 
                return null;
            });
@@ -216,7 +219,7 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
                     return underlyingData;
                 }
 
-                entry.Options.SetDuration(EmptyValuesCacheAbsoluteExpiration);
+                entry.Options.SetDuration(_emptyValuesCacheAbsoluteExpiration);
 
                 return null;
             });
@@ -238,6 +241,30 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
         }
 
         return createResult;
+    }
+
+    public async Task<OneOf<ProductWorkStatusesCreateManyWithSameDataResponse, ValidationResult>> InsertAllIfTheyDontExistAsync(
+        ServiceProductWorkStatusesCreateManyWithSameDataRequest createRequest)
+    {
+        OneOf<ProductWorkStatusesCreateManyWithSameDataResponse, ValidationResult> result
+            = await _productWorkStatusesService.InsertAllIfTheyDontExistAsync(createRequest);
+
+        if (result.IsT0)
+        {
+            foreach (int productId in createRequest.ProductIds)
+            {
+                await _fusionCache.RemoveAsync(GetByProductIdKey(productId));
+            }
+
+            foreach (KeyValuePair<int, OneOf<int, ValidationResult, UnexpectedFailureResult>> productStatusIdKvp in result.AsT0.Results)
+            {
+                if (!productStatusIdKvp.Value.IsT0) continue;
+
+                await _fusionCache.RemoveAsync(GetByIdKey(productStatusIdKvp.Value.AsT0));
+            }
+        }
+
+        return result;
     }
 
     public async Task<OneOf<bool, ValidationResult>> UpdateByIdAsync(ServiceProductWorkStatusesUpdateByIdRequest updateRequest)
