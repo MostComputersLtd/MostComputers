@@ -1,7 +1,42 @@
-﻿namespace MOSTComputers.Services.PDF.Utils;
+﻿using MOSTComputers.Models.Product.Models;
+
+namespace MOSTComputers.Services.PDF.Utils;
+
 internal static class CurrencyToWordsConversionUtils
 {
-    private readonly static string[] _unitsMap = {
+    internal enum PriceConvertScaleEnum
+    {
+        Stotinki = 0,
+        Leva = 1,
+    }
+
+    private readonly static string[] _levaUnitsMap = {
+        "",
+        "един",
+        "два",
+        "три",
+        "четири",
+        "пет",
+        "шест",
+        "седем",
+        "осем",
+        "девет"
+    };
+
+    private readonly static string[] _euroUnitsMap = {
+        "",
+        "едно",
+        "две",
+        "три",
+        "четири",
+        "пет",
+        "шест",
+        "седем",
+        "осем",
+        "девет"
+    };
+
+    private readonly static string[] _usdUnitsMap = {
         "",
         "един",
         "два",
@@ -18,6 +53,26 @@ internal static class CurrencyToWordsConversionUtils
         "",
         "една",
         "две",
+        "три",
+        "четири",
+        "пет",
+        "шест",
+        "седем",
+        "осем",
+        "девет"
+    };
+
+    private readonly static string[] _euroAndUsdCentUnitsMap = {
+        "",
+        "един",
+        "два",
+        "три",
+        "четири",
+        "пет",
+        "шест",
+        "седем",
+        "осем",
+        "девет"
     };
 
     private readonly static string[] _teensMap = {
@@ -59,44 +114,91 @@ internal static class CurrencyToWordsConversionUtils
         "деветстотин"
     };
 
-    internal static string ConvertPriceToWordsInLeva(decimal amount)
+    public static string GetCurrencyString(Currency currency)
     {
-        int leva = (int)amount;
-        int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
-
-        string levaPart = ConvertNumberToWordsInLeva(leva, PriceConvertScaleEnum.Leva, _unitsMap, _teensMap, _tensMap, _hundredsMap);
-
-        if (stotinki == 0)
+        return currency switch
         {
-            return $"{levaPart} лева";
-        }
-
-        string stotinkiPart = ConvertNumberToWordsInLeva(stotinki, PriceConvertScaleEnum.Stotinki, _unitsMap, _teensMap, _tensMap, _hundredsMap);
-
-        return $"{levaPart} лева и {stotinkiPart} стотинки";
+            Currency.EUR => "€",
+            Currency.BGN => "лв",
+            Currency.USD => "$",
+            _ => throw new NotImplementedException("Currency is not supported"),
+        };
     }
 
-    internal static string ConvertPriceToWordsInLeva(double amount)
+    public static string GetCurrencyNameString(Currency currency, PriceConvertScaleEnum priceConvertScaleEnum, long number)
+    {
+        return (priceConvertScaleEnum, currency) switch
+        {
+            (PriceConvertScaleEnum.Leva, Currency.EUR) => "евро",
+            (PriceConvertScaleEnum.Stotinki, Currency.EUR) => number == 1 ? "цент" : "цента",
+
+            (PriceConvertScaleEnum.Leva, Currency.BGN) => number == 1 ? "лев" : "лева",
+            (PriceConvertScaleEnum.Stotinki, Currency.BGN) => number == 1 ? "стотинка" : "стотинки",
+
+            (PriceConvertScaleEnum.Leva, Currency.USD) => number == 1 ? "долар" : "долара",
+            (PriceConvertScaleEnum.Stotinki, Currency.USD) => number == 1 ? "цент" : "цента",
+
+            _ => throw new NotImplementedException("Currency is not supported"),
+        };
+    }
+
+    internal static string ConvertPriceToWords(decimal amount, Currency currency)
     {
         long leva = (long)amount;
         int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
 
-        string levaPart = ConvertNumberToWordsInLeva(leva, PriceConvertScaleEnum.Leva, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+        string[] unitsMap = GetUnitsMap(currency);
+        string[] centUnitsMap = GetCentUnitsMap(currency);
+
+        string levaPart = ConvertNumberToWordsInBulgarian(leva, PriceConvertScaleEnum.Leva, unitsMap, _teensMap, _tensMap, _hundredsMap, centUnitsMap);
+
+        string levaCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Leva, leva);
 
         if (stotinki == 0)
         {
-            return $"{levaPart} лева";
+            return $"{levaPart} {levaCurrencyWord}";
         }
 
-        string stotinkiPart = ConvertNumberToWordsInLeva(stotinki, PriceConvertScaleEnum.Stotinki, _unitsMap, _teensMap, _tensMap, _hundredsMap);
+        string stotinkiCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Stotinki, stotinki);
 
-        return $"{levaPart} лева и {stotinkiPart} стотинки";
+        string stotinkiPart = ConvertNumberToWordsInBulgarian(stotinki, PriceConvertScaleEnum.Stotinki, _levaUnitsMap, _teensMap, _tensMap, _hundredsMap, centUnitsMap);
+
+        return $"{levaPart} {levaCurrencyWord} и {stotinkiPart} {stotinkiCurrencyWord}";
     }
 
-    private static string ConvertNumberToWordsInLeva(long number, PriceConvertScaleEnum priceConvertScale, string[] unitsMap, string[] teensMap, string[] tensMap, string[] hundredsMap)
+    private static string[] GetCentUnitsMap(Currency currency)
+    {
+        return currency switch
+        {
+            Currency.EUR => _euroAndUsdCentUnitsMap,
+            Currency.USD => _euroAndUsdCentUnitsMap,
+            Currency.BGN => _stotinkiUnitsMap,
+            _ => throw new NotImplementedException($"Currency is not supported")
+        };
+    }
+
+    private static string[] GetUnitsMap(Currency currency)
+    {
+        return currency switch
+        {
+            Currency.EUR => _euroUnitsMap,
+            Currency.USD => _usdUnitsMap,
+            Currency.BGN => _levaUnitsMap,
+            _ => throw new NotImplementedException($"Currency is not supported")
+        };
+    }
+
+    private static string ConvertNumberToWordsInBulgarian(
+        long number,
+        PriceConvertScaleEnum priceConvertScale,
+        string[] unitsMap,
+        string[] teensMap,
+        string[] tensMap,
+        string[] hundredsMap,
+        string[] centUnitsMap)
     {
         if (number == 0) return "нула";
-        if (number < 0) return "минус " + ConvertNumberToWordsInLeva(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap);
+        if (number < 0) return "минус " + ConvertNumberToWordsInBulgarian(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap);
 
         string words = "";
 
@@ -110,7 +212,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInLeva(number / 1_000_000_000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " милиарда ";
+                words += ConvertNumberToWordsInBulgarian(number / 1_000_000_000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиарда ";
             }
 
             number %= 1_000_000_000;
@@ -126,7 +228,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInLeva(number / 1000000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " милиона ";
+                words += ConvertNumberToWordsInBulgarian(number / 1000000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиона ";
             }
 
             number %= 1000000;
@@ -142,7 +244,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInLeva(number / 1000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap) + " хиляди ";
+                words += ConvertNumberToWordsInBulgarian(number / 1000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " хиляди ";
             }
 
             number %= 1000;
@@ -159,10 +261,9 @@ internal static class CurrencyToWordsConversionUtils
             {
                 string wordForTenInNumber = unitsMap[number];
 
-                if (priceConvertScale == PriceConvertScaleEnum.Stotinki
-                   && number < _stotinkiUnitsMap.Length)
+                if (priceConvertScale == PriceConvertScaleEnum.Stotinki)
                 {
-                    wordForTenInNumber = _stotinkiUnitsMap[number];
+                    wordForTenInNumber = centUnitsMap[number];
                 }
 
                 words += (words == "" ? "" : "и ") + wordForTenInNumber;
@@ -181,10 +282,9 @@ internal static class CurrencyToWordsConversionUtils
                 {
                     string wordForTenInNumber = unitsMap[tensInNumber];
 
-                    if (priceConvertScale == PriceConvertScaleEnum.Stotinki
-                       && tensInNumber < _stotinkiUnitsMap.Length)
+                    if (priceConvertScale == PriceConvertScaleEnum.Stotinki)
                     {
-                        wordForTenInNumber = _stotinkiUnitsMap[tensInNumber];
+                        wordForTenInNumber = centUnitsMap[tensInNumber];
                     }
 
                     words += " и " + wordForTenInNumber;
@@ -194,10 +294,4 @@ internal static class CurrencyToWordsConversionUtils
 
         return words.Trim();
     }
-}
-
-internal enum PriceConvertScaleEnum
-{
-    Stotinki = 0,
-    Leva = 1,
 }
