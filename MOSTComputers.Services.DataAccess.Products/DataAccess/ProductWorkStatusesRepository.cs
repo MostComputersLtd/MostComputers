@@ -8,8 +8,12 @@ using MOSTComputers.Services.DataAccess.Common;
 using MOSTComputers.Services.DataAccess.Products.Configuration;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductWorkStatuses;
 using OneOf;
+using OneOf.Types;
 using System.Data;
+using System.Reflection.Metadata;
+using System.Text;
 using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.QueryUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
@@ -263,18 +267,232 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
 
         if (result > 0) return result.Value;
 
-        ValidationResult validationResult = GetValidationResultFromFailedInsertResult(result.Value);
+        ValidationResult validationResult = GetValidationResultFromFailedInsertResult(result.Value, nameof(ProductWorkStatusesCreateRequest.ProductId));
 
         return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
     }
 
-    private static ValidationResult GetValidationResultFromFailedInsertResult(int result)
+    public async Task<ProductWorkStatusesCreateManyWithSameDataResponse> InsertAllIfTheyDontExistAsync(
+        ProductWorkStatusesCreateManyWithSameDataRequest createRequest)
+    {
+        const string insertQueryResultsTableDeclaration =
+            $"""
+            DECLARE @InsertedIdTable TABLE (ProductId INT, IdOrStatus INT);
+
+
+            """;
+
+        const string insertQueryFinalSelect =
+            """
+
+            SELECT ProductId, IdOrStatus FROM @InsertedIdTable;
+            """;
+
+        SqlParameter productNewStatusParameter = new()
+        {
+            ParameterName = $"@ProductNewStatus",
+            Value = (int)createRequest.ProductNewStatus,
+            SqlDbType = SqlDbType.Int,
+            IsNullable = false,
+        };
+
+        SqlParameter productXmlStatusParameter = new()
+        {
+            ParameterName = $"@ProductXmlStatus",
+            Value = (int)createRequest.ProductXmlStatus,
+            SqlDbType = SqlDbType.Int,
+            IsNullable = false,
+        };
+
+        SqlParameter readyForImageInsertParameter = new()
+        {
+            ParameterName = $"@ReadyForImageInsert",
+            Value = createRequest.ReadyForImageInsert,
+            SqlDbType = SqlDbType.Bit,
+            IsNullable = false,
+        };
+
+        SqlParameter createUserNameParameter = new()
+        {
+            ParameterName = $"@CreateUserName",
+            Value = createRequest.CreateUserName,
+            SqlDbType = SqlDbType.VarChar,
+            IsNullable = false,
+        };
+
+        SqlParameter createDateParameter = new()
+        {
+            ParameterName = $"@CreateDate",
+            Value = createRequest.CreateDate,
+            SqlDbType = SqlDbType.DateTime,
+            IsNullable = false,
+        };
+
+        SqlParameter lastUpdateUserNameParameter = new()
+        {
+            ParameterName = $"@LastUpdateUserName",
+            Value = createRequest.LastUpdateUserName,
+            SqlDbType = SqlDbType.VarChar,
+            IsNullable = false,
+        };
+
+        SqlParameter lastUpdateDateParameter = new()
+        {
+            ParameterName = $"@LastUpdateDate",
+            Value = createRequest.LastUpdateDate,
+            SqlDbType = SqlDbType.DateTime,
+            IsNullable = false,
+        };
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        await dbConnection.OpenAsync();
+
+        using SqlTransaction transaction = dbConnection.BeginTransaction();
+
+        List<Tuple<int, int>> results;
+
+        try
+        {
+            results = await ExecuteListQueryWithParametersInChunksAsync(
+                RunInsertAllQueryForChunkOfProductIdsAsync,
+                createRequest.ProductIds);
+
+            await transaction.CommitAsync();
+        }
+        catch
+                
+        {
+            await transaction.RollbackAsync();
+
+            throw;
+        }
+
+        Dictionary<int, OneOf<int, ValidationResult, UnexpectedFailureResult>> output = new();
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            Tuple<int, int> result = results[i];
+
+            OneOf<int, ValidationResult, UnexpectedFailureResult> outputForProduct = GetResultForProduct(result.Item2, i);
+
+            output.Add(result.Item1, outputForProduct);
+        }
+
+        return new()
+        {
+            Results = output
+        };
+
+        static string GetInsertQueryWithProductIdParam(string productIdParamName)
+        {
+            string insert =
+                $"""
+                IF EXISTS (
+                    SELECT 1 FROM {ProductWorkStatusesTableName}
+                    WHERE {ProductIdColumnName} = {productIdParamName})
+                BEGIN
+                    INSERT INTO InsertedIdTable (ProductId, IdOrStatus)
+                    VALUES ({productIdParamName}, -1)
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO {ProductWorkStatusesTableName} ({ProductIdColumnName},
+                        {ProductNewStatusColumnName}, {ProductXmlStatusColumnName}, {ReadyForImageInsertColumnName},
+                        {CreateUserNameColumnName}, {CreateDateColumnName}, {LastUpdateUserNameColumnName}, {LastUpdateDateColumnName})
+                    OUTPUT INSERTED.{ProductIdColumnName}, INSERTED.{IdColumnName} INTO @InsertedIdTable
+                    VALUES({productIdParamName}, @ProductNewStatus, @ProductXmlStatus, @ReadyForImageInsert,
+                        @CreateUserName, @CreateDate, @LastUpdateUserName, @LastUpdateDate)
+                END
+                """;
+
+            return insert;
+        }
+
+        async Task<IEnumerable<Tuple<int, int>>> RunInsertAllQueryForChunkOfProductIdsAsync(List<int> productIds)
+        {
+            StringBuilder stringBuilder = new();
+
+            stringBuilder.AppendLine(insertQueryResultsTableDeclaration);
+
+            SqlParameter[] productIdParameters = new SqlParameter[productIds.Count];
+
+            for (int i = 0; i < productIds.Count; i++)
+            {
+                SqlParameter productIdParameter = new()
+                {
+                    ParameterName = $"@ProductId{i}",
+                    Value = productIds[i],
+                    SqlDbType = SqlDbType.Int,
+                    IsNullable = false,
+                };
+
+                productIdParameters[i] = productIdParameter;
+
+                string insertQuery = GetInsertQueryWithProductIdParam(productIdParameter.ParameterName);
+
+                stringBuilder.AppendLine(insertQuery);
+            }
+
+            stringBuilder.AppendLine(insertQueryFinalSelect);
+
+            using SqlCommand sqlCommand = new()
+            {
+                Connection = dbConnection,
+                Transaction = transaction,
+                CommandText = stringBuilder.ToString(),
+                CommandType = CommandType.Text,
+            };
+
+            sqlCommand.Parameters.AddRange(productIdParameters);
+
+            sqlCommand.Parameters.Add(productNewStatusParameter);
+            sqlCommand.Parameters.Add(productXmlStatusParameter);
+            sqlCommand.Parameters.Add(readyForImageInsertParameter);
+            sqlCommand.Parameters.Add(createUserNameParameter);
+            sqlCommand.Parameters.Add(createDateParameter);
+            sqlCommand.Parameters.Add(lastUpdateUserNameParameter);
+            sqlCommand.Parameters.Add(lastUpdateDateParameter);
+
+            List<Tuple<int, int>> localResults = new();
+
+            using (SqlDataReader reader = await sqlCommand.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    int productId = reader.GetInt32(0);
+                    int idOrStatus = reader.GetInt32(1);
+
+                    localResults.Add(new(productId, idOrStatus));
+                }
+            }
+
+            sqlCommand.Parameters.Clear();
+
+            return localResults;
+        }
+
+        static OneOf<int, ValidationResult, UnexpectedFailureResult> GetResultForProduct(int idOrStatus, int indexOfEntry)
+        {
+            if (idOrStatus == 0) return new UnexpectedFailureResult();
+
+            if (idOrStatus > 0) return idOrStatus;
+
+            string productIdPropertyName = $"{nameof(ProductWorkStatusesCreateManyWithSameDataRequest.ProductIds)}.[{indexOfEntry}]";
+
+            ValidationResult validationResult = GetValidationResultFromFailedInsertResult(idOrStatus, productIdPropertyName);
+
+            return validationResult.IsValid ? new UnexpectedFailureResult() : validationResult;
+        }
+    }
+
+    private static ValidationResult GetValidationResultFromFailedInsertResult(int result, string productIdPropertyName)
     {
         ValidationResult validationResult = new();
 
         if (result == -1)
         {
-            validationResult.Errors.Add(new(nameof(ProductStatuses.ProductId), "Product status already exists for this product"));
+            validationResult.Errors.Add(new(productIdPropertyName, "Product status already exists for this product"));
         }
 
         return validationResult;

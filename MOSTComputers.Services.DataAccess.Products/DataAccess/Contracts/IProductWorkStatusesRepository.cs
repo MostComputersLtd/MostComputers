@@ -2,6 +2,7 @@
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductWorkStatuses;
 using OneOf;
 
 namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
@@ -15,6 +16,7 @@ public interface IProductWorkStatusesRepository
     Task<ProductWorkStatuses?> GetByIdAsync(int productWorkStatusesId);
     Task<ProductWorkStatuses?> GetByProductIdAsync(int productId);
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertIfItDoesntExistAsync(ProductWorkStatusesCreateRequest createRequest);
+    Task<ProductWorkStatusesCreateManyWithSameDataResponse> InsertAllIfTheyDontExistAsync(ProductWorkStatusesCreateManyWithSameDataRequest createRequest);
     Task<bool> UpdateByIdAsync(ProductWorkStatusesUpdateByIdRequest updateRequest);
     Task<bool> UpdateByProductIdAsync(ProductWorkStatusesUpdateByProductIdRequest updateRequest);
     Task<OneOf<int, UnexpectedFailureResult>> UpsertByProductIdAsync(ProductWorkStatusesUpsertRequest upsertRequest);
