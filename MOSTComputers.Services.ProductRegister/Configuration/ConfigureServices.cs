@@ -19,6 +19,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionFile;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 
 using MOSTComputers.Services.ProductRegister.Services;
@@ -268,10 +269,14 @@ public static class ConfigureServices
         services.AddScoped<IValidator<CreatePromotionFileRequest>, CreatePromotionFileRequestValidator>();
         services.AddScoped<IValidator<UpdatePromotionFileRequest>, UpdatePromotionFileRequestValidator>();
 
-        services.AddScoped<IValidator<ServicePromotionProductFileCreateRequest>, ServicePromotionProductFileInfoCreateRequestValidator>();
-        services.AddScoped<IValidator<ServicePromotionProductFileUpdateRequest>, ServicePromotionProductFileInfoUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionProductFileCreateRequest>, ServicePromotionProductFileCreateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionProductFileUpdateRequest>, ServicePromotionProductFileUpdateRequestValidator>();
+
+        services.AddScoped<IValidator<ServicePromotionProductFileInfoCreateRequest>, ServicePromotionProductFileInfoCreateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionProductFileInfoUpdateRequest>, ServicePromotionProductFileInfoUpdateRequestValidator>();
 
         services.AddScoped<IValidator<ServiceProductWorkStatusesCreateRequest>, ProductWorkStatusesCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductWorkStatusesCreateManyWithSameDataRequest>, ProductWorkStatusesCreateManyWithSameDataRequestValidator>();
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpdateByIdRequest>, ProductWorkStatusesUpdateByIdRequestValidator>();
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpdateByProductIdRequest>, ProductWorkStatusesUpdateByProductIdRequestValidator>();
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpsertRequest>, ProductWorkStatusesUpsertRequestValidator>();
