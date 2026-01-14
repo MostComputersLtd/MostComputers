@@ -75,10 +75,6 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
     private const string _invoiceTemplateTotalPriceLevaElementId = "invoiceTemplateTotalPriceLeva";
 
-    
-    private const string _invoiceTemplateTotalPriceEuroConversionRateElementId = "invoiceTemplateTotalPriceEuroConversionRate";
-    private const string _invoiceTemplateTotalPriceEuroElementId = "invoiceTemplateTotalPriceEuro";
-
     private const string _invoiceTemplateTotalPriceInWordsElementId = "invoiceTemplateTotalPriceInWords";
     private const string _invoiceTemplatePaymentMethodElementId = "invoiceTemplatePaymentMethod";
 
@@ -128,43 +124,37 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
         htmlDocument.Load(_htmlTemplateFilePath);
 
-        string invoiceDateAsString = (invoiceData.Date is not null) ? invoiceData.Date.Value.ToString("dd.MM.yyy") : string.Empty;
-        string invoiceDueDateAsString = (invoiceData.DueDate is not null) ? invoiceData.DueDate.Value.ToString("dd.MM.yyy") : string.Empty;
+        string invoiceDateAsString = (invoiceData.Date is not null) ? invoiceData.Date.Value.ToString("dd.MM.yyyy") : string.Empty;
+        string invoiceDueDateAsString = (invoiceData.DueDate is not null) ? invoiceData.DueDate.Value.ToString("dd.MM.yyyy") : string.Empty;
 
         decimal totalPriceWithoutVat = 0M;
         decimal totalPriceChargedFromVat = 0M;
         decimal totalPriceInLeva = 0M;
-        decimal totalPriceInEuro = 0M;
+
+        Currency? fullPriceItemsCurrency = null;
 
         foreach (PurchaseInvoiceData priceData in invoiceData.Purchases)
         {
+            fullPriceItemsCurrency ??= priceData.Currency;
+
             totalPriceWithoutVat += priceData.LineNetPrice ?? 0M;
             totalPriceChargedFromVat += priceData.LineVatPrice ?? 0M;
             totalPriceInLeva += priceData.LineTotalPrice ?? 0M;
-            totalPriceInEuro += priceData.LineTotalPriceEuro ?? 0M;
         }
 
-        //decimal totalPriceWithoutVat = GetTotalPriceOfPurchases(invoiceData.Purchases);
+        fullPriceItemsCurrency ??= Currency.EUR;
 
-        //decimal totalPriceChargedFromVat = totalPriceWithoutVat * (decimal)invoiceData.VatPercentageFraction;
-
-        //decimal totalPriceInLeva = RoundCurrency(totalPriceWithoutVat + totalPriceChargedFromVat);
-
-        //decimal totalPriceInEuro = RoundCurrency(totalPriceInLeva / _levaToEuroConversionRate);
+        string fullPriceItemsCurrencyString = GetCurrencyString(fullPriceItemsCurrency.Value);
 
         decimal varPercentageAsPercent = invoiceData.VatPercentageFraction * 100;
 
-        string totalPriceWithoutVatString = GetCurrencyStringFromPrice(RoundCurrency(totalPriceWithoutVat), "лв", true);
+        string totalPriceWithoutVatString = GetCurrencyStringFromPrice(RoundCurrency(totalPriceWithoutVat), fullPriceItemsCurrencyString, true);
 
-        string totalPriceChargedFromVatString = GetCurrencyStringFromPrice(RoundCurrency(totalPriceChargedFromVat), "лв", true);
+        string totalPriceChargedFromVatString = GetCurrencyStringFromPrice(RoundCurrency(totalPriceChargedFromVat), fullPriceItemsCurrencyString, true);
 
-        string totalPriceInLevaString = GetCurrencyStringFromPrice(totalPriceInLeva, "лв", true);
+        string totalPriceInLevaString = GetCurrencyStringFromPrice(totalPriceInLeva, fullPriceItemsCurrencyString, true);
 
-        string totalPriceInEuroConverstionRateString = invoiceData.LevaToEuroExchangeRate.ToString();
-
-        string totalPriceInEuroString = GetCurrencyStringFromPrice(totalPriceInEuro, "€", true);
-
-        string totalPriceInWords = ConvertPriceToWordsInLeva(totalPriceInLeva);
+        string totalPriceInWords = ConvertPriceToWords(totalPriceInLeva, fullPriceItemsCurrency.Value);
 
         string varPercentageText = varPercentageAsPercent.ToString() + "%";
 
@@ -196,9 +186,6 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateVatChargedElementId, totalPriceChargedFromVatString);
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceLevaElementId, totalPriceInLevaString);
-
-        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceEuroConversionRateElementId, totalPriceInEuroConverstionRateString);
-        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceEuroElementId, totalPriceInEuroString);
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateTotalPriceInWordsElementId, totalPriceInWords);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplatePaymentMethodElementId, invoiceData.TypeOfPayment);
@@ -268,13 +255,15 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
             string pricePerUnitString = Math.Round(pricePerUnit, 2).ToString("F2");
             string totalPriceString = RoundCurrency(totalPrice).ToString("F2");
 
+            string entryCurrencyString = GetCurrencyString(purchaseData.Currency);
+
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryNumberElementId, purchaseNumber.ToString());
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryNameElementId, purchaseData.ProductName ?? string.Empty);
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryQuantityElementId, quantity.ToString());
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryUnitOfMeasureElementId, purchaseData.UnitOfMeasurement);
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryPricePerUnitElementId, pricePerUnitString);
             ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryTotalPriceElementId, totalPriceString);
-            ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryCurrencyElementId, purchaseData.Currency);
+            ChangeHtmlElementInnerHtml(purchasesListItemCopy, originalInvoiceTemplateEntryCurrencyElementId, entryCurrencyString);
 
             ChangeHtmlElement(purchasesListItemCopy, originalInvoiceTemplateEntryNumberElementId, x => x.Id = newInvoiceTemplateEntryNumberElementId);
             ChangeHtmlElement(purchasesListItemCopy, originalInvoiceTemplateEntryNameElementId, x => x.Id = newInvoiceTemplateEntryNameElementId);
@@ -343,20 +332,4 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
             MarginOptions = pdfMargins
         };
     }
-
-    //private static decimal GetTotalPriceOfPurchases(IEnumerable<PurchaseInvoiceData> purchaseInvoiceData)
-    //{
-    //    decimal totalPrice = 0;
-
-    //    foreach (PurchaseInvoiceData purchaseData in purchaseInvoiceData)
-    //    {
-    //        int quantity = purchaseData.Quantity ?? 0;
-
-    //        decimal pricePerUnit = (purchaseData.PricePerUnit is not null) ? RoundCurrency(purchaseData.PricePerUnit.Value) : 0;
-
-    //        totalPrice += quantity * pricePerUnit;
-    //    }
-
-    //    return totalPrice;
-    //}
 }
