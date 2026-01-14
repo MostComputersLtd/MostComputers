@@ -16,7 +16,7 @@ using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNam
 namespace MOSTComputers.Services.DataAccess.Documents.DataAccess;
 internal class InvoiceItemRepository : IInvoiceItemRepository
 {
-    public InvoiceItemRepository([FromKeyedServices(ConfigureServices.DataAccessServiceKey)] IConnectionStringProvider connectionStringProvider)
+    public InvoiceItemRepository([FromKeyedServices(ConfigureServices.DocumentsDataAccessServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

@@ -35,12 +35,13 @@ internal static class ResponseMapper
             IsVATRegistered = invoiceDao.IsVATRegistered,
             PrintedNETAmount = invoiceDao.PrintedNETAmount,
             DueDate = invoiceDao.DueDate,
-            CustomerBankNameAndId = invoiceDao.CustomerBankName,
-            CustomerBankIBAN = invoiceDao.CustomerBankIBAN,
+            BankNameAndId = invoiceDao.CustomerBankName,
+            BankIBAN = invoiceDao.CustomerBankIBAN,
             CustomerBankBIC = invoiceDao.CustomerBankBIC,
             PaymentStatus = invoiceDao.PaymentStatus,
             PaymentStatusDate = invoiceDao.PaymentStatusDate,
             PaymentStatusUserName = invoiceDao.PaymentStatusUserName,
+            InvoiceCurrency = invoiceDao.InvoiceCurrency,
 
             InvoiceItems = MapRange(invoiceDao.InvoiceItems),
         };

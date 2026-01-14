@@ -15,7 +15,7 @@ using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNam
 namespace MOSTComputers.Services.DataAccess.Documents.DataAccess;
 internal sealed class WarrantyCardItemRepository : IWarrantyCardItemRepository
 {
-    public WarrantyCardItemRepository([FromKeyedServices(ConfigureServices.DataAccessServiceKey)] IConnectionStringProvider connectionStringProvider)
+    public WarrantyCardItemRepository([FromKeyedServices(ConfigureServices.DocumentsDataAccessServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }

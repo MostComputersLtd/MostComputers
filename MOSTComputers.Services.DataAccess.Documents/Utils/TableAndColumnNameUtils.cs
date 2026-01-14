@@ -9,6 +9,8 @@ internal static class TableAndColumnNameUtils
 
     internal const string CustomerDataViewName = "[dbo].[ViewCustomersID]";
 
+    internal const string FirmsTableName = "[dbo].[Firms]";
+
     internal static class InvoicesTable
     {
         internal const string ExportIdColumn = "ExportID";
@@ -44,6 +46,7 @@ internal static class TableAndColumnNameUtils
         internal const string PaymentStatusColumn = "PStatus";
         internal const string PaymentStatusDateColumn = "PStatusDate";
         internal const string PaymentStatusUserNameColumn = "PStatusUserName";
+        internal const string InvoiceCurrencyColumn = "InvCrr";
     }
 
     internal static class InvoiceItemsTable
@@ -107,5 +110,18 @@ internal static class TableAndColumnNameUtils
         internal const string CountryColumn = "Country";
         internal const string AddressColumn = "Address";
         internal const string EmployeeIdColumn = "EmployeeID";
+    }
+
+    internal static class FirmsTable
+    {
+        internal const string IdColumn = "FIRMID";
+        internal const string NameColumn = "NAME";
+        internal const string OrderColumn = "S";
+        internal const string InfoColumn = "INFO";
+        internal const string InvoiceNumberColumn = "CINVNO";
+        internal const string AddressColumn = "ADDRESS";
+        internal const string MPersonColumn = "MPERSON";
+        internal const string TaxNumberColumn = "DNO";
+        internal const string BulstatColumn = "BULSTAT";
     }
 }

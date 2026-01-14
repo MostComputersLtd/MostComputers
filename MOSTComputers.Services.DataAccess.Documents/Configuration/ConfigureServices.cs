@@ -9,12 +9,12 @@ using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts;
 namespace MOSTComputers.Services.DataAccess.Documents.Configuration;
 public static class ConfigureServices
 {
-    internal const string DataAccessServiceKey = "MOSTComputers.Services.DataAccess.Documents.ReadRelationDataAccess";
+    internal const string DocumentsDataAccessServiceKey = "MOSTComputers.Services.DataAccess.Documents.DocumentsDB";
 
-    public static IServiceCollection AddDocumentRepositories(this IServiceCollection services, string documentDBConnectionString)
+    public static IServiceCollection AddDocumentRepositories(this IServiceCollection services, string replicationDBConnectionString)
     {
-        services.AddKeyedScoped<IConnectionStringProvider, ConnectionStringProvider>(DataAccessServiceKey,
-            (_, _) => new ConnectionStringProvider(documentDBConnectionString));
+        services.AddKeyedScoped<IConnectionStringProvider, ConnectionStringProvider>(DocumentsDataAccessServiceKey,
+            (_, _) => new ConnectionStringProvider(replicationDBConnectionString));
 
         AddDapperMappings();
 
@@ -23,6 +23,8 @@ public static class ConfigureServices
 
         services.TryAddScoped<IWarrantyCardItemRepository, WarrantyCardItemRepository>();
         services.TryAddScoped<IWarrantyCardRepository, WarrantyCardRepository>();
+
+        services.TryAddScoped<IFirmDataRepository, FirmDataRepository>();
 
         return services;
     }
@@ -38,6 +40,8 @@ public static class ConfigureServices
             config.AddMap(new WarrantyCardItemDAOEntityMap());
             config.AddMap(new WarrantyCardDAOEntityMap());
             config.AddMap(new WarrantyCardCustomerDataEntityMap());
+
+            config.AddMap(new FirmDataEntityMap());
         });
     }
 }

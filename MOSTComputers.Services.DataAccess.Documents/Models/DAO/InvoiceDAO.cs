@@ -35,6 +35,7 @@ internal sealed class InvoiceDAO
     public string? PaymentStatus { get; set; }
     public DateTime? PaymentStatusDate { get; set; }
     public string? PaymentStatusUserName { get; set; }
+    public int? InvoiceCurrency { get; set; }
 
     public List<InvoiceItemDAO>? InvoiceItems { get; set; }
 }
