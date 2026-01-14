@@ -350,140 +350,156 @@
                 }
             </div>
 
-            <div class="properties-table-container">
-                <table class="properties-table">
-                    <tbody>
+            <div class="properties-list-container">
+                <ul class="properties-list">
 
-                        @for (int i = 0; i < ProductProperties.Count; i++)
-                        {
-                            ProductPropertyDisplayData propertyData = ProductProperties[i];
+                    @for (int i = 0; i < ProductProperties.Count; i++)
+                    {
+                        ProductPropertyDisplayData propertyData = ProductProperties[i];
 
-                            <tr>
-                                <td class="property-td-alignedOnTop property-characteristic-td">
-                                    <select id="propertyCharacteristicSelect-@i"
-                                        @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductProperties)"
-                                        aria-label="Select property characteristic">
+                        <li class="properties-list-item">
+                            <table class="property-table">
+                                <tbody>
+                                    <tr class="property-data-row">
 
-                                        @if (propertyData.ProductCharacteristic is null)
-                                        {
-                                            <option value="" selected disabled>
-                                                -- Not selected --
-                                            </option>
-                                        }
+                                        <td class="property-td-alignedOnTop property-characteristic-td">
+                                            <select id="propertyCharacteristicSelect-@i"
+                                                @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductProperties)"
+                                                aria-label="Select property characteristic">
 
-                                        @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
-                                        {
-                                            <option value="@characteristic.Id"
-                                                selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
-                                                @characteristic.Name
-                                            </option>
-                                        }
-                                    </select>
-                                </td>
+                                                @if (propertyData.ProductCharacteristic is null)
+                                                {
+                                                    <option value="" selected disabled>
+                                                        -- Not selected --
+                                                    </option>
+                                                }
 
-                                <td class="property-value-td property-td-alignedOnTop">
-                                    <div class="property-value-textarea-container">
-                                        <textarea id="@($"{_propertiesTextAreaCommonName}-properties-{i}")"
-                                            name="@_propertiesTextAreaCommonName"
-                                            class="property-value-textarea"
-                                            @bind-value="propertyData.Value"
-                                            @bind-value:event="onchange"
-                                            @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
-                                            spellcheck="false"
-                                            aria-label="Value"
-                                            rows="@_propertiesTextAreaMinRows"
-                                            maxlength="@_propertiesTextAreaMaxLength"
-                                            oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1) + 'px';" />
-                                    </div>
-                                </td>
+                                                @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
+                                                {
+                                                    <option value="@characteristic.Id"
+                                                        selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
+                                                        @characteristic.Name
+                                                    </option>
+                                                }
+                                            </select>
+                                        </td>
 
-                                <td class="property-td-alignedOnTop property-delete-button-td">
-                                    <button class="btn btn-danger"
-                                        @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)"
-                                        aria-label="Delete">
-                                        X
-                                    </button>
-                                </td>
-                            </tr>
+                                        <td class="property-value-td property-td-alignedOnTop">
+                                            <div class="property-value-textarea-container">
+                                                <textarea id="@($"{_propertiesTextAreaCommonName}-properties-{i}")"
+                                                    name="@_propertiesTextAreaCommonName"
+                                                    class="property-value-textarea"
+                                                    @bind-value="propertyData.Value"
+                                                    @bind-value:event="onchange"
+                                                    @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
+                                                    spellcheck="false"
+                                                    aria-label="Value"
+                                                    rows="@_propertiesTextAreaMinRows"
+                                                    maxlength="@_propertiesTextAreaMaxLength"
+                                                    oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
+                                            </div>
+                                        </td>
 
-                            if (propertyData.ValidationMessages.Count > 0)
-                            {
-                                <tr>
-                                    <td colspan="5">
-                                        <ValidationMessages Messages="propertyData.ValidationMessages" />
-                                    </td>
-                                </tr>
-                            }
-                        }
-                    </tbody>
-                </table>
+                                        <td class="property-td-alignedOnTop property-delete-button-td">
+                                            <button class="btn btn-danger"
+                                                @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)"
+                                                aria-label="Delete">
+                                                X
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    @if (propertyData.ValidationMessages.Count > 0)
+                                    {
+                                        <tr>
+                                            <td colspan="1">
+                                            </td>
+                                            <td colspan="4">
+                                                <ValidationMessages Messages="propertyData.ValidationMessages" />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </li>
+                    }
+                </ul>
             </div>
 
             <div class="full-parent-width pb-4 d-flex flex-column">
 
-                <table class="full-parent-width">
-                    <tbody>
+                <div class="properties-list-container">
+                    <ul class="properties-list">
+
                         @for (int i = 0; i < ProductLinks.Count; i++)
                         {
                             ProductPropertyDisplayData propertyData = ProductLinks[i];
 
-                            <tr>
-                                <td class="property-td-alignedOnTop property-characteristic-td">
-                                    <select id="linkCharacteristicSelect-@i"
-                                        @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductLinks)"
-                                        aria-label="Select link characteristic">
+                            <li class="properties-list-item">
+                                <table class="property-table">
+                                    <tbody>
+                                        <tr class="property-data-row">
+                                            <td class="property-td-alignedOnTop property-characteristic-td">
+                                                <select id="linkCharacteristicSelect-@i"
+                                                        @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductLinks)"
+                                                        aria-label="Select link characteristic">
 
-                                        @if (propertyData.ProductCharacteristic is null)
-                                        {
-                                            <option value="" selected disabled>
-                                                -- Not selected --
-                                            </option>
-										}
+                                                    @if (propertyData.ProductCharacteristic is null)
+                                                    {
+                                                        <option value="" selected disabled>
+                                                            -- Not selected --
+                                                        </option>
+                                                    }
 
-                                        @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
+                                                    @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
+                                                    {
+                                                        <option value="@characteristic.Id"
+                                                                selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
+                                                            @characteristic.Name
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </td>
+
+                                            <td class="property-value-td property-td-alignedOnTop">
+                                                <div class="property-value-textarea-container">
+                                                    <textarea id="@($"{_propertiesTextAreaCommonName}-links-{i}")" name="@_propertiesTextAreaCommonName"
+                                                        class="property-value-textarea"
+                                                        @bind-value="propertyData.Value"
+                                                        @bind-value:event="onchange"
+                                                        @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
+                                                        spellcheck="false"
+                                                        aria-label="Value"
+                                                        rows="@_propertiesTextAreaMinRows"
+                                                        maxlength="@_propertiesTextAreaMaxLength"
+                                                        oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
+                                                </div>
+                                            </td>
+
+                                            <td class="property-td-alignedOnTop property-delete-button-td">
+                                                <button class="btn btn-danger"
+                                                    @onclick="() => RemoveProductPropertyFromList(propertyData, ProductLinks)">
+                                                    X
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        @if (propertyData.ValidationMessages.Count > 0)
                                         {
-                                            <option value="@characteristic.Id"
-                                                selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
-                                                @characteristic.Name
-                                            </option>
+                                            <tr>
+                                                <td colspan="1">
+                                                </td>
+                                                <td colspan="4">
+                                                    <ValidationMessages Messages="propertyData.ValidationMessages" />
+                                                </td>
+                                            </tr>
                                         }
-                                    </select>
-                                </td>
-
-                                <td class="property-value-td property-td-alignedOnTop">
-                                    <div class="property-value-textarea-container">
-                                        <textarea id="@($"{_propertiesTextAreaCommonName}-links-{i}")" name="@_propertiesTextAreaCommonName"
-                                            class="property-value-textarea"
-                                            @bind-value="propertyData.Value"
-                                            @bind-value:event="onchange"
-                                            @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
-                                            spellcheck="false"
-                                            aria-label="Value"
-                                            rows="@_propertiesTextAreaMinRows"
-                                            maxlength="@_propertiesTextAreaMaxLength"
-                                            oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1) + 'px';"/>
-                                    </div>
-                                </td>
-
-                                <td class="property-td-alignedOnTop property-delete-button-td">
-                                    <button class="btn btn-danger"
-                                        @onclick="() => RemoveProductPropertyFromList(propertyData, ProductLinks)">
-                                        X
-                                    </button>
-                                </td>
-                            </tr>
-
-                            if (propertyData.ValidationMessages.Count > 0)
-                            {
-                                <tr>
-                                    <td colspan="5">
-                                        <ValidationMessages Messages="propertyData.ValidationMessages" />
-                                    </td>
-                                </tr>
-                            }
+                                    </tbody>
+                                </table>
+                            </li>
                         }
-                    </tbody>
-                </table>
+                    </ul>
+                </div>
             </div>
         </div>
     </ChildContent>
@@ -1564,10 +1580,6 @@
     {
         _draggedImageListItem = draggedItem;
         _draggedItemStartIndex = ProductImages.IndexOf(draggedItem);
-
-        // if (JSModule is null) return;
-
-        // await JSModule.InvokeVoidAsync("onDragStartImageListItem", imageListItemElementId);
     }
 
     private void OnImageItemDragOver(ProductImageListItemDisplayData draggedOverItem)
@@ -1591,10 +1603,6 @@
         _lastImageListItemDragPositionChangeDateTime = DateTime.Now;
 
         StateHasChanged();
-
-        // if (JSModule is null) return;
-
-        // await JSModule.InvokeVoidAsync("onDragOverImageList", e.ClientX, e.ClientY, "productImageDisplayList", DotNetObjectReference.Create(this));
     }
 
     private void OnImageItemDragEnd(ProductImageListItemDisplayData productImageListItemDisplayData)
@@ -1614,23 +1622,6 @@
         _draggedItemStartIndex = null;
 
         return;
-
-        // if (JSModule is null || productImageListItemDisplayData is null) return;
-
-        // int draggedElementNewIndex = await JSModule.InvokeAsync<int>("onDragEndImageListItem", "productImageDisplayList");
-
-        // int currentDraggedElementIndex = ProductImages.IndexOf(productImageListItemDisplayData);
-
-        // if (currentDraggedElementIndex == draggedElementNewIndex) return;
-
-        // ProductImages.RemoveAt(currentDraggedElementIndex);
-
-        // if (currentDraggedElementIndex < draggedElementNewIndex)
-        // {
-        //     draggedElementNewIndex--;
-        // }
-
-        // ProductImages.Insert(draggedElementNewIndex, productImageListItemDisplayData);
     }
 
     private void UpdateImageFileActive(ChangeEventArgs eventArgs, ProductImageListItemDisplayData productImageListItemDisplayData)
@@ -1916,6 +1907,10 @@
         OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
             = await ProductRelatedItemsFullSaveService.SaveProductRelatedItemsAsync(upsertAllImagesAndPromotionFilesRequest);
 
+        ProductProperties.ForEach(x => x.ValidationMessages.Clear());
+        ProductLinks.ForEach(x => x.ValidationMessages.Clear());
+        ProductImages.ForEach(x => x.ValidationMessages.Clear());
+
         return await result.MatchAsync(
             async success =>
             {
@@ -1934,6 +1929,47 @@
             },
             validationResult =>
             {
+                const char endIndexCharacter = ']';
+                const string propertyRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.PropertyRequests)}[";
+                const string imageRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.ImageRequests)}[";
+
+                foreach (ValidationFailure validationFailure in validationResult.Errors)
+                {
+                    if (validationFailure.PropertyName.StartsWith(propertyRequestsStartString))
+                    {
+                        int startIndexOfPropertyIndex = propertyRequestsStartString.Length;
+
+                        int indexOfEndOfPropertyIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfPropertyIndex);
+
+                        if (indexOfEndOfPropertyIndex > 0)
+                        {
+                            string propertyIndexAsString = validationFailure.PropertyName.Substring(startIndexOfPropertyIndex, indexOfEndOfPropertyIndex - startIndexOfPropertyIndex);
+
+                            if (int.TryParse(propertyIndexAsString, out int propertyIndex))
+                            {
+                                propertyDatas[propertyIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
+                            }
+                        }
+                    }
+
+                    if (validationFailure.PropertyName.StartsWith(imageRequestsStartString))
+                    {
+                        int startIndexOfImageIndex = imageRequestsStartString.Length;
+
+                        int indexOfEndOfImageIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfImageIndex);
+
+                        if (indexOfEndOfImageIndex > 0)
+                        {
+                            string imageIndexAsString = validationFailure.PropertyName.Substring(startIndexOfImageIndex, indexOfEndOfImageIndex - startIndexOfImageIndex);
+
+                            if (int.TryParse(imageIndexAsString, out int imageIndex))
+                            {
+                                imageDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
+                            }
+                        }
+                    }
+                }
+
                 return false;
             },
             fileSaveFailureResult =>
