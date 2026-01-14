@@ -7,12 +7,11 @@ public class InvoiceData
     public required DateTime? DueDate { get; set; }
     public int? FirmId { get; set; }
 
-    public required FirmInvoiceData RecipientData { get; set; }
+    public required RecipientFirmInvoiceData RecipientData { get; set; }
     public required FirmInvoiceData SupplierData { get; set; }
     public required List<PurchaseInvoiceData> Purchases { get; set; }
 
     public required decimal VatPercentageFraction { get; set; }
-    public required decimal LevaToEuroExchangeRate { get; set; }
     public string? RecipientFullName { get; set; }
     public required string TypeOfPayment { get; set; }
     public string? AuthorFullName { get; set; }
