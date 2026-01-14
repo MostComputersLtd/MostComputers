@@ -199,6 +199,8 @@ internal static class DataToTextConversion
             ProductNewStatusSearchOptions.ReadyForUse => "Ready",
             ProductNewStatusSearchOptions.Postponed1 => "Post1",
             ProductNewStatusSearchOptions.Postponed2 => "Post2",
+            ProductNewStatusSearchOptions.LastAdded => "Last Added",
+            ProductNewStatusSearchOptions.None => "None",
             _ => null
         };
     }
