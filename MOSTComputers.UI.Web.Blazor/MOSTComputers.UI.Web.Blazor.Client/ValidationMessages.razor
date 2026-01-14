@@ -1,19 +1,54 @@
-﻿@if (Messages is not null && Messages.Any())
+﻿@using FluentValidation.Results
+@using OneOf
+
+@if (Messages is not null)
 {
-    AdditionalAttributesForList.TryGetValue("class", out object? additionalClasses);
+    @if (Messages.Value.IsT0)
+    {
+        IEnumerable<string> messages = Messages.Value.AsT0;
 
-    <ul @attributes="AdditionalAttributesForList" class="validation-list @additionalClasses">
+        AdditionalAttributesForList.TryGetValue("class", out object? additionalClasses);
 
-        @foreach (string message in Messages)
-        {
-            <li @attributes="AdditionalAttributesForListItems">@message</li>
-        }
+        <ul @attributes="AdditionalAttributesForList" class="validation-list @additionalClasses">
 
-    </ul>
+            @foreach (string message in messages)
+            {
+                <li @attributes="AdditionalAttributesForListItems">@message</li>
+            }
+
+        </ul>
+    }
+    else
+    {
+        GetMessagesFromValidationResult messagesFromValidationResult = Messages.Value.AsT1;
+
+        AdditionalAttributesForList.TryGetValue("class", out object? additionalClasses);
+
+        <ul @attributes="AdditionalAttributesForList" class="validation-list @additionalClasses">
+
+            @foreach (ValidationFailure validationFailure in messagesFromValidationResult.ValidationFailures)
+            {
+                @foreach (string validPropertyPath in messagesFromValidationResult.ValidPropertyPaths)
+                {
+                    if (validationFailure.PropertyName == validPropertyPath)
+                    {
+                        <li @attributes="AdditionalAttributesForListItems">@validationFailure.ErrorMessage</li>
+                    }
+                }
+            }
+
+        </ul>
+    }
 }
 
 @code {
-    [Parameter] public IEnumerable<string>? Messages { get; set; }
+    public sealed class GetMessagesFromValidationResult
+    {
+        public required List<string> ValidPropertyPaths { get; init; }
+        public required List<ValidationFailure> ValidationFailures { get; init; }
+    }
+
+    [Parameter] public OneOf<IEnumerable<string>, GetMessagesFromValidationResult>? Messages { get; set; }
 
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object> AdditionalAttributesForList { get; set; } = new();
