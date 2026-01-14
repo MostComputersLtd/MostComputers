@@ -22,12 +22,17 @@ export function closeDialog(dialogId) {
 }
 
 async function overrideDefaultCloseEvent(e) {
+
+    if (!e.target._customDotNetRef) return;
+
     e.preventDefault();
 
     await e.target._customDotNetRef.invokeMethodAsync("OnDefaultCloseAsync");
 }
 
 async function overrideDefaultEscapeKeyEvent(e) {
+    if (!this._customDotNetRef) return;
+
     if (e.key !== "Escape") return;
 
     e.preventDefault();
