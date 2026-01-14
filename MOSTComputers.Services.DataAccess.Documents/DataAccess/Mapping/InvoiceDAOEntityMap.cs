@@ -42,6 +42,7 @@ internal class InvoiceDAOEntityMap : EntityMap<InvoiceDAO>
         Map(x => x.PaymentStatus).ToColumn(PaymentStatusColumn);
         Map(x => x.PaymentStatusDate).ToColumn(PaymentStatusDateColumn);
         Map(x => x.PaymentStatusUserName).ToColumn(PaymentStatusUserNameColumn);
+        Map(x => x.InvoiceCurrency).ToColumn(InvoiceCurrencyColumn);
 
         Map(x => x.InvoiceItems).Ignore();
     }
