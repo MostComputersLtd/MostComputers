@@ -17,13 +17,16 @@
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.Legacy.Contracts
+@using MOSTComputers.Services.Identity.Models
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.UI.Web.Blazor.Client.Product
@@ -40,11 +43,25 @@
 @using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
 @using OneOf
 @using OneOf.Types
 
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
+
+
+
+
+
+
+
+@using Microsoft.Data.SqlClient
+
+
+
+
+
 
 @inject ICategoryService CategoryService
 
@@ -55,10 +72,13 @@
 @inject IProductImageService ProductImageService
 @inject IProductRelatedItemsFullSaveService ProductImageAndPromotionFileSaveService
 @inject IPromotionProductFileService PromotionProductFileService
+@inject IProductWorkStatusesService ProductWorkStatusesService
 @inject IProductXmlProvidingService ProductXmlProvidingService
 @inject ILegacyProductXmlService LegacyProductXmlService
 @inject IProductEditorDataService ProductEditorDataService
 @inject ITransactionExecuteService TransactionExecuteService
+
+@inject RoleManager<PasswordsTableOnlyRole> TEMP__RoleManager
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -666,13 +686,13 @@
 @if (_promotionProductFilesPopupData is not null)
 {
     <PromotionProductFileEditorPopup
-    @bind-IsVisible="IsPromotionProductFilePopupVisible"
-    PopupMarginOptions='new() { Left = "5%", Right = "5%", Top = "5%", Bottom = "5%" }'
-    Product="_promotionProductFilesPopupData.ProductData.Product"
-    PromotionProductFiles="_promotionProductFilesPopupData.PromotionProductFiles"
-    ShouldDisplaySaveButtonInSingleEditor="false"
-    ShouldDisplayAddButton="false"
-    ShouldDisplayDeleteButton="false"/>
+        @bind-IsVisible="IsPromotionProductFilePopupVisible"
+        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'
+        Product="_promotionProductFilesPopupData.ProductData.Product"
+        PromotionProductFiles="_promotionProductFilesPopupData.PromotionProductFiles"
+        ShouldDisplaySaveButtonInSingleEditor="false"
+        ShouldDisplayAddButton="false"
+        ShouldDisplayDeleteButton="false"/>
 }
 
 @*@if (ProductToDisplay is not null)
@@ -937,15 +957,25 @@
     private bool IsPromotionProductFilePopupVisible { get; set; } = false;
     private PromotionProductFilesPopupData? _promotionProductFilesPopupData { get; set; } = null;
 
+    private string? _currentUserName = null;
+
     private IJSObjectReference? _jsModule;
 
     protected override async Task OnInitializedAsync()
     {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        Task<AuthenticationState> currentAuthenticationStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        await HandleAuthenticationStateChanged(currentAuthenticationStateTask);
+
         List<Category> allCategories = await CategoryService.GetAllAsync();
 
         CategoriesInSelect = allCategories
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
+
+        AddStatusesToAllProductsWithoutStatuses();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -954,6 +984,18 @@
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductEditor.razor.js");
         }
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> authenticationStateTask)
+    {
+        await HandleAuthenticationStateChanged(authenticationStateTask);
+    }
+
+    private async Task HandleAuthenticationStateChanged(Task<AuthenticationState> authenticationStateTask)
+    {
+        AuthenticationState authenticationState = await authenticationStateTask;
+
+        _currentUserName = authenticationState.User.Identity?.Name;
     }
 
     private void OrderByImagesCount()
@@ -1136,6 +1178,31 @@
         };
 
         IsPromotionProductFilePopupVisible = true;
+    }
+
+    private async Task AddStatusesToAllProductsWithoutStatuses()
+    {
+        if (_currentUserName is null) return;
+
+        ProductSearchRequest productSearchRequest = new()
+        {
+            ProductNewStatuses = [ProductNewStatusSearchOptions.None],
+        };
+
+        List<Product> productsWithoutStatuses = await ProductSearchService.SearchProductsAsync(productSearchRequest);
+
+        if (productsWithoutStatuses.Count > 0) return;
+
+        ServiceProductWorkStatusesCreateManyWithSameDataRequest createAllRequest = new()
+        {
+            ProductIds = productsWithoutStatuses.Select(x => x.Id).ToList(),
+            ProductNewStatus = ProductNewStatus.New,
+            ProductXmlStatus = ProductXmlStatus.NotReady,
+            ReadyForImageInsert = false,
+            CreateUserName = _currentUserName,
+        };
+
+        await ProductWorkStatusesService.InsertAllIfTheyDontExistAsync(createAllRequest);
     }
 
     private async Task SearchProductsAsync()
