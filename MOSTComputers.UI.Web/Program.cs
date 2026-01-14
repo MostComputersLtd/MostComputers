@@ -17,7 +17,6 @@ using MOSTComputers.Services.SearchStringOrigin.Configuration;
 using MOSTComputers.Services.TransactionalFileManagement.Services;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using MOSTComputers.UI.Web.Controllers;
-using MOSTComputers.UI.Web.Middlewares;
 using MOSTComputers.UI.Web.Models.Authentication;
 using MOSTComputers.UI.Web.Models.Configuration;
 using MOSTComputers.UI.Web.Services;
