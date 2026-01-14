@@ -305,6 +305,10 @@ p {
     margin-bottom: 0.5em;
 }
 
+.download-confirmation-popup-download-info-date-text {
+    text-wrap-mode: nowrap;
+}
+
 .download-confirmation-popup-download-question-text {
     font-size: medium;
     white-space: normal;
