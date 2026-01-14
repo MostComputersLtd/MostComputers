@@ -8,4 +8,5 @@ public enum ProductNewStatusSearchOptions
     Postponed1 = 3,
     Postponed2 = 4,
     LastAdded = 5,
+    None = 6,
 }

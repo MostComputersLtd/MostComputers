@@ -8,6 +8,7 @@ using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.UI.Web.Blazor.Models.Search.Product;
 using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts;
+using OneOf.Types;
 
 namespace MOSTComputers.UI.Web.Blazor.Services.Search;
 
@@ -459,15 +460,23 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             Dictionary<int, ProductWorkStatuses> statusByProductId = productStatuses.ToDictionary(x => x.ProductId);
 
-            HashSet<ProductNewStatus> allowedBasicProductNewStatuses = productNewStatuses
+            List<ProductNewStatus> allowedBasicProductNewStatuses = productNewStatuses
                 .Select(x => GetProductNewStatusFromSearchOptions(x))
                 .Where(x => x is not null)
                 .Select(x => (ProductNewStatus)x!)
-                .ToHashSet();
-
+                .ToList();
+            
             foreach (Product product in products)
             {
-                if (!statusByProductId.TryGetValue(product.Id, out ProductWorkStatuses? productWorkStatuses)) continue;
+                if (!statusByProductId.TryGetValue(product.Id, out ProductWorkStatuses? productWorkStatuses))
+                {
+                    if (productNewStatuses.Contains(ProductNewStatusSearchOptions.None))
+                    {
+                        filteredProducts.Add(product);
+                    }
+
+                    continue;
+                }
 
                 if (!allowedBasicProductNewStatuses.Contains(productWorkStatuses.ProductNewStatus)) continue;
 
@@ -496,6 +505,7 @@ internal sealed class ProductSearchService : IProductSearchService
             ProductNewStatusSearchOptions.Postponed1 => ProductNewStatus.Postponed1,
             ProductNewStatusSearchOptions.Postponed2 => ProductNewStatus.Postponed2,
             ProductNewStatusSearchOptions.LastAdded => null,
+            ProductNewStatusSearchOptions.None => null,
             _ => null
         };
     }
