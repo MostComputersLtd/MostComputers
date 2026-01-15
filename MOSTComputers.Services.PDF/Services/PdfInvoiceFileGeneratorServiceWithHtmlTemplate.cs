@@ -1,17 +1,14 @@
 ﻿using HtmlAgilityPack;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
+using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.PDF.Models.Invoices;
 using MOSTComputers.Services.PDF.Services.Contracts;
 
 using static MOSTComputers.Services.PDF.Utils.CurrencyBasicOperationUtils;
 using static MOSTComputers.Services.PDF.Utils.CurrencyToWordsConversionUtils;
 using static MOSTComputers.Services.PDF.Utils.HtmlBasicOperationUtils;
-using MOSTComputers.Services.Currencies.Contracts;
-using MOSTComputers.Models.Product.Models;
-using OneOf;
-using OneOf.Types;
-using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.PDF.Services;
 internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileGeneratorService
@@ -47,6 +44,8 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
     private const string _invoiceTemplateRightFirmVatIdElementId = "invoiceTemplateRightFirmVatId";
     private const string _invoiceTemplateRightFirmMRPersonElementId = "invoiceTemplateRightFirmMRPerson";
 
+    private const string _invoiceTemplateInvoiceNameElementId = "invoiceTemplateInvoiceName";
+
     private const string _invoiceTemplateInvoiceIdElementId = "invoiceTemplateInvoiceId";
 
     private const string _invoiceTemplateDateOfIssueElementId = "invoiceTemplateDateOfIssue";
@@ -81,7 +80,6 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
     private const string _invoiceTemplateLeftFirmMRPersonSignatureInitialsElementId = "invoiceTemplateLeftFirmMRPersonSignatureInitials";
     private const string _invoiceTemplateInvoiceCreatorElementId = "invoiceTemplateInvoiceCreator";
     private const string _invoiceTemplateLeagalTextElementId = "invoiceTemplateLeagalText";
-
     private static readonly MarginOptions _defaultChromePdfMargins = new() { Left = "0.4in", Right = "0.39in", Top = "0.4in", Bottom = "0.39in" };
 
     internal static readonly string[] _defaultChromeBrowserOptions = new[]
@@ -123,6 +121,10 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
         HtmlDocument htmlDocument = new();
 
         htmlDocument.Load(_htmlTemplateFilePath);
+
+        string invoiceName = invoiceData.InvoiceDirection != InvoiceDirection.Credit
+            ? "ФАКТУРА"
+            : $"КРЕДИТНО ИЗВЕСТИЕ (Към фактура {invoiceData.RelatedInvoiceNumber})";
 
         string invoiceDateAsString = (invoiceData.Date is not null) ? invoiceData.Date.Value.ToString("dd.MM.yyyy") : string.Empty;
         string invoiceDueDateAsString = (invoiceData.DueDate is not null) ? invoiceData.DueDate.Value.ToString("dd.MM.yyyy") : string.Empty;
@@ -167,7 +169,9 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmIdElementId, invoiceData.SupplierData.FirmOrPersonId ?? string.Empty);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmVatIdElementId, invoiceData.SupplierData.VatId ?? string.Empty);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmMRPersonElementId, invoiceData.SupplierData.MRPersonFullName ?? string.Empty);
-        
+
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateInvoiceNameElementId, invoiceName);
+
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateInvoiceIdElementId, invoiceData.InvoiceNumber.ToString().PadLeft(10, '0'));
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateDateOfIssueElementId, invoiceDateAsString);

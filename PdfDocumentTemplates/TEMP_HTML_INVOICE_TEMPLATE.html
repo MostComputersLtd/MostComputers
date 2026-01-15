@@ -118,8 +118,13 @@
             padding: 10px;
         }
 
-        .invoiceTemplateOFVisible {
+        .invoiceTemplateOverflowVisible {
             overflow: visible !important;
+        }
+
+        .invoiceTemplateInvoiceName {
+            text-align: left;
+            font-size: 15px;
         }
 
         .invoiceTemplateOriginalCopy {
@@ -336,8 +341,8 @@
                 </tbody>
             </table>
         </div>
-        <div class="invoiceTemplateInvoiceData invoiceTemplateOFVisible" id="invoiceTemplateInvoiceData_original">
-            <h2>ФАКТУРА</h2>
+        <div class="invoiceTemplateInvoiceData invoiceTemplateOverflowVisible" id="invoiceTemplateInvoiceData_original">
+            <h2 id="invoiceTemplateInvoiceName" class="invoiceTemplateInvoiceName">ФАКТУРА</h2>
             <div class="invoiceTemplateLeftColumn invoiceTemplateOriginalCopy" style="width:200px; overflow:visible !important;">
                 Оригинал
             </div>
