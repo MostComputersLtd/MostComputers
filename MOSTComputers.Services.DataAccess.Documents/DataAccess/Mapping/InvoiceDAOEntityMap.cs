@@ -32,7 +32,7 @@ internal class InvoiceDAOEntityMap : EntityMap<InvoiceDAO>
         Map(x => x.PratkaId).ToColumn(PratkaIdColumn);
         Map(x => x.InvType).ToColumn(InvTypeColumn);
         Map(x => x.InvBasis).ToColumn(InvBasisColumn);
-        Map(x => x.RelatedInvNo).ToColumn(RelatedInvNoColumn);
+        Map(x => x.RelatedInvoiceNumber).ToColumn(RelatedInvNoColumn);
         Map(x => x.IsVATRegistered).ToColumn(IsVATRegisteredColumn);
         Map(x => x.PrintedNETAmount).ToColumn(PrintedNETAmountColumn);
         Map(x => x.DueDate).ToColumn(DueDateColumn);

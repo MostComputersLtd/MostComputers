@@ -277,7 +277,7 @@ public sealed class DocumentsModel : PageModel
             PratkaId = invoice.PratkaId,
             InvType = invoice.InvType,
             InvBasis = invoice.InvBasis,
-            RelatedInvNo = invoice.RelatedInvNo,
+            RelatedInvNo = invoice.RelatedInvoiceNumber,
             IsVATRegistered = invoice.IsVATRegistered,
             PrintedNETAmount = invoice.PrintedNETAmount,
             DueDate = invoice.DueDate,

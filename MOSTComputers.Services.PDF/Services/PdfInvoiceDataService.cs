@@ -117,7 +117,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
             PratkaId = invoice.PratkaId,
             InvType = invoice.InvType,
             InvBasis = invoice.InvBasis,
-            RelatedInvNo = invoice.RelatedInvNo,
+            RelatedInvoiceNumber = invoice.RelatedInvoiceNumber,
             IsVATRegistered = invoice.IsVATRegistered,
         };
     }

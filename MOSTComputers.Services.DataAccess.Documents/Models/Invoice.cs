@@ -8,7 +8,7 @@ public class Invoice
     public int InvoiceId { get; init; }
     public int? FirmId { get; init; }
     public int? CustomerBID { get; init; }
-    public int? InvoiceDirection { get; init; }
+    public InvoiceDirection? InvoiceDirection { get; init; }
     public string? CustomerName { get; init; }
     public string? MPerson { get; init; }
     public string CustomerAddress { get; init; }
@@ -24,7 +24,7 @@ public class Invoice
     public int? PratkaId { get; init; }
     public int? InvType { get; init; }
     public string? InvBasis { get; init; }
-    public string? RelatedInvNo { get; init; }
+    public string? RelatedInvoiceNumber { get; init; }
     public int? IsVATRegistered { get; init; }
     public decimal? PrintedNETAmount { get; init; }
     public DateTime? DueDate { get; init; }

@@ -1,4 +1,6 @@
-﻿namespace MOSTComputers.Services.PDF.Models.Invoices;
+﻿using MOSTComputers.Services.DataAccess.Documents.Models;
+
+namespace MOSTComputers.Services.PDF.Models.Invoices;
 public class InvoiceData
 {
     public required int InvoiceNumber { get; set; }
@@ -16,10 +18,10 @@ public class InvoiceData
     public required string TypeOfPayment { get; set; }
     public string? AuthorFullName { get; set; }
 
-    internal int? InvoiceDirection { get; set; }
+    internal InvoiceDirection? InvoiceDirection { get; set; }
     internal int? PratkaId { get; set; }
     internal int? InvType { get; set; }
     internal string? InvBasis { get; set; }
-    internal string? RelatedInvNo { get; set; }
+    internal string? RelatedInvoiceNumber { get; set; }
     internal int? IsVATRegistered { get; set; }
 }

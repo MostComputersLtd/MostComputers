@@ -25,7 +25,7 @@ internal sealed class InvoiceDAO
     public int? PratkaId { get; set; }
     public int? InvType { get; set; }
     public string? InvBasis { get; set; }
-    public string? RelatedInvNo { get; set; }
+    public string? RelatedInvoiceNumber { get; set; }
     public int? IsVATRegistered { get; set; }
     public decimal? PrintedNETAmount { get; set; }
     public DateTime? DueDate { get; set; }
