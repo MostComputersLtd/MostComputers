@@ -743,7 +743,12 @@
 
 		string newSourceUrl = $"/{PdfInvoiceDataEndpoints.EndpointGroupRoute}/{invoice.InvoiceNumber}";
 
-		if (_pdfFileSourceUrl == newSourceUrl) return;
+		if (_pdfFileSourceUrl == newSourceUrl)
+		{
+			_selectedInvoice = invoice;
+
+			return;
+		}
 
 		_pdfFileSourceUrl = newSourceUrl;
 		_pdfDownloadFileNamePrefix = invoice.InvoiceNumber ?? "MOST_INVOICE";
@@ -773,7 +778,12 @@
 
 		string newSourceUrl = $"/{PdfWarrantyCardDataWithoutPricesEndpoints.EndpointGroupRoute}/{warrantyCard.OrderId}";
 
-		if (_pdfFileSourceUrl == newSourceUrl) return;
+		if (_pdfFileSourceUrl == newSourceUrl)
+		{
+			_selectedWarrantyCard = warrantyCard;
+
+			return;
+		}
 
 		_pdfFileSourceUrl = newSourceUrl;
 		_pdfDownloadFileNamePrefix = warrantyCard?.OrderId.ToString() ?? "MOST_WARRANTY_CARD";
