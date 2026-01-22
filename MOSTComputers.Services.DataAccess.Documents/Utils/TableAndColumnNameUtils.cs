@@ -7,6 +7,9 @@ internal static class TableAndColumnNameUtils
     internal const string WarrantyCardsTableName = "[dbo].[ExportedWarrantyCards]";
     internal const string WarrantyCardItemsTableName = "[dbo].[ExportedWarrantyCardItems]";
 
+    internal const string InvoiceDownloadStatusesTableName = "[dbo].[ImportedInvoiceStatuses]";
+    internal const string WarrantyCardDownloadStatusesTableName = "[dbo].[ImportedWCStatuses]";
+
     internal const string CustomerDataViewName = "[dbo].[ViewCustomersID]";
 
     internal const string FirmsTableName = "[dbo].[Firms]";
@@ -123,5 +126,25 @@ internal static class TableAndColumnNameUtils
         internal const string MPersonColumn = "MPERSON";
         internal const string TaxNumberColumn = "DNO";
         internal const string BulstatColumn = "BULSTAT";
+    }
+
+    internal static class InvoiceDownloadStatusesTable
+    {
+        internal const string IdColumn = "ImportedStatusID";
+        internal const string ExportIdColumn = "ExportID";
+	    internal const string InvoiceIdColumn = "InvID";
+	    internal const string ImportedStatusColumn = "ImportedStatus";
+	    internal const string DateColumn = "ImportedStatusDate";
+	    internal const string UserNameColumn = "ImportedStatusUser";
+    }
+
+    internal static class WarrantyCardDownloadStatusesTable
+    {
+        internal const string IdColumn = "ImportedStatusID";
+        internal const string ExportIdColumn = "ExportID";
+        internal const string OrderIdColumn = "OrdID";
+        internal const string ImportedStatusColumn = "ImportedStatus";
+        internal const string DateColumn = "ImportedStatusDate";
+        internal const string UserNameColumn = "ImportedStatusUser";
     }
 }

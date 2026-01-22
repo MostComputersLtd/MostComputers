@@ -4,4 +4,5 @@ public sealed class WarrantyCardByStringSearchRequest
 {
     public required string Keyword { get; set; }
     public required WarrantyCardByStringSearchOptions SearchOption { get; set; }
+    public required WarrantyCardByStringSearchType SearchType { get; set; }
 }

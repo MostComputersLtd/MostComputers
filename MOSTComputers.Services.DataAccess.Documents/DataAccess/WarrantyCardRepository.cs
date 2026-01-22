@@ -24,6 +24,8 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
         _connectionStringProvider = connectionStringProvider;
     }
 
+    private const string _warrantyCardsTableNameAliasInQueryBase = "warrantyCards";
+
     const string _selectWithItemsQueryBase =
         $"""
         SELECT warrantyCards.{ExportIdColumn},
@@ -322,7 +324,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
                 parameters.Add(parameterName, warrantyCardByIdSearchRequest.Id, DbType.Int32);
 
                 string whereStatement = GetWarrantyCardQueryWhereStatementForIdSearch(
-                    warrantyCardByIdSearchRequest.SearchOption, parameterName);
+                    warrantyCardByIdSearchRequest.SearchOption, _warrantyCardsTableNameAliasInQueryBase, parameterName);
 
                 whereStatementsInIdSearchRequests.Add(whereStatement);
             }
@@ -349,7 +351,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
                 parameters.Add(parameterName, warrantyCardByStringSearchRequest.Keyword, DbType.String);
 
                 string whereStatement = GetWarrantyCardQueryWhereStatementForKeywordSearch(
-                    warrantyCardByStringSearchRequest.SearchOption, parameterName);
+                    warrantyCardByStringSearchRequest.SearchOption, warrantyCardByStringSearchRequest.SearchType, parameterName);
 
                 whereStatementsInStringSearchRequests.Add(whereStatement);
             }
@@ -425,15 +427,16 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     private static string GetWarrantyCardQueryWhereStatementForIdSearch(
        WarrantyCardByIdSearchOptions invoiceByIdSearchOptions,
+       string tableName,
        string idParameterName)
     {
         idParameterName = GetParameterNameWithStartingSymbol(idParameterName);
 
         string idToCheckInQuery = invoiceByIdSearchOptions switch
         {
-            WarrantyCardByIdSearchOptions.ByExportId => ExportIdColumn,
+            WarrantyCardByIdSearchOptions.ByExportId => $"{tableName}.{ExportIdColumn}",
             WarrantyCardByIdSearchOptions.ByExportUserId => ExportUserIdColumn,
-            WarrantyCardByIdSearchOptions.ByOrderId => OrderIdColumn,
+            WarrantyCardByIdSearchOptions.ByOrderId => $"{tableName}.{OrderIdColumn}",
             WarrantyCardByIdSearchOptions.ByCustomerBID => CustomerBIDColumn,
 
             _ => throw new NotSupportedException($"Value {invoiceByIdSearchOptions} is not supported"),
@@ -444,16 +447,25 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     private static string GetWarrantyCardQueryWhereStatementForKeywordSearch(
         WarrantyCardByStringSearchOptions warrantyCardByStringSearchOptions,
+        WarrantyCardByStringSearchType warrantyCardByStringSearchType,
         string parameterName)
     {
         parameterName = GetParameterNameWithStartingSymbol(parameterName);
 
-        return warrantyCardByStringSearchOptions switch
+        string columnNameToCompareAgainst = warrantyCardByStringSearchOptions switch
         {
-            WarrantyCardByStringSearchOptions.ByExportUser => $"CHARINDEX({parameterName}, {ExportUserColumn}) > 0",
-            WarrantyCardByStringSearchOptions.ByCustomerName => $"CHARINDEX({parameterName}, {CustomerNameColumn}) > 0",
+            WarrantyCardByStringSearchOptions.ByExportUser => ExportUserColumn,
+            WarrantyCardByStringSearchOptions.ByCustomerName => CustomerNameColumn,
 
             _ => throw new NotSupportedException($"Value {warrantyCardByStringSearchOptions} is not supported"),
+        };
+
+        return warrantyCardByStringSearchType switch
+        {
+            WarrantyCardByStringSearchType.DataContainsValue => $"CHARINDEX({parameterName}, {columnNameToCompareAgainst}) > 0",
+            WarrantyCardByStringSearchType.DataExactlyMatchesValue => $"{parameterName} = {columnNameToCompareAgainst}",
+
+            _ => throw new NotSupportedException($"Value {warrantyCardByStringSearchType} is not supported"),
         };
     }
 

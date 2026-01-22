@@ -436,7 +436,7 @@ internal class InvoiceRepository : IInvoiceRepository
                 parameters.Add(parameterName, invoiceByStringSearchRequest.Keyword, DbType.String);
 
                 string whereStatement = GetInvoiceQueryWhereStatementForKeywordSearch(
-                    invoiceByStringSearchRequest.SearchOption, parameterName);
+                    invoiceByStringSearchRequest.SearchOption, invoiceByStringSearchRequest.SearchType, parameterName);
 
                 whereStatementsInStringSearchRequests.Add(whereStatement);
             }
@@ -532,26 +532,35 @@ internal class InvoiceRepository : IInvoiceRepository
 
     private static string GetInvoiceQueryWhereStatementForKeywordSearch(
         InvoiceByStringSearchOptions invoiceByStringSearchOptions,
+        InvoiceByStringSearchType invoiceByStringSearchType,
         string parameterName)
     {
         parameterName = GetParameterNameWithStartingSymbol(parameterName);
 
-        return invoiceByStringSearchOptions switch
+        string columnNameToCompareAgainst = invoiceByStringSearchOptions switch
         {
-            InvoiceByStringSearchOptions.ByExportUser => $"CHARINDEX({parameterName}, {ExportUserColumn}) > 0",
-            InvoiceByStringSearchOptions.ByCustomerName => $"CHARINDEX({parameterName}, {CustomerNameColumn}) > 0",
-            InvoiceByStringSearchOptions.ByMPerson => $"CHARINDEX({parameterName}, {MPersonColumn}) > 0",
-            InvoiceByStringSearchOptions.ByCustomerAddress => $"CHARINDEX({parameterName}, {CustomerAddressColumn}) > 0",
-            InvoiceByStringSearchOptions.ByInvoiceNumber => $"CHARINDEX({parameterName}, {InvoiceNumberColumn}) > 0",
-            InvoiceByStringSearchOptions.ByRPerson => $"CHARINDEX({parameterName}, {RPersonColumn}) > 0",
-            InvoiceByStringSearchOptions.ByBulstat => $"CHARINDEX({parameterName}, {BulstatColumn}) > 0",
-            InvoiceByStringSearchOptions.ByRelatedInvNo => $"CHARINDEX({parameterName}, {RelatedInvNoColumn}) > 0",
-            InvoiceByStringSearchOptions.ByCustomerBankNameAndId => $"CHARINDEX({parameterName}, {CustomerBankNameColumn}) > 0",
-            InvoiceByStringSearchOptions.ByCustomerBankIBAN => $"CHARINDEX({parameterName}, {CustomerBankIBANColumn}) > 0",
-            InvoiceByStringSearchOptions.ByCustomerBankBIC => $"CHARINDEX({parameterName}, {CustomerBankBICColumn}) > 0",
-            InvoiceByStringSearchOptions.ByPaymentStatusUserName => $"CHARINDEX({parameterName}, {PaymentStatusUserNameColumn}) > 0",
+            InvoiceByStringSearchOptions.ByExportUser => ExportUserColumn,
+            InvoiceByStringSearchOptions.ByCustomerName => CustomerNameColumn,
+            InvoiceByStringSearchOptions.ByMPerson => MPersonColumn,
+            InvoiceByStringSearchOptions.ByCustomerAddress => CustomerAddressColumn,
+            InvoiceByStringSearchOptions.ByInvoiceNumber => InvoiceNumberColumn,
+            InvoiceByStringSearchOptions.ByRPerson => RPersonColumn,
+            InvoiceByStringSearchOptions.ByBulstat => BulstatColumn,
+            InvoiceByStringSearchOptions.ByRelatedInvNo => RelatedInvNoColumn,
+            InvoiceByStringSearchOptions.ByCustomerBankNameAndId => CustomerBankNameColumn,
+            InvoiceByStringSearchOptions.ByCustomerBankIBAN => CustomerBankIBANColumn,
+            InvoiceByStringSearchOptions.ByCustomerBankBIC => CustomerBankBICColumn,
+            InvoiceByStringSearchOptions.ByPaymentStatusUserName => PaymentStatusUserNameColumn,
 
             _ => throw new NotSupportedException($"Value {invoiceByStringSearchOptions} is not supported"),
+        };
+
+        return invoiceByStringSearchType switch
+        {
+            InvoiceByStringSearchType.DataContainsValue => $"CHARINDEX({parameterName}, {columnNameToCompareAgainst}) > 0",
+            InvoiceByStringSearchType.DataExactlyMatchesValue => $"{parameterName} = {columnNameToCompareAgainst}",
+
+            _ => throw new NotSupportedException($"Value {invoiceByStringSearchType} is not supported"),
         };
     }
 

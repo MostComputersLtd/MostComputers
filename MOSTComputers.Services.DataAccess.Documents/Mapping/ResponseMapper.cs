@@ -37,7 +37,7 @@ internal static class ResponseMapper
             DueDate = invoiceDao.DueDate,
             BankNameAndId = invoiceDao.CustomerBankName,
             BankIBAN = invoiceDao.CustomerBankIBAN,
-            CustomerBankBIC = invoiceDao.CustomerBankBIC,
+            BankBIC = invoiceDao.CustomerBankBIC,
             PaymentStatus = invoiceDao.PaymentStatus,
             PaymentStatusDate = invoiceDao.PaymentStatusDate,
             PaymentStatusUserName = invoiceDao.PaymentStatusUserName,

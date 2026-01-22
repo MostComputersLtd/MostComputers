@@ -11,7 +11,7 @@ public class Invoice
     public InvoiceDirection? InvoiceDirection { get; init; }
     public string? CustomerName { get; init; }
     public string? MPerson { get; init; }
-    public string CustomerAddress { get; init; }
+    public required string CustomerAddress { get; init; }
     public DateTime? InvoiceDate { get; init; }
     public int? VatPercent { get; init; }
     public string? UserName { get; init; }
@@ -30,7 +30,7 @@ public class Invoice
     public DateTime? DueDate { get; init; }
     public string? BankNameAndId { get; init; }
     public string? BankIBAN { get; init; }
-    public string? CustomerBankBIC { get; init; }
+    public string? BankBIC { get; init; }
     public string? PaymentStatus { get; init; }
     public DateTime? PaymentStatusDate { get; init; }
     public string? PaymentStatusUserName { get; init; }
