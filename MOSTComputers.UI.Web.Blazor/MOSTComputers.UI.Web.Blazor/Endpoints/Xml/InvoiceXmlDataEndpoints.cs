@@ -23,16 +23,26 @@ internal static class InvoiceXmlDataEndpoints
         [FromRoute] int invoiceId,
         HttpContext httpContext,
         [FromServices] IInvoiceRepository invoiceRepository,
-        [FromServices] IInvoiceToXmlService invoiceToXmlService)
+        [FromServices] IInvoiceToXmlService invoiceToXmlService,
+        [FromServices] IFirmDataRepository firmDataRepository)
     {
         Invoice? invoice = await invoiceRepository.GetInvoiceByIdAsync(invoiceId);
 
         List<Invoice> invoicesInXml = invoice is not null ? [invoice] : [];
 
+        FirmData? firmData = null;
+        
+        if (invoice?.FirmId is not null)
+        {
+            firmData = await firmDataRepository.GetByIdAsync(invoice.FirmId.Value);
+        }
+
+        List<FirmData>? firmDatas = firmData is not null ? [firmData] : null;
+
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await invoiceToXmlService.GetXmlForInvoicesAsync(httpContext.Response.Body, invoicesInXml);
+        await invoiceToXmlService.GetXmlForInvoicesAsync(httpContext.Response.Body, invoicesInXml, firmDatas);
 
         return Results.Empty;
     }
@@ -41,11 +51,14 @@ internal static class InvoiceXmlDataEndpoints
         [FromBody] List<int> invoiceIds,
         HttpContext httpContext,
         [FromServices] IInvoiceRepository invoiceRepository,
-        [FromServices] IInvoiceToXmlService invoiceToXmlService)
+        [FromServices] IInvoiceToXmlService invoiceToXmlService,
+        [FromServices] IFirmDataRepository firmDataRepository)
     {
         invoiceIds = invoiceIds.Distinct().Where(x => x > 0).ToList();
 
         List<Invoice> invoices = await invoiceRepository.GetInvoicesByIdsAsync(invoiceIds);
+
+        List<FirmData> firmDatas = await firmDataRepository.GetAllAsync();
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
