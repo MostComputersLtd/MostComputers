@@ -29,9 +29,9 @@ public sealed class InvoiceDisplayData
     public int? IsVATRegistered { get; init; }
     public decimal? PrintedNETAmount { get; init; }
     public DateTime? DueDate { get; init; }
-    public string? CustomerBankNameAndId { get; init; }
-    public string? CustomerBankIBAN { get; init; }
-    public string? CustomerBankBIC { get; init; }
+    public string? BankNameAndId { get; init; }
+    public string? BankIBAN { get; init; }
+    public string? BankBIC { get; init; }
     public string? PaymentStatus { get; init; }
     public DateTime? PaymentStatusDate { get; init; }
     public string? PaymentStatusUserName { get; init; }
