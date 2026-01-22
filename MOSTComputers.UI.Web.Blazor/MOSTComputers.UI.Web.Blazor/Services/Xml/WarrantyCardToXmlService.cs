@@ -85,7 +85,6 @@ internal sealed class WarrantyCardToXmlService : IWarrantyCardToXmlService
             OrderId = warrantyCardItem.OrderId,
             ProductId = warrantyCardItem.ProductId,
             ProductName = warrantyCardItem.ProductName,
-            PriceInLeva = warrantyCardItem.PriceInLeva,
             Quantity = warrantyCardItem.Quantity,
             SerialNumber = warrantyCardItem.SerialNumber,
             WarrantyCardItemTermInMonths = warrantyCardItem.WarrantyCardItemTermInMonths,
