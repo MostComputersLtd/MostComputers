@@ -4,6 +4,8 @@ using System.Xml;
 namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.Documents.WarrantyCardData;
 public sealed class XmlWarrantyCard : IXmlAsyncSerializable
 {
+    private const string _dateFormat = "MMM dd yyyy T:HH:mm:ss";
+
     public int ExportId { get; init; }
     public DateTime? ExportDate { get; init; }
     public int? ExportUserId { get; init; }
@@ -62,6 +64,11 @@ public sealed class XmlWarrantyCard : IXmlAsyncSerializable
 
         await writer.WriteAttributeStringAsync(null, "orderId", null, OrderId.ToString());
 
+        if (ShouldDisplayCustomerBID())
+        {
+            await writer.WriteElementStringAsync(null, "customerBID", null, CustomerBID!.Value.ToString());
+        }
+
         if (ShouldDisplayCustomerName())
         {
             await writer.WriteElementStringAsync(null, "customerName", null, CustomerName!.ToString());
@@ -69,7 +76,7 @@ public sealed class XmlWarrantyCard : IXmlAsyncSerializable
 
         if (ShouldDisplayWarrantyCardDate())
         {
-            await writer.WriteElementStringAsync(null, "date", null, WarrantyCardDate!.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+            await writer.WriteElementStringAsync(null, "date", null, WarrantyCardDate!.Value.ToString(_dateFormat));
         }
 
         if (ShouldDisplayWarrantyCardTerm())

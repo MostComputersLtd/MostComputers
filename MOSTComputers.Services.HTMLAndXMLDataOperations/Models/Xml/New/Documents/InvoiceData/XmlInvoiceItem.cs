@@ -8,7 +8,7 @@ public sealed class XmlInvoiceItem : IXmlAsyncSerializable
     public int? ExportId { get; init; }
     public int IEID { get; init; }
     public string? Name { get; init; }
-    public decimal? PriceInLeva { get; init; }
+    public decimal? Price { get; init; }
     public int? Quantity { get; init; }
     public int? DisplayOrder { get; init; }
 
@@ -19,7 +19,7 @@ public sealed class XmlInvoiceItem : IXmlAsyncSerializable
 
     public bool ShouldDisplayPriceInLeva()
     {
-        return PriceInLeva is not null;
+        return Price is not null;
     }
 
     public bool ShouldDisplayQuantity()
@@ -48,7 +48,7 @@ public sealed class XmlInvoiceItem : IXmlAsyncSerializable
 
         if (ShouldDisplayPriceInLeva())
         {
-            await writer.WriteElementStringAsync(null, "priceInLeva", null, PriceInLeva!.Value.ToString());
+            await writer.WriteElementStringAsync(null, "price", null, Price!.Value.ToString());
         }
 
         if (ShouldDisplayQuantity())

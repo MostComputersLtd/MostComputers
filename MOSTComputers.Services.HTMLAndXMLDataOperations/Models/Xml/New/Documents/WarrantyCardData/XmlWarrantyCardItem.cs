@@ -9,7 +9,6 @@ public sealed class XmlWarrantyCardItem : IXmlAsyncSerializable
     public int OrderId { get; init; }
     public int? ProductId { get; init; }
     public string? ProductName { get; init; }
-    public decimal? PriceInLeva { get; init; }
     public int? Quantity { get; init; }
     public string? SerialNumber { get; init; }
     public int? WarrantyCardItemTermInMonths { get; init; }
@@ -28,11 +27,6 @@ public sealed class XmlWarrantyCardItem : IXmlAsyncSerializable
     public bool ShouldDisplayProductName()
     {
         return !string.IsNullOrEmpty(ProductName);
-    }
-
-    public bool ShouldDisplayPriceInLeva()
-    {
-        return PriceInLeva.HasValue;
     }
 
     public bool ShouldDisplayQuantity()
@@ -59,10 +53,10 @@ public sealed class XmlWarrantyCardItem : IXmlAsyncSerializable
     {
         await writer.WriteStartElementAsync(null, rootElementName, null);
 
-        if (ShouldDisplayDisplayOrder())
-        {
-            await writer.WriteAttributeStringAsync(null, "order", null, DisplayOrder!.Value.ToString());
-        }
+        //if (ShouldDisplayDisplayOrder())
+        //{
+        //    await writer.WriteAttributeStringAsync(null, "order", null, DisplayOrder!.Value.ToString());
+        //}
 
         await writer.WriteStartElementAsync(null, "product", null);
 
@@ -77,11 +71,6 @@ public sealed class XmlWarrantyCardItem : IXmlAsyncSerializable
         }
 
         await writer.WriteEndElementAsync();
-
-        if (ShouldDisplayPriceInLeva())
-        {
-            await writer.WriteElementStringAsync(null, "price", null, PriceInLeva!.Value.ToString() + " лв.");
-        }
 
         if (ShouldDisplayQuantity())
         {
