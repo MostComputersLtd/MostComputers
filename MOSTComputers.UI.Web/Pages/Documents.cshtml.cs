@@ -157,7 +157,8 @@ public sealed class DocumentsModel : PageModel
                 new InvoiceByStringSearchRequest()
                 {
                     Keyword = invoicesSearchRequest.Keyword,
-                    SearchOption = InvoiceByStringSearchOptions.ByCustomerName
+                    SearchOption = InvoiceByStringSearchOptions.ByCustomerName,
+                    SearchType = InvoiceByStringSearchType.DataContainsValue,
                 },
             };
         };
@@ -200,7 +201,8 @@ public sealed class DocumentsModel : PageModel
                 new WarrantyCardByStringSearchRequest()
                 {
                     Keyword = warrantyCardsSearchRequest.Keyword,
-                    SearchOption = WarrantyCardByStringSearchOptions.ByCustomerName
+                    SearchOption = WarrantyCardByStringSearchOptions.ByCustomerName,
+                    SearchType = WarrantyCardByStringSearchType.DataContainsValue,
                 },
             };
         };
@@ -261,7 +263,7 @@ public sealed class DocumentsModel : PageModel
             InvoiceId = invoice.InvoiceId,
             FirmId = invoice.FirmId,
             CustomerFirmBID = invoice.CustomerBID,
-            InvoiceDirection = invoice.InvoiceDirection,
+            InvoiceDirection = (int?)invoice.InvoiceDirection,
             CustomerName = invoice.CustomerName,
             MPerson = invoice.MPerson,
             CustomerAddress = invoice.CustomerAddress,
@@ -281,9 +283,9 @@ public sealed class DocumentsModel : PageModel
             IsVATRegistered = invoice.IsVATRegistered,
             PrintedNETAmount = invoice.PrintedNETAmount,
             DueDate = invoice.DueDate,
-            CustomerBankNameAndId = invoice.BankNameAndId,
-            CustomerBankIBAN = invoice.BankIBAN,
-            CustomerBankBIC = invoice.CustomerBankBIC,
+            BankNameAndId = invoice.BankNameAndId,
+            BankIBAN = invoice.BankIBAN,
+            BankBIC = invoice.BankBIC,
             PaymentStatus = invoice.PaymentStatus,
             PaymentStatusDate = invoice.PaymentStatusDate,
             PaymentStatusUserName = invoice.PaymentStatusUserName,

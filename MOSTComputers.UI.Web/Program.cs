@@ -106,6 +106,20 @@ if (!Path.IsPathFullyQualified(promotionFileFolderFilePath!))
 
 builder.Services.AddPromotionFileManager(promotionFileFolderFilePath!);
 
+string chromeHeadlessForPdfDebuggingUserDataDirectoryPath
+    = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("ChromeHeadlessForPdfDebuggingUserDataDirectory")!;
+
+if (!Path.IsPathFullyQualified(chromeHeadlessForPdfDebuggingUserDataDirectoryPath!))
+{
+    chromeHeadlessForPdfDebuggingUserDataDirectoryPath = Path.GetFullPath(chromeHeadlessForPdfDebuggingUserDataDirectoryPath!, builder.Environment.ContentRootPath);
+}
+
+ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions = new()
+{
+    DebuggingPortNumber = builder.Configuration.GetRequiredSection("Ports").GetValue<int>("ChromeHeadlessForPdfDebuggingPortNumber")!,
+    LocalUserDataDirectoryPath = chromeHeadlessForPdfDebuggingUserDataDirectoryPath!,
+};
+
 string? htmlInvoiceTemplateFilePath = builder.Configuration.GetRequiredSection("Files").GetValue<string>("HtmlInvoiceTemplate");
 
 if (!Path.IsPathFullyQualified(htmlInvoiceTemplateFilePath!))
@@ -120,8 +134,8 @@ if (!Path.IsPathFullyQualified(htmlWarrantyCardWithoutPricesTemplateFilePath!))
     htmlWarrantyCardWithoutPricesTemplateFilePath = Path.Combine(currentDirectory, htmlWarrantyCardWithoutPricesTemplateFilePath!);
 }
 
-builder.Services.AddPdfInvoiceGeneratorFromDataServices(htmlInvoiceTemplateFilePath!);
-builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWarrantyCardWithoutPricesTemplateFilePath!);
+builder.Services.AddPdfInvoiceGeneratorFromDataServices(htmlInvoiceTemplateFilePath!, chromeHeadlessInstanceOptions);
+builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWarrantyCardWithoutPricesTemplateFilePath!, chromeHeadlessInstanceOptions);
 
 builder.Services.AddScoped<IPromotionFileEditorDataService, PromotionFileEditorDataService>();
 
