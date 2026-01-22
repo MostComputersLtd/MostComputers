@@ -6,8 +6,8 @@ internal static class CurrencyToWordsConversionUtils
 {
     internal enum PriceConvertScaleEnum
     {
-        Stotinki = 0,
-        Leva = 1,
+        Subunit = 0,
+        Unit = 1,
     }
 
     private readonly static string[] _levaUnitsMap = {
@@ -119,8 +119,8 @@ internal static class CurrencyToWordsConversionUtils
         return currency switch
         {
             Currency.EUR => "€",
-            Currency.BGN => "лв",
             Currency.USD => "$",
+            Currency.BGN => "лв",
             _ => throw new NotImplementedException("Currency is not supported"),
         };
     }
@@ -129,44 +129,49 @@ internal static class CurrencyToWordsConversionUtils
     {
         return (priceConvertScaleEnum, currency) switch
         {
-            (PriceConvertScaleEnum.Leva, Currency.EUR) => "евро",
-            (PriceConvertScaleEnum.Stotinki, Currency.EUR) => number == 1 ? "цент" : "цента",
+            (PriceConvertScaleEnum.Unit, Currency.EUR) => "евро",
+            (PriceConvertScaleEnum.Subunit, Currency.EUR) => number == 1 ? "евро цент" : "евро цента",
 
-            (PriceConvertScaleEnum.Leva, Currency.BGN) => number == 1 ? "лев" : "лева",
-            (PriceConvertScaleEnum.Stotinki, Currency.BGN) => number == 1 ? "стотинка" : "стотинки",
+            (PriceConvertScaleEnum.Unit, Currency.BGN) => number == 1 ? "лев" : "лева",
+            (PriceConvertScaleEnum.Subunit, Currency.BGN) => number == 1 ? "стотинка" : "стотинки",
 
-            (PriceConvertScaleEnum.Leva, Currency.USD) => number == 1 ? "долар" : "долара",
-            (PriceConvertScaleEnum.Stotinki, Currency.USD) => number == 1 ? "цент" : "цента",
+            (PriceConvertScaleEnum.Unit, Currency.USD) => number == 1 ? "долар" : "долара",
+            (PriceConvertScaleEnum.Subunit, Currency.USD) => number == 1 ? "цент" : "цента",
 
             _ => throw new NotImplementedException("Currency is not supported"),
         };
     }
 
-    internal static string ConvertPriceToWords(decimal amount, Currency currency)
+    internal static string ConvertNumberToWordsInBulgarian(decimal amount, Currency currency)
     {
-        long leva = (long)amount;
-        int stotinki = (int)Math.Round((amount - leva) * 100, 2, MidpointRounding.AwayFromZero);
+        long unit = (long)amount;
+        int subunit = (int)Math.Round((amount - unit) * 100, 2, MidpointRounding.AwayFromZero);
+
+        if (subunit < 0)
+        {
+            subunit = -subunit;
+        }    
 
         string[] unitsMap = GetUnitsMap(currency);
-        string[] centUnitsMap = GetCentUnitsMap(currency);
+        string[] subunitsMap = GetSubunitsMap(currency);
 
-        string levaPart = ConvertNumberToWordsInBulgarian(leva, PriceConvertScaleEnum.Leva, unitsMap, _teensMap, _tensMap, _hundredsMap, centUnitsMap);
+        string unitPart = ConvertNumberToWordsInBulgarianInternal(unit, PriceConvertScaleEnum.Unit, unitsMap, _teensMap, _tensMap, _hundredsMap, subunitsMap);
 
-        string levaCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Leva, leva);
+        string unitCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Unit, unit);
 
-        if (stotinki == 0)
+        if (subunit == 0)
         {
-            return $"{levaPart} {levaCurrencyWord}";
+            return $"{unitPart} {unitCurrencyWord}";
         }
 
-        string stotinkiCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Stotinki, stotinki);
+        string subunitCurrencyWord = GetCurrencyNameString(currency, PriceConvertScaleEnum.Subunit, subunit);
 
-        string stotinkiPart = ConvertNumberToWordsInBulgarian(stotinki, PriceConvertScaleEnum.Stotinki, _levaUnitsMap, _teensMap, _tensMap, _hundredsMap, centUnitsMap);
+        string subunitPart = ConvertNumberToWordsInBulgarianInternal(subunit, PriceConvertScaleEnum.Subunit, unitsMap, _teensMap, _tensMap, _hundredsMap, subunitsMap);
 
-        return $"{levaPart} {levaCurrencyWord} и {stotinkiPart} {stotinkiCurrencyWord}";
+        return $"{unitPart} {unitCurrencyWord} и {subunitPart} {subunitCurrencyWord}";
     }
 
-    private static string[] GetCentUnitsMap(Currency currency)
+    private static string[] GetSubunitsMap(Currency currency)
     {
         return currency switch
         {
@@ -188,7 +193,7 @@ internal static class CurrencyToWordsConversionUtils
         };
     }
 
-    private static string ConvertNumberToWordsInBulgarian(
+    private static string ConvertNumberToWordsInBulgarianInternal(
         long number,
         PriceConvertScaleEnum priceConvertScale,
         string[] unitsMap,
@@ -198,7 +203,7 @@ internal static class CurrencyToWordsConversionUtils
         string[] centUnitsMap)
     {
         if (number == 0) return "нула";
-        if (number < 0) return "минус " + ConvertNumberToWordsInBulgarian(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap);
+        if (number < 0) return "минус " + ConvertNumberToWordsInBulgarianInternal(Math.Abs(number), priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap);
 
         string words = "";
 
@@ -212,7 +217,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInBulgarian(number / 1_000_000_000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиарда ";
+                words += ConvertNumberToWordsInBulgarianInternal(number / 1_000_000_000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиарда ";
             }
 
             number %= 1_000_000_000;
@@ -228,7 +233,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInBulgarian(number / 1000000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиона ";
+                words += ConvertNumberToWordsInBulgarianInternal(number / 1000000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " милиона ";
             }
 
             number %= 1000000;
@@ -244,7 +249,7 @@ internal static class CurrencyToWordsConversionUtils
             }
             else
             {
-                words += ConvertNumberToWordsInBulgarian(number / 1000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " хиляди ";
+                words += ConvertNumberToWordsInBulgarianInternal(number / 1000, priceConvertScale, unitsMap, teensMap, tensMap, hundredsMap, centUnitsMap) + " хиляди ";
             }
 
             number %= 1000;
@@ -261,7 +266,7 @@ internal static class CurrencyToWordsConversionUtils
             {
                 string wordForTenInNumber = unitsMap[number];
 
-                if (priceConvertScale == PriceConvertScaleEnum.Stotinki)
+                if (priceConvertScale == PriceConvertScaleEnum.Subunit)
                 {
                     wordForTenInNumber = centUnitsMap[number];
                 }
@@ -282,7 +287,7 @@ internal static class CurrencyToWordsConversionUtils
                 {
                     string wordForTenInNumber = unitsMap[tensInNumber];
 
-                    if (priceConvertScale == PriceConvertScaleEnum.Stotinki)
+                    if (priceConvertScale == PriceConvertScaleEnum.Subunit)
                     {
                         wordForTenInNumber = centUnitsMap[tensInNumber];
                     }
