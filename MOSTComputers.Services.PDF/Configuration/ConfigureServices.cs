@@ -1,15 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using MOSTComputers.Services.PDF.Services;
 using MOSTComputers.Services.PDF.Services.Contracts;
 using PuppeteerSharp;
 
 namespace MOSTComputers.Services.PDF.Configuration;
+
 public static class ConfigureServices
 {
-    public static IServiceCollection AddPdfInvoiceServices(this IServiceCollection services, string htmlInvoiceTemplateFilePath)
+    public static IServiceCollection AddPdfInvoiceServices(
+        this IServiceCollection services,
+        string htmlInvoiceTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.AddScoped<IPdfInvoiceFileGeneratorService, PdfInvoiceFileGeneratorServiceWithHtmlTemplate>(serviceProvider =>
         {
@@ -22,9 +27,12 @@ public static class ConfigureServices
         return services;
     }
 
-    public static IServiceCollection AddPdfInvoiceGeneratorFromDataServices(this IServiceCollection services, string htmlInvoiceTemplateFilePath)
+    public static IServiceCollection AddPdfInvoiceGeneratorFromDataServices(
+        this IServiceCollection services,
+        string htmlInvoiceTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.TryAddScoped<IPdfInvoiceDataService, PdfInvoiceDataService>();
 
@@ -40,9 +48,11 @@ public static class ConfigureServices
     }
 
     public static IServiceCollection AddPdfWarrantyCardWithoutPricesServices(
-        this IServiceCollection services, string htmlWarrantyCardWithoutPricesTemplateFilePath)
+        this IServiceCollection services,
+        string htmlWarrantyCardWithoutPricesTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.AddScoped<IPdfWarrantyCardWithoutPricesFileGeneratorService, PdfWarrantyCardWithoutPricesFileGeneratorServiceWithHtmlTemplate>(serviceProvider =>
         {
@@ -57,9 +67,11 @@ public static class ConfigureServices
     }
 
     public static IServiceCollection AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(
-        this IServiceCollection services, string htmlWarrantyCardWithoutPricesTemplateFilePath)
+        this IServiceCollection services,
+        string htmlWarrantyCardWithoutPricesTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.TryAddScoped<IPdfWarrantyCardDataService, PdfWarrantyCardDataService>();
 
@@ -76,9 +88,11 @@ public static class ConfigureServices
     }
 
     public static IServiceCollection AddPdfWarrantyCardWithPricesServices(
-        this IServiceCollection services, string htmlWarrantyCardWithPricesTemplateFilePath)
+        this IServiceCollection services,
+        string htmlWarrantyCardWithPricesTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.AddScoped<IPdfWarrantyCardWithPricesFileGeneratorService, PdfWarrantyCardWithPricesFileGeneratorServiceWithHtmlTemplate>(serviceProvider =>
         {
@@ -93,9 +107,11 @@ public static class ConfigureServices
     }
 
     public static IServiceCollection AddPdfWarrantyCardWithPricesGeneratorFromDataServices(
-        this IServiceCollection services, string htmlWarrantyCardWithPricesTemplateFilePath)
+        this IServiceCollection services,
+        string htmlWarrantyCardWithPricesTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
-        services.TryAddPdfBrowserProviderService();
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
 
         services.TryAddScoped<IPdfWarrantyCardDataService, PdfWarrantyCardDataService>();
 
@@ -111,20 +127,24 @@ public static class ConfigureServices
         return services;
     }
 
-    private static IServiceCollection TryAddPdfBrowserProviderService(this IServiceCollection services)
+    private static IServiceCollection TryAddPdfBrowserProviderService(
+        this IServiceCollection services,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
     {
         ServiceDescriptor? existingBrowserProviderService = services.FirstOrDefault(serviceDescriptor =>
             serviceDescriptor.ServiceType == typeof(IBrowserProviderService));
 
         if (existingBrowserProviderService is not null) return services;
 
-        services.AddSingleton<IBrowserProviderService, BrowserProviderService>(serviceProvider =>
+        BrowserProviderServiceLaunchOptions browserProviderServiceLaunchOptions = new()
         {
-            return new BrowserProviderService(new LaunchOptions
+            LaunchOptions = new()
             {
                 Headless = true,
                 Args =
                 [
+                    $"--remote-debugging-port={chromeHeadlessInstanceOptions.DebuggingPortNumber}",
+                    $"--user-data-dir={chromeHeadlessInstanceOptions.LocalUserDataDirectoryPath}",
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-gpu",
@@ -135,8 +155,13 @@ public static class ConfigureServices
                     "--disable-default-apps",
                     "--mute-audio"
                 ]
-            });
-        });
+            },
+            BrowserUrl = $"http://localhost:{chromeHeadlessInstanceOptions.DebuggingPortNumber}"
+        };
+
+        services.AddSingleton(_ => Options.Create(browserProviderServiceLaunchOptions));
+
+        services.AddSingleton<IBrowserProviderService, BrowserProviderService>();
 
         return services;
     }

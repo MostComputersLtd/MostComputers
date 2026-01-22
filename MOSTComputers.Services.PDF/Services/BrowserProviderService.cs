@@ -1,19 +1,27 @@
-﻿using PuppeteerSharp;
+﻿using Microsoft.Extensions.Options;
 using MOSTComputers.Services.PDF.Services.Contracts;
+using PuppeteerSharp;
 
 namespace MOSTComputers.Services.PDF.Services;
+
+internal sealed class BrowserProviderServiceLaunchOptions
+{
+    public required LaunchOptions LaunchOptions { get; init; }
+    public required string BrowserUrl { get; init; }
+}
+
 internal sealed class BrowserProviderService : IBrowserProviderService, IDisposable, IAsyncDisposable
 {
-    public BrowserProviderService(LaunchOptions launchOptions)
+    public BrowserProviderService(IOptions<BrowserProviderServiceLaunchOptions> options)
     {
-        _launchOptions = launchOptions;
+        _options = options.Value;
     }
 
     private IBrowser? _browser;
 
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    private readonly LaunchOptions _launchOptions;
+    private readonly BrowserProviderServiceLaunchOptions _options;
 
     private bool _disposed;
 
@@ -46,19 +54,34 @@ internal sealed class BrowserProviderService : IBrowserProviderService, IDisposa
 
         await browserFetcher.DownloadAsync();
 
-        return await Puppeteer.LaunchAsync(_launchOptions);
+        //return await Puppeteer.LaunchAsync(_options.LaunchOptions);
+
+        try
+        {
+            return await Puppeteer.ConnectAsync(new()
+            {
+                BrowserURL = _options.BrowserUrl,
+            });
+        }
+        catch (TargetClosedException)
+        {
+            return await Puppeteer.LaunchAsync(_options.LaunchOptions);
+        }
+        catch (ProcessException)
+        {
+            return await Puppeteer.LaunchAsync(_options.LaunchOptions);
+        }
     }
 
     public void Dispose()
     {
         if (_disposed) return;
 
-        if (_browser is not null)
-        {
-            _browser.Dispose();
+        Console.WriteLine("Disposing BrowserProviderService...");
 
-            _browser = null;
-        }
+        _browser?.Dispose();
+
+        _browser = null;
 
         _disposed = true;
     }
@@ -66,6 +89,8 @@ internal sealed class BrowserProviderService : IBrowserProviderService, IDisposa
     public async ValueTask DisposeAsync()
     {
         if (_disposed) return;
+
+        Console.WriteLine("ASYNC Disposing BrowserProviderService...");
 
         if (_browser is not null)
         {
