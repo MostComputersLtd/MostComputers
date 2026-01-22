@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using MOSTComputers.Services.Identity.Models;
 using MOSTComputers.UI.Web.Blazor.Client;
+using MOSTComputers.UI.Web.Blazor.Services;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -15,8 +17,11 @@ namespace MOSTComputers.UI.Web.Blazor.Components.Account;
 // authentication state to the client which is then fixed for the lifetime of the WebAssembly application.
 internal sealed class PersistingRevalidatingAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
 {
+    private static readonly TimeSpan _maxUserIdleTime = TimeSpan.FromMinutes(5);
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly PersistentComponentState _state;
+    private readonly UserActivityTrackerService _userActivityTrackerService;
     private readonly IdentityOptions _options;
 
     private readonly PersistingComponentStateSubscription _subscription;
@@ -27,11 +32,13 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
         ILoggerFactory loggerFactory,
         IServiceScopeFactory serviceScopeFactory,
         PersistentComponentState persistentComponentState,
+        UserActivityTrackerService userActivityTrackerService,
         IOptions<IdentityOptions> optionsAccessor)
         : base(loggerFactory)
     {
         _scopeFactory = serviceScopeFactory;
         _state = persistentComponentState;
+        _userActivityTrackerService = userActivityTrackerService;
         _options = optionsAccessor.Value;
 
         AuthenticationStateChanged += OnAuthenticationStateChanged;
@@ -39,17 +46,23 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
         _subscription = _state.RegisterOnPersisting(OnPersistingAsync, RenderMode.InteractiveWebAssembly);
     }
 
-    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(30);
+    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(1);
 
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
-        // Get the user manager from a new scope to ensure it fetches fresh data
+        if (!IsUserActive())
+        {
+            return false;
+        }
+
         await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
 
         UserManager<PasswordsTableOnlyUser> userManager = scope.ServiceProvider.GetRequiredService<UserManager<PasswordsTableOnlyUser>>();
 
-        return await ValidateSecurityStampAsync(userManager, authenticationState.User);
+        bool isSecurityStampValid = await ValidateSecurityStampAsync(userManager, authenticationState.User);
+
+        return isSecurityStampValid;
     }
 
     private async Task<bool> ValidateSecurityStampAsync(UserManager<PasswordsTableOnlyUser> userManager, ClaimsPrincipal principal)
@@ -72,6 +85,11 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
 
             return principalStamp == userStamp;
         }
+    }
+
+    private bool IsUserActive()
+    {
+        return DateTime.UtcNow - _userActivityTrackerService.LastActivityUtc < _maxUserIdleTime;
     }
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> task)

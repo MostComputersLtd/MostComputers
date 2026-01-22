@@ -1,0 +1,80 @@
+﻿@using MOSTComputers.UI.Web.Blazor.Services
+@using Microsoft.AspNetCore.Authentication
+@rendermode InteractiveServer
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject UserActivityTrackerService UserActivityTrackerService
+
+@code {
+    private PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+
+    private IJSObjectReference? _module;
+
+    protected override void OnInitialized()
+    {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> authStateTask)
+    {
+        AuthenticationState authState = await authStateTask;
+
+        if (authState.User.Identity is null || !authState.User.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("Account/force-logout", true);
+        }
+	}
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/ActivityTracker.razor.js");
+
+            await _module.InvokeVoidAsync("initializeActivityTracking");
+
+			_ = PeriodicActivityUpdate();
+        }
+    }
+
+    private async Task PeriodicActivityUpdate()
+    {
+        while (await _timer.WaitForNextTickAsync())
+        {
+            if (_module is not null)
+            {
+                string activityISOString = await _module.InvokeAsync<string>("getLastActivityTime");
+
+				bool isValidDateTime = DateTime.TryParse(activityISOString, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime activityTime);
+
+                if (isValidDateTime)
+				{
+                    UserActivityTrackerService.LastActivityUtc = activityTime;
+				}
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (AuthenticationStateProvider is not null)
+            {
+                AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+			}
+
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("uninitializeActivityTracking");
+
+                await _module.DisposeAsync();
+            }
+        }
+        catch(JSDisconnectedException)
+        {
+        }
+    }
+}

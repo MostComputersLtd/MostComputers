@@ -39,6 +39,15 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             return TypedResults.Challenge(properties, [provider]);
         });
 
+        accountGroup.MapGet("/force-logout", async (
+            ClaimsPrincipal user,
+            SignInManager<PasswordsTableOnlyUser> signInManager) =>
+            {
+                await signInManager.SignOutAsync();
+                return TypedResults.LocalRedirect($"~/Account/Login");
+            });
+
+
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
             SignInManager<PasswordsTableOnlyUser> signInManager,
