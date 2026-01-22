@@ -76,7 +76,7 @@
 
                                 <input type="checkbox"
                                     class="user-role-checkbox"
-                                    checked="@(userDisplayDataInRolesPopup.UserRoles.Contains(role))"
+                                    checked="@userDisplayDataInRolesPopup.UserRoles.Contains(role)"
                                     @onchange="() => ToggleUserRole(userDisplayDataInRolesPopup, role)" @onclick:stopPropagation />
                             </li>
 				        }
@@ -151,13 +151,6 @@
                         <InputText id="password" type="password" @bind-value="userCreateData.Password" class="create-account-field-input"
                             autocomplete="off" aria-required="true" placeholder="Password" />
                     </div>
-                    <div class="create-account-remember-row">
-                        <label for="rememberMe">
-                            Remember me
-                        </label>
-
-                        <InputCheckbox id="rememberMe" @bind-value="userCreateData.RememberMe" class="create-account-remember-row-input" />
-                    </div>
 
                     <div class="create-account-roles-container">
                         <ul class="user-roles-list">
@@ -168,7 +161,7 @@
 
                                     <input type="checkbox"
                                         class="user-role-checkbox"
-                                        checked="@(userCreateData.UserRoles.Contains(role))"
+                                        checked="@userCreateData.UserRoles.Contains(role)"
                                         @onchange="() => ToggleNewUserRole(userCreateData, role)" @onclick:stopPropagation />
                                 </li>
                             }
@@ -300,15 +293,14 @@
 
     private sealed class ClaimCreateData
     {
-        public required string Type { get; set; }
-        public required string Value { get; set; }
+        public string? Type { get; set; }
+        public string? Value { get; set; }
     }
 
     private class UserCreateData
     {
         public string? Username { get; set; } = null;
         public string? Password { get; set; } = null;
-        public bool RememberMe { get; set; } = false;
 
         public List<UserRolesList> UserRoles { get; init; } = new();
 
@@ -618,6 +610,11 @@
 
             foreach (ClaimCreateData claimCreateData in userCreateData.UserClaims)
             {
+                if (string.IsNullOrWhiteSpace(claimCreateData.Type) || string.IsNullOrWhiteSpace(claimCreateData.Value))
+                {
+                    continue;
+                }
+
                 Claim claim = new(claimCreateData.Type, claimCreateData.Value);
 
                 claims.Add(claim);
