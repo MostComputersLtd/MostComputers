@@ -107,6 +107,16 @@
                     </NavLink>
                 </div>
 
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        <div class="nav-item px-1">
+                            <NavLink class="nav-link" href="Account/Manage/AdminPanel">
+                                AMP
+                            </NavLink>
+                        </div>
+					</Authorized>
+				</AuthorizeView>
+
                 <AuthorizeView>
                     <Authorized>
                         <div class="nav-item px-1">
