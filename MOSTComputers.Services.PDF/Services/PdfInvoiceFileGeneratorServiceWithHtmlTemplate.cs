@@ -80,6 +80,7 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
     private const string _invoiceTemplateLeftFirmMRPersonSignatureInitialsElementId = "invoiceTemplateLeftFirmMRPersonSignatureInitials";
     private const string _invoiceTemplateInvoiceCreatorElementId = "invoiceTemplateInvoiceCreator";
     private const string _invoiceTemplateLeagalTextElementId = "invoiceTemplateLeagalText";
+
     private static readonly MarginOptions _defaultChromePdfMargins = new() { Left = "0.4in", Right = "0.39in", Top = "0.4in", Bottom = "0.39in" };
 
     internal static readonly string[] _defaultChromeBrowserOptions = new[]
@@ -122,11 +123,21 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
         htmlDocument.Load(_htmlTemplateFilePath);
 
-        string invoiceName = invoiceData.InvoiceDirection != InvoiceDirection.Credit
-            ? "ФАКТУРА"
-            : $"КРЕДИТНО ИЗВЕСТИЕ (Към фактура {invoiceData.RelatedInvoiceNumber})";
+        string invoiceName = "ФАКТУРА";
+            
+        if (invoiceData.InvoiceDirection == InvoiceDirection.Credit)
+        {
+            if (!string.IsNullOrWhiteSpace(invoiceData.RelatedInvoiceNumber))
+            {
+                invoiceName = $"КРЕДИТНО ИЗВЕСТИЕ (Към фактура {invoiceData.RelatedInvoiceNumber})";
+            }
+            else
+            {
+                invoiceName = $"КРЕДИТНО ИЗВЕСТИЕ";
+            }
+        }
 
-        string invoiceDateAsString = (invoiceData.Date is not null) ? invoiceData.Date.Value.ToString("dd.MM.yyyy") : string.Empty;
+        string invoiceDateAsString = (invoiceData.RDate is not null) ? invoiceData.RDate.Value.ToString("dd.MM.yyyy") : string.Empty;
         string invoiceDueDateAsString = (invoiceData.DueDate is not null) ? invoiceData.DueDate.Value.ToString("dd.MM.yyyy") : string.Empty;
 
         decimal totalPriceWithoutVat = 0M;
@@ -144,7 +155,7 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
             totalPriceInLeva += priceData.LineTotalPrice ?? 0M;
         }
 
-        fullPriceItemsCurrency ??= Currency.EUR;
+        fullPriceItemsCurrency ??= Currency.BGN;
 
         string fullPriceItemsCurrencyString = GetCurrencyString(fullPriceItemsCurrency.Value);
 
@@ -156,7 +167,7 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
         string totalPriceInLevaString = GetCurrencyStringFromPrice(totalPriceInLeva, fullPriceItemsCurrencyString, true);
 
-        string totalPriceInWords = ConvertPriceToWords(totalPriceInLeva, fullPriceItemsCurrency.Value);
+        string totalPriceInWords = ConvertNumberToWordsInBulgarian(totalPriceInLeva, fullPriceItemsCurrency.Value);
 
         string varPercentageText = varPercentageAsPercent.ToString() + "%";
 

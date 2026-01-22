@@ -13,33 +13,18 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
     public PdfInvoiceDataService(
         IInvoiceRepository invoiceRepository,
         IFirmDataRepository firmDataRepository,
-        ICurrencyVATService currencyVATService,
-        IExchangeRateService exchangeRateService,
-        ICurrencyConversionService currencyConversionService)
+        ICurrencyVATService currencyVATService)
     {
         _invoiceRepository = invoiceRepository;
         _firmDataRepository = firmDataRepository;
         _currencyVATService = currencyVATService;
-        _exchangeRateService = exchangeRateService;
-        _currencyConversionService = currencyConversionService;
     }
+
+    private const string _defaultFirmAddress = "бул. Шипченски проход, бл. 240, вх. Г";
 
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IFirmDataRepository _firmDataRepository;
     private readonly ICurrencyVATService _currencyVATService;
-    private readonly IExchangeRateService _exchangeRateService;
-    private readonly ICurrencyConversionService _currencyConversionService;
-
-    private readonly FirmInvoiceData _defaultFirmData = new()
-    {
-        FirmName = "МОСТ КОМПЮТЪРС",
-        FirmAddress = "бул. Шипченски проход, бл. 240, вх. Г",
-        MRPersonFullName = "Георги Петров",
-        VatId = "BG201343443",
-        FirmOrPersonId = "201343443",
-        BankId = "ОББ АД AIC: UBBSBGSA",
-        Iban = "BG23UBBS89247238478234",
-    };
 
     public async Task<InvoiceData?> GetInvoiceDataByIdAsync(int invoiceId)
     {
@@ -71,7 +56,17 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
 
         decimal vatPercentageFraction = (invoice.VatPercent is not null) ? (decimal)invoice.VatPercent / 100 : 0M;
 
-        Currency invoiceCurrency = invoice.InvoiceCurrency is not null ? (Currency)invoice.InvoiceCurrency.Value : Currency.BGN;
+        Currency invoiceCurrency;
+
+        if (invoice.InvoiceCurrency is null || invoice.InvoiceCurrency == 0)
+        {
+            invoiceCurrency = Currency.BGN;
+        }
+        else
+        {
+
+            invoiceCurrency = (Currency)invoice.InvoiceCurrency.Value;
+        }
 
         FirmData? firmData = null;
 
@@ -99,7 +94,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
             SupplierData = new()
             {
                 FirmName = firmData?.Name,
-                FirmAddress = firmData?.Address ?? _defaultFirmData.FirmAddress,
+                FirmAddress = firmData?.Address ?? _defaultFirmAddress,
                 FirmOrPersonId = firmData?.Bulstat,
                 MRPersonFullName = firmData?.MPerson,
                 BankId = invoice.BankNameAndId,
