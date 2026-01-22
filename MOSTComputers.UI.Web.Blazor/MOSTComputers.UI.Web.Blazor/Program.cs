@@ -43,6 +43,7 @@ using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Cached;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
+using PuppeteerSharp;
 using Serilog;
 using Serilog.Core;
 using Serilog.Debugging;
@@ -181,6 +182,20 @@ if (!Path.IsPathFullyQualified(groupPromotionFileFolderFilePath!))
 
 builder.Services.AddGroupPromotionFileManager(groupPromotionFileFolderFilePath!);
 
+string chromeHeadlessForPdfDebuggingUserDataDirectoryPath
+    = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("ChromeHeadlessForPdfDebuggingUserDataDirectory")!;
+
+if (!Path.IsPathFullyQualified(chromeHeadlessForPdfDebuggingUserDataDirectoryPath!))
+{
+    chromeHeadlessForPdfDebuggingUserDataDirectoryPath = Path.GetFullPath(chromeHeadlessForPdfDebuggingUserDataDirectoryPath!, builder.Environment.ContentRootPath);
+}
+
+ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions = new()
+{
+    DebuggingPortNumber = builder.Configuration.GetRequiredSection("Ports").GetValue<int>("ChromeHeadlessForPdfDebuggingPortNumber")!,
+    LocalUserDataDirectoryPath = chromeHeadlessForPdfDebuggingUserDataDirectoryPath!,
+};
+
 string? htmlInvoiceTemplateFilePath = builder.Configuration.GetRequiredSection("Files").GetValue<string>("HtmlInvoiceTemplate");
 
 if (!Path.IsPathFullyQualified(htmlInvoiceTemplateFilePath!))
@@ -195,8 +210,8 @@ if (!Path.IsPathFullyQualified(htmlWarrantyCardWithoutPricesTemplateFilePath!))
     htmlWarrantyCardWithoutPricesTemplateFilePath = Path.Combine(currentDirectory, htmlWarrantyCardWithoutPricesTemplateFilePath!);
 }
 
-builder.Services.AddPdfInvoiceGeneratorFromDataServices(htmlInvoiceTemplateFilePath!);
-builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWarrantyCardWithoutPricesTemplateFilePath!);
+builder.Services.AddPdfInvoiceGeneratorFromDataServices(htmlInvoiceTemplateFilePath!, chromeHeadlessInstanceOptions);
+builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWarrantyCardWithoutPricesTemplateFilePath!, chromeHeadlessInstanceOptions);
 
 builder.Services.AddScoped<IProductSearchService, ProductSearchService>();
 
@@ -233,6 +248,8 @@ builder.Services.AddRazorComponents()
         options.DetailedErrors = true;
     })
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddScoped<UserActivityTrackerService>();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
