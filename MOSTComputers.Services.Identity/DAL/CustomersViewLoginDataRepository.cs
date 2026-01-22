@@ -43,7 +43,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
             WHERE {CustomerDataView.IdColumn} = @id;
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -64,7 +64,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         bool exists = await resultReader.ReadAsync();
 
@@ -99,7 +99,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
             WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username;
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -120,7 +120,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         bool exists = await resultReader.ReadAsync();
 
@@ -144,12 +144,12 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
     {
         const string query =
             $"""
-            SELECT TOP 1 {CustomerDataView.IdColumn}, {CustomerDataView.LoginNameColumn}
+            SELECT TOP 1 {CustomerDataView.IdColumn}, {CustomerDataView.LoginNameColumn}, {CustomerDataView.ContactPersonNameColumn}
             FROM {CustomerDataView.Name} WITH (NOLOCK)
             WHERE {CustomerDataView.IdColumn} = @id;
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -170,7 +170,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         bool exists = await resultReader.ReadAsync();
 
@@ -179,7 +179,8 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         CustomerLoginData customerLoginData = new()
         {
             Id = resultReader.GetInt32(0),
-            Username = GetFieldValueOrDefault<string?>(resultReader, 1)
+            Username = GetFieldValueOrDefault<string?>(resultReader, 1),
+            ContactPerson = GetFieldValueOrDefault<string?>(resultReader, 2),
         };
 
         return customerLoginData;
@@ -189,12 +190,12 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
     {
         const string query =
             $"""
-            SELECT TOP 1 {CustomerDataView.IdColumn}, {CustomerDataView.LoginNameColumn}
+            SELECT TOP 1 {CustomerDataView.IdColumn}, {CustomerDataView.LoginNameColumn}, {CustomerDataView.ContactPersonNameColumn}
             FROM {CustomerDataView.Name} WITH (NOLOCK)
             WHERE {CustomerDataView.LoginNameColumn} COLLATE Cyrillic_General_CS_AS = @username;
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -215,7 +216,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         bool exists = await resultReader.ReadAsync();
 
@@ -224,7 +225,8 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         CustomerLoginData customerLoginData = new()
         {
             Id = resultReader.GetInt32(0),
-            Username = GetFieldValueOrDefault<string?>(resultReader, 1)
+            Username = GetFieldValueOrDefault<string?>(resultReader, 1),
+            ContactPerson = GetFieldValueOrDefault<string?>(resultReader, 2),
         };
 
         return customerLoginData;
@@ -251,7 +253,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
             END
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -276,13 +278,13 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         sqlCommand.Parameters.Add(idParameter);
         sqlCommand.Parameters.Add(passwordParameter);
 
-        SqlConnection sqlConnection = new(_connectionString);
+        using SqlConnection sqlConnection = new(_connectionString);
 
         await sqlConnection.OpenAsync();
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         await sqlDataReader.ReadAsync();
 
@@ -327,7 +329,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
             END
             """;
 
-        SqlCommand sqlCommand = new()
+        using SqlCommand sqlCommand = new()
         {
             CommandText = query,
             CommandType = CommandType.Text
@@ -352,13 +354,13 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         sqlCommand.Parameters.Add(usernameParameter);
         sqlCommand.Parameters.Add(passwordParameter);
 
-        SqlConnection sqlConnection = new(_connectionString);
+        using SqlConnection sqlConnection = new(_connectionString);
 
         await sqlConnection.OpenAsync();
 
         sqlCommand.Connection = sqlConnection;
 
-        SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+        using SqlDataReader sqlDataReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
 
         await sqlDataReader.ReadAsync();
 
