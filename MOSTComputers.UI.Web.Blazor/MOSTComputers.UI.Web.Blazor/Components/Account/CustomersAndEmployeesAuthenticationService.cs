@@ -72,6 +72,13 @@ internal sealed class CustomersAndEmployeesAuthenticationService : ICustomAuthen
             claims.Add(usernameClaim);
         }
 
+        if (userInCustomersView.ContactPerson is not null)
+        {
+            Claim contactPersonClaim = new("ContactPerson", userInCustomersView.ContactPerson);
+
+            claims.Add(contactPersonClaim);
+        }
+
         AuthenticationProperties authenticationProperties = new();
 
         if (isPersistent)

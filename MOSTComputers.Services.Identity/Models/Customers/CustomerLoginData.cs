@@ -4,4 +4,5 @@ public sealed class CustomerLoginData
 {
     public required int Id { get; init; }
     public string? Username { get; init; }
+    public string? ContactPerson { get; init; }
 }
