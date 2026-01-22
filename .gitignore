@@ -365,5 +365,8 @@ FodyWeavers.xsd
 # Custom folder for product images
 ProductImages/*
 
+# Custom folder for Chrome Headless User Data
+ChromeHeadlessForPdfUserData/**/*
+
 # TEMP folder for product images for testing
 TestImages
