@@ -51,9 +51,10 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
-        Claim? roleClaim = authenticationState.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role);
+        Claim? roleClaim = authenticationState.User.Claims.FirstOrDefault(
+            x => x.Type == ClaimTypes.Role && x.Value == "Admin");
 
-        bool isAdmin = roleClaim?.Value.Contains("Admin") ?? false;
+        bool isAdmin = roleClaim is not null;
 
         if (!isAdmin && !IsUserActive())
         {
