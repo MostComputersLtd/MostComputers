@@ -1786,6 +1786,12 @@
             {
                 foreach (LegacyHtmlProductProperty htmlProperty in htmlProduct.Properties)
                 {
+                    if (string.IsNullOrEmpty(htmlProperty.Name)
+                        || string.IsNullOrWhiteSpace(htmlProperty.Value))
+                    {
+                        continue;
+                    }
+
                     ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
                         .FirstOrDefault(x => x.XmlName == htmlProperty.Name);
 
