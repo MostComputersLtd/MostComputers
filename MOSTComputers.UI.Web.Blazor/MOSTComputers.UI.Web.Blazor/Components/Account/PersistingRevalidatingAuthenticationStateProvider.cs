@@ -61,6 +61,14 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
             return false;
         }
 
+        bool isCustomer = authenticationState.User.Claims.Any(
+            x => x.Type == ClaimTypes.Role && x.Value == "CustomerInvoiceViewer");
+
+        if (isCustomer)
+        {
+            return true;
+        }
+
         await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
 
         UserManager<PasswordsTableOnlyUser> userManager = scope.ServiceProvider.GetRequiredService<UserManager<PasswordsTableOnlyUser>>();
