@@ -1206,21 +1206,43 @@
     {
         if (Product.Price is null || Product.Currency is null) return null;
 
-        OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
-            Product.Price.Value, Product.Currency.Value, Currency.BGN);
+        Client.Product.ProductData.DisplayPrice? displayPrice = null;
+        Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
 
         OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
             Product.Price.Value, Product.Currency.Value, Currency.EUR);
 
-        if (!getPriceInBgnResult.IsT0 || !getPriceInEurResult.IsT0) return null;
+        OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
+            Product.Price.Value, Product.Currency.Value, Currency.BGN);
 
-        decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
-        decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
+        if (getPriceInEurResult.IsT0)
+        {
+            decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
+
+            displayPrice = new()
+            {
+                Amount = priceInEur,
+                Currency = Currency.EUR,
+            };
+        }
+
+        if (getPriceInEurResult.IsT0)
+        {
+            decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
+
+            secondaryDisplayPrice = new()
+            {
+                Amount = priceInBgn,
+                Currency = Currency.BGN,
+            };
+        }
+
+        if (displayPrice is null) return null;
 
         return new()
         {
-            PriceInBgn = priceInBgn,
-            PriceInEur = priceInEur,
+            DisplayPrice = displayPrice.Value,
+            SecondaryDisplayPrice = secondaryDisplayPrice,
         };
     }
 

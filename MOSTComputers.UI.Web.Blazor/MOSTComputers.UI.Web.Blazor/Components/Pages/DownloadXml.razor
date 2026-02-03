@@ -126,7 +126,7 @@
 
     private const string _downloadPromotionGroupXmlUri = $"api/promotionGroup/xml/all";
 
-    private readonly List<string> _currencySelectOptions = ["Base currency", "BGN", "EUR", "USD"];
+    private readonly List<string> _currencySelectOptions = ["Base currency", "EUR", "USD", "BGN"];
     private string _selectedCurrency = "Base currency";
 
     private List<Category> _categoriesInSelect { get; set; } = new();
@@ -310,9 +310,9 @@
 
         return _selectedCurrency switch
         {
-            "BGN" => _downloadWithCurrencyQueryValue + "BGN",
             "EUR" => _downloadWithCurrencyQueryValue + "EUR",
             "USD" => _downloadWithCurrencyQueryValue + "USD",
+            "BGN" => _downloadWithCurrencyQueryValue + "BGN",
             _ => null
         };
     }

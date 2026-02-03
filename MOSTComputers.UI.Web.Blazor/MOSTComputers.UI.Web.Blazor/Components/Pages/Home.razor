@@ -351,7 +351,7 @@
                             </td>
                             <td>
                                 <div class="product-list-item-column">
-                                    <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowProductDisplayPopupAsync(productData.Product)">
+                                    <button class="btn link-info product-list-item-column-button product-list-item-column-interactable-item" @onclick="() => ShowProductDisplayPopupAsync(productData)">
                                         @(string.IsNullOrEmpty(productData.Product.Name) ? "-" : productData.Product.Name)
                                     </button>
                                 </div>
@@ -661,12 +661,12 @@
         PromotionSearchOptions.Discount
     ];
 
-    public string SelectedCurrency { get; set; } = ((int)Currency.BGN).ToString();
+    public string SelectedCurrency { get; set; } = ((int)Currency.EUR).ToString();
 
     public List<Currency> CurrenciesInSelect { get; set; } = [
-        Currency.BGN,
         Currency.EUR,
         Currency.USD,
+        Currency.BGN,
     ];
 
     public string SelectedResultCount { get; set; } = (50).ToString();
@@ -710,8 +710,10 @@
         return await CategoryService.GetAllAsync();
     }
 
-    private async Task ShowProductDisplayPopupAsync(Product product)
+    private async Task ShowProductDisplayPopupAsync(ProductDisplayData productData)
     {
+        Product product = productData.Product;
+
         List<int> relatedCategoryIds = [-1];
 
         if (product.CategoryId is not null)
@@ -782,25 +784,65 @@
 
         Client.Product.ProductData.ProductPriceData? productPriceData = null;
 
+        Client.Product.ProductData.DisplayPrice? displayPrice = null;
+        Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
+
+        if (productData.DisplayPrice is not null)
+        {
+            displayPrice = new()
+            {
+                Amount = productData.DisplayPrice.Value.Price,
+                Currency = productData.DisplayPrice.Value.Currency,
+            };
+        }
+
+        if (productData.SecondaryDisplayPrice is not null)
+        {
+            secondaryDisplayPrice = new()
+            {
+                Amount = productData.SecondaryDisplayPrice.Value.Price,
+                Currency = productData.SecondaryDisplayPrice.Value.Currency,
+            };
+        }
+
         if (product.Price is not null && product.Currency is not null)
         {
-            OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
-                product.Price.Value, product.Currency.Value, Currency.BGN);
-
             OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
                 product.Price.Value, product.Currency.Value, Currency.EUR);
 
-            if (getPriceInBgnResult.IsT0 && getPriceInEurResult.IsT0)
+            OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                product.Price.Value, product.Currency.Value, Currency.BGN);
+
+            if (getPriceInEurResult.IsT0)
             {
-                decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
                 decimal priceInEur = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInEurResult.AsT0, 1);
 
-                productPriceData = new()
+                displayPrice = new()
                 {
-                    PriceInBgn = priceInBgn,
-                    PriceInEur = priceInEur,
+                    Amount = priceInEur,
+                    Currency = Currency.EUR,
                 };
             }
+
+            if (getPriceInEurResult.IsT0)
+            {
+                decimal priceInBgn = CurrencyVATService.AddVATToPriceUsingDefaultRate(getPriceInBgnResult.AsT0, 1);
+
+                secondaryDisplayPrice = new()
+                {
+                    Amount = priceInBgn,
+                    Currency = Currency.BGN,
+                };
+            }
+        }
+
+        if (displayPrice is not null)
+        {
+            productPriceData = new()
+            {
+                DisplayPrice = displayPrice.Value,
+                SecondaryDisplayPrice = secondaryDisplayPrice,
+            };
         }
 
         _productDataPopupData = new()
@@ -937,9 +979,9 @@
         Currency selectedCurrency = Currency.TryParse(
             SelectedCurrency, out Currency currencyEnum)
                 ? currencyEnum
-                : Currency.BGN;
+                : Currency.EUR;
 
-        Currency? secondaryCurrency = (selectedCurrency == Currency.BGN) ? Currency.EUR : null;
+        Currency? secondaryCurrency = (selectedCurrency == Currency.EUR) ? Currency.BGN : null;
 
         List<ProductDisplayData> productDisplayDatas = products.Select(product =>
         {
