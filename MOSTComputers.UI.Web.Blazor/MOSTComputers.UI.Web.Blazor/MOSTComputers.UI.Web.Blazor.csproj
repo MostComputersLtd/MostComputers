@@ -40,6 +40,9 @@
     <Content Update="wwwroot\img\logo_16x16.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Update="wwwroot\favicon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <Target Name="CopyPdfDocumentTemplatesOnBuild" AfterTargets="Build">
