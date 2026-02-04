@@ -213,15 +213,17 @@
 				</div>
 			}
 
-			<div class="document-customer-search-date-container me-2">
-				<label for="searchFromDateInput" class="document-customer-search-date-label">From:</label>
-				<InputDate @bind-value="_searchFromDate" id="searchFromDateInput" placeholder="From" min="@minDateString" />
-			</div>
+            <div class="document-customer-search-dates-container">
+			    <div class="document-customer-search-date-container me-2">
+				    <label for="searchFromDateInput" class="document-customer-search-date-label">From:</label>
+				    <InputDate @bind-value="_searchFromDate" id="searchFromDateInput" placeholder="From" min="@minDateString" />
+			    </div>
 
-			<div class="document-customer-search-date-container">
-				<label for="searchToDateInput" class="document-customer-search-date-label">To:</label>
-				<InputDate @bind-value="_searchToDate" id="searchToDateInput" placeholder="To" min="@minDateString" />
-			</div>
+			    <div class="document-customer-search-date-container">
+				    <label for="searchToDateInput" class="document-customer-search-date-label">To:</label>
+				    <InputDate @bind-value="_searchToDate" id="searchToDateInput" placeholder="To" min="@minDateString" />
+			    </div>
+            </div>
 		</div>
 		
 		<div class="document-search-results-container">
