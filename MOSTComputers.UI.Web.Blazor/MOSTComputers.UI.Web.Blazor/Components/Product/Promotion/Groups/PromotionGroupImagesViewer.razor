@@ -14,7 +14,7 @@
         {
             bool isSelected = kvp.Key == _selectedPromotionGroup;
 
-            <div class="promotion-group-item @(isSelected ? "selected" : string.Empty)" @onclick="() => SelectGroup(kvp.Key)">
+            <div class="promotion-group-item @(isSelected ? "selected" : string.Empty)" @onclick="() => SelectGroupAndShowData(kvp.Key)">
 
                 @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
                 {
@@ -98,6 +98,56 @@
 
         _promotionGroups.Clear();
 
+        await FetchPromotionGroupDataAsync();
+
+        SetStartingSelectedGroup();
+    }
+
+    // private void OnKeyDown(KeyboardEventArgs e)
+    // {
+    //     if (!e.CtrlKey) return;
+
+    //     if (_selectedPromotionGroup is null)
+    //     {
+    //         if (_promotionGroups.Count == 0) return;
+
+    //         _selectedPromotionGroup = _promotionGroups.Keys.First();
+    //     }
+
+    //     int currentPromotionIndex = _promotionGroups.Keys.ToList().IndexOf(_selectedPromotionGroup);
+
+    //     if (e.Key == "ArrowDown")
+    //     {
+    //         int nextIndex = currentPromotionIndex + 1;
+
+    //         if (nextIndex >= _promotionGroups.Count)
+    //         {
+    //             nextIndex = 0;
+    //         }
+
+    //         PromotionGroup nextGroup = _promotionGroups.Keys.ElementAt(nextIndex);
+
+    //         SelectGroup(nextGroup);
+    //     }
+    //     else if (e.Key == "ArrowUp")
+    //     {
+    //         int previousIndex = currentPromotionIndex - 1;
+
+    //         if (previousIndex < 0)
+    //         {
+    //             previousIndex = _promotionGroups.Count - 1;
+    //         }
+
+    //         PromotionGroup previousGroup = _promotionGroups.Keys.ElementAt(previousIndex);
+
+    //         SelectGroup(previousGroup);
+    //     }
+
+    //     StateHasChanged();
+    // }
+
+    private async Task FetchPromotionGroupDataAsync()
+    {
         List<PromotionGroup> promotionGroups = await PromotionGroupsRepository.GetAllAsync();
 
         promotionGroups = promotionGroups.OrderBy(x => x.DisplayOrder ?? int.MaxValue)
@@ -122,6 +172,14 @@
 
         List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
 
+        PopulatePromotionGroups(promotionGroups, promotionGroupContents, promotionImageFiles);
+    }
+
+    private void PopulatePromotionGroups(
+        List<PromotionGroup> promotionGroups,
+        List<IGrouping<int, GroupPromotionContent>> promotionGroupContents,
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles)
+    {
         foreach (PromotionGroup promotionGroup in promotionGroups)
         {
             if (promotionGroup.Id == _alwaysIncludedPromotionGroupId)
@@ -163,8 +221,6 @@
 
             _promotionGroups.Add(promotionGroup, imagesForGroup);
         }
-
-        SetStartingSelectedGroup();
     }
 
     private void SetStartingSelectedGroup()
@@ -180,7 +236,7 @@
         {
             PromotionGroup selectedPromotionGroup = _promotionGroups.Keys.ElementAt(selectedIndex);
 
-            SelectGroup(selectedPromotionGroup);
+            SelectGroupAndShowData(selectedPromotionGroup);
         }
     }
 
@@ -189,7 +245,19 @@
         if (!_promotionGroups.ContainsKey(promotionGroup)) return;
 
         _selectedPromotionGroup = promotionGroup;
+    }
 
+    private void SelectGroupAndShowData(PromotionGroup promotionGroup)
+    {
+        if (!_promotionGroups.ContainsKey(promotionGroup)) return;
+
+        _selectedPromotionGroup = promotionGroup;
+
+		ShowPromotionGroupImageData(promotionGroup);
+    }
+
+    private void ShowPromotionGroupImageData(PromotionGroup promotionGroup)
+    {
         _currentImages.Clear();
 
         List<GroupPromotionImageDisplayData> selectedImages = _promotionGroups[promotionGroup];
