@@ -31,7 +31,7 @@ internal sealed class InvoiceDownloadStatusRepository : IInvoiceDownloadStatusRe
 
         const string query =
             $"""
-            SELECT TOP 1 {IdColumn},
+            SELECT {IdColumn},
                 {ExportIdColumn},
             	{InvoiceIdColumn},
             	{ImportedStatusColumn},
@@ -53,11 +53,13 @@ internal sealed class InvoiceDownloadStatusRepository : IInvoiceDownloadStatusRe
 
         await sqlConnection.OpenAsync();
 
-        IEnumerable<InvoiceDownloadStatus> data = await sqlConnection.QueryAsync<InvoiceDownloadStatus>(query, parameters);
+        IEnumerable<InvoiceDownloadStatus> downloadStatuses = await sqlConnection.QueryAsync<InvoiceDownloadStatus>(query, parameters);
+
+        var a = downloadStatuses.ToList();
 
         transactionScope.Complete();
 
-        return data
+        return downloadStatuses
             .GroupBy(x => x.InvoiceId)
             .Select(x => x.First())
             .ToList();
