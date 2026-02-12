@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Folder Include="Pages\" />
+    <Folder Include="wwwroot\js\" />
     <Folder Include="wwwroot\lib\" />
   </ItemGroup>
 
@@ -25,9 +26,13 @@
     <ProjectReference Include="..\..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
   </ItemGroup>
 
-	<Target Name="NpmInstallAndBuild" BeforeTargets="Build">
+	<Target Name="NpmInstallAndBuild" BeforeTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+		<Exec WorkingDirectory="npm" Command="npm install --prefer-offline" />
+		<Exec WorkingDirectory="npm" Command="npm run dev" />
+	</Target>
+
+	<Target Name="NpmInstallAndBuild" BeforeTargets="Build" Condition="'$(Configuration)' == 'Release'">
 		<Exec WorkingDirectory="npm" Command="npm install" />
 		<Exec WorkingDirectory="npm" Command="npm run build" />
 	</Target>
-
 </Project>
