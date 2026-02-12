@@ -46,4 +46,6 @@ internal interface IProductImageAndFileService
     Task<bool> DeleteInAllImagesByIdAsync(int id);
     Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(int id, string deleteUserName);
     Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
+    Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync();
+    Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(List<int> productIds);
 }

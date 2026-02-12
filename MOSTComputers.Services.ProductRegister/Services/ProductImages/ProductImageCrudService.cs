@@ -80,9 +80,19 @@ internal class ProductImageCrudService : IProductImageCrudService
         return await _productImageRepository.GetAllFirstImagesForAllProductsAsync();
     }
 
+    public async Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync()
+    {
+        return await _productImageRepository.GetAllFirstImagesWithoutFileDataForAllProductsAsync();
+    }
+
     public async Task<List<ProductImage>> GetFirstImagesForSelectionOfProductsAsync(IEnumerable<int> productIds)
     {
         return await _productImageRepository.GetFirstImagesForSelectionOfProductsAsync(productIds);
+    }
+
+    public async Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(IEnumerable<int> productIds)
+    {
+        return await _productImageRepository.GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(productIds);
     }
 
     public async Task<ProductImage?> GetByProductIdInFirstImagesAsync(int productId)

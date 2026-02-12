@@ -109,9 +109,19 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
         return await _productImageCrudService.GetAllFirstImagesForAllProductsAsync();
     }
 
+    public async Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync()
+    {
+        return await _productImageCrudService.GetAllFirstImagesWithoutFileDataForAllProductsAsync();
+    }
+
     public async Task<List<ProductImage>> GetFirstImagesForSelectionOfProductsAsync(List<int> productIds)
     {
         return await _productImageCrudService.GetFirstImagesForSelectionOfProductsAsync(productIds);
+    }
+
+    public async Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(List<int> productIds)
+    {
+        return await _productImageCrudService.GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(productIds);
     }
 
     public async Task<ProductImage?> GetByProductIdInFirstImagesAsync(int productId)

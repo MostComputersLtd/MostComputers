@@ -46,4 +46,6 @@ public interface IProductImageService
     Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(int id, string deleteUserName);
     Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdAsync(int productId, string deleteUserName);
     Task<List<IGrouping<int, ProductImageData>>> GetAllWithoutFileDataAsync();
+    Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(List<int> productIds);
+    Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync();
 }

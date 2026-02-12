@@ -49,6 +49,11 @@ internal sealed class ProductImageService : IProductImageService
         return await _productImageAndFileService.GetAllFirstImagesForAllProductsAsync();
     }
 
+    public async Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync()
+    {
+        return await _productImageAndFileService.GetAllFirstImagesWithoutFileDataForAllProductsAsync();
+    }
+
     public async Task<List<ProductImage>> GetAllInProductAsync(int productId)
     {
         return await _productImageAndFileService.GetAllInProductAsync(productId);
@@ -112,6 +117,11 @@ internal sealed class ProductImageService : IProductImageService
     public async Task<List<ProductImage>> GetFirstImagesForSelectionOfProductsAsync(List<int> productIds)
     {
         return await _productImageAndFileService.GetFirstImagesForSelectionOfProductsAsync(productIds);
+    }
+
+    public async Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(List<int> productIds)
+    {
+        return await _productImageAndFileService.GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(productIds);
     }
 
     public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertInAllImagesAsync(

@@ -34,4 +34,6 @@ public interface IProductImageRepository
     Task<bool> DeleteInAllImagesByIdAsync(int id);
     Task<bool> DeleteInFirstImagesByProductIdAsync(int id);
     int GetMinimumImagesAllInsertIdForLocalApplication();
+    Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(IEnumerable<int> productIds);
+    Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync();
 }

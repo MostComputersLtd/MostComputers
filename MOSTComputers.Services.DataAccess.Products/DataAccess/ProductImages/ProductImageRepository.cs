@@ -271,6 +271,29 @@ internal sealed class ProductImageRepository : IProductImageRepository
         return images.SelectAsList(image => Map(image));
     }
 
+    public async Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync()
+    {
+        const string getAllFirstImagesForAllProductsQuery =
+            $"""
+            SELECT {FirstImagesTable.IdColumnName} AS {FirstImagesTable.IdColumnAlias},
+                {FirstImagesTable.DescriptionColumnName} AS {FirstImagesTable.DescriptionColumnAlias},
+                {FirstImagesTable.ImageContentTypeColumnName},
+                {FirstImagesTable.DateModifiedColumnName}
+            FROM {FirstImagesTableName} WITH (NOLOCK)
+            """;
+
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        IEnumerable<ProductFirstImageDataDAO> images = await dbConnection.QueryAsync<ProductFirstImageDataDAO>(
+            getAllFirstImagesForAllProductsQuery, new { }, commandType: CommandType.Text);
+
+        transactionScope.Complete();
+
+        return images.SelectAsList(image => Map(image));
+    }
+
     public async Task<List<ProductImage>> GetFirstImagesForSelectionOfProductsAsync(IEnumerable<int> productIds)
     {
         const string getByIdInFirstImagesQuery =
@@ -297,6 +320,40 @@ internal sealed class ProductImageRepository : IProductImageRepository
                 };
 
                 return dbConnection.QueryAsync<ProductFirstImageDAO>(
+                    getByIdInFirstImagesQuery, parameters, commandType: CommandType.Text);
+            },
+            productIds.AsList());
+
+        transactionScope.Complete();
+
+        return images.SelectAsList(x => Map(x));
+    }
+
+    public async Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(IEnumerable<int> productIds)
+    {
+        const string getByIdInFirstImagesQuery =
+            $"""
+            SELECT {FirstImagesTable.IdColumnName} AS {FirstImagesTable.IdColumnAlias},
+                {FirstImagesTable.DescriptionColumnName} AS {FirstImagesTable.DescriptionColumnAlias},
+                {FirstImagesTable.ImageContentTypeColumnName},
+                {FirstImagesTable.DateModifiedColumnName}
+            FROM {FirstImagesTableName} WITH (NOLOCK)
+            WHERE {FirstImagesTable.IdColumnName} IN @productIds
+            """;
+
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        List<ProductFirstImageDataDAO> images = await ExecuteListQueryWithParametersInChunksAsync(
+            productIdsChunk =>
+            {
+                var parameters = new
+                {
+                    productIds = productIdsChunk,
+                };
+
+                return dbConnection.QueryAsync<ProductFirstImageDataDAO>(
                     getByIdInFirstImagesQuery, parameters, commandType: CommandType.Text);
             },
             productIds.AsList());
@@ -883,6 +940,18 @@ internal sealed class ProductImageRepository : IProductImageRepository
             ProductId = image.Id,
             HtmlData = image.HtmlData,
             ImageData = image.ImageData,
+            ImageContentType = image.ImageContentType,
+            DateModified = image.DateModified,
+        };
+    }
+
+    private static ProductImageData Map(ProductFirstImageDataDAO image)
+    {
+        return new ProductImageData()
+        {
+            Id = image.Id,
+            ProductId = image.Id,
+            HtmlData = image.HtmlData,
             ImageContentType = image.ImageContentType,
             DateModified = image.DateModified,
         };

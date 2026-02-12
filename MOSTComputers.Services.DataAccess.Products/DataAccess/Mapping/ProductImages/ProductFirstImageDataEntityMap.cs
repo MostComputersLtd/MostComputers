@@ -5,13 +5,12 @@ using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnName
 
 namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Mapping.ProductImages;
 
-internal sealed class ProductFirstImageEntityMap : EntityMap<ProductFirstImageDAO>
+internal sealed class ProductFirstImageDataEntityMap : EntityMap<ProductFirstImageDataDAO>
 {
-    public ProductFirstImageEntityMap()
+    public ProductFirstImageDataEntityMap()
     {
         Map(x => x.Id).ToColumn(IdColumnAlias);
         Map(x => x.ImageContentType).ToColumn(ImageContentTypeColumnName);
-        Map(x => x.ImageData).ToColumn(ImageDataColumnName);
         Map(x => x.DateModified).ToColumn(DateModifiedColumnName);
         Map(x => x.HtmlData).ToColumn(DescriptionColumnAlias);
     }

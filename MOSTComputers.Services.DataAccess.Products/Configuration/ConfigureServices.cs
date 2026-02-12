@@ -128,6 +128,7 @@ public static class ConfigureServices
 
             config.AddMap(new ProductImageEntityMap());
             config.AddMap(new ProductFirstImageEntityMap());
+            config.AddMap(new ProductFirstImageDataEntityMap());
 
             config.AddMap(new ProductImageWithoutFileDataEntityMap());
             config.AddMap(new ProductImagesForProductCountDataEntityMap());
