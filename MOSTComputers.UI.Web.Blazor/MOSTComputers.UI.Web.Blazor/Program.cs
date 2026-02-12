@@ -243,6 +243,12 @@ builder.Services.TryAddScoped<IProductEditorDataService, ProductEditorDataServic
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
+    //.AddHubOptions(options =>
+    //{
+    //    options.ClientTimeoutInterval = TimeSpan.FromSeconds(3);
+    //    options.HandshakeTimeout = TimeSpan.FromSeconds(3);
+    //    options.KeepAliveInterval = TimeSpan.FromSeconds(3);
+    //})
     .AddCircuitOptions(options =>
     {
         options.DetailedErrors = true;
