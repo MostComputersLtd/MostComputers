@@ -14,11 +14,79 @@
 </head>
 
 <body>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+
+    <script>
+        const maximumRetryCount = 3;
+        const retryIntervalMilliseconds = 1000;
+
+        const startReconnectionProcess = () => {
+
+            let isCanceled = false;
+
+            (async () => {
+                for (let i = 0; i < maximumRetryCount; i++) {
+
+                    await new Promise(resolve => setTimeout(resolve, retryIntervalMilliseconds));
+
+                    if (isCanceled) {
+                        return;
+                    }
+
+                    try {
+                        const result = await Blazor.reconnect();
+                        if (!result) {
+
+                            // The server was reached, but the connection was rejected. Reload the page.
+                            location.reload();
+                            return;
+                        }
+
+                        // Successfully reconnected to the server.
+                        return;
+                    } catch {
+
+                        // Didn't reach the server; try again.
+                    }
+                }
+
+                // Retried too many times; reload the page.
+                location.reload();
+            })();
+
+            return {
+                cancel: () => {
+                    isCanceled = true;
+                },
+            };
+        };
+
+        let currentReconnectionProcess = null;
+
+        Blazor.start({
+            circuit: {
+                // configureSignalR: function (builder) {
+                //     builder.withServerTimeout(3000);
+                //     builder.withKeepAliveInterval(3000);
+                // },
+                reconnectionOptions: {
+                    maxRetries: maximumRetryCount,
+                    retryIntervalMilliseconds: (previousAttempts, maxRetries) =>
+                        previousAttempts >= maxRetries ? null : retryIntervalMilliseconds
+                },
+                reconnectionHandler: {
+                    onConnectionDown: (options, error) => currentReconnectionProcess ??= startReconnectionProcess(),
+                    onConnectionUp: () => {
+                        currentReconnectionProcess?.cancel();
+                        currentReconnectionProcess = null;
+                    }
+                }
+            }
+        });
+    </script>
+
     <Routes />
     <ActivityTracker />
-    <script src="_framework/blazor.web.js"></script>
-    <script src="lib/ZXingLib.bundle.js"></script>
-    <script src="lib/ZXingBrowser.bundle.js"></script>
 </body>
 
 </html>
