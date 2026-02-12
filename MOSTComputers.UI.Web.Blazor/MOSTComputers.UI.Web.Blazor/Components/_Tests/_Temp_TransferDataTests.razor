@@ -15,6 +15,7 @@
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.ExternalXmlImport
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
 @using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductProperty
 @using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups
@@ -41,6 +42,7 @@
 @using SixLabors.ImageSharp
 @using static MOSTComputers.Utils.Files.ContentTypeUtils;
 @using static MOSTComputers.Utils.OneOf.MappingExtensions;
+@using static MOSTComputers.UI.Web.Blazor.Components._Tests.CommonLogic;
 
 @inject SaveService SaveServiceInstance
 
@@ -49,8 +51,10 @@
 @inject IProductRelatedItemsFullSaveService _productRelatedItemsFullSaveService
 @inject IProductImageService _productImageService
 @inject IProductCharacteristicService _productCharacteristicService
-@inject IProductPropertyCrudService _productPropertyService
+@inject IProductPropertyCrudService _productPropertyCrudService
+@inject IProductPropertyService _productPropertyService
 @inject IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService
+@inject ProductCharacteristicAndImageHtmlRelationRepository _productCharacteristicAndImageHtmlRelationRepository
 @inject IProductXmlProvidingService _productXmlProvidingService
 @inject ILegacyProductHtmlService _legacyProductHtmlService
 
@@ -65,30 +69,63 @@
 <div class="full-parent-width full-parent-height d-flex flex-column">
     <div class="full-parent-width flex-grow-1 d-flex flex-column">
 
-        @* <a class="btn btn-outline-primary mb-2" @onclick="SaveAllFilesAndPropertiesImgAllAsync" disabled="@_saveOperationRunning">
-            Save files and props from original
-        </a> *@
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveAllFilesAndPropertiesImgAllAsync" disabled="@_saveOperationRunning">
+            Save files and props from ImagesAll
+        </a>
 
         <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedFilesAndPropertiesImgAllAsync" disabled="@_saveOperationRunning">
-            Save Unsaved files and props from original
+            Save Unsaved files and props from ImagesAll
+        </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="GetProductsWithFileDifferences" disabled="@_saveOperationRunning">
+            Show Unsaved files from ImagesAll
+        </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedFilesImgAllAsync" disabled="@_saveOperationRunning">
+            Save Unsaved files from ImagesAll
         </a>
 
         <a class="btn btn-outline-primary mb-2" @onclick="CheckForUnsavedImagesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
             Check for Unsaved Images From XML
         </a>
 
-        <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedImagesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
+        @* <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedImagesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
             Save Unsaved Images From XML
-        </a>
+        </a> *@
 
         <a class="btn btn-outline-primary mb-2" @onclick="SaveAllPropertiesImgAllAsync" disabled="@_saveOperationRunning">
-            Save All props
+            Save All props From Images (Most4WebDB ImagesAll)
         </a>
+
+        <a class="btn btn-outline-primary mb-2" @onclick="SaveAllPropertiesFromLegacyXmlAsync" disabled="@_saveOperationRunning">
+            Save All props From Legacy XML (mostcomputers.bg)
+        </a>
+
+        <div class="d-flex flex-row">
+
+            <select class="me-2 mb-2" @onchange="(e) => OnDataSourceSelectOptionChanged(e)">
+                @foreach (KeyValuePair<string, DiagnoseDifferencesBetweenDataStores.DataSource[]> kvp in DataSourceSelectOptions)
+                {
+                    string name = kvp.Key;
+
+                    <option value="@name">@name</option>
+                }
+            </select>
+
+            <input type="number" class="me-2 mb-2" @bind="MaxAllowedDifferenceBetweenSources" />
+
+            <a class="btn btn-outline-primary me-2 mb-2" @onclick="CompareDataSourcesForProducts" disabled="@_saveOperationRunning">
+                Compare Data Sources For Products
+            </a>
+        </div>
 
         <a class="btn btn-outline-primary mb-2" @onclick="SaveUnsavedFilesForGroupImagesAsync" disabled="@_saveOperationRunning">
             Save Unsaved files for group images
         </a>
 
+        <a class="btn btn-outline-primary mb-2" @onclick='() => DisconnectCircuit()' >
+            Disconnect application
+        </a>
         @*
         <div class="full-parent-width mb-2 d-flex flex-row align-items-center">
             <InputDate Type="InputDateType.DateTimeLocal" class="flex-grow-1 me-2" placeholder="Select update date..." @bind-Value="_updateDate" />
@@ -103,6 +140,8 @@
             <p class="mb-0 me-2">CSTID to start from:</p>
 
             <input type="number" class="flex-grow-1" @bind="_startProductId" />
+            <p class="mb-0 ms-2 me-2">To:</p>
+            <input type="number" class="flex-grow-1" @bind="_endProductId" />
         </div>
 
         <div class="round-loader-default" style="display: @(_saveOperationRunning ? string.Empty : "none")"></div>
@@ -221,6 +260,95 @@
         </div>
     }
 
+    @if (_comparisonResults.Count > 0)
+    {
+		string dataSourceSelectOption = DataSourceSelectOption ?? "Both";
+
+        DiagnoseDifferencesBetweenDataStores.DataSource[] dataSources = DataSourceSelectOptions[dataSourceSelectOption];
+
+        bool hasProps = dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties);
+        bool hasImageHtml = dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll);
+        bool hasLegacyXml = dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct);
+
+        <table>
+            <thead>
+                <tr>
+                    <th>CSTID</th>
+
+                    @if (hasProps)
+                    {
+					    <th>ProductXML</th>
+					}
+
+                    @if (hasImageHtml)
+                    {
+                        <th>Image HTML</th>
+                    }
+
+                    @if (hasLegacyXml)
+	                {
+                        <th>Legacy XML</th>
+                    }
+
+                    <th>Identical</th>
+                    <th>Differences</th>
+
+                    @if (hasImageHtml)
+                    {
+					    <th>Images</th>
+                        <th>ImagesAll</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult comparisonResult in _comparisonResults)
+	            {
+                    <tr>
+                        <td>
+                            <button class="btn btn-link" @onclick="() => SaveProductPropertiesFromLegacyXmlAsync(comparisonResult)">
+                                @comparisonResult.Product.Id
+                            </button>
+                        </td>
+
+                        @if (hasProps)
+                        {
+                            <td>@(comparisonResult.ProductProperties?.Count ?? 0)</td>
+                        }
+
+                        @if (hasImageHtml)
+                        {
+                            <td>@(comparisonResult.HtmlProduct?.Properties?.Count ?? 0)</td>
+                        }
+
+                        @if (hasLegacyXml)
+                        {
+                            <td>@(comparisonResult.LegacyXmlProduct?.Properties.Count ?? 0)</td>
+                        }
+
+                        <td>@comparisonResult.AreDataSourcesIdentical</td>
+                        <td>@comparisonResult.DataSourceDeviations</td>
+
+                        @if (hasImageHtml)
+                        {
+                            <td>@(comparisonResult.ProductFirstImage is not null)</td>
+
+                            <td>@(comparisonResult.ProductImages?.Count > 0)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (_messagesThatOccuredOvertime.Count > 0)
+    {
+        foreach (string messageThatOccuredOvertime in _messagesThatOccuredOvertime)
+        {
+            <p class="mb-0">@messageThatOccuredOvertime</p>
+        }
+    }
+
+
     @if (_errorsThatOccuredOvertime.Count > 0)
     {
         <p class="mb-0 me-2">
@@ -248,112 +376,33 @@
 
 
 @code {
-    public sealed class ProductTestMetrics
+    private const int _defaultLinkCharacteristicId = 1693;
+    private const int _maxProductImageUpdatesInOneOperation = 50;
+
+    private Dictionary<string, DiagnoseDifferencesBetweenDataStores.DataSource[]> DataSourceSelectOptions = new()
     {
-        private readonly List<int> _processedProductIds = new();
-        private readonly List<int> _processedImagesIds = new();
-        private readonly List<int> _processedImagesAllIds = new();
-        private readonly List<Tuple<int, List<int>>> _processedProductPropertyData = new();
-        private readonly List<LegacyHtmlProductProperty> _processedHtmlProperties = new();
+        {"Legacy XML", [DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+            DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct]},
+        {"Img HTML", [DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+            DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll]},
+        {"Both", [DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+            DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct,
+            DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll]},
+    };
 
-        public IReadOnlyList<int> ProcessedProductIds => _processedProductIds;
-        public IReadOnlyList<int> ProcessedImagesIds => _processedImagesIds;
-        public IReadOnlyList<int> ProcessedImagesAllIds => _processedImagesAllIds;
-        public IReadOnlyList<Tuple<int, List<int>>> ProcessedProductPropertyData => _processedProductPropertyData;
-        public IReadOnlyList<LegacyHtmlProductProperty> ProcessedHtmlProperties => _processedHtmlProperties;
+    private string DataSourceSelectOption { get; set; } = "Legacy XML";
 
-        public void AddProcessedProductId(int id)
-        {
-            if (!_processedProductIds.Contains(id))
-            {
-                _processedProductIds.Add(id);
-            }
-        }
+    private void OnDataSourceSelectOptionChanged(ChangeEventArgs e)
+    {
+        DataSourceSelectOption = e.Value?.ToString() ?? "Legacy XML";
 
-        public void RemoveProcessedProductId(int id)
-        {
-            _processedProductIds.Remove(id);
-        }
-
-        public void AddProcessedImagesId(int id)
-        {
-            if (!_processedImagesIds.Contains(id))
-            {
-                _processedImagesIds.Add(id);
-            }
-        }
-
-        public void RemoveProcessedImagesId(int id)
-        {
-            _processedImagesIds.Remove(id);
-        }
-
-        public void AddProcessedImagesAllId(int id)
-        {
-            if (!_processedImagesAllIds.Contains(id))
-            {
-                _processedImagesAllIds.Add(id);
-            }
-        }
-
-        public void RemoveProcessedImagesAllId(int id)
-        {
-            _processedImagesAllIds.Remove(id);
-        }
-
-        public void AddProcessedProductPropertyForProduct(int productId, int characteristicId)
-        {
-            Tuple<int, List<int>>? existingEntry = _processedProductPropertyData
-                .FirstOrDefault(x => x.Item1 == productId);
-
-            if (existingEntry is not null
-                && !existingEntry.Item2.Contains(characteristicId))
-            {
-                existingEntry.Item2.Add(characteristicId);
-
-                return;
-            }
-
-            _processedProductPropertyData.Add(new(productId, new List<int> { characteristicId }));
-        }
-
-        public void RemoveProcessedProductPropertyForProduct(int productId, int characteristicId)
-        {
-            Tuple<int, List<int>>? existingEntry = _processedProductPropertyData
-                .FirstOrDefault(x => x.Item1 == productId);
-
-            if (existingEntry is null) return;
-
-            existingEntry.Item2.Remove(characteristicId);
-        }
-
-        public void RemoveAllProcessedProductPropertiesForProduct(int productId)
-        {
-            int existingEntryIndex = _processedProductPropertyData
-                .FindIndex(x => x.Item1 == productId);
-
-            if (existingEntryIndex < 0) return;
-
-            _processedProductPropertyData.RemoveAt(existingEntryIndex);
-        }
-
-        public void AddProcessedHtmlProperty(LegacyHtmlProductProperty property)
-        {
-            if (!_processedHtmlProperties.Contains(property))
-            {
-                _processedHtmlProperties.Add(property);
-            }
-        }
-
-        public void RemoveProcessedHtmlProperty(LegacyHtmlProductProperty property)
-        {
-            _processedHtmlProperties.Remove(property);
-        }
+        _comparisonResults.Clear();
     }
 
-    private const int _defaultLinkCharacteristicId = 1693;
+    private string MaxAllowedDifferenceBetweenSources { get; set; } = "5";
 
     private int? _startProductId = null;
+    private int? _endProductId = null;
 
     private DateTime? _updateDate = DateTime.Now.AddDays(-7);
 
@@ -362,11 +411,15 @@
 
     private bool _saveOperationRunning { get; set; } = false;
 
+    private List<string> _messagesThatOccuredOvertime { get; set; } = new();
+
     private OneOf<ProductTestMetrics, ValidationResult, List<string>>? TestResults { get; set; }
 
     private List<ValidationResult> _validationErrorsThatOccuredOvertime { get; set; } = new();
     private List<string> _errorsThatOccuredOvertime { get; set; } = new();
     private List<Exception> _exceptionsThatOccuredOvertime { get; set; } = new();
+
+    private List<DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult> _comparisonResults { get; set; } = new();
 
     private IJSObjectReference? _jsModule;
 
@@ -417,6 +470,11 @@
         await Task.Delay(1);
     }
 
+    private async Task DisconnectCircuit()
+    {
+        await JSRuntime.InvokeVoidAsync("Blazor.disconnect");
+    }
+
     public async Task SaveAllFilesAndPropertiesImgAllAsync()
     {
         _saveOperationRunning = true;
@@ -433,12 +491,24 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
 
             _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
 
             _validationErrorsThatOccuredOvertime.Clear();
             _errorsThatOccuredOvertime.Clear();
@@ -450,14 +520,16 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
             await SaveServiceInstance.SaveAllFilesAndPropertiesImgAllAsync(
-                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+                neededServices, currentUserName, products, OnTestResultsChangedAsync);
         }
         catch (Exception e)
         {
@@ -485,12 +557,24 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
 
             _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
 
             _validationErrorsThatOccuredOvertime.Clear();
             _errorsThatOccuredOvertime.Clear();
@@ -502,15 +586,122 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
 
             await SaveServiceInstance.SaveUnsavedFilesAndPropertiesImgAllAsync(
-                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+                neededServices, currentUserName, products, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task GetProductsWithFileDifferences()
+    {
+        _saveOperationRunning = true;
+
+        try
+        {
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            List<IGrouping<int, ProductImageData>> imageDatas = await _productImageService.GetAllWithoutFileDataAsync();
+            List<IGrouping<int, ProductImageFileData>> imageFiles = await _productImageFileService.GetAllAsync()
+                .ContinueWith(task => task.Result.GroupBy(x => x.ProductId)
+                .ToList());
+
+			_messagesThatOccuredOvertime.Clear();
+
+            List<Product> productsWithDifferences = SaveImageFilesFromImagesAll.GetProductsWithFileDifferences(
+                products, imageDatas, imageFiles, AddMessage);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveUnsavedFilesImgAllAsync()
+    {
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveImageFilesFromImagesAll saveImageFilesFromImagesAllTest = new(_productImageService, _productImageFileService);
+
+            await saveImageFilesFromImagesAllTest.SaveFilesFromImagesAllAsync(
+                products, currentUserName, OnTestResultsChangedAsync);
         }
         catch (Exception e)
         {
@@ -540,12 +731,24 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
 
             _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
 
             _validationErrorsThatOccuredOvertime.Clear();
             _errorsThatOccuredOvertime.Clear();
@@ -557,14 +760,16 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
             await SaveServiceInstance.SaveFilesAndPropertiesImgAllThatHaveBeenUpdatedAfterDateAsync(
-                neededServices, _updateDate.Value, currentUserName, _startProductId, OnTestResultsChangedAsync);
+                neededServices, _updateDate.Value, currentUserName, products, OnTestResultsChangedAsync);
         }
         catch (Exception e)
         {
@@ -594,12 +799,25 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
 
             _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
 
             _validationErrorsThatOccuredOvertime.Clear();
             _errorsThatOccuredOvertime.Clear();
@@ -611,14 +829,344 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
             await SaveServiceInstance.SaveAllPropertiesImgAllAsync(
-                neededServices, _updateDate.Value, currentUserName, _startProductId, OnTestResultsChangedAsync);
+                neededServices, _updateDate.Value, currentUserName, products, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    public async Task SaveAllPropertiesFromLegacyXmlAsync()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            if (products.Count > _maxProductImageUpdatesInOneOperation)
+            {
+                _errorsThatOccuredOvertime.Add($"Too many products to update at once. Number tried: {products.Count}. Max allowed: {_maxProductImageUpdatesInOneOperation}.");
+
+                _saveOperationRunning = false;
+                return;
+            }
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            SaveService.NeededServicesForProductSaves neededServices = new(
+                _productService,
+                _productImageFileService,
+                _productRelatedItemsFullSaveService,
+                _productImageService,
+                _productCharacteristicService,
+                _productPropertyCrudService,
+                _productPropertyService,
+                _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
+                _productXmlProvidingService,
+                _legacyProductHtmlService,
+                _transactionExecuteService);
+
+            await SaveServiceInstance.SaveAllPropertiesFromLegacyXmlAsync(
+                neededServices, _updateDate.Value, currentUserName, products, propertiesGrouped, OnTestResultsChangedAsync);
+        }
+        catch (Exception e)
+        {
+            _exceptionsThatOccuredOvertime.Add(e);
+        }
+        finally
+        {
+            _saveOperationRunning = false;
+        }
+    }
+
+    private async Task SaveProductPropertiesFromImagesHtmlAsync(DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult productDataComparisonResult)
+    {
+        string? currentUserName = await GetCurrentUserNameAsync();
+
+        if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+        SaveService.NeededServicesForProductSaves neededServices = new(
+            _productService,
+            _productImageFileService,
+            _productRelatedItemsFullSaveService,
+            _productImageService,
+            _productCharacteristicService,
+            _productPropertyCrudService,
+            _productPropertyService,
+            _productCharacteristicAndExternalXmlDataRelationService,
+            _productCharacteristicAndImageHtmlRelationRepository,
+            _productXmlProvidingService,
+            _legacyProductHtmlService,
+            _transactionExecuteService);
+
+        await SaveServiceInstance.SaveProductPropertiesFromLegacyXmlAsync(
+            neededServices, currentUserName, productDataComparisonResult);
+
+        DiagnoseDifferencesBetweenDataStores dataUpdateTest = new(
+            _productImageService,
+            _productPropertyService,
+            _productXmlProvidingService,
+            _legacyProductHtmlService,
+            _productCharacteristicAndExternalXmlDataRelationService
+        );
+
+        DiagnoseDifferencesBetweenDataStores.DataSource[] dataSourcesToCompare;
+
+        if (DataSourceSelectOption is not null && DataSourceSelectOptions.TryGetValue(DataSourceSelectOption, out var selectedDataSources))
+        {
+            dataSourcesToCompare = selectedDataSources.ToArray();
+        }
+        else
+        {
+            dataSourcesToCompare = [
+                DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+                    DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct,
+                    DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll,
+    ];
+        }
+
+        List<DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult> newComparisonResults
+            = await dataUpdateTest.CompareDataSourcesForProductsAsync([productDataComparisonResult.Product], dataSourcesToCompare, null);
+
+        DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult? newComparisonResult = newComparisonResults.FirstOrDefault();
+
+        if (newComparisonResult is not null)
+        {
+            int indexOfComparisonResultToUpdate = _comparisonResults.FindIndex(x => x.Product.Id == productDataComparisonResult.Product.Id);
+
+            if (indexOfComparisonResultToUpdate >= 0)
+            {
+                _comparisonResults[indexOfComparisonResultToUpdate] = newComparisonResult;
+            }
+            else
+            {
+                _comparisonResults.Insert(0, newComparisonResult);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveProductPropertiesFromLegacyXmlAsync(DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult productDataComparisonResult)
+    {
+        string? currentUserName = await GetCurrentUserNameAsync();
+
+        if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+        SaveService.NeededServicesForProductSaves neededServices = new(
+            _productService,
+            _productImageFileService,
+            _productRelatedItemsFullSaveService,
+            _productImageService,
+            _productCharacteristicService,
+            _productPropertyCrudService,
+            _productPropertyService,
+            _productCharacteristicAndExternalXmlDataRelationService,
+            _productCharacteristicAndImageHtmlRelationRepository,
+            _productXmlProvidingService,
+            _legacyProductHtmlService,
+            _transactionExecuteService);
+
+        await SaveServiceInstance.SaveProductPropertiesFromLegacyXmlAsync(
+            neededServices, currentUserName, productDataComparisonResult);
+
+        DiagnoseDifferencesBetweenDataStores dataUpdateTest = new(
+            _productImageService,
+            _productPropertyService,
+            _productXmlProvidingService,
+            _legacyProductHtmlService,
+            _productCharacteristicAndExternalXmlDataRelationService
+        );
+
+        DiagnoseDifferencesBetweenDataStores.DataSource[] dataSourcesToCompare;
+
+        if (DataSourceSelectOption is not null && DataSourceSelectOptions.TryGetValue(DataSourceSelectOption, out var selectedDataSources))
+        {
+            dataSourcesToCompare = selectedDataSources.ToArray();
+        }
+        else
+        {
+            dataSourcesToCompare = [
+                DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+                DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct,
+                DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll,
+    ];
+        }
+
+        List<DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult> newComparisonResults
+            = await dataUpdateTest.CompareDataSourcesForProductsAsync([productDataComparisonResult.Product], dataSourcesToCompare, null);
+
+        DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult? newComparisonResult = newComparisonResults.FirstOrDefault();
+
+        if (newComparisonResult is not null)
+        {
+            int indexOfComparisonResultToUpdate = _comparisonResults.FindIndex(x => x.Product.Id == productDataComparisonResult.Product.Id);
+
+            if (indexOfComparisonResultToUpdate >= 0)
+            {
+                _comparisonResults[indexOfComparisonResultToUpdate] = newComparisonResult;
+            }
+            else
+            {
+                _comparisonResults.Insert(0, newComparisonResult);
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+
+    public async Task CompareDataSourcesForProducts()
+    {
+        if (_updateDate is null) return;
+
+        _saveOperationRunning = true;
+
+        try
+        {
+            string? currentUserName = await GetCurrentUserNameAsync();
+
+            if (string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            List<MOSTComputers.Models.Product.Models.Product> products = await _productService.GetAllAsync();
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
+
+            List<int> productIds = products.Select(x => x.Id).ToList();
+
+            _lastProductId = products.Count > 0 ? productIds.Max() : 0;
+
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
+
+            List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
+                .ToList();
+
+            DiagnoseDifferencesBetweenDataStores.DataSource[] dataSources = [
+                DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties,
+                DiagnoseDifferencesBetweenDataStores.DataSource.HtmlProductInImagesOrImagesAll,
+                DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct
+            ];
+
+            if (DataSourceSelectOption is not null)
+            {
+                dataSources = DataSourceSelectOptions[DataSourceSelectOption];
+            }
+
+            int maxAllowedDifferenceBetweenSources = 0;
+
+            if (int.TryParse(MaxAllowedDifferenceBetweenSources, out int maxAllowedDifferenceBetweenSourcesRead))
+            {
+                maxAllowedDifferenceBetweenSources = maxAllowedDifferenceBetweenSourcesRead;
+            }
+
+            _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            _validationErrorsThatOccuredOvertime.Clear();
+            _errorsThatOccuredOvertime.Clear();
+            _exceptionsThatOccuredOvertime.Clear();
+
+            DiagnoseDifferencesBetweenDataStores testToRun = new(
+                _productImageService,
+                _productPropertyService,
+                _productXmlProvidingService,
+                _legacyProductHtmlService,
+                _productCharacteristicAndExternalXmlDataRelationService
+            );
+
+            _comparisonResults.Clear();
+
+            List<DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult> data = await testToRun.CompareDataSourcesForProductsAsync(
+                products,
+                dataSources,
+                async newComparisonData =>
+                {
+                    bool displayResult = newComparisonData.DataSourceDeviations >= maxAllowedDifferenceBetweenSources;
+
+                    if (dataSources.Length == 2
+                        && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties)
+                        && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct))
+                    {
+                        int propsCount = (newComparisonData.ProductProperties?.Count) ?? 0;
+                        int legacyXmlPropsCount = (newComparisonData.LegacyXmlProduct?.Properties?.Count) ?? 0;
+
+                        displayResult = displayResult && legacyXmlPropsCount > propsCount;
+                    }
+
+                    if (displayResult)
+                    {
+                        _comparisonResults.Add(newComparisonData);
+                    }
+
+                    await InvokeAsync(StateHasChanged);
+
+                    await Task.Delay(1);
+                });
+
+            string finalMessage = $"Showing {data.Count} out of {products.Count} products.";
+
+            if (TestResults is not null && TestResults.Value.IsT2)
+            {
+                TestResults.Value.AsT2.Add(finalMessage);
+            }
+
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception e)
         {
@@ -648,12 +1196,24 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
 
             _lastProductIdInProperties = propertiesGrouped.Count > 0 ? propertiesGrouped.Select(x => x.Key).Max() : 0;
+
+            if (_startProductId is not null)
+            {
+                products = products.Where(x => x.Id >= _startProductId.Value).ToList();
+            }
+
+            if (_endProductId is not null)
+            {
+                products = products.Where(x => x.Id <= _endProductId.Value).ToList();
+            }
+
+            products = products.OrderBy(x => x.Id).ToList();
 
             _validationErrorsThatOccuredOvertime.Clear();
             _errorsThatOccuredOvertime.Clear();
@@ -665,14 +1225,16 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
 
             await SaveServiceInstance.CheckForUnsavedImagesFromLegacyXmlAsync(
-                neededServices, currentUserName, _startProductId, OnTestResultsChangedAsync);
+                neededServices, currentUserName, products, OnTestResultsChangedAsync);
         }
         catch (Exception e)
         {
@@ -702,7 +1264,7 @@
 
             _lastProductId = products.Count > 0 ? productIds.Max() : 0;
 
-            List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+            List<ProductProperty> properties = await _productPropertyCrudService.GetAllAsync();
 
             List<IGrouping<int, ProductProperty>> propertiesGrouped = properties.GroupBy(x => x.ProductId)
                 .ToList();
@@ -719,8 +1281,10 @@
                 _productRelatedItemsFullSaveService,
                 _productImageService,
                 _productCharacteristicService,
+                _productPropertyCrudService,
                 _productPropertyService,
                 _productCharacteristicAndExternalXmlDataRelationService,
+                _productCharacteristicAndImageHtmlRelationRepository,
                 _productXmlProvidingService,
                 _legacyProductHtmlService,
                 _transactionExecuteService);
@@ -736,6 +1300,24 @@
         {
             _saveOperationRunning = false;
         }
+    }
+
+    private async Task AddMessage(string message)
+    {
+		_messagesThatOccuredOvertime.Add(message);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1);
+    }
+
+    private async Task AddMessages(IEnumerable<string> messages)
+    {
+        _messagesThatOccuredOvertime.AddRange(messages);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(1);
     }
 
     private async Task OnTestResultsChangedAsync(OneOf<ProductTestMetrics, ValidationResult, List<string>> testResults)
@@ -798,9 +1380,10 @@
             public IProductRelatedItemsFullSaveService _productRelatedItemsFullSaveService { get; init; }
             public IProductImageService _productImageService { get; init; }
             public IProductCharacteristicService _productCharacteristicService { get; init; }
-            public IProductPropertyCrudService _productPropertyService { get; init; }
+            public IProductPropertyCrudService _productPropertyCrudService { get; init; }
+            public IProductPropertyService _productPropertyService { get; init; }
             public IProductCharacteristicAndExternalXmlDataRelationService _productCharacteristicAndExternalXmlDataRelationService { get; init; }
-
+            public ProductCharacteristicAndImageHtmlRelationRepository _productCharacteristicAndImageHtmlRelationRepository { get; init; }
             public IProductXmlProvidingService _productXmlProvidingService { get; init; }
             public ILegacyProductHtmlService _legacyProductHtmlService { get; init; }
             public ITransactionExecuteService _transactionExecuteService { get; init; }
@@ -811,8 +1394,10 @@
                 IProductRelatedItemsFullSaveService productRelatedItemsFullSaveService,
                 IProductImageService productImageService,
                 IProductCharacteristicService productCharacteristicService,
-                IProductPropertyCrudService productPropertyService,
+                IProductPropertyCrudService productPropertyCrudService,
+                IProductPropertyService productPropertyService,
                 IProductCharacteristicAndExternalXmlDataRelationService productCharacteristicAndExternalXmlDataRelationService,
+                ProductCharacteristicAndImageHtmlRelationRepository productCharacteristicAndImageHtmlRelationRepository,
                 IProductXmlProvidingService productXmlProvidingService,
                 ILegacyProductHtmlService legacyProductHtmlService,
                 ITransactionExecuteService transactionExecuteService)
@@ -822,11 +1407,13 @@
                 _productRelatedItemsFullSaveService = productRelatedItemsFullSaveService;
                 _productImageService = productImageService;
                 _productCharacteristicService = productCharacteristicService;
-                _productPropertyService = productPropertyService;
+                _productPropertyCrudService = productPropertyCrudService;
                 _productCharacteristicAndExternalXmlDataRelationService = productCharacteristicAndExternalXmlDataRelationService;
+                _productCharacteristicAndImageHtmlRelationRepository = productCharacteristicAndImageHtmlRelationRepository;
                 _legacyProductHtmlService = legacyProductHtmlService;
                 _transactionExecuteService = transactionExecuteService;
                 _productXmlProvidingService = productXmlProvidingService;
+                _productPropertyService = productPropertyService;
             }
         }
 
@@ -852,20 +1439,14 @@
         public async Task SaveAllFilesAndPropertiesImgAllAsync(
             NeededServicesForProductSaves neededServices,
             string? currentUserName,
-            int? startProductId,
+            List<Product> products,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
         {
             if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
 
             _alreadyActive = true;
 
-            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
             // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
-
-            if (startProductId is not null)
-            {
-                products = products.Where(x => x.Id >= startProductId).ToList();
-            }
 
             products = products.OrderBy(x => x.Id).ToList();
 
@@ -918,20 +1499,14 @@
         public async Task SaveUnsavedFilesAndPropertiesImgAllAsync(
             NeededServicesForProductSaves neededServices,
             string? currentUserName,
-            int? startProductId,
+            List<Product> products,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
         {
             if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
 
             _alreadyActive = true;
 
-            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
             // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
-
-            if (startProductId is not null)
-            {
-                products = products.Where(x => x.Id >= startProductId).ToList();
-            }
 
             List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
 
@@ -1043,20 +1618,14 @@
             NeededServicesForProductSaves neededServices,
             DateTime updateDate,
             string? currentUserName,
-            int? startProductId,
+            List<Product> products,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
         {
             if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
 
             _alreadyActive = true;
 
-            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
             // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
-
-            if (startProductId is not null)
-            {
-                products = products.Where(x => x.Id >= startProductId).ToList();
-            }
 
             List<IGrouping<int, ProductImageData>> images = await neededServices._productImageService.GetAllWithoutFileDataAsync();
 
@@ -1138,20 +1707,14 @@
             NeededServicesForProductSaves neededServices,
             DateTime updateDate,
             string? currentUserName,
-            int? startProductId,
+            List<Product> products,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
         {
             if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
 
             _alreadyActive = true;
 
-            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
             // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
-
-            if (startProductId is not null)
-            {
-                products = products.Where(x => x.Id >= startProductId).ToList();
-            }
 
             products = products.OrderBy(x => x.Id).ToList();
 
@@ -1200,23 +1763,123 @@
             _alreadyActive = false;
         }
 
-        public async Task CheckForUnsavedImagesFromLegacyXmlAsync(
+        public async Task SaveAllPropertiesFromLegacyXmlAsync(
             NeededServicesForProductSaves neededServices,
+            DateTime updateDate,
             string? currentUserName,
-            int? startProductId,
+            List<Product> products,
+            List<IGrouping<int, ProductProperty>> propertiesGrouped,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
         {
             if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
 
             _alreadyActive = true;
 
-            List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetAllAsync();
             // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
 
-            if (startProductId is not null)
+            products = products.OrderBy(x => x.Id).ToList();
+
+            var getXmlResult = await neededServices._productXmlProvidingService.GetProductXmlParsedAsync();
+
+            if (!getXmlResult.IsT0)
             {
-                products = products.Where(x => x.Id >= startProductId).ToList();
+                _alreadyActive = false;
+                return;
             }
+
+            LegacyXmlObjectData legacyXmlObjectData = getXmlResult.AsT0;
+
+            ProductTestMetrics productTestMetrics = new();
+
+            TimeSpan timeout = TimeSpan.FromDays(2);
+
+            TEMP__AllowTransactionScopesWithLongTimeouts(timeout);
+
+            const int productsProcessingAtTheSameTimeBatchSize = 1;
+
+            for (int i = 0; i < products.Count; i += productsProcessingAtTheSameTimeBatchSize)
+            {
+                int batchCount = Math.Min(productsProcessingAtTheSameTimeBatchSize, products.Count - i);
+
+                List<MOSTComputers.Models.Product.Models.Product> currentProductBatch = products.GetRange(i, batchCount);
+
+                List<OneOf<Success, ValidationResult, UnexpectedFailureResult>> resultsForBatch = new();
+
+                foreach (Product product in currentProductBatch)
+                {
+                    LegacyXmlProduct? legacyXmlProduct = legacyXmlObjectData.Products.FirstOrDefault(x => x.Id == product.Id);
+
+                    if (legacyXmlProduct is null) continue;
+
+                    List<ProductProperty>? productProperties = propertiesGrouped.Find(x => x.Key == product.Id)?.ToList();
+
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> result
+                        = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                            () => UpsertPropertiesFromLegacyXmlAsync(neededServices, currentUserName, false, product, legacyXmlProduct, productProperties, productTestMetrics, onChanged),
+                            result => result.IsT0,
+                            transactionOptions: new()
+                            {
+                                Timeout = timeout
+                            });
+
+                    resultsForBatch.Add(result);
+                }
+
+                int startId = currentProductBatch[0].Id;
+                int endId = currentProductBatch[batchCount - 1].Id;
+
+                foreach (OneOf<Success, ValidationResult, UnexpectedFailureResult> result in resultsForBatch)
+                {
+                    result.Switch(
+                        success => onChanged(productTestMetrics),
+                        validationResult =>
+                        {
+                            foreach (ValidationFailure validationFailure in validationResult.Errors)
+                            {
+                                validationFailure.ErrorMessage += $" (between {startId} and {endId})";
+                            }
+
+                            onChanged(validationResult);
+                        },
+                        // fileDoesntExistResult => onChanged(new List<string>() { $"File '{fileDoesntExistResult.FileName}' does not exist (between {startId} and {endId})" }),
+                        // fileAlreadyExistsResult => onChanged(new List<string>() { $"File '{fileAlreadyExistsResult.FileName}' already exists (between {startId} and {endId})" }),
+                        unexpectedFailureResult => onChanged(new List<string>() { $"Unknown error (between {startId} and {endId})" }));
+                }
+            }
+
+            _alreadyActive = false;
+        }
+
+        public async Task SaveProductPropertiesFromLegacyXmlAsync(
+            NeededServicesForProductSaves neededServices,
+            string currentUserName,
+            DiagnoseDifferencesBetweenDataStores.ProductDataComparisonResult productDataComparisonResult)
+        {
+            Product product = productDataComparisonResult.Product;
+
+			LegacyXmlProduct? legacyXmlProduct = productDataComparisonResult.LegacyXmlProduct;
+
+            if (legacyXmlProduct is null) return;
+
+            List<ProductProperty>? productProperties = productDataComparisonResult.ProductProperties;
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> result
+                = await neededServices._transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+                    () => UpsertPropertiesFromLegacyXmlAsync(neededServices, currentUserName, false, product, legacyXmlProduct, productProperties, null, null),
+                    result => result.IsT0);
+        }
+
+        public async Task CheckForUnsavedImagesFromLegacyXmlAsync(
+            NeededServicesForProductSaves neededServices,
+            string? currentUserName,
+			List<Product> products,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task> onChanged)
+        {
+            if (_alreadyActive || string.IsNullOrWhiteSpace(currentUserName)) return;
+
+            _alreadyActive = true;
+
+            // List<MOSTComputers.Models.Product.Models.Product> products = await neededServices._productService.GetByIdsAsync([55668,56252,56254,56257,56349,56355,56705,57648,57865,58121,58640,63971,64117,64761,64911,65595,65636,65637,65638,65639,65640,65641,67617,67618,69664]);
 
             Task<OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound>> getLegacyXmlObjectDataTask = neededServices._productXmlProvidingService.GetProductXmlParsedAsync();
 
@@ -1493,7 +2156,7 @@
                 .GroupBy(x => products.Find(p => p.Id == x.ProductId))
                 .ToList();
 
-            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyService.GetAllInProductsAsync(productIds);
+            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyCrudService.GetAllInProductsAsync(productIds);
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> savePropertiesResult
                 = await SaveProductPropertiesFromOriginalImageHtmlInternalAsync(
@@ -1525,7 +2188,7 @@
                 .GroupBy(x => products.Find(p => p.Id == x.ProductId))
                 .ToList();
 
-            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyService.GetAllInProductsAsync(productIds);
+            List<IGrouping<int, ProductProperty>> propertiesOfProducts = await neededServices._productPropertyCrudService.GetAllInProductsAsync(productIds);
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> savePropertiesResult
                 = await SaveProductPropertiesFromOriginalImageHtmlInternalAsync(
@@ -1589,7 +2252,7 @@
                 }
 
                 OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertAllResult
-                    = await SaveImgAllFilesForProductAsync(neededServices, upsertUserName, originalImagesByProduct, imageFilesByProduct, productTestMetrics, onChanged);
+                    = await SaveImgAllFilesForProductAsync(neededServices, upsertUserName, originalImagesByProduct.Key, originalImagesByProduct, imageFilesByProduct, productTestMetrics, onChanged);
 
                 if (!upsertAllResult.IsT0) return upsertAllResult;
             }
@@ -1600,8 +2263,9 @@
         private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> SaveImgAllFilesForProductAsync(
             NeededServicesForProductSaves neededServices,
             string upsertUserName,
-            IGrouping<int, ProductImage> originalImagesByProduct,
-            IGrouping<int, ProductImageFileData>? existingImageFilesByProduct = null,
+            int productId,
+            IEnumerable<ProductImage> originalImagesByProduct,
+            IEnumerable<ProductImageFileData>? existingImageFilesByProduct = null,
             ProductTestMetrics? productTestMetrics = null,
             Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
         {
@@ -1671,7 +2335,7 @@
 
                 ProductImageFileCreateRequest productImageFileCreateRequest = new()
                 {
-                    ProductId = originalImagesByProduct.Key,
+                    ProductId = productId,
                     ImageId = originalImage.Id,
                     FileData = new()
                     {
@@ -1698,7 +2362,7 @@
 
             if (productTestMetrics is not null)
             {
-                productTestMetrics.AddProcessedProductId(originalImagesByProduct.Key);
+                productTestMetrics.AddProcessedProductId(productId);
 
                 foreach (ProductImage newProductImage in originalImagesByProduct)
                 {
@@ -1801,7 +2465,7 @@
                     }
 
                     OneOf<Success, ValidationResult, UnexpectedFailureResult> insertPropertyActionResult
-                        = await UpsertXmlPropertyInPropertiesAsync(neededServices, product.Id, htmlProperty, propertyRelationship, currentUserName);
+                        = await UpsertHtmlPropertyInPropertiesAsync(neededServices, product.Id, htmlProperty, propertyRelationship, currentUserName);
 
                     if (!insertPropertyActionResult.IsT0) return insertPropertyActionResult;
 
@@ -1819,7 +2483,120 @@
             if (!string.IsNullOrWhiteSpace(htmlProduct.VendorUrl))
             {
                 OneOf<Success, ValidationResult, UnexpectedFailureResult> saveLinkResult
-                    = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, htmlProduct.VendorUrl, currentUserName);
+                    = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, htmlProduct.VendorUrl);
+
+                if (!saveLinkResult.IsT0) return saveLinkResult;
+
+                if (productTestMetrics is not null)
+                {
+                    productTestMetrics.AddProcessedProductId(product.Id);
+                    productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, _defaultLinkCharacteristicId);
+
+                    metricsChanged = true;
+                }
+            }
+
+            if (metricsChanged && productTestMetrics is not null)
+            {
+                productTestMetrics.AddProcessedProductId(product.Id);
+
+                if (onChanged is not null)
+                {
+                    await onChanged(productTestMetrics);
+                }
+            }
+
+            return new Success();
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertPropertiesFromLegacyXmlAsync(
+            NeededServicesForProductSaves neededServices,
+            string currentUserName,
+            bool unsavedOnly,
+            Product product,
+            LegacyXmlProduct xmlProduct,
+            List<ProductProperty>? properties = null,
+            ProductTestMetrics? productTestMetrics = null,
+            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        {
+            if (product.CategoryId is null)
+            {
+                ValidationFailure categoryIdError = new(nameof(product.CategoryId), "Cannot be null");
+
+                return new ValidationResult([categoryIdError]);
+            }
+
+            List<int> categoryIds = [-1, product.CategoryId.Value];
+
+            List<ProductCharacteristicAndExternalXmlDataRelation> propertyRelationshipsFromProductCategory
+                = await neededServices._productCharacteristicAndExternalXmlDataRelationService.GetAllWithSameCategoryIdsAsync(categoryIds);
+
+            List<ProductCharacteristic> productCharacteristics
+                = await neededServices._productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+                    categoryIds, [ProductCharacteristicType.ProductCharacteristic, ProductCharacteristicType.Link]);
+
+            bool metricsChanged = false;
+
+            if (xmlProduct.Properties is not null)
+            {
+                foreach (LegacyXmlProductProperty xmlProperty in xmlProduct.Properties)
+                {
+                    if (string.IsNullOrEmpty(xmlProperty.Name)
+                        || string.IsNullOrWhiteSpace(xmlProperty.Value))
+                    {
+                        continue;
+                    }
+
+                    ProductCharacteristic? matchingCharacteristic = null;
+
+                    ProductCharacteristicAndExternalXmlDataRelation? propertyRelationship = propertyRelationshipsFromProductCategory
+                        .FirstOrDefault(x => x.XmlName == xmlProperty.Name);
+
+                    if (propertyRelationship?.ProductCharacteristicId is not null)
+                    {
+                        matchingCharacteristic = productCharacteristics.FirstOrDefault(
+                            characteristic => characteristic.Id == propertyRelationship.ProductCharacteristicId.Value);
+                    }
+                    else
+                    {
+                        matchingCharacteristic = productCharacteristics.FirstOrDefault(
+                            productCharacteristic => productCharacteristic.Name is not null 
+                                && productCharacteristic.Name.Equals(xmlProperty.Name, StringComparison.Ordinal));
+                    }
+
+                    if (matchingCharacteristic is null)
+                    {
+                        continue;
+                    }
+
+                    ProductProperty? matchingProperty = properties?.FirstOrDefault(x => x.ProductCharacteristicId == matchingCharacteristic.Id);
+
+                    if (matchingProperty is not null
+                        && matchingProperty.Value == xmlProperty.Value)
+                    {
+                        continue;
+                    }
+
+                    OneOf<Success, ValidationResult, UnexpectedFailureResult> insertPropertyActionResult
+                        = await UpsertXmlPropertyInPropertiesAsync(neededServices, product.Id, xmlProperty.Value, matchingCharacteristic.Id, currentUserName);
+
+                    if (!insertPropertyActionResult.IsT0) return insertPropertyActionResult;
+
+                    if (productTestMetrics is not null)
+                    {
+                        productTestMetrics.AddProcessedProductId(product.Id);
+                        // productTestMetrics.AddProcessedHtmlProperty(xmlProperty);
+                        productTestMetrics.AddProcessedProductPropertyForProduct(product.Id, matchingCharacteristic.Id);
+
+                        metricsChanged = true;
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(xmlProduct.VendorUrl))
+            {
+                OneOf<Success, ValidationResult, UnexpectedFailureResult> saveLinkResult
+                    = await SaveVendorUrlLinkFromXmlProductAsync(neededServices, product.Id, xmlProduct.VendorUrl);
 
                 if (!saveLinkResult.IsT0) return saveLinkResult;
 
@@ -1845,7 +2622,7 @@
             return new Success();
         }
                    
-        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertHtmlPropertyInPropertiesAsync(
             NeededServicesForProductSaves neededServices,
             int productId,
             LegacyHtmlProductProperty htmlProperty,
@@ -1869,7 +2646,27 @@
             };
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertPropertyResult
-                = await neededServices._productPropertyService.UpsertAsync(productPropertyUpdateRequest);
+                = await neededServices._productPropertyCrudService.UpsertAsync(productPropertyUpdateRequest);
+
+            return upsertPropertyResult;
+        }
+
+        private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertXmlPropertyInPropertiesAsync(
+            NeededServicesForProductSaves neededServices,
+            int productId,
+            string value,
+            int productCharacteristicId,
+            string currentUserName)
+        {
+            ProductPropertyUpdateRequest productPropertyUpdateRequest = new()
+            {
+                ProductCharacteristicId = productCharacteristicId,
+                ProductId = productId,
+                Value = value,
+            };
+
+            OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertPropertyResult
+                = await neededServices._productPropertyService.UpsertAsync(productPropertyUpdateRequest, currentUserName);
 
             return upsertPropertyResult;
         }
@@ -1877,8 +2674,7 @@
         private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> SaveVendorUrlLinkFromXmlProductAsync(
             NeededServicesForProductSaves neededServices,
             int productId,
-            string? vendorUrl,
-            string upsertUserName)
+            string? vendorUrl)
         {
             if (vendorUrl is null)
             {
@@ -1899,7 +2695,7 @@
             };
 
             OneOf<Success, ValidationResult, UnexpectedFailureResult> createLinkResult
-                = await neededServices._productPropertyService.UpsertAsync(updateRequest);
+                = await neededServices._productPropertyCrudService.UpsertAsync(updateRequest);
 
             return createLinkResult;
         }
