@@ -26,33 +26,51 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     private const string _warrantyCardsTableNameAliasInQueryBase = "warrantyCards";
 
-    const string _selectWithItemsQueryBase =
-        $"""
-        SELECT warrantyCards.{ExportIdColumn},
-            warrantyCards.{ExportDateColumn},
-            warrantyCards.{ExportUserIdColumn},
-            warrantyCards.{ExportUserColumn},
-            warrantyCards.{OrderIdColumn},
-            warrantyCards.{CustomerBIDColumn},
-            warrantyCards.{CustomerNameColumn},
-            warrantyCards.{WarrantyCardDateColumn},
-            warrantyCards.{WarrantyCardTermColumn},
+    private static string SelectLastVersionOfWarrantyCards(string additionalWhereStatement)
+    {
+        return
+            $"""
+            WITH LatestWarrantyCardExports AS
+            (
+                SELECT RecordOrderId, RecordExportId
+                FROM (
+                    SELECT {OrderIdColumn} AS RecordOrderId, MAX({ExportIdColumn}) AS RecordExportId
+                    FROM {WarrantyCardsTableName} warrantyCards WITH (NOLOCK)
+                    {additionalWhereStatement}
+                    GROUP BY {OrderIdColumn}
+                ) AS LastExportIdsFiltered
+            )
 
-            warrantyCardItems.{WarrantyCardItemsTable.ExportedItemIdColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.ExportIdColumn} AS {WarrantyCardItemsTable.ExportIdAlias},
-            warrantyCardItems.{WarrantyCardItemsTable.OrderIdColumn} AS {WarrantyCardItemsTable.OrderIdAlias},
-            warrantyCardItems.{WarrantyCardItemsTable.ProductIdColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.ProductNameColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.PriceInLevaColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.QuantityColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.SerialNumberColumn},
-            warrantyCardItems.{WarrantyCardItemsTable.WarrantyCardItemTermInMonthsColumn} AS {WarrantyCardItemsTable.WarrantyCardItemTermInMonthsAlias},
-            warrantyCardItems.{WarrantyCardItemsTable.DisplayOrderColumn}
-
-        FROM {WarrantyCardsTableName} warrantyCards WITH (NOLOCK)
-        LEFT JOIN {WarrantyCardItemsTableName} warrantyCardItems WITH (NOLOCK)
-        ON warrantyCards.{OrderIdColumn} = warrantyCardItems.{WarrantyCardItemsTable.OrderIdColumn}
-        """;
+            SELECT warrantyCards.{ExportIdColumn},
+                warrantyCards.{ExportDateColumn},
+                warrantyCards.{ExportUserIdColumn},
+                warrantyCards.{ExportUserColumn},
+                warrantyCards.{OrderIdColumn},
+                warrantyCards.{CustomerBIDColumn},
+                warrantyCards.{CustomerNameColumn},
+                warrantyCards.{WarrantyCardDateColumn},
+                warrantyCards.{WarrantyCardTermColumn},
+            
+                warrantyCardItems.{WarrantyCardItemsTable.ExportedItemIdColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.ExportIdColumn} AS {WarrantyCardItemsTable.ExportIdAlias},
+                warrantyCardItems.{WarrantyCardItemsTable.OrderIdColumn} AS {WarrantyCardItemsTable.OrderIdAlias},
+                warrantyCardItems.{WarrantyCardItemsTable.ProductIdColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.ProductNameColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.PriceInLevaColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.QuantityColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.SerialNumberColumn},
+                warrantyCardItems.{WarrantyCardItemsTable.WarrantyCardItemTermInMonthsColumn} AS {WarrantyCardItemsTable.WarrantyCardItemTermInMonthsAlias},
+                warrantyCardItems.{WarrantyCardItemsTable.DisplayOrderColumn}
+            
+            FROM LatestWarrantyCardExports latestExports
+            INNER JOIN {WarrantyCardsTableName} warrantyCards WITH (NOLOCK)
+                ON latestExports.RecordOrderId = warrantyCards.{OrderIdColumn}
+                AND latestExports.RecordExportId = warrantyCards.{ExportIdColumn}
+            LEFT JOIN {WarrantyCardItemsTableName} warrantyCardItems WITH (NOLOCK)
+                ON warrantyCards.{OrderIdColumn} = warrantyCardItems.{WarrantyCardItemsTable.OrderIdColumn}
+                AND warrantyCards.{ExportIdColumn} = warrantyCardItems.{WarrantyCardItemsTable.ExportIdColumn}
+            """;
+    }
 
     private readonly IConnectionStringProvider _connectionStringProvider;
 
@@ -60,11 +78,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
     {
         (string whereClause, DynamicParameters parameters) = GetQueryAndAssignParametersFromSearchData(warrantyCardSearchRequest, true);
 
-        string query =
-            $"""
-            {_selectWithItemsQueryBase}
-            {whereClause}
-            """;
+        string query = SelectLastVersionOfWarrantyCards(whereClause);
 
         List<WarrantyCardDAO> output = new();
 
@@ -76,23 +90,31 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
             query,
             (warrantyCard, warrantyCardItem) =>
             {
-                WarrantyCardDAO? existingWarrantyCard = output.FirstOrDefault(x => x.ExportId == warrantyCard.ExportId);
+                WarrantyCardDAO? existingWarrantyCard = output.FirstOrDefault(x => x.OrderId == warrantyCard.OrderId);
 
                 if (existingWarrantyCard is null)
                 {
                     warrantyCard.WarrantyCardItems = new();
 
                     output.Add(warrantyCard);
+                }
+                else if (existingWarrantyCard.ExportId < warrantyCard.ExportId)
+                {
+                    int existingWarrantyCardIndex = output.IndexOf(existingWarrantyCard);
 
-                    existingWarrantyCard = warrantyCard;
+                    output[existingWarrantyCardIndex] = warrantyCard;
+                }
+                else
+                {
+                    warrantyCard = existingWarrantyCard;
                 }
 
                 if (warrantyCardItem is not null)
                 {
-                    existingWarrantyCard.WarrantyCardItems!.Add(warrantyCardItem);
+                    warrantyCard.WarrantyCardItems!.Add(warrantyCardItem);
                 }
 
-                return existingWarrantyCard;
+                return warrantyCard;
             },
             parameters,
             splitOn: $"{WarrantyCardItemsTable.ExportedItemIdColumn}",
@@ -204,11 +226,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     public async Task<List<WarrantyCard>> GetWarrantyCardByOrderIdsAsync(List<int> warrantyCardOrderIds)
     {
-        const string query =
-            $"""
-            {_selectWithItemsQueryBase}
-            WHERE warrantyCards.{OrderIdColumn} IN @warrantyCardOrderIds;
-            """;
+        string query = SelectLastVersionOfWarrantyCards("WHERE warrantyCards.{OrderIdColumn} IN @warrantyCardOrderIds");
 
         var parameters = new
         {
@@ -254,11 +272,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     public async Task<WarrantyCard?> GetWarrantyCardByOrderIdAsync(int warrantyCardOrderId)
     {
-        const string query =
-            $"""
-            {_selectWithItemsQueryBase}
-            WHERE warrantyCards.{OrderIdColumn} = @warrantyCardOrderId;
-            """;
+        string query = SelectLastVersionOfWarrantyCards($"WHERE warrantyCards.{OrderIdColumn} = @warrantyCardOrderId");
 
         var parameters = new
         {
