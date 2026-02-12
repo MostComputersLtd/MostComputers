@@ -7,6 +7,7 @@
 
 @using FluentValidation.Results
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Web
 @using OneOf
 @using OneOf.Types
 @using Microsoft.AspNetCore.Components.Authorization
@@ -22,7 +23,13 @@
 
 @inject IProductGTINCodeService _productGTINCodeService
 
-<PageTitle>Barcode Scanner</PageTitle>
+
+<HeadContent>
+    <title>Barcode Scanner</title>
+
+    <script src="lib/ZXingLib.bundle.js"></script>
+    <script src="lib/ZXingBrowser.bundle.js"></script>
+</HeadContent>
 
 <div class="full-parent-width full-parent-height d-flex flex-column">
 
