@@ -975,7 +975,7 @@
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
 
-        AddStatusesToAllProductsWithoutStatuses();
+        Task _ = AddStatusesToAllProductsWithoutStatuses();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
