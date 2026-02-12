@@ -170,7 +170,8 @@
             .Select(x => x.Id)
             .ToList();
 
-        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+            = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
 
         PopulatePromotionGroups(promotionGroups, promotionGroupContents, promotionImageFiles);
     }
