@@ -707,7 +707,6 @@
     {
         return await CategoryService.GetAllAsync();
     }
-
     private async Task ShowProductDisplayPopupAsync(ProductDisplayData productData)
     {
         Product product = productData.Product;
@@ -729,29 +728,8 @@
 
         List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(product.Id);
 
-        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
-
-        foreach (ProductProperty property in productProperties)
-        {
-            ProductCharacteristic productCharacteristic = productCharacteristics
-                .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
-
-            Client.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
-            {
-                ProductCharacteristic = new()
-                {
-                    Id = productCharacteristic!.Id,
-                    CategoryId = productCharacteristic.CategoryId,
-                    Active = productCharacteristic.Active,
-                    KWPrCh = productCharacteristic.KWPrCh
-                },
-                Name = property.Characteristic,
-                Value = property.Value,
-                DisplayOrder = property.DisplayOrder
-            };
-
-            propertiesInData.Add(mappedProperty);
-        }
+        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData
+            = GetProductPropertiesFromProductData(productProperties, productCharacteristics);
 
         List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
 
@@ -780,7 +758,53 @@
         List<SearchStringPartOriginData>? productSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             product.SearchString, product.CategoryId);
 
-        Client.Product.ProductData.ProductPriceData? productPriceData = null;
+        Client.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceData(productData);
+
+        _productDataPopupData = new()
+        {
+            Product = product,
+            ProductDataPopupPriceData = productPriceData,
+            ProductProperties = propertiesInData,
+            ProductImages = productImagesInData,
+            Promotions = productPromotions,
+            ProductSearchStringParts = productSearchStringParts,
+        };
+
+        IsProductDataPopupVisible = true;
+    }
+
+    private List<Client.Product.ProductData.ProductPropertyDisplayData> GetProductPropertiesFromProductData(
+        List<ProductProperty> productProperties,
+        List<ProductCharacteristic> productCharacteristics)
+    {
+        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
+
+        foreach (ProductProperty property in productProperties)
+        {
+            ProductCharacteristic productCharacteristic = productCharacteristics
+                .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
+
+            Client.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
+            {
+                ProductCharacteristic = new()
+                {
+                    Id = productCharacteristic!.Id,
+                    CategoryId = productCharacteristic.CategoryId,
+                    Active = productCharacteristic.Active,
+                    KWPrCh = productCharacteristic.KWPrCh
+                },
+                Name = property.Characteristic,
+                Value = property.Value,
+                DisplayOrder = property.DisplayOrder
+            };
+        }
+
+        return propertiesInData;
+    }
+
+    private async Task<Client.Product.ProductData.ProductPriceData?> GetProductPriceData(ProductDisplayData productData)
+    {
+		Product product = productData.Product;
 
         Client.Product.ProductData.DisplayPrice? displayPrice = null;
         Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
@@ -834,26 +858,13 @@
             }
         }
 
-        if (displayPrice is not null)
-        {
-            productPriceData = new()
-            {
-                DisplayPrice = displayPrice.Value,
-                SecondaryDisplayPrice = secondaryDisplayPrice,
-            };
-        }
+        if (displayPrice is null) return null;
 
-        _productDataPopupData = new()
+        return new()
         {
-            Product = product,
-            ProductDataPopupPriceData = productPriceData,
-            ProductProperties = propertiesInData,
-            ProductImages = productImagesInData,
-            Promotions = productPromotions,
-            ProductSearchStringParts = productSearchStringParts,
+            DisplayPrice = displayPrice.Value,
+            SecondaryDisplayPrice = secondaryDisplayPrice,
         };
-
-        IsProductDataPopupVisible = true;
     }
 
     private async Task OpenDataInNewWindow(string url)
@@ -863,8 +874,6 @@
 
     private void ShowProductXmlPopup(Product product)
     {
-        // ProductToDisplay = product;
-
         _productXmlPopupData = new()
         {
             Product = product,
@@ -876,9 +885,6 @@
     private void ShowPromotionGroupImagesPopup(ProductDisplayData productDisplayData)
     {
         if (productDisplayData.ManufacturerPromotionGroupId is null) return;
-
-        // ProductToDisplay = productDisplayData.Product;
-        // ProductToDisplayData = productDisplayData;
 
         _productGroupImagesPopupData = new()
         {
