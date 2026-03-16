@@ -89,6 +89,8 @@ public static class ConfigureServices
 
         services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
 
+        services.AddScoped<IXmlDownloadsRepository, XmlDownloadsRepository>();
+
         //services.AddScoped<IProductStatusesRepository, ProductStatusesRepository>();
 
         services.AddScoped<IToDoLocalChangesRepository, ToDoLocalChangesRepository>();
@@ -149,6 +151,8 @@ public static class ConfigureServices
             config.AddMap(new PromotionFileInfoEntityMap());
             config.AddMap(new PromotionProductFileInfoDAOEntityMap());
             config.AddMap(new PromotionProductFileInfoForProductCountDataEntityMap());
+
+            config.AddMap(new XmlDownloadsEntityMap());
 
             config.AddMap(new ProductStatusesEntityMap());
             config.AddMap(new ProductWorkStatusesEntityMap());
