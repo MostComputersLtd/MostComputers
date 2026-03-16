@@ -22,6 +22,11 @@ internal class PasswordsTableOnlyAuthenticationDBContext : DbContext
     {
         base.OnModelCreating(builder);
 
+        builder.Entity<PasswordsTableOnlyUser>(userTable =>
+        {
+            userTable.Property(user => user.PersonRealName).HasColumnName("PersonRealName");
+        });
+
         builder.Entity<PasswordsTableOnlyUser>().ToTable("Users");
 
         builder.Entity<PasswordsTableOnlyRole>().ToTable("UserRoles");
