@@ -10,10 +10,9 @@
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
-@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
 @using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
 @using Microsoft.Extensions.Caching.Memory
 @using System.Text.Json
@@ -87,7 +86,7 @@
             Download XML with manufacturer
         </button>
 
-        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlUrlAndCopyToClipboard(_downloadAllByManufacturerUri)">Copy Url</button>
+        <button class="btn btn-outline-secondary" @onclick="() => GenerateProductXmlByManufacturerUrlAndCopyToClipboard()">Copy Url</button>
     </div>
 
     <div class="download-xml-option-container @(_isLoading ? "loading" : "")">
@@ -125,6 +124,8 @@
     private const string _downloadWithCurrencyQueryValue = $"?currency=";
 
     private const string _downloadPromotionGroupXmlUri = $"api/promotionGroup/xml/all";
+
+    private const string _timeFormatInFileNames = "yyyy_MM_dd_HH:mm:ss";
 
     private readonly List<string> _currencySelectOptions = ["Base currency", "EUR", "USD", "BGN"];
     private string _selectedCurrency = "Base currency";
@@ -164,7 +165,7 @@
 
         _isLoading = true;
 
-        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        string fileName = $"MOST_XML_({DateTime.Now.ToString(_timeFormatInFileNames)})";
 
         try
         {
@@ -194,7 +195,7 @@
             return;
         }
 
-        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        string fileName = $"MOST_XML_({DateTime.Now.ToString(_timeFormatInFileNames)})";
 
         Category? selectedCategory = _categoriesInSelect.FirstOrDefault(x => x.Id == selectedCategoryId);
 
@@ -207,7 +208,7 @@
                 categoryNameInFileName.Replace(invalidChar.ToString(), string.Empty);
             }
 
-            fileName = $"MOST_XML_{categoryNameInFileName}_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+            fileName = $"MOST_XML_{categoryNameInFileName}_({DateTime.Now.ToString(_timeFormatInFileNames)})";
         }
 
         string url = _downloadAllInCategoryUri + selectedCategoryId + GetQueryValueForSelectedCurrency();
@@ -228,7 +229,7 @@
 
         _isLoading = true;
 
-        int? selectedManufacturerId = int.TryParse(_selectedManufacturerId, out int categoryId) ? categoryId : null;
+        int? selectedManufacturerId = int.TryParse(_selectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
 
         if (selectedManufacturerId is null)
         {
@@ -237,7 +238,7 @@
             return;
         }
 
-        string fileName = $"MOST_XML_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        string fileName = $"MOST_XML_({DateTime.Now.ToString(_timeFormatInFileNames)})";
 
         Manufacturer? selectedManufacturer = _manufacturersInSelect.FirstOrDefault(x => x.Id == selectedManufacturerId);
 
@@ -250,7 +251,7 @@
                 manufacturerNameInFileName.Replace(invalidChar.ToString(), string.Empty);
             }
 
-            fileName = $"MOST_XML_{manufacturerNameInFileName}_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+            fileName = $"MOST_XML_{manufacturerNameInFileName}_({DateTime.Now.ToString(_timeFormatInFileNames)})";
         }
 
         string url = _downloadAllByManufacturerUri + selectedManufacturerId + GetQueryValueForSelectedCurrency();
@@ -271,7 +272,7 @@
 
         _isLoading = true;
 
-        string fileName = $"MOST_XML_ALL_PROMOTIONS_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        string fileName = $"MOST_XML_ALL_PROMOTIONS_({DateTime.Now.ToString(_timeFormatInFileNames)})";
 
         try
         {
@@ -292,7 +293,7 @@
 
         _isLoading = true;
 
-        string fileName = $"MOST_XML_PROMOTION_GROUPS_({DateTime.Now.ToString("yyyy_MM_dd_HH:mm:ss")})";
+        string fileName = $"MOST_XML_PROMOTION_GROUPS_({DateTime.Now.ToString(_timeFormatInFileNames)})";
 
         try
         {
@@ -331,6 +332,17 @@
         if (selectedCategoryId is null) return;
 
         string uriWithQueryString = uri + selectedCategoryId.ToString() + GetQueryValueForSelectedCurrency();
+
+        await CopyFullUrlToClipboardFromUri(uriWithQueryString);
+    }
+
+    private async Task GenerateProductXmlByManufacturerUrlAndCopyToClipboard()
+    {
+        int? selectedManufacturerId = int.TryParse(_selectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
+
+        if (selectedManufacturerId is null) return;
+
+        string uriWithQueryString = _downloadAllByManufacturerUri + selectedManufacturerId.ToString() + GetQueryValueForSelectedCurrency();
 
         await CopyFullUrlToClipboardFromUri(uriWithQueryString);
     }
