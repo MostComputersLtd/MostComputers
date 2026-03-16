@@ -2,7 +2,7 @@
 using System.Text;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
-using MOSTComputers.UI.Web.Blazor.Models.Search.Product;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
 namespace MOSTComputers.UI.Web.Blazor.Utils;
 
@@ -199,7 +199,6 @@ internal static class DataToTextConversion
             ProductNewStatusSearchOptions.ReadyForUse => "Ready",
             ProductNewStatusSearchOptions.Postponed1 => "Post1",
             ProductNewStatusSearchOptions.Postponed2 => "Post2",
-            ProductNewStatusSearchOptions.LastAdded => "Last Added",
             ProductNewStatusSearchOptions.None => "None",
             _ => null
         };
