@@ -277,222 +277,222 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
     //        unexpectedFailureResult => unexpectedFailureResult);
     //}
 
-    public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateAsync(
-        ServicePromotionProductFileUpdateRequest updateRequest)
-    {
-        ValidationResult validationResult = ValidateDefault(_updateRequestValidator, updateRequest);
+    //public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateAsync(
+    //    ServicePromotionProductFileUpdateRequest updateRequest)
+    //{
+    //    ValidationResult validationResult = ValidateDefault(_updateRequestValidator, updateRequest);
 
-        if (!validationResult.IsValid) return validationResult;
+    //    if (!validationResult.IsValid) return validationResult;
 
-        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //    () => UpdateInternalAsync(updateRequest),
-        //    result => result.Match(
-        //        success => true,
-        //        validationResult => false,
-        //        fileDoesntExistResult => false,
-        //        fileAlreadyExistsResult => false,
-        //        unexpectedFailureResult => false));
+    //    //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //    () => UpdateInternalAsync(updateRequest),
+    //    //    result => result.Match(
+    //    //        success => true,
+    //    //        validationResult => false,
+    //    //        fileDoesntExistResult => false,
+    //    //        fileAlreadyExistsResult => false,
+    //    //        unexpectedFailureResult => false));
 
-        return await UpdateInternalAsync(updateRequest);
-    }
+    //    return await UpdateInternalAsync(updateRequest);
+    //}
 
-    private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateInternalAsync(
-        ServicePromotionProductFileUpdateRequest updateRequest)
-    {
-        PromotionProductFileInfo? promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(updateRequest.Id);
+    //private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateInternalAsync(
+    //    ServicePromotionProductFileUpdateRequest updateRequest)
+    //{
+    //    PromotionProductFileInfo? promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(updateRequest.Id);
 
-        if (promotionProductFile is null)
-        {
-            ValidationFailure validationFailure = new(nameof(updateRequest.Id), _invalidPromotionProductFileIdErrorMessage);
+    //    if (promotionProductFile is null)
+    //    {
+    //        ValidationFailure validationFailure = new(nameof(updateRequest.Id), _invalidPromotionProductFileIdErrorMessage);
 
-            return CreateValidationResultFromErrors(validationFailure);
-        }
+    //        return CreateValidationResultFromErrors(validationFailure);
+    //    }
 
-        PromotionFileInfo? currentPromotionFile = await _promotionFileService.GetByIdAsync(promotionProductFile.PromotionFileInfoId);
+    //    PromotionFileInfo? currentPromotionFile = await _promotionFileService.GetByIdAsync(promotionProductFile.PromotionFileInfoId);
 
-        if (currentPromotionFile is null) return new UnexpectedFailureResult();
+    //    if (currentPromotionFile is null) return new UnexpectedFailureResult();
 
-        Stream? currentPromotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(promotionProductFile.PromotionFileInfoId);
+    //    Stream? currentPromotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(promotionProductFile.PromotionFileInfoId);
 
-        PromotionFileInfo? newPromotionFile = null;
+    //    PromotionFileInfo? newPromotionFile = null;
 
-        Stream? newPromotionFileDataStream = null;
+    //    Stream? newPromotionFileDataStream = null;
 
-        if (updateRequest.NewPromotionFileInfoId is not null)
-        {
-            newPromotionFile = await _promotionFileService.GetByIdAsync(updateRequest.NewPromotionFileInfoId.Value);
+    //    if (updateRequest.NewPromotionFileInfoId is not null)
+    //    {
+    //        newPromotionFile = await _promotionFileService.GetByIdAsync(updateRequest.NewPromotionFileInfoId.Value);
 
-            if (newPromotionFile is null)
-            {
-                ValidationFailure validationFailure = new(nameof(updateRequest.NewPromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
+    //        if (newPromotionFile is null)
+    //        {
+    //            ValidationFailure validationFailure = new(nameof(updateRequest.NewPromotionFileInfoId), _invalidPromotionFileIdErrorMessage);
 
-                return CreateValidationResultFromErrors(validationFailure);
-            }
+    //            return CreateValidationResultFromErrors(validationFailure);
+    //        }
 
-            newPromotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(updateRequest.NewPromotionFileInfoId.Value);
-        }
+    //        newPromotionFileDataStream = await _promotionFileService.GetFileDataByIdAsync(updateRequest.NewPromotionFileInfoId.Value);
+    //    }
 
-        int? productImageId = null;
+    //    int? productImageId = null;
 
-        using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        if (updateRequest.UpsertInProductImagesRequest is not null)
-        {
-            PromotionFileInfo promotionFileAfterUpdate;
-            Stream? promotionFileAfterUpdateDataStream;
+    //    if (updateRequest.UpsertInProductImagesRequest is not null)
+    //    {
+    //        PromotionFileInfo promotionFileAfterUpdate;
+    //        Stream? promotionFileAfterUpdateDataStream;
 
-            if (newPromotionFile is not null)
-            {
-                promotionFileAfterUpdate = newPromotionFile;
+    //        if (newPromotionFile is not null)
+    //        {
+    //            promotionFileAfterUpdate = newPromotionFile;
 
-                promotionFileAfterUpdateDataStream = newPromotionFileDataStream;
-            }
-            else
-            {
-                promotionFileAfterUpdate = currentPromotionFile;
+    //            promotionFileAfterUpdateDataStream = newPromotionFileDataStream;
+    //        }
+    //        else
+    //        {
+    //            promotionFileAfterUpdate = currentPromotionFile;
 
-                promotionFileAfterUpdateDataStream = currentPromotionFileDataStream;
-            }
+    //            promotionFileAfterUpdateDataStream = currentPromotionFileDataStream;
+    //        }
 
-            if (promotionFileAfterUpdateDataStream is null) return new UnexpectedFailureResult();
+    //        if (promotionFileAfterUpdateDataStream is null) return new UnexpectedFailureResult();
 
-            using MemoryStream memoryStream = new();
+    //        using MemoryStream memoryStream = new();
 
-            promotionFileAfterUpdateDataStream.CopyTo(memoryStream);
+    //        promotionFileAfterUpdateDataStream.CopyTo(memoryStream);
 
-            byte[] fileData = memoryStream.ToArray();
+    //        byte[] fileData = memoryStream.ToArray();
 
-            Product? product = await _productRepository.GetByIdAsync(promotionProductFile.ProductId);
+    //        Product? product = await _productRepository.GetByIdAsync(promotionProductFile.ProductId);
 
-            if (product is null) return new UnexpectedFailureResult();
+    //        if (product is null) return new UnexpectedFailureResult();
 
-            string fileExtension = Path.GetExtension(promotionFileAfterUpdate.FileName);
+    //        string fileExtension = Path.GetExtension(promotionFileAfterUpdate.FileName);
 
-            string? contentType = GetContentTypeFromExtension(fileExtension);
+    //        string? contentType = GetContentTypeFromExtension(fileExtension);
 
-            if (!IsImageContentType(contentType))
-            {
-                ValidationFailure validationFailure = new(nameof(PromotionFileInfo.FileName), _promotionFileIsNotAnImageErrorMessage);
+    //        if (!IsImageContentType(contentType))
+    //        {
+    //            ValidationFailure validationFailure = new(nameof(PromotionFileInfo.FileName), _promotionFileIsNotAnImageErrorMessage);
 
-                return CreateValidationResultFromErrors(validationFailure);
-            }
+    //            return CreateValidationResultFromErrors(validationFailure);
+    //        }
 
-            OneOf<string?, UnexpectedFailureResult> getHtmlResult = await updateRequest.UpsertInProductImagesRequest.HtmlDataOptions.MatchAsync(
-                async useCurrentData =>
-                {
-                    HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync(product);
+    //        OneOf<string?, UnexpectedFailureResult> getHtmlResult = await updateRequest.UpsertInProductImagesRequest.HtmlDataOptions.MatchAsync(
+    //            async useCurrentData =>
+    //            {
+    //                HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync(product);
 
-                    OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
+    //                OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
 
-                    if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
+    //                if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
 
-                    return getProductHtmlResult.AsT0;
-                },
-                async doNotUpdate =>
-                {
-                    if (promotionProductFile.ProductImageId is null) return null;
+    //                return getProductHtmlResult.AsT0;
+    //            },
+    //            async doNotUpdate =>
+    //            {
+    //                if (promotionProductFile.ProductImageId is null) return null;
 
-                    ProductImage? existingImage = await _productImageAndFileService.GetByIdInAllImagesAsync(promotionProductFile.ProductImageId.Value);
+    //                ProductImage? existingImage = await _productImageAndFileService.GetByIdInAllImagesAsync(promotionProductFile.ProductImageId.Value);
 
-                    return OneOf<string?, UnexpectedFailureResult>.FromT0(existingImage?.HtmlData);
-                },
-                useCustomData => useCustomData.HtmlData);
+    //                return OneOf<string?, UnexpectedFailureResult>.FromT0(existingImage?.HtmlData);
+    //            },
+    //            useCustomData => useCustomData.HtmlData);
 
-            if (!getHtmlResult.IsT0)
-            {
-                return getHtmlResult.Match(
-                    productHtml => new UnexpectedFailureResult(),
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
+    //        if (!getHtmlResult.IsT0)
+    //        {
+    //            return getHtmlResult.Match(
+    //                productHtml => new UnexpectedFailureResult(),
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
                     
-            ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest = new()
-            {
-                ProductId = promotionProductFile.ProductId,
-                ExistingImageId = promotionProductFile.ProductImageId,
-                FileExtension = fileExtension,
-                ImageData = fileData,
-                HtmlData = getHtmlResult.AsT0,
-                FileUpsertRequest = new()
-                {
-                    Active = updateRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active ?? false,
-                    CustomDisplayOrder = updateRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
-                    UpsertUserName = updateRequest.UpdateUserName,
-                },
-            };
+    //        ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest = new()
+    //        {
+    //            ProductId = promotionProductFile.ProductId,
+    //            ExistingImageId = promotionProductFile.ProductImageId,
+    //            FileExtension = fileExtension,
+    //            ImageData = fileData,
+    //            HtmlData = getHtmlResult.AsT0,
+    //            FileUpsertRequest = new()
+    //            {
+    //                Active = updateRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active ?? false,
+    //                CustomDisplayOrder = updateRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
+    //                UpsertUserName = updateRequest.UpdateUserName,
+    //            },
+    //        };
 
-            OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateImageResult
-                = await _productImageAndFileService.UpsertInAllImagesWithFileAsync(productImageWithFileUpsertRequest);
+    //        OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateImageResult
+    //            = await _productImageAndFileService.UpsertInAllImagesWithFileAsync(productImageWithFileUpsertRequest);
 
-            if (!updateImageResult.IsT0)
-            {
-                return updateImageResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                    imageAndFileIdsInfo => new UnexpectedFailureResult(),
-                    validationResult => validationResult,
-                    fileSaveFailureResult => fileSaveFailureResult,
-                    fileDoesntExistResult => fileDoesntExistResult,
-                    fileAlreadyExistsResult => fileAlreadyExistsResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
+    //        if (!updateImageResult.IsT0)
+    //        {
+    //            return updateImageResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                imageAndFileIdsInfo => new UnexpectedFailureResult(),
+    //                validationResult => validationResult,
+    //                fileSaveFailureResult => fileSaveFailureResult,
+    //                fileDoesntExistResult => fileDoesntExistResult,
+    //                fileAlreadyExistsResult => fileAlreadyExistsResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
 
-            productImageId = updateImageResult.AsT0.ImageId;
-        }
-        else if (promotionProductFile.ProductImageId is not null)
-        {
-            OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> imageAndFileDeleteResult = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(
-                promotionProductFile.ProductImageId.Value, updateRequest.UpdateUserName);
+    //        productImageId = updateImageResult.AsT0.ImageId;
+    //    }
+    //    else if (promotionProductFile.ProductImageId is not null)
+    //    {
+    //        OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> imageAndFileDeleteResult = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(
+    //            promotionProductFile.ProductImageId.Value, updateRequest.UpdateUserName);
 
-            if (!imageAndFileDeleteResult.IsT0)
-            {
-                return imageAndFileDeleteResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                    success => new UnexpectedFailureResult(),
-                    notFound => new UnexpectedFailureResult(),
-                    fileDoesntExistResult => fileDoesntExistResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-        }
+    //        if (!imageAndFileDeleteResult.IsT0)
+    //        {
+    //            return imageAndFileDeleteResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                success => new UnexpectedFailureResult(),
+    //                notFound => new UnexpectedFailureResult(),
+    //                fileDoesntExistResult => fileDoesntExistResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
+    //    }
 
-        ServicePromotionProductFileInfoUpdateRequest promotionProductFileInfoUpdateRequest = new()
-        {
-            Id = updateRequest.Id,
-            NewPromotionFileInfoId = updateRequest.NewPromotionFileInfoId,
-            ValidFrom = updateRequest.ValidFrom,
-            ValidTo = updateRequest.ValidTo,
-            Active = updateRequest.Active,
-            ProductImageId = productImageId,
-            UpdateUserName = updateRequest.UpdateUserName,
-        };
+    //    ServicePromotionProductFileInfoUpdateRequest promotionProductFileInfoUpdateRequest = new()
+    //    {
+    //        Id = updateRequest.Id,
+    //        NewPromotionFileInfoId = updateRequest.NewPromotionFileInfoId,
+    //        ValidFrom = updateRequest.ValidFrom,
+    //        ValidTo = updateRequest.ValidTo,
+    //        Active = updateRequest.Active,
+    //        ProductImageId = productImageId,
+    //        UpdateUserName = updateRequest.UpdateUserName,
+    //    };
 
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        OneOf<Success, NotFound, ValidationResult> updatePromotionProductFileResult
-            = await _promotionProductFileInfoService.UpdateAsync(promotionProductFileInfoUpdateRequest);
+    //    OneOf<Success, NotFound, ValidationResult> updatePromotionProductFileResult
+    //        = await _promotionProductFileInfoService.UpdateAsync(promotionProductFileInfoUpdateRequest);
 
-        if (!updatePromotionProductFileResult.IsT0)
-        {
-            return updatePromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                success => success,
-                notFound => new UnexpectedFailureResult(),
-                validationResult => validationResult);
-        }
+    //    if (!updatePromotionProductFileResult.IsT0)
+    //    {
+    //        return updatePromotionProductFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //            success => success,
+    //            notFound => new UnexpectedFailureResult(),
+    //            validationResult => validationResult);
+    //    }
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                promotionProductFile.ProductId, ProductNewStatus.WorkInProgress, updateRequest.UpdateUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            promotionProductFile.ProductId, ProductNewStatus.WorkInProgress, updateRequest.UpdateUserName);
 
-        if (!upsertProductStatusResult.IsT0)
-        {
-            return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                statusId => updatePromotionProductFileResult.AsT0,
-                validationResult => validationResult,
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
+    //    if (!upsertProductStatusResult.IsT0)
+    //    {
+    //        return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //            statusId => updatePromotionProductFileResult.AsT0,
+    //            validationResult => validationResult,
+    //            unexpectedFailureResult => unexpectedFailureResult);
+    //    }
 
-        localDBTransactionScope.Complete();
+    //    localDBTransactionScope.Complete();
 
-        replicationDBTransactionScope.Complete();
+    //    replicationDBTransactionScope.Complete();
 
-        return updatePromotionProductFileResult.AsT0;
-    }
+    //    return updatePromotionProductFileResult.AsT0;
+    //}
 
     //private async Task<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateInternalAsync(
     //    ServicePromotionProductFileUpdateRequest updateRequest)
@@ -707,72 +707,72 @@ internal sealed class PromotionProductFileService : IPromotionProductFileService
         return insertImageWithFileResult;
     }
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteAsync(int id, string deleteUserName)
-    {
-        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //    () => DeleteInternalAsync(id, deleteUserName),
-        //    result => result.Match(
-        //        success => true,
-        //        notFound => false,
-        //        validationResult => false,
-        //        fileDoesntExistResult => false,
-        //        unexpectedFailureResult => false
-        //    ));
+    //public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteAsync(int id, string deleteUserName)
+    //{
+    //    //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //    () => DeleteInternalAsync(id, deleteUserName),
+    //    //    result => result.Match(
+    //    //        success => true,
+    //    //        notFound => false,
+    //    //        validationResult => false,
+    //    //        fileDoesntExistResult => false,
+    //    //        unexpectedFailureResult => false
+    //    //    ));
 
-        return await DeleteInternalAsync(id, deleteUserName);
-    }
+    //    return await DeleteInternalAsync(id, deleteUserName);
+    //}
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInternalAsync(int id, string deleteUserName)
-    {
-        PromotionProductFileInfo? promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(id);
+    //private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInternalAsync(int id, string deleteUserName)
+    //{
+    //    PromotionProductFileInfo? promotionProductFile = await _promotionProductFileInfoService.GetByIdAsync(id);
 
-        if (promotionProductFile is null) return new NotFound();
+    //    if (promotionProductFile is null) return new NotFound();
 
-        PromotionFileInfo? promotionFile = await _promotionFileService.GetByIdAsync(promotionProductFile.PromotionFileInfoId);
+    //    PromotionFileInfo? promotionFile = await _promotionFileService.GetByIdAsync(promotionProductFile.PromotionFileInfoId);
 
-        if (promotionFile is null) return new UnexpectedFailureResult();
+    //    if (promotionFile is null) return new UnexpectedFailureResult();
 
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
-        bool promotionProductFileDeleteSuccess = await _promotionProductFileInfoService.DeleteAsync(id);
+    //    bool promotionProductFileDeleteSuccess = await _promotionProductFileInfoService.DeleteAsync(id);
 
-        if (!promotionProductFileDeleteSuccess) return new UnexpectedFailureResult();
+    //    if (!promotionProductFileDeleteSuccess) return new UnexpectedFailureResult();
 
-        if (promotionProductFile.ProductImageId is null) return new Success();
+    //    if (promotionProductFile.ProductImageId is null) return new Success();
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                promotionProductFile.ProductId, ProductNewStatus.WorkInProgress, deleteUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            promotionProductFile.ProductId, ProductNewStatus.WorkInProgress, deleteUserName);
 
-        if (!upsertProductStatusResult.IsT0)
-        {
-            return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                statusId => new Success(),
-                validationResult => validationResult,
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
+    //    if (!upsertProductStatusResult.IsT0)
+    //    {
+    //        return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+    //            statusId => new Success(),
+    //            validationResult => validationResult,
+    //            unexpectedFailureResult => unexpectedFailureResult);
+    //    }
 
-        using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> imageAndFileDeleteResult
-            = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(
-                promotionProductFile.ProductImageId.Value, deleteUserName);
+    //    OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> imageAndFileDeleteResult
+    //        = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(
+    //            promotionProductFile.ProductImageId.Value, deleteUserName);
 
-        if (!imageAndFileDeleteResult.IsT0)
-        {
-            return imageAndFileDeleteResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                success => new UnexpectedFailureResult(),
-                notFound => notFound,
-                fileDoesntExistResult => fileDoesntExistResult,
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
+    //    if (!imageAndFileDeleteResult.IsT0)
+    //    {
+    //        return imageAndFileDeleteResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+    //            success => new UnexpectedFailureResult(),
+    //            notFound => notFound,
+    //            fileDoesntExistResult => fileDoesntExistResult,
+    //            unexpectedFailureResult => unexpectedFailureResult);
+    //    }
 
-        replicationDBTransactionScope.Complete();
+    //    replicationDBTransactionScope.Complete();
 
-        localDBTransactionScope.Complete();
+    //    localDBTransactionScope.Complete();
 
-        return imageAndFileDeleteResult.AsT0;
-    }
+    //    return imageAndFileDeleteResult.AsT0;
+    //}
 
     //private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInternalAsync(int id, string deleteUserName)
     //{

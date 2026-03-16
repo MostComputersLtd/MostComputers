@@ -919,301 +919,301 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
         return await _productImageCrudService.UpsertInFirstImagesAsync(upsertRequest);
     }
 
-    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(
-        int productId,
-        List<ProductImageForProductUpsertRequest> imageUpsertRequests)
-    {
-        foreach (ProductImageForProductUpsertRequest imageUpsertRequest in imageUpsertRequests)
-        {
-            ValidationResult validationResult = ValidateDefault(_upsertForProductRequestValidator, imageUpsertRequest);
-
-            if (!validationResult.IsValid) return validationResult;
-        }
-
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => UpsertFirstAndAllImagesForProductInternalAsync(productId, imageUpsertRequests),
-            result => result.IsT0);
-    }
-
-    private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductInternalAsync(
-        int productId,
-        List<ProductImageForProductUpsertRequest> imageUpsertRequests)
-    {
-        List<ProductImage>? oldProductImages = await GetAllInProductAsync(productId);
-
-        ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
-
-        foreach (ProductImageForProductUpsertRequest productImageUpsertRequest in imageUpsertRequests)
-        {
-            ProductImageUpsertRequest productImageUpsertRequestInternal = new()
-            {
-                ProductId = productId,
-                ExistingImageId = productImageUpsertRequest.ExistingImageId,
-                ImageContentType = productImageUpsertRequest.ImageContentType,
-                ImageData = productImageUpsertRequest.ImageData,
-                HtmlData = productImageUpsertRequest.HtmlData,
-            };
-
-            OneOf<int, ValidationResult, UnexpectedFailureResult> upsertImageResult = await UpsertInAllImagesAsync(productImageUpsertRequestInternal);
-
-            if (!upsertImageResult.IsT0)
-            {
-                return upsertImageResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-                    success => new UnexpectedFailureResult(),
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-
-            if (productImageUpsertRequestInternal.ExistingImageId is not null)
-            {
-                int imageIndex = oldProductImages.FindIndex(x => x.Id == productImageUpsertRequestInternal.ExistingImageId);
-
-                oldProductImages.RemoveAt(imageIndex);
-            }
-
-            productFirstImageUpsertRequest ??= new()
-            {
-                ProductId = productId,
-                ImageContentType = productImageUpsertRequest.ImageContentType,
-                ImageData = productImageUpsertRequest.ImageData,
-                HtmlData = productImageUpsertRequest.HtmlData,
-            };
-        }
+    //public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(
+    //    int productId,
+    //    List<ProductImageForProductUpsertRequest> imageUpsertRequests)
+    //{
+    //    foreach (ProductImageForProductUpsertRequest imageUpsertRequest in imageUpsertRequests)
+    //    {
+    //        ValidationResult validationResult = ValidateDefault(_upsertForProductRequestValidator, imageUpsertRequest);
+
+    //        if (!validationResult.IsValid) return validationResult;
+    //    }
+
+    //    return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //        () => UpsertFirstAndAllImagesForProductInternalAsync(productId, imageUpsertRequests),
+    //        result => result.IsT0);
+    //}
+
+    //private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductInternalAsync(
+    //    int productId,
+    //    List<ProductImageForProductUpsertRequest> imageUpsertRequests)
+    //{
+    //    List<ProductImage>? oldProductImages = await GetAllInProductAsync(productId);
+
+    //    ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
+
+    //    foreach (ProductImageForProductUpsertRequest productImageUpsertRequest in imageUpsertRequests)
+    //    {
+    //        ProductImageUpsertRequest productImageUpsertRequestInternal = new()
+    //        {
+    //            ProductId = productId,
+    //            ExistingImageId = productImageUpsertRequest.ExistingImageId,
+    //            ImageContentType = productImageUpsertRequest.ImageContentType,
+    //            ImageData = productImageUpsertRequest.ImageData,
+    //            HtmlData = productImageUpsertRequest.HtmlData,
+    //        };
+
+    //        OneOf<int, ValidationResult, UnexpectedFailureResult> upsertImageResult = await UpsertInAllImagesAsync(productImageUpsertRequestInternal);
+
+    //        if (!upsertImageResult.IsT0)
+    //        {
+    //            return upsertImageResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+    //                success => new UnexpectedFailureResult(),
+    //                validationResult => validationResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
+
+    //        if (productImageUpsertRequestInternal.ExistingImageId is not null)
+    //        {
+    //            int imageIndex = oldProductImages.FindIndex(x => x.Id == productImageUpsertRequestInternal.ExistingImageId);
+
+    //            oldProductImages.RemoveAt(imageIndex);
+    //        }
+
+    //        productFirstImageUpsertRequest ??= new()
+    //        {
+    //            ProductId = productId,
+    //            ImageContentType = productImageUpsertRequest.ImageContentType,
+    //            ImageData = productImageUpsertRequest.ImageData,
+    //            HtmlData = productImageUpsertRequest.HtmlData,
+    //        };
+    //    }
 
-        foreach (ProductImage oldImageToBeRemoved in oldProductImages)
-        {
-            bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
+    //    foreach (ProductImage oldImageToBeRemoved in oldProductImages)
+    //    {
+    //        bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync_(oldImageToBeRemoved.Id);
 
-            if (!imageDeleteResult) return new UnexpectedFailureResult();
-        }
+    //        if (!imageDeleteResult) return new UnexpectedFailureResult();
+    //    }
 
-        if (productFirstImageUpsertRequest is not null)
-        {
-            OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+    //    if (productFirstImageUpsertRequest is not null)
+    //    {
+    //        OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
 
-            if (!productFirstImageUpsertResult.IsT0)
-            {
-                return productFirstImageUpsertResult;
-            }
-        }
-        else
-        {
-            ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
+    //        if (!productFirstImageUpsertResult.IsT0)
+    //        {
+    //            return productFirstImageUpsertResult;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
 
-            if (oldProductFirstImage is null) return new Success();
+    //        if (oldProductFirstImage is null) return new Success();
 
-            bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
+    //        bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
 
-            if (!isFirstImageDeleted) return new UnexpectedFailureResult();
-        }
-
-        return new Success();
-    }
-
-    public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertFirstAndAllImagesWithFilesForProductAsync(
-            int productId,
-            List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
-            string deleteUserName)
-    {
-        foreach (ProductImageWithFileForProductUpsertRequest imageWithFileForProductUpsertRequest in imageAndFileNameUpsertRequests)
-        {
-            ValidationResult validationResult = ValidateDefault(_upsertWithFileForProductRequestValidator, imageWithFileForProductUpsertRequest);
-
-            if (!validationResult.IsValid) return validationResult;
-        }
+    //        if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+    //    }
+
+    //    return new Success();
+    //}
+
+    //public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+    //    UpsertFirstAndAllImagesWithFilesForProductAsync(
+    //        int productId,
+    //        List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
+    //        string deleteUserName)
+    //{
+    //    foreach (ProductImageWithFileForProductUpsertRequest imageWithFileForProductUpsertRequest in imageAndFileNameUpsertRequests)
+    //    {
+    //        ValidationResult validationResult = ValidateDefault(_upsertWithFileForProductRequestValidator, imageWithFileForProductUpsertRequest);
+
+    //        if (!validationResult.IsValid) return validationResult;
+    //    }
 
-        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //   () => UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName),
-        //   result => result.IsT0);
+    //    //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //   () => UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName),
+    //    //   result => result.IsT0);
 
-        return await UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName);
-    }
+    //    return await UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName);
+    //}
 
-    private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
-        UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
-            int productId,
-            List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
-            string deleteUserName)
-    {
-        List<ProductImage>? oldProductImages = await GetAllInProductAsync(productId);
-        List<ProductImageFileData>? oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
+    //private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+    //    UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
+    //        int productId,
+    //        List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
+    //        string deleteUserName)
+    //{
+    //    List<ProductImage>? oldProductImages = await GetAllInProductAsync(productId);
+    //    List<ProductImageFileData>? oldProductImageFileInfos = await _productImageFileService.GetAllInProductAsync(productId);
 
-        imageAndFileNameUpsertRequests = OrderProductImageWithFileUpsertRequests(imageAndFileNameUpsertRequests);
+    //    imageAndFileNameUpsertRequests = OrderProductImageWithFileUpsertRequests(imageAndFileNameUpsertRequests);
 
-        foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
-        {
-            if (productImageWithFileUpsertRequest.ExistingImageId is null) continue;
+    //    foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
+    //    {
+    //        if (productImageWithFileUpsertRequest.ExistingImageId is null) continue;
 
-            int imageIndex = oldProductImages.FindIndex(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId);
+    //        int imageIndex = oldProductImages.FindIndex(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId);
 
-            if (imageIndex < 0)
-            {
-                ValidationFailure imageDoesNotExistError = new(nameof(ProductImageWithFileForProductUpsertRequest.ExistingImageId), _invalidImageIdErrorMessage);
+    //        if (imageIndex < 0)
+    //        {
+    //            ValidationFailure imageDoesNotExistError = new(nameof(ProductImageWithFileForProductUpsertRequest.ExistingImageId), _invalidImageIdErrorMessage);
 
-                return CreateValidationResultFromErrors(imageDoesNotExistError);
-            }
+    //            return CreateValidationResultFromErrors(imageDoesNotExistError);
+    //        }
 
-            oldProductImages.RemoveAt(imageIndex);
+    //        oldProductImages.RemoveAt(imageIndex);
 
-            int imageFileNameIndex = oldProductImageFileInfos.FindIndex(x => x.ImageId == productImageWithFileUpsertRequest.ExistingImageId);
+    //        int imageFileNameIndex = oldProductImageFileInfos.FindIndex(x => x.ImageId == productImageWithFileUpsertRequest.ExistingImageId);
 
-            if (imageFileNameIndex < 0) continue;
+    //        if (imageFileNameIndex < 0) continue;
 
-            oldProductImageFileInfos.RemoveAt(imageFileNameIndex);
-        }
+    //        oldProductImageFileInfos.RemoveAt(imageFileNameIndex);
+    //    }
 
-        HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productId]);
+    //    HtmlProductsData htmlProductsData = await _productToHtmlProductService.GetHtmlProductDataFromProductsAsync([productId]);
 
-        OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
+    //    OneOf<string, InvalidXmlResult> getProductHtmlResult = _productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
 
-        if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
+    //    if (!getProductHtmlResult.IsT0) return new UnexpectedFailureResult();
 
-        string productHtml = getProductHtmlResult.AsT0;
+    //    string productHtml = getProductHtmlResult.AsT0;
 
-        ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
+    //    ServiceProductFirstImageUpsertRequest? productFirstImageUpsertRequest = null;
 
-        //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+    //    //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
-        Dictionary<ProductImageWithFileForProductUpsertRequest, int> imageIdsForRequests = new();
+    //    Dictionary<ProductImageWithFileForProductUpsertRequest, int> imageIdsForRequests = new();
 
-        using (TransactionScope imagesTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
-        {
-            foreach (ProductImage oldImageToBeRemoved in oldProductImages)
-            {
-                bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
+    //    using (TransactionScope imagesTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled))
+    //    {
+    //        foreach (ProductImage oldImageToBeRemoved in oldProductImages)
+    //        {
+    //            bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync_(oldImageToBeRemoved.Id);
 
-                if (!imageDeleteResult) return new UnexpectedFailureResult();
-            }
+    //            if (!imageDeleteResult) return new UnexpectedFailureResult();
+    //        }
 
-            foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
-            {
-                string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
+    //        foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
+    //        {
+    //            string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
 
-                string? contentTypeFromFileExtension = GetContentTypeFromExtension(productImageWithFileUpsertRequest.FileExtension);
+    //            string? contentTypeFromFileExtension = GetContentTypeFromExtension(productImageWithFileUpsertRequest.FileExtension);
 
-                if (fileExtensionWithDot is null || contentTypeFromFileExtension is null)
-                {
-                    ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+    //            if (fileExtensionWithDot is null || contentTypeFromFileExtension is null)
+    //            {
+    //                ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
 
-                    return CreateValidationResultFromErrors(validationFailure);
-                }
+    //                return CreateValidationResultFromErrors(validationFailure);
+    //            }
 
-                ProductImageUpsertRequest productImageUpsertRequest = new()
-                {
-                    ProductId = productId,
-                    ExistingImageId = productImageWithFileUpsertRequest.ExistingImageId,
-                    ImageContentType = contentTypeFromFileExtension,
-                    ImageData = productImageWithFileUpsertRequest.ImageData,
-                    HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
-                        useCurrentData => productHtml,
-                        doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
-                        useCustomData => useCustomData.HtmlData),
-                };
+    //            ProductImageUpsertRequest productImageUpsertRequest = new()
+    //            {
+    //                ProductId = productId,
+    //                ExistingImageId = productImageWithFileUpsertRequest.ExistingImageId,
+    //                ImageContentType = contentTypeFromFileExtension,
+    //                ImageData = productImageWithFileUpsertRequest.ImageData,
+    //                HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
+    //                    useCurrentData => productHtml,
+    //                    doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
+    //                    useCustomData => useCustomData.HtmlData),
+    //            };
 
-                OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await UpsertInAllImagesAsync(productImageUpsertRequest);
+    //            OneOf<int, ValidationResult, UnexpectedFailureResult> imageUpsertResult = await UpsertInAllImagesAsync(productImageUpsertRequest);
 
-                if (!imageUpsertResult.IsT0)
-                {
-                    return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                        id => new UnexpectedFailureResult(),
-                        validationResult => validationResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
-                }
+    //            if (!imageUpsertResult.IsT0)
+    //            {
+    //                return imageUpsertResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                    id => new UnexpectedFailureResult(),
+    //                    validationResult => validationResult,
+    //                    unexpectedFailureResult => unexpectedFailureResult);
+    //            }
 
-                imageIdsForRequests.Add(productImageWithFileUpsertRequest, imageUpsertResult.AsT0);
+    //            imageIdsForRequests.Add(productImageWithFileUpsertRequest, imageUpsertResult.AsT0);
 
-                if (productFirstImageUpsertRequest is null)
-                {
-                    productFirstImageUpsertRequest ??= new()
-                    {
-                        ProductId = productId,
-                        ImageContentType = contentTypeFromFileExtension,
-                        ImageData = productImageWithFileUpsertRequest.ImageData,
-                        HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
-                            useCurrentData => productHtml,
-                            doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
-                            useCustomData => useCustomData.HtmlData),
-                    };
-                }
-            }
+    //            if (productFirstImageUpsertRequest is null)
+    //            {
+    //                productFirstImageUpsertRequest ??= new()
+    //                {
+    //                    ProductId = productId,
+    //                    ImageContentType = contentTypeFromFileExtension,
+    //                    ImageData = productImageWithFileUpsertRequest.ImageData,
+    //                    HtmlData = productImageWithFileUpsertRequest.HtmlDataOptions.Match(
+    //                        useCurrentData => productHtml,
+    //                        doNotUpdate => oldProductImages.FirstOrDefault(x => x.Id == productImageWithFileUpsertRequest.ExistingImageId)?.HtmlData,
+    //                        useCustomData => useCustomData.HtmlData),
+    //                };
+    //            }
+    //        }
 
-            if (productFirstImageUpsertRequest is not null)
-            {
-                OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
+    //        if (productFirstImageUpsertRequest is not null)
+    //        {
+    //            OneOf<Success, ValidationResult, UnexpectedFailureResult> productFirstImageUpsertResult = await UpsertInFirstImagesAsync(productFirstImageUpsertRequest);
 
-                if (!productFirstImageUpsertResult.IsT0)
-                {
-                    return productFirstImageUpsertResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
-                }
-            }
-            else
-            {
-                ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
+    //            if (!productFirstImageUpsertResult.IsT0)
+    //            {
+    //                return productFirstImageUpsertResult.Map<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+    //            }
+    //        }
+    //        else
+    //        {
+    //            ProductImage? oldProductFirstImage = await GetByProductIdInFirstImagesAsync(productId);
 
-                if (oldProductFirstImage is null) return new Success();
+    //            if (oldProductFirstImage is null) return new Success();
 
-                bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
+    //            bool isFirstImageDeleted = await DeleteInFirstImagesByProductIdAsync(productId);
 
-                if (!isFirstImageDeleted) return new UnexpectedFailureResult();
-            }
+    //            if (!isFirstImageDeleted) return new UnexpectedFailureResult();
+    //        }
 
-            imagesTransactionScope.Complete();
-        }
+    //        imagesTransactionScope.Complete();
+    //    }
 
-        //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    //using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
-        {
-            OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> imageFileDeleteResult
-                = await _productImageFileService.DeleteFileAsync(oldImageFileToBeRemoved.Id, deleteUserName);
+    //    foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFileInfos)
+    //    {
+    //        OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> imageFileDeleteResult
+    //            = await _productImageFileService.DeleteFileAsync(oldImageFileToBeRemoved.Id, deleteUserName);
 
-            if (!imageFileDeleteResult.IsT0) return new UnexpectedFailureResult();
-        }
+    //        if (!imageFileDeleteResult.IsT0) return new UnexpectedFailureResult();
+    //    }
 
-        foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
-        {
-            if (productImageWithFileUpsertRequest.FileUpsertRequest is null) continue;
+    //    foreach (ProductImageWithFileForProductUpsertRequest productImageWithFileUpsertRequest in imageAndFileNameUpsertRequests)
+    //    {
+    //        if (productImageWithFileUpsertRequest.FileUpsertRequest is null) continue;
 
-            int imageId = imageIdsForRequests[productImageWithFileUpsertRequest];
+    //        int imageId = imageIdsForRequests[productImageWithFileUpsertRequest];
 
-            string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
+    //        string? fileExtensionWithDot = GetExtensionWithDotFromExtensionOrFileName(productImageWithFileUpsertRequest.FileExtension);
 
-            if (fileExtensionWithDot is null)
-            {
-                ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
+    //        if (fileExtensionWithDot is null)
+    //        {
+    //            ValidationFailure validationFailure = new(nameof(FileData.FileName), _invalidFileTypeErrorMessage);
 
-                return CreateValidationResultFromErrors(validationFailure);
-            }
+    //            return CreateValidationResultFromErrors(validationFailure);
+    //        }
 
-            OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertImageWithFileResult
-                = await UpsertImageFileForImageAsync(
-                    productId,
-                    imageId,
-                    productImageWithFileUpsertRequest.ImageData,
-                    productImageWithFileUpsertRequest.FileUpsertRequest.Active,
-                    productImageWithFileUpsertRequest.FileUpsertRequest.CustomDisplayOrder,
-                    fileExtensionWithDot,
-                    deleteUserName);
+    //        OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> upsertImageWithFileResult
+    //            = await UpsertImageFileForImageAsync(
+    //                productId,
+    //                imageId,
+    //                productImageWithFileUpsertRequest.ImageData,
+    //                productImageWithFileUpsertRequest.FileUpsertRequest.Active,
+    //                productImageWithFileUpsertRequest.FileUpsertRequest.CustomDisplayOrder,
+    //                fileExtensionWithDot,
+    //                deleteUserName);
 
-            if (!upsertImageWithFileResult.IsT0)
-            {
-                return upsertImageWithFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                    success => new UnexpectedFailureResult(),
-                    validationResult => validationResult,
-                    fileSaveFailureResult => fileSaveFailureResult,
-                    fileDoesntExistResult => fileDoesntExistResult,
-                    fileAlreadyExistsResult => fileAlreadyExistsResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-        }
+    //        if (!upsertImageWithFileResult.IsT0)
+    //        {
+    //            return upsertImageWithFileResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+    //                success => new UnexpectedFailureResult(),
+    //                validationResult => validationResult,
+    //                fileSaveFailureResult => fileSaveFailureResult,
+    //                fileDoesntExistResult => fileDoesntExistResult,
+    //                fileAlreadyExistsResult => fileAlreadyExistsResult,
+    //                unexpectedFailureResult => unexpectedFailureResult);
+    //        }
+    //    }
 
-        //localDBTransactionScope.Complete();
+    //    //localDBTransactionScope.Complete();
 
-        //replicationDBTransactionScope.Complete();
+    //    //replicationDBTransactionScope.Complete();
 
-        return new Success();
-    }
+    //    return new Success();
+    //}
 
     //private async Task<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
     //   UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
@@ -1252,7 +1252,7 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
 
     //    foreach (ProductImage oldImageToBeRemoved in oldProductImages)
     //    {
-    //        bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync(oldImageToBeRemoved.Id);
+    //        bool imageDeleteResult = await _productImageCrudService.DeleteInAllImagesByIdAsync_(oldImageToBeRemoved.Id);
 
     //        if (!imageDeleteResult) return new UnexpectedFailureResult();
     //    }
@@ -1361,69 +1361,69 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
         return await _productImageCrudService.UpdateHtmlDataInFirstAndAllImagesByProductIdAsync(productId, htmlData);
     }
 
-    public async Task<bool> DeleteAllImagesForProductAsync(int productId)
-    {
-        return await _productImageCrudService.DeleteAllInAllImagesByProductIdAsync(productId);
-    }
+    //public async Task<bool> DeleteAllImagesForProductAsync(int productId)
+    //{
+    //    return await _productImageCrudService.DeleteAllInAllImagesByProductIdAsync(productId);
+    //}
 
-    public async Task<bool> DeleteInAllImagesByIdAsync(int id)
-    {
-        return await _productImageCrudService.DeleteInAllImagesByIdAsync(id);
-    }
+    //public async Task<bool> DeleteInAllImagesByIdAsync(int id)
+    //{
+    //    return await _productImageCrudService.DeleteInAllImagesByIdAsync(id);
+    //}
 
-    public async Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(
-        int id, string deleteUserName)
-    {
-        if (id <= 0) return new NotFound();
+    //public async Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(
+    //    int id, string deleteUserName)
+    //{
+    //    if (id <= 0) return new NotFound();
 
-        ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
+    //    ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
 
-        if (image is null) return new NotFound();
+    //    if (image is null) return new NotFound();
 
-        if (image.ProductId is null) return new UnexpectedFailureResult();
+    //    if (image.ProductId is null) return new UnexpectedFailureResult();
 
-        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //    () => DeleteInAllImagesByIdWithFileInternalAsync(id, image.ProductId.Value, deleteUserName),
-        //    result => result.IsT0);
+    //    //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //    () => DeleteInAllImagesByIdWithFileInternalAsync(id, image.ProductId.Value, deleteUserName),
+    //    //    result => result.IsT0);
 
-        return await DeleteInAllImagesByIdWithFileInternalAsync(id, image.ProductId.Value, deleteUserName);
-    }
-
-    private async Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileInternalAsync(
-        int id, int productId, string deleteUserName)
-    {
-        using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
-        bool isImageDeleted = await _productImageCrudService.DeleteInAllImagesByIdAsync(id);
-
-        if (!isImageDeleted) return new NotFound();
-
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-
-        OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> fileDeleteResult
-            = await _productImageFileService.DeleteFileByProductIdAndImageIdAsync(productId, id, deleteUserName);
-
-        if (!fileDeleteResult.IsT0)
-        {
-            return fileDeleteResult.Match<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>>(
-                success => success,
-                notFound => new Success(),
-                fileDoesntExistResult => fileDoesntExistResult,
-                validationResult => new UnexpectedFailureResult(),
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
-
-        localDBTransactionScope.Complete();
-
-        replicationDBTransactionScope.Complete();
-
-        return fileDeleteResult.AsT0;
-    }
+    //    return await DeleteInAllImagesByIdWithFileInternalAsync(id, image.ProductId.Value, deleteUserName);
+    //}
 
     //private async Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileInternalAsync(
     //    int id, int productId, string deleteUserName)
     //{
+    //    using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
     //    bool isImageDeleted = await _productImageCrudService.DeleteInAllImagesByIdAsync(id);
+
+    //    if (!isImageDeleted) return new NotFound();
+
+    //    using TransactionScope localDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+
+    //    OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult> fileDeleteResult
+    //        = await _productImageFileService.DeleteFileByProductIdAndImageIdAsync(productId, id, deleteUserName);
+
+    //    if (!fileDeleteResult.IsT0)
+    //    {
+    //        return fileDeleteResult.Match<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>>(
+    //            success => success,
+    //            notFound => new Success(),
+    //            fileDoesntExistResult => fileDoesntExistResult,
+    //            validationResult => new UnexpectedFailureResult(),
+    //            unexpectedFailureResult => unexpectedFailureResult);
+    //    }
+
+    //    localDBTransactionScope.Complete();
+
+    //    replicationDBTransactionScope.Complete();
+
+    //    return fileDeleteResult.AsT0;
+    //}
+
+    //private async Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileInternalAsync(
+    //    int id, int productId, string deleteUserName)
+    //{
+    //    bool isImageDeleted = await _productImageCrudService.DeleteInAllImagesByIdAsync_(id);
 
     //    if (!isImageDeleted) return new NotFound();
 
@@ -1438,8 +1438,8 @@ internal sealed class ProductImageAndFileService : IProductImageAndFileService
     //        unexpectedFailureResult => unexpectedFailureResult);
     //}
 
-    public async Task<bool> DeleteInFirstImagesByProductIdAsync(int productId)
-    {
-        return await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
-    }
+    //public async Task<bool> DeleteInFirstImagesByProductIdAsync(int productId)
+    //{
+    //    return await _productImageCrudService.DeleteInFirstImagesByProductIdAsync(productId);
+    //}
 }

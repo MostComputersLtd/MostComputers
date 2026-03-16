@@ -34,9 +34,9 @@ internal interface IProductImageCrudService
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInAllImagesByIdAsync(int imageId, string htmlData);
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstImagesByProductIdAsync(int productId, string htmlData);
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstAndAllImagesByProductIdAsync(int productId, string htmlData);
-    Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId);
+    //Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId);
     Task<bool> DeleteInAllImagesByIdAsync(int id);
-    Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
+    //Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
     int GetMinimumImagesAllInsertIdForLocalApplication();
     Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync();
     Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(IEnumerable<int> productIds);

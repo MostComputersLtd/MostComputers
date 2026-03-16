@@ -336,12 +336,12 @@ internal class ProductImageCrudService : IProductImageCrudService
         return updateHtmlDataInAllAndFirstImagesResult.Map<bool, ValidationResult, UnexpectedFailureResult>();
     }
 
-    public async Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId)
-    {
-        if (productId <= 0) return false;
+    //public async Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId)
+    //{
+    //    if (productId <= 0) return false;
 
-        return await _productImageRepository.DeleteAllInAllImagesByProductIdAsync(productId);
-    }
+    //    return await _productImageRepository.DeleteAllInAllImagesByProductIdAsync(productId);
+    //}
 
     public async Task<bool> DeleteInAllImagesByIdAsync(int id)
     {
@@ -350,10 +350,10 @@ internal class ProductImageCrudService : IProductImageCrudService
         return await _productImageRepository.DeleteInAllImagesByIdAsync(id);
     }
 
-    public async Task<bool> DeleteInFirstImagesByProductIdAsync(int productId)
-    {
-        if (productId <= 0) return false;
+    //public async Task<bool> DeleteInFirstImagesByProductIdAsync(int productId)
+    //{
+    //    if (productId <= 0) return false;
 
-        return await _productImageRepository.DeleteInFirstImagesByProductIdAsync(productId);
-    }
+    //    return await _productImageRepository.DeleteInFirstImagesByProductIdAsync(productId);
+    //}
 }

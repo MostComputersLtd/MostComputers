@@ -354,117 +354,117 @@ internal sealed class ProductImageService : IProductImageService
             unexpectedFailureResult => unexpectedFailureResult);
     }
 
-    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(
-        int productId,
-        List<ProductImageForProductUpsertRequest> imageUpsertRequests,
-        string upsertUserName)
-    {
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => UpsertFirstAndAllImagesForProductInternalAsync(productId, imageUpsertRequests, upsertUserName),
-            result => result.IsT0);
-    }
+    //public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(
+    //    int productId,
+    //    List<ProductImageForProductUpsertRequest> imageUpsertRequests,
+    //    string upsertUserName)
+    //{
+    //    return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //        () => UpsertFirstAndAllImagesForProductInternalAsync(productId, imageUpsertRequests, upsertUserName),
+    //        result => result.IsT0);
+    //}
 
-    private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductInternalAsync(
-        int productId,
-        List<ProductImageForProductUpsertRequest> imageUpsertRequests,
-        string upsertUserName)
-    {
-        List<ProductImageData> currentProductImages = await _productImageAndFileService.GetAllInProductWithoutFileDataAsync(productId);
+    //private async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductInternalAsync(
+    //    int productId,
+    //    List<ProductImageForProductUpsertRequest> imageUpsertRequests,
+    //    string upsertUserName)
+    //{
+    //    List<ProductImageData> currentProductImages = await _productImageAndFileService.GetAllInProductWithoutFileDataAsync(productId);
 
-        List<PromotionProductFileInfo> relatedPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
+    //    List<PromotionProductFileInfo> relatedPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
 
-        foreach (ProductImageData image in currentProductImages)
-        {
-            ProductImageForProductUpsertRequest? requestWithSameId
-                = imageUpsertRequests.FirstOrDefault(x => x.ExistingImageId == image.Id);
+    //    foreach (ProductImageData image in currentProductImages)
+    //    {
+    //        ProductImageForProductUpsertRequest? requestWithSameId
+    //            = imageUpsertRequests.FirstOrDefault(x => x.ExistingImageId == image.Id);
 
-            if (requestWithSameId is not null) continue;
+    //        if (requestWithSameId is not null) continue;
             
-            IEnumerable<PromotionProductFileInfo> promotionProductFilesWithImage = relatedPromotionProductFileInfos
-                .Where(x => x.ProductImageId == image.Id);
+    //        IEnumerable<PromotionProductFileInfo> promotionProductFilesWithImage = relatedPromotionProductFileInfos
+    //            .Where(x => x.ProductImageId == image.Id);
 
-            foreach (PromotionProductFileInfo? promotionProductFile in promotionProductFilesWithImage)
-            {
-                bool deleteResult = await _promotionProductFileInfoService.DeleteAsync(promotionProductFile.Id);
+    //        foreach (PromotionProductFileInfo? promotionProductFile in promotionProductFilesWithImage)
+    //        {
+    //            bool deleteResult = await _promotionProductFileInfoService.DeleteAsync(promotionProductFile.Id);
 
-                if (!deleteResult) return new UnexpectedFailureResult();
-            }
+    //            if (!deleteResult) return new UnexpectedFailureResult();
+    //        }
 
-            //ChangeRelatedPromotionFileInfosToNewImageId(image.Id, null, productId, upsertUserName);
-        }
+    //        //ChangeRelatedPromotionFileInfosToNewImageId(image.Id, null, productId, upsertUserName);
+    //    }
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> result
-            = await _productImageAndFileService.UpsertFirstAndAllImagesForProductAsync(productId, imageUpsertRequests);
+    //    OneOf<Success, ValidationResult, UnexpectedFailureResult> result
+    //        = await _productImageAndFileService.UpsertFirstAndAllImagesForProductAsync(productId, imageUpsertRequests);
 
-        if (!result.IsT0) return result;
+    //    if (!result.IsT0) return result;
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                productId, ProductNewStatus.WorkInProgress, upsertUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            productId, ProductNewStatus.WorkInProgress, upsertUserName);
 
-        return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
-            statusId => result.AsT0,
-            validationResult => validationResult,
-            unexpectedFailureResult => unexpectedFailureResult);
-    }
+    //    return upsertProductStatusResult.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
+    //        statusId => result.AsT0,
+    //        validationResult => validationResult,
+    //        unexpectedFailureResult => unexpectedFailureResult);
+    //}
 
-    public Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductAsync(
-        int productId,
-        List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
-        string deleteUserName)
-    {
-        //return _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //    () => UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName),
-        //    result => result.IsT0);
+    //public Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductAsync(
+    //    int productId,
+    //    List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
+    //    string deleteUserName)
+    //{
+    //    //return _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //    () => UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName),
+    //    //    result => result.IsT0);
 
-        return UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName);
-    }
+    //    return UpsertFirstAndAllImagesWithFilesForProductInternalAsync(productId, imageAndFileNameUpsertRequests, deleteUserName);
+    //}
 
-    private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
-        int productId,
-        List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
-        string deleteUserName)
-    {
-        List<ProductImageData> currentProductImages = await _productImageAndFileService.GetAllInProductWithoutFileDataAsync(productId);
+    //private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
+    //    int productId,
+    //    List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests,
+    //    string deleteUserName)
+    //{
+    //    List<ProductImageData> currentProductImages = await _productImageAndFileService.GetAllInProductWithoutFileDataAsync(productId);
 
-        List<PromotionProductFileInfo> relatedPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
+    //    List<PromotionProductFileInfo> relatedPromotionProductFileInfos = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
 
-        using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope localDBTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
 
-        foreach (ProductImageData image in currentProductImages)
-        {
-            ProductImageWithFileForProductUpsertRequest? requestWithSameId
-                = imageAndFileNameUpsertRequests.FirstOrDefault(x => x.ExistingImageId == image.Id);
+    //    foreach (ProductImageData image in currentProductImages)
+    //    {
+    //        ProductImageWithFileForProductUpsertRequest? requestWithSameId
+    //            = imageAndFileNameUpsertRequests.FirstOrDefault(x => x.ExistingImageId == image.Id);
 
-            if (requestWithSameId is not null) continue;
+    //        if (requestWithSameId is not null) continue;
 
-            IEnumerable<PromotionProductFileInfo> promotionProductFilesWithImage = relatedPromotionProductFileInfos
-               .Where(x => x.ProductImageId == image.Id);
+    //        IEnumerable<PromotionProductFileInfo> promotionProductFilesWithImage = relatedPromotionProductFileInfos
+    //           .Where(x => x.ProductImageId == image.Id);
 
-            foreach (PromotionProductFileInfo? promotionProductFile in promotionProductFilesWithImage)
-            {
-                bool deleteResult = await _promotionProductFileInfoService.DeleteAsync(promotionProductFile.Id);
+    //        foreach (PromotionProductFileInfo? promotionProductFile in promotionProductFilesWithImage)
+    //        {
+    //            bool deleteResult = await _promotionProductFileInfoService.DeleteAsync(promotionProductFile.Id);
 
-                if (!deleteResult) return new UnexpectedFailureResult();
-            }
+    //            if (!deleteResult) return new UnexpectedFailureResult();
+    //        }
 
-            //ChangeRelatedPromotionFileInfosToNewImageId(image.Id, null, productId, upsertUserName);
-        }
+    //        //ChangeRelatedPromotionFileInfosToNewImageId(image.Id, null, productId, upsertUserName);
+    //    }
 
-        using TransactionScope replicationDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope replicationDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
-            = await _productImageAndFileService.UpsertFirstAndAllImagesWithFilesForProductAsync(
-            productId, imageAndFileNameUpsertRequests, deleteUserName);
+    //    OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
+    //        = await _productImageAndFileService.UpsertFirstAndAllImagesWithFilesForProductAsync(
+    //        productId, imageAndFileNameUpsertRequests, deleteUserName);
 
-        if (!result.IsT0) return result;
+    //    if (!result.IsT0) return result;
 
-        replicationDBWorkTransactionScope.Complete();
+    //    replicationDBWorkTransactionScope.Complete();
 
-        localDBTransactionScope.Complete();
+    //    localDBTransactionScope.Complete();
 
-        return result;
-    }
+    //    return result;
+    //}
 
     //private async Task<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductInternalAsync(
     //    int productId,
@@ -499,169 +499,169 @@ internal sealed class ProductImageService : IProductImageService
     //        productId, imageAndFileNameUpsertRequests, deleteUserName);
     //}
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteAllImagesForProductAsync(
-        int productId, string deleteUserName)
-    {
-        if (productId <= 0) return new NotFound();
+    //public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteAllImagesForProductAsync(
+    //    int productId, string deleteUserName)
+    //{
+    //    if (productId <= 0) return new NotFound();
 
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => DeleteAllImagesForProductInternalAsync(productId, deleteUserName),
-            result => result.Match(
-                success => true,
-                notFound => true,
-                validationResult => false,
-                unexpectedFailureResult => false));
-    }
+    //    return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //        () => DeleteAllImagesForProductInternalAsync(productId, deleteUserName),
+    //        result => result.Match(
+    //            success => true,
+    //            notFound => true,
+    //            validationResult => false,
+    //            unexpectedFailureResult => false));
+    //}
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteAllImagesForProductInternalAsync(
-        int productId, string deleteUserName)
-    {
-        bool result = await _productImageAndFileService.DeleteAllImagesForProductAsync(productId);
+    //private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteAllImagesForProductInternalAsync(
+    //    int productId, string deleteUserName)
+    //{
+    //    bool result = await _productImageAndFileService.DeleteAllImagesForProductAsync(productId);
 
-        if (!result) return new NotFound();
+    //    if (!result) return new NotFound();
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                productId, ProductNewStatus.WorkInProgress, deleteUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            productId, ProductNewStatus.WorkInProgress, deleteUserName);
 
-        return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
-            statusId => new Success(),
-            validationResult => validationResult,
-            unexpectedFailureResult => unexpectedFailureResult);
-    }
+    //    return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
+    //        statusId => new Success(),
+    //        validationResult => validationResult,
+    //        unexpectedFailureResult => unexpectedFailureResult);
+    //}
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInAllImagesByIdAsync(
-        int id, string deleteUserName)
-    {
-        if (id <= 0) return new NotFound();
+    //public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInAllImagesByIdAsync(
+    //    int id, string deleteUserName)
+    //{
+    //    if (id <= 0) return new NotFound();
 
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => DeleteInAllImagesByIdInternalAsync(id, deleteUserName),
-            result => result.IsT0);
-    }
+    //    return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //        () => DeleteInAllImagesByIdInternalAsync(id, deleteUserName),
+    //        result => result.IsT0);
+    //}
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInAllImagesByIdInternalAsync(
-        int id, string deleteUserName)
-    {
-        ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
+    //private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInAllImagesByIdInternalAsync(
+    //    int id, string deleteUserName)
+    //{
+    //    ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
 
-        if (image is null) return new NotFound();
+    //    if (image is null) return new NotFound();
 
-        if (image.ProductId is null) return new UnexpectedFailureResult();
+    //    if (image.ProductId is null) return new UnexpectedFailureResult();
 
-        bool isImageDeleted = await _productImageAndFileService.DeleteInAllImagesByIdAsync(id);
+    //    bool isImageDeleted = await _productImageAndFileService.DeleteInAllImagesByIdAsync(id);
 
-        if (!isImageDeleted) return new NotFound();
+    //    if (!isImageDeleted) return new NotFound();
 
-        OneOf<Success, NotFound, UnexpectedFailureResult> deleteRelatedPromotionProductFiles
-            = await DeleteRelatedPromotionFileInfosAsync(image.ProductId.Value, id);
+    //    OneOf<Success, NotFound, UnexpectedFailureResult> deleteRelatedPromotionProductFiles
+    //        = await DeleteRelatedPromotionFileInfosAsync(image.ProductId.Value, id);
 
-        if (!deleteRelatedPromotionProductFiles.IsT0 && !deleteRelatedPromotionProductFiles.IsT1)
-        {
-            return deleteRelatedPromotionProductFiles.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
-                success => success,
-                notFound => new Success(),
-                unexpectedFailureResult => unexpectedFailureResult);
-        }
+    //    if (!deleteRelatedPromotionProductFiles.IsT0 && !deleteRelatedPromotionProductFiles.IsT1)
+    //    {
+    //        return deleteRelatedPromotionProductFiles.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
+    //            success => success,
+    //            notFound => new Success(),
+    //            unexpectedFailureResult => unexpectedFailureResult);
+    //    }
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                image.ProductId.Value, ProductNewStatus.WorkInProgress, deleteUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            image.ProductId.Value, ProductNewStatus.WorkInProgress, deleteUserName);
 
-        return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
-            statusId => new Success(),
-            validationResult => validationResult,
-            unexpectedFailureResult => unexpectedFailureResult);
+    //    return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
+    //        statusId => new Success(),
+    //        validationResult => validationResult,
+    //        unexpectedFailureResult => unexpectedFailureResult);
 
-        //OneOf<Success, NotFound, ValidationResult> updatePromotionProductFilesResult
-        //    = ChangeRelatedPromotionFileInfosToNewImageId(id, null, image.ProductId.Value, deleteUserName);
+    //    //OneOf<Success, NotFound, ValidationResult> updatePromotionProductFilesResult
+    //    //    = ChangeRelatedPromotionFileInfosToNewImageId(id, null, image.ProductId.Value, deleteUserName);
 
-        //return updatePromotionProductFilesResult.Map<Success, NotFound, ValidationResult, UnexpectedFailureResult>();
-    }
+    //    //return updatePromotionProductFilesResult.Map<Success, NotFound, ValidationResult, UnexpectedFailureResult>();
+    //}
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(
-        int id, string deleteUserName)
-    {
-        if (id <= 0) return new NotFound();
+    //public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(
+    //    int id, string deleteUserName)
+    //{
+    //    if (id <= 0) return new NotFound();
 
-        //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-        //    () => DeleteInAllImagesByIdWithFileInternalAsync(id, deleteUserName),
-        //    result => result.IsT0);
+    //    //return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //    //    () => DeleteInAllImagesByIdWithFileInternalAsync(id, deleteUserName),
+    //    //    result => result.IsT0);
 
-        return await DeleteInAllImagesByIdWithFileInternalAsync(id, deleteUserName);
-    }
+    //    return await DeleteInAllImagesByIdWithFileInternalAsync(id, deleteUserName);
+    //}
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileInternalAsync(
-        int id, string deleteUserName)
-    {
-        ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
+    //private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileInternalAsync(
+    //    int id, string deleteUserName)
+    //{
+    //    ProductImageData? image = await GetByIdInAllImagesWithoutFileDataAsync(id);
 
-        if (image is null) return new NotFound();
+    //    if (image is null) return new NotFound();
 
-        if (image.ProductId is null) return new UnexpectedFailureResult();
+    //    if (image.ProductId is null) return new UnexpectedFailureResult();
 
-        using TransactionScope replicatedDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope replicatedDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> deleteImageWithFileResult
-            = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(id, deleteUserName);
+    //    OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult> deleteImageWithFileResult
+    //        = await _productImageAndFileService.DeleteInAllImagesByIdWithFileAsync(id, deleteUserName);
 
-        if (!deleteImageWithFileResult.IsT0)
-        {
-            return deleteImageWithFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>();
-        }
+    //    if (!deleteImageWithFileResult.IsT0)
+    //    {
+    //        return deleteImageWithFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>();
+    //    }
 
-        using TransactionScope localDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+    //    using TransactionScope localDBWorkTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
-        OneOf<Success, NotFound, UnexpectedFailureResult> deleteRelatedPromotionProductFilesResult = await DeleteRelatedPromotionFileInfosAsync(image.ProductId.Value, id);
+    //    OneOf<Success, NotFound, UnexpectedFailureResult> deleteRelatedPromotionProductFilesResult = await DeleteRelatedPromotionFileInfosAsync(image.ProductId.Value, id);
 
-        OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult> deleteRelatedPromotionProductFilesResultMapped
-            = deleteRelatedPromotionProductFilesResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                success => success,
-                notFound => new Success(),
-                unexpectedFailureResult => unexpectedFailureResult);
+    //    OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult> deleteRelatedPromotionProductFilesResultMapped
+    //        = deleteRelatedPromotionProductFilesResult.Match<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+    //            success => success,
+    //            notFound => new Success(),
+    //            unexpectedFailureResult => unexpectedFailureResult);
 
-        if (!deleteRelatedPromotionProductFilesResultMapped.IsT0) return deleteRelatedPromotionProductFilesResultMapped;
+    //    if (!deleteRelatedPromotionProductFilesResultMapped.IsT0) return deleteRelatedPromotionProductFilesResultMapped;
 
-        localDBWorkTransactionScope.Complete();
+    //    localDBWorkTransactionScope.Complete();
 
-        replicatedDBWorkTransactionScope.Complete();
+    //    replicatedDBWorkTransactionScope.Complete();
 
-        return deleteRelatedPromotionProductFilesResultMapped;
+    //    return deleteRelatedPromotionProductFilesResultMapped;
 
-        //OneOf<Success, NotFound, ValidationResult> updatePromotionProductFilesResult
-        //    = ChangeRelatedPromotionFileInfosToNewImageId(id, null, image.ProductId.Value, deleteUserName);
+    //    //OneOf<Success, NotFound, ValidationResult> updatePromotionProductFilesResult
+    //    //    = ChangeRelatedPromotionFileInfosToNewImageId(id, null, image.ProductId.Value, deleteUserName);
 
-        //return updatePromotionProductFilesResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>();
-    }
+    //    //return updatePromotionProductFilesResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>();
+    //}
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdAsync(int productId, string deleteUserName)
-    {
-        if (productId <= 0) return new NotFound();
+    //public async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdAsync(int productId, string deleteUserName)
+    //{
+    //    if (productId <= 0) return new NotFound();
 
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => DeleteInFirstImagesByProductIdInternalAsync(productId, deleteUserName),
-            result => result.Match(
-                success => true,
-                notFound => true,
-                validationResult => false,
-                unexpectedFailureResult => false));
-    }
+    //    return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+    //        () => DeleteInFirstImagesByProductIdInternalAsync(productId, deleteUserName),
+    //        result => result.Match(
+    //            success => true,
+    //            notFound => true,
+    //            validationResult => false,
+    //            unexpectedFailureResult => false));
+    //}
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdInternalAsync(int productId, string deleteUserName)
-    {
-        bool result = await _productImageAndFileService.DeleteInFirstImagesByProductIdAsync(productId);
+    //private async Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> DeleteInFirstImagesByProductIdInternalAsync(int productId, string deleteUserName)
+    //{
+    //    bool result = await _productImageAndFileService.DeleteInFirstImagesByProductIdAsync(productId);
 
-        if (!result) return new NotFound();
+    //    if (!result) return new NotFound();
 
-        OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
-            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
-                productId, ProductNewStatus.WorkInProgress, deleteUserName);
+    //    OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
+    //        = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
+    //            productId, ProductNewStatus.WorkInProgress, deleteUserName);
 
-        return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
-            statusId => new Success(),
-            validationResult => validationResult,
-            unexpectedFailureResult => unexpectedFailureResult);
-    }
+    //    return upsertProductStatusResult.Match<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>>(
+    //        statusId => new Success(),
+    //        validationResult => validationResult,
+    //        unexpectedFailureResult => unexpectedFailureResult);
+    //}
 
     //private OneOf<Success, NotFound, ValidationResult> ChangeRelatedPromotionFileInfosToNewImageId(
     //    int imageId, int? newImageId, int productId, string deleteUserName)
@@ -689,6 +689,7 @@ internal sealed class ProductImageService : IProductImageService
     //    return new Success();
     //}
 
+    /*
     private async Task<OneOf<Success, NotFound, UnexpectedFailureResult>> DeleteRelatedPromotionFileInfosAsync(int productId, int imageId)
     {
         List<PromotionProductFileInfo> promotionProductFilesForProduct = await _promotionProductFileInfoService.GetAllForProductAsync(productId);
@@ -707,4 +708,5 @@ internal sealed class ProductImageService : IProductImageService
 
         return new Success();
     }
+    */
 }

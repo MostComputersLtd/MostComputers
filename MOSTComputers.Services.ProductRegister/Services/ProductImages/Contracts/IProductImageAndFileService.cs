@@ -28,6 +28,7 @@ internal interface IProductImageAndFileService
     Task<List<ProductFirstImageExistsForProductData>> DoProductsHaveImagesInFirstImagesAsync(List<int> productIds);
     Task<ProductImage?> GetByProductIdInFirstImagesAsync(int productId);
     Task<bool> DoesProductHaveImageInFirstImagesAsync(int productId);
+
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertInAllImagesAsync(ServiceProductImageCreateRequest createRequest);
     Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertInAllImagesWithFileAsync(ProductImageWithFileCreateRequest productImageWithFileCreateRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> InsertInFirstImagesAsync(ServiceProductFirstImageCreateRequest createRequest);
@@ -40,12 +41,12 @@ internal interface IProductImageAndFileService
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> UpsertInAllImagesAsync(ProductImageUpsertRequest productImageUpsertRequest);
     Task<OneOf<ImageAndFileIdsInfo, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertInAllImagesWithFileAsync(ProductImageWithFileUpsertRequest productImageWithFileUpsertRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertInFirstImagesAsync(ServiceProductFirstImageUpsertRequest upsertRequest);
-    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(int productId, List<ProductImageForProductUpsertRequest> imageUpsertRequests);
-    Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductAsync(int productId, List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests, string deleteUserName);
-    Task<bool> DeleteAllImagesForProductAsync(int productId);
-    Task<bool> DeleteInAllImagesByIdAsync(int id);
-    Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(int id, string deleteUserName);
-    Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
+    //Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesForProductAsync(int productId, List<ProductImageForProductUpsertRequest> imageUpsertRequests);
+    //Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpsertFirstAndAllImagesWithFilesForProductAsync(int productId, List<ProductImageWithFileForProductUpsertRequest> imageAndFileNameUpsertRequests, string deleteUserName);
+    //Task<bool> DeleteAllImagesForProductAsync(int productId);
+    //Task<bool> DeleteInAllImagesByIdAsync(int id);
+    //Task<OneOf<Success, NotFound, FileDoesntExistResult, UnexpectedFailureResult>> DeleteInAllImagesByIdWithFileAsync(int id, string deleteUserName);
+    //Task<bool> DeleteInFirstImagesByProductIdAsync(int productId);
     Task<List<ProductImageData>> GetAllFirstImagesWithoutFileDataForAllProductsAsync();
     Task<List<ProductImageData>> GetFirstImagesWithoutFileDataForSelectionOfProductsAsync(List<int> productIds);
 }

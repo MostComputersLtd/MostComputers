@@ -17,6 +17,6 @@ public interface IPromotionProductFileService
     Task<PromotionProductFileInfo?> GetByIdAsync(int id);
     Task<bool> DoesExistForPromotionFileAsync(int promotionFileId);
     Task<OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(ServicePromotionProductFileCreateRequest createRequest);
-    Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateAsync(ServicePromotionProductFileUpdateRequest updateRequest);
-    Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteAsync(int id, string deleteUserName);
+    //Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateAsync(ServicePromotionProductFileUpdateRequest updateRequest);
+    //Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, UnexpectedFailureResult>> DeleteAsync(int id, string deleteUserName);
 }
