@@ -18,6 +18,7 @@
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.Legacy.Contracts
 @using MOSTComputers.Services.Identity.Models
+@using MOSTComputers.Services.ProductRegister.Models.Requests.Product
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
@@ -27,6 +28,7 @@
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.UI.Web.Blazor.Client.Product
@@ -37,10 +39,8 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
 @using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts
-@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
@@ -50,18 +50,7 @@
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
 
-
-
-
-
-
-
 @using Microsoft.Data.SqlClient
-
-
-
-
-
 
 @inject ICategoryService CategoryService
 
@@ -179,9 +168,10 @@
 		<table class="product-data-table table-with-small-horizontal-padding-on-cells">
 			<thead class="product-data-table-head">
 				<tr>
+                    <th @onclick="OrderByPlShow">PLSH</th>
                     <th>Work Stat</th>
                     <th @onclick="OrderByImagesCount">P</th>
-					<th>Stat</th>
+                    <th>Stat</th>
 					<th>CSTID</th>
 					<th>Name</th>
 					<th>SStr</th>
@@ -233,10 +223,26 @@
                         promotionPictureId = productData.Product.PromotionPictureId;
                     }
 
+                    string plShowString = "";
+                    string plShowStringClass = "";
+
+                    int? plShow = productData.Product.PlShow;
+
+                    if (plShow == 2)
+                    {
+                        plShowString = "STOP";
+                        plShowStringClass = "price-list-show-stop";
+                    }
+
                     @* string isSelectedClass = productData.IsSelected ? "product-item-selected-for-change" : string.Empty; *@
 
                     <tr class="product-data-table-entry">
 
+                        <td>
+                            <p class="@plShowStringClass">
+                                @plShowString
+                            </p>
+                        </td>
 	                    <td>
                             <p>
 		                        @(productData.ProductStatuses?.ProductNewStatus is not null
@@ -809,6 +815,7 @@
         NewAndWorkInProgress = 5,
         LastAdded = 6,
         LastAddedNew = 7,
+        None = 8,
     }
 
     public enum LoadState
@@ -816,6 +823,19 @@
         Loading = 0,
         Loaded = 1,
         FailedToLoad = 2,
+    }
+
+    public enum ProductOrderByCategory
+    {
+        None = 0,
+        FromSecondUp = 1,
+    }
+
+
+    public enum ProductOrderByPlShow
+    {
+        None = 0,
+        FirstWithHiddenProducts = 1,
     }
 
     public enum ProductOrderByImages
@@ -899,6 +919,7 @@
         ProductEditorProductNewStatusSearchOptions.Postponed2,
         ProductEditorProductNewStatusSearchOptions.LastAdded,
         ProductEditorProductNewStatusSearchOptions.LastAddedNew,
+        ProductEditorProductNewStatusSearchOptions.None,
     ];
 
     public string SelectedProductNewStatus { get; set; }
@@ -923,7 +944,9 @@
         300,
     ];
 
-    private ProductOrderByImages _productOrder = ProductOrderByImages.None;
+    private ProductOrderByCategory _productOrderByCategory = ProductOrderByCategory.None;
+    private ProductOrderByPlShow _productOrderByPlShow = ProductOrderByPlShow.None;
+    private ProductOrderByImages _productOrderByImages = ProductOrderByImages.None;
 
     private List<ProductEditorProductData> ProductDatas { get; set; } = new();
 
@@ -974,8 +997,6 @@
         CategoriesInSelect = allCategories
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
-
-        Task _ = AddStatusesToAllProductsWithoutStatuses();
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -983,6 +1004,8 @@
         if (firstRender)
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductEditor.razor.js");
+
+            Task _ = AddStatusesToAllProductsWithoutStatuses();
         }
     }
 
@@ -998,22 +1021,83 @@
         _currentUserName = authenticationState.User.Identity?.Name;
     }
 
-    private void OrderByImagesCount()
+    private void OrderByPlShow()
     {
-        if (_productOrder == ProductOrderByImages.None || _productOrder == ProductOrderByImages.FirstWithImages)
-        {
-            ProductDatas = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 1 : 0)
-                .ToList();
+        _productOrderByImages = ProductOrderByImages.None;
 
-            _productOrder = ProductOrderByImages.FirstWithNoImages;
+        if (_productOrderByPlShow == ProductOrderByPlShow.None)
+        {
+            IOrderedEnumerable<ProductEditorProductData> productDatasOrderedByPlShow
+                = ProductDatas.OrderBy(x => x.Product.PlShow == 2 ? 0 : 1);
+
+            ProductDatas = ThenOrderProductDatasInDefaultOrder(productDatasOrderedByPlShow);
+
+            _productOrderByPlShow = ProductOrderByPlShow.FirstWithHiddenProducts;
 
             return;
         }
 
-        ProductDatas = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 0 : 1)
-            .ToList();
+        OrderProductDatasInDefaultOrder();
 
-        _productOrder = ProductOrderByImages.FirstWithImages;
+        _productOrderByPlShow = ProductOrderByPlShow.None;
+    }
+
+    private void OrderByImagesCount()
+    {
+        _productOrderByPlShow = ProductOrderByPlShow.None;
+
+        if (_productOrderByImages == ProductOrderByImages.None)
+        {
+            IOrderedEnumerable<ProductEditorProductData> productsOrderedByImagesCount
+                = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 1 : 0);
+
+            ProductDatas = ThenOrderProductDatasInDefaultOrder(productsOrderedByImagesCount);
+
+            _productOrderByImages = ProductOrderByImages.FirstWithNoImages;
+        }
+        else if (_productOrderByImages == ProductOrderByImages.FirstWithNoImages)
+        {
+            IOrderedEnumerable<ProductEditorProductData> productsOrderedByImagesCount
+                = ProductDatas.OrderBy(x => (x.OriginalImagesCount > 0) ? 0 : 1);
+
+            ProductDatas = ThenOrderProductDatasInDefaultOrder(productsOrderedByImagesCount);
+
+            _productOrderByImages = ProductOrderByImages.FirstWithImages;
+        }
+        else
+        {
+            OrderProductDatasInDefaultOrder();
+
+            _productOrderByImages = ProductOrderByImages.None;
+        }
+    }
+
+    private void OrderProductDatasInDefaultOrder()
+    {
+        if (_productOrderByCategory == ProductOrderByCategory.FromSecondUp)
+        {
+            SortProductEditorDatasFromSecondCategoryUp(ProductDatas);
+
+            return;
+        }
+
+        ProductDatas = ProductDatas
+            .OrderBy(x => x.Product.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Product.Id)
+            .ToList();
+    }
+
+    private List<ProductEditorProductData> ThenOrderProductDatasInDefaultOrder(IOrderedEnumerable<ProductEditorProductData> productEditorProductDatas)
+    {
+        if (_productOrderByCategory == ProductOrderByCategory.FromSecondUp)
+        {
+            return ThenOrderByProductEditorDatasFromSecondCategoryUp(productEditorProductDatas);
+        }
+
+        return productEditorProductDatas
+            .ThenBy(x => x.Product.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Product.Id)
+            .ToList();
     }
 
     private void ShowSingleProductEditorPopup(ProductEditorProductData productData)
@@ -1186,12 +1270,13 @@
 
         ProductSearchRequest productSearchRequest = new()
         {
+            OnlyVisibleByEndUsers = false,
             ProductNewStatuses = [ProductNewStatusSearchOptions.None],
         };
 
         List<Product> productsWithoutStatuses = await ProductSearchService.SearchProductsAsync(productSearchRequest);
 
-        if (productsWithoutStatuses.Count > 0) return;
+        if (productsWithoutStatuses.Count == 0) return;
 
         ServiceProductWorkStatusesCreateManyWithSameDataRequest createAllRequest = new()
         {
@@ -1275,13 +1360,16 @@
         List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
             = GetSearchOptionsFromEditorSearchOptions(productEditorNewStatusSearchOptions);
 
-        bool filterByLastAdded = productNewStatusSearchOptions?.Contains(ProductNewStatusSearchOptions.LastAdded) ?? false;
+        bool orderProductsByLastAddedDate = productEditorNewStatusSearchOptions == ProductEditorProductNewStatusSearchOptions.LastAdded
+            || productEditorNewStatusSearchOptions == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
 
-        int? maxResultCountInner = maxResultCount;
+        bool orderProductsFromSecondCategoryUp = categoryId == null && string.IsNullOrWhiteSpace(userInputString);
 
-        if (filterByLastAdded && maxResultCount is not null)
+        int? searchMaxResultCount = maxResultCount;
+
+        if (orderProductsByLastAddedDate || orderProductsFromSecondCategoryUp)
         {
-            maxResultCountInner = Math.Min(maxResultCount.Value, LastAddedProductsSearchCount);
+            searchMaxResultCount = null;
         }
 
         ProductSearchRequest productSearchRequest = new()
@@ -1292,10 +1380,90 @@
             ProductNewStatuses = productNewStatusSearchOptions,
             ProductStatus = productStatusSearchOptions,
             PromotionSearchOptions =  promotionSearchOptions,
-            MaxResultCount = maxResultCountInner,
+            MaxResultCount = searchMaxResultCount,
         };
 
-        return await ProductSearchService.SearchProductsAsync(productSearchRequest);
+        List<Product> products = await ProductSearchService.SearchProductsAsync(productSearchRequest);
+
+        _productOrderByImages = ProductOrderByImages.None;
+        _productOrderByPlShow = ProductOrderByPlShow.None;
+        _productOrderByCategory = orderProductsFromSecondCategoryUp ? ProductOrderByCategory.FromSecondUp : ProductOrderByCategory.None;
+
+        if (orderProductsByLastAddedDate)
+        {
+            int? finalResultCount = LastAddedProductsSearchCount;
+
+            if (searchMaxResultCount is not null)
+            {
+                finalResultCount = Math.Min(searchMaxResultCount.Value, LastAddedProductsSearchCount);
+            }
+
+            List<Product> productsOrderedByLastAddedDate = await ProductSearchService.OrderProductsByLastAddedDateAsync(products);
+
+            products = productsOrderedByLastAddedDate.Slice(0, Math.Min(finalResultCount.Value, productsOrderedByLastAddedDate.Count));
+
+            return products;
+        }
+        else if (orderProductsFromSecondCategoryUp)
+        {
+            SortProductsFromSecondCategoryUp(products);
+
+            if (maxResultCount is null) return products;
+
+            return products.Slice(0, Math.Min(maxResultCount.Value, products.Count));
+        }
+
+        if (maxResultCount is not null && maxResultCount > 0)
+        {
+            return products
+                .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+                .ThenBy(x => x.Id)
+                .Take(maxResultCount.Value)
+                .ToList();
+        }
+
+        return products
+            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Id)
+            .ToList();
+    }
+
+    private static void SortProductEditorDatasFromSecondCategoryUp(List<ProductEditorProductData> products)
+    {
+        products.Sort((productData1, productData2) => CompareProductsFromSecondCategoryUp(productData1.Product, productData2.Product));
+    }
+
+    private static void SortProductsFromSecondCategoryUp(List<Product> products)
+    {
+        products.Sort(CompareProductsFromSecondCategoryUp);
+    }
+
+    private static List<ProductEditorProductData> ThenOrderByProductEditorDatasFromSecondCategoryUp(IOrderedEnumerable<ProductEditorProductData> products)
+    {
+        return products
+            .ThenBy(x => (x.Product.CategoryId > 1) ? x.Product.CategoryId.Value : int.MaxValue)
+            .ThenBy(x => x.Product.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Product.Id)
+            .ToList();
+    }
+
+    private static int CompareProductsFromSecondCategoryUp(Product product1, Product product2)
+    {
+        int categorySortIndex1 = (product1.CategoryId > 1) ? product1.CategoryId.Value : int.MaxValue;
+        int categorySortIndex2 = (product2.CategoryId > 1) ? product2.CategoryId.Value : int.MaxValue;
+
+        int categoryComparison = categorySortIndex1 - categorySortIndex2;
+
+        if (categoryComparison != 0) return categoryComparison;
+
+        int displayOrder1 = product1.DisplayOrder ?? int.MaxValue;
+        int displayOrder2 = product2.DisplayOrder ?? int.MaxValue;
+
+        int displayOrderComparison = displayOrder1 - displayOrder2;
+
+        if (displayOrderComparison != 0) return displayOrderComparison;
+
+        return product1.Id.CompareTo(product2.Id);
     }
 
     private static List<ProductNewStatusSearchOptions>? GetSearchOptionsFromEditorSearchOptions(
@@ -1309,8 +1477,8 @@
             ProductEditorProductNewStatusSearchOptions.ReadyForUse => [ProductNewStatusSearchOptions.ReadyForUse],
             ProductEditorProductNewStatusSearchOptions.Postponed1 => [ProductNewStatusSearchOptions.Postponed1],
             ProductEditorProductNewStatusSearchOptions.Postponed2 => [ProductNewStatusSearchOptions.Postponed2],
-            ProductEditorProductNewStatusSearchOptions.LastAdded => [ProductNewStatusSearchOptions.LastAdded],
-            ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.LastAdded, ProductNewStatusSearchOptions.New],
+            ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.New],
+            ProductEditorProductNewStatusSearchOptions.None => [ProductNewStatusSearchOptions.None],
             _ => null
         };
     }
@@ -1347,6 +1515,7 @@
             ProductEditorProductNewStatusSearchOptions.Postponed2 => "Post2",
             ProductEditorProductNewStatusSearchOptions.LastAdded => "Last Added",
             ProductEditorProductNewStatusSearchOptions.LastAddedNew => "Last Added & New",
+            ProductEditorProductNewStatusSearchOptions.None => "None",
             _ => null
         };
     }

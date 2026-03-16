@@ -99,8 +99,12 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     width: 1em;
 }
 
-.product-data-table-entry {
+.price-list-show-stop {
+    background-color: #FF0000;
+    max-width: 2.7rem;
+}
 
+.product-data-table-entry {
 }
 
     .product-data-table-entry.product-item-selected-for-change {
