@@ -1,8 +1,8 @@
-﻿namespace MOSTComputers.UI.Web.Blazor.Models.Search.Product;
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
 public class ProductSearchRequest
 {
-    public bool OnlyVisibleByEndUsers { get; init; } = true;
+    public bool OnlyVisibleByEndUsers { get; init; } = false;
     public string? UserInputString { get; init; }
     public int? CategoryId { get; init; }
     public int? ManufacturerId { get; init; }

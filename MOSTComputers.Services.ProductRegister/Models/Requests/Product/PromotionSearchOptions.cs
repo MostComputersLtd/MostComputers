@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.UI.Web.Blazor.Models.Search.Product;
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
 public enum PromotionSearchOptions
 {

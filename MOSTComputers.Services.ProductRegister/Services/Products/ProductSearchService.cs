@@ -3,16 +3,15 @@ using MOSTComputers.Models.Product.Models.Changes;
 using MOSTComputers.Models.Product.Models.Changes.Local;
 using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Promotions;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
-using MOSTComputers.UI.Web.Blazor.Models.Search.Product;
-using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts;
-using OneOf.Types;
 
-namespace MOSTComputers.UI.Web.Blazor.Services.Search;
+namespace MOSTComputers.Services.ProductRegister.Services.Products;
 
-internal sealed class ProductSearchService : IProductSearchService
+public sealed class ProductSearchService : IProductSearchService
 {
     public ProductSearchService(
         IProductService productService,
@@ -50,7 +49,8 @@ internal sealed class ProductSearchService : IProductSearchService
         }
         else if (productSearchRequest.ProductStatus != null)
         {
-            List<ProductStatus>? statusesToSearch = GetProductStatusEnumsFromSearchData(productSearchRequest.ProductStatus.Value);
+            List<MOSTComputers.Models.Product.Models.ProductStatus>? statusesToSearch
+                = GetProductStatusEnumsFromSearchData(productSearchRequest.ProductStatus.Value);
 
             if (statusesToSearch?.Count > 0)
             {
@@ -105,12 +105,14 @@ internal sealed class ProductSearchService : IProductSearchService
         if (productSearchRequest.MaxResultCount is not null
             && productSearchRequest.MaxResultCount > 0)
         {
-            searchedProducts = searchedProducts
+            return OrderProductsByDisplayOrderThenById(searchedProducts)
                 .Take(productSearchRequest.MaxResultCount.Value)
                 .ToList();
         }
 
-        return searchedProducts.OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+        return searchedProducts
+            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Id)
             .ToList();
     }
 
@@ -387,7 +389,11 @@ internal sealed class ProductSearchService : IProductSearchService
         {
             foreach (Product product in products)
             {
-                if (product.Status != ProductStatus.Available && product.Status != ProductStatus.Call) continue;
+                if (product.Status != MOSTComputers.Models.Product.Models.ProductStatus.Available
+                    && product.Status != MOSTComputers.Models.Product.Models.ProductStatus.Call)
+                {
+                    continue;
+                }
 
                 filteredProducts.Add(product);
             }
@@ -395,11 +401,11 @@ internal sealed class ProductSearchService : IProductSearchService
             return filteredProducts;
         }
 
-        ProductStatus? productStatusEnumToSearchFor = productStatusSearchEnum switch
+        MOSTComputers.Models.Product.Models.ProductStatus? productStatusEnumToSearchFor = productStatusSearchEnum switch
         {
-            ProductStatusSearchOptions.Unavailable => ProductStatus.Unavailable,
-            ProductStatusSearchOptions.Call => ProductStatus.Call,
-            ProductStatusSearchOptions.Available => ProductStatus.Available,
+            ProductStatusSearchOptions.Unavailable => MOSTComputers.Models.Product.Models.ProductStatus.Unavailable,
+            ProductStatusSearchOptions.Call => MOSTComputers.Models.Product.Models.ProductStatus.Call,
+            ProductStatusSearchOptions.Available => MOSTComputers.Models.Product.Models.ProductStatus.Available,
             _ => null
         };
 
@@ -415,42 +421,39 @@ internal sealed class ProductSearchService : IProductSearchService
         return filteredProducts;
     }
 
-    private static List<ProductStatus>? GetProductStatusEnumsFromSearchData(ProductStatusSearchOptions productStatusSearchOptions)
+    private static List<MOSTComputers.Models.Product.Models.ProductStatus>? GetProductStatusEnumsFromSearchData(
+        ProductStatusSearchOptions productStatusSearchOptions)
     {
         return productStatusSearchOptions switch
         {
-            ProductStatusSearchOptions.Unavailable => [ProductStatus.Unavailable],
-            ProductStatusSearchOptions.Call => [ProductStatus.Call],
-            ProductStatusSearchOptions.Available => [ProductStatus.Available],
-            ProductStatusSearchOptions.AvailableAndCall => [ProductStatus.Call, ProductStatus.Available],
+            ProductStatusSearchOptions.Unavailable => [MOSTComputers.Models.Product.Models.ProductStatus.Unavailable],
+            ProductStatusSearchOptions.Call => [MOSTComputers.Models.Product.Models.ProductStatus.Call],
+            ProductStatusSearchOptions.Available => [MOSTComputers.Models.Product.Models.ProductStatus.Available],
+            ProductStatusSearchOptions.AvailableAndCall => [
+                MOSTComputers.Models.Product.Models.ProductStatus.Call,
+                MOSTComputers.Models.Product.Models.ProductStatus.Available],
             _ => null,
         };
     }
 
-    private async Task<List<Product>> GetFilteredProductsByNewStatusAsync(List<ProductNewStatusSearchOptions> productNewStatuses, IEnumerable<Product> products)
+    private async Task<List<Product>> GetFilteredProductsByNewStatusAsync(
+        List<ProductNewStatusSearchOptions> productNewStatuses, IEnumerable<Product> products)
     {
         IEnumerable<int> productIds = products.Select(x => x.Id);
 
         IEnumerable<ProductWorkStatuses> productWorkStatuses = await _productWorkStatusesService.GetAllForProductsAsync(productIds);
 
-        List<Product> filteredProducts = await GetFilteredProductsByNewStatusAsync(products, productWorkStatuses, productNewStatuses);
+        List<Product> filteredProducts = GetFilteredProductsByNewStatus(products, productWorkStatuses, productNewStatuses);
 
         return filteredProducts;
     }
 
-    private async Task<List<Product>> GetFilteredProductsByNewStatusAsync(
+    private static List<Product> GetFilteredProductsByNewStatus(
         IEnumerable<Product> products,
         IEnumerable<ProductWorkStatuses> productStatuses,
         List<ProductNewStatusSearchOptions> productNewStatuses)
     {
         List<Product> filteredProducts = new();
-
-        bool filterByLastAdded = productNewStatuses.Contains(ProductNewStatusSearchOptions.LastAdded);
-
-        if (filterByLastAdded)
-        {
-            productNewStatuses.RemoveAll(x => x == ProductNewStatusSearchOptions.LastAdded);
-        }
 
         if (productNewStatuses.Count <= 0)
         {
@@ -484,14 +487,6 @@ internal sealed class ProductSearchService : IProductSearchService
             }
         }
 
-        if (filterByLastAdded)
-        {
-            List<LocalChangeData> localChangeDatas = await _originalLocalChangesReadService.GetAllForTableNameAndOperationTypeAsync(
-                _originalLocalChangesReadService.ProductsTableName, ChangeOperationType.Create);
-
-            filteredProducts = GetOrderedProductsByLastAddedDate(filteredProducts, localChangeDatas);
-        }
-
         return filteredProducts;
     }
 
@@ -504,10 +499,24 @@ internal sealed class ProductSearchService : IProductSearchService
             ProductNewStatusSearchOptions.ReadyForUse => ProductNewStatus.ReadyForUse,
             ProductNewStatusSearchOptions.Postponed1 => ProductNewStatus.Postponed1,
             ProductNewStatusSearchOptions.Postponed2 => ProductNewStatus.Postponed2,
-            ProductNewStatusSearchOptions.LastAdded => null,
             ProductNewStatusSearchOptions.None => null,
             _ => null
         };
+    }
+
+    public IOrderedEnumerable<Product> OrderProductsByDisplayOrderThenById(List<Product> searchedProducts)
+    {
+        return searchedProducts
+            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ThenBy(x => x.Id);
+    }
+
+    public async Task<List<Product>> OrderProductsByLastAddedDateAsync(List<Product> filteredProducts)
+    {
+        List<LocalChangeData> localChangeDatas = await _originalLocalChangesReadService.GetAllForTableNameAndOperationTypeAsync(
+            _originalLocalChangesReadService.ProductsTableName, ChangeOperationType.Create);
+
+        return GetOrderedProductsByLastAddedDate(filteredProducts, localChangeDatas);
     }
 
     private List<Product> GetOrderedProductsByLastAddedDate(
@@ -650,7 +659,7 @@ internal sealed class ProductSearchService : IProductSearchService
                     promotionPictureId = product.PromotionPictureId;
                 }
 
-                bool infoPromotionIsActive = (product.AlertExpireDate is null || product.AlertExpireDate >= DateTime.Now);
+                bool infoPromotionIsActive = product.AlertExpireDate is null || product.AlertExpireDate >= DateTime.Now;
 
                 if (promotionPictureId > 0 && infoPromotionIsActive) continue;
 
@@ -736,6 +745,6 @@ internal sealed class ProductSearchService : IProductSearchService
 
     private static bool PromotionHasDiscount(Promotion promotion)
     {
-        return (promotion.DiscountEUR > 0M || promotion.DiscountUSD > 0M);
+        return promotion.DiscountEUR > 0M || promotion.DiscountUSD > 0M;
     }
 }

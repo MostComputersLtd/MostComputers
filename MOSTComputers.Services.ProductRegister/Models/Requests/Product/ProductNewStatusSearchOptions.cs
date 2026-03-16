@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.UI.Web.Blazor.Models.Search.Product;
+﻿namespace MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 
 public enum ProductNewStatusSearchOptions
 {
@@ -7,6 +7,5 @@ public enum ProductNewStatusSearchOptions
     ReadyForUse = 2,
     Postponed1 = 3,
     Postponed2 = 4,
-    LastAdded = 5,
     None = 6,
 }
