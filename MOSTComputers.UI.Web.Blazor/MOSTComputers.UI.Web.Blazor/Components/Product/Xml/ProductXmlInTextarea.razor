@@ -15,7 +15,9 @@
 @using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
 @using OneOf
 @using static MOSTComputers.Utils.Files.FilePathUtils;
+@using static MOSTComputers.UI.Web.Blazor.Endpoints.PromotionPictureSource;
 
+@inject IProductService ProductService
 @inject IProductXmlService ProductXmlService
 @inject IProductToXmlProductMappingService ProductToXmlProductMappingService
 @inject IProductToXmlService ProductToXmlService
@@ -105,11 +107,17 @@
             return;
         }
 
+        string baseUri = NavigationManager.BaseUri;
+
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = NavigationManager.BaseUri,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUri, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUri, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUri, GetPromotionPictureSource(id) ?? "")
         };
 
-        _productXmlData = await ProductToXmlService.TryGetXmlForProductsAsync(DataOptions.AsT1.ProductIds, productXmlOptions);
+        List<Product> products = await ProductService.GetByIdsAsync(DataOptions.AsT1.ProductIds);
+
+        _productXmlData = await ProductToXmlService.TryGetXmlForProductsAsync(products, productXmlOptions);
     }
 }
