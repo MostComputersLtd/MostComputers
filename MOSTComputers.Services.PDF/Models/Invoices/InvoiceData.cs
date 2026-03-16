@@ -13,9 +13,11 @@ public class InvoiceData
     public required FirmInvoiceData SupplierData { get; set; }
     public required List<PurchaseInvoiceData> Purchases { get; set; }
 
+    public int? Status { get; set; }
     public required decimal VatPercentageFraction { get; set; }
     public string? RecipientFullName { get; set; }
     public required string TypeOfPayment { get; set; }
+    public string? PaymentStatus { get; set; }
     public string? AuthorFullName { get; set; }
 
     internal InvoiceDirection? InvoiceDirection { get; set; }

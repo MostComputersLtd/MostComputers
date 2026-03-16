@@ -82,6 +82,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
             RDate = invoice.RDATE,
             DueDate = invoice.DueDate,
             FirmId = invoice.FirmId,
+            Status = invoice.Status,
 
             RecipientData = new()
             {
@@ -106,6 +107,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
             VatPercentageFraction = vatPercentageFraction,
             RecipientFullName = invoice.RPerson,
             TypeOfPayment = TEMP_GET_PAYTYPE_STRING(invoice.PayType),
+            PaymentStatus = invoice.PaymentStatus,
             AuthorFullName = invoice.PaymentStatusUserName,
 
             InvoiceDirection = invoice.InvoiceDirection,

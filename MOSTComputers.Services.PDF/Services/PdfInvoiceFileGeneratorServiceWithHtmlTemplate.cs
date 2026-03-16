@@ -124,7 +124,9 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
         htmlDocument.Load(_htmlTemplateFilePath);
 
         string invoiceName = "ФАКТУРА";
-            
+
+        bool isCancelled = invoiceData.PaymentStatus == "A" || invoiceData.Status == 4;
+
         if (invoiceData.InvoiceDirection == InvoiceDirection.Credit)
         {
             if (!string.IsNullOrWhiteSpace(invoiceData.RelatedInvoiceNumber))
@@ -135,9 +137,19 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
             {
                 invoiceName = $"КРЕДИТНО ИЗВЕСТИЕ";
             }
+
+            if (isCancelled)
+            {
+                invoiceName += " - АНУЛИРАНO";
+            }
+        }
+        else if (isCancelled)
+        {
+            invoiceName += " - АНУЛИРАНА";
         }
 
-        string invoiceDateAsString = (invoiceData.RDate is not null) ? invoiceData.RDate.Value.ToString("dd.MM.yyyy") : string.Empty;
+
+        string invoiceDateAsString = (invoiceData.Date is not null) ? invoiceData.Date.Value.ToString("dd.MM.yyyy") : string.Empty;
         string invoiceDueDateAsString = (invoiceData.DueDate is not null) ? invoiceData.DueDate.Value.ToString("dd.MM.yyyy") : string.Empty;
 
         decimal totalPriceWithoutVat = 0M;
@@ -173,12 +185,18 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmAndAddressElementId, invoiceData.RecipientData.FirmName + "<br>" + invoiceData.RecipientData.FirmAddress);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmElementId, invoiceData.RecipientData.FirmOrPersonId ?? string.Empty);
-        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmVatElementId, invoiceData.RecipientData.VatId ?? string.Empty);
+
+        string customerVatId = string.IsNullOrEmpty(invoiceData.RecipientData.VatId) ? string.Empty : "BG" + invoiceData.RecipientData.VatId;
+
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmVatElementId, customerVatId);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateLeftFirmMRPersonElementId, invoiceData.RecipientData.MRPersonFullName ?? string.Empty);
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmAndAddressElementId, invoiceData.SupplierData.FirmName + "<br>" + invoiceData.SupplierData.FirmAddress);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmIdElementId, invoiceData.SupplierData.FirmOrPersonId ?? string.Empty);
-        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmVatIdElementId, invoiceData.SupplierData.VatId ?? string.Empty);
+
+        string firmVatId = string.IsNullOrEmpty(invoiceData.SupplierData.VatId) ? string.Empty : "BG" + invoiceData.SupplierData.VatId;
+
+        ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmVatIdElementId, firmVatId);
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateRightFirmMRPersonElementId, invoiceData.SupplierData.MRPersonFullName ?? string.Empty);
 
         ChangeHtmlElementInnerHtml(htmlDocument, _invoiceTemplateInvoiceNameElementId, invoiceName);
