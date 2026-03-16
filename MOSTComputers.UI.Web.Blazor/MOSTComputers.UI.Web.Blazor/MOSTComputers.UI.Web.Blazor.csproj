@@ -45,6 +45,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\Search\Product\" />
+  </ItemGroup>
+
   <Target Name="CopyPdfDocumentTemplatesOnBuild" AfterTargets="Build">
 	<Copy SourceFiles="@(PdfDocumentTemplates)" DestinationFolder="$(OutputPath)PdfDocumentTemplates\" />
   </Target>
