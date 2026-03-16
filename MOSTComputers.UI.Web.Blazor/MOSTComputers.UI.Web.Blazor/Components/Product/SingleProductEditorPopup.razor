@@ -69,7 +69,7 @@
 <Popup IsVisible="IsVisible"
     IsVisibleChanged="OnVisibleChanged"
     PopupMarginOptions="PopupMarginOptions"
-    CloseHandler="CloseHandler">
+    CloseHandler="CloseHandlerAsync">
     <HeaderContent>
         <div class="single-product-editor-popup-header">
 
@@ -724,7 +724,7 @@
         await IsVisibleChanged.InvokeAsync(isVisible);
     }
 
-    private void CloseHandler()
+    private async Task CloseHandlerAsync()
     {
         bool isDataChanged = IsDataChanged();
 
@@ -735,9 +735,12 @@
             return;
         }
 
+
         IsVisible = false;
 
-        IsVisibleChanged.InvokeAsync(IsVisible);
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+
+        await ClearProductRelatedData();
     }
 
     [Parameter] public required Product Product { get; set; }
@@ -813,8 +816,9 @@
     {
         ProductNewStatusesInSelect = new(DefaultProductNewStatusesInSelect);
 
-        if (_previousProduct is not null
-            && _previousProduct.Id != Product.Id)
+        if (IsVisible
+            && _currentIsVisible is not null
+            && _currentIsVisible != IsVisible)
         {
             await ClearProductRelatedData();
 
@@ -1034,6 +1038,16 @@
 
         ProductImages.Clear();
         PromotionProductFilesInEditor.Clear();
+
+        ProductProperties.Clear();
+        ProductLinks.Clear();
+        RelatedProductCharacteristics.Clear();
+
+        ProductPromotions.Clear();
+        SearchStringParts.Clear();
+
+        ProductStatuses = null;
+        _currentProductNewStatus = null;
 
         _changedProperties.Clear();
         _changedImages.Clear();
@@ -1656,6 +1670,14 @@
 
     private bool RemoveProductImageListItem(ProductImageListItemDisplayData productImageListItemDisplayData)
     {
+        if (productImageListItemDisplayData.RelatedImage is not null && productImageListItemDisplayData.RelatedImage.ExistingImageId < 100000)
+        {
+            productImageListItemDisplayData.ValidationMessages.Clear();
+            productImageListItemDisplayData.ValidationMessages.Add("Images with ID < 100000 cannot be removed");
+
+            return false;
+        }
+
         bool success = ProductImages.Remove(productImageListItemDisplayData);
 
         if (!success) return false;
@@ -1848,6 +1870,8 @@
         IsVisible = false;
 
         await IsVisibleChanged.InvokeAsync(IsVisible);
+
+        await ClearProductRelatedData();
     }
 
     private async Task CloseIsDataChangedPopupAndExitWithoutSavingAsync()
@@ -1857,6 +1881,8 @@
         IsVisible = false;
 
         await IsVisibleChanged.InvokeAsync();
+
+        await ClearProductRelatedData();
     }
 
     private async Task SaveAllFromEditorDataAsync()
