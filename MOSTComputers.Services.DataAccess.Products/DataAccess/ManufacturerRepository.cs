@@ -79,6 +79,44 @@ internal sealed class ManufacturerRepository : IManufacturerRepository
         return manufacturers.AsList();
     }
 
+    public async Task<List<Manufacturer>> GetAllWithActiveProductsInCategoryAsync(int categoryId)
+    {
+        const string getAllQuery =
+            $"""
+            SELECT [{IdColumnName}] AS [{IdColumnAlias}],
+                [{BGNameColumnName}],
+                [{RealCompanyNameColumnName}],
+                [{DisplayOrderColumnName}] AS [{DisplayOrderColumnAlias}],
+                [{ActiveColumnName}]
+            FROM {ManufacturersTableName} manufacturers WITH (NOLOCK)
+            WHERE EXISTS (
+                SELECT 1
+                FROM {ProductsTableName} products WITH (NOLOCK)
+                WHERE products.{ProductsTable.ManufacturerIdColumnName} = manufacturers.{IdColumnName}
+                AND products.{ProductsTable.CategoryIdColumnName} = @categoryId
+                AND products.{ProductsTable.StatusColumnName} != 1
+                AND products.{ProductsTable.PlShowColumnName} != 2
+            )
+            ORDER BY {DisplayOrderColumnName}
+            """;
+
+        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            categoryId = categoryId
+        };
+
+        IEnumerable<Manufacturer> manufacturers = await dbConnection.QueryAsync<Manufacturer>(
+            getAllQuery, parameters, commandType: CommandType.Text);
+
+        transactionScope.Complete();
+
+        return manufacturers.AsList();
+    }
+
     public async Task<Manufacturer?> GetByIdAsync(int id)
     {
         const string getByIdQuery =
