@@ -2,6 +2,8 @@
 
 @rendermode InteractiveServer
 
+@layout MOSTComputers.UI.Web.Blazor.Components.Layout.MainLayout
+
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Admin Accounts Panel</PageTitle>
@@ -38,8 +40,9 @@
             <li class="account-list-item">
                 <p class="user-id-text">@userDisplayData.User.Id</p>
                 <p class="user-name-text">@userDisplayData.User.UserName</p>
+                <p class="user-name-text">@userDisplayData.User.PersonRealName</p>
                 <button class="btn btn-primary user-roles-button" @onclick="() => ShowUserRolesPopup(userDisplayData)">@userRolesString</button>
-                <button class="btn btn-success user-change-password-popup-button" @onclick="() => ShowChangePasswordPopup(userDisplayData)">Change Password</button>
+                <button class="btn btn-success user-change-password-popup-button" @onclick="() => ShowChangePasswordPopup(userDisplayData)">Edit</button>
                 <button class="btn btn-close red-and-white-theme user-delete-button" @onclick="() => ShowDeleteUserPopup(userDisplayData)" />
 		    </li>
         }
@@ -99,9 +102,17 @@
                 </div>
             </HeaderContent>
             <ChildContent>
+
                 <div class="standard-popup-body standard-popup-body-with-centered-content">
-                    <input type="password" @bind="@newPasswordInput" placeholder="New Password" aria-label="New Password" class="user-change-password-input" />
-                    <button class="btn btn-primary user-change-password-button" @onclick="() => ChangePassword(userDisplayDataInChangePasswordPopup)">Change Password</button>
+                    <div class="user-edit-popup-item">
+                        <input type="password" @bind="@newPasswordInput" placeholder="New Password" aria-label="New Password" class="user-change-password-input" />
+                        <button class="btn btn-primary user-change-password-button" @onclick="() => ChangePassword(userDisplayDataInChangePasswordPopup)">Update</button>
+                    </div>
+
+                    <div class="user-edit-popup-item">
+                        <input type="text" @bind="@newRealNameInput" placeholder="New Real Name" aria-label="New Real Name" class="user-change-password-input" />
+                        <button class="btn btn-primary user-change-password-button" @onclick="() => ChangeRealName(userDisplayDataInChangePasswordPopup)">Update</button>
+                    </div>
                 </div>
             </ChildContent>
         </Popup>
@@ -146,10 +157,22 @@
                         <InputText id="username" @bind-value="userCreateData.Username" class="create-account-field-input"
                             autocomplete="off" aria-required="true" placeholder="Username" />
                     </div>
+
                     <div class="create-account-field">
                         <label for="password">Password</label>
                         <InputText id="password" type="password" @bind-value="userCreateData.Password" class="create-account-field-input"
                             autocomplete="off" aria-required="true" placeholder="Password" />
+                    </div>
+
+                    <div class="create-account-field">
+                        <label for="realName">Person Name</label>
+                        <InputText id="realName" type="text"
+                            @bind-value="userCreateData.PersonRealName"
+                            class="create-account-field-input"
+                            maxlength="@_personRealNameMaxLength"
+                            autocomplete="off"
+                            aria-required="true"
+                            placeholder="Real Name" />
                     </div>
 
                     <div class="create-account-roles-container">
@@ -301,6 +324,7 @@
     {
         public string? Username { get; set; } = null;
         public string? Password { get; set; } = null;
+        public string? PersonRealName { get; set; } = null;
 
         public List<UserRolesList> UserRoles { get; init; } = new();
 
@@ -308,6 +332,8 @@
     }
 
     private const string _customerInvoiceViewerBIDClaimName = "BID";
+
+    private const int _personRealNameMaxLength = 512;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -320,6 +346,7 @@
     private bool isChangePasswordPopupVisible = false;
     private UserDisplayData? userDisplayDataInChangePasswordPopup { get; set; } = null;
     private string? newPasswordInput { get; set; } = null;
+    private string? newRealNameInput { get; set; } = null;
 
     private bool isDeletePopupVisible { get; set; } = false;
     private UserDisplayData? userDisplayDataInDeletePopup { get; set; } = null;
@@ -342,6 +369,7 @@
     {
         userDisplayDataInChangePasswordPopup = userDisplayData;
         newPasswordInput = string.Empty;
+        newRealNameInput = userDisplayData.User.PersonRealName ?? string.Empty;
         isChangePasswordPopupVisible = true;
     }
 
@@ -561,18 +589,54 @@
         }
     }
 
+    private async Task ChangeRealName(UserDisplayData userDisplayData)
+    {
+        if (string.IsNullOrWhiteSpace(newRealNameInput)) return;
+
+        string newRealName = newRealNameInput;
+
+        PasswordsTableOnlyUser userInData = userDisplayData.User;
+
+        PasswordsTableOnlyUser? user = await UserManager.FindByIdAsync(userDisplayData.User.Id);
+
+        if (user is null)
+        {
+            string message = $"Unexpected error occurred when changing user password., Errors: User not found";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        user.PersonRealName = newRealName;
+
+        IdentityResult result = await UserManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            string message = $"Unexpected error occurred when changing user real name., Errors: {string.Join(',', result.Errors.Select(error => error.Description))}";
+
+            InvalidOperationException exception = new(message);
+
+            throw exception;
+        }
+
+        userDisplayDataList = await GetUserDataAsync();
+    }
+
     private async Task CreateUser()
     {
         if (userCreateData is null
-        || string.IsNullOrWhiteSpace(userCreateData.Username)
-        || string.IsNullOrWhiteSpace(userCreateData.Password))
+            || string.IsNullOrWhiteSpace(userCreateData.Username)
+            || string.IsNullOrWhiteSpace(userCreateData.Password))
         {
             return;
         }
 
         PasswordsTableOnlyUser? user = new()
         {
-            UserName = userCreateData.Username
+            UserName = userCreateData.Username,
+            PersonRealName = userCreateData.PersonRealName,
         };
 
         await UserStore.SetUserNameAsync(user, userCreateData.Username, CancellationToken.None);

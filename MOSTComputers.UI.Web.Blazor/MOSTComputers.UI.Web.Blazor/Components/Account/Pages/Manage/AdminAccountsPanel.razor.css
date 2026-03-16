@@ -77,7 +77,7 @@ button:not(:focus-visible) {
 }
 
 .user-roles-button {
-    margin: 0.5em 1em;
+    margin: 0.5em 1em 0.5em auto;
 }
 
 .user-change-password-popup-button {
@@ -85,7 +85,7 @@ button:not(:focus-visible) {
 }
 
 .user-delete-button {
-    margin-left: auto;
+    margin-left: 0.5em;
     color: white;
 }
 
@@ -158,14 +158,24 @@ button:not(:focus-visible) {
 ::deep .user-role-checkbox {
 }
 
-::deep .user-change-password-input {
-    width: 100%;
-    font-size: medium;
+::deep .user-edit-popup-item {
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-align-items: center;
+    align-items: center;
     margin-bottom: 1em;
 }
 
+::deep .user-change-password-input {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    font-size: medium;
+    margin-right: 1em;
+}
+
 ::deep .user-change-password-button {
-    width: 100%;
 }
 
 ::deep .delete-popup-confirmation-text {
@@ -177,18 +187,22 @@ button:not(:focus-visible) {
 }
 
 ::deep.create-account-field {
+    margin-bottom: 0.4em;
     display: flex;
-    flex-direction: column;
-    gap: 3px;
+    flex-direction: row;
+    -webkit-align-items: center;
+    align-items: center;
+    gap: 0px 0.5em;
 }
 
     ::deep .create-account-field label {
+        min-width: 5em;
         font-size: 12px;
         color: var(--text-muted);
     }
 
 ::deep .create-account-field-input {
-    padding: 6px 9px;
+    padding: 3px 6px;
     font-size: 13px;
     border-radius: var(--radius-input);
     border: 1px solid #d1d5db;
@@ -197,7 +211,7 @@ button:not(:focus-visible) {
 
     ::deep .create-account-field-input:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 1px rgba(201,48,44,0.25);
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 1);
     }
 
 ::deep .create-account-remember-row {
