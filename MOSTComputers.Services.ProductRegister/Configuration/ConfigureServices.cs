@@ -20,7 +20,6 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionFile;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ToDoLocalChanges;
 
 using MOSTComputers.Services.ProductRegister.Services;
 using MOSTComputers.Services.ProductRegister.Services.Cached;
@@ -37,10 +36,13 @@ using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Cached;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
+using MOSTComputers.Services.ProductRegister.Services.Products;
+using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Cached;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Cached;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
@@ -66,6 +68,9 @@ namespace MOSTComputers.Services.ProductRegister.Configuration;
 public static class ConfigureServices
 {
     internal const string ProductServiceKey = "MOSTComputers.Services.ProductRegister.ProductServiceKey";
+    internal const string CategoryServiceKey = "MOSTComputers.Services.ProductRegister.CategoryServiceKey";
+    internal const string ManufacturerServiceKey = "MOSTComputers.Services.ProductRegister.ManufactuererServiceKey";
+    internal const string PromotionServiceKey = "MOSTComputers.Services.ProductRegister.PromotionServiceKey";
     internal const string ProductPropertyCrudServiceKey = "MOSTComputers.Services.ProductRegister.ProductPropertyServiceKey";
     internal const string ProductImageFileServiceKey = "MOSTComputers.Services.ProductRegister.ProductImageFileServiceKey";
     internal const string PromotionFileServiceKey = "MOSTComputers.Services.ProductRegister.PromotionFileServiceKey";
@@ -117,6 +122,7 @@ public static class ConfigureServices
 
         services.AddKeyedScoped<IProductService, ProductService>(ProductServiceKey);
         services.AddScoped<IProductService, CachedProductService>();
+        services.AddScoped<IProductSearchService, ProductSearchService>();
 
         services.AddScoped<IProductToHtmlProductService, ProductToHtmlProductService>();
 
@@ -142,18 +148,13 @@ public static class ConfigureServices
 
         services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
 
-        services.AddScoped<ICategoryService, CategoryService>();
+        AddCachedCategoryService(services);
+
         services.AddScoped<ISubCategoryService, SubCategoryService>();
 
-        services.AddScoped<IManufacturerService, ManufacturerService>();
+        AddCachedManufacturerService(services);
 
-        services.AddKeyedScoped<IProductImageFileService, ProductImageFileService>(ProductImageFileServiceKey);
-        services.AddScoped<IProductImageFileService, CachedProductImageFileService>(serviceProvider =>
-        {
-            return new(serviceProvider.GetRequiredKeyedService<IProductImageFileService>(ProductImageFileServiceKey),
-                //serviceProvider.GetRequiredService<ICache<string>>(),
-                serviceProvider.GetRequiredService<IFusionCache>());
-        });
+        AddCachedProductImageFileService(services);
 
         services.AddScoped<IProductImageCrudService, ProductImageCrudService>();
         services.AddScoped<IProductImageAndFileService, ProductImageAndFileService>();
@@ -166,13 +167,12 @@ public static class ConfigureServices
         {
             return new(serviceProvider.GetRequiredKeyedService<IProductPropertyCrudService>(ProductPropertyCrudServiceKey),
                 serviceProvider.GetRequiredService<IProductRepository>(),
-                //serviceProvider.GetRequiredService<ICache<string>>(),
                 serviceProvider.GetRequiredService<IFusionCache>());
         });
 
         services.AddScoped<IProductPropertyService, ProductPropertyService>();
 
-        services.AddScoped<IPromotionService, PromotionService>();
+        services.AddCachedPromotionService();
 
         services.AddScoped<IManufacturerToPromotionGroupRelationService, ManufacturerToPromotionGroupRelationService>();
         services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
@@ -202,14 +202,7 @@ public static class ConfigureServices
 
         //services.AddScoped<IProductStatusesService, ProductStatusesService>();
 
-        services.AddKeyedScoped<IProductWorkStatusesService, ProductWorkStatusesService>(ProductWorkStatusesServiceKey);
-        services.AddScoped<IProductWorkStatusesService, CachedProductWorkStatusesService>(serviceProvider =>
-        {
-            return new(serviceProvider.GetRequiredKeyedService<IProductWorkStatusesService>(ProductWorkStatusesServiceKey),
-                //serviceProvider.GetRequiredService<IProductRepository>(),
-                //serviceProvider.GetRequiredService<ICache<string>>()
-                serviceProvider.GetRequiredService<IFusionCache>());
-        });
+        services.AddCachedProductWorkStatusesService();
 
         services.AddScoped<IProductWorkStatusesWorkflowService, ProductWorkStatusesWorkflowService>();
         services.AddScoped<IProductWorkStatusesChangesUpsertService, ProductWorkStatusesChangesUpsertService>();
@@ -217,8 +210,7 @@ public static class ConfigureServices
         services.AddScoped<IProductGTINCodeService, ProductGTINCodeService>();
         services.AddScoped<IProductSerialNumberService, ProductSerialNumberService>();
 
-        services.AddKeyedScoped<IProductService, ProductService>(ProductServiceKey);
-        services.AddScoped<IProductService, CachedProductService>();
+        services.AddCachedProductService();
 
         services.AddScoped<IProductToHtmlProductService, ProductToHtmlProductService>();
 
@@ -229,6 +221,63 @@ public static class ConfigureServices
         AddExternalXmlImportServices(services);
 
         return services;
+    }
+
+    public static void AddCachedProductService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IProductService, ProductService>(ProductServiceKey);
+        services.AddScoped<IProductService, CachedProductService>();
+    }
+
+    public static void AddCachedCategoryService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<ICategoryService, CategoryService>(CategoryServiceKey);
+        services.AddScoped<ICategoryService, CachedCategoryService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<ICategoryService>(CategoryServiceKey),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
+    public static void AddCachedManufacturerService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IManufacturerService, ManufacturerService>(ManufacturerServiceKey);
+        services.AddScoped<IManufacturerService, CachedManufacturerService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IManufacturerService>(ManufacturerServiceKey),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
+    public static void AddCachedPromotionService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IPromotionService, PromotionService>(ProductServiceKey);
+        services.AddScoped<IPromotionService, CachedPromotionService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IPromotionService>(ProductServiceKey),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
+    public static void AddCachedProductImageFileService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IProductImageFileService, ProductImageFileService>(ProductImageFileServiceKey);
+        services.AddScoped<IProductImageFileService, CachedProductImageFileService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IProductImageFileService>(ProductImageFileServiceKey),
+                //serviceProvider.GetRequiredService<ICache<string>>(),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
+    public static void AddCachedProductWorkStatusesService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IProductWorkStatusesService, ProductWorkStatusesService>(ProductWorkStatusesServiceKey);
+        services.AddScoped<IProductWorkStatusesService, CachedProductWorkStatusesService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IProductWorkStatusesService>(ProductWorkStatusesServiceKey),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
     }
 
     private static void AddValidation(IServiceCollection services)
