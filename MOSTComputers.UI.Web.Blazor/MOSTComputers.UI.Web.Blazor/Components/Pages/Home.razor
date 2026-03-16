@@ -13,10 +13,12 @@
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Requests.Product
 @using MOSTComputers.Services.ProductRegister.Models.Responses
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
@@ -26,8 +28,6 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Models.Search.Product
-@using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
@@ -37,6 +37,7 @@
 @using static MOSTComputers.Utils.Files.FilePathUtils
 
 @inject ICategoryService CategoryService
+@inject IManufacturerService ManufacturerService
 
 @inject IProductService ProductService
 @inject IProductSearchService ProductSearchService
@@ -78,9 +79,12 @@
         <ul class="header-items-list">
 
             <li class="header-list-item header-search-input-list-item">
-                <input id="productTableSearchInput" type="text" class="search-input"
-                    aria-label="User Input For Search"
-                    placeholder="Search..." @bind="UserInputString" />
+                <input id="productTableSearchInput"
+                    type="text"
+                    class="search-input"
+                    aria-label="User Input"
+                    placeholder="Search..."
+                    @bind="UserInputString" />
 
                 <button class="btn header-search-input-help-button" @onclick="ShowSearchHelpPopup">
                     ?
@@ -100,7 +104,7 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productTableCategorySelect" @bind="SelectedCategoryId" aria-label="User Input For Search">
+                <select id="productTableCategorySelect" @onchange="OnCategorySelectChanged" aria-label="Product Category">
 
                     <option value="">All</option>
 
@@ -112,7 +116,24 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productTableProductStatusSelect" @bind="SelectedProductStatus">
+                <select id="productTableManufacturerSelect" class="product-table-manufacturer-select" @onchange="OnManufacturerSelectChanged" aria-label="Manufacturer">
+
+                    <option value="" selected="@(SelectedManufacturerId == string.Empty)">All Manufacturers</option>
+
+                    @{
+                        bool isValidId = int.TryParse(SelectedManufacturerId, out int selectedManufacturerId);
+                    }
+
+                    @foreach (Manufacturer manufacturer in ManufacturersInSelect)
+                    {
+                        <option value="@manufacturer.Id" selected="@(isValidId && selectedManufacturerId == manufacturer.Id)">@manufacturer.RealCompanyName</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableProductStatusSelect" @bind="SelectedProductStatus"
+                     aria-label="Product status">
 
                     @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
                     {
@@ -122,7 +143,8 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productTablePromotionStatusSelect" @bind="SelectedPromotionSearchOptions">
+                <select id="productTablePromotionStatusSelect" @bind="SelectedPromotionSearchOptions"
+                     aria-label="Promotion types">
 
                     <option value="">All</option>
 
@@ -136,7 +158,8 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productTableCurrencySelect" @bind="SelectedCurrency">
+                <select id="productTableCurrencySelect" @bind="SelectedCurrency"
+                    aria-label="Currency">
 
                     @foreach (Currency currency in CurrenciesInSelect)
                     {
@@ -148,7 +171,8 @@
             </li>
 
             <li class="header-list-item header-result-count-list-item">
-                <select id="productTableResultsCountSelect" @bind="SelectedResultCount">
+                <select id="productTableResultsCountSelect" @bind="SelectedResultCount"
+                    aria-label="Number of results">
 
                     @foreach (int resultCount in ResultCountsInSelect)
                     {
@@ -641,6 +665,54 @@
 
     public List<Category> CategoriesInSelect { get; set; } = new();
 
+    private async Task OnCategorySelectChanged(ChangeEventArgs e)
+    {
+        SelectedCategoryId = e.Value?.ToString() ?? string.Empty;
+
+        SelectedManufacturerId = string.Empty;
+
+        await SearchProductsAsync();
+
+        if (int.TryParse(SelectedCategoryId, out int categoryId))
+        {
+            ProductSearchRequest productSearchRequest = new()
+            {
+                OnlyVisibleByEndUsers = true,
+                CategoryId = categoryId,
+                ProductStatus = ProductStatusSearchOptions.AvailableAndCall,
+            };
+
+            List<Product> visibleProductsInCategory = await ProductSearchService.SearchProductsAsync(productSearchRequest);
+
+            List<Manufacturer> manufacturersInProducts = new();
+
+            foreach (Product product in visibleProductsInCategory)
+            {
+                if (product.Manufacturer is null || manufacturersInProducts.Any(x => x.Id == product.Manufacturer.Id)) continue;
+
+                manufacturersInProducts.Add(product.Manufacturer);
+            }
+
+            ManufacturersInSelect = manufacturersInProducts;
+        }
+        else
+        {
+            ManufacturersInSelect = AllManufacturers;
+        }
+    }
+
+    public string SelectedManufacturerId { get; set; } = string.Empty;
+
+    public List<Manufacturer> ManufacturersInSelect { get; set; } = new();
+    public List<Manufacturer> AllManufacturers { get; set; } = new();
+
+    private async Task OnManufacturerSelectChanged(ChangeEventArgs eventArgs)
+    {
+        SelectedManufacturerId = eventArgs.Value?.ToString() ?? string.Empty;
+
+        await SearchProductsAsync();
+    }
+
     public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
 
     public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
@@ -701,12 +773,21 @@
     protected override async Task OnInitializedAsync()
     {
         CategoriesInSelect = await GetAllCategoriesAsync();
+        AllManufacturers = await GetAllManufacturersAsync();
+
+        ManufacturersInSelect = AllManufacturers.ToList();
     }
 
     private async Task<List<Category>> GetAllCategoriesAsync()
     {
         return await CategoryService.GetAllAsync();
     }
+
+    private async Task<List<Manufacturer>> GetAllManufacturersAsync()
+    {
+        return await ManufacturerService.GetAllWithActiveProductsAsync();
+    }
+
     private async Task ShowProductDisplayPopupAsync(ProductDisplayData productData)
     {
         Product product = productData.Product;
@@ -732,6 +813,11 @@
             = GetProductPropertiesFromProductData(productProperties, productCharacteristics);
 
         List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
+
+        if (productImages.Count == 0)
+        {
+            // var firstImage = await ProductImageService.GetByProductIdWithoutFileDataInFirstImagesAsync(product.Id);
+        }
 
         List<Client.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
 
@@ -797,6 +883,8 @@
                 Value = property.Value,
                 DisplayOrder = property.DisplayOrder
             };
+
+            propertiesInData.Add(mappedProperty);
         }
 
         return propertiesInData;
@@ -804,7 +892,7 @@
 
     private async Task<Client.Product.ProductData.ProductPriceData?> GetProductPriceData(ProductDisplayData productData)
     {
-		Product product = productData.Product;
+        Product product = productData.Product;
 
         Client.Product.ProductData.DisplayPrice? displayPrice = null;
         Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
@@ -934,6 +1022,8 @@
 
         int? selectedCategoryId = int.TryParse(SelectedCategoryId, out int categoryId) ? categoryId : null;
 
+        int? selectedManufacturerId = int.TryParse(SelectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
+
         ProductStatusSearchOptions selectedProductStatus = ProductStatusSearchOptions.TryParse(
             SelectedProductStatus, out ProductStatusSearchOptions productStatus)
                 ? productStatus
@@ -950,6 +1040,15 @@
                : 50;
 
         selectedResultCount = Math.Min(selectedResultCount, 300);
+
+        int? finalResultCount = selectedResultCount;
+
+        bool orderProductsFromSecondCategoryUp = selectedCategoryId == null && selectedManufacturerId == null && string.IsNullOrWhiteSpace(UserInputString);
+
+        if (orderProductsFromSecondCategoryUp)
+        {
+            finalResultCount = null;
+        }
 
         List<Product> products = new();
 
@@ -970,16 +1069,26 @@
                 OnlyVisibleByEndUsers = true,
                 UserInputString = UserInputString,
                 CategoryId = selectedCategoryId,
+                ManufacturerId = selectedManufacturerId,
                 ProductStatus = selectedProductStatus,
                 PromotionSearchOptions = selectedPromotionSearchOptions,
-                MaxResultCount = selectedResultCount,
+                MaxResultCount = finalResultCount,
             };
 
             List<Product> searchedProducts = await ProductSearchService.SearchProductsAsync(productSearchRequest);
 
             products.AddRange(searchedProducts);
         }
-        
+
+        if (orderProductsFromSecondCategoryUp)
+        {
+            SortProductsFromSecondCategoryUp(products);
+        }
+
+        int productsToDisplayCount = Math.Min(selectedResultCount, products.Count);
+
+        products = products.Slice(0, productsToDisplayCount);
+
         Currency selectedCurrency = Currency.TryParse(
             SelectedCurrency, out Currency currencyEnum)
                 ? currencyEnum
@@ -1011,6 +1120,30 @@
         Products.AddRange(productDisplayDatas);
 
         _isSearchingForProducts = false;
+    }
+
+    private static void SortProductsFromSecondCategoryUp(List<Product> products)
+    {
+        products.Sort(CompareProductsFromSecondCategoryUp);
+    }
+
+    private static int CompareProductsFromSecondCategoryUp(Product product1, Product product2)
+    {
+        int categorySortIndex1 = (product1.CategoryId > 1) ? product1.CategoryId.Value : int.MaxValue;
+        int categorySortIndex2 = (product2.CategoryId > 1) ? product2.CategoryId.Value : int.MaxValue;
+
+        int categoryComparison = categorySortIndex1 - categorySortIndex2;
+
+        if (categoryComparison != 0) return categoryComparison;
+
+        int displayOrder1 = product1.DisplayOrder ?? int.MaxValue;
+        int displayOrder2 = product2.DisplayOrder ?? int.MaxValue;
+
+        int displayOrderComparison = displayOrder1 - displayOrder2;
+
+        if (displayOrderComparison != 0) return displayOrderComparison;
+
+        return product1.Id.CompareTo(product2.Id);
     }
 
     private async Task AddCurrenciesToProductDataAsync(List<ProductDisplayData> productDisplayDatas, Currency currency, Currency? secondaryCurrency = null)
@@ -1112,7 +1245,9 @@
                 .Where(x =>
                 {
                     if (x.Id != productDisplayData.Product.PromotionPid && x.Id != productDisplayData.Product.PromotionRid) return false;
-                    return (x.StartDate is null || x.StartDate <= DateTime.Now) && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+
+                    return (x.StartDate is null || x.StartDate <= DateTime.Now)
+                        && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
                 })
                 .ToList();
 

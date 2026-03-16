@@ -71,6 +71,10 @@ input[type=number] {
     width: 100%;
 }
 
+.product-table-manufacturer-select {
+/*    width: 7em;*/
+}
+
 .header-result-count-list-item {
     margin-left: 0.25em;
 }
