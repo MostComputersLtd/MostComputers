@@ -1,16 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.Product.Models;
-using MOSTComputers.UI.Web.Blazor.Models.Search.Product;
-using MOSTComputers.UI.Web.Blazor.Services.Search.Contracts;
+using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
+using MOSTComputers.Services.DataAccess.Products.Models.Responses.XmlDownloads;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
+using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
+using System.Security.Claims;
+using static MOSTComputers.UI.Web.Blazor.Endpoints.PromotionPictureSource;
+using static MOSTComputers.Utils.Files.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Endpoints.Xml;
 
 public static class ProductXmlDataEndpoints
 {
     internal const string EndpointGroupRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "product/" + "xml";
-    
+
+    private const string _rootResourceType = "products";
+
+    private const string _allProductsResourceType = _rootResourceType + "/all";
+    private const string _productsWithPromotionsResourceType = _rootResourceType + "/promotions";
+    private static string GetProductsFromManufacturerResourceType(int manufacturerId)
+    {
+        return _rootResourceType + "/manufacturerId=" + manufacturerId.ToString();
+    }
+
+    private static string GetProductsInCategoryResourceType(int categoryId)
+    {
+        return _rootResourceType + "/categoryId=" + categoryId.ToString();
+    }
+
+    private static string GetProductResourceType(int productId)
+    {
+        return _rootResourceType + "/id=" + productId.ToString();
+    }
+
     public static IEndpointConventionBuilder MapProductXmlEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
@@ -27,7 +53,8 @@ public static class ProductXmlDataEndpoints
     private static async Task<IResult> GetXmlForAllProductsAsync(
         HttpContext httpContext,
         [FromQuery(Name = "currency")] string? currency,
-        [FromServices] IProductToXmlService productXmlService)
+        [FromServices] IProductToXmlService productXmlService,
+        [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
         HttpRequest request = httpContext.Request;
 
@@ -37,14 +64,18 @@ public static class ProductXmlDataEndpoints
 
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = baseUrl,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
         };
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await productXmlService.TryGetXmlForAllProductsAsync(httpContext.Response.Body, productXmlOptions);
+        await productXmlService.TryGetXmlForAllPublicProductsAsync(httpContext.Response.Body, productXmlOptions);
+
+        await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, _allProductsResourceType);
 
         return Results.Empty;
     }
@@ -53,7 +84,8 @@ public static class ProductXmlDataEndpoints
         [FromQuery(Name = "currency")] string? currency,
         HttpContext httpContext,
         [FromServices] IProductSearchService productSearchService,
-        [FromServices] IProductToXmlService productXmlService)
+        [FromServices] IProductToXmlService productXmlService,
+        [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
         HttpRequest request = httpContext.Request;
 
@@ -70,18 +102,20 @@ public static class ProductXmlDataEndpoints
 
         List<Product> products = await productSearchService.SearchProductsAsync(productSearchRequest);
 
-        List<int> productIds = products.Select(x => x.Id).ToList();
-
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = baseUrl,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
         };
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, productIds, productXmlOptions);
+        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, products, productXmlOptions);
+
+        await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, _productsWithPromotionsResourceType);
 
         return Results.Empty;
     }
@@ -91,7 +125,8 @@ public static class ProductXmlDataEndpoints
         [FromQuery(Name = "currency")] string? currency,
         HttpContext httpContext,
         [FromServices] IProductSearchService productSearchService,
-        [FromServices] IProductToXmlService productXmlService)
+        [FromServices] IProductToXmlService productXmlService,
+        [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
         if (manufacturerId == null) return Results.NotFound();
 
@@ -110,18 +145,20 @@ public static class ProductXmlDataEndpoints
 
         List<Product> products = await productSearchService.SearchProductsAsync(productSearchRequest);
 
-        List<int> productIds = products.Select(x => x.Id).ToList();
-
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = baseUrl,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
         };
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, productIds, productXmlOptions);
+        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, products, productXmlOptions);
+
+        await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, GetProductsFromManufacturerResourceType(manufacturerId.Value));
 
         return Results.Empty;
     }
@@ -131,7 +168,8 @@ public static class ProductXmlDataEndpoints
         [FromQuery(Name = "currency")] string? currency,
         HttpContext httpContext,
         [FromServices] IProductSearchService productSearchService,
-        [FromServices] IProductToXmlService productXmlService)
+        [FromServices] IProductToXmlService productXmlService,
+        [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
         if (categoryId == null) return Results.NotFound();
 
@@ -150,18 +188,20 @@ public static class ProductXmlDataEndpoints
 
         List<Product> products = await productSearchService.SearchProductsAsync(productSearchRequest);
 
-        List<int> productIds = products.Select(x => x.Id).ToList();
-
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = baseUrl,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
         };
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, productIds, productXmlOptions);
+        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, products, productXmlOptions);
+
+        await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, GetProductsInCategoryResourceType(categoryId.Value));
 
         return Results.Empty;
     }
@@ -170,7 +210,10 @@ public static class ProductXmlDataEndpoints
         [FromRoute] int productId,
         [FromQuery(Name = "currency")] string? currency,
         HttpContext httpContext,
-        [FromServices] IProductToXmlService productXmlService)
+        [FromServices] IProductService productService,
+        [FromServices] IProductSearchService productSearchService,
+        [FromServices] IProductToXmlService productXmlService,
+        [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
         HttpRequest request = httpContext.Request;
 
@@ -178,18 +221,87 @@ public static class ProductXmlDataEndpoints
 
         Currency? prefferedCurrency = TryParseCurrencyFromQueryParameters(currency);
 
+        Product? product = await productService.GetByIdAsync(productId);
+
+        if (product == null)
+        {
+            return Results.NotFound(productId);
+        }
+
+        ProductSearchRequest productSearchRequest = new()
+        {
+            OnlyVisibleByEndUsers = true,
+            ProductStatus = ProductStatusSearchOptions.AvailableAndCall
+        };
+
+        List<Product> singleProductList = await productSearchService.SearchProductsAsync([product], productSearchRequest);
+
+        if (singleProductList.Count == 0)
+        {
+            return Results.NotFound(productId);
+        }
+
         ProductToXmlService.ProductXmlOptions productXmlOptions = new()
         {
-            ApplicationRootPath = baseUrl,
+            ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
+            PromotionGroupImagesBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
+            GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
         };
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
-        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, [productId], productXmlOptions);
+        await productXmlService.TryGetXmlForProductsAsync(httpContext.Response.Body, singleProductList, productXmlOptions);
+
+        await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, GetProductResourceType(productId));
 
         return Results.Empty;
+    }
+
+    private static async Task RecordXmlDownloadAsync(
+        IXmlDownloadsRepository xmlDownloadsRepository,
+        HttpContext httpContext,
+        string xmlResourceType)
+    {
+        ClaimsPrincipal claimsPrincipal = httpContext.User;
+
+        bool isAuthenticated = claimsPrincipal.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            XmlDownloadData xmlDownloadDataWithNoUser = new()
+            {
+                TimeStamp = DateTime.Now,
+                XmlResourceType = xmlResourceType,
+            };
+
+            await xmlDownloadsRepository.InsertAsync(xmlDownloadDataWithNoUser);
+
+            return;
+        }
+
+        string? userId = claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        bool isCustomerUser = int.TryParse(userId, out int userIdParsed)
+            && claimsPrincipal.IsInRole("CustomerInvoiceViewer");
+
+        if (!isCustomerUser) return;
+
+        string? username = claimsPrincipal.FindFirst(ClaimTypes.Name)?.Value;
+        string? contactPerson = claimsPrincipal.FindFirst("ContactPerson")?.Value;
+
+
+        XmlDownloadData xmlDownloadData = new()
+        {
+            TimeStamp = DateTime.Now,
+            XmlResourceType = xmlResourceType,
+            BID = userIdParsed,
+            UserName = username,
+            ContactPerson = contactPerson,
+        };
+
+        await xmlDownloadsRepository.InsertAsync(xmlDownloadData);
     }
 
     private static Currency? TryParseCurrencyFromQueryParameters(string? currency)
