@@ -1,0 +1,78 @@
+﻿@model MOSTComputers.UI.Web.Client.Pages.Shared.CarouselModel
+@{
+    Layout = null;
+
+    string? additionalClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalAttributes, "class");
+    string? additionalViewportClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalViewportAttributes, "class");
+    string? additionalIndicatorsListContainerClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalIndicatorsListContainerAttributes, "class");
+    string? additionalIndicatorsListClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalIndicatorsListAttributes, "class");
+
+    string? additionalAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalAttributes);
+    string? additionalViewportAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalViewportAttributes);
+    string? additionalIndicatorsListContainerAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalIndicatorsListContainerAttributes);
+    string? additionalIndicatorsListAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalIndicatorsListAttributes);
+}
+
+<div id="@Model.CarouselId"
+    @additionalAttributes class="custom-carousel @additionalClasses"
+    onload="startAutoSlide(@(Model.AllowAutoSlide ? "true" : "false"), '@Model.CarouselId')"
+    onmouseenter="stopAutoSlide('@Model.CarouselId')"
+    onmouseleave="startAutoSlide(@(Model.AllowAutoSlide ? "true" : "false"), '@Model.CarouselId')"
+    data-custom-carousel-transition-time-ms="@Model.TransitionMs"
+    data-custom-carousel-auto-slide-interval-time-ms="@Model.AutoSlideIntervalMs">
+
+    <div @additionalViewportAttributes class="custom-carousel-viewport @additionalViewportClasses">
+
+        @for (int i = 0; i < Model.Items.Count; i++)
+        {
+            object carouselItem = Model.Items[i];
+
+            int index = i;
+
+            bool isFirst = index == 0;
+
+            string transformStyle = isFirst ? "translateX(0%)" : "translateX(100%)";
+            string itemActiveClass = isFirst ? "active-carousel-item" : string.Empty;
+
+            <div id="custom-carousel-item-@index" class="custom-carousel-slide @itemActiveClass" style="transform: @transformStyle">
+                <partial name="@Model.ItemTemplatePartialPath" model="Model.Items[index]" />
+            </div>
+        }
+
+        <button class="custom-carousel-control custom-prev" onclick="prev('@Model.CarouselId')">&lt;</button>
+        <button class="custom-carousel-control custom-next" onclick="next('@Model.CarouselId')">&gt;</button>
+    </div>
+
+    <div @additionalIndicatorsListContainerAttributes class="custom-carousel-indicators-container @additionalIndicatorsListContainerClasses">
+
+        <div @additionalIndicatorsListAttributes
+            class="custom-carousel-indicators @additionalIndicatorsListClasses"
+            role="listbox"
+            aria-multiselectable="false"
+            aria-activedescendant="carousel-option-0">
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                int index = i;
+
+                @if (Model.ItemIndicatorTemplatePartialPath is not null)
+                {
+                    <partial name="@Model.ItemIndicatorTemplatePartialPath" model="Model.Items[i]"/>
+                }
+                else
+                {
+                    bool isFirstItem = index == 0;
+
+                    string activeClass = isFirstItem ? "active-carousel-indicator" : string.Empty;
+                    string ariaSelected = isFirstItem ? "selected" : string.Empty;
+
+                    <button id="carousel-option-@index"
+                        class="custom-dot @activeClass"
+                        role="option"
+                        aria-label="Go to slide @(index + 1)"
+					    aria-selected="@ariaSelected"
+                        onclick="goTo('@Model.CarouselId', @index)"></button>
+                }
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,212 @@
+﻿.navbar {
+    max-height: 40px;
+    padding: 0px;
+    margin-bottom: 0px;
+    border-width: 0px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgb(189, 17, 5);
+    color: #FFFFFF;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, .05);
+}
+
+.navbar-content {
+    width: 100%;
+    height: 100%;
+    margin: 0px 1em;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.navbar-collapse {
+    flex-basis: 100%;
+    flex-grow: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between !important;
+}
+
+.navbar-items-list {
+    height: 40px;
+    flex-grow: 1;
+    margin: 0px 0px 0px 1.5rem;
+    padding-left: 0px;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    list-style: none;
+}
+
+.navbar-brand {
+    height: 40px;
+    padding-top: .3125rem;
+    padding-bottom: .3125rem;
+    margin-right: 1rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    font-size: 1.25rem;
+    text-decoration: none;
+    white-space: nowrap;
+    text-align: center;
+    color: white;
+}
+
+.navbar-brand-image {
+    max-width: 100%;
+    max-height: 100%;
+    -o-object-fit: contain;
+    object-fit: contain;
+}
+
+.navbar-brand-image-small {
+    display: none;
+}
+
+.navbar-brand-contacts {
+    min-width: min-content;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -webkit-justify-content: center;
+    justify-content: center;
+    gap: 0.15rem 0px;
+}
+
+    .navbar-brand-contacts > span {
+        white-space: nowrap;
+        font-size: 0.6rem;
+    }
+
+[type=button]:not(:disabled), [type=reset]:not(:disabled), [type=submit]:not(:disabled), button:not(:disabled) {
+    cursor: pointer;
+}
+
+.navbar-toggler {
+    height: 100%;
+    padding: .25rem .75rem;
+    margin: 0px 0px 0px auto;
+    display: none;
+    font-size: 1.25rem;
+    line-height: 1;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+    transition: box-shadow .15s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .navbar-toggler {
+        transition: none;
+    }
+}
+
+.navbar-toggler-image {
+    width: 100%;
+
+    /*  navbar height - navbar padding - navbar-toggler margin - navbar-toggler padding */
+    height: calc(40px - 0.5em - 1px - 0.5rem);
+
+    max-height: 100%;
+    -o-object-fit: contain;
+    object-fit: contain;
+}
+
+.navbar-item {
+    padding: 0px 0.75rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-align-items: center;
+    align-items: center;
+    color: #FFFFFF;
+}
+
+    .navbar-item:hover {
+        background-color: #6c0300;
+    }
+
+    .navbar-item.active {
+        background-color: #bd0400;
+    }
+
+    .navbar-item > a.navbar-link {
+        color: #FFFFFF;
+        -webkit-text-decoration: none;
+        text-decoration: none;
+    }
+
+.navbar-divider {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+}
+
+@media (max-width: 576px) {
+    .navbar.navbar-change-to-expand {
+        padding: 0.5rem 0px;
+        max-height: none;
+    }
+
+        .navbar.navbar-change-to-expand.show-items {
+            padding-bottom: 0.2rem;
+        }
+
+    .navbar-change-to-expand .navbar-toggler {
+        display: flex;
+    }
+
+    .navbar-content {
+        -ms-flex-wrap: wrap;
+        -webkit-flex-wrap: wrap;
+        flex-wrap: wrap;
+    }
+
+    .navbar-brand-image-small {
+        display: block;
+    }
+
+    .navbar-brand-image-big {
+        display: none;
+    }
+
+    .navbar-change-to-expand .navbar-items-list {
+        height: unset;
+        margin: 0.25rem 0px;
+        -ms-flex-direction: column;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+    }
+
+    .navbar.navbar-change-to-expand:not(.show-items) .navbar-collapse {
+        display: none;
+    }
+
+    .navbar-item {
+        padding-bottom: 0px;
+        line-height: 1.35;
+    }
+
+    .navbar-divider {
+        display: none;
+    }
+}
+
+.footer {
+    width: 100%;
+    padding: 0px 1em;
+    line-height: 60px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+    color: #6c757d;
+}

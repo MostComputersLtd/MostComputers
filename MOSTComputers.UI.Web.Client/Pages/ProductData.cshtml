@@ -1,0 +1,21 @@
+﻿@page "/product/{productId:int}"
+@model MOSTComputers.UI.Web.Client.Pages.ProductDataModel
+@{
+}
+
+@section Styles {
+	<link rel="stylesheet" href="/css/Pages/Shared/Components/ProductData/Default.css" asp-append-version="true" />
+	<link rel="stylesheet" href="/css/Pages/Shared/Carousel.css" asp-append-version="true" />
+}
+
+@section Scripts {
+	<script src="/js/Pages/Shared/Carousel.js" asp-append-version="true"></script>
+}
+
+@using MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData
+
+@await Component.InvokeAsync(ProductDataViewComponent.ComponentName, new
+{
+	existingData = Model.ExistingData,
+	showProductIdData = true,
+});

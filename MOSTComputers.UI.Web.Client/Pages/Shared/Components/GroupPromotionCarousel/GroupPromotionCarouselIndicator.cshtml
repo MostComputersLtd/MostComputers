@@ -1,0 +1,14 @@
+﻿@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.GroupPromotionCarousel.GroupPromotionsCarouselItemModel
+@{
+	Layout = null;
+
+    string activeClass = Model.IsActive ? "active-carousel-indicator" : string.Empty;
+    string ariaSelected = Model.IsActive ? "selected" : string.Empty;
+}
+
+<button id="carousel-option-@Model.Index"
+    class="group-promotions-carousel-indicator @activeClass"
+    role="option"
+    aria-label="Go to slide @(Model.Index + 1)"
+    aria-selected="@ariaSelected"
+    onclick="TEMP__goTo('@Model.CarouselId', @Model.Index)"></button>

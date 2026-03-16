@@ -1,0 +1,356 @@
+﻿@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData.DefaultModel
+@{
+	Layout = null;
+}
+
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Services.SearchStringOrigin.Models
+
+@using static MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData.DefaultModel;
+@using static MOSTComputers.UI.Web.Client.Utils.DataToTextConversion;
+@using static MOSTComputers.UI.Web.Client.Endpoints.PromotionPictureSource;
+
+@if (Model.Product is null)
+{
+    <h4>Product does not exist</h4>
+}
+else
+{
+    string carouselId = "productDataCarousel";
+
+    bool isValidEAN13Code = false;
+
+    if (Model.Product.PartNumber1 is not null)
+    {
+        isValidEAN13Code = ProductGTINCodeType.EAN13.IsValid(Model.Product.PartNumber1);
+    }
+
+    <div class="product-data">
+        <div class="main-info-and-images-container">
+            <div class="name-column">
+                <div class="main-info-and-download-buttons-container">
+                    <div class="main-info-container">
+                        <div class="name-and-partnumber-container">
+
+                            @if (Model.ShowProductIdData)
+                            {
+                                <h4 class="main-product-info-text">ID: @Model.Product.Id</h4>
+                                <h4 class="main-product-info-text">@Model.Product.Name</h4>
+                            }
+
+                            <h4 class="main-product-info-text @(isValidEAN13Code ? string.Empty : "invalid-ean-code")">EAN: @Model.Product.PartNumber1</h4>
+
+                            <h4 class="main-product-info-text">Part №: @Model.Product.PartNumber2</h4>
+                        </div>
+                    </div>
+
+                    <div class="download-buttons-layout-container">
+                        <div class="download-buttons-container">
+                            <a class="btn download-button download-product-xml-button" href="api/product/xml/id=@Model.Product.Id" target="_blank" rel="noopener noreferrer">
+                                XML
+                            </a>
+
+                            <button id="copyLinkButton" class="btn download-button copy-link-button"
+                                onclick="copyLinkToClipboardAndAnimateCopyButton('product/@Model.Product.Id')">
+                                <p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+                                <svg id="copyLinkButtonCheckmark"
+                                    class="copy-link-button-checkmark"
+                                    viewBox="0 0 24 24">
+                                    <path d="M4 12 L10 18 L20 6"
+                                        fill="none"
+                                        stroke="#FFFFFF"
+                                        stroke-width="3"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="images-column">
+                <div class="carousel-container">
+
+                    @if (Model.ProductImages?.Count > 0)
+                    {
+                        List<object> carouselItems = new();
+
+                        @for (int i = 0; i < Model.ProductImages.Count; i++)
+                        {
+                            ProductImageDisplayData productImageDisplayData = Model.ProductImages[i];
+
+                            CarouselPartialsModel carouselItem = new()
+                            {
+                                CarouselId = carouselId,
+                                Image = productImageDisplayData,
+                                ImageCarouselIndex = i,
+                                IsActive = i == 0
+                            };
+
+                            carouselItems.Add(carouselItem);
+                        }
+
+                        CarouselModel carouselModel = new ()
+                        {
+                            CarouselId = carouselId,
+                            Items = carouselItems,
+                            ItemTemplatePartialPath = DefaultModel.CarouselItemTemplatePartialPath,
+                            ItemIndicatorTemplatePartialPath = DefaultModel.CarouselItemIndicatorTemplatePartialPath,
+                            TransitionMs = 1000,
+                            AllowAutoSlide = true,
+                            AutoSlideIntervalMs = 5000,
+                            AdditionalAttributes = new()
+                            {
+                                { "class", "image-carousel" }
+                            },
+                            AdditionalIndicatorsListContainerAttributes = new()
+                            {
+                                { "class", "carousel-indicators-list-container" }
+                            }
+                        };
+
+                        <partial name="Carousel" model='carouselModel' />
+                    }
+                </div>
+            </div>
+
+            <div class="price-and-promotion-container">
+                <div class="price-wrapper">
+                    <div class="price red-and-white-theme">
+
+                        <b class="fw-bold">ЦЕНА:</b>
+
+                        @if (Model.PriceData is not null)
+                        {
+                            <span class="price-display-span">
+                                @Model.PriceData.DisplayPrice.Amount @GetPriceSuffixStringFromCurrency(Model.PriceData.DisplayPrice.Currency) с ДДС
+
+                                @if (Model.PriceData.SecondaryDisplayPrice is not null)
+                                {
+                                    DisplayPrice secondaryDisplayPrice = Model.PriceData.SecondaryDisplayPrice.Value;
+
+                                    <br />
+                                    <span class="secondary-price-display-span">
+                                        (@secondaryDisplayPrice.Amount @GetPriceSuffixStringFromCurrency(secondaryDisplayPrice.Currency))
+                                    </span>
+                                }
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="price-display-span">
+                                @Model.Product.Price @(Model.Product.Currency is not null ? GetPriceSuffixStringFromCurrency(Model.Product.Currency.Value) : string.Empty) с ДДС
+                                <br />
+                                <span class="secondary-price-display-span">
+                                    (@Model.Product.Price @(Model.Product.Currency is not null ? GetPriceSuffixStringFromCurrency(Model.Product.Currency.Value) : string.Empty))
+                                </span>
+                            </span>
+                        }
+                    </div>
+
+                    @{
+                        int? promotionPictureId = Model.Product.AlertPictureId;
+
+                        if (promotionPictureId is null || promotionPictureId <= 0)
+                        {
+                            promotionPictureId = Model.Product.PromotionPictureId;
+                        }
+
+                        bool isInfoPromotionActive = (Model.Product.AlertExpireDate is null || Model.Product.AlertExpireDate >= DateTime.Now);
+                    }
+
+                    @if (promotionPictureId > 0 && isInfoPromotionActive)
+                    {
+                        string? promotionPictureSource = GetPromotionPictureSource(promotionPictureId.Value);
+
+                        @if (promotionPictureSource is not null)
+                        {
+                            <div class="promotion-picture-container red-and-white-theme">
+                                <img src="@promotionPictureSource" alt="Image" class="promotion-picture" />
+                            </div>
+                        }
+
+                    }
+
+                    @if (Model.ProductPromotions is not null && Model.ProductPromotions.Count > 0)
+                    {
+                        <div class="promotions red-and-white-theme">
+
+                            @foreach (Models.Product.Models.Promotions.Promotion promotion in Model.ProductPromotions)
+                            {
+                                string? promotionTypeString = null;
+
+                                if (promotion.Type is not null)
+                                {
+                                    promotionTypeString = promotion.Type.Value switch
+                                    {
+                                        1 => "Promotion",
+                                        2 => "Consignation",
+                                        _ => null
+                                    };
+                                }
+
+                                string? expirationDateString = null;
+
+                                <div class="promotion">
+                                    <div class="promotion-period">
+
+                                        @if (promotionTypeString is not null)
+                                        {
+                                            <p class="promotion-type-text">@promotionTypeString:</p>
+                                        }
+                                        else
+                                        {
+                                            <p class="promotion-type-text">Promo:</p>
+                                        }
+
+                                        @if (promotion.ExpirationDate is not null)
+                                        {
+                                            if (promotion.ExpirationDate.Value.TimeOfDay == TimeSpan.Zero)
+                                            {
+                                                expirationDateString = promotion.ExpirationDate.Value.ToString("d");
+                                            }
+                                            else
+                                            {
+                                                expirationDateString = promotion.ExpirationDate.Value.ToString();
+                                            }
+                                        }
+
+                                        @if (promotion.StartDate is not null)
+                                        {
+                                            string startDateString;
+
+                                            if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
+                                            {
+                                                startDateString = promotion.StartDate.Value.ToString("d");
+                                            }
+                                            else
+                                            {
+                                                startDateString = promotion.StartDate.Value.ToString();
+                                            }
+
+                                            if (promotion.ExpirationDate is not null)
+                                            {
+                                                <p>@startDateString - @expirationDateString</p>
+                                            }
+                                            else
+                                            {
+                                                <p>Starts on: @startDateString</p>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <p>Expires on: @expirationDateString</p>
+                                        }
+                                    </div>
+
+                                    @if (promotion.DiscountEUR is not null && promotion.DiscountEUR > 0.00M)
+                                    {
+                                        <p>Discount: @promotion.DiscountEUR @GetPriceSuffixStringFromCurrency(Currency.EUR)</p>
+                                    }
+                                    else if (promotion.DiscountUSD is not null && promotion.DiscountUSD > 0.00M)
+                                    {
+                                        <p>Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)</p>
+									}
+
+                                </div>
+						    }
+                        </div>
+					}
+                </div>
+            </div>
+        </div>
+
+        @if (Model.ProductSearchStringParts is not null && Model.ProductSearchStringParts.Count > 0)
+        {
+            <div class="search-string-text-container">
+                <h6>
+                    Search String:
+                </h6>
+            </div>
+
+            <div class="search-string-container">
+                <h5>
+                    @(Model.Product.SearchString ?? "-")
+                </h5>
+            </div>
+
+            <div class="search-string-table-container">
+
+                <table class="search-string-table table-with-all-borders table-with-small-horizontal-padding-on-cells">
+
+                    <thead>
+                        <tr>
+                            <th class="search-string-table-head">Name</th>
+                            <th class="search-string-table-head">Meaning</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.ProductSearchStringParts.Count; i++)
+                        {
+                            SearchStringPartOriginData searchStringPartOriginData = Model.ProductSearchStringParts[i];
+
+                            <tr id="searchStringPart-@i" class="search-string-part">
+                                <td>@searchStringPartOriginData.SearchStringPart</td>
+                                <td>@(searchStringPartOriginData.Characteristic.Meaning ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @{
+            List<ProductPropertyDisplayData> productLinks = new();
+
+            if (Model.ProductProperties is not null)
+            {
+                for (int i = 0; i < Model.ProductProperties.Count; i++)
+                {
+                    ProductPropertyDisplayData property = Model.ProductProperties[i];
+
+                    if (property.ProductCharacteristic.KWPrCh != ProductCharacteristicType.Link) continue;
+
+                    productLinks.Add(property);
+
+                    Model.ProductProperties.RemoveAt(i);
+
+                    i--;
+                }
+            }
+        }
+
+        @if (Model.ProductProperties is not null && Model.ProductProperties.Count > 0)
+        {
+            <div class="props-section-container">
+                <section class="props-section">
+                    @foreach (ProductPropertyDisplayData property in Model.ProductProperties)
+                    {
+                        <div class="props-section-item">
+                            <strong>@property.Name:</strong><br /><p class="props-section-item-value-text">@property.Value</p>
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+
+        @if (productLinks.Count > 0)
+        {
+            <div class="links-section-container">
+                <ul class="links-section">
+                    @foreach (ProductPropertyDisplayData property in productLinks)
+                    {
+                        <li class="links-section-item">
+                            <p>@property.Name:&nbsp;</p>
+                            <a href="@property.Value" class="related-link">@property.Value</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }       
+    </div>
+}

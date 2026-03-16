@@ -1,0 +1,89 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using static MOSTComputers.UI.Web.Client.Utils.DataToTextConversion
+
+@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductListItems.ProductListItemsModel
+@{
+	Layout = null;
+}
+
+@foreach (ProductListItemsModel.ProductDisplayData productData in Model.Products)
+{
+	Product product = productData.Product;
+
+	string statusString = string.Empty;
+
+	if (product.Status is not null)
+	{
+		string? statusStringFromProduct = GetStringFromProductStatus(product.Status.Value);
+
+		if (statusStringFromProduct is not null)
+		{
+			statusString = $"- {statusStringFromProduct}";
+		}
+	}
+
+	<li class="product-list-item">
+		<div class="product-image-container">
+
+			@if (productData.NeedsPromotionalBanner)
+			{
+				<div class="product-promotion-banner">ПРОМОЦИЯ!</div>
+			}
+
+			@if (productData.ProductImageUrl is not null)
+			{
+				<img src="@productData.ProductImageUrl" class="product-image" title="Image For Product (ID: @(product.Id))"/>
+			}
+		</div>
+
+		@if (!string.IsNullOrEmpty(product.Name))
+		{
+			<h6 class="product-name">@product.Name</h6>
+		}
+
+		<p class="product-id">ID: @(product.Id) @(statusString)</p>
+
+		<div class="product-caption">
+			<div class="product-price-data">
+				@if (productData.PriceDisplayData is not null)
+				{
+					ProductListItemsModel.PriceDisplayData priceData = productData.PriceDisplayData;
+					ProductListItemsModel.PriceDisplayData? secondaryDisplayPrice = productData.SecondaryPriceDisplayData;
+
+					<span class="price-display-span">
+						@priceData.Amount @GetPriceSuffixStringFromCurrency(priceData.Currency) с ДДС
+
+
+						@if (secondaryDisplayPrice is not null)
+						{
+							<br />
+							<span class="secondary-price-display-span">
+								(@secondaryDisplayPrice.Amount @GetPriceSuffixStringFromCurrency(secondaryDisplayPrice.Currency))
+							</span>
+						}
+					</span>
+				}
+				else if (product.Price is not null)
+				{
+					<span class="price-display-span">
+						@product.Price @(product.Currency is not null ? GetPriceSuffixStringFromCurrency(product.Currency.Value) : string.Empty) с ДДС
+						<br />
+						<span class="secondary-price-display-span">
+							(@product.Price @(product.Currency is not null ? GetPriceSuffixStringFromCurrency(product.Currency.Value) : string.Empty))
+						</span>
+					</span>
+				}
+				else
+				{
+					<span class="price-display-span">-</span>
+				}
+			</div>
+
+			<div class="product-view-options">
+				<button class="product-view-data-button" onclick="openProductDataDialogWithData(@product.Id)">Преглед</button>
+			</div>
+
+			<input type="hidden" class="product-list-item-hidden-input" />
+		</div>
+	</li>
+}

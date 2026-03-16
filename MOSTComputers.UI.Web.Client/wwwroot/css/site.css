@@ -1,0 +1,177 @@
+*, ::after, ::before {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0px;
+}
+
+p {
+    margin: 0px;
+}
+
+a {
+    color: #006bb7;
+}
+
+h1:focus {
+    outline: none;
+}
+
+.display-none {
+    display: none;
+}
+
+.input-number-remove-spinners::-webkit-outer-spin-button,
+.input-number-remove-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.input-number-remove-spinners[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    border-radius: .25rem;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.red-and-white-theme {
+    color: #FFFFFF;
+    background-color: #BD1105;
+}
+
+    .red-and-white-theme.lighter {
+        color: #FFFFFF;
+        background-color: #D9534F;
+    }
+
+    .red-and-white-theme .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+.white-button {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.round-loader-default {
+    align-self: center;
+    padding: 0.8em;
+    border: 4px solid lightgray;
+    border-top-color: #BD1105;
+    border-radius: 50%;
+    aspect-ratio: 1;
+    -webkit-animation: round_loader_default-spin 2s linear infinite;
+    animation: round_loader_default-spin 2s linear infinite;
+}
+
+.round-loader-default:not(.loading) {
+    display: none;
+}
+
+/* Safari */
+@-webkit-keyframes round_loader_default-spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes round_loader_default-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #60AD63;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+    .slider.round:before {
+        border-radius: 50%;
+    }

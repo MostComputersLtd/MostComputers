@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.UI.Web.Blazor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Services.Currencies", "MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj", "{6DB5D3E2-F0DE-42FC-B157-675FE0DB1EF3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.UI.Web.Client", "MOSTComputers.UI.Web.Client\MOSTComputers.UI.Web.Client.csproj", "{DE690E58-E080-478F-A667-F32996CED7B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -151,6 +153,10 @@ Global
 		{6DB5D3E2-F0DE-42FC-B157-675FE0DB1EF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DB5D3E2-F0DE-42FC-B157-675FE0DB1EF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DB5D3E2-F0DE-42FC-B157-675FE0DB1EF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE690E58-E080-478F-A667-F32996CED7B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE690E58-E080-478F-A667-F32996CED7B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE690E58-E080-478F-A667-F32996CED7B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE690E58-E080-478F-A667-F32996CED7B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -179,6 +185,7 @@ Global
 		{142B8051-E839-4189-9D78-451C68FE3901} = {D06C77A6-8E06-4D43-A3B9-147E73E3AA35}
 		{AD406369-F2C3-4A35-8D23-54A9BD785C88} = {D06C77A6-8E06-4D43-A3B9-147E73E3AA35}
 		{6DB5D3E2-F0DE-42FC-B157-675FE0DB1EF3} = {D06C77A6-8E06-4D43-A3B9-147E73E3AA35}
+		{DE690E58-E080-478F-A667-F32996CED7B6} = {D06C77A6-8E06-4D43-A3B9-147E73E3AA35}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2963B041-8A27-49C8-8BC8-A5907E8168D8}

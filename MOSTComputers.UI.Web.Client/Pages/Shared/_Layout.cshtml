@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MOST Computers</title>
+    <meta name="description" content="crm.mostbg.com" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/MOSTComputers.UI.Web.Client.styles.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav id="navbar" class="navbar navbar-change-to-expand">
+            <div class="navbar-content">
+                <a class="navbar-brand" href="/">
+                    <img class="navbar-brand-image navbar-brand-image-big" src="/img/Logo/logo-navbar-big.svg" />
+                    <img class="navbar-brand-image navbar-brand-image-small" src="/img/Logo/logo-navbar-small.svg" />
+                </a>
+
+                <div class="navbar-brand-contacts">
+                    <span>Phone: (+359 2) 91 823</span>
+                    <span>e-mail: info@mostbg.com</span>
+                </div>
+
+                <button type="button"
+                    onclick="toggleNavbarItems('navbar')"
+                    class="navbar-toggler"
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                        class="navbar-toggler-image"
+                        fill="#FFFFFF"
+                        version="1.1"
+                        viewBox="0 0 24.75 24.75"
+                        xml:space="preserve">
+                        <g>
+                            <path d="M0,3.875c0-1.104,0.896-2,2-2h20.75c1.104,0,2,0.896,2,2s-0.896,2-2,2H2C0.896,5.875,0,4.979,0,3.875z M22.75,10.375H2   c-1.104,0-2,0.896-2,2c0,1.104,0.896,2,2,2h20.75c1.104,0,2-0.896,2-2C24.75,11.271,23.855,10.375,22.75,10.375z M22.75,18.875H2   c-1.104,0-2,0.896-2,2s0.896,2,2,2h20.75c1.104,0,2-0.896,2-2S23.855,18.875,22.75,18.875z" />
+                        </g>
+                    </svg>
+                </button>
+
+                <div class="navbar-collapse">
+                    <ul class="navbar-items-list">
+                        <li class="navbar-item">
+                            <a class="navbar-link" href="/">Home</a>
+                        </li>
+
+                        <li class="navbar-item">
+                            <a class="navbar-link" href="/promotions">Promotions</a>
+                        </li>
+
+                        <li class="navbar-divider"></li>
+
+                        <li class="navbar-item">
+                            <a class="navbar-link" href="https://portal.mostbg.com" target="_blank">Вход Портал</a>
+                        </li>
+
+                        <li class="navbar-item">
+                            <a class="navbar-link" href="http://www.mostbg.com/most/PriceList.aspx" target="_blank">Вход B2B</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div>
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer">
+        MOST Computers
+    </footer>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/Pages/Shared/_Layout.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,229 @@
+﻿@page
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Services.ProductRegister.Models.Requests.Product
+@using MOSTComputers.UI.Web.Client.Pages.Shared
+@using MOSTComputers.UI.Web.Client.Pages.Shared.Components.GroupPromotionCarousel
+@using MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductListItems
+@using static MOSTComputers.UI.Web.Client.Pages.IndexModel
+@using static MOSTComputers.UI.Web.Client.Utils.DataToTextConversion
+
+@model IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Pages/Index.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/Pages/Shared/Carousel.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Components/ProductData/Default.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Components/ProductData/Popup.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Components/ProductListItems/Default.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Pages/Shared/Components/GroupPromotionCarousel/Default.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/Pages/Index.js" asp-append-version="true"></script>
+    <script src="~/js/Pages/Shared/Carousel.js" asp-append-version="true"></script>
+    <script src="~/js/Pages/Shared/Components/ProductData/Default.js" asp-append-version="true"></script>
+    <script src="~/js/Pages/Shared/Components/ProductData/Popup.js" asp-append-version="true"></script>
+    <script src="~/js/Pages/Shared/Components/GroupPromotionCarousel/Default.js" asp-append-version="true"></script>
+}
+
+<div class="index-page">
+    <div id="groupPromotionsCarouselContainer" class="group-promotions-carousel-container">
+        @await Component.InvokeAsync(GroupPromotionCarouselViewComponent.ComponentPath, new {
+            carouselId = "groupPromotionsCarousel",
+            viewportItemsCount = 3
+        })
+    </div>
+
+    <div class="product-search-container">
+        <ul class="product-search-list">
+            <li class="product-search-list-item product-search-input-item">
+
+                <input id="productSearchInput" type="text" class="product-search-input"
+			        placeholder="Search..." aria-label="Search"/>
+            </li>
+
+            <li class="product-search-list-item">
+                <button id="productSearchButton" class="product-search-button" aria-label="Search">
+                    <p class="product-search-button-text">Search</p>
+                    <div id="productSearchButtonLoader" class="round-loader-default product-search-button-loader"></div>
+                </button>
+
+            <li class="product-search-list-item">
+                <select id="productTableCategorySelect" aria-label="Product Category">
+
+                    <option value="">All Categories</option>
+
+                    @foreach (Category category in Model.CategoriesInSelect)
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+
+            <li class="product-search-list-item">
+                <select id="productTableManufacturerSelect" class="product-table-manufacturer-select" aria-label="Manufacturer">
+
+                    @if (Model.IsDefaultManufacturerOptionSelected)
+                    {
+                        <option value="" selected>All Manufacturers</option>
+                    }
+                    else
+                    {
+                        <option value="">All Manufacturers</option>
+                    }
+
+                    @foreach (Manufacturer manufacturer in Model.ManufacturersInSelect)
+                    {
+                        <option value="@manufacturer.Id">@manufacturer.RealCompanyName</option>
+                    }
+                </select>
+            </li>
+
+            <li class="product-search-list-item">
+
+                <input id="productTableAvaliableOnlyCheckbox" class="product-search-available-only-checkbox" type="checkbox" aria-label="Available only" />
+                <label for="productTableAvaliableOnlyCheckbox">Само налични</label>
+            </li>
+
+            <li class="product-search-list-item product-search-sorting-list-item">
+
+                <button id="productSearchSortingButton" class="product-search-sorting-button" aria-label="Sort">Сортирай по</button>
+
+                <ul id="productSearchSortingOptionsList" class="product-search-sorting-options-list">
+                    <li id="productSearchDefaultSortingOption" class="product-search-sorting-option">
+                        <button type="button"
+                            onclick="setSortingMethodAndSearchProducts(@((int)ProductSearchSortingOptions.Default), 'productSearchDefaultSortingOption')"
+                            class="product-search-sorting-option-button">
+                            Подразбиране
+                        </button>
+                    </li>
+                    <li id="productSearchPriceDescendingSortingOption" class="product-search-sorting-option">
+                        <button type="button"
+                            onclick="setSortingMethodAndSearchProducts(@((int)ProductSearchSortingOptions.PriceDescending), 'productSearchPriceDescendingSortingOption')"
+                            class="product-search-sorting-option-button">
+
+                            <p>Цена</p>
+
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 width="16"
+                                 height="16"
+                                 class="product-search-sorting-price-option-icon"
+                                 viewBox="0 0 16 16"
+                                 fill="currentColor"
+                                 aria-hidden="true">
+
+                                <path d="M3 2h2v8h2L4 14 1 10h2z" />
+
+                                <path d="M8 3h4v1H8z" />
+
+                                <path d="M8 6h5v1H8z" />
+
+                                <path d="M8 9h6v1H8z" />
+
+                                <path d="M8 12h7v1H8z" />
+
+                            </svg>
+                        </button>
+                    </li>
+                    <li id="productSearchPriceAscendingSortingOption" class="product-search-sorting-option">
+                        <button type="button"
+                            onclick="setSortingMethodAndSearchProducts(@((int)ProductSearchSortingOptions.PriceAcsending), 'productSearchPriceAscendingSortingOption')"
+                            class="product-search-sorting-option-button">
+                            <p>Цена</p>
+                            
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 width="16"
+                                 height="16"
+                                 class="product-search-sorting-price-option-icon"
+                                 viewBox="0 0 16 16"
+                                 fill="currentColor"
+                                 aria-hidden="true">
+
+                                <path d="M3 2h2v8h2L4 14 1 10h2z" />
+
+                                <path d="M8 3h7v1H8z" />
+
+                                <path d="M8 6h6v1H8z" />
+
+                                <path d="M8 9h5v1H8z" />
+
+                                <path d="M8 12h4v1H8z" />
+
+                            </svg>
+                        </button>
+                    </li>
+                    <li id="productSearchPromotionsFirstSortingOption" class="product-search-sorting-option">
+                        <button type="button"
+                            onclick="setSortingMethodAndSearchProducts(@((int)ProductSearchSortingOptions.PromotionsFirst), 'productSearchPromotionsFirstSortingOption')"
+                            class="product-search-sorting-option-button">
+                            Промоциите първи
+                        </button>
+                    </li>
+                    <li id="productSearchAlphabeticalSortingOption" class="product-search-sorting-option">
+                        <button type="button"
+                            onclick="setSortingMethodAndSearchProducts(@((int)ProductSearchSortingOptions.Alphabetically), 'productSearchAlphabeticalSortingOption')"
+                            class="product-search-sorting-option-button">
+                            Найменование
+                        </button>
+                    </li>
+                </ul>
+
+                @* <select id="productTablePromotionStatusSelect" aria-label="Promotion type">
+
+                    <option value="">All</option>
+
+                    @foreach (PromotionSearchOptions promotionSearchOptions in Model.PromotionSearchOptionsInSelect)
+                    {
+                        <option value="@((int)promotionSearchOptions)">
+                            @GetStringFromPromotionSearchOptions(promotionSearchOptions)
+                        </option>
+                    }
+                </select> *@
+            </li>
+
+            <li class="product-search-list-item product-search-download-xml-list-item">
+                <button id="downloadXmlButton" class="download-xml-button">Експорт XML</button>
+                <ul id="downloadXmlOptionsList" class="download-xml-options-list">
+                    <li class="download-xml-option">
+                        <button id="downloadXmlForSelectionButton" type="button" class="download-xml-option-button">
+
+                            <p>Селекцията</p>
+                            <div class="round-loader-default"></div>
+                        </button>
+                    </li>
+                    <li class="download-xml-option">
+                        <button id="downloadXmlForAllProductsButton" type="button" class="download-xml-option-button">
+
+                            <p>Всичко</p>
+                            <div class="round-loader-default"></div>
+                        </button>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <ul id="productList" class="product-list">
+        
+        @await Component.InvokeAsync(ProductListItemsViewComponent.ComponentName, new
+        {
+            products = Model.Products,
+            currency = Model.Currency,
+            secondaryCurrency = Model.SecondaryCurrency,
+        });
+    </ul>
+
+    <div id="productListBottomIndicator" class="product-list-bottom-indicator"></div>
+</div>
+
+<dialog id="productDataDialog" class="popup-dialog" closedBy="any"
+        style="margin-left: 5vw; margin-right: 5vw; margin-top: 5vh; margin-bottom: 5vh;">
+    <div id="productDataDialogContent" class="popup-content"
+         style="width: calc(100vw - 5vw - 5vw); height: calc(100vh - 5vh - 5vh);">
+    </div>
+</dialog>
+
+@Html.AntiForgeryToken()

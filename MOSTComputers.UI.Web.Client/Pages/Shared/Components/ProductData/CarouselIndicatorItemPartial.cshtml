@@ -1,0 +1,9 @@
+﻿@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData.CarouselPartialsModel
+@{
+	Layout = null;
+}
+
+<button type="button" class="btn carousel-indicator @(Model.IsActive ? "active-carousel-indicator" : string.Empty)"
+	onclick="goTo('@Model.CarouselId', @Model.ImageCarouselIndex)">
+	<img src="@Url.Content(Model.Image.ImageSrc)" class="carousel-indicator-image" alt="Navigate to image">
+</button>

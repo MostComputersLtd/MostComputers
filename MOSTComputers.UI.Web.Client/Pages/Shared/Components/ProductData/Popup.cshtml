@@ -1,0 +1,76 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using static MOSTComputers.UI.Web.Client.Utils.DataToTextConversion;
+@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData.PopupModel
+@{
+    Layout = null;
+
+    Product? product = Model.ExistingData?.Product;
+}
+
+@if (product is not null)
+{
+    <div class='popup-header red-and-white-theme'>
+        <div class="popup-header-content">
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="popup-header-text right-margin no-bottom-margin">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+
+            @if (product.Category is not null)
+            {
+                <h4 class="popup-header-text right-margin no-bottom-margin">Category: @product.Category.Description</h4>
+            }
+
+            <h4 class="popup-header-text right-margin">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text right-margin">@(product.Name ?? "-")</h4>
+            <h4 class="popup-header-text right-margin">
+                Status: @(product.Status is not null ? GetStringFromProductStatus(product.Status.Value) : "-")
+            </h4>
+        </div>
+
+        <button type="button" title="Fullscreen" aria-label="Fullscreen" class="btn popup-full-screen-button"
+            onclick='toggleFullScreenAndChangeFullScreenButton("@Model.DialogId", "normalScreenFullScreenButton", "fullScreenFullScreenButton")'>
+            
+            <svg id="normalScreenFullScreenButton"
+                width="1em"
+                height="1em"
+                class="full-screen-button white-button"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4" />
+            </svg>
+
+            <svg id="fullScreenFullScreenButton"
+                width="1em"
+                height="1em"
+                class="full-screen-button white-button display-none"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 5v4H5M15 5v4h4M9 19v-4H5M15 19v-4h4" />
+            </svg>
+        </button>
+
+         <button class="white-button popup-close-button" onclick="closeProductDataDialog()"></button>
+    </div>
+
+    <div id="productDataDialogBody" class="popup-body">
+        @await Component.InvokeAsync(ProductDataViewComponent.ComponentName, new {
+            existingData = Model.ExistingData,
+            showProductIdData = false,
+        })
+    </div>
+}
+else
+{
+    <p>Product not found.</p>
+}

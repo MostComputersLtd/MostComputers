@@ -1,0 +1,13 @@
+﻿@model GroupPromotionsCarouselItemModel
+@{
+	Layout = null;
+}
+
+<div class="group-promotions-carousel-item">
+	@foreach (string imageUrl in Model.ImageUrls)
+	{
+		<a class="group-promotions-carousel-image-link" href="/promotions?displayedGroupId=@(Model.PromotionGroupId)&focusedImageId=@(Model.PromotionImageFileId)">
+			<img class="group-promotions-carousel-image" src="@imageUrl" />
+		</a>
+	}
+</div>

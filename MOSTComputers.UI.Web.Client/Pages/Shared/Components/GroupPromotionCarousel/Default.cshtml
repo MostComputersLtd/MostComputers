@@ -1,0 +1,75 @@
+﻿@model MOSTComputers.UI.Web.Client.Pages.Shared.Components.GroupPromotionCarousel.DefaultModel
+@{
+    Layout = null;
+
+    string? additionalClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalAttributes, "class");
+    string? additionalViewportClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalViewportAttributes, "class");
+    string? additionalIndicatorsListContainerClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalIndicatorsListContainerAttributes, "class");
+    string? additionalIndicatorsListClasses = Model.GetAttributeValueFromDictAsStringAndRemoveFromOriginal(Model.AdditionalIndicatorsListAttributes, "class");
+
+    string? additionalAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalAttributes);
+    string? additionalViewportAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalViewportAttributes);
+    string? additionalIndicatorsListContainerAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalIndicatorsListContainerAttributes);
+    string? additionalIndicatorsListAttributes = Model.ConvertAdditionalDataDictToString(Model.AdditionalIndicatorsListAttributes);
+
+    decimal itemWidthPercent = (decimal)100 / Model.DisplayedItemsCount;
+
+    string itemWidthPercentString = $"{itemWidthPercent}%;";
+
+    int indicatorCount = (int)Math.Ceiling((decimal)Model.Items.Count / Model.DisplayedItemsCount);
+}
+
+<div id="@Model.CarouselId"
+    @additionalAttributes class="custom-carousel @additionalClasses"
+    data-custom-carousel-transition-time-ms="@Model.TransitionMs"
+    data-custom-carousel-go-to-transition-time-ms="@Model.GoToTransitionMs"
+    data-custom-carousel-auto-slide-allowed="@(Model.AllowAutoSlide ? "true" : "false")"
+    data-custom-carousel-auto-slide-interval-time-ms="@Model.AutoSlideIntervalMs"
+    data-custom-carousel-items-displayed-at-once="@Model.DisplayedItemsCount"
+    data-custom-carousel-item-hops-per-move="@Model.ItemHopsPerMove">
+
+    <div @additionalViewportAttributes class="custom-carousel-viewport @additionalViewportClasses">
+
+        @for (int i = 0; i < Model.Items.Count; i++)
+        {
+            object carouselItem = Model.Items[i];
+
+            int index = i;
+
+            bool isActive = index < Model.DisplayedItemsCount;
+
+            string transformStyle = isActive ? $"translateX({i * 100}%)" : $"translateX({Model.DisplayedItemsCount * 100}%)";
+            string itemActiveClass = isActive ? "active-carousel-item" : string.Empty;
+
+            <div id="custom-carousel-item-@index" class="custom-carousel-slide @itemActiveClass" style="width: @itemWidthPercentString transform: @transformStyle">
+                <partial name="@Model.ItemTemplatePartialPath" model="Model.Items[index]" />
+            </div>
+        }
+
+        @if (Model.DisplayArrowButtons)
+        {
+            <button class="custom-carousel-control custom-prev" onclick="TEMP__prev('@Model.CarouselId')">&lt;</button>
+            <button class="custom-carousel-control custom-next" onclick="TEMP__next('@Model.CarouselId')">&gt;</button>
+        }
+    </div>
+
+    <div @additionalIndicatorsListContainerAttributes class="custom-carousel-indicators-container @additionalIndicatorsListContainerClasses">
+
+        <div @additionalIndicatorsListAttributes
+            class="custom-carousel-indicators @additionalIndicatorsListClasses"
+            role="listbox"
+            aria-multiselectable="false"
+            aria-activedescendant="carousel-option-0">
+
+            @for (int i = 0; i < indicatorCount; i++)
+            {
+                int startIndex = i * Model.DisplayedItemsCount;
+
+                @if (Model.ItemIndicatorTemplatePartialPath is not null)
+                {
+                    <partial name="@Model.ItemIndicatorTemplatePartialPath" model="Model.Items[startIndex]" />
+                }
+            }
+        </div>
+    </div>
+</div>
