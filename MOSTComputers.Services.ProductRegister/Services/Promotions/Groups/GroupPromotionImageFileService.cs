@@ -15,7 +15,7 @@ using OneOf.Types;
 using System.IO;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
-internal sealed class GroupPromotionImageFileService : IGroupPromotionImageFileService
+public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileService
 {
     public GroupPromotionImageFileService(
         IGroupPromotionImageFileDataService groupPromotionImageFileDataService,

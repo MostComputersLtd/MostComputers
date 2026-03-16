@@ -3,7 +3,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal sealed class ManufacturerService : IManufacturerService
+public sealed class ManufacturerService : IManufacturerService
 {
     public ManufacturerService(IManufacturerRepository manufacturerRepository)
     {

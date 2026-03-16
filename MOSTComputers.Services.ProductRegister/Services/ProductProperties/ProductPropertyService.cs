@@ -18,12 +18,11 @@ using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
-using System.Text.Json.Serialization;
 using System.Transactions;
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductProperties;
-internal sealed class ProductPropertyService : IProductPropertyService
+public sealed class ProductPropertyService : IProductPropertyService
 {
     public ProductPropertyService(
         IProductPropertyCrudService productPropertyCrudService,

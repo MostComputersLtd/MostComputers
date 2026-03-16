@@ -14,10 +14,9 @@ using MOSTComputers.Utils.OneOf;
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.ProductProperties;
-using System.Diagnostics.CodeAnalysis;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductProperties;
-internal sealed class ProductPropertyCrudService : IProductPropertyCrudService
+public sealed class ProductPropertyCrudService : IProductPropertyCrudService
 {
     public ProductPropertyCrudService(
         IProductRepository productRepository,

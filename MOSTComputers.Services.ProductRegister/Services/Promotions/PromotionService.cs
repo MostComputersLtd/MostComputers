@@ -4,7 +4,7 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions;
-internal sealed class PromotionService : IPromotionService
+public sealed class PromotionService : IPromotionService
 {
     public PromotionService(IPromotionRepository promotionRepository)
     {

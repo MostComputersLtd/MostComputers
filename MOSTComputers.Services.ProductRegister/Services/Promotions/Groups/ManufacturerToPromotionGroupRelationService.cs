@@ -12,7 +12,7 @@ using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
-internal sealed class ManufacturerToPromotionGroupRelationService : IManufacturerToPromotionGroupRelationService
+public sealed class ManufacturerToPromotionGroupRelationService : IManufacturerToPromotionGroupRelationService
 {
     public ManufacturerToPromotionGroupRelationService(
         IManufacturerToPromotionGroupRelationsRepository manufacturerToPromotionGroupRelationsRepository,

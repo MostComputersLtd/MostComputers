@@ -3,7 +3,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal sealed class ProductCharacteristicService : IProductCharacteristicService
+public sealed class ProductCharacteristicService : IProductCharacteristicService
 {
     public ProductCharacteristicService(IProductCharacteristicsRepository productCharacteristicsRepository)
     {

@@ -2,7 +2,7 @@
 using System.Transactions;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal sealed class TransactionExecuteService : ITransactionExecuteService
+public sealed class TransactionExecuteService : ITransactionExecuteService
 {
     public void ExecuteActionInTransaction(Action action)
     {

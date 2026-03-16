@@ -13,7 +13,7 @@ using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
-internal sealed class GroupPromotionImageFileDataService : IGroupPromotionImageFileDataService
+public sealed class GroupPromotionImageFileDataService : IGroupPromotionImageFileDataService
 {
     public GroupPromotionImageFileDataService(
         IGroupPromotionImageFileDatasRepository groupPromotionImageFileDatasRepository,

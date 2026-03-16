@@ -4,7 +4,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal class OriginalLocalChangesReadService : IOriginalLocalChangesReadService
+public sealed class OriginalLocalChangesReadService : IOriginalLocalChangesReadService
 {
     public OriginalLocalChangesReadService(IOriginalLocalChangesReadRepository originalLocalChangesReadRepository)
     {

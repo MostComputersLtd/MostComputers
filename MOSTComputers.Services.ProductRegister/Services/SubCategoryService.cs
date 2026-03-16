@@ -3,7 +3,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal sealed class SubCategoryService : ISubCategoryService
+public sealed class SubCategoryService : ISubCategoryService
 {
     public SubCategoryService(ISubCategoryRepository subCategoryRepository)
     {

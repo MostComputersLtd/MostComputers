@@ -3,7 +3,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductHtml;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
-internal interface IProductToHtmlProductService
+public interface IProductToHtmlProductService
 {
     HtmlProductsData GetHtmlProductDataFromProducts(List<GetHtmlDataForProductRequest> requests);
     Task<HtmlProductsData> GetHtmlProductDataFromProductsAsync(IEnumerable<Product> products);

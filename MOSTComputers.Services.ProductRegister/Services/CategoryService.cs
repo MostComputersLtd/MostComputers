@@ -3,7 +3,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal sealed class CategoryService : ICategoryService
+public sealed class CategoryService : ICategoryService
 {
     public CategoryService(ICategoryRepository categoryRepository)
     {

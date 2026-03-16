@@ -3,7 +3,7 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
-internal class ExchangeRateService : IExchangeRateService
+public sealed class ExchangeRateService : IExchangeRateService
 {
     public ExchangeRateService(IExchangeRateRepository exchangeRateRepository)
     {
