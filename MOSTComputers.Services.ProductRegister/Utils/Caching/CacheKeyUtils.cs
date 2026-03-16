@@ -29,6 +29,51 @@ internal class CacheKeyUtils
         }
     }
 
+    internal static class ForCategory
+    {
+        private const string _coreWord = "category";
+
+        internal const string GetAllKey = _coreWord;
+
+        internal static string GetByIdKey(int categoryId)
+        {
+            return $"{_coreWord}:ById:{categoryId}";
+        }
+    }
+
+    internal static class ForManufacturer
+    {
+        private const string _coreWord = "manufacturer";
+
+        internal const string GetAllKey = _coreWord;
+
+        internal const string GetAllWithActiveProductsKey = _coreWord + ":WithActiveProducts";
+
+        internal static string GetByIdKey(int manufacturerId)
+        {
+            return $"{_coreWord}:ById:{manufacturerId}";
+        }
+    }
+
+    internal static class ForPromotion
+    {
+        private const string _coreWord = "promotion";
+
+        internal const string GetAllKey = _coreWord;
+
+        internal const string GetAllActiveKey = _coreWord + ":Active";
+
+        internal static string GetAllForProductKey(int productId)
+        {
+            return $"{_coreWord}:ByProduct:{productId}";
+        }
+
+        internal static string GetAllActiveForProductKey(int productId)
+        {
+            return $"{_coreWord}:Active:ByProduct:{productId}";
+        }
+    }
+
     internal static class ForProductProperty
     {
         private const string _coreWord = "productProperties";
