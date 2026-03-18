@@ -36,6 +36,8 @@ internal static class TableAndColumnNameUtils
     internal const string LocalChangesTableName = "[dbo].[Changes4Web]";
     internal const string ToDoLocalChangesTableName = "[dbo].[TodoChanges4Web]";
 
+    internal const string ProductDocumentsTableName = "[dbo].[ProductDocuments]";
+
     internal const string XmlDownloadsTableName = "[dbo].[XmlDownloads]";
 
     internal const string ProductCharacteristicAndExternalXmlDataRelationsTableName = "[dbo].[ProductKeywordAndExternalXmlDataRelations]";
@@ -432,6 +434,14 @@ internal static class TableAndColumnNameUtils
 
         internal const string TimeStampColumnName = "TimeStamp";
         internal const string TimeStampColumnAlias = "LocalChangeTimeStamp";
+    }
+
+    internal static class ProductDocumentsTable
+    {
+        internal const string IdColumnName = "Id";
+        internal const string ProductIdColumnName = "CSTID";
+        internal const string FileNameColumnName = "FileName";
+        internal const string DescriptionColumnName = "Description";
     }
 
     internal static class XmlDownloadsTable
