@@ -139,9 +139,9 @@
             Save Unsaved files for group images
         </a>
 
-        <a class="btn btn-outline-primary mb-2" @onclick='() => DisconnectCircuit()'>
+        @* <a class="btn btn-outline-primary mb-2" @onclick='() => DisconnectCircuit()'>
             Disconnect application
-        </a>
+        </a> *@
         @*
         <div class="full-parent-width mb-2 d-flex flex-row align-items-center">
             <InputDate Type="InputDateType.DateTimeLocal" class="flex-grow-1 me-2" placeholder="Select update date..." @bind-Value="_updateDate" />
@@ -485,10 +485,10 @@
         await Task.Delay(1);
     }
 
-    private async Task DisconnectCircuit()
-    {
-        await JSRuntime.InvokeVoidAsync("Blazor.disconnect");
-    }
+    // private async Task DisconnectCircuit()
+    // {
+    //     await JSRuntime.InvokeVoidAsync("Blazor.disconnect");
+    // }
 
     public async Task SaveAllFilesAndPropertiesImgAllAsync()
     {
