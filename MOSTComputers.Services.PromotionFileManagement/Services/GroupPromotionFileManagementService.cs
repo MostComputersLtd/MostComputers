@@ -15,7 +15,7 @@ internal sealed class GroupPromotionFileManagementService : IGroupPromotionFileM
         _groupPromotionFileDirectoryFullPath = groupPromotionFileDirectoryFullPath;
         _transactionalFileManager = transactionalFileManager;
 
-        _promotionFileManagementService = new PromotionFileManagementService(
+        _promotionFileManagementService = new LocalFileManagementService(
             _groupPromotionFileDirectoryFullPath,
             _transactionalFileManager);
     }
@@ -24,7 +24,7 @@ internal sealed class GroupPromotionFileManagementService : IGroupPromotionFileM
 
     private readonly ITransactionalFileManager _transactionalFileManager;
 
-    private readonly PromotionFileManagementService _promotionFileManagementService;
+    private readonly LocalFileManagementService _promotionFileManagementService;
 
     public byte[]? GetFile(string fullFileName)
     {

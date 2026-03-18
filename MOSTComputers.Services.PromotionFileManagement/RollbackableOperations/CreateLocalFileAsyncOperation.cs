@@ -4,37 +4,37 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class CreatePromotionFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, FileAlreadyExistsResult>>
+internal sealed class CreateLocalFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, FileAlreadyExistsResult>>
 {
-    internal CreatePromotionFileAsyncOperation(
-        string imageDirectoryPath, string fullFileName, byte[] imageData, CancellationToken? cancellationToken = null)
+    internal CreateLocalFileAsyncOperation(
+        string directoryPath, string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
     {
-        _imageDirectoryPath = imageDirectoryPath;
+        _directoryPath = directoryPath;
         _fullFileName = fullFileName;
-        _imageData = imageData;
+        _fileData = fileData;
         _cancellationToken = cancellationToken;
     }
 
-    private readonly string _imageDirectoryPath;
+    private readonly string _directoryPath;
     private readonly string _fullFileName;
-    private readonly byte[] _imageData;
+    private readonly byte[] _fileData;
     private readonly CancellationToken? _cancellationToken;
 
     private bool _succeeeded = false;
 
     public async Task<OneOf<Success, FileAlreadyExistsResult>> ExecuteAsync()
     {
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = _fullFileName };
 
         if (_cancellationToken is null)
         {
-            await File.WriteAllBytesAsync(filePath, _imageData);
+            await File.WriteAllBytesAsync(filePath, _fileData);
         }
         else
         {
-            await File.WriteAllBytesAsync(filePath, _imageData, _cancellationToken.Value);
+            await File.WriteAllBytesAsync(filePath, _fileData, _cancellationToken.Value);
         }
 
         _succeeeded = true;
@@ -46,7 +46,7 @@ internal sealed class CreatePromotionFileAsyncOperation : IRollbackableOperation
     {
         if (!_succeeeded) return;
 
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (!File.Exists(filePath))
         {

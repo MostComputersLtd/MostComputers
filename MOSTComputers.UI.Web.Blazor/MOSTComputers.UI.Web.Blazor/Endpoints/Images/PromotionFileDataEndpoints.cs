@@ -19,7 +19,7 @@ public static class PromotionFileDataEndpoints
 
     private static IResult GetPromotionFile(
         [FromRoute] string fullFileName,
-        [FromServices] IPromotionFileManagementService promotionFileManagementService)
+        [FromServices] ILocalFileManagementService promotionFileManagementService)
     {
         if (string.IsNullOrWhiteSpace(fullFileName))
         {

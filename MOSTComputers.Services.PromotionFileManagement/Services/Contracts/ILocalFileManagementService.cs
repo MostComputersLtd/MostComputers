@@ -4,7 +4,7 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
-public interface IPromotionFileManagementService
+public interface ILocalFileManagementService
 {
     byte[]? GetFile(string fullFileName);
     Task<byte[]?> GetFileAsync(string fullFileName);

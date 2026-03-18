@@ -2,33 +2,33 @@
 using MOSTComputers.Services.TransactionalFileManagement.Contracts;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class CreateOrUpdatePromotionFileOperation : IRollbackableOperation<CreateOrUpdateOperationTypeEnum>
+internal sealed class CreateOrUpdateLocalFileOperation : IRollbackableOperation<CreateOrUpdateOperationTypeEnum>
 {
-    internal CreateOrUpdatePromotionFileOperation(string imageDirectoryPath, string fullFileName, byte[] imageData)
+    internal CreateOrUpdateLocalFileOperation(string directoryPath, string fullFileName, byte[] fileData)
     {
-        _imageDirectoryPath = imageDirectoryPath;
+        _directoryPath = directoryPath;
         _fullFileName = fullFileName;
-        _imageData = imageData;
+        _fileData = fileData;
     }
 
-    private readonly string _imageDirectoryPath;
+    private readonly string _directoryPath;
     private readonly string _fullFileName;
-    private readonly byte[] _imageData;
+    private readonly byte[] _fileData;
 
     private bool _succeeeded = false;
 
     private CreateOrUpdateOperationTypeEnum? _createOrUpdateOperationType = null;
-    private byte[]? _oldImageData = null;
+    private byte[]? _oldFileData = null;
 
     public CreateOrUpdateOperationTypeEnum Execute()
     {
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (File.Exists(filePath))
         {
-            _oldImageData = File.ReadAllBytes(filePath);
+            _oldFileData = File.ReadAllBytes(filePath);
 
-            File.WriteAllBytes(filePath, _imageData);
+            File.WriteAllBytes(filePath, _fileData);
 
             _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Update;
 
@@ -37,7 +37,7 @@ internal sealed class CreateOrUpdatePromotionFileOperation : IRollbackableOperat
             return CreateOrUpdateOperationTypeEnum.Update;
         }
 
-        File.WriteAllBytes(filePath, _imageData);
+        File.WriteAllBytes(filePath, _fileData);
 
         _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Create;
 
@@ -50,7 +50,7 @@ internal sealed class CreateOrUpdatePromotionFileOperation : IRollbackableOperat
     {
         if (!_succeeeded) return;
 
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (_createOrUpdateOperationType == CreateOrUpdateOperationTypeEnum.Create)
         {
@@ -64,11 +64,11 @@ internal sealed class CreateOrUpdatePromotionFileOperation : IRollbackableOperat
             return;
         }
 
-        if (_oldImageData is null)
+        if (_oldFileData is null)
         {
             throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {filePath}");
         }
 
-        File.WriteAllBytes(filePath, _oldImageData);
+        File.WriteAllBytes(filePath, _oldFileData);
     }
 }

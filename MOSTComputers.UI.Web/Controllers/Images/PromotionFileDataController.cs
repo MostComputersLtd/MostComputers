@@ -9,14 +9,14 @@ namespace MOSTComputers.UI.Web.Controllers.Images;
 [Route(ControllerRoute)]
 public sealed class PromotionFileDataController : ControllerBase
 {
-    public PromotionFileDataController(IPromotionFileManagementService promotionFileManagementService)
+    public PromotionFileDataController(ILocalFileManagementService promotionFileManagementService)
     {
         _promotionFileManagementService = promotionFileManagementService;
     }
 
     internal const string ControllerRoute = ControllerCommonElements.ControllerRoutePrefix + "images/" + "promotionFileData";
 
-    private readonly IPromotionFileManagementService _promotionFileManagementService;
+    private readonly ILocalFileManagementService _promotionFileManagementService;
 
     [HttpGet("{fullFileName}")]
     public async Task<IActionResult> GetPromotionFileAsync(string fullFileName)

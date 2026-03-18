@@ -4,16 +4,16 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class RenamePromotionFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult>>
+internal sealed class RenameLocalFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult>>
 {
-    internal RenamePromotionFileOperation(string imageDirectoryPath, string currentFullFileName, string newFileNameWithoutExtension)
+    internal RenameLocalFileOperation(string directoryPath, string currentFullFileName, string newFileNameWithoutExtension)
     {
-        _imageDirectoryPath = imageDirectoryPath;
+        _directoryPath = directoryPath;
         _currentFullFileName = currentFullFileName;
         _newFileNameWithoutExtension = newFileNameWithoutExtension;
     }
 
-    private readonly string _imageDirectoryPath;
+    private readonly string _directoryPath;
     private readonly string _currentFullFileName;
     private readonly string _newFileNameWithoutExtension;
 
@@ -21,7 +21,7 @@ internal sealed class RenamePromotionFileOperation : IRollbackableOperation<OneO
 
     public OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> Execute()
     {
-        string oldFilePath = Path.Combine(_imageDirectoryPath, _currentFullFileName);
+        string oldFilePath = Path.Combine(_directoryPath, _currentFullFileName);
 
         string? fileExtension = Path.GetExtension(oldFilePath);
 
@@ -34,7 +34,7 @@ internal sealed class RenamePromotionFileOperation : IRollbackableOperation<OneO
 
         string newFileName = _newFileNameWithoutExtension + fileExtension;
 
-        string newFilePath = Path.Combine(_imageDirectoryPath, newFileName);
+        string newFilePath = Path.Combine(_directoryPath, newFileName);
 
         if (File.Exists(newFilePath))
         {
@@ -52,7 +52,7 @@ internal sealed class RenamePromotionFileOperation : IRollbackableOperation<OneO
     {
         if (!_succeeeded) return;
 
-        string oldFilePath = Path.Combine(_imageDirectoryPath, _currentFullFileName);
+        string oldFilePath = Path.Combine(_directoryPath, _currentFullFileName);
 
         if (File.Exists(oldFilePath))
         {
@@ -69,7 +69,7 @@ internal sealed class RenamePromotionFileOperation : IRollbackableOperation<OneO
 
         string newFileName = _newFileNameWithoutExtension + fileExtension;
 
-        string newFilePath = Path.Combine(_imageDirectoryPath, newFileName);
+        string newFilePath = Path.Combine(_directoryPath, newFileName);
 
         if (!File.Exists(newFilePath))
         {

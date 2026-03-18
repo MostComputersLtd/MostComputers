@@ -4,16 +4,16 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class CreatePromotionFileOperation : IRollbackableOperation<OneOf<Success, FileAlreadyExistsResult>>
+internal sealed class CreateLocalFileOperation : IRollbackableOperation<OneOf<Success, FileAlreadyExistsResult>>
 {
-    internal CreatePromotionFileOperation(string imageDirectoryPath, string fullFileName, byte[] imageData)
+    internal CreateLocalFileOperation(string directoryPath, string fullFileName, byte[] fileData)
     {
-        _imageDirectoryPath = imageDirectoryPath;
+        _directoryPath = directoryPath;
         _fullFileName = fullFileName;
-        _imageData = imageData;
+        _imageData = fileData;
     }
 
-    private readonly string _imageDirectoryPath;
+    private readonly string _directoryPath;
     private readonly string _fullFileName;
     private readonly byte[] _imageData;
 
@@ -21,7 +21,7 @@ internal sealed class CreatePromotionFileOperation : IRollbackableOperation<OneO
 
     public OneOf<Success, FileAlreadyExistsResult> Execute()
     {
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = _fullFileName };
 
@@ -36,7 +36,7 @@ internal sealed class CreatePromotionFileOperation : IRollbackableOperation<OneO
     {
         if (!_succeeeded) return;
 
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (!File.Exists(filePath))
         {

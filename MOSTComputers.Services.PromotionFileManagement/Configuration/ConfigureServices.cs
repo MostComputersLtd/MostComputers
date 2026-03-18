@@ -8,7 +8,7 @@ public static class ConfigureServices
 {
     public static IServiceCollection AddPromotionFileManager(this IServiceCollection services, string promotionFileDirectoryFullPath)
     {
-        services.AddScoped<IPromotionFileManagementService, PromotionFileManagementService>(serviceProvider =>
+        services.AddScoped<ILocalFileManagementService, LocalFileManagementService>(serviceProvider =>
         {
             return new(promotionFileDirectoryFullPath, serviceProvider.GetRequiredService<ITransactionalFileManager>());
         });

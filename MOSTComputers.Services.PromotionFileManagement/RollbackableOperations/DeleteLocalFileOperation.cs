@@ -4,31 +4,31 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class DeletePromotionFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult>>
+internal sealed class DeleteLocalFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult>>
 {
-    internal DeletePromotionFileOperation(string imageDirectoryPath, string fullFileName)
+    internal DeleteLocalFileOperation(string directoryPath, string fullFileName)
     {
-        _imageDirectoryPath = imageDirectoryPath;
+        _directoryPath = directoryPath;
         _fullFileName = fullFileName;
     }
 
-    private readonly string _imageDirectoryPath;
+    private readonly string _directoryPath;
     private readonly string _fullFileName;
 
     private bool _succeeeded = false;
 
-    private byte[]? _oldImageData = null;
+    private byte[]? _oldFileData = null;
 
     public OneOf<Success, FileDoesntExistResult> Execute()
     {
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (!File.Exists(filePath))
         {
             return new FileDoesntExistResult() { FileName = _fullFileName };
         }
 
-        _oldImageData = File.ReadAllBytes(filePath);
+        _oldFileData = File.ReadAllBytes(filePath);
 
         File.Delete(filePath);
 
@@ -41,18 +41,18 @@ internal sealed class DeletePromotionFileOperation : IRollbackableOperation<OneO
     {
         if (!_succeeeded) return;
 
-        string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
+        string filePath = Path.Combine(_directoryPath, _fullFileName);
 
         if (File.Exists(filePath))
         {
             throw new InvalidOperationException("Inconsistent state: Rollback discovered, that a file to be added already exists.");
         }
 
-        if (_oldImageData is null)
+        if (_oldFileData is null)
         {
             throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {filePath}");
         }
 
-        File.WriteAllBytes(filePath, _oldImageData);
+        File.WriteAllBytes(filePath, _oldFileData);
     }
 }
