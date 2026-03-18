@@ -41,6 +41,13 @@ internal static class CommonValueConstraints
         internal const int LastUpdateUserNameMaxLength = 256;
     }
 
+    internal static class ProductDocumentConstraints
+    {
+        internal const int FileExtensionMaxLength = 9;
+        internal const int DescriptionMaxLength = 250;
+        internal const int FileDataMaxSizeBytes = 100 * 1024 * 1024;
+    }
+
     internal static class ProductGTINCodeConstraints
     {
         internal const int CodeTypeAsTextMaxLength = 20;

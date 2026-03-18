@@ -94,6 +94,24 @@ internal static class CommonElements
             .WithErrorCode("ValidGTINCodeFormat");
     }
 
+    public static IRuleBuilderOptions<T, ICollection<TItem?>> MaximumLength<T, TItem>(
+        this IRuleBuilder<T, ICollection<TItem?>> ruleBuilder, int maximumLength)
+    {
+        return ruleBuilder.Must((obj, property, validationContext) =>
+        {
+            bool isValid = property.Count <= maximumLength;
+
+            if (isValid) return true;
+
+            validationContext.MessageFormatter.AppendArgument("MaximumLength", maximumLength);
+            validationContext.MessageFormatter.AppendArgument("AttemptedLength", property.Count);
+
+            return false;
+        })
+            .WithMessage($"Value must not have length greater than {maximumLength}")
+            .WithErrorCode("NotNullOrWhiteSpace");
+    }
+
     internal static List<TValue> DoesNotHaveNotNullDuplicates<T, TValue>(IEnumerable<T> datas, Func<T, TValue?> getValueFunc)
     {
         List<TValue> knownValues = new();

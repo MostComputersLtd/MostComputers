@@ -22,7 +22,7 @@ internal sealed class PromotionFileService : IPromotionFileService
     public PromotionFileService(
         IPromotionFileInfoRepository promotionFileInfoService,
         IPromotionProductFileInfoRepository promotionProductFileInfoRepository,
-        IPromotionFileManagementService promotionFileManagementService,
+        ILocalFileManagementService promotionFileManagementService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<CreatePromotionFileRequest>? createRequestValidator = null,
         IValidator<UpdatePromotionFileRequest>? updateRequestValidator = null)
@@ -40,7 +40,7 @@ internal sealed class PromotionFileService : IPromotionFileService
 
     private readonly IPromotionFileInfoRepository _promotionFileInfoRepository;
     private readonly IPromotionProductFileInfoRepository _promotionProductFileInfoRepository;
-    private readonly IPromotionFileManagementService _promotionFileManagementService;
+    private readonly ILocalFileManagementService _promotionFileManagementService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
     private readonly IValidator<CreatePromotionFileRequest>? _createRequestValidator;

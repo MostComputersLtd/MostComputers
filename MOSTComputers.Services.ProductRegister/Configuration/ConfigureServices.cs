@@ -9,6 +9,7 @@ using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductStatuses
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Mapping;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductDocuments;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductIdentifiers.ProductGTINCode;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
@@ -50,6 +51,7 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Cached;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
 using MOSTComputers.Services.ProductRegister.Validation;
+using MOSTComputers.Services.ProductRegister.Validation.ProductDocuments;
 using MOSTComputers.Services.ProductRegister.Validation.ProductIdentifiers.ProductGTINCode;
 using MOSTComputers.Services.ProductRegister.Validation.ProductIdentifiers.ProductSerialNumber;
 using MOSTComputers.Services.ProductRegister.Validation.ProductImage;
@@ -62,6 +64,9 @@ using MOSTComputers.Services.ProductRegister.Validation.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Validation.PromotionFileInfo;
 using MOSTComputers.Services.ProductRegister.Validation.PromotionProductFileInfo;
 using MOSTComputers.Services.ProductRegister.Validation.Promotions.Groups;
+using MOSTComputers.Services.PromotionFileManagement.Services;
+using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
+using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using ZiggyCreatures.Caching.Fusion;
 
 namespace MOSTComputers.Services.ProductRegister.Configuration;
@@ -76,6 +81,8 @@ public static class ConfigureServices
     internal const string PromotionFileServiceKey = "MOSTComputers.Services.ProductRegister.PromotionFileServiceKey";
     internal const string PromotionProductFileServiceKey = "MOSTComputers.Services.ProductRegister.PromotionProductFileServiceKey";
     internal const string ProductWorkStatusesServiceKey = "MOSTComputers.Services.ProductRegister.ProductWorkStatusesServiceKey";
+
+    internal const string ProductDocumentLocalFileManagementServiceKey = "MOSTComputers.Services.ProductRegister.ProductDocumentLocalFileManagementServiceKey";
 
     public static IServiceCollection AddProductServices(this IServiceCollection services)
     {
@@ -223,6 +230,15 @@ public static class ConfigureServices
         return services;
     }
 
+    public static void AddProductDocumentService(this IServiceCollection services, string productDocumentFilesDirectoryFullPath)
+    {
+        services.AddKeyedScoped<ILocalFileManagementService, LocalFileManagementService>(ProductDocumentLocalFileManagementServiceKey, (serviceProvider, _) =>
+        {
+            return new(productDocumentFilesDirectoryFullPath, serviceProvider.GetRequiredService<ITransactionalFileManager>());
+        });
+        services.AddScoped<IProductDocumentFileService, ProductDocumentFileService>();
+    }
+
     public static void AddCachedProductService(this IServiceCollection services)
     {
         services.AddKeyedScoped<IProductService, ProductService>(ProductServiceKey);
@@ -329,6 +345,8 @@ public static class ConfigureServices
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpdateByIdRequest>, ProductWorkStatusesUpdateByIdRequestValidator>();
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpdateByProductIdRequest>, ProductWorkStatusesUpdateByProductIdRequestValidator>();
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpsertRequest>, ProductWorkStatusesUpsertRequestValidator>();
+
+        services.AddScoped<IValidator<ServiceProductDocumentCreateRequest>, ProductDocumentCreateRequestValidator>();
 
         services.AddScoped<IValidator<ServiceProductGTINCodeCreateRequest>, ServiceProductGTINCodeCreateRequestValidator>();
         services.AddScoped<IValidator<ServiceProductGTINCodeUpdateRequest>, ServiceProductGTINCodeUpdateRequestValidator>();
