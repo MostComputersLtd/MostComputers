@@ -8,7 +8,7 @@ using MOSTComputers.Services.Identity.Services;
 using MOSTComputers.Services.Identity.Services.Cached;
 
 namespace MOSTComputers.Services.Identity.Confuguration;
-public static class Configuration
+public static class ConfigureServices
 {
     public const string IdentityServiceKey = "MOSTComputers.Services.Identity.IdentityService";
 
