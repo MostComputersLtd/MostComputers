@@ -12,7 +12,7 @@ namespace MOSTComputers.Services.Identity.Services.Cached;
 internal sealed class CachedPasswordsTableOnlyIdentityService : IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole>
 {
     public CachedPasswordsTableOnlyIdentityService(
-        [FromKeyedServices(Configuration.IdentityServiceKey)] IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole> identityService,
+        [FromKeyedServices(ConfigureServices.IdentityServiceKey)] IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole> identityService,
         //ICache<string> cache,
         IFusionCache fusionCache)
     {
