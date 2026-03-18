@@ -107,6 +107,15 @@ builder.Services.AddDataAccess(productDBConnectionString, most4WebDBConnectionSt
 
 builder.Services.AddCachedProductServices();
 
+string? productDocumentFileFolderFilePath = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("ProductDocumentDirectory");
+
+if (!Path.IsPathFullyQualified(productDocumentFileFolderFilePath!))
+{
+    productDocumentFileFolderFilePath = Path.GetFullPath(productDocumentFileFolderFilePath!, builder.Environment.ContentRootPath);
+}
+
+builder.Services.AddProductDocumentService(productDocumentFileFolderFilePath!);
+
 builder.Services.AddDocumentRepositories(most4WebDBConnectionString);
 
 string currentDirectory = AppDomain.CurrentDomain.BaseDirectory.Replace('\\', '/');
