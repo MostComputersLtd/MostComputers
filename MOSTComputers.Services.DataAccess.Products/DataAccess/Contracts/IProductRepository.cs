@@ -5,6 +5,7 @@ public interface IProductRepository
 {
     Task<List<int>> GetAllIdsAsync();
     Task<List<int>> GetOnlyExistingIdsAsync(List<int> idsToValidate);
+    Task<bool> DoesProductExistAsync(int id);
     Task<List<Product>> GetAllAsync();
     Task<List<Product>> GetAllWithStatusesAsync(List<ProductStatus> productStatuses);
     Task<List<Product>> GetAllInCategoriesAsync(IEnumerable<int> categoryIds);

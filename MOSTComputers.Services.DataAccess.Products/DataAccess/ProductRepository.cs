@@ -74,6 +74,37 @@ internal sealed class ProductRepository : IProductRepository
         return validProductIds;
     }
 
+    public async Task<bool> DoesProductExistAsync(int id)
+    {
+        const string doesExistQuery =
+            $"""
+            SELECT CASE 
+                WHEN EXISTS (
+                    SELECT 1 
+                    FROM {ProductsTableName} 
+                    WHERE {IdColumnName} = @Id
+                )
+                THEN 1
+                ELSE 0 
+            END;
+            """;
+
+        using TransactionScope suppressedTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            Id = id
+        };
+
+        int exists = await connection.QueryFirstOrDefaultAsync<int>(doesExistQuery, parameters, commandType: CommandType.Text);
+
+        suppressedTransactionScope.Complete();
+
+        return exists == 1;
+    }
+
     public async Task<List<Product>> GetAllAsync()
     {
         const string getAllWithManufacturerAndCategoryQuery =
