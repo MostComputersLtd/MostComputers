@@ -126,20 +126,30 @@ export function resizeTextareasToColumnText(textAreasCommonName, minRows = null)
 
     for (const textArea of textAreas)
     {
-        const lineHeight = parseInt(window.getComputedStyle(textArea).lineHeight, 10);
-
-        if (minRows != null)
+        requestAnimationFrame(() =>
         {
-            const minHeight = lineHeight * minRows;
+            requestAnimationFrame(() => {
 
-            textArea.style.height = 'auto';
-            textArea.style.height = Math.max(textArea.scrollHeight + 1, minHeight) + 'px';
+                const lineHeight = parseInt(window.getComputedStyle(textArea).lineHeight, 10);
 
-            continue;
-        }
+                let textAreaScrollHeight = textArea.scrollHeight + 1;
 
-        textArea.style.height = 'auto';
-        textArea.style.height = (textArea.scrollHeight + 1) + 'px';
+                if (minRows != null)
+                {
+                    const minHeight = lineHeight * minRows;
+
+                    if (minHeight > textAreaScrollHeight)
+                    {
+                        textAreaScrollHeight = minHeight;
+                    }
+                }
+
+                console.log(textAreaScrollHeight);
+
+                textArea.style.height = 'auto';
+                textArea.style.height = textAreaScrollHeight + 'px';
+            })
+        })
     }
 }
 
