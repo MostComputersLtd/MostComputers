@@ -56,6 +56,7 @@
 @inject IPromotionService PromotionService
 @inject IPromotionFileService PromotionFileService
 @inject IPromotionProductFileService PromotionProductFileService
+@inject IProductDocumentFileService ProductDocumentFileService
 @inject ICurrencyConversionService CurrencyConversionService
 @inject ICurrencyVATService CurrencyVATService
 
@@ -137,6 +138,14 @@
                     Add Link
                 </button>
 
+                <button class="btn btn-outline-success single-product-editor-popup-header-item"
+                    @onclick='() => ForceFileInputClickAsync("singleProductEditorAddDocumentFileInput")'>
+                    Add Document
+                </button>
+
+                <InputFile OnChange="AddProductDocumentAsync" id="singleProductEditorAddDocumentFileInput" type="file" accept="application/pdf"
+                    class="image-file-hidden-input" tabindex="-1" />
+
                 <div class="save-button-and-loader-container">
                     <div class="save-button-container @(_isSavingProduct ? "loading" : string.Empty)">
                         <button class="btn btn-primary save-button single-product-editor-popup-header-item" disabled="@_isSavingProduct"
@@ -145,7 +154,7 @@
                         </button>
                     </div>
 
-                    <div class="round-loader-default @(_isSavingProduct ? "loading" : string.Empty)"></div>
+                    <div class="round-loader-default save-button-loader @(_isSavingProduct ? "loading" : string.Empty)"></div>
                 </div>
             </div>
         </div>
@@ -501,6 +510,49 @@
                     </ul>
                 </div>
             </div>
+
+            @if (ProductDocuments is not null && ProductDocuments.Count > 0)
+            {
+                <div class="full-parent-width pb-4">
+                    <ul class="product-documents-list">
+                        @for (int i = 0; i < ProductDocuments.Count; i++)
+                        {
+                            ProductDocumentDisplayData productDocumentData = ProductDocuments[i];
+
+                            ProductDocument? document = productDocumentData.ExistingDocument;
+
+                            <li class="product-document-list-item">
+                                @if (document is not null)
+                                {
+                                    <p class="product-document-file-name-text">@document.FileName</p>
+                                }
+
+                                <input id="productDocumentDescription-@i"
+                                    type="text"
+                                    class="product-document-description-input"
+                                    @bind="productDocumentData.CurrentDescription"
+                                    aria-label="Description"
+                                    placeholder="Description (optional)" />
+
+                                <button type="button" class="btn btn-secondary product-document-view-button"
+                                    @onclick="() => ShowProductDocumentPopup(productDocumentData)">
+                                    View
+                                </button>
+
+                                @if (document != null)
+                                {
+                                    <button type="button" class="btn btn-secondary product-document-copy-url-button">Copy Url</button>
+                                }
+
+                                <button class="btn btn-danger"
+                                    @onclick="() => RemoveProductDocument(productDocumentData)">
+                                    X
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
     </ChildContent>
 </Popup>
@@ -600,6 +652,55 @@
         </ChildContent>
     </Popup>
 
+    @if (_productDocumentPopupData != null)
+    {
+        Product product = _productDocumentPopupData.Product;
+        ProductDocumentDisplayData productDocumentData = _productDocumentPopupData.ProductDocumentDisplayData;
+
+        string? fileDataBase64String = null;
+
+        if (productDocumentData.FileData.IsT0)
+        {
+            fileDataBase64String = Convert.ToBase64String(productDocumentData.FileData.AsT0);
+        }
+
+        <Popup @bind-IsVisible='@IsProductDocumentPopupVisible'
+            PopupMarginOptions='new() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" }'
+            AddFullScreenButtonToHeader="true">
+            <HeaderContent>
+
+                <div class="product-data-popup-header">
+
+                    @if (product.Manufacturer is not null)
+                    {
+                        <h4 class="popup-header-text product-data-popup-header-text">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+                    }
+
+                    @if (product.Category is not null)
+                    {
+                        <h4 class="popup-header-text me-2 product-data-popup-header-text">Category: @product.Category.Description</h4>
+                    }
+
+                    <h4 class="popup-header-text product-data-popup-header-text">ID: @(product.Id)</h4>
+                    <h4 class="popup-header-text product-data-popup-header-text">@(product.Name ?? "-")</h4>
+                </div>
+            </HeaderContent>
+
+            <ChildContent>
+                <div class="product-document-pdf-display-container">
+                    @if (fileDataBase64String != null)
+                    {
+                        <iframe id="productDocumentPdfDisplay" class="product-document-pdf-display" src="data:application/pdf;base64,@fileDataBase64String"></iframe>
+                    }
+                    else
+                    {
+                        <p>File is invalid</p>
+                    }
+                </div>
+            </ChildContent>
+        </Popup>
+    }
+
     <Popup @bind-IsVisible="IsDataChangedPopupVisible"
         PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
         DisplayHeader="false"
@@ -680,6 +781,15 @@
         public List<string> ValidationMessages { get; set; } = new();
     }
 
+    private readonly struct InvalidProductFileResult {}
+
+    private sealed class ProductDocumentDisplayData
+    {
+        public ProductDocument? ExistingDocument { get; set; } = null;
+        public string? CurrentDescription { get; set; } = string.Empty;
+        public required OneOf<byte[], InvalidProductFileResult> FileData { get; set; }
+    }
+
     private enum ItemChangeState
     {
         Added = 1,
@@ -702,6 +812,12 @@
         public required Product Product { get; set; }
         public List<ProductHtmlAndImages.ProductImageDisplayData>? ProductImages { get; set; }
         public string? ProductHtml { get; set; }
+    }
+
+    private sealed class ProductDocumentPopupData
+    {
+        public required Product Product { get; set; }
+        public required ProductDocumentDisplayData ProductDocumentDisplayData { get; set; }
     }
 
     private const int _propertiesTextAreaMinRows = 1;
@@ -756,6 +872,8 @@
 
     private List<SearchStringPartOriginData> SearchStringParts { get; set; } = new();
 
+    private List<ProductDocumentDisplayData>? ProductDocuments { get; set; } = null;
+
     private List<MOSTComputers.Models.Product.Models.Promotions.Promotion> ProductPromotions { get; set; } = new();
 
     private static IReadOnlyList<ProductNewStatus> DefaultProductNewStatusesInSelect = [
@@ -774,6 +892,9 @@
 
     private bool IsPromotionProductFileEditorPopupVisible { get; set; } = false;
     private List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> PromotionProductFilesInEditor { get; set; } = new();
+
+    private bool IsProductDocumentPopupVisible { get; set; } = false;
+    private ProductDocumentPopupData? _productDocumentPopupData { get; set; } = null;
 
     private bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
 
@@ -853,7 +974,10 @@
 
     private bool IsDataChanged()
     {
-        return (_changedProperties.Count > 0) || (_changedImages.Count > 0) || (_changedPromotionFiles.Count > 0) || (_currentProductNewStatus != ProductStatuses?.ProductNewStatus);
+        return (_changedProperties.Count > 0)
+            || (_changedImages.Count > 0)
+            || (_changedPromotionFiles.Count > 0)
+            || (_currentProductNewStatus != ProductStatuses?.ProductNewStatus);
     }
 
     private void SetDataChanged(ProductPropertyDisplayData productPropertyDisplayData, ItemChangeState itemChangeState)
@@ -1027,6 +1151,33 @@
             Product.SearchString, Product.CategoryId)
             ?? new();
 
+        List<ProductDocument> productDocuments = await ProductDocumentFileService.GetAllForProductAsync(Product.Id);
+
+        ProductDocuments ??= new();
+
+        foreach (ProductDocument productDocument in productDocuments)
+        {
+            Stream? fileStream = ProductDocumentFileService.GetFileStreamByFileName(productDocument.FileName);
+
+            byte[]? fileData = null;
+
+            if (fileStream is not null)
+            {
+                fileData = new byte[fileStream.Length];
+
+                await fileStream.ReadAsync(fileData);
+            }
+
+            ProductDocumentDisplayData productDocumentDisplayData = new()
+            {
+                ExistingDocument = productDocument,
+                CurrentDescription = productDocument.Description ?? string.Empty,
+                FileData = fileData != null ? fileData : new InvalidProductFileResult(),
+            };
+
+            ProductDocuments.Add(productDocumentDisplayData);
+        }
+
         ProductStatuses = await ProductWorkStatusesService.GetByProductIdAsync(Product.Id);
 
         _currentProductNewStatus = ProductStatuses?.ProductNewStatus;
@@ -1045,6 +1196,8 @@
 
         ProductPromotions.Clear();
         SearchStringParts.Clear();
+
+        ProductDocuments?.Clear();
 
         ProductStatuses = null;
         _currentProductNewStatus = null;
@@ -1291,6 +1444,17 @@
     private void ShowPromotionProductFileEditorPopup()
     {
         IsPromotionProductFileEditorPopupVisible = true;
+    }
+
+    private void ShowProductDocumentPopup(ProductDocumentDisplayData productDocumentDisplayData)
+    {
+        _productDocumentPopupData = new()
+        {
+            Product = Product,
+            ProductDocumentDisplayData = productDocumentDisplayData,
+        };
+
+        IsProductDocumentPopupVisible = true;
     }
 
     private void ShowProductSearchStringOriginDataPopup()
@@ -1859,6 +2023,49 @@
         {
             property.RemainingCharacteristics.Add(productPropertyDisplayData.ProductCharacteristic);
         }
+    }
+
+    public async Task AddProductDocumentAsync(InputFileChangeEventArgs fileChangeEventArgs)
+    {
+        if (fileChangeEventArgs.FileCount == 0) return;
+
+        IBrowserFile? file = fileChangeEventArgs.File;
+
+        if (file is null
+            || file.Size == 0
+            || file.Size > 100 * 1024 * 1024
+            || file.ContentType != "application/pdf"
+            || Path.GetExtension(file.Name) != ".pdf")
+        {
+            return;
+        }
+
+        using MemoryStream memoryStream = new();
+
+        using (Stream stream = file.OpenReadStream(100 * 1024 * 1024))
+        {
+            await stream.CopyToAsync(memoryStream);
+        }
+
+        byte[] fileData = memoryStream.ToArray();
+
+        ProductDocumentDisplayData productDocumentDisplayData = new()
+        {
+            ExistingDocument = null,
+            CurrentDescription = string.Empty,
+            FileData = fileData,
+        };
+
+        ProductDocuments ??= new();
+
+        ProductDocuments.Add(productDocumentDisplayData);
+    }
+
+    private bool RemoveProductDocument(ProductDocumentDisplayData productDocumentDisplayData)
+    {
+        if (ProductDocuments == null) return false;
+
+        return ProductDocuments.Remove(productDocumentDisplayData);
     }
 
     private async Task SaveChangesAndCloseIsDataChangedPopupAsync()
