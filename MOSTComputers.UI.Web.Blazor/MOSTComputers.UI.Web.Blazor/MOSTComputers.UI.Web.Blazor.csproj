@@ -37,10 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\img\logo_16x16.png">
+    <Content Update="wwwroot\favicon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\favicon.png">
+    <Content Update="wwwroot\img\logo_16x16.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
