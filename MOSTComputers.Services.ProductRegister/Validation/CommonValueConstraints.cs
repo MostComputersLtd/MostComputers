@@ -43,7 +43,8 @@ internal static class CommonValueConstraints
 
     internal static class ProductDocumentConstraints
     {
-        internal const int FileExtensionMaxLength = 9;
+        internal const int FileNameMaxLength = 32;
+        internal const int FileExtensionMaxLength = 10;
         internal const int DescriptionMaxLength = 250;
         internal const int FileDataMaxSizeBytes = 100 * 1024 * 1024;
     }

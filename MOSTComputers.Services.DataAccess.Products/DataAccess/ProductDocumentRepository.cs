@@ -20,7 +20,7 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
     private readonly IConnectionStringProvider _connectionStringProvider;
 
     public ProductDocumentRepository(
-        [FromKeyedServices(ConfigureServices.LocalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
+        [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
@@ -32,6 +32,7 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
             SELECT
                 {IdColumnName},
                 {ProductIdColumnName},
+                {FileExtensionColumnName},
                 {FileNameColumnName},
                 {DescriptionColumnName}
             FROM {ProductDocumentsTableName}
@@ -57,6 +58,7 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
             SELECT TOP 1
                 {IdColumnName},
                 {ProductIdColumnName},
+                {FileExtensionColumnName},
                 {FileNameColumnName},
                 {DescriptionColumnName}
             FROM {ProductDocumentsTableName}
@@ -83,20 +85,16 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
 
             INSERT INTO {ProductDocumentsTableName} (
                 {ProductIdColumnName},
-                {DescriptionColumnName})
-            OUTPUT INSERTED.{IdColumnName} INTO @InsertedIdTable (Id)
-            VALUES (@ProductId, @Description);
-
-            UPDATE pd
-            SET {FileNameColumnName} = CAST({ProductIdColumnName} AS VARCHAR(10)) + '-' + CAST({IdColumnName} AS VARCHAR(10)) + '.' + @FileExtension
-            FROM {ProductDocumentsTableName} pd
-            INNER JOIN @InsertedIdTable insertedIdTable
-            ON insertedIdTable.Id = pd.{IdColumnName};
+                {DescriptionColumnName},
+                {FileExtensionColumnName})
+            OUTPUT INSERTED.{IdColumnName} INTO @InsertedIdTable
+            VALUES (@ProductId, @Description, @FileExtension);
 
             SELECT TOP 1
                 pd.{IdColumnName},
                 {ProductIdColumnName},
                 {FileNameColumnName},
+                {FileExtensionColumnName},
                 {DescriptionColumnName}
             FROM {ProductDocumentsTableName} pd
             INNER JOIN @InsertedIdTable insertedIdTable
@@ -120,7 +118,8 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
-        ProductDocument? productDocument = await dbConnection.ExecuteScalarAsync<ProductDocument>(query, parameters, commandType: CommandType.Text);
+        ProductDocument? productDocument = await dbConnection.QueryFirstOrDefaultAsync<ProductDocument>(
+            query, parameters, commandType: CommandType.Text);
 
         if (productDocument != null)
         {
@@ -130,5 +129,94 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
         }
 
         return new UnexpectedFailureResult();
+    }
+
+    public async Task<OneOf<Success, NotFound>> UpdateAsync(ProductDocumentUpdateRequest updateRequest)
+    {
+        const string updateByIdQuery =
+            $"""
+            UPDATE {ProductDocumentsTableName}
+            SET {DescriptionColumnName} = @Description
+            WHERE {IdColumnName} = @Id;
+            """;
+
+        const string updateByFileNameQuery =
+            $"""
+            UPDATE {ProductDocumentsTableName}
+            SET {DescriptionColumnName} = @Description
+            WHERE {FileNameColumnName} = @FileName;
+            """;
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        int rowsAffected;
+
+        if (updateRequest.IdOrFileName.IsT0)
+        {
+            var parameters = new
+            {
+                Id = updateRequest.IdOrFileName.AsT0,
+                Description = updateRequest.Description,
+            };
+
+            rowsAffected = await dbConnection.ExecuteAsync(updateByIdQuery, parameters, commandType: CommandType.Text);
+        }
+        else
+        {
+            var parameters = new
+            {
+                Id = updateRequest.IdOrFileName.AsT0,
+                Description = updateRequest.Description,
+            };
+
+            rowsAffected = await dbConnection.ExecuteAsync(updateByFileNameQuery, parameters, commandType: CommandType.Text);
+        }
+
+        if (rowsAffected <= 0)
+        {
+            return new NotFound();
+        }
+
+        return new Success();
+    }
+
+    public async Task<OneOf<Success, NotFound>> DeleteAsync(OneOf<int, string> idOrFileName)
+    {
+        const string deleteByIdQuery =
+            $"""
+            DELETE FROM {ProductDocumentsTableName}
+            WHERE {IdColumnName} = @Id;
+            """;
+
+        const string deleteByFileNameQuery =
+            $"""
+            DELETE FROM {ProductDocumentsTableName}
+            WHERE {FileNameColumnName} = @FileName;
+            """;
+
+        if (idOrFileName.IsT0)
+        {
+            var deleteByIdParameters = new
+            {
+                id = idOrFileName.AsT0,
+            };
+
+            using SqlConnection deleteByIdDbConnection = new(_connectionStringProvider.ConnectionString);
+
+            int deleteByIdRowsAffected = await deleteByIdDbConnection.ExecuteAsync(deleteByIdQuery, deleteByIdParameters, commandType: CommandType.Text);
+
+            return deleteByIdRowsAffected > 0 ? new Success() : new NotFound();
+        }
+
+        var deleteByFileNameParameters = new
+        {
+            id = idOrFileName.AsT0,
+        };
+
+        using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
+
+        int rowsAffected = await dbConnection.ExecuteAsync(deleteByFileNameQuery, deleteByFileNameParameters, commandType: CommandType.Text);
+
+        return rowsAffected > 0 ? new Success() : new NotFound();
     }
 }

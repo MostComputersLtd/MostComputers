@@ -10,4 +10,6 @@ public interface IProductDocumentRepository
     Task<List<ProductDocument>> GetAllForProductAsync(int productId);
     Task<ProductDocument?> GetByIdAsync(int id);
     Task<OneOf<ProductDocument, UnexpectedFailureResult>> InsertAsync(ProductDocumentCreateRequest createRequest);
+    Task<OneOf<Success, NotFound>> UpdateAsync(ProductDocumentUpdateRequest updateRequest);
+    Task<OneOf<Success, NotFound>> DeleteAsync(OneOf<int, string> idOrFileName);
 }

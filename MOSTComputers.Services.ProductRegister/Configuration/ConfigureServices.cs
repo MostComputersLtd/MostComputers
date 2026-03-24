@@ -347,6 +347,7 @@ public static class ConfigureServices
         services.AddScoped<IValidator<ServiceProductWorkStatusesUpsertRequest>, ProductWorkStatusesUpsertRequestValidator>();
 
         services.AddScoped<IValidator<ServiceProductDocumentCreateRequest>, ProductDocumentCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceProductDocumentUpdateRequest>, ProductDocumentUpdateRequestValidator>();
 
         services.AddScoped<IValidator<ServiceProductGTINCodeCreateRequest>, ServiceProductGTINCodeCreateRequestValidator>();
         services.AddScoped<IValidator<ServiceProductGTINCodeUpdateRequest>, ServiceProductGTINCodeUpdateRequestValidator>();

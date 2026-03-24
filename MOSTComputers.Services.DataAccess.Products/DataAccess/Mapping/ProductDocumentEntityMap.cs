@@ -9,6 +9,7 @@ internal sealed class ProductDocumentEntityMap : EntityMap<ProductDocument>
     {
         Map(x => x.Id).ToColumn(IdColumnName);
         Map(x => x.ProductId).ToColumn(ProductIdColumnName);
+        Map(x => x.FileExtension).ToColumn(FileExtensionColumnName);
         Map(x => x.FileName).ToColumn(FileNameColumnName);
         Map(x => x.Description).ToColumn(DescriptionColumnName);
     }

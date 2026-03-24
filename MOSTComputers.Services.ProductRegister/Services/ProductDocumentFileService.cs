@@ -10,10 +10,12 @@ using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductDocuments;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
+using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
 using System.Transactions;
 using static MOSTComputers.Utils.OneOf.MappingExtensions;
+using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductDocumentConstraints;
 
 namespace MOSTComputers.Services.ProductRegister.Services;
 internal sealed class ProductDocumentFileService : IProductDocumentFileService
@@ -24,17 +26,20 @@ internal sealed class ProductDocumentFileService : IProductDocumentFileService
     private readonly IProductRepository _productRepository;
     private readonly ILocalFileManagementService _localFileManagementService;
     private readonly IValidator<ServiceProductDocumentCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceProductDocumentUpdateRequest>? _updateRequestValidator;
 
     public ProductDocumentFileService(
         IProductDocumentRepository productDocumentRepository,
         IProductRepository productRepository,
         [FromKeyedServices(ConfigureServices.ProductDocumentLocalFileManagementServiceKey)] ILocalFileManagementService localFileManagementService,
-        IValidator<ServiceProductDocumentCreateRequest>? createRequestValidator = null)
+        IValidator<ServiceProductDocumentCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceProductDocumentUpdateRequest>? updateRequestValidator = null)
     {
         _productDocumentRepository = productDocumentRepository;
         _productRepository = productRepository;
         _localFileManagementService = localFileManagementService;
         _createRequestValidator = createRequestValidator;
+        _updateRequestValidator = updateRequestValidator;
     }
 
     public async Task<List<ProductDocument>> GetAllForProductAsync(int productId)
@@ -71,6 +76,13 @@ internal sealed class ProductDocumentFileService : IProductDocumentFileService
         ServiceProductDocumentCreateRequest createRequest)
     {
         using TransactionScope transactionScope = new(TransactionScopeAsyncFlowOption.Enabled);
+
+        createRequest.FileExtension = createRequest.FileExtension.Trim().ToLowerInvariant();
+
+        if (createRequest.FileExtension.StartsWith('.'))
+        {
+            createRequest.FileExtension = createRequest.FileExtension[1..];
+        }
 
         if (_createRequestValidator != null)
         {
@@ -118,5 +130,41 @@ internal sealed class ProductDocumentFileService : IProductDocumentFileService
         transactionScope.Complete();
 
         return productDocument;
+    }
+
+    public async Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServiceProductDocumentUpdateRequest updateRequest)
+    {
+        if (_updateRequestValidator != null)
+        {
+            ValidationResult validationResult = _updateRequestValidator.Validate(updateRequest);
+
+            if (!validationResult.IsValid)
+            {
+                return validationResult;
+            }
+        }
+
+        ProductDocumentUpdateRequest innerUpdateRequest = new()
+        {
+            IdOrFileName = updateRequest.IdOrFileName,
+            Description = updateRequest.Description,
+        };
+
+        OneOf<Success, NotFound> result = await _productDocumentRepository.UpdateAsync(innerUpdateRequest);
+
+        return result.Map<Success, NotFound, ValidationResult>();
+    }
+
+    public async Task<OneOf<Success, NotFound>> DeleteAsync(OneOf<int, string> idOrFileName)
+    {
+        if (idOrFileName.IsT0 && idOrFileName.AsT0 <= 0) return new NotFound();
+
+        if (idOrFileName.IsT1
+            && (string.IsNullOrWhiteSpace(idOrFileName.AsT1) || idOrFileName.AsT1.Length > FileNameMaxLength))
+        {
+            return new NotFound();
+        }
+
+        return await _productDocumentRepository.DeleteAsync(idOrFileName);
     }
 }

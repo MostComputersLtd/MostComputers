@@ -441,6 +441,7 @@ internal static class TableAndColumnNameUtils
         internal const string IdColumnName = "Id";
         internal const string ProductIdColumnName = "CSTID";
         internal const string FileNameColumnName = "FileName";
+        internal const string FileExtensionColumnName = "FileExtension";
         internal const string DescriptionColumnName = "Description";
     }
 
