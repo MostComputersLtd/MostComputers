@@ -378,6 +378,7 @@ app.MapWarrantyCardXmlEndpoints();
 
 app.MapPdfInvoiceDataEndpoints();
 app.MapPdfWarrantyCardDataWithoutPricesEndpoints();
+app.MapProductDocumentEndpoints();
 
 app.MapProductImageDataEndpoints();
 app.MapProductImageFileDataEndpoints();
