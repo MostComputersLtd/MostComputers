@@ -365,8 +365,15 @@ FodyWeavers.xsd
 # Custom folder for product images
 ProductImages/*
 
+Test_MostXmlImages/*
+Test_MostXmlPromotions/*
+Test_MostXmlGroupPromotions/*
+Test_MostXmlProductDocuments/*
+BrowserOverridesForDebugging/*
+
 # Custom folder for Chrome Headless User Data
 ChromeHeadlessForPdfUserData/**/*
 
 # TEMP folder for product images for testing
 TestImages
+/MOSTComputers.UI.Web.Blazor/MOSTComputers.UI.Web.Blazor/appsettings.json
