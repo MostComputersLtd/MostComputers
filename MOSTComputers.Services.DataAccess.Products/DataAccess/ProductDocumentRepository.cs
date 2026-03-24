@@ -81,6 +81,8 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
     {
         const string query =
             $"""
+            SET ARITHABORT ON;
+
             DECLARE @InsertedIdTable TABLE (Id INT);
 
             INSERT INTO {ProductDocumentsTableName} (
