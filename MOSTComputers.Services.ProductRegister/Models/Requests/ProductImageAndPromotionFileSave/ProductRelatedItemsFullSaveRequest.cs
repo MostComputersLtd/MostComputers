@@ -4,6 +4,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRe
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductDocuments;
 
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
 
@@ -13,6 +14,7 @@ public sealed class ProductRelatedItemsFullSaveRequest
 
     public List<ProductPropertyForProductUpsertRequest> PropertyRequests { get; set; } = new();
     public List<ProductImageAndPromotionFileUpsertRequest> ImageRequests { get; set; } = new();
+    public List<ProductDocumentUpsertRequest> DocumentRequests { get; set; } = new();
     public required string UpsertUserName { get; set; }
 }
 
@@ -78,4 +80,22 @@ public sealed class PromotionProductFileForProductUpsertRequest
     public DateTime? ValidTo { get; init; }
     public required bool Active { get; init; }
     public ServicePromotionProductImageUpsertRequest? UpsertInProductImagesRequest { get; init; }
+}
+
+public sealed class ProductDocumentUpsertRequest
+{
+    public required OneOf<ProductDocumentCreateForProductRequest, ProductDocumentUpdateForProductRequest> Request { get; set; }
+}
+
+public sealed class ProductDocumentCreateForProductRequest
+{
+    public required byte[] FileData { get; set; }
+    public required string FileExtension { get; set; }
+    public string? Description { get; set; }
+}
+
+public sealed class ProductDocumentUpdateForProductRequest
+{
+    public required int ExistingId { get; set; }
+    public string? Description { get; set; }
 }

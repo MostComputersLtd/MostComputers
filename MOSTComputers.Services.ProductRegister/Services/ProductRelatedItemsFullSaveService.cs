@@ -19,6 +19,7 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contract
 using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Configuration;
 using MOSTComputers.Services.ProductRegister.Models.Requests;
+using MOSTComputers.Services.ProductRegister.Models.Requests.ProductDocuments;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductHtml;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
@@ -66,6 +67,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         IPromotionFileService promotionFileService,
         IPromotionProductFileService promotionProductFileService,
         IPromotionProductFileInfoService promotionProductFileInfoService,
+        IProductDocumentFileService productDocumentFileService,
         IProductWorkStatusesWorkflowService productWorkStatusesWorkflowService,
         IProductRepository productRepository,
         IProductToHtmlProductService productToHtmlProductService,
@@ -88,6 +90,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         _promotionFileService = promotionFileService;
         _promotionProductFileService = promotionProductFileService;
         _promotionProductFileInfoService = promotionProductFileInfoService;
+        _productDocumentFileService = productDocumentFileService;
         _productWorkStatusesWorkflowService = productWorkStatusesWorkflowService;
         _productRepository = productRepository;
         _productToHtmlProductService = productToHtmlProductService;
@@ -126,6 +129,7 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private readonly IPromotionFileService _promotionFileService;
     private readonly IPromotionProductFileService _promotionProductFileService;
     private readonly IPromotionProductFileInfoService _promotionProductFileInfoService;
+    private readonly IProductDocumentFileService _productDocumentFileService;
     private readonly IProductWorkStatusesWorkflowService _productWorkStatusesWorkflowService;
     private readonly IProductRepository _productRepository;
     private readonly IProductToHtmlProductService _productToHtmlProductService;
@@ -1090,6 +1094,90 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             }
         }
 
+        // using (TransactionScope documentsTransactionScope = new(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+        // {
+            List<ProductDocument> productDocuments = await _productDocumentFileService.GetAllForProductAsync(product.Id);
+
+            foreach (ProductDocument productDocument in productDocuments)
+            {
+                ProductDocumentUpsertRequest? matchingRequest
+                    = upsertAllRequest.DocumentRequests.Find(x => x.Request.IsT1 && x.Request.AsT1.ExistingId == productDocument.Id);
+
+                if (matchingRequest != null) continue;
+
+                OneOf<Success, NotFound> deleteResult = await _productDocumentFileService.DeleteAsync(productDocument.Id);
+
+                if (!deleteResult.IsT0)
+                {
+                    return LogUnexpectedFailureResult(new UnexpectedFailureResult(), productId, "upserting image file");
+                }
+            }
+
+            for (int i = 0; i < upsertAllRequest.DocumentRequests.Count; i++)
+            {
+                ProductDocumentUpsertRequest productDocumentUpsertRequest = upsertAllRequest.DocumentRequests[i];
+
+                if (productDocumentUpsertRequest.Request.IsT1)
+                {
+                    ProductDocumentUpdateForProductRequest request = productDocumentUpsertRequest.Request.AsT1;
+
+                    ServiceProductDocumentUpdateRequest productDocumentUpdateRequest = new()
+                    {
+                        IdOrFileName = request.ExistingId,
+                        Description = request.Description,
+                    };
+
+                    OneOf<Success, NotFound, ValidationResult> updateDocumentResult
+                        = await _productDocumentFileService.UpdateAsync(productDocumentUpdateRequest);
+
+                    if (!updateDocumentResult.IsT0)
+                    {
+                        return updateDocumentResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                            success => LogUnexpectedFailureResult(new UnexpectedFailureResult(), productId, "updating document record"),
+                            notFound => LogUnexpectedFailureResult(new UnexpectedFailureResult(), productId, "updating document record"),
+                            validationResult =>
+                            {
+                                TransformValidationResultErrorPathsForDocumentRequests(validationResult, productDocumentUpsertRequest, i);
+
+                                return LogValidationResult(validationResult, productId, "updating document record");
+                            });
+                    }
+
+                    continue;
+                }
+
+                ProductDocumentCreateForProductRequest documentCreateRequest = productDocumentUpsertRequest.Request.AsT0;
+
+                ServiceProductDocumentCreateRequest productDocumentCreateRequest = new()
+                {
+                    ProductId = productId,
+                    Description = documentCreateRequest.Description,
+                    FileData = documentCreateRequest.FileData,
+                    FileExtension = documentCreateRequest.FileExtension.ToLower(),
+                };
+
+                OneOf<ProductDocument, ValidationResult, FileAlreadyExistsResult, UnexpectedFailureResult> documentCreateResult
+                    = await _productDocumentFileService.InsertAsync(productDocumentCreateRequest);
+
+                if (!documentCreateResult.IsT0)
+                {
+                    return documentCreateResult.Match<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        productDocument => LogUnexpectedFailureResult(new UnexpectedFailureResult(), productId, "updating document record"),
+                        validationResult =>
+                        {
+                            TransformValidationResultErrorPathsForDocumentRequests(validationResult, productDocumentUpsertRequest, i);
+
+                            return LogValidationResult(validationResult, productId, "updating document record");
+                        },
+                        fileAlreadyExistsResult => LogFileAlreadyExistsResult(fileAlreadyExistsResult, productId, "updating document record"),
+                        unexpectedFailureResult => LogUnexpectedFailureResult(new UnexpectedFailureResult(), productId, "updating document record")
+                    );
+                }
+            }
+
+            // documentsTransactionScope.Complete();
+        // }
+
         OneOf<int?, ValidationResult, UnexpectedFailureResult> upsertProductStatusResult
            = await _productWorkStatusesWorkflowService.UpsertProductNewStatusToGivenStatusIfItsNewAsync(
                productId, ProductNewStatus.WorkInProgress, upsertUserName);
@@ -1597,6 +1685,36 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             x => "AsT1",
             x => "AsT2",
             x => "AsT3");
+    }
+
+    private static void TransformValidationResultErrorPathsForDocumentRequests(
+        ValidationResult validationResult,
+        ProductDocumentUpsertRequest upsertRequest,
+        int requestIndex)
+    {
+        string prefix = GetDocumentRequestValidationErrorPath(upsertRequest, requestIndex);
+
+        TransformValidationResultErrors(validationResult, error =>
+        {
+            error.PropertyName = prefix + error.PropertyName;
+        });
+    }
+
+    private static string GetDocumentRequestValidationErrorPath(ProductDocumentUpsertRequest upsertRequest, int requestIndex)
+    {
+        string requestType = GetDocumentRequestTypeInResultErrorPath(upsertRequest);
+
+        string prefix = $"DocumentRequests[{requestIndex}].Request.{requestType}.";
+
+        return prefix;
+    }
+    
+    private static string GetDocumentRequestTypeInResultErrorPath(ProductDocumentUpsertRequest upsertRequest)
+    {
+        return upsertRequest.Request.Match(
+            x => "AsT0",
+            x => "AsT1"
+        );
     }
 
     private static void PrefixValidationResultErrorPaths(ValidationResult validationResult, string prefix)
