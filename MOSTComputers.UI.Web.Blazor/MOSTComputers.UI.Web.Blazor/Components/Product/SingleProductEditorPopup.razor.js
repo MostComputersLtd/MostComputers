@@ -1,4 +1,35 @@
-﻿export function forceFileInputClick(fileInputElementId)
+﻿const productPropertyInputName = "propertyValueInput";
+const productPropertyInputCheckboxIdPrefix = "propertyValueActiveCheckbox";
+
+document.addEventListener("keydown", function (e) {
+    if (!e.ctrlKey
+        || e.key !== "Enter"
+        || e.target.name != productPropertyInputName) {
+        return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const matchingCheckbox = getMatchingCheckboxFromProductPropertyInput(e.target.id);
+
+    matchingCheckbox.checked = !matchingCheckbox.checked;
+    matchingCheckbox.dispatchEvent(new Event("change", { bubbles: true }));
+});
+
+function getMatchingCheckboxFromProductPropertyInput(inputElementId) {
+    const propertyTypeSeparatorIndex = inputElementId.indexOf('-');
+    const idSeparatorIndex = inputElementId.indexOf('-', propertyTypeSeparatorIndex + 1);
+
+    const propertyType = inputElementId.substring(propertyTypeSeparatorIndex + 1, idSeparatorIndex)
+    const indexAsString = inputElementId.substring(idSeparatorIndex + 1);
+
+    const relatedCheckboxId = productPropertyInputCheckboxIdPrefix + '-' + propertyType + '-' + indexAsString;
+
+    return document.getElementById(relatedCheckboxId);
+}
+
+export function forceFileInputClick(fileInputElementId)
 {
     const fileInputElement = document.getElementById(fileInputElementId);
 
@@ -8,6 +39,11 @@
 export function openDataUrlInNewWindow(url)
 {
     window.open(url, '_blank');
+}
+
+export async function copyTextToClipboard(text)
+{
+    await navigator.clipboard.writeText(text);
 }
 
 export async function changeFileInputDataToImageFromClipboardAndForceChangeEvent(fileInputElementId)

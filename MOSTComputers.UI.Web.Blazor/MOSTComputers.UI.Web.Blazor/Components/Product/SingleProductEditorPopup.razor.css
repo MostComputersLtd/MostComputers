@@ -284,6 +284,9 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     margin-right: 20px;
 }
 
+.property-is-active-td {
+    margin-left: 1em;
+}
 .property-characteristic-td {
     width: 20%;
     padding-right: 20px;

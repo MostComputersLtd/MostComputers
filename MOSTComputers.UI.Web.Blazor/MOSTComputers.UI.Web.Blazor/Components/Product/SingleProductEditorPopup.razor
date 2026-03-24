@@ -16,6 +16,7 @@
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
 @using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Models.Requests
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductDocuments
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
@@ -35,6 +36,7 @@
 @using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
 @using MOSTComputers.UI.Web.Blazor.Services
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
@@ -45,6 +47,7 @@
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
 @using static MOSTComputers.Utils.OneOf.AsyncMatchingExtensions
+@using static MOSTComputers.Utils.Files.FilePathUtils
 
 @inject IProductPropertyService ProductPropertyService
 @inject IProductCharacteristicService ProductCharacteristicService
@@ -359,99 +362,81 @@
                 }
             </div>
 
+            <div style="display: flex;">
+                <p class="me-2">Display all properties:</p>
+
+                <input type="checkbox" checked="@AreAllPropertiesDisplayed" @onchange="OnChangeAllPropertiesDisplayedCheckbox" />
+            </div>
+
             <div class="properties-list-container">
                 <ul class="properties-list">
 
-                    @for (int i = 0; i < ProductProperties.Count; i++)
+                    @if (AreAllPropertiesDisplayed)
                     {
-                        ProductPropertyDisplayData propertyData = ProductProperties[i];
-
-                        <li class="properties-list-item">
-                            <table class="property-table">
-                                <tbody>
-                                    <tr class="property-data-row">
-
-                                        <td class="property-td-alignedOnTop property-characteristic-td">
-                                            <select id="propertyCharacteristicSelect-@i"
-                                                @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductProperties)"
-                                                aria-label="Select property characteristic">
-
-                                                @if (propertyData.ProductCharacteristic is null)
-                                                {
-                                                    <option value="" selected disabled>
-                                                        -- Not selected --
-                                                    </option>
-                                                }
-
-                                                @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
-                                                {
-                                                    <option value="@characteristic.Id"
-                                                        selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
-                                                        @characteristic.Name
-                                                    </option>
-                                                }
-                                            </select>
-                                        </td>
-
-                                        <td class="property-value-td property-td-alignedOnTop">
-                                            <div class="property-value-textarea-container">
-                                                <textarea id="@($"{_propertiesTextAreaCommonName}-properties-{i}")"
-                                                    name="@_propertiesTextAreaCommonName"
-                                                    class="property-value-textarea"
-                                                    @bind-value="propertyData.Value"
-                                                    @bind-value:event="onchange"
-                                                    @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
-                                                    spellcheck="false"
-                                                    aria-label="Value"
-                                                    rows="@_propertiesTextAreaMinRows"
-                                                    maxlength="@_propertiesTextAreaMaxLength"
-                                                    oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
-                                            </div>
-                                        </td>
-
-                                        <td class="property-td-alignedOnTop property-delete-button-td">
-                                            <button class="btn btn-danger"
-                                                @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)"
-                                                aria-label="Delete">
-                                                X
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    @if (propertyData.ValidationMessages.Count > 0)
-                                    {
-                                        <tr>
-                                            <td colspan="1">
-                                            </td>
-                                            <td colspan="4">
-                                                <ValidationMessages Messages="propertyData.ValidationMessages" />
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </li>
-                    }
-                </ul>
-            </div>
-
-            <div class="full-parent-width pb-4 d-flex flex-column">
-
-                <div class="properties-list-container">
-                    <ul class="properties-list">
-
-                        @for (int i = 0; i < ProductLinks.Count; i++)
+                        for (int i = 0; i < ProductProperties.Count; i++)
                         {
-                            ProductPropertyDisplayData propertyData = ProductLinks[i];
+                            ProductPropertyDisplayData propertyData = ProductProperties[i];
 
                             <li class="properties-list-item">
                                 <table class="property-table">
                                     <tbody>
                                         <tr class="property-data-row">
+
+                                            <td class="property-td-alignedOnTop property-is-active-td">
+                                                <input id="@($"propertyValueActiveCheckbox-properties-{i}")"
+                                                    type="checkbox" @bind="propertyData.IsActive" tabindex="-1"/>
+                                            </td>
+
                                             <td class="property-td-alignedOnTop property-characteristic-td">
-                                                <select id="linkCharacteristicSelect-@i"
-                                                        @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductLinks)"
-                                                        aria-label="Select link characteristic">
+                                                <p>@propertyData.ProductCharacteristic?.Name</p>
+                                            </td>
+
+                                            <td class="property-value-td property-td-alignedOnTop">
+                                                <div class="property-value-textarea-container">
+                                                    <textarea id="@($"{_propertiesTextAreaCommonName}-properties-{i}")"
+                                                        name="@_propertiesTextAreaCommonName"
+                                                        class="property-value-textarea"
+                                                        value="@propertyData.Value"
+                                                        @onchange="(e) => OnProductPropertyTextAreaChanged(e, propertyData)"
+                                                        spellcheck="false"
+                                                        aria-label="Value"
+                                                        rows="@_propertiesTextAreaMinRows"
+                                                        maxlength="@_propertiesTextAreaMaxLength"
+                                                        oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        @if (propertyData.ValidationMessages.Count > 0)
+                                        {
+                                            <tr>
+                                                <td colspan="1">
+                                                </td>
+                                                <td colspan="4">
+                                                    <ValidationMessages Messages="propertyData.ValidationMessages" />
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < ProductProperties.Count; i++)
+                        {
+                            ProductPropertyDisplayData propertyData = ProductProperties[i];
+
+                            <li class="properties-list-item">
+                                <table class="property-table">
+                                    <tbody>
+                                        <tr class="property-data-row">
+
+                                            <td class="property-td-alignedOnTop property-characteristic-td">
+                                                <select id="propertyCharacteristicSelect-@i"
+                                                    @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductProperties)"
+                                                    aria-label="Select property characteristic">
 
                                                     @if (propertyData.ProductCharacteristic is null)
                                                     {
@@ -463,7 +448,7 @@
                                                     @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
                                                     {
                                                         <option value="@characteristic.Id"
-                                                                selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
+                                                            selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
                                                             @characteristic.Name
                                                         </option>
                                                     }
@@ -472,11 +457,11 @@
 
                                             <td class="property-value-td property-td-alignedOnTop">
                                                 <div class="property-value-textarea-container">
-                                                    <textarea id="@($"{_propertiesTextAreaCommonName}-links-{i}")" name="@_propertiesTextAreaCommonName"
+                                                    <textarea id="@($"{_propertiesTextAreaCommonName}-properties-{i}")"
+                                                        name="@_propertiesTextAreaCommonName"
                                                         class="property-value-textarea"
-                                                        @bind-value="propertyData.Value"
-                                                        @bind-value:event="onchange"
-                                                        @bind-value:after="() => SetDataChanged(propertyData, ItemChangeState.Updated)"
+                                                        value="@propertyData.Value"
+                                                        @onchange="(e) => OnProductPropertyTextAreaChanged(e, propertyData)"
                                                         spellcheck="false"
                                                         aria-label="Value"
                                                         rows="@_propertiesTextAreaMinRows"
@@ -487,7 +472,8 @@
 
                                             <td class="property-td-alignedOnTop property-delete-button-td">
                                                 <button class="btn btn-danger"
-                                                    @onclick="() => RemoveProductPropertyFromList(propertyData, ProductLinks)">
+                                                    @onclick="() => RemoveProductPropertyFromList(propertyData, ProductProperties)"
+                                                    aria-label="Delete">
                                                     X
                                                 </button>
                                             </td>
@@ -507,6 +493,135 @@
                                 </table>
                             </li>
                         }
+                    }
+                </ul>
+            </div>
+
+            <div class="full-parent-width pb-4 d-flex flex-column">
+
+                <div class="properties-list-container">
+                    <ul class="properties-list">
+                        @if (AreAllPropertiesDisplayed)
+                        {
+                            for (int i = 0; i < ProductLinks.Count; i++)
+                            {
+                                ProductPropertyDisplayData propertyData = ProductLinks[i];
+
+                                <li class="properties-list-item">
+                                    <table class="property-table">
+                                        <tbody>
+                                            <tr class="property-data-row">
+
+                                                <td class="property-td-alignedOnTop property-is-active-td">
+                                                    <input id="@($"propertyValueActiveCheckbox-links-{i}")"
+                                                        type="checkbox" @bind="propertyData.IsActive" tabindex="-1"/>
+                                                </td>
+
+                                                <td class="property-td-alignedOnTop property-characteristic-td">
+                                                    <p>@propertyData.ProductCharacteristic?.Name</p>
+                                                </td>
+
+                                                <td class="property-value-td property-td-alignedOnTop">
+                                                    <div class="property-value-textarea-container">
+                                                        <textarea id="@($"{_propertiesTextAreaCommonName}-links-{i}")"
+                                                            name="@_propertiesTextAreaCommonName"
+                                                            class="property-value-textarea"
+                                                            value="@propertyData.Value"
+                                                            @onchange="(e) => OnProductPropertyTextAreaChanged(e, propertyData)"
+                                                            spellcheck="false"
+                                                            aria-label="Value"
+                                                            rows="@_propertiesTextAreaMinRows"
+                                                            maxlength="@_propertiesTextAreaMaxLength"
+                                                            oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+
+                                                @if (propertyData.ValidationMessages.Count > 0)
+                                                {
+                                                    <tr>
+                                                        <td colspan="1">
+                                                        </td>
+                                                        <td colspan="4">
+                                                            <ValidationMessages Messages="propertyData.ValidationMessages" />
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </li>
+                                }
+                            }
+                            else
+                            {
+                                @for (int i = 0; i < ProductLinks.Count; i++)
+                                {
+                                    ProductPropertyDisplayData propertyData = ProductLinks[i];
+
+                                    <li class="properties-list-item">
+                                        <table class="property-table">
+                                            <tbody>
+                                                <tr class="property-data-row">
+                                                    <td class="property-td-alignedOnTop property-characteristic-td">
+                                                        <select id="linkCharacteristicSelect-@i"
+                                                                @onchange="(e) => UpdateProductPropertyCharacteristicWithSelect(e, propertyData, ProductLinks)"
+                                                                aria-label="Select link characteristic">
+
+                                                            @if (propertyData.ProductCharacteristic is null)
+                                                            {
+                                                                <option value="" selected disabled>
+                                                                    -- Not selected --
+                                                                </option>
+                                                            }
+
+                                                            @foreach (ProductCharacteristic characteristic in propertyData.RemainingCharacteristics)
+                                                            {
+                                                                <option value="@characteristic.Id"
+                                                                        selected="@(propertyData.ProductCharacteristic?.Id == characteristic.Id)">
+                                                                    @characteristic.Name
+                                                                </option>
+                                                            }
+                                                        </select>
+                                                    </td>
+
+                                                    <td class="property-value-td property-td-alignedOnTop">
+                                                    <div class="property-value-textarea-container">
+                                                        <textarea id="@($"{_propertiesTextAreaCommonName}-links-{i}")"
+                                                            name="@_propertiesTextAreaCommonName"
+                                                            class="property-value-textarea"
+                                                            value="@propertyData.Value"
+                                                            @onchange="(e) => OnProductPropertyTextAreaChanged(e, propertyData)"
+                                                            spellcheck="false"
+                                                            aria-label="Value"
+                                                            rows="@_propertiesTextAreaMinRows"
+                                                            maxlength="@_propertiesTextAreaMaxLength"
+                                                            oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight + 1.6) + 'px';" />
+                                                    </div>
+                                                </td>
+
+                                                <td class="property-td-alignedOnTop property-delete-button-td">
+                                                    <button class="btn btn-danger"
+                                                        @onclick="() => RemoveProductPropertyFromList(propertyData, ProductLinks)">
+                                                        X
+                                                    </button>
+                                                </td>
+                                            </tr>
+
+                                            @if (propertyData.ValidationMessages.Count > 0)
+                                            {
+                                                <tr>
+                                                    <td colspan="1">
+                                                    </td>
+                                                    <td colspan="4">
+                                                        <ValidationMessages Messages="propertyData.ValidationMessages" />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </li>
+                            }
+                            }
                     </ul>
                 </div>
             </div>
@@ -530,7 +645,9 @@
                                 <input id="productDocumentDescription-@i"
                                     type="text"
                                     class="product-document-description-input"
-                                    @bind="productDocumentData.CurrentDescription"
+                                    @bind-value="productDocumentData.CurrentDescription"
+                                    @bind-value:event="onchange"
+                                    @bind-value:after="() => SetDataChanged(productDocumentData, ItemChangeState.Updated)"
                                     aria-label="Description"
                                     placeholder="Description (optional)" />
 
@@ -541,7 +658,8 @@
 
                                 @if (document != null)
                                 {
-                                    <button type="button" class="btn btn-secondary product-document-copy-url-button">Copy Url</button>
+                                    <button type="button" class="btn btn-secondary product-document-copy-url-button"
+                                        @onclick="() => CopyProductDocumentUrlToClipboard(document)">Copy Url</button>
                                 }
 
                                 <button class="btn btn-danger"
@@ -655,14 +773,7 @@
     @if (_productDocumentPopupData != null)
     {
         Product product = _productDocumentPopupData.Product;
-        ProductDocumentDisplayData productDocumentData = _productDocumentPopupData.ProductDocumentDisplayData;
-
-        string? fileDataBase64String = null;
-
-        if (productDocumentData.FileData.IsT0)
-        {
-            fileDataBase64String = Convert.ToBase64String(productDocumentData.FileData.AsT0);
-        }
+        ProductDocumentDisplayData productDocumentData = _productDocumentPopupData.ProductDocumentDisplayData; 
 
         <Popup @bind-IsVisible='@IsProductDocumentPopupVisible'
             PopupMarginOptions='new() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" }'
@@ -688,9 +799,18 @@
 
             <ChildContent>
                 <div class="product-document-pdf-display-container">
-                    @if (fileDataBase64String != null)
+                    @if (productDocumentData.ExistingDocument != null)
                     {
-                        <iframe id="productDocumentPdfDisplay" class="product-document-pdf-display" src="data:application/pdf;base64,@fileDataBase64String"></iframe>
+
+                        <iframe id="productDocumentPdfDisplay" class="product-document-pdf-display"
+                            src="@(ProductDocumentEndpoints.EndpointGroupRoute + productDocumentData.ExistingDocument.Id.ToString())"></iframe> 
+                    }
+                    else if (productDocumentData.FileData.IsT0)
+                    {
+                        string? fileDataBase64String = Convert.ToBase64String(productDocumentData.FileData.AsT0);
+
+                        <iframe id="productDocumentPdfDisplay" class="product-document-pdf-display"
+                            src="data:application/pdf;base64,@fileDataBase64String"></iframe>
                     }
                     else
                     {
@@ -778,6 +898,7 @@
         public string? Value { get; set; }
         public required List<ProductCharacteristic> RemainingCharacteristics { get; set; }
 
+        public bool IsActive { get; set; } = true;
         public List<string> ValidationMessages { get; set; } = new();
     }
 
@@ -788,6 +909,9 @@
         public ProductDocument? ExistingDocument { get; set; } = null;
         public string? CurrentDescription { get; set; } = string.Empty;
         public required OneOf<byte[], InvalidProductFileResult> FileData { get; set; }
+        public required string FileExtension { get; set; }
+
+        public List<string> ValidationMessages { get; set; } = new();
     }
 
     private enum ItemChangeState
@@ -884,6 +1008,40 @@
 
     private List<ProductNewStatus> ProductNewStatusesInSelect = new(DefaultProductNewStatusesInSelect);
 
+    private bool AreAllPropertiesDisplayed { get; set; } = true;
+
+    private void OnChangeAllPropertiesDisplayedCheckbox(ChangeEventArgs eventArgs)
+    {
+        bool areAllPropertiesVisible = (bool?)eventArgs.Value ?? false;
+
+        List<ProductCharacteristic> neededCharacteristics
+            = RelatedProductCharacteristics.Where(x => x.KWPrCh == ProductCharacteristicType.ProductCharacteristic)
+            .ToList();
+
+        List<ProductCharacteristic> neededLinkCharacteristics
+            = RelatedProductCharacteristics.Where(x => x.KWPrCh == ProductCharacteristicType.Link)
+            .ToList();
+
+        AddOrRemovePropertiesBasedOnWhichAreVisible(areAllPropertiesVisible, ProductProperties, neededCharacteristics);
+        AddOrRemovePropertiesBasedOnWhichAreVisible(areAllPropertiesVisible, ProductLinks, neededLinkCharacteristics);
+
+        Task _ = ResizeTextAreasWithDelayAsync();
+
+        AreAllPropertiesDisplayed = areAllPropertiesVisible;
+    } 
+
+    private async Task ResizeTextAreasWithDelayAsync()
+    {
+        if (_jsModule is not null)
+        {
+            await Task.Delay(50);
+
+            await _jsModule.InvokeVoidAsync("resizeTextareasToColumnText", _propertiesTextAreaCommonName, _propertiesTextAreaMinRows);
+
+            StateHasChanged();
+        }
+    }
+
     private bool IsProductDataPopupVisible { get; set; } = false;
     private ProductDataPopupData? _productDataPopupData = null;
 
@@ -916,6 +1074,8 @@
     private Dictionary<ProductPropertyDisplayData, ItemChangeState> _changedProperties = new();
     private Dictionary<ProductImageListItemDisplayData, ItemChangeState> _changedImages = new();
     private Dictionary<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData, ItemChangeState> _changedPromotionFiles = new();
+    private Dictionary<ProductDocumentDisplayData, ItemChangeState> _changedDocuments { get; set; } = new();
+
     private ProductNewStatus? _currentProductNewStatus { get; set; }
 
     [Parameter] public EventCallback OnSaveSuccessful { get; set; }
@@ -977,6 +1137,7 @@
         return (_changedProperties.Count > 0)
             || (_changedImages.Count > 0)
             || (_changedPromotionFiles.Count > 0)
+            || (_changedDocuments.Count > 0)
             || (_currentProductNewStatus != ProductStatuses?.ProductNewStatus);
     }
 
@@ -993,6 +1154,11 @@
     private void SetDataChanged(PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileDisplayData, ItemChangeState itemChangeState)
     {
         SetDataChanged(_changedPromotionFiles, promotionProductFileDisplayData, itemChangeState);
+    }
+
+    private void SetDataChanged(ProductDocumentDisplayData productDocumentDisplayData, ItemChangeState itemChangeState)
+    {
+        SetDataChanged(_changedDocuments, productDocumentDisplayData, itemChangeState);
     }
 
     private void SetDataChanged<T>(Dictionary<T, ItemChangeState> changedItems, T changedItem, ItemChangeState itemChangeState)
@@ -1045,6 +1211,7 @@
         _changedProperties.Clear();
         _changedImages.Clear();
         _changedPromotionFiles.Clear();
+        _changedDocuments.Clear();
 
         List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(Product.Id);
 
@@ -1153,7 +1320,14 @@
 
         List<ProductDocument> productDocuments = await ProductDocumentFileService.GetAllForProductAsync(Product.Id);
 
-        ProductDocuments ??= new();
+        if (ProductDocuments == null)
+        {
+            ProductDocuments = new();
+        }
+        else if (ProductDocuments.Count > 0)
+        {
+            ProductDocuments.Clear();
+        }
 
         foreach (ProductDocument productDocument in productDocuments)
         {
@@ -1173,6 +1347,7 @@
                 ExistingDocument = productDocument,
                 CurrentDescription = productDocument.Description ?? string.Empty,
                 FileData = fileData != null ? fileData : new InvalidProductFileResult(),
+                FileExtension = ".pdf",
             };
 
             ProductDocuments.Add(productDocumentDisplayData);
@@ -1205,6 +1380,7 @@
         _changedProperties.Clear();
         _changedImages.Clear();
         _changedPromotionFiles.Clear();
+        _changedDocuments.Clear();
     }
 
     private async Task<byte[]?> GetImageDataFromListItemAsync(ProductImageListItemDisplayData imageListItem)
@@ -1775,6 +1951,13 @@
         await _jsModule.InvokeVoidAsync("openDataUrlInNewWindow", dataUrl);
     }
 
+    private async Task CopyTextToClipboard(string text)
+    {
+        if (_jsModule is null) return;
+
+        await _jsModule.InvokeVoidAsync("copyTextToClipboard", text);
+    }
+
     private void OnImageItemDragStart(ProductImageListItemDisplayData draggedItem)
     {
         _draggedImageListItem = draggedItem;
@@ -2009,6 +2192,20 @@
         }
     }
 
+    private void OnProductPropertyTextAreaChanged(ChangeEventArgs eventArgs, ProductPropertyDisplayData propertyData)
+    {
+        string? value = eventArgs.Value?.ToString();
+
+        if (string.IsNullOrEmpty(propertyData.Value) && !string.IsNullOrEmpty(value))
+        {
+            propertyData.IsActive = true;
+        }
+
+        propertyData.Value = value;
+
+        SetDataChanged(propertyData, ItemChangeState.Updated);
+    }
+
     private void RemoveProductPropertyFromList(
         ProductPropertyDisplayData productPropertyDisplayData,
         List<ProductPropertyDisplayData> productPropertyDisplayDataList)
@@ -2054,18 +2251,35 @@
             ExistingDocument = null,
             CurrentDescription = string.Empty,
             FileData = fileData,
+            FileExtension = ".pdf",
         };
 
         ProductDocuments ??= new();
 
         ProductDocuments.Add(productDocumentDisplayData);
+
+        SetDataChanged(productDocumentDisplayData, ItemChangeState.Added);
     }
 
+    private async Task CopyProductDocumentUrlToClipboard(ProductDocument productDocument)
+    {
+        string url = CombinePathsWithSeparator(
+            '/', NavigationManager.BaseUri, ProductDocumentEndpoints.EndpointGroupRoute, productDocument.Id.ToString());
+
+        await CopyTextToClipboard(url);
+    }
+    
     private bool RemoveProductDocument(ProductDocumentDisplayData productDocumentDisplayData)
     {
         if (ProductDocuments == null) return false;
 
-        return ProductDocuments.Remove(productDocumentDisplayData);
+        bool success = ProductDocuments.Remove(productDocumentDisplayData);
+        
+        if (!success) return false;
+
+        SetDataChanged(productDocumentDisplayData, ItemChangeState.Deleted);
+
+        return true;
     }
 
     private async Task SaveChangesAndCloseIsDataChangedPopupAsync()
@@ -2113,6 +2327,12 @@
 
             propertiesAndLinks.AddRange(ProductLinks);
 
+            if (AreAllPropertiesDisplayed)
+            {
+                propertiesAndLinks = propertiesAndLinks.Where(x => x.IsActive)
+                    .ToList();
+            }
+
             List<ProductImageListItemDisplayData> productImagesAndPromotionFiles = new(ProductImages);
 
             foreach (PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileDisplayData in PromotionProductFilesInEditor)
@@ -2129,7 +2349,9 @@
 
                 productImagesAndPromotionFiles.Add(newImageListItem);
             }
-            bool updateImagesSuccess = await SaveAllAsync(propertiesAndLinks, productImagesAndPromotionFiles, currentUserName);
+            List<ProductDocumentDisplayData> documentDatas = ProductDocuments ?? new();
+
+            bool updateImagesSuccess = await SaveAllAsync(propertiesAndLinks, productImagesAndPromotionFiles, documentDatas, currentUserName);
 
             if (!updateImagesSuccess) return;
         }
@@ -2142,6 +2364,7 @@
     private async Task<bool> SaveAllAsync(
         List<ProductPropertyDisplayData> propertyDatas,
         List<ProductImageListItemDisplayData> imageDatas,
+        List<ProductDocumentDisplayData> documentDatas,
         string currentUserName)
     {
         ProductRelatedItemsFullSaveRequest upsertAllImagesAndPromotionFilesRequest = new()
@@ -2158,12 +2381,15 @@
 
         upsertAllImagesAndPromotionFilesRequest.ImageRequests = getImageRequestsResult.AsT0;
 
+        upsertAllImagesAndPromotionFilesRequest.DocumentRequests = GetDocumentCreateRequests(documentDatas);
+
         OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
             = await ProductRelatedItemsFullSaveService.SaveProductRelatedItemsAsync(upsertAllImagesAndPromotionFilesRequest);
 
         ProductProperties.ForEach(x => x.ValidationMessages.Clear());
         ProductLinks.ForEach(x => x.ValidationMessages.Clear());
         ProductImages.ForEach(x => x.ValidationMessages.Clear());
+        ProductDocuments?.ForEach(x => x.ValidationMessages.Clear());
 
         return await result.MatchAsync(
             async success =>
@@ -2171,6 +2397,7 @@
                 _changedProperties.Clear();
                 _changedImages.Clear();
                 _changedPromotionFiles.Clear();
+                _changedDocuments.Clear();
 
                 if (OnSaveSuccessful.HasDelegate)
                 {
@@ -2186,6 +2413,7 @@
                 const char endIndexCharacter = ']';
                 const string propertyRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.PropertyRequests)}[";
                 const string imageRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.ImageRequests)}[";
+                const string documentRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.DocumentRequests)}[";
 
                 foreach (ValidationFailure validationFailure in validationResult.Errors)
                 {
@@ -2205,8 +2433,7 @@
                             }
                         }
                     }
-
-                    if (validationFailure.PropertyName.StartsWith(imageRequestsStartString))
+                    else if (validationFailure.PropertyName.StartsWith(imageRequestsStartString))
                     {
                         int startIndexOfImageIndex = imageRequestsStartString.Length;
 
@@ -2219,6 +2446,22 @@
                             if (int.TryParse(imageIndexAsString, out int imageIndex))
                             {
                                 imageDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
+                            }
+                        }
+                    }
+                    else if (validationFailure.PropertyName.StartsWith(documentRequestsStartString))
+                    {
+                        int startIndexOfDocumentIndex = imageRequestsStartString.Length;
+
+                        int indexOfEndOfDocumentIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfDocumentIndex);
+
+                        if (indexOfEndOfDocumentIndex > 0)
+                        {
+                            string documentIndexAsString = validationFailure.PropertyName.Substring(startIndexOfDocumentIndex, indexOfEndOfDocumentIndex - startIndexOfDocumentIndex);
+
+                            if (int.TryParse(documentIndexAsString, out int imageIndex))
+                            {
+                                documentDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
                             }
                         }
                     }
@@ -2499,8 +2742,114 @@
             propertyEditorDataList.Add(propertyEditorData);
         }
 
+        AddOrRemovePropertiesBasedOnWhichAreVisible(AreAllPropertiesDisplayed, propertyEditorDataList, productCharacteristics);
+
         return propertyEditorDataList;
     }
+
+    private void AddOrRemovePropertiesBasedOnWhichAreVisible(
+        bool areAllPropertiesVisible,
+        List<ProductPropertyDisplayData> properties,
+        List<ProductCharacteristic> characteristics)
+    {
+        if (areAllPropertiesVisible)
+        {
+            IEnumerable<int> propertyCharacteristicIds = properties
+                .Where(property => property.ProductCharacteristic is not null)
+                .Select(property => property.ProductCharacteristic!.Id);
+
+            for (int i = 0; i < characteristics.Count; i++)
+            {
+                ProductCharacteristic productCharacteristic = characteristics[i];
+
+                ProductPropertyDisplayData? propertyData = properties.Find(
+                    x => x.ProductCharacteristic?.Id == productCharacteristic.Id);
+
+                IEnumerable<int> propertyCharacteristicIdsToExclude = propertyCharacteristicIds
+                    .Where(productPropertyId => productPropertyId != productCharacteristic.Id);
+
+                if (propertyData == null)
+                {
+                    propertyData = new()
+                    {
+                        IsActive = false,
+                        ProductCharacteristic = productCharacteristic,
+                        RemainingCharacteristics = GetDifferentCharacteristics(characteristics, propertyCharacteristicIdsToExclude),
+                        DisplayOrder = null,
+                        Value = null,
+                    };
+
+                    properties.Add(propertyData);
+                }
+            }
+            
+            properties.Sort((property1, property2) =>
+            {
+                return (property1.ProductCharacteristic?.DisplayOrder ?? 0) - (property2.ProductCharacteristic?.DisplayOrder ?? 0);
+            });
+        }
+        else
+        {
+            properties.RemoveAll(x => !x.IsActive);
+
+            properties.Sort((property1, property2) =>
+            {
+                return (property1.DisplayOrder ?? 0) - (property2.DisplayOrder ?? 0);
+            });
+        }
+    }
+    private List<ProductDocumentUpsertRequest> GetDocumentCreateRequests(List<ProductDocumentDisplayData> documentDisplayDatas)
+    {
+        List<ProductDocumentUpsertRequest> output = new();
+
+        if (documentDisplayDatas.Count == 0) return output;
+
+        foreach (ProductDocumentDisplayData productDocumentData in documentDisplayDatas)
+        {
+            ProductDocumentUpsertRequest upsertRequest;
+
+            string? newDescription = productDocumentData.CurrentDescription?.Trim();
+
+            if (newDescription == string.Empty)
+            {
+                newDescription = null;
+            }
+
+            if (productDocumentData.ExistingDocument != null)
+            {
+                ProductDocumentUpdateForProductRequest documentUpdateRequest = new()
+                {
+                    ExistingId = productDocumentData.ExistingDocument.Id,
+                    Description = newDescription,
+                };
+
+                upsertRequest = new()
+                {
+                    Request = documentUpdateRequest,
+                };
+
+                output.Add(upsertRequest);
+
+                continue;
+            }
+
+            ProductDocumentCreateForProductRequest documentCreateRequest = new()
+            {
+                FileData = productDocumentData.FileData.IsT0 ? productDocumentData.FileData.AsT0 : Array.Empty<byte>(),
+                FileExtension = productDocumentData.FileExtension,
+                Description = newDescription,
+            };
+
+            upsertRequest = new()
+            {
+                Request = documentCreateRequest,
+            };
+
+            output.Add(upsertRequest);
+        }
+
+        return output;
+    }    
 
     public List<ProductCharacteristic> GetDifferentCharacteristics(
         IEnumerable<ProductCharacteristic> characteristics,
