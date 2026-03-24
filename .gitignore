@@ -376,4 +376,3 @@ ChromeHeadlessForPdfUserData/**/*
 
 # TEMP folder for product images for testing
 TestImages
-/MOSTComputers.UI.Web.Blazor/MOSTComputers.UI.Web.Blazor/appsettings.json
