@@ -49,3 +49,13 @@
         background-color: #F7B9B9;
         border-color: #F7B9B9;
     }
+
+.product-html-container {
+    overflow-y: auto;
+}
+
+::deep .product-html-container p > b {
+    overflow-wrap: anywhere;
+    white-space-collapse: break-spaces;
+    text-wrap-mode: wrap;
+}

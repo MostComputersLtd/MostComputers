@@ -172,6 +172,8 @@
 }
 
 .product-full-popup-props-section-item-value-text {
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space-collapse: break-spaces;
+    text-wrap-mode: wrap;
     text-indent: -0px !important;
 }

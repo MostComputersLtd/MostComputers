@@ -1,6 +1,6 @@
 ﻿@using MOSTComputers.Models.Product.Models
 
-<div class="d-flex flex-column full-parent-width full-parent-height">
+<div class="d-flex flex-column full-parent-width full-parent-height pb-2">
 
     <table id="propertiesDisplay_ul" class="full-parent-width bg-white table-with-all-borders table-with-small-horizontal-padding-on-cells">
 
@@ -26,7 +26,7 @@
                         <td>@productProperty.ProductCharacteristicId</td>
                         <td>@productProperty.DisplayOrder</td>
                         <td>@productProperty.Characteristic</td>
-                        <td>@productProperty.Value</td>
+                        <td class="property-value">@productProperty.Value</td>
                     </tr>
                 }
             }
