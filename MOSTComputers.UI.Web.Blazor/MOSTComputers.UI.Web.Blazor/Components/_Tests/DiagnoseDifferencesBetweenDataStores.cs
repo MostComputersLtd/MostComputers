@@ -2,13 +2,9 @@
 using MOSTComputers.Models.Product.Models.ExternalXmlImport;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.Legacy;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.Legacy.Contracts;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
-using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.Legacy.Contracts;
-using MOSTComputers.Services.ProductRegister.Models.Requests.ProductHtml;
 using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
@@ -192,6 +188,8 @@ public sealed class DiagnoseDifferencesBetweenDataStores
         LegacyXmlProduct? legacyXmlProduct,
         List<ProductCharacteristicAndExternalXmlDataRelation>? legacyXmlRelations)
     {
+        if (dataSources.Length < 2) return 0;
+
         int propsToUseCount = productProperties?.Count ?? 0;
         int htmlPropsToUseCount = legacyHtmlProduct?.Properties?.Count ?? 0;
         int legacyXmlPropsToUseCount = legacyXmlProduct?.Properties?.Count ?? 0;
@@ -238,95 +236,145 @@ public sealed class DiagnoseDifferencesBetweenDataStores
             return maxDataSourceCount;
         }
 
-        if (dataSources.Contains(DataSource.ProductProperties))
+        if (dataSources.Contains(DataSource.ProductProperties) && productProperties != null)
         {
-            List<LegacyHtmlProductProperty>? htmlProperties = legacyHtmlProduct?.Properties is not null ? new(legacyHtmlProduct.Properties) : null;
-            List<LegacyXmlProductProperty>? xmlProperties = legacyXmlProduct?.Properties is not null ? new(legacyXmlProduct.Properties) : null;
-
             int deviationsInHtml = 0;
             int deviationsInXml = 0;
 
-            foreach (ProductProperty property in productProperties!)
+            if (dataSources.Contains(DataSource.HtmlProductInImagesOrImagesAll) && legacyHtmlProduct != null)
             {
-                bool matchInHtml = false;
-
-                if (dataSources.Contains(DataSource.HtmlProductInImagesOrImagesAll) && htmlProperties != null)
-                {
-                    for (int i = 0; i < htmlProperties.Count; i++)
-                    {
-                        LegacyHtmlProductProperty htmlProp = htmlProperties[i];
-
-                        if (htmlProp.Name == property.Characteristic)
-                        {
-                            matchInHtml = true;
-                        }
-                        else if (property.ProductCharacteristicId == _defaultLinkCharacteristicId
-                            && legacyHtmlProduct!.VendorUrl is not null)
-                        {
-                            matchInHtml = true;
-                        }
-
-                        if (matchInHtml)
-                        {
-                            htmlProperties.RemoveAt(i);
-                            break;
-                        }
-                    }
-
-                    if (!matchInHtml)
-                    {
-                        deviationsInHtml++;
-                    }
-                }
-
-                if (dataSources.Contains(DataSource.LegacyXmlProduct) && xmlProperties != null)
-                {
-                    bool matchInXml = false;
-
-                    for (int i = 0; i < xmlProperties.Count; i++)
-                    {
-                        LegacyXmlProductProperty xmlProp = xmlProperties[i];
-
-                        int? xmlPropOrder = int.TryParse(xmlProp.Order, out int order) ? order : null;
-
-                        if (xmlProp.Name == property.Characteristic
-                            || legacyXmlRelations?.FirstOrDefault(x => x.XmlName == xmlProp.Name && x.XmlDisplayOrder == xmlPropOrder) is not null)
-                        {
-                            matchInXml = true;
-                        }
-                        else if (property.ProductCharacteristicId == _defaultLinkCharacteristicId
-                            && legacyXmlProduct!.VendorUrl is not null)
-                        {
-                            matchInXml = true;
-                        }
-
-                        if (matchInXml)
-                        {
-                            xmlProperties.RemoveAt(i);
-                            break;
-                        }
-                    }
-
-                    if (!matchInXml)
-                    {
-                        deviationsInXml++;
-                    }
-                }
+                deviationsInHtml = ComparePropertiesAndHtml(productProperties, legacyHtmlProduct);
             }
 
-            deviationsInHtml += htmlProperties?.Count ?? 0;
-            deviationsInXml += xmlProperties?.Count ?? 0;
+            if (dataSources.Contains(DataSource.LegacyXmlProduct) && legacyXmlProduct != null)
+            {
+                deviationsInXml = ComparePropertiesAndXml(
+                    productProperties, legacyXmlProduct, legacyXmlRelations);
+            }
+
 
             return deviationsInHtml > deviationsInXml ? deviationsInHtml : deviationsInXml;
         }
 
+        return CompareXmlToHtml(legacyHtmlProduct!, legacyXmlProduct!);
+    }
+
+    private static int ComparePropertiesAndHtml(
+        List<ProductProperty> productProperties,
+        LegacyHtmlProduct legacyHtmlProduct)
+    {
+        int deviationsInHtml = 0;
+
+        List<LegacyHtmlProductProperty>? htmlProperties
+            = legacyHtmlProduct?.Properties is not null ? new(legacyHtmlProduct.Properties) : null;
+
+        if (htmlProperties == null) return productProperties.Count;
+
+        foreach (ProductProperty property in productProperties!)
+        {
+            bool matchInHtml = false;
+
+            if (property.ProductCharacteristicId == _defaultLinkCharacteristicId
+                && legacyHtmlProduct!.VendorUrl is not null)
+            {
+                continue;
+            }
+
+            for (int i = 0; i < htmlProperties.Count; i++)
+            {
+                LegacyHtmlProductProperty htmlProp = htmlProperties[i];
+
+                if (htmlProp.Name == property.Characteristic)
+                {
+                    matchInHtml = true;
+                }
+
+                if (matchInHtml)
+                {
+                    htmlProperties.RemoveAt(i);
+                    break;
+                }
+            }
+
+            if (!matchInHtml)
+            {
+                deviationsInHtml++;
+            }
+        }
+
+        deviationsInHtml += htmlProperties?.Count ?? 0;
+
+        return deviationsInHtml;
+    }
+
+    private static int ComparePropertiesAndXml(
+        List<ProductProperty> productProperties,
+        LegacyXmlProduct legacyXmlProduct,
+        List<ProductCharacteristicAndExternalXmlDataRelation>? legacyXmlRelations)
+    {
+        int deviationsInXml = 0;
+
+        List<LegacyXmlProductProperty>? xmlProperties
+            = legacyXmlProduct?.Properties is not null ? new(legacyXmlProduct.Properties) : null;
+
+        if (xmlProperties == null) return productProperties.Count;
+
+        foreach (ProductProperty property in productProperties!)
+        {
+            bool matchInXml = false;
+
+            if (property.ProductCharacteristicId == _defaultLinkCharacteristicId
+                && legacyXmlProduct!.VendorUrl is not null)
+            {
+                continue;
+            }
+
+            for (int i = 0; i < xmlProperties.Count; i++)
+            {
+                LegacyXmlProductProperty xmlProp = xmlProperties[i];
+
+                int? xmlPropOrder = int.TryParse(xmlProp.Order, out int order) ? order : null;
+
+                ProductCharacteristicAndExternalXmlDataRelation? relatedXmlRelation
+                    = legacyXmlRelations?.FirstOrDefault(x =>
+                        x.ProductCharacteristicId == property.ProductCharacteristicId
+                        && x.XmlName == xmlProp.Name
+                        && x.XmlDisplayOrder == xmlPropOrder);
+
+                if (xmlProp.Name == property.Characteristic
+                    || relatedXmlRelation is not null)
+                {
+                    matchInXml = true;
+                }
+
+                if (matchInXml)
+                {
+                    xmlProperties.RemoveAt(i);
+                    break;
+                }
+            }
+
+            if (!matchInXml)
+            {
+                deviationsInXml++;
+            }
+        }
+
+        deviationsInXml += xmlProperties?.Count ?? 0;
+
+        return deviationsInXml;
+    }
+
+
+    private static int CompareXmlToHtml(LegacyHtmlProduct legacyHtmlProduct, LegacyXmlProduct legacyXmlProduct)
+    {
         int totalDeviationsBetweenSources = 0;
 
-        List<LegacyXmlProductProperty>? xmlPropertiesLast = new(legacyXmlProduct!.Properties);
+        List<LegacyXmlProductProperty>? xmlPropertiesList = new(legacyXmlProduct!.Properties);
 
-        foreach (LegacyHtmlProductProperty htmlProp in legacyHtmlProduct!.Properties!)
+        foreach (LegacyHtmlProductProperty htmlProperty in legacyHtmlProduct!.Properties!)
         {
-            LegacyXmlProductProperty? matchingXmlProperty = xmlPropertiesLast.FirstOrDefault(x => x.Name == htmlProp.Name);
+            LegacyXmlProductProperty? matchingXmlProperty = xmlPropertiesList.FirstOrDefault(x => x.Name == htmlProperty.Name);
 
             if (matchingXmlProperty == null)
             {

@@ -2625,7 +2625,7 @@
                     {
                         matchingCharacteristic = productCharacteristics.FirstOrDefault(
                             productCharacteristic => productCharacteristic.Name is not null 
-                                && productCharacteristic.Name.Equals(xmlProperty.Name, StringComparison.Ordinal));
+                                && productCharacteristic.Name == xmlProperty.Name);
                     }
 
                     if (matchingCharacteristic is null)
