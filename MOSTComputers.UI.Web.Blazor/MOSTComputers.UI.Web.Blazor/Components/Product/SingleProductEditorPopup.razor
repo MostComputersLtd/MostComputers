@@ -1495,7 +1495,11 @@
 
         foreach (ProductPropertyDisplayData productProperty in ProductProperties)
         {
-            if (productProperty.ProductCharacteristic is null) continue;
+            if (productProperty.ProductCharacteristic is null
+                || !productProperty.IsActive)
+            {
+                continue;
+            }
 
             ProductData.ProductPropertyDisplayData displayData = new ()
             {
@@ -1595,6 +1599,8 @@
         List<ProductPropertyDisplayData> propertiesAndLinks = new(ProductProperties);
 
         propertiesAndLinks.AddRange(ProductLinks);
+
+        propertiesAndLinks = propertiesAndLinks.Where(x => x.IsActive).ToList();
 
         OneOf<string, InvalidXmlResult> getProductHtmlResult = GetProductHtmlFromCurrentEditorData(propertiesAndLinks);
 
@@ -2050,6 +2056,8 @@
 
     private void AddProductProperty(int? characteristicId = null)
     {
+        if (AreAllPropertiesDisplayed) return;
+
         IEnumerable<int> propertyCharacteristicIdsToExclude = ProductProperties
             .Where(property => property.ProductCharacteristic is not null)
             .Select(property => property.ProductCharacteristic!.Id);
@@ -2073,6 +2081,8 @@
 
     private void AddProductLink(int? characteristicId = null)
     {
+        if (AreAllPropertiesDisplayed) return;
+        
         IEnumerable<int> propertyCharacteristicIdsToExclude = ProductLinks
             .Where(property => property.ProductCharacteristic is not null)
             .Select(property => property.ProductCharacteristic!.Id);
@@ -2086,7 +2096,8 @@
 
         if (productPropertyDisplayData.ProductCharacteristic is not null)
         {
-            RemoveNewCharacteristicFromAllOtherProperties(productPropertyDisplayData.ProductCharacteristic, productPropertyDisplayData, ProductLinks);
+            RemoveNewCharacteristicFromAllOtherProperties(
+                productPropertyDisplayData.ProductCharacteristic, productPropertyDisplayData, ProductLinks);
         }
 
         ProductLinks.Add(productPropertyDisplayData);
