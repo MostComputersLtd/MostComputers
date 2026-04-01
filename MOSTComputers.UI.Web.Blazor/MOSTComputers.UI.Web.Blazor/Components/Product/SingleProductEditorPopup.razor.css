@@ -305,6 +305,7 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 
 .product-document-list-item {
     display: flex;
+    margin-bottom: 0.75em;
 }
 
 .product-document-file-name-text {
