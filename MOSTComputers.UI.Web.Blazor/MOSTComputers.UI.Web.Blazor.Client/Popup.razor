@@ -8,53 +8,105 @@
     AdditionalFooterAttributes.TryGetValue("class", out object? footerAdditionalClasses);
 }
 
-@* <div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="CloseAsync"> *@
-    @* <div class="popup-content" *@
-<dialog id="@_popupId" class="popup-dialog" closedBy="any"
-    style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
-        margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);">
-    <div class="popup-content"
-        style="width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
-            height: calc(100vh - @PopupMarginOptions.Top - @PopupMarginOptions.Bottom);"
-         @onclick:stopPropagation>
+@if (IsRenderedInteractively)
+{
+    @* <div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="CloseAsync"> *@
+        @* <div class="popup-content" *@
+    <dialog id="@PopupId" class="popup-dialog" closedBy="any"
+        style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
+            margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);">
+        <div class="popup-content"
+            style="width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
+                height: calc(100vh - @PopupMarginOptions.Top - @PopupMarginOptions.Bottom);"
+             @onclick:stopPropagation>
 
-        @if (DisplayHeader)
-        {
-            <div @attributes='AdditionalHeaderAttributes' class='popup-header @headerAdditionalClasses'>
-                <div class="popup-header-content">
-                    @if (HeaderContent is not null)
-                    {
-                        @HeaderContent(new PopupContext(this))
-                    }
-                </div>
-
-                @if (AddFullScreenButtonToHeader)
-                {
-                    <PopupFullScreenButton PopupContext="new PopupContext(this)" />
-				}
-
-                <button class="btn-close popup-close-button ms-2" @onclick="OnButtonCloseAsync"></button>
-            </div>
-        }
-
-        <div @attributes='AdditionalBodyAttributes' class="popup-body @bodyAdditionalClasses">
-
-            @if (ChildContent is not null)
+            @if (DisplayHeader)
             {
-                @ChildContent(new PopupContext(this))
+                <div @attributes='AdditionalHeaderAttributes' class='popup-header @headerAdditionalClasses'>
+                    <div class="popup-header-content">
+                        @if (HeaderContent is not null)
+                        {
+                            @HeaderContent(new PopupContext(this))
+                        }
+                    </div>
+
+                    @if (AddFullScreenButtonToHeader)
+                    {
+                        <PopupFullScreenButton PopupContext="new PopupContext(this)" />
+                    }
+
+                    <button class="btn-close popup-close-button ms-2" @onclick="OnButtonCloseAsync"></button>
+                </div>
+            }
+
+            <div @attributes='AdditionalBodyAttributes' class="popup-body @bodyAdditionalClasses">
+
+                @if (ChildContent is not null)
+                {
+                    @ChildContent(new PopupContext(this))
+                }
+            </div>
+
+            @if (FooterContent is not null)
+            {
+                <div @attributes='AdditionalFooterAttributes' class="popup-footer @footerAdditionalClasses">
+                    @FooterContent(new PopupContext(this))
+                </div>
             }
         </div>
+    </dialog>
+        @*</div>*@
+    @* </div>  *@
+}
+else
+{
+    <dialog id="@PopupId" class="popup-dialog"
+            style="margin-left:@PopupMarginOptions.Left;
+                   margin-top:@PopupMarginOptions.Top;
+                   margin-right:@PopupMarginOptions.Right;
+                   margin-bottom:@PopupMarginOptions.Bottom;">
+        <div class="popup-content"
+             style="width: calc(100vw - @PopupMarginOptions.Left - @PopupMarginOptions.Right);
+                    height: calc(100vh - @PopupMarginOptions.Top - @PopupMarginOptions.Bottom);">
 
-        @if (FooterContent is not null)
-        {
-            <div @attributes='AdditionalFooterAttributes' class="popup-footer @footerAdditionalClasses">
-                @FooterContent(new PopupContext(this))
+            @if (DisplayHeader)
+            {
+                <div @attributes='AdditionalHeaderAttributes' class='popup-header @headerAdditionalClasses'>
+                    <div class="popup-header-content">
+                        @if (HeaderContent is not null)
+                        {
+                            @* PopupContext is null in static mode *@
+                            @HeaderContent(null!)
+                        }
+                    </div>
+
+                    @if (AddFullScreenButtonToHeader)
+                    {
+                        <PopupFullScreenButton IsRenderedInteractively="false" DialogId="@PopupId" PopupContext="null!" />
+                    }
+
+                    <button class="btn-close popup-close-button ms-2"
+                            onclick='closeDialog("@PopupId")'>
+                    </button>
+                </div>
+            }
+
+            <div @attributes='AdditionalBodyAttributes' class="popup-body @bodyAdditionalClasses">
+                @if (ChildContent is not null)
+                {
+                    @ChildContent(null!)
+                }
             </div>
-        }
-    </div>
-</dialog>
-    @*</div>*@
-@* </div>  *@
+
+            @if (FooterContent is not null)
+            {
+                <div @attributes='AdditionalFooterAttributes' class="popup-footer @footerAdditionalClasses">
+                    @FooterContent(null!)
+                </div>
+            }
+        </div>
+    </dialog>
+}
 
 @code {
     public class MarginOptions
@@ -88,6 +140,8 @@
             await _popup.SetIsVisibleAsync(isVisible);
         }
     }
+
+    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
 
     [Parameter] public bool DisplayHeader { get; set; } = true;
 
@@ -130,16 +184,25 @@
     private IJSObjectReference? _jsModule = null;
     private DotNetObjectReference<Popup> dotNetObjectReference = null!;
 
-    private string _popupId = string.Empty;
+    [Parameter] public string PopupId { get; set; } = string.Empty;
 
     protected override void OnInitialized()
     {
-        dotNetObjectReference = DotNetObjectReference.Create(this);
-        _popupId = $"{DateTime.Now.Ticks}_{Random.Shared.Next(100, 999)}";
+        if (IsRenderedInteractively)
+        {
+            dotNetObjectReference = DotNetObjectReference.Create(this);
+        }
+
+        if (PopupId == string.Empty)
+        {
+            PopupId = $"{DateTime.Now.Ticks}_{Random.Shared.Next(100, 999)}";
+        }
     }
 
     protected async override Task OnParametersSetAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_currentIsVisible == IsVisible) return;
 
         bool changed = await ChangeVisibility(IsVisible);
@@ -152,11 +215,13 @@
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!IsRenderedInteractively) return;
+
         if (firstRender)
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Popup.razor.js");
 
-            await _jsModule.InvokeVoidAsync("attachAutoCloseEvent", _popupId, dotNetObjectReference);
+            await _jsModule.InvokeVoidAsync("attachAutoCloseEvent", PopupId, dotNetObjectReference);
 
             if (_currentIsVisible == IsVisible) return;
 
@@ -168,11 +233,13 @@
 
     private async Task<bool> ChangeVisibility(bool isVisible)
     {
+        if (!IsRenderedInteractively) return false;
+
         if (_jsModule is null) return false;
 
         if (isVisible)
         {
-            await _jsModule.InvokeVoidAsync("openDialog", _popupId, true);
+            await _jsModule.InvokeVoidAsync("openDialog", PopupId, true);
         }
         else
         {
@@ -185,6 +252,8 @@
     [JSInvokable("OnDefaultCloseAsync")]
     public async Task OnDefaultCloseAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (CloseHandler.HasDelegate)
         {
             await CloseHandler.InvokeAsync();
@@ -197,6 +266,8 @@
 
     private async Task OnButtonCloseAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (CloseHandler.HasDelegate)
         {
             await CloseHandler.InvokeAsync();
@@ -209,31 +280,37 @@
 
     private async Task CloseAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_jsModule is null) return;
 
         IsVisible = false;
 
         _currentIsVisible = IsVisible;
 
-        await _jsModule.InvokeVoidAsync("closeDialog", _popupId);
+        await _jsModule.InvokeVoidAsync("closeDialog", PopupId);
 
         await IsVisibleChanged.InvokeAsync(IsVisible);
     }
 
     private async Task CloseUIAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_jsModule is null) return;
 
-        await _jsModule.InvokeVoidAsync("closeDialog", _popupId);
+        await _jsModule.InvokeVoidAsync("closeDialog", PopupId);
     }
 
     public async ValueTask DisposeAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_jsModule is not null)
         {
             try
             {
-                await _jsModule.InvokeVoidAsync("detachAutoCloseEvent", _popupId);
+                await _jsModule.InvokeVoidAsync("detachAutoCloseEvent", PopupId);
 
                 dotNetObjectReference.Dispose();
 
