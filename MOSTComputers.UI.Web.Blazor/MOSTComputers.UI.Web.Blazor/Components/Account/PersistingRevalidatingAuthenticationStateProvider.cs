@@ -17,6 +17,20 @@ namespace MOSTComputers.UI.Web.Blazor.Components.Account;
 // authentication state to the client which is then fixed for the lifetime of the WebAssembly application.
 internal sealed class PersistingRevalidatingAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
 {
+    internal const string AdminRoleName = "Admin";
+    internal const string XmlRelationEditorRoleName = "XmlRelationEditor";
+    internal const string ProductEditorRoleName = "ProductEditor";
+    internal const string EmployeeRoleName = "Employee";
+    internal const string UserRoleName = "User";
+    internal const string CustomerInvoiceViewerRoleName = "CustomerInvoiceViewer";
+
+    private static readonly string[] _rolesThatDoNotRequireRevalidation = [
+        AdminRoleName,
+        XmlRelationEditorRoleName,
+        ProductEditorRoleName,
+        EmployeeRoleName,
+    ];
+
     private static readonly TimeSpan _maxUserIdleTime = TimeSpan.FromMinutes(5);
 
     private readonly IServiceScopeFactory _scopeFactory;
@@ -51,12 +65,7 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
-        Claim? roleClaim = authenticationState.User.Claims.FirstOrDefault(
-            x => x.Type == ClaimTypes.Role && x.Value == "Admin");
-
-        bool isAdmin = roleClaim is not null;
-
-        if (!isAdmin && !IsUserActive())
+        if (!IsUserImmuneFromLoggingInAgain(authenticationState.User) && !IsUserActive())
         {
             return false;
         }
@@ -76,6 +85,20 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
         bool isSecurityStampValid = await ValidateSecurityStampAsync(userManager, authenticationState.User);
 
         return isSecurityStampValid;
+    }
+
+    private static bool IsUserImmuneFromLoggingInAgain(ClaimsPrincipal principal)
+    {
+        foreach (Claim claim in principal.Claims)
+        {
+            if (claim.Type == ClaimTypes.Role
+                && _rolesThatDoNotRequireRevalidation.Contains(claim.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async Task<bool> ValidateSecurityStampAsync(UserManager<PasswordsTableOnlyUser> userManager, ClaimsPrincipal principal)
