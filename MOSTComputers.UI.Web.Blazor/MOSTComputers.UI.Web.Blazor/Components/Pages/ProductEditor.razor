@@ -79,7 +79,7 @@
 	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
 </HeadContent>
 
-<div class="product-editor-page product-data-table-scrollable-container">
+<div id="productEditorPage" class="product-editor-page product-data-table-scrollable-container">
 
     <header class="product-editor-page-header">
         <ul class="header-list">
@@ -922,8 +922,7 @@
         ProductEditorProductNewStatusSearchOptions.None,
     ];
 
-    public string SelectedProductNewStatus { get; set; }
-        = ((int)ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress).ToString();
+    public string SelectedProductNewStatus { get; set; } = string.Empty;
 
     public List<PromotionSearchOptions> PromotionSearchOptionsInSelect { get; set; } = [
         PromotionSearchOptions.None,
@@ -1005,6 +1004,8 @@
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductEditor.razor.js");
 
+            await _jsModule.InvokeVoidAsync("registerKeyDownEvent");
+
             Task _ = AddStatusesToAllProductsWithoutStatuses();
         }
     }
@@ -1021,7 +1022,7 @@
         _currentUserName = authenticationState.User.Identity?.Name;
     }
 
-    private void OrderByPlShow()
+   private void OrderByPlShow()
     {
         _productOrderByImages = ProductOrderByImages.None;
 
