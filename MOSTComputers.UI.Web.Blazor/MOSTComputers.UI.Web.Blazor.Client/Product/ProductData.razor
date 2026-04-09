@@ -39,7 +39,7 @@ else
                                     XML
                                 </a>
 
-                                <button class="btn btn-secondary">
+                                <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('https://localhost:7056/product/productData/@Product.Id')">
                                     Copy link
                                 </button>
                             </div>
@@ -52,7 +52,12 @@ else
 
                         @if (ProductImages?.Count > 0)
                         {
-                            <Carousel TItem="ProductImageDisplayData" Items="ProductImages" TransitionMs="1000" AutoPlayOptions="TimeSpan.FromSeconds(6)"
+                            <Carousel TItem="ProductImageDisplayData"
+                                IsRenderedInteractively="IsRenderedInteractively"
+                                CarouselId="@CarouselId"
+                                Items="ProductImages"
+                                TransitionMs="1000"
+                                AutoPlayOptions="TimeSpan.FromSeconds(6)"
                                 AdditionalIndicatorsListAttributes='new()
                                 {
                                     {"style", "padding: 0.25em;"}
@@ -66,9 +71,22 @@ else
 
                                 <ItemIndicatorTemplate>
 
-                                    <button type="button" class="btn carousel-indicator @(context.IsActive ? "item-active" : string.Empty)" @onclick="context.GoToItemAsync">
-                                        <img src="@context.Item.ImageSrc" class="carousel-indicator-image" alt="Navigate to image">
-                                    </button>
+                                    @if (IsRenderedInteractively)
+                                    {
+                                        <button type="button"
+                                            class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)" @onclick="context.GoToItemAsync">
+                                            <img src="@context.Item.ImageSrc" class="carousel-indicator-image" alt="Navigate to image">
+                                        </button>
+
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                            class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
+                                            onclick="goTo('@CarouselId', @context.Index)">
+                                            <img src="@context.Item.ImageSrc" class="carousel-indicator-image" alt="Navigate to image">
+                                        </button>
+                                    }
 
                                 </ItemIndicatorTemplate>
                             </Carousel>
@@ -235,30 +253,34 @@ else
             }
 
             @{
+                List<ProductPropertyDisplayData>? productPropertiesCopy = null;
+
                 List<ProductPropertyDisplayData> productLinks = new();
 
                 if (ProductProperties is not null)
                 {
-                    for (int i = 0; i < ProductProperties.Count; i++)
+                    productPropertiesCopy = new(ProductProperties);
+
+                    for (int i = 0; i < productPropertiesCopy.Count; i++)
                     {
-                        ProductPropertyDisplayData property = ProductProperties[i];
+                        ProductPropertyDisplayData property = productPropertiesCopy[i];
 
                         if (property.ProductCharacteristic.KWPrCh != ProductCharacteristicType.Link) continue;
 
                         productLinks.Add(property);
 
-                        ProductProperties.RemoveAt(i);
+                        productPropertiesCopy.RemoveAt(i);
 
                         i--;
                     }
                 }
             }
 
-            @if (ProductProperties is not null && ProductProperties.Count > 0)
+            @if (productPropertiesCopy is not null && productPropertiesCopy.Count > 0)
             {
                 <div class="props-section-container">
                     <section class="props-section">
-                        @foreach (ProductPropertyDisplayData property in ProductProperties)
+                        @foreach (ProductPropertyDisplayData property in productPropertiesCopy)
                         {
                             <div class="props-section-item">
                                 <strong>@property.Name:</strong><br /><p class="props-section-item-value-text">@property.Value</p>
@@ -319,6 +341,10 @@ else
     {
         public required string ImageSrc { get; init; }
     }
+
+    private string CarouselId = "productDataCarousel";
+
+    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
 
     [Parameter] public Product? Product { get; set; }
     [Parameter] public ProductPriceData? PriceData { get; set; }

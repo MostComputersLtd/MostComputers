@@ -7,52 +7,136 @@
 
 @inject IJSRuntime JSRuntime
 
-<div @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses" @onmouseenter="StopAutoPlayAsync" @onmouseleave="StartAutoPlayAsync">
-    <div @attributes='AdditionalViewportAttributes' class="custom-carousel-viewport @_additionalViewportClasses">
+@if (IsRenderedInteractively)
+{
+    <div @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses"
+        @onmouseenter="StopAutoPlayAsync" @onmouseleave="StartAutoPlayAsync">
+        <div @attributes='AdditionalViewportAttributes' class="custom-carousel-viewport @_additionalViewportClasses">
 
-        @for (int i = 0; i < _carouselItems.Count; i++)
-        {
-            CarouselItem carouselItem = _carouselItems[i];
-
-            <div class="custom-carousel-slide" style="@carouselItem.TransformStyle @carouselItem.TransitionStyle">
-                @ItemTemplate(carouselItem.Item)
-            </div>
-        }
-
-        <button class="custom-carousel-control custom-prev" @onclick="Previous">&lt;</button>
-        <button class="custom-carousel-control custom-next" @onclick="Next">&gt;</button>
-    </div>
-
-
-    <div @attributes='AdditionalIndicatorsListContainerAttributes' class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
-
-        <div @attributes='AdditionalIndicatorsListAttributes'
-            class="custom-carousel-indicators @_additionalIndicatorsListClasses"
-             role="listbox"
-             aria-multiselectable="false"
-             aria-activedescendant="carousel-option-@(_activeItemIndex)">
-
-            @for (int i = 0; i < _carouselIndicators.Count; i++)
+            @for (int i = 0; i < _carouselItems.Count; i++)
             {
-                int currentIndex = i;
+                CarouselItem carouselItem = _carouselItems[i];
 
-                @if (ItemIndicatorTemplate is not null)
-                {
-                    @ItemIndicatorTemplate(_carouselIndicators[i]);
-                }
-                else
-                {
-                    <button id="carousel-option-@i"
-                        class="custom-dot @(_carouselIndicators[i].IsActive ? "active" : null)"
-                        role="option"
-                        aria-label="Go to slide @(currentIndex + 1)"
-					    aria-selected="@(_carouselIndicators[i].IsActive ? "true" : "false")"
-                        @onclick="() => GoTo(currentIndex)"></button>
-                }
+                <div class="custom-carousel-slide" style="@carouselItem.TransformStyle @carouselItem.TransitionStyle">
+                    @ItemTemplate(carouselItem.Item)
+                </div>
             }
+
+            <button class="custom-carousel-control custom-prev" @onclick="Previous">&lt;</button>
+            <button class="custom-carousel-control custom-next" @onclick="Next">&gt;</button>
+        </div>
+
+
+        <div @attributes='AdditionalIndicatorsListContainerAttributes'
+            class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
+
+            <div @attributes='AdditionalIndicatorsListAttributes'
+                class="custom-carousel-indicators @_additionalIndicatorsListClasses"
+                 role="listbox"
+                 aria-multiselectable="false"
+                 aria-activedescendant="carousel-option-@(_activeItemIndex)">
+
+                @for (int i = 0; i < _carouselIndicators.Count; i++)
+                {
+                    int currentIndex = i;
+
+                    @if (ItemIndicatorTemplate is not null)
+                    {
+                        @ItemIndicatorTemplate(_carouselIndicators[i]);
+                    }
+                    else
+                    {
+                        <button id="carousel-option-@i"
+                            class="custom-dot @(_carouselIndicators[i].IsActive ? "active" : null)"
+                            role="option"
+                            aria-label="Go to slide @(currentIndex + 1)"
+                            aria-selected="@(_carouselIndicators[i].IsActive ? "true" : "false")"
+                            @onclick="() => GoTo(currentIndex)"></button>
+                    }
+                }
+            </div>
         </div>
     </div>
-</div>
+}
+else
+{
+    <div id="@CarouselId"
+        @attributes="AdditionalAttributes"
+        class="custom-carousel @_additionalClasses"
+        onload="startAutoSlide(@(AutoPlayOptions.IsT0 ? "true" : "false"), '@CarouselId')"
+        onmouseenter="stopAutoSlide('@CarouselId')"
+        onmouseleave="startAutoSlide(@(AutoPlayOptions.IsT0 ? "true" : "false"), '@CarouselId')"
+        data-custom-carousel-transition-time-ms="@TransitionMs"
+        data-custom-carousel-auto-slide-interval-time-ms="@(AutoPlayOptions.IsT0 ? AutoPlayOptions.AsT0.TotalMilliseconds : 0)">
+
+        <div @attributes="AdditionalViewportAttributes" class="custom-carousel-viewport @_additionalViewportClasses">
+
+            @for (int i = 0; i < Items.Count; i++)
+            {
+                TItem carouselItem = Items[i];
+
+                int index = i;
+
+                bool isFirst = index == 0;
+
+                string transformStyle = isFirst ? "translateX(0%)" : "translateX(100%)";
+                string itemActiveClass = isFirst ? "active-carousel-item" : string.Empty;
+
+                <div id="custom-carousel-item-@index" class="custom-carousel-slide @itemActiveClass" style="transform: @transformStyle">
+                    @ItemTemplate(carouselItem)
+                </div>
+            }
+
+            <button class="custom-carousel-control custom-prev" onclick="prev('@CarouselId')">&lt;</button>
+            <button class="custom-carousel-control custom-next" onclick="next('@CarouselId')">&gt;</button>
+        </div>
+
+        <div @attributes="AdditionalIndicatorsListContainerAttributes"
+            class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
+
+            <div @attributes="AdditionalIndicatorsListAttributes"
+                class="custom-carousel-indicators @_additionalIndicatorsListClasses"
+                role="listbox"
+                aria-multiselectable="false"
+                aria-activedescendant="carousel-option-0">
+
+                @for (int i = 0; i < Items.Count; i++)
+                {
+                    int index = i;
+
+                    TItem carouselItem = Items[i];
+
+                    CarouselIndicator carouselIndicator = new()
+                    {
+                        Carousel = this,
+                        Item = carouselItem,
+                        Index = i,
+                        IsActive = index == _activeItemIndex,
+                    };
+
+                    @if (ItemIndicatorTemplate is not null)
+                    {
+                        @ItemIndicatorTemplate(carouselIndicator);
+                    }
+                    else
+                    {
+                        bool isFirstItem = index == 0;
+
+                        string activeClass = isFirstItem ? "active-carousel-indicator" : string.Empty;
+                        string ariaSelected = isFirstItem ? "selected" : string.Empty;
+
+                        <button id="carousel-option-@index"
+                            class="custom-dot @activeClass"
+                            role="option"
+                            aria-label="Go to slide @(index + 1)"
+                            aria-selected="@ariaSelected"
+                            onclick="goTo('@CarouselId', @index)"></button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code{
     private sealed class CarouselItem
@@ -70,6 +154,7 @@
     {
         public required Carousel<TItem> Carousel { get; init; }
         public required TItem Item { get; init; }
+        public required int Index { get; init; }
 
         public bool IsActive { get; internal set; }
 
@@ -91,6 +176,10 @@
     {
         return $"transition: all {TransitionMs}ms ease;";
     }
+
+    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+
+    [Parameter] public string CarouselId { get; set; } = string.Empty;
 
     [Parameter] public List<TItem> Items { get; set; } = new();
 
@@ -126,8 +215,28 @@
 
     private long? _autoSlideIntervalId = null;
 
+    protected override void OnInitialized()
+    {
+        if (CarouselId == string.Empty)
+        {
+            CarouselId = $"{DateTime.Now.Ticks}_{Random.Shared.Next(100, 999)}";
+        }
+
+        if (IsRenderedInteractively) return;
+
+        SetCurrentData();
+    }
+
     protected override void OnParametersSet()
     {
+        if (!IsRenderedInteractively) return;
+
+        SetCurrentData();
+    }
+
+    private void SetCurrentData()
+    {
+
         _additionalClasses = AdditionalAttributes.TryGetValue("class", out object? additionalClasses)
             ? additionalClasses?.ToString() : null;
 
@@ -179,6 +288,7 @@
                     {
                         Carousel = this,
                         Item = item,
+                        Index = i,
                         IsActive = true,
                     };
 
@@ -198,6 +308,7 @@
                 {
                     Carousel = this,
                     Item = item,
+                    Index = i,
                     IsActive = false,
                 };
 
@@ -209,6 +320,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!IsRenderedInteractively) return;
+
         if (firstRender)
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Carousel.razor.js");
@@ -226,6 +339,8 @@
 
     private async Task StartAutoPlayAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_isAutoPlayRunning || AutoPlayOptions.IsT1 || _jsModule is null) return;
 
         _isAutoPlayRunning = true;
@@ -235,6 +350,8 @@
 
     private async Task StopAutoPlayAsync()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_jsModule is null || _autoSlideIntervalId is null) return;
 
         await _jsModule.InvokeVoidAsync("stopAutoSlide", _autoSlideIntervalId);
@@ -246,6 +363,8 @@
 
     private async Task Previous()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_carouselItems.Count <= 1) return;
 
         CarouselItem currentItem = _carouselItems[_activeItemIndex];
@@ -280,6 +399,8 @@
     [JSInvokable("Next")]
     public async Task Next()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_carouselItems.Count <= 1) return;
 
         CarouselItem currentItem = _carouselItems[_activeItemIndex];
@@ -308,6 +429,8 @@
 
     private async Task GoTo(int index)
     {
+        if (!IsRenderedInteractively) return;
+
         if (_activeItemIndex == index || _carouselItems.Count <= 1) return;
 
         CarouselItem currentItem = _carouselItems[_activeItemIndex];
