@@ -1,0 +1,23 @@
+﻿.product-data-header {
+    width: 100%;
+    height: 100%;
+    margin-bottom: 1em;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+}
+
+.header-text-container {
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -ms-flex-wrap: wrap;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.category-and-manufacturer-container {
+    margin-bottom: 0.25em;
+}

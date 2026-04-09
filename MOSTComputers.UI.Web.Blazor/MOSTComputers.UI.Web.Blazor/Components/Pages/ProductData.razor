@@ -34,23 +34,27 @@
     return;
 }
 
-<div class="full-parent-width full-parent-height d-flex flex-row flex-wrap red-and-white-theme">
+<div class="product-data-header">
 
-    @if (Product.Manufacturer is not null)
-    {
-        <h4 class="popup-header-text me-2 mb-0">Manufacturer: @Product.Manufacturer.RealCompanyName</h4>
-    }
+    <div class="header-text-container category-and-manufacturer-container">
+        @if (Product.Manufacturer is not null)
+        {
+            <h4 class="popup-header-text me-2 mb-0">Manufacturer: @Product.Manufacturer.RealCompanyName</h4>
+        }
 
-    @if (Product.Category is not null)
-    {
-        <h4 class="popup-header-text me-2 mb-0">Category: @Product.Category?.Description</h4>
-    }
+        @if (Product.Category is not null)
+        {
+            <h4 class="popup-header-text me-2 mb-0">Category: @Product.Category?.Description</h4>
+        }
+    </div>
 
-    <h4 class="popup-header-text me-2">ID: @(Product.Id)</h4>
-    <h4 class="popup-header-text me-2">@(Product.Name ?? "-")</h4>
-    <h4 class="popup-header-text me-2">
-        @(Product.Status is not null ? GetStringFromProductStatus(Product.Status.Value) : "-")
-    </h4>
+    <div class="header-text-container">
+        <h4 class="popup-header-text me-2">ID: @(Product.Id)</h4>
+        <h4 class="popup-header-text me-2">@(Product.Name ?? "-")</h4>
+        <h4 class="popup-header-text me-2">
+            @(Product.Status is not null ? GetStringFromProductStatus(Product.Status.Value) : "-")
+        </h4>
+    </div>
 </div>
 
 <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
