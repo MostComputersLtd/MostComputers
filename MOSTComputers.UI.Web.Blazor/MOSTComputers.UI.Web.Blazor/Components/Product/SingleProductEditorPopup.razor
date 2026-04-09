@@ -70,7 +70,8 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
-<Popup IsVisible="IsVisible"
+<Popup PopupId="singleProductEditorPopup"
+    IsVisible="IsVisible"
     IsVisibleChanged="OnVisibleChanged"
     PopupMarginOptions="PopupMarginOptions"
     CloseHandler="CloseHandlerAsync">
@@ -141,19 +142,17 @@
                     Add Link
                 </button>
 
-                <!--
                 <button class="btn btn-outline-success single-product-editor-popup-header-item"
                     @onclick='() => ForceFileInputClickAsync("singleProductEditorAddDocumentFileInput")'>
                     Add Document
                 </button>
-                -->
 
                 <InputFile OnChange="AddProductDocumentAsync" id="singleProductEditorAddDocumentFileInput" type="file" accept="application/pdf"
                     class="image-file-hidden-input" tabindex="-1" />
 
                 <div class="save-button-and-loader-container">
                     <div class="save-button-container @(_isSavingProduct ? "loading" : string.Empty)">
-                        <button class="btn btn-primary save-button single-product-editor-popup-header-item" disabled="@_isSavingProduct"
+                        <button id="singleProductEditorSaveButton" class="btn btn-primary save-button single-product-editor-popup-header-item" disabled="@_isSavingProduct"
                             @onclick="SaveAllFromEditorDataAsync">
                             Save @(IsDataChanged() ? "*" : string.Empty)
                         </button>
@@ -963,6 +962,18 @@
 
         _currentIsVisible = isVisible;
 
+        if (_jsModule is not null)
+        {
+            if (isVisible)
+            {
+                await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference);
+            }
+            else
+            {
+                await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
+            }
+        }
+
         await IsVisibleChanged.InvokeAsync(isVisible);
     }
 
@@ -979,6 +990,11 @@
 
 
         IsVisible = false;
+
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
+        }
 
         await IsVisibleChanged.InvokeAsync(IsVisible);
 
@@ -1085,6 +1101,7 @@
     private bool _isSavingProduct { get; set; }
 
     private IJSObjectReference? _jsModule;
+    private DotNetObjectReference<SingleProductEditorPopup>? _dotNetObjectReference;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1108,6 +1125,18 @@
             StateHasChanged();
 
             await SetProductRelatedData();
+
+            if (_jsModule is not null)
+            {
+                if (IsVisible)
+                {
+                    await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference);
+                }
+                else
+                {
+                    await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
+                }
+            }
         }
 
         if (ProductStatuses is not null && !ProductNewStatusesInSelect.Contains(ProductStatuses.ProductNewStatus))
@@ -1126,6 +1155,10 @@
         if (firstRender)
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Product/SingleProductEditorPopup.razor.js");
+
+            _dotNetObjectReference = DotNetObjectReference.Create(this);
+
+            await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference, true);
         }
 
         if (_jsModule is not null && _shouldResizePropertyTextAreas)
@@ -2082,7 +2115,7 @@
     private void AddProductLink(int? characteristicId = null)
     {
         if (AreAllPropertiesDisplayed) return;
-        
+
         IEnumerable<int> propertyCharacteristicIdsToExclude = ProductLinks
             .Where(property => property.ProductCharacteristic is not null)
             .Select(property => property.ProductCharacteristic!.Id);
@@ -2281,13 +2314,13 @@
 
         await CopyTextToClipboard(url);
     }
-    
+
     private bool RemoveProductDocument(ProductDocumentDisplayData productDocumentDisplayData)
     {
         if (ProductDocuments == null) return false;
 
         bool success = ProductDocuments.Remove(productDocumentDisplayData);
-        
+
         if (!success) return false;
 
         SetDataChanged(productDocumentDisplayData, ItemChangeState.Deleted);
@@ -2303,6 +2336,11 @@
 
         IsVisible = false;
 
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
+        }
+
         await IsVisibleChanged.InvokeAsync(IsVisible);
 
         await ClearProductRelatedData();
@@ -2314,9 +2352,22 @@
 
         IsVisible = false;
 
+        if (_jsModule is not null)
+        {
+            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
+        }
+
         await IsVisibleChanged.InvokeAsync();
 
         await ClearProductRelatedData();
+    }
+
+    [JSInvokable("SaveFromShortcut")]
+    public async Task SaveAllFromShortcut()
+    {
+        await SaveAllFromEditorDataAsync();
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveAllFromEditorDataAsync()

@@ -29,6 +29,46 @@ function getMatchingCheckboxFromProductPropertyInput(inputElementId) {
     return document.getElementById(relatedCheckboxId);
 }
 
+export function attachEventsOnPopupVisible(dotNetReference, isFirstCall = false) {
+    const popupElement = document.getElementById("singleProductEditorPopup");
+
+    console.log(popupElement.open);
+
+    if (!popupElement || (!isFirstCall && !popupElement.open)) return;
+
+    popupElement._singleProductEditorPopupReference = dotNetReference;
+
+    window.addEventListener("keydown", saveOnShortcut);
+
+    console.log("Added Single Editor");
+}
+
+function saveOnShortcut(e) {
+    if (!e.ctrlKey || e.key !== "s") return;
+
+    console.log("EVENT Single Editor");
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const popupElement = document.getElementById("singleProductEditorPopup");
+    const saveAllButton = document.getElementById("singleProductEditorSaveButton");
+
+    if (!popupElement._singleProductEditorPopupReference) {
+        return;
+    }
+
+    saveAllButton.focus();
+
+    popupElement._singleProductEditorPopupReference.invokeMethodAsync("SaveFromShortcut");
+}
+
+export function removeEventsOnPopupHidden() {
+    window.removeEventListener("keydown", saveOnShortcut);
+
+    console.log("Removed Single Editor");
+}
+
 export function forceFileInputClick(fileInputElementId)
 {
     const fileInputElement = document.getElementById(fileInputElementId);
@@ -179,8 +219,6 @@ export function resizeTextareasToColumnText(textAreasCommonName, minRows = null)
                         textAreaScrollHeight = minHeight;
                     }
                 }
-
-                console.log(textAreaScrollHeight);
 
                 textArea.style.height = 'auto';
                 textArea.style.height = textAreaScrollHeight + 'px';
