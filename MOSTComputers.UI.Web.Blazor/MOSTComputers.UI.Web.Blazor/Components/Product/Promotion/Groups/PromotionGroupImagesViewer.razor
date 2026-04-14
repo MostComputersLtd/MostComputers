@@ -9,30 +9,54 @@
 @inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
 
 <div class="promotion-group-images-viewer">
-    <div class="promotion-groups-list col-2">
+    <div id="promotionGroupsList" class="promotion-groups-list col-2">
         @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageDisplayData>> kvp in _promotionGroups)
         {
             bool isSelected = kvp.Key == _selectedPromotionGroup;
 
-            <div class="promotion-group-item @(isSelected ? "selected" : string.Empty)" @onclick="() => SelectGroupAndShowData(kvp.Key)">
+            if (IsRenderedInteractively)
+            {
+                <div class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
+                    @onclick="() => SelectGroupAndShowData(kvp.Key)">
 
-                @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
-                {
-                    <button class="promotion-group-item-image-button"
-                         style="background-image: url(data:@kvp.Key.LogoContentType;base64,@Convert.ToBase64String(kvp.Key.LogoImage))">
-                    </button>
-                }
-                else
-                {
-                    <button class="promotion-group-item-group-name-button">
-                        <h3>@kvp.Key.Name</h3>
-                    </button>
-                }
-            </div>
+                    @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
+                    {
+                        <button class="promotion-group-item-image-button"
+                             style="background-image: url(data:@kvp.Key.LogoContentType;base64,@Convert.ToBase64String(kvp.Key.LogoImage))">
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="promotion-group-item-group-name-button">
+                            <h3>@kvp.Key.Name</h3>
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div id="promotionGroupItem-@kvp.Key.Id" name="promotionGroupItem" class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
+                    onclick="selectGroupAndShowData(@kvp.Key.Id, 'promotionGroupItem-@kvp.Key.Id')">
+
+                    @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
+                    {
+                        <button class="promotion-group-item-image-button"
+                             style="background-image: url(data:@kvp.Key.LogoContentType;base64,@Convert.ToBase64String(kvp.Key.LogoImage))">
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="promotion-group-item-group-name-button">
+                            <h3>@kvp.Key.Name</h3>
+                        </button>
+                    }
+                </div>
+
+            }
         }
     </div>
 
-    <div class="promotion-images-container">
+    <div id="promotionImagesContainer" class="promotion-images-container">
         <PromotionGroupImages ImageFiles="_currentImages" />
     </div>
 </div>
@@ -49,6 +73,8 @@
 
     private const int _alwaysIncludedPromotionGroupId = 65;
 
+    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+
     [Parameter, EditorRequired] public required OneOf<Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>>, GetDataFromServer> DataOptions { get; set; }
     private OneOf<Dictionary<PromotionGroup, List<GroupPromotionImageDisplayData>>, GetDataFromServer> _currentDataOptions { get; set; }
 
@@ -62,7 +88,21 @@
 
     private PromotionGroup? _alwaysIncludedPromotionGroup = null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsRenderedInteractively) return;
+
+        await ProcessDataOptionsAsync();
+    }
+
     protected override async Task OnParametersSetAsync()
+    {
+        if (!IsRenderedInteractively) return;
+
+        await ProcessDataOptionsAsync();
+    }
+
+    private async Task ProcessDataOptionsAsync()
     {
         if (DataOptions.IsT0)
         {
@@ -101,8 +141,8 @@
         await FetchPromotionGroupDataAsync();
 
         SetStartingSelectedGroup();
-    }
 
+    }
     // private void OnKeyDown(KeyboardEventArgs e)
     // {
     //     if (!e.CtrlKey) return;

@@ -1,0 +1,361 @@
+﻿@page "/home2"
+
+@using System.Text
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.Currencies.Contracts
+@using MOSTComputers.Services.Currencies.Models
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Requests.Product
+@using MOSTComputers.Services.ProductRegister.Models.Responses
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Client.Product
+@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Home
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Utils
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+@using static MOSTComputers.Utils.Files.FilePathUtils
+
+@inject ICategoryService CategoryService
+@inject IManufacturerService ManufacturerService
+
+@inject IProductService ProductService
+@inject IProductSearchService ProductSearchService
+
+@inject IProductPropertyService ProductPropertyService
+@inject IProductCharacteristicService ProductCharacteristicService
+@inject IProductImageService ProductImageService
+@inject IProductImageFileService ProductImageFileService
+@inject IPromotionService PromotionService
+@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+@inject IManufacturerToPromotionGroupRelationService ManufacturerToPromotionGroupRelationService
+@inject IProductHtmlService ProductHtmlService
+@inject ISearchStringOriginService SearchStringOriginService
+@inject ICurrencyVATService CurrencyVATService
+@inject ICurrencyConversionService CurrencyConversionService
+
+@inject NavigationManager NavigationManager
+
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Home</PageTitle>
+
+<HeadContent>
+    <link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+    <script src="js/Product/Promotions/Groups/PromotionGroupImagesViewer.js"></script>
+    <script src="js/Carousel/Carousel.js"></script>
+    <script src="js/Popup/PopupFullScreenButton.js"></script>
+    <script src="js/Popup/Popup.js"></script>
+    <script src="js/Pages/Home.js"></script>
+
+    <style>
+        body > div.page > main {
+        }
+
+            body > div.page > main > article {
+            }
+    </style>
+</HeadContent>
+
+<div class="home-page">
+    <header class="home-page-header">
+
+        <ul class="header-items-list">
+
+            <li class="header-list-item header-search-input-list-item">
+                <input id="productTableSearchInput"
+                    type="text"
+                    class="search-input"
+                    aria-label="User Input"
+                    placeholder="Search..." />
+
+                <button class="btn header-search-input-help-button" onclick="showSearchHelpPopup()">
+                    ?
+                </button>
+            </li>
+
+            <li class="header-search-button-list-item">
+                <button id="productTableSearchButton" type="button"
+                    class="btn btn-outline-primary search-button"
+                    aria-label="Search"
+                    onclick="searchProductsAndDisplaySearchButtonLoader()">
+                    Search
+                </button>
+
+                <div id="productTableSearchLoader" class="search-button-loader round-loader-default"></div>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableCategorySelect"
+                    onchange="setManufacturersForCategory()"
+                    aria-label="Product Category">
+
+                    <option value="">All</option>
+
+                    @foreach (Category category in CategoriesInSelect)
+                    {
+                        <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableManufacturerSelect"
+                    class="product-table-manufacturer-select"
+                    onchange="searchProductsAndDisplaySearchButtonLoader()"
+                    aria-label="Manufacturer">
+
+                    <option value="" selected="@(SelectedManufacturerId == string.Empty)">All Manufacturers</option>
+
+                    @{
+                        bool isValidId = int.TryParse(SelectedManufacturerId, out int selectedManufacturerId);
+                    }
+
+                    @foreach (Manufacturer manufacturer in ManufacturersInSelect)
+                    {
+                        <option value="@manufacturer.Id" selected="@(isValidId && selectedManufacturerId == manufacturer.Id)">@manufacturer.RealCompanyName</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableProductStatusSelect"
+                     aria-label="Product status">
+
+                    @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
+                    {
+                        <option value="@((int)productStatus)">@GetStringFromProductStatusSearchOptions(productStatus)</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTablePromotionStatusSelect"
+                     aria-label="Promotion types">
+
+                    <option value="">All</option>
+
+                    @foreach (PromotionSearchOptions promotionSearchOptions in PromotionSearchOptionsInSelect)
+                    {
+                        <option value="@((int)promotionSearchOptions)">
+                            @GetStringFromPromotionSearchOptions(promotionSearchOptions)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="productTableCurrencySelect"
+                    aria-label="Currency">
+
+                    @foreach (Currency currency in CurrenciesInSelect)
+                    {
+                        <option value="@((int)currency)">
+                            @GetPriceSuffixStringFromCurrency(currency)
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item header-result-count-list-item">
+                <select id="productTableResultsCountSelect"
+                    aria-label="Number of results">
+
+                    @foreach (int resultCount in ResultCountsInSelect)
+                    {
+                        <option value="@resultCount">
+                            @resultCount
+                        </option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item header-show-images-list-item">
+                <label for="productTableResultsShowImagesCheckbox" class="header-show-images-label">Images:</label>
+
+                <input id="productTableResultsShowImagesCheckbox" type="checkbox" alt="Show Images"
+                    onchange="toggleShowImages()" />
+            </li>
+
+            <li class="header-list-item header-order-summary-list-item">
+                <label id="productTableOrderSummaryLabel" type="button" class="btn btn-secondary">
+                    <span id="productTableOrderSummaryLabelText">Order Summary</span>
+                    <input id="productTableOrderSummaryCheckbox" type="checkbox"
+                        onchange="toggleOrderSummary()" hidden />
+                </label>
+            </li>
+        </ul>
+    </header>
+
+    <div id="productsDataContainer" class="products-data-container">
+    </div>
+</div>
+
+<div id="productXmlPopupContainer">
+</div>
+
+<div id="productDisplayPopupContainer">
+</div>
+
+<div id="promotionGroupImagesPopupContainer">
+</div>
+
+<div id="productSearchStringPartsPopupContainer">
+</div>
+
+<Popup
+    PopupId="searchHelpPopup"
+    IsRenderedInteractively="false"
+    PopupMarginOptions='new() { Left = "30vw", Right = "30vw", Top = "20vh", Bottom = "50vh" }'>
+    <ChildContent>
+        <div class="full-parent-width full-parent-height d-flex flex-column align-items-center">
+            <p>65781,71071,68359 - search products by Ids</p>
+            <p>i7 8GB - products with i7 and 8GB RAM</p>
+            <p>[ACER MSI] i7-12 - ACER and MSI products with i7-12 CPU</p>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+
+    public class ProductDisplayData
+    {
+        public required Product Product { get; set; }
+
+        public int? OrderQuantity { get; set; } = null;
+
+        public DisplayPrice? DisplayPrice { get; set; }
+        public DisplayPrice? SecondaryDisplayPrice { get; set; }
+
+        public List<string>? ImageUrls { get; set; }
+        public List<Promotion>? Promotions { get; set; }
+
+        public int? ManufacturerPromotionGroupId { get; set; }
+    }
+
+    public struct DisplayPrice
+    {
+        public required decimal Price { get; set; }
+        public required Currency Currency { get; set; }
+    }
+
+    public sealed class ProductDataPopupData
+    {
+        public bool IsVisible { get; set; } = false;
+        public required Product Product { get; set; }
+        public Client.Product.ProductData.ProductPriceData? ProductDataPopupPriceData { get; set; }
+        public List<Client.Product.ProductData.ProductPropertyDisplayData>? ProductProperties { get; set; }
+        public List<Client.Product.ProductData.ProductImageDisplayData>? ProductImages { get; set; }
+        public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
+        public List<MOSTComputers.Models.Product.Models.Promotions.Promotion>? Promotions { get; set; }
+    }
+
+    public sealed class ProductXmlPopupData
+    {
+        public bool IsVisible { get; set; } = false;
+        public required Product Product { get; set; }
+    }
+
+    public sealed class PromotionGroupImagesPopupData
+    {
+        public bool IsVisible { get; set; } = false;
+        public required Product Product { get; set; }
+        public required int ManufacturerPromotionGroupId { get; set; }
+    }
+
+    public sealed class ProductSearchStringPartsPopupData
+    {
+        public bool IsVisible { get; set; } = false;
+        public required Product Product { get; set; }
+        public required List<SearchStringPartOriginData> SearchStringOriginDataList { get; set; }
+    }
+
+    public string? UserInputString { get; set; }
+    private string? _userInputStringWithoutOrderSummary { get; set; }
+
+    public string SelectedCategoryId { get; set; } = string.Empty;
+
+    public List<Category> CategoriesInSelect { get; set; } = new();
+
+    public string SelectedManufacturerId { get; set; } = string.Empty;
+
+    public List<Manufacturer> ManufacturersInSelect { get; set; } = new();
+    public List<Manufacturer> AllManufacturers { get; set; } = new();
+
+    public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
+
+    public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
+        ProductStatusSearchOptions.AvailableAndCall,
+        ProductStatusSearchOptions.Available,
+        ProductStatusSearchOptions.Call,
+    ];
+
+    public string SelectedPromotionSearchOptions { get; set; } = string.Empty;
+
+    public List<PromotionSearchOptions> PromotionSearchOptionsInSelect { get; set; } = [
+        PromotionSearchOptions.None,
+        PromotionSearchOptions.P,
+        PromotionSearchOptions.R,
+        PromotionSearchOptions.I,
+        PromotionSearchOptions.Discount
+    ];
+
+    public string SelectedCurrency { get; set; } = ((int)Currency.EUR).ToString();
+
+    public List<Currency> CurrenciesInSelect { get; set; } = [
+        Currency.EUR,
+        Currency.USD,
+        Currency.BGN,
+    ];
+
+    public string SelectedResultCount { get; set; } = (50).ToString();
+
+    public List<int> ResultCountsInSelect { get; set; } = [
+        50,
+        100,
+        200,
+        300,
+    ];
+
+    List<ProductDisplayData> Products { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        CategoriesInSelect = await GetAllCategoriesAsync();
+        AllManufacturers = await GetAllManufacturersAsync();
+
+        ManufacturersInSelect = AllManufacturers.ToList();
+    }
+
+    private async Task<List<Category>> GetAllCategoriesAsync()
+    {
+        return await CategoryService.GetAllAsync();
+    }
+
+    private async Task<List<Manufacturer>> GetAllManufacturersAsync()
+    {
+        return await ManufacturerService.GetAllWithActiveProductsAsync();
+    }
+}

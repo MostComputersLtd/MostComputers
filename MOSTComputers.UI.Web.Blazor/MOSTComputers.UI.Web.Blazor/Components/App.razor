@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -86,7 +88,18 @@
     </script>
 
     <Routes />
-    <ActivityTracker />
+
+    @if (!IsHomePage)
+    {
+        <ActivityTracker />
+    }
 </body>
 
 </html>
+
+
+@code {
+    private bool IsHomePage =>
+        HttpContextAccessor.HttpContext?.Request.Path == "/home2"
+        || HttpContextAccessor.HttpContext?.Request.Path == "/downloadXml2";
+}

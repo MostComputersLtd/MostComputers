@@ -1,0 +1,84 @@
+@using System.Text
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.Currencies.Contracts
+@using MOSTComputers.Services.Currencies.Models
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
+@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
+@using MOSTComputers.Services.ProductRegister.Models.Requests.Product
+@using MOSTComputers.Services.ProductRegister.Models.Responses
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.Services.SearchStringOrigin.Models
+@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Client.Product
+@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Utils
+@using Microsoft.AspNetCore.Authorization
+@using OneOf
+@using OneOf.Types
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+@using static MOSTComputers.Utils.Files.FilePathUtils
+
+@{
+    Product product = ProductDataPopupData.Product;
+}
+
+<Popup @bind-IsVisible='@ProductDataPopupData.IsVisible'
+    IsRenderedInteractively="false"
+    PopupMarginOptions='new() { Left = "3vw", Top = "3vh", Right = "3vw", Bottom = "3vh" }'
+    AddFullScreenButtonToHeader="true"
+    AdditionalHeaderAttributes='new()
+    {
+        { "class", "red-and-white-theme" },
+    }'>
+    <HeaderContent>
+
+        <div class="full-parent-width full-parent-height d-flex flex-row flex-wrap red-and-white-theme">
+
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="popup-header-text me-3 mb-0">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+
+            @if (product.Category is not null)
+            {
+                <h4 class="popup-header-text me-3 mb-0">Category: @product.Category.Description</h4>
+            }
+
+            <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text me-3">@(product.Name ?? "-")</h4>
+            <h4 class="popup-header-text me-2">
+                Status: @(product.Status is not null ? GetStringFromProductStatus(product.Status.Value) : "-")
+            </h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="product"
+            IsRenderedInteractively="false"
+            PriceData="ProductDataPopupData.ProductDataPopupPriceData"
+            ProductProperties="ProductDataPopupData.ProductProperties"
+            ProductImages='ProductDataPopupData.ProductImages'
+            ProductPromotions="ProductDataPopupData.Promotions"
+            ProductSearchStringParts="ProductDataPopupData.ProductSearchStringParts" />
+    </ChildContent>
+</Popup>
+
+@code {
+
+    [Parameter, EditorRequired] public ProductDataPopupData ProductDataPopupData { get; set; }
+}

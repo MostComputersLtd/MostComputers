@@ -1,0 +1,41 @@
+﻿@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+
+@{
+    Product product = ProductGroupImagesPopupData.Product;
+}
+
+<Popup IsVisible="ProductGroupImagesPopupData.IsVisible"
+    IsRenderedInteractively="false"
+    PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="mb-0 me-2">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <PromotionGroupImagesViewer IsRenderedInteractively="false"
+            DataOptions="new PromotionGroupImagesViewer.GetDataFromServer()"
+            GetSelectedIndexFunc="GetSelectedIndexForPromotionGroupImagesPopup" />
+    </ChildContent>
+</Popup>
+
+@code {
+    [Parameter, EditorRequired] public required PromotionGroupImagesPopupData ProductGroupImagesPopupData { get; set; }
+
+     private int GetSelectedIndexForPromotionGroupImagesPopup(
+        Dictionary<PromotionGroup, List<PromotionGroupImagesViewer.GroupPromotionImageDisplayData>> promotionGroupsAndImages)
+    {
+        if (ProductGroupImagesPopupData is null) return 0;
+
+        return promotionGroupsAndImages.Keys.ToList()
+            .FindIndex(x => x.Id == ProductGroupImagesPopupData.ManufacturerPromotionGroupId);
+    }
+}

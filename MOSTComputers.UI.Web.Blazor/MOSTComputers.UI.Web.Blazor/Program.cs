@@ -36,6 +36,8 @@ using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Cached;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
+using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups;
+using MOSTComputers.UI.Web.Blazor.Components.Product.Home;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
@@ -384,5 +386,8 @@ app.MapProductImageDataEndpoints();
 app.MapProductImageFileDataEndpoints();
 app.MapGroupPromotionImageFileDataEndpoints();
 app.MapPromotionFileDataEndpoints();
+
+app.MapPromotionGroupComponentEndpoints();
+app.MapProductDataComponentEndpoints();
 
 app.Run();

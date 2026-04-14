@@ -1,0 +1,37 @@
+﻿@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+
+@{
+    Product product = ProductSearchStringPartsPopupData.Product;
+}
+
+<Popup @bind-IsVisible="ProductSearchStringPartsPopupData.IsVisible"
+    IsRenderedInteractively="false"
+    PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="mb-0 me-3">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+
+            @if (product.Category is not null)
+            {
+                <h4 class="mb-0 me-3">Category: @product.Category?.Description</h4>
+            }
+
+            <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text me-2">@(product.Name ?? "-")</h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <ProductSearchStringOriginTable SearchStringOriginDataList="ProductSearchStringPartsPopupData.SearchStringOriginDataList" />
+    </ChildContent>
+</Popup>
+
+@code {
+    [Parameter, EditorRequired] public required ProductSearchStringPartsPopupData ProductSearchStringPartsPopupData { get; set; }
+}

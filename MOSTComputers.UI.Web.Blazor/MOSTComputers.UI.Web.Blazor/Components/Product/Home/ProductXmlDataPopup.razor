@@ -1,0 +1,43 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+
+@{
+    Product product = ProductXmlPopupData.Product;
+}
+
+<Popup IsVisible="ProductXmlPopupData.IsVisible"
+    IsRenderedInteractively="false"
+    PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh", }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="popup-header-text me-3 mb-0">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+
+            @if (product.Category is not null)
+            {
+                <h4 class="popup-header-text me-3 mb-0">Category: @product.Category.Description</h4>
+            }
+
+            <h4 class="popup-header-text me-3">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text me-3">@(product.Name ?? "-")</h4>
+            <h4 class="popup-header-text me-2">
+                Status: @(product.Status is not null ? GetStringFromProductStatus(product.Status.Value) : "-")
+            </h4>
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <ProductXmlInTextarea IsRenderedInteractively="false" DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+        {
+            ProductIds = [product.Id]
+        }" />
+    </ChildContent>
+</Popup>
+
+@code {
+    [Parameter, EditorRequired] public required ProductXmlPopupData ProductXmlPopupData { get; set; }
+}

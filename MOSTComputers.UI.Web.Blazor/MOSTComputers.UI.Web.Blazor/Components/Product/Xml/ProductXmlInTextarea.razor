@@ -65,12 +65,16 @@
         public List<XmlSearchStringPartInfo>? SearchStringPartInfos { get; init; }
     }
 
+    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+
     [Parameter] public required OneOf<List<ProductXmlRelatedData>, GetDataFromServer> DataOptions { get; set; }
 
     private OneOf<string, InvalidXmlResult>? _productXmlData { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        if (IsRenderedInteractively) return;
+
         await SetProductXmlFromDataOptionsAsync();
     }
 
