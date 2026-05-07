@@ -2,10 +2,14 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Common;
 using MOSTComputers.Services.DataAccess.Products.Configuration;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
+using OneOf;
+using OneOf.Types;
 using System.Data;
 using System.Transactions;
 
@@ -173,5 +177,88 @@ internal sealed class GroupPromotionImagesRepository : IGroupPromotionImagesRepo
         suppressedTransactionScope.Complete();
 
         return promotionImage;
+    }
+
+    public async Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(GroupPromotionImageCreateRequest createRequest)
+    {
+        const string query =
+            $"""
+            DECLARE @TempIdTable TABLE (Id INT);
+
+            INSERT INTO {GroupPromotionImagesTableName} (
+                {PromotionIdColumnName},
+                {ImageColumnName},
+                {ContentTypeColumnName})
+
+            OUTPUT INSERTED.Id INTO @TempIdTable (Id)
+            VALUES (@PromotionId, @Image, @ContentType);
+
+            SELECT TOP 1 Id FROM @TempIdTable;
+            """;
+
+        using SqlConnection sqlConnection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            PromotionId = createRequest.PromotionId,
+            Image = createRequest.Image,
+            ContentType = createRequest.ContentType,
+        };
+
+        int? insertedId = await sqlConnection.ExecuteScalarAsync<int?>(query, parameters, commandType: CommandType.Text);
+
+        if (insertedId != null && insertedId > 0)
+        {
+            return insertedId.Value;
+        }
+
+        return new UnexpectedFailureResult();
+    }
+
+    public async Task<OneOf<Success, NotFound>> UpdateAsync(GroupPromotionImageUpdateRequest updateRequest)
+    {
+        const string query =
+            $"""
+            UPDATE {GroupPromotionImagesTableName}
+            SET {PromotionIdColumnName} = @PromotionId,
+                {ImageColumnName} = @Image,
+                {ContentTypeColumnName} = @ContentType
+
+            WHERE {IdColumnName} = @Id;
+            """;
+
+        var parameters = new
+        {
+            Id = updateRequest.Id,
+            PromotionId = updateRequest.PromotionId,
+            Image = updateRequest.Image,
+            ContentType = updateRequest.ContentType,
+        };
+
+        SqlConnection sqlConnection = new (_connectionStringProvider.ConnectionString);
+
+        int rowsAffected = await sqlConnection.ExecuteAsync(query, parameters, commandType: CommandType.Text);
+
+        return rowsAffected > 0 ? new Success() : new NotFound();
+    }
+
+    public async Task<OneOf<Success, NotFound>> DeleteAsync(int id)
+    {
+        const string query =
+            $"""
+            DELETE FROM {GroupPromotionImagesTableName}
+            WHERE {IdColumnName} = @Id;
+            """;
+
+        var parameters = new
+        {
+            Id = id,
+        };
+
+        SqlConnection sqlConnection = new(_connectionStringProvider.ConnectionString);
+
+        int rowsAffected = await sqlConnection.ExecuteAsync(query, parameters, commandType: CommandType.Text);
+
+        return rowsAffected > 0 ? new Success() : new NotFound();
     }
 }

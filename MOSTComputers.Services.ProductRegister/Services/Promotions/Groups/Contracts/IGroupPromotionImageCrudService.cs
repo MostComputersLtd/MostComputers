@@ -1,12 +1,13 @@
-﻿using MOSTComputers.Models.Product.Models.Promotions.Groups;
+﻿using FluentValidation.Results;
+using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
 using OneOf;
 using OneOf.Types;
 
-namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
-public interface IGroupPromotionImagesRepository
+namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+public interface IGroupPromotionImageCrudService
 {
     Task<OneOf<Success, NotFound>> DeleteAsync(int id);
     Task<List<GroupPromotionImage>> GetAllInPromotionAsync(int groupPromotionId);
@@ -16,6 +17,6 @@ public interface IGroupPromotionImagesRepository
     Task<List<GroupPromotionImage>> GetByIdsAsync(IEnumerable<int> ids);
     Task<List<GroupPromotionImageWithoutFile>> GetByIdsWithoutFilesAsync(IEnumerable<int> ids);
     Task<GroupPromotionImageWithoutFile?> GetByIdWithoutFileAsync(int id);
-    Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(GroupPromotionImageCreateRequest createRequest);
-    Task<OneOf<Success, NotFound>> UpdateAsync(GroupPromotionImageUpdateRequest createRequest);
+    Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(GroupPromotionImageCreateRequest createRequest);
+    Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(GroupPromotionImageUpdateRequest updateRequest);
 }

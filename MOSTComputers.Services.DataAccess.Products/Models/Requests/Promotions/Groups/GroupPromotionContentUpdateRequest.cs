@@ -1,7 +1,8 @@
-﻿namespace MOSTComputers.Models.Product.Models.Promotions.Groups;
-public sealed class GroupPromotionContent
+﻿namespace MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
+
+public sealed class GroupPromotionContentUpdateRequest
 {
-    public int Id { get; init; }
+    public required int Id { get; init; }
     public string? Name { get; init; }
 	public int? GroupId { get; init; }
 	public string? HtmlContent { get; init; }

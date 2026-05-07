@@ -2,7 +2,7 @@
 public sealed class PromotionGroup
 {
 	public int Id { get; init; }
-    public string? Name  { get; init; }
+    public string? Name { get; init; }
 	public string? Header { get; init; }
 	public byte[]? LogoImage { get; init; }
 	public string? LogoContentType { get; init; }

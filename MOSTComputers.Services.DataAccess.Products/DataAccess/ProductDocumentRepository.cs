@@ -79,17 +79,7 @@ internal sealed class ProductDocumentRepository : IProductDocumentRepository
 
     public async Task<OneOf<ProductDocument, UnexpectedFailureResult>> InsertAsync(ProductDocumentCreateRequest createRequest)
     {
-        /*
-        SET ARITHABORT ON;
-        SET ANSI_WARNINGS ON;
-        SET ANSI_NULLS ON;
-        SET QUOTED_IDENTIFIER ON;
-        SET CONCAT_NULL_YIELDS_NULL ON;
-        SET ANSI_PADDING ON;
-        SET NUMERIC_ROUNDABORT OFF; 
-         */
-
-        const string query =
+       const string query =
             $"""
             DECLARE @InsertedIdTable TABLE (Id INT);
 

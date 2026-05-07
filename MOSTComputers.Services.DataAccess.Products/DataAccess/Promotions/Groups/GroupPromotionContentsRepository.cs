@@ -2,9 +2,13 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
+using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Common;
 using MOSTComputers.Services.DataAccess.Products.Configuration;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
+using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
+using OneOf;
+using OneOf.Types;
 using System.Data;
 using System.Transactions;
 
@@ -190,5 +194,107 @@ internal sealed class GroupPromotionContentsRepository : IGroupPromotionContents
         suppressedTransactionScope.Complete();
 
         return promotionContent;
+    }
+
+    public async Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(GroupPromotionContentCreateRequest createRequest)
+    {
+        const string query =
+            $"""
+            DECLARE @TempIdTable TABLE (Id INT);
+
+            INSERT INTO {GroupPromotionContentsTableName} (
+                {NameColumnName},
+                {GroupIdColumnName},
+                {HtmlContentColumnName},
+                {StartDateColumnName},
+                {ExpireDateColumnName},
+                {DisplayOrderColumnName},
+                {DateModifiedColumnName},
+                {DisabledColumnName},
+                {RestrictedColumnName},
+                {MemberOfDefaultGroupColumnName},
+                {DefaultGroupPriorityColumnName})
+                OUTPUT INSERTED.Id INTO @TempIdTable (Id)
+
+            VALUES (@Name, @GroupId, @HtmlContent, @StartDate, @ExpirationDate,
+                @DisplayOrder, @DateModified, @Disabled, @Restricted,
+                @MemberOfDefaultGroup, @DefaultGroupPriority)
+
+            SELECT TOP 1 Id FROM @TempIdTable;
+            """;
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            Name = createRequest.Name,
+            GroupId = createRequest.GroupId,
+            HtmlContent = createRequest.HtmlContent,
+            StartDate = createRequest.StartDate,
+            ExpirationDate = createRequest.ExpirationDate,
+            DisplayOrder = createRequest.DisplayOrder,
+            DateModified = createRequest.DateModified,
+            Disabled = createRequest.Disabled,
+            Restricted = createRequest.Restricted,
+            MemberOfDefaultGroup = createRequest.MemberOfDefaultGroup,
+            DefaultGroupPriority = createRequest.DefaultGroupPriority,
+        };
+
+        int? insertedId = await connection.ExecuteScalarAsync<int?>(query, parameters, commandType: CommandType.Text);
+
+        if (insertedId != null && insertedId > 0)
+        {
+            return insertedId.Value;
+        }
+
+        return new UnexpectedFailureResult();
+    }
+
+    public async Task<OneOf<Success, NotFound>> UpdateAsync(GroupPromotionContentUpdateRequest updateRequest)
+    {
+        const string query =
+            $"""
+            UPDATE {GroupPromotionContentsTableName}
+                SET {NameColumnName} = @Name,
+                    {GroupIdColumnName} = @GroupId,
+                    {HtmlContentColumnName} = @HtmlContent,
+                    {StartDateColumnName} = @StartDate,
+                    {ExpireDateColumnName} = @ExpirationDate,
+                    {DisplayOrderColumnName} = @DisplayOrder,
+                    {DateModifiedColumnName} = @DateModified,
+                    {DisabledColumnName} = @Disabled,
+                    {RestrictedColumnName} = @Restricted,
+                    {MemberOfDefaultGroupColumnName} = @MemberOfDefaultGroup,
+                    {DefaultGroupPriorityColumnName} = @DefaultGroupPriority
+
+                WHERE {IdColumnName} = @Id;
+            """;
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            Id = updateRequest.Id,
+            Name = updateRequest.Name,
+            GroupId = updateRequest.GroupId,
+            HtmlContent = updateRequest.HtmlContent,
+            StartDate = updateRequest.StartDate,
+            ExpirationDate = updateRequest.ExpirationDate,
+            DisplayOrder = updateRequest.DisplayOrder,
+            DateModified = updateRequest.DateModified,
+            Disabled = updateRequest.Disabled,
+            Restricted = updateRequest.Restricted,
+            MemberOfDefaultGroup = updateRequest.MemberOfDefaultGroup,
+            DefaultGroupPriority = updateRequest.DefaultGroupPriority,
+        };
+
+        int rowsAffected = await connection.ExecuteAsync(query, parameters, commandType: CommandType.Text);
+
+        if (rowsAffected > 0)
+        {
+            return new Success();
+        }
+
+        return new NotFound();
     }
 }

@@ -5,6 +5,7 @@ using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
@@ -142,15 +143,15 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
             fileAlreadyExists => new ImageFileAlreadyExistsResult { ExistingImageId = image.Id });
     }
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> UpdateAsync(
+    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileNameAsync(
         GroupPromotionImageFileDataUpdateRequest updateRequest)
     {
         return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => UpdateInternalAsync(updateRequest),
+            () => ChangeFileNameInternalAsync(updateRequest),
             result => result.IsT0);
     }
 
-    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> UpdateInternalAsync(
+    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileNameInternalAsync(
         GroupPromotionImageFileDataUpdateRequest updateRequest)
     {
         GroupPromotionImageFileData? existingImageFileData = await _groupPromotionImageFileDataService.GetByIdAsync(updateRequest.Id);
@@ -175,11 +176,64 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
             return result.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
         }
 
+        string newFileNameWithoutExtension = Path.GetFileNameWithoutExtension(updateRequest.NewFileName);
+
         OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> renameFileResult
-            = _groupPromotionFileManagementService.RenameFile(existingImageFileData.FileName, updateRequest.NewFileName);
+            = _groupPromotionFileManagementService.RenameFile(existingImageFileData.FileName, newFileNameWithoutExtension);
 
         return renameFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
     }
+
+    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileAsync(
+        GroupPromotionImageFileUpdateRequest updateRequest)
+    {
+        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
+            () => ChangeFileInternalAsync(updateRequest),
+            result => result.IsT0);
+    }
+
+    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileInternalAsync(
+        GroupPromotionImageFileUpdateRequest updateRequest)
+    {
+        GroupPromotionImageFileData? existingImageFileData = await _groupPromotionImageFileDataService.GetByIdAsync(updateRequest.Id);
+
+        if (existingImageFileData is null) return new NotFound();
+
+        if (existingImageFileData.FileName == updateRequest.FileName)
+        {
+            OneOf<Success, FileDoesntExistResult> updateFileResult
+                = await _groupPromotionFileManagementService.UpdateFileAsync(updateRequest.FileName, updateRequest.Image);
+
+            return updateFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+        }
+
+        GroupPromotionImageFileDataUpdateRequest fileDataUpdateRequest = new()
+        {
+            Id = updateRequest.Id,
+            NewFileName = updateRequest.FileName,
+        };
+
+        OneOf<Success, NotFound, ValidationResult> result = await _groupPromotionImageFileDataService.UpdateAsync(fileDataUpdateRequest);
+
+        if (!result.IsT0)
+        {
+            return result.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+        }
+
+        OneOf<Success, FileDoesntExistResult> deleteFileResult
+            = _groupPromotionFileManagementService.DeleteFile(existingImageFileData.FileName);
+
+        if (!deleteFileResult.IsT0)
+        {
+            return deleteFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+        }
+
+        OneOf<Success, FileAlreadyExistsResult> createFileResult
+            = await _groupPromotionFileManagementService.AddFileAsync(updateRequest.FileName, updateRequest.Image);
+
+        return createFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+    }
+
 
     public async Task<OneOf<Success, NotFound, FileDoesntExistResult>> DeleteAsync(int id)
     {

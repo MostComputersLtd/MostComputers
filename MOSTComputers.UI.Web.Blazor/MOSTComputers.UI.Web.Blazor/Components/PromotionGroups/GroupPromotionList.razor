@@ -1,0 +1,51 @@
+﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
+<ul class="promotion-groups-list">
+	
+	@foreach (GroupPromotionContent promotion in Promotions)
+	{
+		string startDateString = promotion.StartDate is not null ? promotion.StartDate.Value.ToString("d") : "Unspecified";
+		string expirationDateString = "Unspecified";
+
+		string expiredText = "Active";
+
+		if (promotion.ExpirationDate is not null)
+		{
+			expirationDateString = promotion.ExpirationDate.Value.ToString("d");
+
+			if (promotion.ExpirationDate < DateTime.Now)
+			{
+				expiredText = "Expired";
+			}
+		}
+
+		<li class="promotion-groups-list-item" onclick="openPromotionEditorForPromotion(@promotion.Id)">
+
+			<div class="promotion-groups-item-left">
+				<p>@promotion.Name</p>
+
+				<p>@expiredText: @startDateString - @expirationDateString</p>
+			</div>
+
+
+			<div class="promotion-groups-item-right">
+				@if (promotion.Disabled == true)
+				{
+					<p>Disabled</p>
+				}
+				else
+				{
+					<p>Enabled</p>
+				}
+
+				@if (promotion.Restricted == true)
+				{
+					<p>Restricted</p>
+				}
+			</div>
+		</li>
+	}
+</ul>
+
+@code {
+	[Parameter, EditorRequired] public required List<GroupPromotionContent> Promotions { get; set; } = new();
+}

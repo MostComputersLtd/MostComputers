@@ -4,6 +4,7 @@ using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using OneOf;
 using OneOf.Types;
@@ -19,7 +20,8 @@ public interface IGroupPromotionImageFileService
     Task<GroupPromotionImageFileData?> GetByImageIdAsync(int imageId);
     Task<GroupPromotionImageFile?> GetByImageIdWithFileAsync(int imageId);
     Task<OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(GroupPromotionImageFileDataCreateRequest createRequest);
-    Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> UpdateAsync(GroupPromotionImageFileDataUpdateRequest updateRequest);
+    Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileNameAsync(GroupPromotionImageFileDataUpdateRequest updateRequest);
     Task<OneOf<Success, NotFound, FileDoesntExistResult>> DeleteAsync(int id);
     Task<OneOf<Success, NotFound, FileDoesntExistResult>> DeleteByImageIdAsync(int imageId);
+    Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileAsync(GroupPromotionImageFileUpdateRequest updateRequest);
 }

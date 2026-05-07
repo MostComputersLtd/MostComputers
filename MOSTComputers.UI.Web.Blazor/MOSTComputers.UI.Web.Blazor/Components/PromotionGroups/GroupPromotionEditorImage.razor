@@ -1,0 +1,29 @@
+﻿@{
+	string imageTitle = Image.Title ?? Image.ImageUrl;
+}
+
+<li id="promotion-groups-image-list-item-@Image.Index" name="promotion-groups-image-list-item" class="promotion-groups-image-list-item">
+
+	<div class="promotion-groups-image-delete-button-container">
+
+		<button type="button"
+			class="btn-close promotion-groups-image-delete-button"
+			onclick="removePromotionImage('promotion-groups-image-list-item-@Image.Index', '@Image.ImageUrl')"
+			aria-label="Delete" />
+	</div>
+
+	<img name="promotion-groups-image" class="promotion-groups-image" src="@Image.ImageUrl" aria-label="@imageTitle" title="@imageTitle"
+		data-current-promotion-image-id="@(Image.ImageId != null ? Image.ImageId : string.Empty)"/>
+</li>
+
+@code {
+	public sealed class GroupPromotionImageEditorData
+	{
+		public required int Index { get; set; }
+		public int? ImageId { get; set; }
+		public required string ImageUrl { get; set; }
+		public string? Title { get; set; }
+	}
+
+	[Parameter, EditorRequired] public required GroupPromotionImageEditorData Image { get; set; }
+}
