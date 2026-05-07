@@ -49,6 +49,7 @@
     min-width: min-content;
     height: inherit;
     display: flex;
+    margin: 0px;
     -ms-flex-direction: column;
     -webkit-flex-direction: column;
     flex-direction: column;
