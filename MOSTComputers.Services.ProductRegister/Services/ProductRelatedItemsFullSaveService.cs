@@ -1,7 +1,5 @@
-﻿using Azure.Core;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Results;
-using FluentValidation.TestHelper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MOSTComputers.Models.FileManagement.Models;
@@ -11,8 +9,6 @@ using MOSTComputers.Models.Product.Models.ProductStatuses;
 using MOSTComputers.Models.Product.Models.Promotions.Files;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
-using MOSTComputers.Services.DataAccess.Products.Models.Requests.ProductImage;
-using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Files.PromotionProductFiles;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts;
@@ -31,23 +27,16 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFil
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
-using MOSTComputers.Services.ProductRegister.Services.ProductImages;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
-using MOSTComputers.Services.ProductRegister.Validation;
-using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
-using System;
-using System.Globalization;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Transactions;
 using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
-using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
 using static MOSTComputers.Utils.Files.ContentTypeUtils;
 using static MOSTComputers.Utils.Files.FileExtensionUtils;
 
@@ -261,15 +250,15 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
             }
         }
 
-        foreach (ProductImage oldProductImage in productImagesToDelete)
-        {
-            if (oldProductImage.Id < _productImageCrudService.GetMinimumImagesAllInsertIdForLocalApplication())
-            {
-                ValidationFailure validationFailure = new(nameof(ProductRelatedItemsFullSaveRequest.ImageRequests), _unsupportedIdForDeleteErrorMessage);
+        //foreach (ProductImage oldProductImage in productImagesToDelete)
+        //{
+        //    if (oldProductImage.Id < _productImageCrudService.GetMinimumImagesAllInsertIdForLocalApplication())
+        //    {
+        //        ValidationFailure validationFailure = new(nameof(ProductRelatedItemsFullSaveRequest.ImageRequests), _unsupportedIdForDeleteErrorMessage);
 
-                return new ValidationResult([validationFailure]);
-            }
-        }
+        //        return new ValidationResult([validationFailure]);
+        //    }
+        //}
 
         //using TransactionScope replicationDBTransactionScope = new(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
