@@ -5,9 +5,20 @@
 
 	@foreach (GroupPromotionImageFileDisplayData imageData in ImageFiles)
 	{
-		<div class="promotion-group-image-item">
-			<img class="promotion-group-image" src="api/promotionGroup/imageFiles/@imageData.Id" alt="@imageData.FileName" />
-		</div>
+		if (imageData.IsVisibleInitially)
+		{
+			<div class="promotion-group-image-item">
+				<img class="promotion-group-image" src="api/promotionGroup/imageFiles/@imageData.Id" alt="@imageData.FileName"
+					data-promotion-group-id="@imageData.PromotionGroupId" />
+			</div>
+		}
+		else
+		{
+			<div class="promotion-group-image-item not-displayed">
+				<img class="promotion-group-image" data-src="api/promotionGroup/imageFiles/@imageData.Id" alt="@imageData.FileName"
+					data-promotion-group-id="@imageData.PromotionGroupId"/>
+			</div>
+		}
 	}
 </div>
 
@@ -16,6 +27,8 @@
 	{
 		public required int Id { get; init; }
 		public required string FileName { get; init; }
+		public required int PromotionGroupId { get; init; }
+		public required bool IsVisibleInitially { get; init; }
 	}
 
 	[Parameter, EditorRequired] public required List<GroupPromotionImageFileDisplayData> ImageFiles { get; set; }

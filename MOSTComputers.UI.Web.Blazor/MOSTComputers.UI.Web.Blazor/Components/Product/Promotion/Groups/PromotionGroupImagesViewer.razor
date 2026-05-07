@@ -36,7 +36,7 @@
             else
             {
                 <div id="promotionGroupItem-@kvp.Key.Id" name="promotionGroupItem" class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
-                    onclick="selectGroupAndShowData(@kvp.Key.Id, 'promotionGroupItem-@kvp.Key.Id')">
+                    onclick="selectGroupAndShowData(@kvp.Key.Id, 'promotionGroupItem-@kvp.Key.Id', @_alwaysIncludedPromotionGroupId)">
 
                     @if (kvp.Key.LogoContentType is not null && kvp.Key.LogoImage?.Length > 0)
                     {
@@ -92,7 +92,43 @@
     {
         if (IsRenderedInteractively) return;
 
-        await ProcessDataOptionsAsync();
+		if (DataOptions.IsT0)
+        {
+            _currentDataOptions = DataOptions;
+
+            _promotionGroups = DataOptions.AsT0;
+
+            @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageDisplayData>> kvp in _promotionGroups)
+            {
+                if (kvp.Key.Id == _alwaysIncludedPromotionGroupId)
+                {
+                    _alwaysIncludedPromotionGroup = kvp.Key;
+
+                    break;
+                }
+            }
+
+            SetStartingSelectedGroupStatic();
+
+            return;
+        }
+
+        if (_currentDataOptions.IsT1)
+        {
+            _currentDataOptions = DataOptions;
+
+            SetStartingSelectedGroupStatic();
+
+            return;
+        }
+
+        _currentDataOptions = DataOptions;
+
+        _promotionGroups.Clear();
+
+        await FetchPromotionGroupDataAsync();
+
+        SetStartingSelectedGroupStatic();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -141,8 +177,8 @@
         await FetchPromotionGroupDataAsync();
 
         SetStartingSelectedGroup();
-
     }
+
     // private void OnKeyDown(KeyboardEventArgs e)
     // {
     //     if (!e.CtrlKey) return;
@@ -281,6 +317,23 @@
         }
     }
 
+	private void SetStartingSelectedGroupStatic()
+    {
+        int selectedIndex = GetSelectedIndexFunc(_promotionGroups);
+
+        if (selectedIndex < 0 || selectedIndex >= _promotionGroups.Count)
+        {
+            selectedIndex = _promotionGroups.Count > 0 ? 0 : -1;
+        }
+
+        if (_promotionGroups.Count > 0)
+        {
+            PromotionGroup selectedPromotionGroup = _promotionGroups.Keys.ElementAt(selectedIndex);
+
+            AddAllImagesToDisplay(selectedPromotionGroup);
+        }
+    }
+
     private void SelectGroup(PromotionGroup promotionGroup)
     {
         if (!_promotionGroups.ContainsKey(promotionGroup)) return;
@@ -309,6 +362,8 @@
             {
                 Id = selectedImage.Id,
                 FileName = selectedImage.FileName,
+                PromotionGroupId = promotionGroup.Id,
+				IsVisibleInitially = true,
             });
         }
 
@@ -322,7 +377,45 @@
             {
                 Id = selectedImage.Id,
                 FileName = selectedImage.FileName,
+                PromotionGroupId = _alwaysIncludedPromotionGroup.Id,
+                IsVisibleInitially = true,
             });
+        }
+    }
+
+	private void AddAllImagesToDisplay(PromotionGroup promotionGroup)
+    {
+        _currentImages.Clear();
+
+        List<GroupPromotionImageDisplayData> selectedImages = _promotionGroups[promotionGroup];
+
+        foreach (GroupPromotionImageDisplayData selectedImage in selectedImages)
+        {
+            _currentImages.Add(new()
+            {
+                Id = selectedImage.Id,
+                FileName = selectedImage.FileName,
+                PromotionGroupId = promotionGroup.Id,
+                IsVisibleInitially = true
+            });
+        }
+
+        foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageDisplayData>> kvp in _promotionGroups)
+        {
+            if (kvp.Key == promotionGroup) return;
+
+            bool isVisible = kvp.Key == _alwaysIncludedPromotionGroup;
+
+			foreach (GroupPromotionImageDisplayData selectedImage in kvp.Value)
+			{
+				_currentImages.Add(new()
+				{
+					Id = selectedImage.Id,
+					FileName = selectedImage.FileName,
+                    PromotionGroupId = kvp.Key.Id,
+                    IsVisibleInitially = isVisible,
+				});
+			}
         }
     }
 }
