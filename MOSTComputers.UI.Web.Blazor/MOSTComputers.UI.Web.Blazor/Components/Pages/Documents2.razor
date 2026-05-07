@@ -1,9 +1,6 @@
-﻿@page "/documents"
-@rendermode InteractiveServer
+﻿@* @page "/documents2" *@
 
 @attribute [Authorize(Roles = "Admin,Employee,CustomerInvoiceViewer")]
-
-@implements IAsyncDisposable
 
 @using System.Diagnostics.CodeAnalysis
 @using System.Numerics
@@ -55,15 +52,17 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
-<PageTitle>Documents - MOST Computers</PageTitle>
-
 <HeadContent>
+    <title>Documents - MOST Computers</title>
+
 	<meta name="description"
         content="Преглед и експорт на фактури, гаранционни карти и други документи за нашите клиенти" />
 
     <meta name="robots" content="NOINDEX,NOFOLLOW">
 
 	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+    <script href="@_pageScriptUrlWithVersion!"></script>
 </HeadContent>
 
 <div class="documents-page">
@@ -845,6 +844,7 @@
     }
 
     private const string _pageScriptUrl = "./Components/Pages/Documents.razor.js";
+    private string? _pageScriptUrlWithVersion = null;
 
     private List<DocumentTypeSearchOptions> _documentTypeSearchOptionsInSelect = new()
 	{
@@ -912,6 +912,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_pageScriptUrl);
+
         AuthenticationStateProvider.AuthenticationStateChanged += async (task) => ConfigureAuthState(await task);
 
         AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -966,16 +968,6 @@
             DocumentUserType = userType,
             ContactPersonName = contactPerson,
         };
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            string pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_pageScriptUrl);
-
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", pageScriptUrlWithVersion);
-        }
     }
 
     private string GetCurrentDateTimeInFileNameFormat()

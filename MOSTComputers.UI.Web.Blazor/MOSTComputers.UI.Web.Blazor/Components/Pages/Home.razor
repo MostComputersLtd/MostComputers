@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@* @page "/" *@
 @rendermode InteractiveServer
 
 @using System.Text
@@ -502,6 +502,7 @@
 
         <ChildContent>
             <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="product"
+				BaseProductPagePath="@NavigationManager.BaseUri"
                 PriceData="_productDataPopupData.ProductDataPopupPriceData"
                 ProductProperties="_productDataPopupData.ProductProperties"
                 ProductImages='_productDataPopupData.ProductImages'

@@ -1,4 +1,4 @@
-﻿@page "/downloadXml2"
+﻿@page "/downloadXml"
 
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.Promotions.Groups
@@ -8,6 +8,7 @@
 @using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
 @using Microsoft.Extensions.Caching.Memory
 @using System.Text.Json
@@ -17,11 +18,18 @@
 
 @inject ICategoryService CategoryService
 @inject IManufacturerService ManufacturerService
+@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 <PageTitle>Download Xml</PageTitle>
 
 <HeadContent>
-    <script src="js/Pages/DownloadXml.js"></script>
+	<meta name="description"
+        content="Експорт на XML данни за продуктите, който предлагаме." />
+
+    <meta name="keywords" content="MOST Computers, МОСТ Компютърс, компютри, компоненти, лаптопи, сървъри, принтери, консумативи, цени" />
+    <meta name="robots" content="INDEX,FOLLOW">
+
+    <script src="@_pageScriptUrlWithVersion"></script>
 </HeadContent>
 
 <div id="downloadXmlPage" class="download-xml-page">
@@ -32,7 +40,14 @@
 
             @foreach (string currencyOption in _currencySelectOptions)
             {
-                <option value="@currencyOption">@currencyOption</option>
+                if (currencyOption == _defaultCurrencySelectOption)
+                {
+                    <option value="@currencyOption" selected>@currencyOption</option>
+                }
+                else
+                {
+					<option value="@currencyOption">@currencyOption</option>
+                }
             }
         </select>
     </div>
@@ -107,6 +122,10 @@
 
 @code {
 
+    private const string _pageScriptUrl = "js/Pages/DownloadXml.js";
+
+    private string? _pageScriptUrlWithVersion;
+
     private const string _downloadAllUri = $"api/product/xml/all";
     private const string _downloadAllWithPromotionsUri = $"api/product/xml/promotions";
     private const string _downloadAllInCategoryUri = $"api/product/xml/categoryId=";
@@ -120,6 +139,8 @@
 
     private readonly List<string> _currencySelectOptions = ["Base currency", "EUR", "USD", "BGN"];
 
+    private readonly string _defaultCurrencySelectOption = "EUR";
+
     private List<Category> _categoriesInSelect { get; set; } = new();
     private List<Manufacturer> _manufacturersInSelect { get; set; } = new();
 
@@ -128,5 +149,7 @@
         _categoriesInSelect = await CategoryService.GetAllAsync();
 
         _manufacturersInSelect = await ManufacturerService.GetAllWithActiveProductsAsync();
+
+        _pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_pageScriptUrl);
     }
 }

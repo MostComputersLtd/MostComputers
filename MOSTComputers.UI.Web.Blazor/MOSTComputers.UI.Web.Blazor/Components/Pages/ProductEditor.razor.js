@@ -1,23 +1,24 @@
-﻿const searchInputId = "userInput";
+﻿const pageRootDivId = "productEditorPage";
+const searchInputId = "userInput";
+const searchButtonId = "productEditorSearchButton";
 
-export function registerKeyDownEvent() {
+export function registerKeyDownEvent(dotNetReference) {
    
-    attachKeyDownEvent();
-
-    console.log(Blazor.addEventListener);
+    attachKeyDownEvent(dotNetReference);
 
     Blazor.addEventListener("enhancedload", removeKeyDownEvent);
     window.addEventListener("beforeunload", removeKeyDownEvent);
 }
 
-function attachKeyDownEvent() {
+function attachKeyDownEvent(dotNetReference) {
     const root = document.getElementById(pageRootDivId);
 
     if (!root || root._listenerAttached) return;
 
-    window.addEventListener("keydown", MakeEnterRedirectToSearchInput);
+    window.addEventListener("keydown", MakeEnterStartSearch);
 
     root._listenerAttached = true;
+    root._dotNetReference = dotNetReference;
 
     console.log("Attached");
 }
@@ -25,24 +26,25 @@ function attachKeyDownEvent() {
 function removeKeyDownEvent() {
     const root = document.getElementById(pageRootDivId);
 
-    window.removeEventListener("keydown", MakeEnterRedirectToSearchInput);
+    window.removeEventListener("keydown", MakeEnterStartSearch);
 
     if (root) {
         root._listenerAttached = false;
+        root._dotNetReference = null;
     }
 
     console.log("Removed");
 }
 
-function MakeEnterRedirectToSearchInput(e) {
+function MakeEnterStartSearch(e) {
     if (e.key !== 'Enter') return;
 
     console.log("EVENT");
 
     const pageRootElement = document.getElementById(pageRootDivId);
-    const searchInput = document.getElementById(searchInputId);
+    const searchButton = document.getElementById(searchButtonId);
 
-    if (!pageRootElement || !searchInput) return;
+    if (!pageRootElement || !searchButton) return;
 
     const el = document.activeElement;
 
@@ -79,7 +81,11 @@ function MakeEnterRedirectToSearchInput(e) {
 
     console.log("Prevented default");
 
-    searchInput.focus();
+    searchButton.focus();
+
+    const dotNetReference = pageRootElement._dotNetReference;
+
+    dotNetReference.invokeMethodAsync("SearchProductsFromJs");
 }
 
 function toggleElementDisplay(elementId)
@@ -154,5 +160,3 @@ export function openFileDataInNewWindow(fileData, contentType, newWindowTitle)
         newWindow.document.title = newWindowTitle;
     }
 }
-
-const pageRootDivId = "productEditorPage";

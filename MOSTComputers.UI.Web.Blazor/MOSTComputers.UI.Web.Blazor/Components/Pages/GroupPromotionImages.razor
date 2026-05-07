@@ -65,7 +65,9 @@
                 PromotionGroupImageFiles.Add(new()
                 {
                     Id = imageFileForPromotion.Id,
-                    FileName = imageFileForPromotion.FileName
+                    FileName = imageFileForPromotion.FileName,
+                    PromotionGroupId = PromotionGroupId.Value,
+                    IsVisibleInitially = true,
                 });
 
             }

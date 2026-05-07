@@ -1,15 +1,16 @@
 ﻿@page "/product/productData/{ProductId:int}"
 
-@rendermode InteractiveServer
-
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.Models.Product.Models.Promotions
 @using MOSTComputers.Services.Currencies.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using OneOf
 @using OneOf.Types
 
@@ -21,11 +22,57 @@
 @inject IProductCharacteristicService ProductCharacteristicService
 @inject IProductImageService ProductImageService
 @inject IProductImageFileService ProductImageFileService
+@inject IPromotionService PromotionService
 @inject ISearchStringOriginService SearchStringOriginService
 @inject ICurrencyVATService CurrencyVATService
 @inject ICurrencyConversionService CurrencyConversionService
+@inject NavigationManager NavigationManager
+@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
-<PageTitle>@(Product?.Name ?? "Product Data")</PageTitle>
+@{
+	string productNameInPageTitle = "Product Data";
+	string productNameInPageDescription = string.Empty;
+
+	string productPartNumberSectionInPageDescription = string.Empty;
+
+	if (Product != null)
+	{
+		productNameInPageTitle = Product.Name ?? Product.Id.ToString();
+
+		productNameInPageDescription = Product.Name ?? Product.Id.ToString();
+		productPartNumberSectionInPageDescription = $"(Парт номер: {Product.PartNumber2}";
+	}
+}
+
+<PageTitle>@productNameInPageTitle</PageTitle>
+
+<HeadContent>
+	<meta name="description"
+        content="Информация за продукт @productNameInPageDescription @productPartNumberSectionInPageDescription" />
+
+    <meta name="keywords" content="MOST Computers, МОСТ Компютърс, компютри, компоненти, лаптопи, сървъри, принтери, консумативи, цени" />
+    <meta name="robots" content="INDEX,FOLLOW">
+
+    <script src="@_carouselScriptUrlWithVersion"></script>
+    <script src="@_productDataScriptUrlWithVersion"></script>
+    <script src="@_pageScriptUrlWithVersion"></script>
+
+    <style>
+		body > div.page > main > article {
+			padding-left: 1.25rem;
+			padding-right: 1.25rem;
+			padding-top: 1.1rem;
+		}
+
+	    @@media (max-width: 684px) {
+			body > div.page > main > article {
+				padding-left: 0.75rem;
+				padding-right: 0.75rem;
+				padding-top: 1.1rem;
+			}
+	    }
+    </style>
+</HeadContent>
 
 @if (Product is null)
 {
@@ -34,7 +81,7 @@
     return;
 }
 
-<div class="product-data-header">
+@* <div class="product-data-header">
 
     <div class="header-text-container category-and-manufacturer-container">
         @if (Product.Manufacturer is not null)
@@ -55,13 +102,28 @@
             @(Product.Status is not null ? GetStringFromProductStatus(Product.Status.Value) : "-")
         </h4>
     </div>
-</div>
+</div> *@
 
 <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
-    Product="Product" PriceData="ProductPriceData" ProductProperties="ProductProperties"
-    ProductImages="ProductImages" ProductSearchStringParts="ProductSearchStringParts"/>
+	IsRenderedInteractively="false"
+	BaseProductPagePath="@NavigationManager.BaseUri"
+    ShowProductIdData="true"
+    Product="Product"
+    PriceData="ProductPriceData"
+    ProductProperties="ProductProperties"
+    ProductImages="ProductImages"
+    ProductPromotions="ProductPromotions"
+    ProductSearchStringParts="ProductSearchStringParts"/>
 
 @code {
+
+    private const string _productDataScriptUrl = "js/Product/ProductData.js";
+    private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
+    private const string _pageScriptUrl = "js/Pages/ProductData.js";
+
+    private string? _productDataScriptUrlWithVersion = null;
+    private string? _carouselScriptUrlWithVersion = null;
+    private string? _pageScriptUrlWithVersion = null;
 
     [Parameter] public required int? ProductId { get; set; }
     private int? _previousProductId { get; set; }
@@ -70,28 +132,33 @@
 
     private List<ProductPropertyDisplayData> ProductProperties { get; set; } = new();
     private List<ProductImageDisplayData> ProductImages { get; set; } = new();
+    private List<Promotion>? ProductPromotions { get; set; }
     private List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
     private ProductPriceData? ProductPriceData { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        _productDataScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_productDataScriptUrl);
+        _carouselScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_carouselScriptUrl);
+        _pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_pageScriptUrl);
+
         await SetProductDataAsync();
 
         StateHasChanged();
     }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        if (_previousProductId is not null
-            && _previousProductId != ProductId)
-        {
-            await SetProductDataAsync();
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     if (_previousProductId is not null
+    //         && _previousProductId != ProductId)
+    //     {
+    //         await SetProductDataAsync();
 
-            StateHasChanged();
-        }
+    //         StateHasChanged();
+    //     }
 
-        _previousProductId = ProductId;
-    }
+    //     _previousProductId = ProductId;
+    // }
 
     private async Task SetProductDataAsync()
     {
@@ -175,6 +242,16 @@
 
             ProductImages.Add(productImageDisplayData);
         }
+
+        List<Promotion> productPromotions = await PromotionService.GetAllForProductAsync(ProductId.Value);
+
+		ProductPromotions = productPromotions.Where(x =>
+        {
+            if (x.Id != Product.PromotionPid && x.Id != Product.PromotionRid) return false;
+
+            return (x.StartDate is null || x.StartDate <= DateTime.Now) && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+        })
+            .ToList();
 
         ProductSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             Product.SearchString, Product.CategoryId);

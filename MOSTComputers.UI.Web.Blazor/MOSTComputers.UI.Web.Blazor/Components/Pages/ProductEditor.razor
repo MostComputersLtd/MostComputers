@@ -12,7 +12,11 @@
 @using MOSTComputers.Models.Product.Models.ProductStatuses
 @using MOSTComputers.Models.Product.Models.Promotions
 @using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.Models.Product.Models.Validation
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
@@ -21,6 +25,7 @@
 @using MOSTComputers.Services.ProductRegister.Models.Requests.Product
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
+@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
@@ -29,6 +34,7 @@
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.UI.Web.Blazor.Client.Product
@@ -39,7 +45,9 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.ProductEditor
 @using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
@@ -61,22 +69,29 @@
 @inject IProductImageService ProductImageService
 @inject IProductRelatedItemsFullSaveService ProductImageAndPromotionFileSaveService
 @inject IPromotionProductFileService PromotionProductFileService
+@inject IGroupPromotionImagesRepository GroupPromotionImagesRepository
+@inject IGroupPromotionImageFileService GroupPromotionImageFileService
 @inject IProductWorkStatusesService ProductWorkStatusesService
 @inject IProductXmlProvidingService ProductXmlProvidingService
 @inject ILegacyProductXmlService LegacyProductXmlService
 @inject IProductEditorDataService ProductEditorDataService
 @inject ITransactionExecuteService TransactionExecuteService
+@inject ApplicationDataSyncService ApplicationDataSyncService
 
 @inject RoleManager<PasswordsTableOnlyRole> TEMP__RoleManager
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
+@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 <PageTitle>Product Editor</PageTitle>
 
 <HeadContent>
 	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+
+	<script src="@_carouselScriptUrlWithVersion!"></script>
+    <script src="@_productDataScriptUrlWithVersion!"></script>
 </HeadContent>
 
 <div id="productEditorPage" class="product-editor-page product-data-table-scrollable-container">
@@ -894,6 +909,14 @@
         public required List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> PromotionProductFiles { get; set; }
     }
 
+    private const string _collocatedJsRelativePath = "./Components/Pages/ProductEditor.razor.js";
+
+    private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
+    private const string _productDataScriptUrl = "js/Product/ProductData.js";
+
+    private string? _carouselScriptUrlWithVersion = null;
+    private string? _productDataScriptUrlWithVersion = null;
+
     public const int LastAddedProductsSearchCount = 200;
 
     public string? UserInputString { get; set; }
@@ -983,8 +1006,13 @@
 
     private IJSObjectReference? _jsModule;
 
+    private DotNetObjectReference<ProductEditor>? _dotNetObjectReference;
+
     protected override async Task OnInitializedAsync()
     {
+        _carouselScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_carouselScriptUrl);
+        _productDataScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_productDataScriptUrl);
+
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
 
         Task<AuthenticationState> currentAuthenticationStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -1002,11 +1030,15 @@
     {
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductEditor.razor.js");
+            string urlWithVersionHash = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_collocatedJsRelativePath);
 
-            await _jsModule.InvokeVoidAsync("registerKeyDownEvent");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", urlWithVersionHash);
 
-            Task _ = AddStatusesToAllProductsWithoutStatuses();
+            _dotNetObjectReference = DotNetObjectReference.Create(this);
+
+            await _jsModule.InvokeVoidAsync("registerKeyDownEvent", _dotNetObjectReference);
+
+            OnLocationChangedToProductEditor();
         }
     }
 
@@ -1022,7 +1054,12 @@
         _currentUserName = authenticationState.User.Identity?.Name;
     }
 
-   private void OrderByPlShow()
+    private void OnLocationChangedToProductEditor()
+    {
+        Task _ = ApplicationDataSyncService.SyncApplicationAsync(_currentUserName!);
+    }
+
+    private void OrderByPlShow()
     {
         _productOrderByImages = ProductOrderByImages.None;
 
@@ -1265,30 +1302,12 @@
         IsPromotionProductFilePopupVisible = true;
     }
 
-    private async Task AddStatusesToAllProductsWithoutStatuses()
+    [JSInvokable("SearchProductsFromJs")]
+    public async Task SearchProductsFromJsAsync()
     {
-        if (_currentUserName is null) return;
+        await SearchProductsAsync();
 
-        ProductSearchRequest productSearchRequest = new()
-        {
-            OnlyVisibleByEndUsers = false,
-            ProductNewStatuses = [ProductNewStatusSearchOptions.None],
-        };
-
-        List<Product> productsWithoutStatuses = await ProductSearchService.SearchProductsAsync(productSearchRequest);
-
-        if (productsWithoutStatuses.Count == 0) return;
-
-        ServiceProductWorkStatusesCreateManyWithSameDataRequest createAllRequest = new()
-        {
-            ProductIds = productsWithoutStatuses.Select(x => x.Id).ToList(),
-            ProductNewStatus = ProductNewStatus.New,
-            ProductXmlStatus = ProductXmlStatus.NotReady,
-            ReadyForImageInsert = false,
-            CreateUserName = _currentUserName,
-        };
-
-        await ProductWorkStatusesService.InsertAllIfTheyDontExistAsync(createAllRequest);
+        StateHasChanged();
     }
 
     private async Task SearchProductsAsync()
