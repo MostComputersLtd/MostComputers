@@ -37,12 +37,14 @@ using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Cached;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
 using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups;
-using MOSTComputers.UI.Web.Blazor.Components.Product.Home;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
 using System.Data;
 using ZiggyCreatures.Caching.Fusion;
+using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing;
+using MOSTComputers.UI.Web.Blazor.Components.Home;
+using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -213,9 +215,13 @@ builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWa
 
 builder.Services.AddScoped<IProductSearchService, ProductSearchService>();
 
+//IConfigurationSection legacyPricelistOptionsConfigurationSection = builder.Configuration
+//    .GetRequiredSection("ExternalDataPaths")
+//    .GetRequiredSection("LegacyPricelistSite");
+
 IConfigurationSection legacyPricelistOptionsConfigurationSection = builder.Configuration
-    .GetRequiredSection("ExternalDataPaths")
-    .GetRequiredSection("LegacyPricelistSite");
+    .GetRequiredSection("Files")
+    .GetRequiredSection("LegacyPricelistSiteCopiedFiles");
 
 builder.Services.Configure<LegacyPricelistSiteOptions>(legacyPricelistOptionsConfigurationSection);
 
@@ -240,7 +246,11 @@ builder.Services.TryAddScoped<IWarrantyCardToXmlService, WarrantyCardToXmlServic
 builder.Services.TryAddScoped<IProductEditorDataService, ProductEditorDataService>();
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(60);
+        options.DisconnectedCircuitMaxRetained = 1000;
+    })
     //.AddHubOptions(options =>
     //{
     //    options.ClientTimeoutInterval = TimeSpan.FromSeconds(3);
@@ -297,6 +307,9 @@ builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
 
 builder.Services.AddScoped<ICustomAuthenticationService, CustomersAndEmployeesAuthenticationService>();
 
+builder.Services.AddSingleton<WebResourceUrlsHashingService>();
+builder.Services.AddSingleton<WebResourceUrlsStorageService>();
+
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
 
 //builder.Services.AddRateLimiter(options =>
@@ -322,6 +335,7 @@ builder.Services.AddLocalization();
 
 // TEMPORARY
 builder.Services.AddSingleton<_Temp_TransferDataTests.SaveService>();
+builder.Services.AddScoped<ApplicationDataSyncService>();
 
 builder.Services.AddScoped<ValidationMessagesLocalizer>();
 
@@ -377,6 +391,7 @@ app.MapProductXmlEndpoints();
 app.MapPromotionGroupXmlEndpoints();
 app.MapInvoiceXmlEndpoints();
 app.MapWarrantyCardXmlEndpoints();
+app.MapSitemapEndpoints();
 
 app.MapPdfInvoiceDataEndpoints();
 app.MapPdfWarrantyCardDataWithoutPricesEndpoints();
@@ -389,5 +404,6 @@ app.MapPromotionFileDataEndpoints();
 
 app.MapPromotionGroupComponentEndpoints();
 app.MapProductDataComponentEndpoints();
+app.MapPromotionGroupPageComponentEndpoints();
 
 app.Run();

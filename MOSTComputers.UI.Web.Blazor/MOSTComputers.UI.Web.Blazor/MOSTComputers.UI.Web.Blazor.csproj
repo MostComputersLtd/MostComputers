@@ -27,6 +27,7 @@
   <ItemGroup>
 	<PdfDocumentTemplates Include="..\..\PdfDocumentTemplates\**\*" />
 	<ProductHtmlFileTemplates Include="..\..\ProductHtmlFileTemplates\**\*" />
+	<LegacyXmlFiles Include="..\..\LegacyXmlFiles\**\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,5 +64,13 @@
 
   <Target Name="CopyProductHtmlFileTemplatesOnPublish" AfterTargets="Publish">
 	<Copy SourceFiles="@(ProductHtmlFileTemplates)" DestinationFolder="$(PublishDir)ProductHtmlFileTemplates\" />
+  </Target>
+
+  <Target Name="CopyLegacyXmlFilesOnBuild" AfterTargets="Build">
+	<Copy SourceFiles="@(LegacyXmlFiles)" DestinationFolder="$(OutputPath)LegacyXmlFiles\" />
+  </Target>
+
+  <Target Name="CopyLegacyXmlFilesOnPublish" AfterTargets="Publish">
+	<Copy SourceFiles="@(LegacyXmlFiles)" DestinationFolder="$(PublishDir)LegacyXmlFiles\" />
   </Target>
 </Project>
