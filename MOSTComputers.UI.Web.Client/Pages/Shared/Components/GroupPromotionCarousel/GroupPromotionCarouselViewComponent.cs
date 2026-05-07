@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 using MOSTComputers.UI.Web.Client.Services;
 using static MOSTComputers.UI.Web.Client.Services.ActivePromotionGroupsService;
 

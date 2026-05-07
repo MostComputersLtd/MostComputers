@@ -1,8 +1,10 @@
 ﻿@model CarouselPartialsModel
 @{
 	Layout = null;
+
+	string imagePath = Url.Content(Model.Image.ImageSrc);
 }
 
-<a class="carousel-item" href="@Model.Image.ImageSrc" target="_blank" rel="noopener noreferrer">
-	<img src="@Url.Content(Model.Image.ImageSrc)" class="carousel-item-image" alt="Image">
+<a class="carousel-item" href="@imagePath" target="_blank" rel="noopener noreferrer">
+	<img src="@imagePath" class="carousel-item-image" alt="Image">
 </a>
