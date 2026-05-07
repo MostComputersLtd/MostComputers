@@ -3,6 +3,7 @@ using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.PromotionGroupData;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 
