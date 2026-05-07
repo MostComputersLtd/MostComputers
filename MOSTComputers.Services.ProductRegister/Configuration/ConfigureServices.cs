@@ -19,6 +19,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileDat
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionFile;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo.Internal;
 
@@ -112,6 +113,9 @@ public static class ConfigureServices
         services.AddScoped<IManufacturerToPromotionGroupRelationService, ManufacturerToPromotionGroupRelationService>();
         services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
         services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
+        services.AddScoped<IGroupPromotionImageCrudService, GroupPromotionImageCrudService>();
+        services.AddScoped<IGroupPromotionService, GroupPromotionService>();
+        services.AddScoped<IPromotionGroupService, PromotionGroupService>();
 
         services.AddScoped<IPromotionFileService, PromotionFileService>();
         services.AddScoped<IPromotionProductFileInfoService, PromotionProductFileInfoService>();
@@ -184,6 +188,9 @@ public static class ConfigureServices
         services.AddScoped<IManufacturerToPromotionGroupRelationService, ManufacturerToPromotionGroupRelationService>();
         services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
         services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
+        services.AddScoped<IGroupPromotionImageCrudService, GroupPromotionImageCrudService>();
+        services.AddScoped<IGroupPromotionService, GroupPromotionService>();
+        services.AddScoped<IPromotionGroupService, PromotionGroupService>();
 
         services.AddKeyedScoped<IPromotionFileService, PromotionFileService>(PromotionFileServiceKey);
         services.AddScoped<IPromotionFileService, CachedPromotionFileService>(serviceProvider =>
@@ -330,6 +337,14 @@ public static class ConfigureServices
 
         services.AddScoped<IValidator<GroupPromotionImageFileDataCreateRequest>, GroupPromotionImageFileDataCreateRequestValidator>();
         services.AddScoped<IValidator<GroupPromotionImageFileDataUpdateRequest>, GroupPromotionImageFileDataUpdateRequestValidator>();
+        services.AddScoped<IValidator<GroupPromotionImageCreateRequest>, GroupPromotionImageCreateRequestValidator>();
+        services.AddScoped<IValidator<GroupPromotionImageUpdateRequest>, GroupPromotionImageUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServiceGroupPromotionImageCreateRequest>, ServiceGroupPromotionImageCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceGroupPromotionImageUpsertRequest>, ServiceGroupPromotionImageUpsertRequestValidator>();
+        services.AddScoped<IValidator<ServiceGroupPromotionContentCreateRequest>, GroupPromotionContentCreateRequestValidator>();
+        services.AddScoped<IValidator<ServiceGroupPromotionContentUpdateRequest>, GroupPromotionContentUpdateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionGroupCreateRequest>, PromotionGroupCreateRequestValidator>();
+        services.AddScoped<IValidator<ServicePromotionGroupUpdateRequest>, PromotionGroupUpdateRequestValidator>();
 
         services.AddScoped<IValidator<CreatePromotionFileRequest>, CreatePromotionFileRequestValidator>();
         services.AddScoped<IValidator<UpdatePromotionFileRequest>, UpdatePromotionFileRequestValidator>();
