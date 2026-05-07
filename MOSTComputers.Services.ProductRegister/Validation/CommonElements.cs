@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
+using FluentValidation.Validators;
 using MOSTComputers.Models.Product.Models.ProductIdentifiers;
+using MOSTComputers.Utils.Files;
 using System.Numerics;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
@@ -109,7 +111,134 @@ internal static class CommonElements
             return false;
         })
             .WithMessage($"Value must not have length greater than {maximumLength}")
-            .WithErrorCode("NotNullOrWhiteSpace");
+            .WithErrorCode("MaximumLengthCollection");
+    }
+
+    public static IRuleBuilderOptions<T, TItem> FileNameMaxLengthValidation<T, TItem>(
+       this IRuleBuilder<T, TItem> ruleBuilder, int maxLength, Func<T, TItem, string> fullFileNameFunc)
+    {
+        return ruleBuilder.SetValidator(
+            new MaxCombinedLengthValidator<T, TItem>((obj, property) =>
+            {
+                return fullFileNameFunc(obj, property).Length;
+            }, maxLength));
+    }
+
+    public class MaxCombinedLengthValidator<T, TItem> : PropertyValidator<T, TItem>
+    {
+        private readonly Func<T, TItem, int> _lengthFunc;
+        private readonly int _max;
+
+        public MaxCombinedLengthValidator(Func<T, TItem, int> lengthFunc, int max)
+        {
+            _lengthFunc = lengthFunc;
+            _max = max;
+        }
+
+        public override bool IsValid(ValidationContext<T> context, TItem value)
+        {
+            int totalLength = _lengthFunc(context.InstanceToValidate, value);
+
+            context.MessageFormatter
+                .AppendArgument("MaxLength", _max)
+                .AppendArgument("TotalLength", totalLength);
+
+            return totalLength <= _max;
+        }
+
+        public override string Name => "MaximumLengthValidator";
+
+        protected override string GetDefaultMessageTemplate(string errorCode)
+            => "The length of '{PropertyName}' must be {MaxLength} characters or fewer. You entered {TotalLength} characters.";
+    }
+
+    public static IRuleBuilderOptions<T, IEnumerable<TItem>> HasDuplicateValues<T, TItem>(
+        this IRuleBuilder<T, IEnumerable<TItem>> ruleBuilder,
+        Func<TItem, TItem, bool> equalityComparison)
+    {
+        return ruleBuilder.Must(property =>
+        {
+            List<TItem> existingItems = new();
+
+            foreach (TItem item in property)
+            {
+                foreach (TItem existingItem in existingItems)
+                {
+                    if (equalityComparison(item, existingItem))
+                    {
+                        return false;
+                    }
+
+                    existingItems.Add(item);
+                }
+            }
+
+            return true;
+        })
+            .WithMessage($"Collection must not contain duplicate values")
+            .WithErrorCode("ContainsDuplicateValues");
+    }
+
+    public static IRuleBuilderOptions<T, string?> IsImageContentType<T>(
+        this IRuleBuilder<T, string?> ruleBuilder)
+    {
+        return ruleBuilder.Must(ContentTypeUtils.IsImageContentType)
+            .WithMessage($"Value must be a valid image content type")
+            .WithErrorCode("IsImageContentType");
+    }
+
+    public static IRuleBuilderOptions<T, string?> IsExtensionValidForContentType<T>(
+        this IRuleBuilder<T, string?> ruleBuilder, Func<T, string> contentTypeFunc)
+    {
+        return ruleBuilder.Must((obj, property, validationContext) =>
+        {
+            string contentType = contentTypeFunc(obj);
+            
+            bool isValid = ExtensionIsValidForContentType(contentType, property);
+
+            if (!isValid)
+            {
+                validationContext.MessageFormatter
+                    .AppendArgument("ContentType", contentType)
+                    .AppendArgument("FileExtension", property);
+            }
+
+            return isValid;
+        })
+            .WithMessage($"Value must be a valid extension for given content type")
+            .WithErrorCode("ValidExtensionForContentType");
+
+    }
+
+    public static IRuleBuilderOptions<T, string?> IsExtensionValidForContentType<T>(
+        this IRuleBuilder<T, string?> ruleBuilder, string contentType)
+    {
+        return ruleBuilder.Must((obj, property, validationContext) =>
+        {
+            bool isValid = ExtensionIsValidForContentType(contentType, property);
+
+            if (!isValid)
+            {
+                validationContext.MessageFormatter
+                    .AppendArgument("ContentType", contentType)
+                    .AppendArgument("FileExtension", property);
+            }
+
+            return isValid;
+        })
+            .WithMessage($"Value must be a valid extension for given content type")
+            .WithErrorCode("ValidExtensionForContentType");
+    }
+
+    private static bool ExtensionIsValidForContentType(string contentType, string? property)
+    {
+        if (property == null) return false;
+
+        List<string> allowedExtensions = ContentTypeUtils.GetPossibleExtensionsFromContentType(contentType);
+
+        bool isValid = allowedExtensions.Contains(property);
+
+        return isValid;
     }
 
     internal static List<TValue> DoesNotHaveNotNullDuplicates<T, TValue>(IEnumerable<T> datas, Func<T, TValue?> getValueFunc)

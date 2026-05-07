@@ -19,9 +19,27 @@ internal static class CommonValueConstraints
         internal const int FileNameMaxLength = 50;
     }
 
+    internal static class PromotionGroupConstraints
+    {
+        internal const int NameMaxLength = 50;
+        internal const int HeaderMaxLength = 200;
+        internal const int LogoContentTypeMaxLength = 50;
+    }
+
+    internal static class GroupPromotionContentConstraints
+    {
+        internal const int NameMaxLength = 50;
+        internal const int HtmlContentMaxLength = 5000;
+    }
+
     internal static class GroupPromotionImageFileDataConstraints
     {
         internal const int FileNameMaxLength = 50;
+    }
+
+    internal static class GroupPromotionImageConstraints
+    {
+        internal const int ContentTypeMaxLength = 50;
     }
 
     internal static class PromotionFileInfoConstraints
