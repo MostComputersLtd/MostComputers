@@ -1,7 +1,7 @@
 ﻿using System.Xml;
 
 namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
-internal interface IXmlAsyncSerializable
+public interface IXmlAsyncSerializable
 {
     Task WriteXmlAsync(XmlWriter writer, string rootElementName);
 }
