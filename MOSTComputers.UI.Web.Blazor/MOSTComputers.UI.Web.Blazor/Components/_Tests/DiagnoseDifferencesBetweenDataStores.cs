@@ -270,7 +270,7 @@ public sealed class DiagnoseDifferencesBetweenDataStores
 
         if (htmlProperties == null) return productProperties.Count;
 
-        foreach (ProductProperty property in productProperties!)
+        foreach (ProductProperty property in productProperties)
         {
             bool matchInHtml = false;
 

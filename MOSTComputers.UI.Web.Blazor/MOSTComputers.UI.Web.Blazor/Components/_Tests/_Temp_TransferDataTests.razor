@@ -1200,15 +1200,15 @@
                 {
                     bool displayResult = newComparisonData.DataSourceDeviations >= maxAllowedDifferenceBetweenSources;
 
-                    if (dataSources.Length == 2
-                        && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties)
-                        && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct))
-                    {
-                        int propsCount = (newComparisonData.ProductProperties?.Count) ?? 0;
-                        int legacyXmlPropsCount = (newComparisonData.LegacyXmlProduct?.Properties?.Count) ?? 0;
+                    // if (dataSources.Length == 2
+                    //     && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.ProductProperties)
+                    //     && dataSources.Contains(DiagnoseDifferencesBetweenDataStores.DataSource.LegacyXmlProduct))
+                    // {
+                    //     int propsCount = (newComparisonData.ProductProperties?.Count) ?? 0;
+                    //     int legacyXmlPropsCount = (newComparisonData.LegacyXmlProduct?.Properties?.Count) ?? 0;
 
-                        displayResult = displayResult && legacyXmlPropsCount > propsCount;
-                    }
+                    //     displayResult = displayResult && legacyXmlPropsCount > propsCount;
+                    // }
 
                     if (displayResult)
                     {
@@ -2637,8 +2637,8 @@
 
                     ProductProperty? matchingProperty = properties?.FirstOrDefault(x => x.ProductCharacteristicId == matchingCharacteristic.Id);
 
-                    if (matchingProperty is not null
-                        && matchingProperty.Value == xmlProperty.Value)
+                    if (matchingProperty is not null)
+                        //&& matchingProperty.Value == xmlProperty.Value)
                     {
                         continue;
                     }

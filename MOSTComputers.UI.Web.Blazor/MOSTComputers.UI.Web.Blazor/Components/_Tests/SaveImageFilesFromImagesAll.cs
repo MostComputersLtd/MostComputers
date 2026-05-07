@@ -115,12 +115,12 @@ public class SaveImageFilesFromImagesAll
     }
 
     private async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> SaveImgAllFilesForProductAsync(
-            string upsertUserName,
-            int productId,
-            IEnumerable<ProductImage> originalImagesByProduct,
-            IEnumerable<ProductImageFileData>? existingImageFilesByProduct = null,
-            ProductTestMetrics? productTestMetrics = null,
-            Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
+        string upsertUserName,
+        int productId,
+        IEnumerable<ProductImage> originalImagesByProduct,
+        IEnumerable<ProductImageFileData>? existingImageFilesByProduct = null,
+        ProductTestMetrics? productTestMetrics = null,
+        Func<OneOf<ProductTestMetrics, ValidationResult, List<string>>, Task>? onChanged = null)
     {
         foreach (ProductImage originalImage in originalImagesByProduct)
         {
