@@ -9,7 +9,8 @@
 
 @if (IsRenderedInteractively)
 {
-    <div @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses"
+    <div id="@CarouselId"
+        @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses"
         @onmouseenter="StopAutoPlayAsync" @onmouseleave="StartAutoPlayAsync">
         <div @attributes='AdditionalViewportAttributes' class="custom-carousel-viewport @_additionalViewportClasses">
 
@@ -236,7 +237,6 @@ else
 
     private void SetCurrentData()
     {
-
         _additionalClasses = AdditionalAttributes.TryGetValue("class", out object? additionalClasses)
             ? additionalClasses?.ToString() : null;
 
