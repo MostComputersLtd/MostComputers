@@ -89,7 +89,7 @@
 
     <Routes />
 
-    @if (!IsHomePage)
+    @if (!IsStaticPage)
     {
         <ActivityTracker />
     }
@@ -99,7 +99,35 @@
 
 
 @code {
-    private bool IsHomePage =>
-        HttpContextAccessor.HttpContext?.Request.Path == "/home2"
-        || HttpContextAccessor.HttpContext?.Request.Path == "/downloadXml2";
+    private static List<string> StaticPageRoutes = [
+        "/",
+        "/downloadXml",
+        "/promotionGroups",
+        "/Account/Login",
+    ];
+
+    private static List<string> StaticPageRoutesWithExtraRoutes = [
+        "/product/productData/",
+    ];
+
+    private bool IsStaticPage
+    {
+        get
+        {
+            string? path = HttpContextAccessor.HttpContext?.Request.Path;
+
+            if (path == null) return false;
+
+            bool isExactPage = StaticPageRoutes.Contains(path);
+
+            if (isExactPage) return true;
+
+            foreach (string pagePrefix in StaticPageRoutesWithExtraRoutes)
+            {
+                if (path.StartsWith(pagePrefix)) return true;
+            }
+
+            return false;
+        }
+    }
 }
