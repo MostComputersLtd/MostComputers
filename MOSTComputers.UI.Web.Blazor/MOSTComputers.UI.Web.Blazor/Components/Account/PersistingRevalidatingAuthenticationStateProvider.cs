@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Account;
 // This is a server-side AuthenticationStateProvider that revalidates the security stamp for the connected user
-// every 30 minutes an interactive circuit is connected. It also uses PersistentComponentState to flow the
+// every 1 minute an interactive circuit is connected. It also uses PersistentComponentState to flow the
 // authentication state to the client which is then fixed for the lifetime of the WebAssembly application.
 internal sealed class PersistingRevalidatingAuthenticationStateProvider : RevalidatingServerAuthenticationStateProvider
 {
@@ -31,7 +31,7 @@ internal sealed class PersistingRevalidatingAuthenticationStateProvider : Revali
         EmployeeRoleName,
     ];
 
-    private static readonly TimeSpan _maxUserIdleTime = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _maxUserIdleTime = TimeSpan.FromMinutes(35);
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly PersistentComponentState _state;
