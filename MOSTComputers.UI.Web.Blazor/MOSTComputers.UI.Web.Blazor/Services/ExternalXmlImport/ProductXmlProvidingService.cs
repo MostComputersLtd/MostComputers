@@ -87,6 +87,18 @@ public class ProductXmlProvidingService : IProductXmlProvidingService
 
         if (xmlDataPath is null) return new NotFound();
 
+        if (!_legacyPricelistSiteOptions.Value.IsExternalFile)
+        {
+            if (!Path.IsPathFullyQualified(xmlDataPath))
+            {
+                string currentDirectory = AppDomain.CurrentDomain.BaseDirectory.Replace('\\', '/');
+
+                xmlDataPath = Path.Combine(currentDirectory, xmlDataPath);
+            }
+
+            return File.ReadAllText(xmlDataPath);
+        }
+
         IHttpClientFactory httpClientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
 
         HttpClient client = httpClientFactory.CreateClient();
