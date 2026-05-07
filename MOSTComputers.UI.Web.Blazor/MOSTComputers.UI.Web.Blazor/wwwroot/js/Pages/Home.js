@@ -32,6 +32,21 @@ const searchInputTextWithoutOrderSummaryAttribute = "data-search-without-order-s
 
 const loadingClass = "loading";
 
+document.addEventListener("visibilitychange", handleVisibilityChange);
+
+function handleVisibilityChange() {
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (productDataDialogCarousel == null) return;
+
+    if (document.hidden) {
+        stopAutoSlide(productDataDialogCarouselId);
+    }
+    else {
+        startAutoSlide(true, productDataDialogCarouselId);
+    }
+}
+
 async function searchProductsAndDisplaySearchButtonLoader() {
 
     const orderSummaryCheckbox = document.getElementById(orderSummaryCheckboxId);
@@ -421,6 +436,7 @@ async function getProductSearchStringPartsPopupDataAsync(productId) {
 
     return await response.text();
 }
+
 function getNumberOrNull(numberValue) {
     return typeof numberValue === "number" ? numberValue : null;
 }
