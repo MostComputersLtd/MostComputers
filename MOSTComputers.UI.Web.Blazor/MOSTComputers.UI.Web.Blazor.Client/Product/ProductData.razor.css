@@ -53,6 +53,47 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: row;
 }
 
+.download-button {
+    color: white;
+    background-color: #6C757D;
+    border-color: #6C757D;
+}
+
+.download-product-xml-button {
+    margin-right: 0.5rem;
+}
+
+.copy-link-button {
+}
+
+.copy-link-button-text.link-copied {
+    height: 0px;
+    visibility: hidden;
+}
+
+.copy-link-button-checkmark  {
+    display: none;
+}
+
+    .copy-link-button-checkmark.link-copied {
+        width: 1.4rem;
+        height: 1.4rem;
+        margin: 0px auto;
+        display: block;
+    }
+
+    .copy-link-button-checkmark.link-copied > path {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+        animation: draw-checkmark 0.35s ease-out forwards;
+    }
+
+@keyframes draw-checkmark {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
 .images-column {
     display: flex;
     -ms-flex-direction: column;

@@ -3,8 +3,10 @@
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using Microsoft.AspNetCore.Http
+@using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion
 
-@using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion;
+@inject IHttpContextAccessor HttpContextAccessor
 
 @if (Product is null)
 {
@@ -26,6 +28,12 @@ else
                     <div class="main-info-and-download-buttons-container">
                         <div class="col-lg-7 main-info-container">
                             <div class="name-and-partnumber-container">
+                                
+								@if (ShowProductIdData)
+								{
+									<h4 class="main-product-info-text">ID: @Product.Id</h4>
+									<h4 class="main-product-info-text">@Product.Name</h4>
+								}
 
                                 <h4 class="main-product-info-text @(isValidEAN13Code ? string.Empty : "invalid-ean-code")">EAN: @Product.PartNumber1</h4>
 
@@ -35,13 +43,29 @@ else
 
                         <div class="col-lg-5 align-content-start">
                             <div class="download-buttons-container">
-                                <a class="btn btn-secondary me-2" href="api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer">
+                                <a class="btn download-button me-2" href="api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer">
                                     XML
                                 </a>
 
-                                <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('https://localhost:7056/product/productData/@Product.Id')">
+								<button id="copyLinkButton" class="btn download-button copy-link-button"
+									onclick="copyLinkToClipboardAndAnimateCopyButton('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
+									<p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+									<svg id="copyLinkButtonCheckmark"
+										class="copy-link-button-checkmark"
+										viewBox="0 0 24 24">
+										<path d="M4 12 L10 18 L20 6"
+											fill="none"
+											stroke="#FFFFFF"
+											stroke-width="3"
+											stroke-linecap="round"
+											stroke-linejoin="round"/>
+									</svg>
+								</button>
+                               
+         @*                        <button class="btn btn-secondary"
+									onclick="navigator.clipboard.writeText('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
                                     Copy link
-                                </button>
+                                </button> *@
                             </div>
                         </div>
                     </div>
@@ -342,9 +366,18 @@ else
         public required string ImageSrc { get; init; }
     }
 
+    private const string copyLinkButtonId = "copyLinkButton";
+    private const string copyLinkButtonTextId = "copyLinkButtonText";
+    private const string copyLinkButtonCheckmarkId = "copyLinkButtonCheckmark";
+
+    private const string copyLinkButtonCheckedClass = "link-copied";
+
     private string CarouselId = "productDataCarousel";
 
+    [Parameter, EditorRequired] public required string BaseProductPagePath { get; set; }
+
     [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+    [Parameter] public bool ShowProductIdData { get; set; } = false;
 
     [Parameter] public Product? Product { get; set; }
     [Parameter] public ProductPriceData? PriceData { get; set; }
