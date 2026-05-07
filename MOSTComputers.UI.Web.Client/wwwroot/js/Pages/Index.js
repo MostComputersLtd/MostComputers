@@ -113,11 +113,23 @@ function handleWindowResize() {
 
 function handleVisibilityChange() {
 
+    const productDataDialog = document.getElementById(productDataDialogCarouselId);
+
     if (document.hidden) {
         TEMP__stopAutoSlide(groupPromotionsCarouselId);
+
+        if (productDataDialog != null)
+        {
+            stopAutoSlide(productDataDialogCarouselId);
+        }
     }
     else {
         TEMP__startAutoSlide(groupPromotionsCarouselId);
+
+        if (productDataDialog != null)
+        {
+            startAutoSlide(true, productDataDialogCarouselId);
+        }
     }
 }
 
