@@ -1,6 +1,23 @@
 ﻿const productPropertyInputName = "propertyValueInput";
 const productPropertyInputCheckboxIdPrefix = "propertyValueActiveCheckbox";
 
+const productDataPopupDialogCarouselId = "productDataCarousel";
+
+//document.addEventListener("visibilitychange", handleVisibilityChange);
+
+//function handleVisibilityChange() {
+//    const productDataPopupDialogCarousel = document.getElementById(productDataPopupDialogCarouselId);
+
+//    if (productDataPopupDialogCarousel == null) return;
+
+//    if (document.hidden) {
+//        stopAutoSlide(productDataPopupDialogCarouselId);
+//    }
+//    else {
+//        startAutoSlide(true, productDataPopupDialogCarouselId);
+//    }
+//}
+
 document.addEventListener("keydown", function (e) {
     if (!e.ctrlKey
         || e.key !== "Enter"
