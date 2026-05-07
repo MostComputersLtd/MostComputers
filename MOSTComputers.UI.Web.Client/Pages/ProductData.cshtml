@@ -1,21 +1,38 @@
-﻿@page "/product/{productId:int}"
+﻿@page "/product/{productId:int?}"
+
 @model MOSTComputers.UI.Web.Client.Pages.ProductDataModel
 @{
+	Product? product = Model.ExistingData.Product;
+
+	if (product is not null)
+	{
+		ViewData["Title"] = product.Name ?? product.Id.ToString();
+	}
+	else
+	{
+		ViewData["Title"] = "Product Data";
+	}
+
 }
 
 @section Styles {
 	<link rel="stylesheet" href="/css/Pages/Shared/Components/ProductData/Default.css" asp-append-version="true" />
 	<link rel="stylesheet" href="/css/Pages/Shared/Carousel.css" asp-append-version="true" />
+	<link rel="stylesheet" href="/css/Pages/ProductData.css" asp-append-version="true" />
 }
 
 @section Scripts {
 	<script src="/js/Pages/Shared/Carousel.js" asp-append-version="true"></script>
+	<script src="/js/Pages/Shared/Components/ProductData/Default.js" asp-append-version="true"></script>
 }
 
+@using MOSTComputers.Models.Product.Models
 @using MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductData
 
-@await Component.InvokeAsync(ProductDataViewComponent.ComponentName, new
-{
-	existingData = Model.ExistingData,
-	showProductIdData = true,
-});
+<div class="product-data-page">
+	@await Component.InvokeAsync(ProductDataViewComponent.ComponentName, new
+	{
+		existingData = Model.ExistingData,
+		showProductIdData = true,
+	})
+</div>
