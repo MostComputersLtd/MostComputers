@@ -1,5 +1,6 @@
 ﻿using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 
 namespace MOSTComputers.UI.Web.Client.Services;
