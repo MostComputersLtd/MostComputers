@@ -34,6 +34,7 @@ string productDBConnectionString = builder.Configuration.GetConnectionString(loc
 string most4WebDBConnectionString = builder.Configuration.GetConnectionString(most4WebDBConnectionStringName)!;
 
 //builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddFusionCachingServices();
 
@@ -108,7 +109,11 @@ builder.Services.AddScoped<ICurrencyConversionService, CurrencyConversionService
 builder.Services.AddScoped<ActivePromotionGroupsService>();
 
 // Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages()
+    .AddRazorPagesOptions(options =>
+    {
+        options.Conventions.AddPageRoute("/ProductData", "/preview_most.php");
+    });
 
 var app = builder.Build();
 
