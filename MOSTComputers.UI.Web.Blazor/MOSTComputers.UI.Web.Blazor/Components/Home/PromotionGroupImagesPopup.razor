@@ -4,10 +4,10 @@
 @using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
 
 @{
-    Product product = ProductGroupImagesPopupData.Product;
+    Product product = PromotionGroupPromotionPopupData.Product;
 }
 
-<Popup IsVisible="ProductGroupImagesPopupData.IsVisible"
+<Popup IsVisible="PromotionGroupPromotionPopupData.IsVisible"
     IsRenderedInteractively="false"
     PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
     <HeaderContent>
@@ -28,14 +28,14 @@
 </Popup>
 
 @code {
-    [Parameter, EditorRequired] public required PromotionGroupImagesPopupData ProductGroupImagesPopupData { get; set; }
+    [Parameter, EditorRequired] public required PromotionGroupImagesPopupData PromotionGroupPromotionPopupData { get; set; }
 
      private int GetSelectedIndexForPromotionGroupImagesPopup(
         Dictionary<PromotionGroup, List<PromotionGroupImagesViewer.GroupPromotionImageDisplayData>> promotionGroupsAndImages)
     {
-        if (ProductGroupImagesPopupData is null) return 0;
+        if (PromotionGroupPromotionPopupData is null) return 0;
 
         return promotionGroupsAndImages.Keys.ToList()
-            .FindIndex(x => x.Id == ProductGroupImagesPopupData.ManufacturerPromotionGroupId);
+            .FindIndex(x => x.Id == PromotionGroupPromotionPopupData.ManufacturerPromotionGroupId);
     }
 }

@@ -13,10 +13,9 @@ using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using OneOf;
-using ZiggyCreatures.Caching.Fusion;
 using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2;
 
-namespace MOSTComputers.UI.Web.Blazor.Components.Product.Home;
+namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
 public static class ProductDataComponentEndpoints
 {
@@ -216,6 +215,7 @@ public static class ProductDataComponentEndpoints
     }
 
     private static async Task<IResult> GetProductDataPopupAsync(
+        HttpContext httpContext,
         [FromServices] IProductService productService,
         [FromServices] IProductCharacteristicService ProductCharacteristicService,
         [FromServices] IProductPropertyService ProductPropertyService,
@@ -289,12 +289,17 @@ public static class ProductDataComponentEndpoints
         Client.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(
             currencyConversionService, currencyVATService, product);
 
+        HttpRequest httpRequest = httpContext.Request;
+
+        string baseUrl = $"{httpRequest.Scheme}://{httpRequest.Host}{httpRequest.PathBase}/";
+
         return new RazorComponentResult<ProductDataPopup>(new
         {
             ProductDataPopupData = new ProductDataPopupData()
             {
                 IsVisible = true,
                 Product = product,
+                BaseProductPagePath = baseUrl,
                 ProductDataPopupPriceData = productPriceData,
                 ProductProperties = propertiesInData,
                 ProductImages = productImagesInData,
