@@ -88,7 +88,8 @@ h6 {
 }
 
 .product-data .download-button {
-    background-color: gray;
+    background-color: #6C757D;
+    border-color: #6C757D;
     color: white;
 }
 
