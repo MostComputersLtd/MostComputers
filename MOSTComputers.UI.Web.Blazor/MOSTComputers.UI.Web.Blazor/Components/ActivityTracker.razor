@@ -1,15 +1,18 @@
 ﻿@using MOSTComputers.UI.Web.Blazor.Services
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using Microsoft.AspNetCore.Authentication
 @rendermode InteractiveServer
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 @inject UserActivityTrackerService UserActivityTrackerService
 
 @code {
-    private PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+    private const string _pageScriptUrl = "./Components/ActivityTracker.razor.js";
 
+    private PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
     private IJSObjectReference? _module;
 
     protected override void OnInitialized()
@@ -25,13 +28,15 @@
         {
             NavigationManager.NavigateTo("Account/force-logout", true);
         }
-	}
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/ActivityTracker.razor.js");
+            string pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_pageScriptUrl);
+
+            _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", pageScriptUrlWithVersion);
 
             await _module.InvokeVoidAsync("initializeActivityTracking");
 
