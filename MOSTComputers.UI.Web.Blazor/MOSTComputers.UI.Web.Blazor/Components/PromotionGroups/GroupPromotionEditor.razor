@@ -200,6 +200,10 @@
 
 			<label class="promotion-edit-input-label">Related Products</label>
 
+			<button type="button" onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)">
+				Add Products
+			</button>
+
 			<table id="promotionEditRelatedProductsTable" class="promotion-edit-related-products-table">
 
 				@if (PromotionData.RelatedProducts != null)
