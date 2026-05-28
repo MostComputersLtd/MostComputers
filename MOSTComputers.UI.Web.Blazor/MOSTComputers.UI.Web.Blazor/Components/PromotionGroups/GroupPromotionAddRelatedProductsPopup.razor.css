@@ -1,0 +1,37 @@
+﻿.add-related-products-popup-search-header {
+    width: 100%;
+}
+
+.manufacturer-select {
+    margin-right: 1rem;
+}
+
+.search-input {
+    margin-right: 1rem;
+}
+
+.add-related-product-search-button {
+    height: min-content;
+    margin-left: auto;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.35rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-justify-content: center;
+    justify-content: center;
+    background: #25b822;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.add-related-product-search-button.loading .add-related-product-search-button-text {
+    height: 0px;
+    visibility: hidden;
+}
+
+    .add-related-product-search-button.loading .round-loader-default {
+        display: block;
+    }

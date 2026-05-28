@@ -1,4 +1,10 @@
-﻿.download-xml-page {
+﻿.btn:focus-visible {
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+.download-xml-page {
     width: 100%;
     height: 100%;
     display: flex;
@@ -35,3 +41,59 @@
     .download-xml-loader.loading {
         display: unset;
     }
+
+.copy-url-button {
+    padding: .375rem .75rem;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #6c757d;
+    border-radius: .25rem;
+    line-height: 1.5;
+    color: #6c757d;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    background-color: transparent; 
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.copy-url-button:hover {
+    background-color: #e5e4e4;
+}
+
+.copy-url-button-text {
+    margin-bottom: 0px;
+}
+
+.copy-url-button.url-copied .copy-url-button-text {
+    height: 0px;
+    visibility: hidden;
+}
+
+.copy-url-button-checkmark {
+    display: none;
+}
+
+    .copy-url-button.url-copied .copy-url-button-checkmark {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin: 0px auto;
+        display: block;
+    }
+
+    .copy-url-button.url-copied .copy-url-button-checkmark > path {
+        stroke-dasharray: 40;
+        stroke-dashoffset: 40;
+        animation: draw-checkmark 0.35s ease-out forwards;
+    }
+
+@keyframes draw-checkmark {
+    to {
+        stroke-dashoffset: 0;
+    }
+}

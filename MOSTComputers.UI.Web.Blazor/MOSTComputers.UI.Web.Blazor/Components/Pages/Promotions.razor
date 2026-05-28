@@ -1,0 +1,56 @@
+﻿@page "/promotions"
+
+@attribute [ExcludeFromInteractiveRouting]
+
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+
+@inject NavigationManager NavigationManager
+
+<PageTitle>Promotions</PageTitle>
+
+<HeadContent>
+    <link href="@Assets["/css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+
+    <script src="@Assets[_groupPromotionsDisplayScriptUrl]"></script>
+    <script src="@Assets[_pageScriptUrl]"></script>
+</HeadContent>
+
+<div class="group-promotions-page">
+	<MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay
+		DisplayedGroupId="DisplayedGroupId"
+        FocusedPromotionId="FocusedPromotionId">
+	</MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
+</div>
+
+@code {
+
+	private const string _groupPromotionsDisplayScriptUrl = "/js/Promotions/GroupPromotionsDisplay.js";
+	private const string _pageScriptUrl = "/js/Pages/Promotions.js";
+
+	private const string _groupIdQueryParameterName = "displayedGroupId";
+    private const string _focusedImageIdQueryParameterName = "focusedPromotionId";
+
+    public int? DisplayedGroupId { get; set; }
+    public int? FocusedPromotionId { get; set; }
+
+	protected override void OnInitialized()
+	{	
+		Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+
+        Dictionary<string, StringValues> queryParameters = QueryHelpers.ParseQuery(uri.Query);
+
+        if (queryParameters.TryGetValue(_groupIdQueryParameterName, out StringValues groupIdAsString)
+            && int.TryParse(groupIdAsString, out int displayedGroupId))
+        {
+            DisplayedGroupId = displayedGroupId;
+        }
+
+        if (queryParameters.TryGetValue(_focusedImageIdQueryParameterName, out StringValues focusedImageIdAsString)
+            && int.TryParse(focusedImageIdAsString, out int focusedPromotionId))
+        {
+            FocusedPromotionId = focusedPromotionId;
+        }
+	}
+}

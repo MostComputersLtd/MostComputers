@@ -1,3 +1,5 @@
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
+
 public sealed class ServicePromotionGroupCreateRequest
 {
     public string? Name { get; set; }

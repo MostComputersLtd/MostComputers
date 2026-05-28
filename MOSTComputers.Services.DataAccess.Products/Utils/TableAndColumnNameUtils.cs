@@ -19,7 +19,10 @@ internal static class TableAndColumnNameUtils
 
     internal const string PromotionGroupsTableName = "[dbo].[PromotionGroups]";
     internal const string ManufacturerToPromotionGroupRelationsTableName = "[dbo].[ManufacturerToPromotionGroupRelations]";
+
     internal const string GroupPromotionContentsTableName = "[dbo].[PromotionContents]";
+    internal const string GroupPromotionContentsToProductsTableName = "[dbo].[PromotionContentsToProducts]";
+
     internal const string GroupPromotionImagesTableName = "[dbo].[PromotionImages]";
     internal const string GroupPromotionImageFileDatasTableName = "[dbo].[GroupPromotionImageFileData]";
 
@@ -255,6 +258,12 @@ internal static class TableAndColumnNameUtils
         internal const string RestrictedColumnName = "Restricted";
         internal const string MemberOfDefaultGroupColumnName = "MemberOfDefaultGroup";
         internal const string DefaultGroupPriorityColumnName = "DefaultGroupPriority";
+    }
+
+    internal static class GroupPromotionContentsToProductsTable
+    {
+        internal const string PromotionIdColumnName = "PromotionId";
+        internal const string ProductIdColumnName = "CSTID";
     }
 
     internal static class GroupPromotionImagesTable

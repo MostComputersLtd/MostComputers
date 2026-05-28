@@ -712,7 +712,6 @@
 
             <ChildContent>
                 <ProductData Product="product"
-                    IsRenderedInteractively="true"
                     ShowProductIdData="false"
                     BaseProductPagePath="@NavigationManager.BaseUri"
                     PriceData="_productDataPopupData.ProductDataPopupPriceData"
@@ -948,6 +947,8 @@
         public required ProductDocumentDisplayData ProductDocumentDisplayData { get; set; }
     }
 
+    private const string _componentScriptUrl = "./Components/Product/SingleProductEditorPopup.razor.js";
+
     private const int _propertiesTextAreaMinRows = 1;
     private const int _propertiesTextAreaMaxLength = 4000;
     private const string _propertiesTextAreaCommonName = "propertyValueInput";
@@ -1157,7 +1158,7 @@
     {
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Product/SingleProductEditorPopup.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_componentScriptUrl]);
 
             _dotNetObjectReference = DotNetObjectReference.Create(this);
 
@@ -2061,13 +2062,13 @@
 
     private bool RemoveProductImageListItem(ProductImageListItemDisplayData productImageListItemDisplayData)
     {
-        if (productImageListItemDisplayData.RelatedImage is not null && productImageListItemDisplayData.RelatedImage.ExistingImageId < 100000)
-        {
-            productImageListItemDisplayData.ValidationMessages.Clear();
-            productImageListItemDisplayData.ValidationMessages.Add("Images with ID < 100000 cannot be removed");
+        // if (productImageListItemDisplayData.RelatedImage is not null && productImageListItemDisplayData.RelatedImage.ExistingImageId < 100000)
+        // {
+        //     productImageListItemDisplayData.ValidationMessages.Clear();
+        //     productImageListItemDisplayData.ValidationMessages.Add("Images with ID < 100000 cannot be removed");
 
-            return false;
-        }
+        //     return false;
+        // }
 
         bool success = ProductImages.Remove(productImageListItemDisplayData);
 

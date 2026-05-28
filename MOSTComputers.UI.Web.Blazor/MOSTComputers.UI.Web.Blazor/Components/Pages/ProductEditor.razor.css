@@ -95,6 +95,10 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     background: inherit;
 }
 
+.product-data-table-column-with-sort-options {
+    text-wrap-mode: nowrap;
+}
+
 .legacy-xml-product-loader {
     width: 1em;
 }

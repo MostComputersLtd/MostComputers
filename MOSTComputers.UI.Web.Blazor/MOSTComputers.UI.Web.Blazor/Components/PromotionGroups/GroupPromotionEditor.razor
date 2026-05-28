@@ -1,58 +1,92 @@
-﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
+﻿@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
 
 @using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditorImage
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
 
 @{
-	string? startDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.StartDate);
-	string? expirationDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.ExpirationDate);
+	string? startDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.StartDate ?? _defaultStartDate);
+	string? expirationDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.ExpirationDate ?? _defaultExpirationDate);
+	string? minDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.MinDateValue);
+
+	string? promotionGroupName = null;
+
+	foreach (PromotionGroup promotionGroup in AvailablePromotionGroups)
+	{
+		if (promotionGroup.Id == PromotionData.GroupId)
+		{
+			promotionGroupName = promotionGroup.Name;
+
+			break;
+		}
+	}
 }
 
-<div id="promotion-edit-panel" class="promotion-edit-panel"
-	data-current-promotion-id="@(PromotionData.Id != null ? PromotionData.Id.ToString() : string.Empty)">
+<div id="promotionEditPanel"
+	class="promotion-edit-panel"
+	data-current-promotion-id="@(PromotionData.Id != null ? PromotionData.Id.ToString() : string.Empty)"
+	spellcheck="false">
 
-	<div class="promotion-groups-actions">
-		<button id="save-promotion-button" class="promotion-groups-save-button" onclick="savePromotion()">
+	<div class="promotion-edit-actions">
 
-			<p class="promotion-groups-save-button-text">Save</p>
+		<button id="savePromotionButton" class="promotion-save-button" onclick="savePromotion()">
 
-			<div class="round-loader-default promotion-groups-save-button-loader"></div>
+			<p class="promotion-save-button-text">Save</p>
+
+			<div class="round-loader-default promotion-save-button-loader"></div>
 		</button>
+
+		@if (PromotionData.GroupId != null)
+		{
+			<button id="editPromotionGroupButton" type="button"
+				class="promotion-group-edit-button"
+				onclick="openPromotionGroupEditorPopup(@PromotionData.GroupId)">
+				Edit Group@(promotionGroupName != null ? $" {promotionGroupName}" : string.Empty)
+			</button>
+		}
 
 		@if (PromotionData.Id != null)
 		{
-			<p class="promotion-groups-id-label">ID: @PromotionData.Id</p>
+			<p class="promotion-id-text">ID: @PromotionData.Id</p>
 		}
+
+		<button id="resetPromotionGroupEditorButton" type="button"
+			class="promotion-group-editor-reset-button"
+			onclick="openPromotionEditorForPromotion(@(PromotionData.Id != null ? PromotionData.Id.Value.ToString() : string.Empty))">
+			Reset
+		</button>
 	</div>
 
-	<div class="promotion-groups-edit-fields">
+	<div class="promotion-edit-fields">
 
-		<div class="promotion-groups-row">
-			<label for="promotion-name" class="promotion-groups-input-label">Name</label>
-			<input id="promotion-name" class="promotion-groups-input" value="@PromotionData.Name"/>
+		<div class="promotion-edit-row">
+			<label for="promotionName" class="promotion-edit-input-label">Name</label>
+			<input id="promotionName" class="promotion-edit-input" value="@PromotionData.Name"/>
 		</div>	
 
-		<div class="promotion-groups-row multiple-fields">
-			<div class="promotion-groups-row-item">
-				<label for="promotion-start-date" class="promotion-groups-input-label">Start Date</label>
-				<input type="date" id="promotion-start-date" class="promotion-groups-input" value="@startDateTimeStartingValue" />
+		<div class="promotion-edit-row multiple-fields">
+			<div class="promotion-edit-row-item">
+				<label for="promotionStartDate" class="promotion-edit-input-label">Start Date</label>
+				<input type="date" id="promotionStartDate" class="promotion-edit-input promotion-edit-date-input"
+					value="@startDateTimeStartingValue" min="@minDateTimeStartingValue" />
 			</div>
-			<div class="promotion-groups-row-item">
-				<label for="promotion-expiration-date" class="promotion-groups-input-label">Expiration Date</label>
-				<input type="date" id="promotion-expiration-date" class="promotion-groups-input" value="@expirationDateTimeStartingValue" />
+			<div class="promotion-edit-row-item">
+				<label for="promotionExpirationDate" class="promotion-edit-input-label">Expiration Date</label>
+				<input type="date" id="promotionExpirationDate" class="promotion-edit-input promotion-edit-date-input"
+					value="@expirationDateTimeStartingValue" min="@minDateTimeStartingValue" />
 			</div>
 		</div>
 		
-		<div class="promotion-groups-row multiple-fields">
-			<div class="promotion-groups-row-item">
-				<label for="promotion-display-order" class="promotion-groups-input-label">Display Order</label>
-				<input type="number" id="promotion-display-order" class="promotion-groups-input" value="@PromotionData.DisplayOrder" />
+		<div class="promotion-edit-row multiple-fields">
+			<div class="promotion-edit-row-item">
+				<label for="promotionDisplayOrder" class="promotion-edit-input-label">Display Order</label>
+				<input type="number" id="promotionDisplayOrder" class="promotion-edit-input" value="@PromotionData.DisplayOrder" />
 			</div>
 
-			<div class="promotion-groups-row-item">
-				<label for="promotion-group" class="promotion-groups-input-label">Group</label>	
+			<div class="promotion-edit-row-item">
+				<label for="promotionGroupEditorSelect" class="promotion-edit-input-label">Group</label>	
 
-				<select id="promotion-group-editor-select" class="promotion-group-editor-select">
+				<select id="promotionGroupEditorSelect" class="promotion-group-editor-select">
 
 					@if (PromotionData.GroupId == null)
 					{
@@ -78,64 +112,68 @@
 			</div>
 		</div>
 
-		<div class="promotion-groups-row multiple-fields">
-			<div class="promotion-groups-row-item center-content">
-				<label for="promotion-disabled" class="promotion-groups-input-label">Disabled</label>
+		<div class="promotion-edit-row multiple-fields">
+			<div class="promotion-edit-row-item center-content">
+				<label for="promotionDisabled" class="promotion-edit-input-label">Disabled</label>
 
 				@if (PromotionData.Disabled == true)
 				{
-					<input type="checkbox" id="promotion-disabled" class="promotion-groups-checkbox" checked />
+					<input type="checkbox" id="promotionDisabled" class="promotion-edit-checkbox" checked />
 				}
 				else
 				{
-					<input type="checkbox" id="promotion-disabled" class="promotion-groups-checkbox" />
+					<input type="checkbox" id="promotionDisabled" class="promotion-edit-checkbox" />
 				}
 			</div>
 
-			<div class="promotion-groups-row-item center-content">
-				<label for="promotion-restricted" class="promotion-groups-input-label">Restricted</label>
+			<div class="promotion-edit-row-item center-content">
+				<label for="promotionRestricted" class="promotion-edit-input-label">Restricted</label>
 
 				@if (PromotionData.Restricted == true)
 				{
-					<input type="checkbox" id="promotion-restricted" class="promotion-groups-checkbox" checked />
+					<input type="checkbox" id="promotionRestricted" class="promotion-edit-checkbox" checked />
 				}
 				else
 				{
-					<input type="checkbox" id="promotion-restricted" class="promotion-groups-checkbox" />
+					<input type="checkbox" id="promotionRestricted" class="promotion-edit-checkbox" />
 				}
 			</div>
 		</div>
 
-		<div class="promotion-groups-row multiple-fields">
-			<div class="promotion-groups-row-item center-content">
-				<label for="promotion-member-default" class="promotion-groups-input-label">Member Of Default Group</label>
+		<div class="promotion-edit-row multiple-fields">
+			<div class="promotion-edit-row-item center-content">
+				<label for="promotionMemberDefault" class="promotion-edit-input-label">Member Of Default Group</label>
 
 				@if (PromotionData.MemberOfDefaultGroup == true)
 				{
-					<input type="checkbox" id="promotion-member-default" class="promotion-groups-checkbox" checked />
+					<input type="checkbox" id="promotionMemberDefault" class="promotion-edit-checkbox" checked />
 				}
 				else
 				{
-					<input type="checkbox" id="promotion-member-default" class="promotion-groups-checkbox" />
+					<input type="checkbox" id="promotionMemberDefault" class="promotion-edit-checkbox" />
 				}
 			</div>
 
-			<div class="promotion-groups-row-item center-content">
-				<label for="promotion-default-priority" class="promotion-groups-input-label">Default Group Priority</label>
-				<input type="number" id="promotion-default-priority" class="promotion-groups-input" value="@PromotionData.DefaultGroupPriority" />
+			<div class="promotion-edit-row-item center-content">
+				<label for="promotionDefaultPriority" class="promotion-edit-input-label">Default Group Priority</label>
+				<input type="number" id="promotionDefaultPriority" class="promotion-edit-input" value="@PromotionData.DefaultGroupPriority" />
 			</div>
 		</div>
 
-		<div class="promotion-groups-row">
-			<label for="promotion-images" class="promotion-groups-input-label">Promotion Images</label>
-			<button type="button" class="promotion-groups-file-select-button" onclick="addNewImageToEditor()" aria-label="promotion-images-input">
+		<div class="promotion-edit-row">
+			<p class="promotion-edit-input-label">Promotion Images</p>
+			<button id="promotionImagesAddFileButton"
+				type="button"
+				class="promotion-edit-file-select-button"
+				onclick="addNewImageToEditor()"
+				aria-label="Add File">
 				Add File
 			</button>
 
-			<input type="file" id="promotion-images-input" class="promotion-groups-file-input" accept="image/*" multiple />
+			<input type="file" id="promotionImagesInput" class="promotion-edit-file-input" accept="image/*" />
 		</div>
 
-		<ul id="promotion-images-list" class="promotion-groups-image-list">
+		<ul id="promotionImagesList" class="promotion-edit-image-list">
 
 			@foreach (GroupPromotionImageEditorData image in PromotionData.Images)
 			{
@@ -143,16 +181,41 @@
 			}
 		</ul>
 
-		<div class="promotion-groups-row">
-			<label for="promotion-html" class="promotion-groups-input-label">Html Content</label>
-			<textarea id="promotion-html" class="promotion-groups-input" value="@PromotionData.HtmlContent" oninput='expandTextAreaToNeededHeight("promotion-html")'>
-			</textarea>
+		<div class="promotion-edit-row">
+
+			<label class="promotion-edit-input-label">Html Content</label>
+
+			<div id="promotionHtml"
+				contenteditable="true"
+				class="promotion-edit-input promotion-edit-html-content"
+				oninput='expandTextAreaToNeededHeight("promotionHtml")'>
+				@PromotionData.HtmlContent
+			</div>
+
+		</div>
+
+		<p>&lt;br&gt;&lt;br&gt;&lt;a href="https://www.mostbg.com"&gt;&lt;img src=""/&gt;&lt;/a&gt;&lt;br&gt;&lt;br&gt;</p>
+
+		<div class="promotion-edit-row">
+
+			<label class="promotion-edit-input-label">Related Products</label>
+
+			<table id="promotionEditRelatedProductsTable" class="promotion-edit-related-products-table">
+
+				@if (PromotionData.RelatedProducts != null)
+				{
+					foreach (Product product in PromotionData.RelatedProducts)
+					{
+						<GroupPromotionEditorRelatedProduct Product="product" />
+					}
+				}
+			</table>
 		</div>
 	</div>
 </div>
 
-
 @code {
+
 	public sealed class GroupPromotionContentEditorData
 	{
 		public int? Id { get; init; }
@@ -161,6 +224,7 @@
 		public string? HtmlContent { get; init; }
 		public DateTime? StartDate { get; init; }
 		public DateTime? ExpirationDate { get; init; }
+		public DateTime? MinDateValue { get; init; }
 		public int? DisplayOrder { get; init; }
 		public DateTime? DateModified { get; init; }
 		public bool? Disabled { get; init; }
@@ -169,7 +233,11 @@
 		public int? DefaultGroupPriority { get; init; }
 
 		public List<GroupPromotionImageEditorData> Images { get; set; } = new();
+		public List<Product>? RelatedProducts { get; set; } = null;
 	}
+
+	public static readonly DateTime _defaultStartDate = DateTime.Today;
+	public static readonly DateTime _defaultExpirationDate = DateTime.Today.AddDays(7);
 
 	[Parameter, EditorRequired] public required GroupPromotionContentEditorData PromotionData { get; set; }
 	[Parameter, EditorRequired] public required List<PromotionGroup> AvailablePromotionGroups { get; set; }

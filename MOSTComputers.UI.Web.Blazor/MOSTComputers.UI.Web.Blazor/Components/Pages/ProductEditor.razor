@@ -83,15 +83,14 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
-@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 <PageTitle>Product Editor</PageTitle>
 
 <HeadContent>
-	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-	<script src="@_carouselScriptUrlWithVersion!"></script>
-    <script src="@_productDataScriptUrlWithVersion!"></script>
+	@* <script src="@Assets[_carouselScriptUrl]"></script>
+    <script src="@Assets[_productDataScriptUrl]"></script> *@
 </HeadContent>
 
 <div id="productEditorPage" class="product-editor-page product-data-table-scrollable-container">
@@ -183,9 +182,11 @@
 		<table class="product-data-table table-with-small-horizontal-padding-on-cells">
 			<thead class="product-data-table-head">
 				<tr>
-                    <th @onclick="OrderByPlShow">PLSH</th>
-                    <th>Work Stat</th>
-                    <th @onclick="OrderByImagesCount">P</th>
+                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByPlShow">PLSH •</th>
+                    <th class="product-data-table-column-with-sort-options" @onclick="OrderProductDatasByStatusDate">
+                        Work Stat @GetDisplayedValueOnWorkStatusColumn()
+                    </th>
+                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByImagesCount">P •</th>
                     <th>Stat</th>
 					<th>CSTID</th>
 					<th>Name</th>
@@ -262,7 +263,9 @@
                             <p>
 		                        @(productData.ProductStatuses?.ProductNewStatus is not null
 			                        ? GetStringFromProductNewStatus(productData.ProductStatuses.ProductNewStatus)
-		                            : "-")
+		                            : "-") 
+									@(productData.ProductStatuses?.CreateDate.ToString("MMM dd")) / 
+                                    @(productData.ProductStatuses?.LastUpdateDate.ToString("MMM dd"))
                             </p>
 	                    </td>
                         <td>
@@ -846,6 +849,12 @@
         FromSecondUp = 1,
     }
 
+    public enum ProductOrderByStatusDate
+    {
+        None = 0,
+        CreatedDate = 1,
+        LastUpdatedDate = 2,
+    }
 
     public enum ProductOrderByPlShow
     {
@@ -914,9 +923,6 @@
     private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
     private const string _productDataScriptUrl = "js/Product/ProductData.js";
 
-    private string? _carouselScriptUrlWithVersion = null;
-    private string? _productDataScriptUrlWithVersion = null;
-
     public const int LastAddedProductsSearchCount = 200;
 
     public string? UserInputString { get; set; }
@@ -967,6 +973,7 @@
     ];
 
     private ProductOrderByCategory _productOrderByCategory = ProductOrderByCategory.None;
+    private ProductOrderByStatusDate _productOrderByStatusDate = ProductOrderByStatusDate.None;
     private ProductOrderByPlShow _productOrderByPlShow = ProductOrderByPlShow.None;
     private ProductOrderByImages _productOrderByImages = ProductOrderByImages.None;
 
@@ -1010,9 +1017,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _carouselScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_carouselScriptUrl);
-        _productDataScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_productDataScriptUrl);
-
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
 
         Task<AuthenticationState> currentAuthenticationStateTask = AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -1030,7 +1034,7 @@
     {
         if (firstRender)
         {
-            string urlWithVersionHash = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_collocatedJsRelativePath);
+            string urlWithVersionHash = Assets[_collocatedJsRelativePath];
 
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", urlWithVersionHash);
 
@@ -1059,9 +1063,55 @@
         Task _ = ApplicationDataSyncService.SyncApplicationAsync(_currentUserName!);
     }
 
+    private void OrderProductDatasByStatusDate()
+    {
+        _productOrderByImages = ProductOrderByImages.None;
+        _productOrderByPlShow = ProductOrderByPlShow.None;
+
+        if (_productOrderByStatusDate == ProductOrderByStatusDate.None)
+        {
+            IOrderedEnumerable<ProductEditorProductData> productDatasOrderedByUpdateDate
+                = ProductDatas.OrderByDescending(x => x.Product.Id);
+                // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.LastUpdateDate ?? DateTime.MinValue);
+
+            ProductDatas = ThenOrderProductDatasInDefaultOrder(productDatasOrderedByUpdateDate);
+
+            _productOrderByStatusDate = ProductOrderByStatusDate.LastUpdatedDate;
+
+            return;
+        }
+        else if (_productOrderByStatusDate == ProductOrderByStatusDate.LastUpdatedDate)
+        {
+            IOrderedEnumerable<ProductEditorProductData> productDatasOrderedByCreateDate
+                = ProductDatas.OrderByDescending(x => x.Product.Id);
+                // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.CreateDate ?? DateTime.MinValue);
+
+            ProductDatas = ThenOrderProductDatasInDefaultOrder(productDatasOrderedByCreateDate);
+
+            _productOrderByStatusDate = ProductOrderByStatusDate.CreatedDate;
+
+            return;
+        }
+
+        OrderProductDatasInDefaultOrder();
+
+        _productOrderByStatusDate = ProductOrderByStatusDate.None;
+    }
+
+    private string GetDisplayedValueOnWorkStatusColumn()
+    {
+        return _productOrderByStatusDate switch
+        {
+            ProductOrderByStatusDate.LastUpdatedDate => "Update",
+            ProductOrderByStatusDate.CreatedDate => "Create",
+            ProductOrderByStatusDate.None or _ => "•",
+        };
+    }
+
     private void OrderByPlShow()
     {
         _productOrderByImages = ProductOrderByImages.None;
+        _productOrderByStatusDate = ProductOrderByStatusDate.None;
 
         if (_productOrderByPlShow == ProductOrderByPlShow.None)
         {
@@ -1083,6 +1133,7 @@
     private void OrderByImagesCount()
     {
         _productOrderByPlShow = ProductOrderByPlShow.None;
+        _productOrderByStatusDate = ProductOrderByStatusDate.None;
 
         if (_productOrderByImages == ProductOrderByImages.None)
         {
@@ -1123,7 +1174,7 @@
             .OrderBy(x => x.Product.DisplayOrder ?? int.MaxValue)
             .ThenBy(x => x.Product.Id)
             .ToList();
-    }
+    }	
 
     private List<ProductEditorProductData> ThenOrderProductDatasInDefaultOrder(IOrderedEnumerable<ProductEditorProductData> productEditorProductDatas)
     {
@@ -1345,8 +1396,20 @@
 
             selectedResultCount = Math.Min(selectedResultCount, ResultCountsInSelect.Max());
 
-            List<Product> products = await GetProductsFromSearchOptionsAsync(UserInputString, selectedCategoryId,
-                selectedProductStatus, selectedProductEditorNewStatus, selectedPromotionSearchOptions, selectedResultCount);
+            bool orderProductsByLastAddedDate = selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAdded
+                || selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
+
+            bool orderProductsFromSecondCategoryUp = selectedCategoryId == null && string.IsNullOrWhiteSpace(UserInputString);
+
+            List<Product> products = await GetProductsFromSearchOptionsAsync(
+                UserInputString,
+                selectedCategoryId,
+                selectedProductStatus,
+                selectedProductEditorNewStatus,
+                selectedPromotionSearchOptions,
+                selectedResultCount,
+                orderProductsByLastAddedDate,
+                orderProductsFromSecondCategoryUp);
 
             List<ProductEditorProductData> productDatas = await ProductEditorDataService.GetProductEditorProductDatasAsync(products);
 
@@ -1375,15 +1438,12 @@
         ProductStatusSearchOptions? productStatusSearchOptions = null,
         ProductEditorProductNewStatusSearchOptions? productEditorNewStatusSearchOptions = null,
         PromotionSearchOptions? promotionSearchOptions = null,
-        int? maxResultCount = null)
+        int? maxResultCount = null,
+        bool orderProductsByLastAddedDate = false,
+        bool orderProductsFromSecondCategoryUp = false)
     {
         List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
             = GetSearchOptionsFromEditorSearchOptions(productEditorNewStatusSearchOptions);
-
-        bool orderProductsByLastAddedDate = productEditorNewStatusSearchOptions == ProductEditorProductNewStatusSearchOptions.LastAdded
-            || productEditorNewStatusSearchOptions == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
-
-        bool orderProductsFromSecondCategoryUp = categoryId == null && string.IsNullOrWhiteSpace(userInputString);
 
         int? searchMaxResultCount = maxResultCount;
 
@@ -1405,6 +1465,7 @@
 
         List<Product> products = await ProductSearchService.SearchProductsAsync(productSearchRequest);
 
+        _productOrderByStatusDate = orderProductsByLastAddedDate ? ProductOrderByStatusDate.LastUpdatedDate : ProductOrderByStatusDate.None;
         _productOrderByImages = ProductOrderByImages.None;
         _productOrderByPlShow = ProductOrderByPlShow.None;
         _productOrderByCategory = orderProductsFromSecondCategoryUp ? ProductOrderByCategory.FromSecondUp : ProductOrderByCategory.None;
@@ -1413,18 +1474,19 @@
         {
             int? finalResultCount = LastAddedProductsSearchCount;
 
+            products = OrderProductsByLastUpdatedStatusDate(products);
+            // products = await OrderProductsByLastUpdatedStatusDateAsync(products);
+
             if (searchMaxResultCount is not null)
             {
                 finalResultCount = Math.Min(searchMaxResultCount.Value, LastAddedProductsSearchCount);
             }
 
-            List<Product> productsOrderedByLastAddedDate = await ProductSearchService.OrderProductsByLastAddedDateAsync(products);
+            if (maxResultCount is null) return products;
 
-            products = productsOrderedByLastAddedDate.Slice(0, Math.Min(finalResultCount.Value, productsOrderedByLastAddedDate.Count));
-
-            return products;
+            return products.Slice(0, Math.Min(maxResultCount.Value, products.Count));
         }
-        else if (orderProductsFromSecondCategoryUp)
+        else if (!orderProductsByLastAddedDate && orderProductsFromSecondCategoryUp)
         {
             SortProductsFromSecondCategoryUp(products);
 
@@ -1446,6 +1508,42 @@
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ThenBy(x => x.Id)
             .ToList();
+    }
+
+    private static void SortProductEditorDatasByLastUpdatedStatusDate(List<ProductEditorProductData> products)
+    {
+        products.Sort((productData1, productData2) => CompareProductEditorDatasByLastUpdatedStatusDate(productData1, productData2));
+    }
+
+	private List<Product> OrderProductsByLastUpdatedStatusDate(List<Product> products)
+    {
+		return products.OrderByDescending(x => x.Id).ToList();
+    }
+
+	// private async Task<List<Product>> OrderProductsByLastUpdatedStatusDateAsync(List<Product> products)
+ //    {
+        // IEnumerable<int> productIds = products.Select(x => x.Id);
+
+        // List<ProductWorkStatuses> productWorkStatuses = await ProductWorkStatusesService.GetAllForProductsAsync(productIds);
+
+        // Dictionary<int, DateTime> statusDateByProductId = productWorkStatuses.ToDictionary(
+        //     x => x.ProductId,
+        //     x => x.LastUpdateDate
+        // );
+
+        // return products
+        //     .OrderByDescending(x => statusDateByProductId.TryGetValue(x.Id, out DateTime dateTime) ? dateTime : DateTime.MinValue)
+        //     .ToList();
+    // }
+
+    private static int CompareProductEditorDatasByLastUpdatedStatusDate(
+        ProductEditorProductData productData1,
+        ProductEditorProductData productData2)
+    {
+        DateTime lastUpdatedStatusDate1 = productData1.ProductStatuses?.LastUpdateDate ?? DateTime.MinValue;
+        DateTime lastUpdatedStatusDate2 = productData2.ProductStatuses?.LastUpdateDate ?? DateTime.MinValue;
+
+        return lastUpdatedStatusDate2.CompareTo(lastUpdatedStatusDate1);
     }
 
     private static void SortProductEditorDatasFromSecondCategoryUp(List<ProductEditorProductData> products)

@@ -54,6 +54,7 @@ function stopAutoSlide(carouselId) {
     if (!intervalId) return;
 
     if (intervalId !== null) {
+
         clearInterval(intervalId);
 
         carousel.removeAttribute(carouselAutoSlideIntervalIdAttribute);

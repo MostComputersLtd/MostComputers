@@ -5,7 +5,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }"
-        OnNavigateAsync="HandleNavigation">
+        OnNavigateAsync="HandleNavigation" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
@@ -22,7 +22,7 @@
     {
         Uri targetUri = NavigationManager.ToAbsoluteUri(context.Path);
 
-        if (targetUri.AbsolutePath.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase))
+        if (targetUri.AbsolutePath.Equals("/account/login", StringComparison.OrdinalIgnoreCase))
         {
             AuthenticationState state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
 

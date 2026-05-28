@@ -636,7 +636,7 @@
 
     private async Task<List<LocalAndLegacyXmlCharacteristicRelationDisplayData>> GetLocalAndLegacyXmlDataAsync(int categoryId)
     {
-        OneOf<LegacyXmlObjectData, InvalidXmlResult, NotFound> getProductXmlResult = await ProductXmlProvidingService.GetProductXmlParsedAsync();
+        OneOf<LegacyXmlObjectData, InvalidXmlResult, OneOf.Types.NotFound> getProductXmlResult = await ProductXmlProvidingService.GetProductXmlParsedAsync();
 
         if (!getProductXmlResult.IsT0)
         {

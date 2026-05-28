@@ -1,0 +1,98 @@
+﻿@page "/promotionGroups"
+
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [Authorize(Roles = "PromotionEditor")]
+
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
+@using Microsoft.AspNetCore.Authorization
+
+@inject IPromotionGroupService PromotionGroupService
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+<PageTitle>Promotion Groups</PageTitle>
+
+<HeadContent>
+	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+
+	<script src="@Assets[_pageScriptUrl]"></script>
+	<script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
+    <script src="@Assets[_popupScriptUrl]"></script>
+</HeadContent>
+
+<div class="promotion-group-editor-layout">
+    <div class="promotion-group-editor-menu">
+
+        <select id="promotionGroupSelect" class="promotion-group-select">
+
+			<option selected value="">All Groups</option>
+
+			@foreach (PromotionGroup promotionGroup in PromotionGroupsInSelect)
+			{
+				<option value="@promotionGroup.Id">@promotionGroup.Name</option>
+			}
+		</select>
+
+        <input id="groupPromotionSearchInput" class="group-promotion-search-input" spellcheck="false" />
+
+		<div class="group-promotion-only-active-promotions-checkbox-container">
+			<label for="groupPromotionOnlyActivePromotionsCheckbox">Active Only</label>
+			<input id="groupPromotionOnlyActivePromotionsCheckbox" type="checkbox" class="group-promotion-only-active-promotions-checkbox" checked />
+		</div>
+
+		<button id="searchPromotionButton" class="group-promotion-search-button" onclick="searchGroupPromotions()">
+			<p class="group-promotion-search-button-text">
+				Search
+			</p>
+		</button>
+
+        <button id="addPromotionButton" class="group-promotion-add-button" onclick="openPromotionEditorForPromotion()">
+			<p class="group-promotion-add-button-text">
+				Add Promotion
+			</p>
+		</button>
+
+        <button id="addPromotionGroupButton" class="promotion-group-add-button" onclick="openPromotionGroupEditorPopup()">
+			<p class="group-promotion-add-button-text">
+				Add Group
+			</p>
+		</button>
+    </div>
+
+    <div class="promotion-editor-display">
+		<div id="promotionListContainer" class="promotion-list-container">
+		</div>
+
+		<div id="promotionEditPanelContainer" class="promotion-edit-panel-container">
+		</div>
+    </div>
+</div>
+
+<div id="promotionGroupEditorPopupContainer">
+</div>
+
+<div id="addRelatedProductsPopupContainer">	
+</div>
+
+<input type="hidden" id="__RequestVerificationToken" hidden
+	value="@Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!).RequestToken" />
+
+@code {
+
+	private const string _popupFullScreenButtonScriptUrl = "/js/Popup/PopupFullScreenButton.js";
+	private const string _popupScriptUrl = "/js/Popup/Popup.js";
+	internal const string _pageScriptUrl = "/js/Pages/PromotionGroups.js";
+
+	public List<PromotionGroup> PromotionGroupsInSelect = new();	
+
+	protected override async Task OnInitializedAsync()
+	{
+		PromotionGroupsInSelect = await PromotionGroupService.GetAllAsync();
+	}
+}

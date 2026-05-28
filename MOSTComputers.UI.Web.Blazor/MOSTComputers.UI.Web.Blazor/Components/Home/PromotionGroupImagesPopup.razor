@@ -1,14 +1,12 @@
 ﻿@using MOSTComputers.Models.Product.Models;
 @using MOSTComputers.Models.Product.Models.Promotions.Groups
-@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
-@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home
 
 @{
     Product product = PromotionGroupPromotionPopupData.Product;
 }
 
 <Popup IsVisible="PromotionGroupPromotionPopupData.IsVisible"
-    IsRenderedInteractively="false"
     PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
     <HeaderContent>
         <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
@@ -21,21 +19,14 @@
     </HeaderContent>
 
     <ChildContent>
-        <PromotionGroupImagesViewer IsRenderedInteractively="false"
-            DataOptions="new PromotionGroupImagesViewer.GetDataFromServer()"
-            GetSelectedIndexFunc="GetSelectedIndexForPromotionGroupImagesPopup" />
+		<div class="group-promotion-display-container">
+			<MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
+			</MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
+        </div>
+
     </ChildContent>
 </Popup>
 
 @code {
     [Parameter, EditorRequired] public required PromotionGroupImagesPopupData PromotionGroupPromotionPopupData { get; set; }
-
-     private int GetSelectedIndexForPromotionGroupImagesPopup(
-        Dictionary<PromotionGroup, List<PromotionGroupImagesViewer.GroupPromotionImageDisplayData>> promotionGroupsAndImages)
-    {
-        if (PromotionGroupPromotionPopupData is null) return 0;
-
-        return promotionGroupsAndImages.Keys.ToList()
-            .FindIndex(x => x.Id == PromotionGroupPromotionPopupData.ManufacturerPromotionGroupId);
-    }
 }

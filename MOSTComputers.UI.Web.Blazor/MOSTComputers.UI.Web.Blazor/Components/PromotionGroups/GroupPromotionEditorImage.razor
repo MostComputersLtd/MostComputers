@@ -2,18 +2,26 @@
 	string imageTitle = Image.Title ?? Image.ImageUrl;
 }
 
-<li id="promotion-groups-image-list-item-@Image.Index" name="promotion-groups-image-list-item" class="promotion-groups-image-list-item">
+<li id="promotionEditImageListItem-@Image.Index" name="promotionEditImageListItem" class="promotion-edit-image-list-item">
 
-	<div class="promotion-groups-image-delete-button-container">
+	<div class="promotion-edit-image-delete-button-container">
 
-		<button type="button"
-			class="btn-close promotion-groups-image-delete-button"
-			onclick="removePromotionImage('promotion-groups-image-list-item-@Image.Index', '@Image.ImageUrl')"
+		<button id="promotionEditImageDeleteButton-@Image.Index"
+			name="promotionEditImageDeleteButton"
+			type="button"
+			class="btn-close promotion-edit-image-delete-button"
 			aria-label="Delete" />
 	</div>
+			@* onclick="removePromotionImage('promotion-edit-image-list-item-@Image.Index', '@Image.ImageUrl')" *@
 
-	<img name="promotion-groups-image" class="promotion-groups-image" src="@Image.ImageUrl" aria-label="@imageTitle" title="@imageTitle"
-		data-current-promotion-image-id="@(Image.ImageId != null ? Image.ImageId : string.Empty)"/>
+	<img id="promotionEditImage-@Image.Index"
+		name="promotionEditImage"
+		class="promotion-edit-image"
+		src="@Image.ImageUrl"
+		aria-label="@imageTitle"
+		title="@imageTitle"
+		data-current-promotion-image-index="@Image.Index"
+		data-current-promotion-image-id="@(Image.ImageId != null ? Image.ImageId : string.Empty)" />
 </li>
 
 @code {

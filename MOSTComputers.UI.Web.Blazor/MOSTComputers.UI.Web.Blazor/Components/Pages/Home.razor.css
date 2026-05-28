@@ -2,11 +2,11 @@
     box-shadow: none !important;
 }
 
-p {
+::deep p {
     margin-bottom: 0;
 }
 
-input[type=number] {
+::deep input[type=number] {
     -webkit-appearance: textfield;
     -moz-appearance: textfield;
     appearance: textfield;
@@ -71,6 +71,18 @@ input[type=number] {
     width: 100%;
 }
 
+    .search-button.loading {
+        display: none;
+    }
+
+.search-button-loader {
+    display: none;
+}
+
+    .search-button-loader.loading {
+        display: unset;
+    }
+
 .product-table-manufacturer-select {
     min-width: 9.75em;
 }
@@ -104,7 +116,23 @@ input[type=number] {
     overflow-y: auto;
 }
 
-.products-data-table {
+.search-help-popup-content {
+    padding: 0.25rem 0.75rem;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.no-wrap-text {
+    text-wrap-mode: nowrap;
+}
+
+::deep .products-data-table {
     width: 100%;
     max-height: 100%;
     font-size: smaller;
@@ -112,7 +140,7 @@ input[type=number] {
     background-color: var(--products-table-header-background-color, #FFFFFF);
 }
 
-.products-data-table-head {
+::deep .products-data-table-head {
     position: sticky;
     top: 0;
     background-color: inherit;
@@ -123,7 +151,7 @@ input[type=number] {
     max-height: 1.5em;
 }
 
-.product-promotions {
+::deep .product-promotions {
     width: 100%;
     max-width: 11em;
     height: fit-content;
@@ -136,7 +164,7 @@ input[type=number] {
     margin-top: 0px;
 }
 
-.product-promotion {
+::deep .product-promotion {
     width: 100%;
     height: fit-content;
     display: flex;
@@ -145,7 +173,7 @@ input[type=number] {
     flex-direction: column;
 }
 
-.product-promotion-period {
+::deep .product-promotion-period {
     width: 100%;
     height: fit-content;
     display: flex;
@@ -155,16 +183,16 @@ input[type=number] {
     flex-wrap: wrap;
 }
 
-.product-promotion-discount {
+::deep .product-promotion-discount {
     white-space: nowrap;
 }
 
-.product-list-item {
+::deep .product-list-item {
     
 }
 
 
-.product-list-item-column {
+::deep .product-list-item-column {
     width: 100%;
     height: 100%;
     display: flex;
@@ -174,7 +202,7 @@ input[type=number] {
     align-items: start;
 }
 
-.product-list-item-column-button {
+::deep .product-list-item-column-button {
     padding: 0px;
     margin: 0px;
     line-height: 1.25em;
@@ -182,7 +210,7 @@ input[type=number] {
     font-size: inherit;
 }
 
-.product-list-item-column-interactable-item {
+::deep .product-list-item-column-interactable-item {
     border-width: 0.1em;
     padding: 0.1em;
     border-style: solid;
@@ -190,42 +218,56 @@ input[type=number] {
     box-shadow: none !important;
 }
 
-    .product-list-item-column-interactable-item:focus-visible {
+    ::deep .product-list-item-column-interactable-item:focus-visible {
         border-color: black;
     }
 
-.product-list-item-quantity-input {
+::deep .product-list-item-quantity-input {
     width: 2em;
     height: 1.25em;
     margin: 0px;
 }
 
-.product-list-item-price {
+::deep .product-list-item-price {
     white-space: nowrap;
 }
 
-.product-list-item-secondary-price {
+::deep .product-list-item-secondary-price {
     white-space: nowrap;
     margin-left: 0.5em;
 }
 
-.product-list-item-invalid-ean-code {
+::deep .product-list-item-invalid-ean-code {
     color: red;
 }
 
-.product-list-item-images-container {
+::deep .product-list-item-images-container {
     width: 100%;
     display: flex;
     -ms-flex-direction: row;
     -webkit-flex-direction: row;
     flex-direction: row;
+    -ms-flex-wrap: wrap;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
     margin-top: 0.25em;
     margin-bottom: 0.25em;
 }
 
-.product-list-item-image {
+::deep .product-list-item-image {
     max-width: 10em;
     max-height: 6em;
     object-fit: contain;
     margin-right: 0.25em;
+}
+
+::deep .group-promotion-display-container {
+    width: 100%;
+    height: 100%;
+    padding: 0.25em 0px 0px 0.2em;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    overflow-y: auto;
 }

@@ -18,6 +18,9 @@ using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 using static MOSTComputers.Utils.Files.FileExtensionUtils;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints;
 using System.Transactions;
+using System.Text;
+using System.Diagnostics;
+using Microsoft.Extensions.Options;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 
@@ -46,6 +49,23 @@ public sealed class GroupPromotionService : IGroupPromotionService
         _groupPromotionContentsRepository = groupPromotionContentsRepository;
     }
 
+    private const string _imageRepresentationStart = "|/imageStart/%|";
+    private const string _imageRepresentationEnd = "|/imageEnd/%|";
+
+    private const string _imageIndexPrefix = "index=";
+
+    private const string _legacyImageRepresentationInHtmlContent = "PromViewImage.aspx?ImageId=";
+
+    public DateTime GetMinStartDate()
+    {
+        return GroupPromotionContentConstraints.MinInsertStartDate;
+    }
+
+    public Task<List<GroupPromotionContent>> GetAllAsync()
+    {
+        return _groupPromotionContentsRepository.GetAllAsync();
+    }
+
     public Task<List<GroupPromotionContent>> GetAllActiveAsync()
     {
         return _groupPromotionContentsRepository.GetAllActiveAsync();
@@ -61,10 +81,10 @@ public sealed class GroupPromotionService : IGroupPromotionService
         return _groupPromotionContentsRepository.GetAllActiveInGroupsAsync(groupIds);
     }
 
-    public Task<List<GroupPromotionContent>> GetAllAsync()
+    public Task<List<GroupPromotionContent>> GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime dateTime)
     {
-        return _groupPromotionContentsRepository.GetAllAsync();
-    }
+        return _groupPromotionContentsRepository.GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(dateTime);
+    } 
 
     public Task<List<GroupPromotionContent>> GetAllInGroupAsync(int groupId)
     {
@@ -79,6 +99,72 @@ public sealed class GroupPromotionService : IGroupPromotionService
     public Task<GroupPromotionContent?> GetByIdAsync(int id)
     {
         return _groupPromotionContentsRepository.GetByIdAsync(id);
+    }
+
+    public string? ChangeLegacyUrlsToNewOnes(
+        string? htmlContent,
+        IEnumerable<GroupPromotionImageFileData>? promotionImageFiles,
+        Func<GroupPromotionImageFileData, string> getNewUrlFromFileData)
+    {
+        if (string.IsNullOrWhiteSpace(htmlContent)
+            || promotionImageFiles == null)
+        {
+            return htmlContent;
+        }
+
+        int indexToScanFrom = 0;
+
+        StringBuilder stringBuilder = new();
+
+        while (true)
+        {
+            int indexOfLegacyHtmlImageRepresentation = htmlContent.IndexOf(_legacyImageRepresentationInHtmlContent, indexToScanFrom);
+
+            if (indexOfLegacyHtmlImageRepresentation < 0)
+            {
+                stringBuilder.Append(htmlContent[indexToScanFrom..]);
+
+                break;
+            }
+
+            string contentBeforeImageRepresentation = htmlContent[indexToScanFrom..indexOfLegacyHtmlImageRepresentation];
+
+            stringBuilder.Append(contentBeforeImageRepresentation);
+
+            int currentImageIdCharacterIndex = indexOfLegacyHtmlImageRepresentation + _legacyImageRepresentationInHtmlContent.Length;
+
+            char nextDigitInId;
+
+            string imageIdAsString = string.Empty;
+
+            while (currentImageIdCharacterIndex < htmlContent.Length)
+            {
+                nextDigitInId = htmlContent[currentImageIdCharacterIndex];
+
+                if (!char.IsDigit(nextDigitInId)) break;
+
+                imageIdAsString += nextDigitInId;
+
+                currentImageIdCharacterIndex++;
+            }
+
+            int imageId = int.Parse(imageIdAsString);
+
+            foreach (GroupPromotionImageFileData promotionImageFile in promotionImageFiles)
+            {
+                if (promotionImageFile.ImageId != imageId) continue;
+
+                string newFileName = getNewUrlFromFileData(promotionImageFile);
+
+                stringBuilder.Append(newFileName);
+
+                break;
+            }
+
+            indexToScanFrom = currentImageIdCharacterIndex;
+        }
+
+        return stringBuilder.ToString();
     }
 
     public async Task<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(
@@ -97,12 +183,29 @@ public sealed class GroupPromotionService : IGroupPromotionService
     private async Task<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertInternalAsync(
         ServiceGroupPromotionContentCreateRequest createRequest)
     {
+        DateTime minStartDate = GetMinStartDate();
+
+        if (createRequest.StartDate == null
+            || minStartDate < createRequest.StartDate)
+        {
+            createRequest.StartDate = minStartDate;
+        }
+
+        if (createRequest.ExpirationDate == null)
+        {
+            createRequest.ExpirationDate = DateTime.MaxValue;
+        }
+        else if (minStartDate < createRequest.ExpirationDate)
+        {
+            createRequest.ExpirationDate = minStartDate;
+        }
+
         GroupPromotionContentCreateRequest innerCreateRequest = new()
         {
             Name = createRequest.Name,
             GroupId = createRequest.GroupId,
             HtmlContent = createRequest.HtmlContent ?? string.Empty,
-            StartDate = createRequest.StartDate ?? DateTime.MinValue,
+            StartDate = createRequest.StartDate ?? createRequest.StartDate,
             ExpirationDate = createRequest.ExpirationDate ?? DateTime.MaxValue,
             DisplayOrder = createRequest.DisplayOrder ?? 0,
             DateModified = DateTime.Now,
@@ -121,7 +224,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
             Id = promotionId,
         };
 
-        if (!result.IsT0 || createRequest.PromotionImageCreateRequests is null)
+        if (!result.IsT0)
         {
             return result.Match<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>>(
                 x => output,
@@ -131,31 +234,67 @@ public sealed class GroupPromotionService : IGroupPromotionService
         output.ImageIds = new();
         output.ImageFileIds = new();
 
-        List<ServiceGroupPromotionImageCreateRequest> promotionImageCreateRequests = createRequest.PromotionImageCreateRequests;
+        List<ServiceGroupPromotionImageCreateRequest>? promotionImageCreateRequests = createRequest.PromotionImageCreateRequests;
 
-        foreach (ServiceGroupPromotionImageCreateRequest promotionImageCreateRequest in promotionImageCreateRequests)
+        List<int> imageIdsOrderedByRequest = new();
+
+        if (promotionImageCreateRequests != null && promotionImageCreateRequests.Count != 0)
         {
-            OneOf<Tuple<int, int>, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageInsertResult
-                = await InsertGroupPromotionImageAsync(
-                    promotionId,
-                    promotionImageCreateRequest.Image,
-                    promotionImageCreateRequest.ContentType,
-                    promotionImageCreateRequest.FileExtension,
-                    promotionImageCreateRequest.CustomFileNameWithoutExtension);
-
-            if (!imageInsertResult.IsT0)
+            foreach (ServiceGroupPromotionImageCreateRequest promotionImageCreateRequest in promotionImageCreateRequests)
             {
-                return imageInsertResult.Match<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>>(
-                    success => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
-                    validationResult => validationResult,
-                    imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
+                OneOf<Tuple<int, int>, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageInsertResult
+                    = await InsertGroupPromotionImageAsync(
+                        promotionId,
+                        promotionImageCreateRequest.Image,
+                        promotionImageCreateRequest.ContentType,
+                        promotionImageCreateRequest.FileExtension,
+                        promotionImageCreateRequest.CustomFileNameWithoutExtension);
+
+                if (!imageInsertResult.IsT0)
+                {
+                    return imageInsertResult.Match<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>>(
+                        success => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
+                        validationResult => validationResult,
+                        imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
+                        unexpectedFailureResult => unexpectedFailureResult);
+                }
+
+                Tuple<int, int> imageAndFileIds = imageInsertResult.AsT0;
+
+                imageIdsOrderedByRequest.Add(imageAndFileIds.Item1);
+
+                output.ImageIds.Add(imageAndFileIds.Item1);
+                output.ImageFileIds.Add(imageAndFileIds.Item2);
             }
+        }
 
-            Tuple<int, int> imageAndFileIds = imageInsertResult.AsT0;
+        string newHtmlContent = ReplaceHtmlContentImageUrlReferencesWithLegacyImageUrls(
+            innerCreateRequest.HtmlContent,
+            imageIdsOrderedByRequest);
 
-            output.ImageIds.Add(imageAndFileIds.Item1);
-            output.ImageFileIds.Add(imageAndFileIds.Item2);
+        GroupPromotionContentUpdateRequest updateRequest = new()
+        {
+            Id = promotionId,
+            Name = innerCreateRequest.Name,
+            GroupId = innerCreateRequest.GroupId,
+            HtmlContent = newHtmlContent,
+            StartDate = innerCreateRequest.StartDate,
+            ExpirationDate = innerCreateRequest.ExpirationDate,
+            DisplayOrder = innerCreateRequest.DisplayOrder,
+            DateModified = innerCreateRequest.DateModified,
+            Disabled = innerCreateRequest.Disabled,
+            Restricted = innerCreateRequest.Restricted,
+            MemberOfDefaultGroup = innerCreateRequest.MemberOfDefaultGroup,
+            DefaultGroupPriority = innerCreateRequest.DefaultGroupPriority,
+        };
+
+        OneOf<Success, NotFound> updateResult = await _groupPromotionContentsRepository.UpdateAsync(updateRequest);
+
+        if (!updateResult.IsT0)
+        {
+            return updateResult.Match<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>>(
+                x => throw new UnreachableException(),
+                notFound => new UnexpectedFailureResult());
         }
 
         return output;
@@ -177,30 +316,8 @@ public sealed class GroupPromotionService : IGroupPromotionService
     private async Task<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>> UpdateInternalAsync(
         ServiceGroupPromotionContentUpdateRequest updateRequest)
     {
-        GroupPromotionContentUpdateRequest innerUpdateRequest = new()
-        {
-            Id = updateRequest.Id,
-            Name = updateRequest.Name,
-            GroupId = updateRequest.GroupId,
-            HtmlContent = updateRequest.HtmlContent,
-            StartDate = updateRequest.StartDate,
-            ExpirationDate = updateRequest.ExpirationDate,
-            DisplayOrder = updateRequest.DisplayOrder,
-            DateModified = DateTime.Now,
-            Disabled = updateRequest.Disabled,
-            Restricted = updateRequest.Restricted,
-            MemberOfDefaultGroup = updateRequest.MemberOfDefaultGroup,
-            DefaultGroupPriority = updateRequest.DefaultGroupPriority,
-        };
-
-        OneOf<Success, NotFound> result = await _groupPromotionContentsRepository.UpdateAsync(innerUpdateRequest);
-
-        if (!result.IsT0)
-        {
-            return result.Map<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>();
-        }
-
         int promotionId = updateRequest.Id;
+
         List<ServiceGroupPromotionImageUpsertRequest>? imageRequests = updateRequest.ImageRequests;
 
         List<GroupPromotionImage> existingImages = await _groupPromotionImageCrudService.GetAllInPromotionAsync(promotionId);
@@ -249,138 +366,174 @@ public sealed class GroupPromotionService : IGroupPromotionService
             i--;
         }
 
-        if (imageRequests is null
-            || imageRequests.Count == 0)
-        {
-            return new Success();
-        }
+        List<int> imageIdsOrderedByRequest = new();
 
-        foreach (ServiceGroupPromotionImageUpsertRequest imageUpsertRequest in imageRequests)
+        if (imageRequests != null && imageRequests.Count != 0)
         {
-            GroupPromotionImage? existingImage = existingImages.Find(x => x.Id == imageUpsertRequest.ExistingImageId);
-            GroupPromotionImageFileData? existingImageFile = existingImageFiles.Find(x => x.ImageId == imageUpsertRequest.ExistingImageId);
-
-            if (existingImage is null)
+            foreach (ServiceGroupPromotionImageUpsertRequest imageUpsertRequest in imageRequests)
             {
-                OneOf<Tuple<int, int>, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageCreateResult
-                    = await InsertGroupPromotionImageAsync(
-                        promotionId,
-                        imageUpsertRequest.Image,
-                        imageUpsertRequest.ContentType,
-                        imageUpsertRequest.FileExtension,
-                        imageUpsertRequest.CustomFileNameWithoutExtension);
+                GroupPromotionImage? existingImage = existingImages.Find(x => x.Id == imageUpsertRequest.ExistingImageId);
+                GroupPromotionImageFileData? existingImageFile = existingImageFiles.Find(x => x.ImageId == imageUpsertRequest.ExistingImageId);
 
-                if (!imageCreateResult.IsT0)
+                if (existingImage is null)
                 {
-                    return imageCreateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                        success => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
-                        validationResult => validationResult,
-                        imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
-                        unexpectedFailureResult => unexpectedFailureResult);
+                    OneOf<Tuple<int, int>, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageCreateResult
+                        = await InsertGroupPromotionImageAsync(
+                            promotionId,
+                            imageUpsertRequest.Image,
+                            imageUpsertRequest.ContentType,
+                            imageUpsertRequest.FileExtension,
+                            imageUpsertRequest.CustomFileNameWithoutExtension);
+
+                    if (!imageCreateResult.IsT0)
+                    {
+                        return imageCreateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+                            success => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
+                            validationResult => validationResult,
+                            imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
+                            unexpectedFailureResult => unexpectedFailureResult);
+                    }
+
+                    imageIdsOrderedByRequest.Add(imageCreateResult.AsT0.Item1);
+
+                    continue;
                 }
 
-                continue;
-            }
+                int existingImageId = imageUpsertRequest.ExistingImageId!.Value;
 
-            string contentType = imageUpsertRequest.ContentType;
+                imageIdsOrderedByRequest.Add(existingImageId);
 
-            int contentTypeSlashIndex = contentType.IndexOf('/');
+                string contentType = imageUpsertRequest.ContentType;
 
-            string contentTypeWithDotForExtension = contentType.Insert(contentTypeSlashIndex + 1, ".");
+                int contentTypeSlashIndex = contentType.IndexOf('/');
 
-            GroupPromotionImageUpdateRequest imageUpdateRequest = new()
-            {
-                Id = imageUpsertRequest.ExistingImageId!.Value,
-                PromotionId = promotionId,
-                Image = imageUpsertRequest.Image,
-                ContentType = contentTypeWithDotForExtension,
-            };
+                string contentTypeWithDotForExtension = contentType.Insert(contentTypeSlashIndex + 1, ".");
 
-            OneOf<Success, NotFound, ValidationResult> imageUpdateResult
-                = await _groupPromotionImageCrudService.UpdateAsync(imageUpdateRequest);
-
-            if (!imageUpdateResult.IsT0)
-            {
-                return imageUpdateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                    imageId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
-                    validationResult => validationResult,
-                    unexpectedFailureResult => unexpectedFailureResult);
-            }
-
-            string fileName;
-
-            string formattedFileExtension = GetExtensionWithDotFromExtensionOrFileName(imageUpsertRequest.FileExtension)!;
-
-            formattedFileExtension = formattedFileExtension.ToLower();
-
-            if (imageUpsertRequest.CustomFileNameWithoutExtension == null)
-            {
-
-                fileName = imageUpsertRequest.ExistingImageId.Value.ToString() + formattedFileExtension;
-            }
-            else
-            {
-                fileName = imageUpsertRequest.CustomFileNameWithoutExtension + formattedFileExtension;
-            }
-
-            if (fileName.Length > GroupPromotionImageFileDataConstraints.FileNameMaxLength)
-            {
-                ValidationFailure fileNameTooLongError = new(
-                    nameof(ServiceGroupPromotionImageUpsertRequest.FileExtension),
-                    "File name is too long");
-
-                return new ValidationResult([fileNameTooLongError]);
-            }
-
-            if (existingImageFile is null)
-            {
-                GroupPromotionImageFileDataCreateRequest imageFileCreateRequest = new()
+                GroupPromotionImageUpdateRequest imageUpdateRequest = new()
                 {
+                    Id = existingImageId,
                     PromotionId = promotionId,
-                    FileName = fileName,
-                    ImageId = imageUpsertRequest.ExistingImageId!.Value,
+                    Image = imageUpsertRequest.Image,
+                    ContentType = contentTypeWithDotForExtension,
                 };
 
-                OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageFileCreateResult
-                    = await _groupPromotionImageFileService.InsertAsync(imageFileCreateRequest);
+                OneOf<Success, NotFound, ValidationResult> imageUpdateResult
+                    = await _groupPromotionImageCrudService.UpdateAsync(imageUpdateRequest);
 
-                if (!imageFileCreateResult.IsT0)
+                if (!imageUpdateResult.IsT0)
                 {
-                    return imageFileCreateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                        imageFileId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
+                    return imageUpdateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+                        imageId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
                         validationResult => validationResult,
-                        imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
                         unexpectedFailureResult => unexpectedFailureResult);
                 }
 
-                continue;
-            }
+                string fileName;
 
-            GroupPromotionImageFileUpdateRequest changeFileRequest = new()
-            {
-                Id = existingImageFile.Id,
-                FileName = fileName,
-                Image = imageUpsertRequest.Image,
-            };
+                string formattedFileExtension = GetExtensionWithDotFromExtensionOrFileName(imageUpsertRequest.FileExtension)!;
 
-            OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult> changeFileResult
-                = await _groupPromotionImageFileService.ChangeFileAsync(changeFileRequest);
+                formattedFileExtension = formattedFileExtension.ToLower();
 
-            if (!changeFileResult.IsT0)
-            {
-                return changeFileResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
-                    imageFileId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
-                    notFound => notFound,
-                    validationResult => validationResult,
-                    fileDoesntExistResult => fileDoesntExistResult,
-                    fileAlreadyExistsResult =>
+                if (imageUpsertRequest.CustomFileNameWithoutExtension == null)
+                {
+                    fileName = existingImageId.ToString() + formattedFileExtension;
+                }
+                else
+                {
+                    fileName = imageUpsertRequest.CustomFileNameWithoutExtension + formattedFileExtension;
+                }
+
+                if (fileName.Length > GroupPromotionImageFileDataConstraints.FileNameMaxLength)
+                {
+                    ValidationFailure fileNameTooLongError = new(
+                        nameof(ServiceGroupPromotionImageUpsertRequest.FileExtension),
+                        "File name is too long");
+
+                    return new ValidationResult([fileNameTooLongError]);
+                }
+
+                if (existingImageFile is null)
+                {
+                    GroupPromotionImageFileDataCreateRequest imageFileCreateRequest = new()
                     {
-                        return new ImageFileAlreadyExistsResult()
+                        PromotionId = promotionId,
+                        FileName = fileName,
+                        ImageId = existingImageId,
+                    };
+
+                    OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageFileCreateResult
+                        = await _groupPromotionImageFileService.InsertAsync(imageFileCreateRequest);
+
+                    if (!imageFileCreateResult.IsT0)
+                    {
+                        return imageFileCreateResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+                            imageFileId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
+                            validationResult => validationResult,
+                            imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
+                            unexpectedFailureResult => unexpectedFailureResult);
+                    }
+
+                    continue;
+                }
+
+                GroupPromotionImageFileUpdateRequest changeFileRequest = new()
+                {
+                    Id = existingImageFile.Id,
+                    FileName = fileName,
+                    Image = imageUpsertRequest.Image,
+                };
+
+                OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult> changeFileResult
+                    = await _groupPromotionImageFileService.ChangeFileAsync(changeFileRequest);
+
+                if (!changeFileResult.IsT0)
+                {
+                    return changeFileResult.Match<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>>(
+                        imageFileId => throw new InvalidOperationException("Cannot be here because of the preceding if statement"),
+                        notFound => notFound,
+                        validationResult => validationResult,
+                        fileDoesntExistResult => fileDoesntExistResult,
+                        fileAlreadyExistsResult =>
                         {
-                            ExistingImageId = imageUpsertRequest.ExistingImageId!.Value,
-                        };
-                    });
+                            return new ImageFileAlreadyExistsResult()
+                            {
+                                ExistingImageId = imageUpsertRequest.ExistingImageId!.Value,
+                            };
+                        });
+                }
             }
+        }
+
+        string? htmlContent = updateRequest.HtmlContent;
+
+        if (htmlContent is not null)
+        {
+            htmlContent = ReplaceHtmlContentImageUrlReferencesWithLegacyImageUrls(
+                htmlContent,
+                imageIdsOrderedByRequest);
+        }
+
+        GroupPromotionContentUpdateRequest innerUpdateRequest = new()
+        {
+            Id = updateRequest.Id,
+            Name = updateRequest.Name,
+            GroupId = updateRequest.GroupId,
+            HtmlContent = htmlContent,
+            StartDate = updateRequest.StartDate,
+            ExpirationDate = updateRequest.ExpirationDate,
+            DisplayOrder = updateRequest.DisplayOrder,
+            DateModified = DateTime.Now,
+            Disabled = updateRequest.Disabled,
+            Restricted = updateRequest.Restricted,
+            MemberOfDefaultGroup = updateRequest.MemberOfDefaultGroup,
+            DefaultGroupPriority = updateRequest.DefaultGroupPriority,
+        };
+
+        OneOf<Success, NotFound> result = await _groupPromotionContentsRepository.UpdateAsync(innerUpdateRequest);
+
+        if (!result.IsT0)
+        {
+            return result.Map<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>();
         }
 
         return new Success();
@@ -456,5 +609,79 @@ public sealed class GroupPromotionService : IGroupPromotionService
             validationResult => validationResult,
             imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
             unexpectedFailureResult => unexpectedFailureResult);
+    }
+
+    public string GetValidHtmlContentImageUrlReference(int imageRequestIndex)
+    {
+        string imageRepresentationInHtmlContent = _imageRepresentationStart;
+
+        imageRepresentationInHtmlContent += _imageIndexPrefix + imageRequestIndex.ToString();
+
+        imageRepresentationInHtmlContent += _imageRepresentationEnd;
+
+        return imageRepresentationInHtmlContent;
+    }
+
+    private static string ReplaceHtmlContentImageUrlReferencesWithLegacyImageUrls(
+        string htmlContent,
+        List<int> imageIdsOrderedByRequest)
+    {
+        int currentlyScannedIndex = 0;
+
+        StringBuilder stringBuilder = new();
+
+        while (true)
+        {
+            int indexOfStart = htmlContent.IndexOf(_imageRepresentationStart, currentlyScannedIndex);
+
+            if (indexOfStart == -1)
+            {
+                stringBuilder.Append(htmlContent[currentlyScannedIndex..]);
+
+                break;
+            }
+
+            stringBuilder.Append(htmlContent, currentlyScannedIndex, indexOfStart - currentlyScannedIndex);
+
+            int indexOfEnd = htmlContent.IndexOf(_imageRepresentationEnd, indexOfStart + _imageRepresentationStart.Length);
+
+            if (indexOfEnd == -1)
+            {
+                stringBuilder.Append(htmlContent[indexOfStart..]);
+
+                break;
+            }
+            int indexOfImageDataStart = indexOfStart + _imageRepresentationStart.Length;
+
+            string imageData = htmlContent[indexOfImageDataStart..indexOfEnd];
+
+            int imageRequestIndex = GetImageRequestIndexFromClientData(imageData);
+
+            int imageId = imageIdsOrderedByRequest[imageRequestIndex];
+
+            string legacyImageUrl = GetLegacyPathImageUrl(imageId);
+
+            stringBuilder.Append(legacyImageUrl);
+
+            currentlyScannedIndex = indexOfEnd + _imageRepresentationEnd.Length;
+        }
+
+        return stringBuilder.ToString();
+    }
+
+    private static int GetImageRequestIndexFromClientData(string clientData)
+    {
+        int clientImageRequestIndexPrefixIndex = clientData.IndexOf(_imageIndexPrefix);
+
+        int imageIndexStartIndex = (clientImageRequestIndexPrefixIndex + _imageIndexPrefix.Length);
+
+        string imageIndexAsString = clientData[imageIndexStartIndex..];
+
+        return int.Parse(imageIndexAsString);
+    }
+
+    private static string GetLegacyPathImageUrl(int imageId)
+    {
+        return $"{_legacyImageRepresentationInHtmlContent}{imageId}";
     }
 }

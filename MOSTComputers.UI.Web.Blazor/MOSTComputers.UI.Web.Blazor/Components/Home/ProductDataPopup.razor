@@ -22,14 +22,13 @@
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Client.Product
 @using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
-@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
 @using OneOf.Types
-@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.FilePathUtils
 
@@ -38,7 +37,6 @@
 }
 
 <Popup @bind-IsVisible='@ProductDataPopupData.IsVisible'
-    IsRenderedInteractively="false"
     PopupMarginOptions='new() { Left = "3vw", Top = "3vh", Right = "3vw", Bottom = "3vh" }'
     AddFullScreenButtonToHeader="true"
     AdditionalHeaderAttributes='new()
@@ -69,7 +67,6 @@
 
     <ChildContent>
         <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData Product="product"
-            IsRenderedInteractively="false"
 			BaseProductPagePath="@ProductDataPopupData.BaseProductPagePath"
             PriceData="ProductDataPopupData.ProductDataPopupPriceData"
             ProductProperties="ProductDataPopupData.ProductProperties"

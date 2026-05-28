@@ -1,0 +1,97 @@
+﻿::deep p {
+    margin-bottom: 0px;
+}
+
+.promotion-group-editor-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.promotion-group-editor-menu {
+    width: 100%;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    padding: 1rem;
+}
+
+.group-promotion-search-input {
+    flex-grow: 1;
+    margin-right: 2.5rem;
+    border-width: 0.05rem;
+    border-style: solid;
+    border-radius: 0.25rem;
+}
+
+.promotion-group-select {
+    min-width: 9.75em;
+    margin-right: 0.5rem;
+}
+
+.group-promotion-only-active-promotions-checkbox-container {
+    margin-right: 1rem;
+    display: flex;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.group-promotion-only-active-promotions-checkbox {
+    margin-left: 0.5rem;
+}
+
+.promotion-editor-display {
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    overflow-y: auto;
+}
+
+.group-promotion-search-button,
+.group-promotion-add-button,
+.promotion-group-add-button {
+    height: min-content;
+    padding: 0.25rem 0.35rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-justify-content: center;
+    justify-content: center;
+    background: #0078d4;
+    color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.group-promotion-search-button,
+.group-promotion-add-button {
+    margin-right: 0.5rem;
+}
+
+.group-promotion-add-button-text,
+.group-promotion-search-button-text {
+    margin: 0px;
+    font-size: 0.9rem;
+}
+
+.promotion-list-container {
+    width: 35%;
+    border-right: 3px solid black;
+    overflow-y: auto;
+}
+
+::deep .promotion-edit-panel-container {
+    flex: 1;
+    padding-bottom: 1rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}

@@ -1,4 +1,6 @@
-﻿@page "/Account/Login"
+﻿@page "/account/login"
+
+@attribute [ExcludeFromInteractiveRouting]
 
 @using System.ComponentModel.DataAnnotations
 @using MOSTComputers.Services.Identity.Models
@@ -132,7 +134,8 @@
         {
             Logger.LogInformation("User logged in.");
 
-            RedirectManager.RedirectTo(ReturnUrl);
+            NavigationManager.NavigateTo(ReturnUrl ?? "");
+            // RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)
         {
@@ -144,7 +147,8 @@
         {
             Logger.LogWarning("User account locked out.");
 
-            RedirectManager.RedirectTo("Account/Lockout");
+            NavigationManager.NavigateTo("Account/Lockout");
+            // RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {

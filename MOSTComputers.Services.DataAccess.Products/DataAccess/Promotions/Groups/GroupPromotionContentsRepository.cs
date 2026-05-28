@@ -66,6 +66,34 @@ internal sealed class GroupPromotionContentsRepository : IGroupPromotionContents
         return promotionGroups.AsList();
     }
 
+    public async Task<List<GroupPromotionContent>> GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime dateTime)
+    {
+        const string query =
+            $"""
+            SELECT * FROM {GroupPromotionContentsTableName} WITH (NOLOCK)
+            WHERE {DisabledColumnName} = 0
+            AND ({StartDateColumnName} = NULL OR {StartDateColumnName} <= @dateTime)
+            AND ({ExpireDateColumnName} = NULL OR {ExpireDateColumnName} >= @dateTime)
+            ORDER BY {DisplayOrderColumnName};
+            """;
+
+        using TransactionScope suppressedTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            dateTime = dateTime,
+        };
+
+        IEnumerable<GroupPromotionContent> promotionGroups
+            = await connection.QueryAsync<GroupPromotionContent>(query, parameters, commandType: CommandType.Text);
+
+        suppressedTransactionScope.Complete();
+
+        return promotionGroups.AsList();
+    }
+
     public async Task<List<IGrouping<int, GroupPromotionContent>>> GetAllInGroupsAsync(List<int> groupIds)
     {
         const string query =

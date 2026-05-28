@@ -24,15 +24,21 @@
 
         <div class="nav-scrollable">
             <div class="nav-item">
-                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All" data-enhance-nav="false">
                     Home
                 </NavLink>
             </div>
 
+			<div class="nav-item">
+                <a class="nav-link" href="promotions" data-enhance-nav="false">
+                    Promotions
+                </a>
+            </div>
+
             <div class="nav-item">
-                <NavLink class="nav-link" href="downloadXml">
+                <a class="nav-link" href="downloadXml" data-enhance-nav="false">
                     XML
-                </NavLink>
+                </a>
             </div>
 
             <div class="nav-item">
@@ -44,11 +50,25 @@
             <AuthorizeView Roles="ProductEditor">
                 <Authorized>
                     <div class="nav-item">
-                        <NavLink class="nav-link" href="productEditor">
+                        <NavLink class="nav-link" href="productEditor" data-enhance-nav="false">
                             Product Editor
                         </NavLink>
                     </div>
+				</Authorized>
+			</AuthorizeView>
 
+			<AuthorizeView Roles="PromotionEditor">
+                <Authorized>
+                    <div class="nav-item">
+                        <a class="nav-link" href="promotionGroups" data-enhance-nav="false">
+                            Promotion Groups
+                        </a>
+                    </div>
+				</Authorized>
+			</AuthorizeView>
+
+			<AuthorizeView Roles="ProductEditor">
+                <Authorized>
                     <div class="nav-item">
                         <NavLink class="nav-link" href="promotionFiles">
                             Promotion Files
@@ -71,13 +91,13 @@
                         </NavLink>
                     </div>
 
-                    <div class="nav-item">
+                    @* <div class="nav-item">
                         <NavLink class="nav-link" href="_tests/_temp_imagesCreationTests">
                             Image Tests
                         </NavLink>
-                    </div>
+                    </div> *@
 
-                    <div class="nav-item">
+                    @* <div class="nav-item">
                         <NavLink class="nav-link nav-link-nowrap" href="/legacyXmlCharacteristicsMatch">
                             Match Characteristics (XML)
                         </NavLink>
@@ -87,7 +107,7 @@
                         <NavLink class="nav-link nav-link-nowrap" href="/imageHtmlCharacteristicsMatch">
                             Match Characteristics (HTML)
                         </NavLink>
-                    </div>
+                    </div> *@
                     
                 </Authorized>
             </AuthorizeView>
@@ -101,6 +121,12 @@
             </AuthorizeView>
 
             <div class="nav-end-data-container">
+				<div class="nav-item">
+                    <a class="nav-link" href="http://www.mostbg.com/most/PriceList.aspx" target="_blank">
+                        Вход B2B
+                    </a>
+                </div>
+
                 <div class="nav-item">
                     <NavLink class="nav-link" href="contactUs">
                         Contact us
@@ -110,7 +136,7 @@
                 <AuthorizeView Roles="Admin">
                     <Authorized>
                         <div class="nav-item">
-                            <NavLink class="nav-link" href="Account/Manage/AdminPanel">
+                            <NavLink class="nav-link" href="account/manage/adminPanel">
                                 AMP
                             </NavLink>
                         </div>
@@ -125,7 +151,7 @@
                             </p>
                         </div>
                         <div class="nav-item">
-                            <form action="Account/Logout" method="post">
+                            <form action="account/logout" method="post">
                                 <AntiforgeryToken />
                                 <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                                 <button type="submit" class="nav-link">
@@ -134,16 +160,12 @@
                             </form>
                         </div>
                     </Authorized>
+
                     <NotAuthorized>
-                        @* <div class="nav-item">
-                            <NavLink class="nav-link" href="Account/Register">
-                                Register
-                            </NavLink>
-                        </div> *@
                         <div class="nav-item">
-                            <NavLink class="nav-link" href="Account/Login">
+                            <a class="nav-link" href="account/login" data-enhance-nav="false">
                                 Login
-                            </NavLink>
+                            </a>
                         </div>
                     </NotAuthorized>
                 </AuthorizeView>

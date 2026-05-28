@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+	<TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <UserSecretsId>aspnet-MOSTComputers.UI.Web.Blazor-3225e848-2710-452a-af46-5b21a9ec2929</UserSecretsId>
   </PropertyGroup>
 
@@ -17,11 +18,12 @@
     <ProjectReference Include="..\..\MOSTComputers.Services.PromotionFileManagement\MOSTComputers.Services.PromotionFileManagement.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
     <ProjectReference Include="..\MOSTComputers.UI.Web.Blazor.Client\MOSTComputers.UI.Web.Blazor.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.16" />
-    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="9.0.2" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="9.0.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
   <ItemGroup>

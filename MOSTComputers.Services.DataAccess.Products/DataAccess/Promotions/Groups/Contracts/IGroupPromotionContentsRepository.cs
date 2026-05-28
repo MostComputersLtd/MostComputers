@@ -7,6 +7,7 @@ using OneOf.Types;
 namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
 public interface IGroupPromotionContentsRepository
 {
+    Task<List<GroupPromotionContent>> GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime dateTime);
     Task<List<GroupPromotionContent>> GetAllActiveAsync();
     Task<List<GroupPromotionContent>> GetAllActiveInGroupAsync(int groupId);
     Task<List<IGrouping<int, GroupPromotionContent>>> GetAllActiveInGroupsAsync(List<int> groupIds);

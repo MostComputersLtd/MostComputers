@@ -19,7 +19,14 @@ const xmlCurrencySelectId = "xmlCurrencySelect";
 const downloadXmlCategorySelectId = "downloadXmlCategorySelect";
 const downloadXmlManufacturerSelectId = "downloadXmlManufacturerSelect";
 
+const downloadAllUrlCopyButtonId = "downloadAllUrlCopyButton";
+const downloadAllInCategoryUrlCopyButtonId = "downloadAllInCategoryUrlCopyButton";
+const downloadAllInManufacturerUrlCopyButtonId = "downloadAllInManufacturerUrlCopyButton";
+const downloadAllWithPromotionsUrlCopyButtonId = "downloadAllWithPromotionsUrlCopyButton";
+const downloadPromotionGroupsUrlCopyButtonId = "downloadPromotionGroupsUrlCopyButton";
+
 const loadingClass = "loading";
+const copyUrlButtonCheckedClass = "url-copied";
 
 async function onDownloadAllXmlButtonClick() {
     const selectedCurrency = getSelectedCurrency();
@@ -46,7 +53,16 @@ async function onCopyDownloadAllUrlButtonClick() {
     
     const uri = getDownloadAllXmlUrl(selectedCurrency);
 
-    await copyFullUrlToClipboardFromUri(uri);
+    const success = await tryCopyFullUrlToClipboardFromUri(uri);
+
+    if (success) {
+
+        const downloadAllUrlCopyButton = document.getElementById(downloadAllUrlCopyButtonId);
+
+        addCopyLinkButtonAnimation(downloadAllUrlCopyButton);
+
+        setTimeout(() => removeCopyLinkButtonAnimation(downloadAllUrlCopyButton), 1000);
+    }
 }
 
 function getDownloadAllXmlUrl(selectedCurrency) {
@@ -101,6 +117,7 @@ async function onDownloadXmlForCategoryButtonClick() {
 }
 
 async function onCopyDownloadXmlForCategoryUrlButtonClick() {
+    
     const categorySelect = document.getElementById(downloadXmlCategorySelectId);
 
     const selectedCategoryId = categorySelect.value;
@@ -111,7 +128,16 @@ async function onCopyDownloadXmlForCategoryUrlButtonClick() {
 
     const uri = getDownloadCategoryXmlUrl(selectedCategoryId, selectedCurrency);
 
-    await copyFullUrlToClipboardFromUri(uri);
+    const success = await tryCopyFullUrlToClipboardFromUri(uri);
+
+    if (success) {
+
+        const downloadAllInCategoryUrlCopyButton = document.getElementById(downloadAllInCategoryUrlCopyButtonId);
+
+        addCopyLinkButtonAnimation(downloadAllInCategoryUrlCopyButton);
+
+        setTimeout(() => removeCopyLinkButtonAnimation(downloadAllInCategoryUrlCopyButton), 1000);
+    }
 }
 
 function getDownloadCategoryXmlUrl(selectedCategoryId, selectedCurrency) {
@@ -178,7 +204,16 @@ async function onCopyDownloadXmlForManufacturerUrlButtonClick() {
 
     const uri = getDownloadManufacturerXmlUrl(selectedManufacturerId, selectedCurrency);
 
-    await copyFullUrlToClipboardFromUri(uri);
+    const success = await tryCopyFullUrlToClipboardFromUri(uri);
+
+    if (success) {
+
+        const downloadAllInManufacturerUrlCopyButton = document.getElementById(downloadAllInManufacturerUrlCopyButtonId);
+
+        addCopyLinkButtonAnimation(downloadAllInManufacturerUrlCopyButton);
+
+        setTimeout(() => removeCopyLinkButtonAnimation(downloadAllInManufacturerUrlCopyButton), 1000);
+    }
 }
 
 function getDownloadManufacturerXmlUrl(selectedManufacturerId, selectedCurrency) {
@@ -195,6 +230,7 @@ function getDownloadManufacturerXmlUrl(selectedManufacturerId, selectedCurrency)
 }
 
 async function onDownloadXmlWithPromotionsButtonClick() {
+
     const selectedCurrency = getSelectedCurrency();
 
     const url = getDownloadAllWithPromotionsXmlUrl(selectedCurrency);
@@ -219,7 +255,16 @@ async function onCopyDownloadXmlWithPromotionsUrlButtonClick() {
 
     const uri = getDownloadAllWithPromotionsXmlUrl(selectedCurrency);
 
-    await copyFullUrlToClipboardFromUri(uri);
+    const success = await tryCopyFullUrlToClipboardFromUri(uri);
+
+    if (success) {
+
+        const downloadAllWithPromotionsUrlCopyButton = document.getElementById(downloadAllWithPromotionsUrlCopyButtonId);
+
+        addCopyLinkButtonAnimation(downloadAllWithPromotionsUrlCopyButton);
+
+        setTimeout(() => removeCopyLinkButtonAnimation(downloadAllWithPromotionsUrlCopyButton), 1000);
+    }
 }
 
 function getDownloadAllWithPromotionsXmlUrl(selectedCurrency) {
@@ -258,20 +303,37 @@ async function onCopyDownloadPromotionGroupXmlUrlButtonClick() {
 
     const uri = `${downloadPromotionGroupXmlUri}`;
 
-    await copyFullUrlToClipboardFromUri(uri);
+    const success = await tryCopyFullUrlToClipboardFromUri(uri);
+
+    if (success) {
+
+        const downloadPromotionGroupsUrlCopyButton = document.getElementById(downloadPromotionGroupsUrlCopyButtonId);
+
+        addCopyLinkButtonAnimation(downloadPromotionGroupsUrlCopyButton);
+
+        setTimeout(() => removeCopyLinkButtonAnimation(downloadPromotionGroupsUrlCopyButton), 1000);
+    }
 }
 
-async function copyFullUrlToClipboardFromUri(uri) {
+async function tryCopyFullUrlToClipboardFromUri(uri) {
+
     const baseUrl = window.location.protocol + "//" + window.location.host;
 
     const url = `${baseUrl}/${uri}`;
 
-    await copyTextToClipboard(url);
+    return await tryCopyTextToClipboard(url);
 }
 
-async function copyTextToClipboard(text)
+async function tryCopyTextToClipboard(text)
 {
-    await navigator.clipboard.writeText(text);
+    try {
+        await navigator.clipboard.writeText(text);
+
+        return true;
+    }
+    catch {
+        return false;
+    }
 }
 
 function getSelectedCurrency() {
@@ -396,4 +458,14 @@ async function downloadXmlFile(response, fileName) {
     URL.revokeObjectURL(link.href);
 
     return true;
+}
+
+function addCopyLinkButtonAnimation(copyUrlButton) {
+
+    copyUrlButton.classList.add(copyUrlButtonCheckedClass);
+}
+
+function removeCopyLinkButtonAnimation(copyUrlButton) {
+
+    copyUrlButton.classList.remove(copyUrlButtonCheckedClass);
 }

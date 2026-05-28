@@ -115,6 +115,7 @@ public static class ConfigureServices
         services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
         services.AddScoped<IGroupPromotionImageCrudService, GroupPromotionImageCrudService>();
         services.AddScoped<IGroupPromotionService, GroupPromotionService>();
+        services.AddScoped<IGroupPromotionProductBindingsService, GroupPromotionProductBindingsService>();
         services.AddScoped<IPromotionGroupService, PromotionGroupService>();
 
         services.AddScoped<IPromotionFileService, PromotionFileService>();

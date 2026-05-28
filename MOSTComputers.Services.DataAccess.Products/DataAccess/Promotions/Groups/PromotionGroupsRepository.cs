@@ -84,10 +84,10 @@ internal sealed class PromotionGroupsRepository : IPromotionGroupsRepository
                 {IsDefaultColumnName},
                 {ShowEmptyForLoggedColumnName},
                 {ShowEmptyForNonLoggedColumnName})
-            OUTPUT INSERTED.Id INTO @TempIdTable.Id
+            OUTPUT INSERTED.Id INTO @TempIdTable (Id)
             VALUES (@Name, @Header, @LogoImage, @LogoContentType, @DisplayOrder, @IsDefault, @ShowEmptyForLogged, @ShowEmptyForNonLogged)
 
-            SELECT TOP 1 FROM @TempIdTable.Id;
+            SELECT TOP 1 Id FROM @TempIdTable;
             """;
 
         using SqlConnection connection = new(_connectionStringProvider.ConnectionString);

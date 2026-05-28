@@ -1,0 +1,17 @@
+.add-related-product-search-results-table {
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+}
+
+.add-related-product-search-result {
+    padding: 0.25rem 0.5rem;
+}
+
+    .add-related-product-search-result:hover {
+        background-color: #e5e4e4;
+    }
+
+.add-related-product-search-result-entry-with-margin {
+    margin-left: 0.5rem;
+}

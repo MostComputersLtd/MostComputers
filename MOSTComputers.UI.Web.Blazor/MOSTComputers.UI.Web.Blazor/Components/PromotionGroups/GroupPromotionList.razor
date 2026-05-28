@@ -1,5 +1,6 @@
 ﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
-<ul class="promotion-groups-list">
+
+<ul class="promotions-list">
 	
 	@foreach (GroupPromotionContent promotion in Promotions)
 	{
@@ -18,16 +19,16 @@
 			}
 		}
 
-		<li class="promotion-groups-list-item" onclick="openPromotionEditorForPromotion(@promotion.Id)">
+		<li class="promotion-list-item" onclick="openPromotionEditorForPromotion(@promotion.Id)">
 
-			<div class="promotion-groups-item-left">
+			<div class="promotion-item-left">
 				<p>@promotion.Name</p>
 
 				<p>@expiredText: @startDateString - @expirationDateString</p>
 			</div>
 
 
-			<div class="promotion-groups-item-right">
+			<div class="promotion-item-right">
 				@if (promotion.Disabled == true)
 				{
 					<p>Disabled</p>

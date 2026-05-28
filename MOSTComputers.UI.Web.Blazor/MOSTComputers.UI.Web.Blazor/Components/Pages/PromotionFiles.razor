@@ -26,7 +26,7 @@
 <PageTitle>Promotion Files</PageTitle>
 
 <HeadContent>
-	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 </HeadContent>
 
 <div class="full-parent-width full-parent-height">
@@ -362,7 +362,7 @@
 
     private async Task DeleteFileAsync(PromotionFileInfo promotionFileInfo)
     {
-        OneOf<Success, NotFound, PromotionFileHasRelationsResult, FileDoesntExistResult> deleteFileResult
+        OneOf<Success, OneOf.Types.NotFound, PromotionFileHasRelationsResult, FileDoesntExistResult> deleteFileResult
             = await PromotionFileService.DeleteAsync(promotionFileInfo.Id);
 
         if (deleteFileResult.IsT0)

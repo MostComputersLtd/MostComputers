@@ -37,6 +37,7 @@ public sealed class PromotionGroupService : IPromotionGroupService
     {
         return _promotionGroupsRepository.GetByIdAsync(id);
     }
+
     public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ServicePromotionGroupCreateRequest createRequest)
     {
         ValidationResult validationResult = ValidateDefault(_createRequestValidator, createRequest);

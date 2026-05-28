@@ -10,6 +10,7 @@
 
 .product-images-list-item {
     position: relative;
+    margin-right: 0.5rem;
     display: flex;
     flex-direction: column;
     min-width: 20%;

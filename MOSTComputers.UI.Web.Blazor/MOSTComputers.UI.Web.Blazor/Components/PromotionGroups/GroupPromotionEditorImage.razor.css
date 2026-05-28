@@ -1,0 +1,33 @@
+﻿.promotion-edit-image-list-item {
+    height: min-content;
+    position: relative;
+    border: 0.0625rem solid #ddd;
+    border-radius: 0.25rem;
+    padding: 0.6rem;
+    background: #fafafa;
+}
+
+.promotion-edit-image-delete-button-container {
+    position: absolute;
+    display: flex;
+    justify-content: flex-end;
+    right: 0.1rem;
+    top: 0.1rem;
+    pointer-events: none;
+    user-select: none;
+}
+
+.promotion-edit-image-delete-button {
+    width: 0.3em;
+    height: 0.3em;
+    pointer-events: all;
+}
+
+.promotion-edit-image {
+    display: block;
+    max-height: 7rem;
+    width: auto;
+    border-radius: 0.125rem;
+    object-fit: contain;
+}
+

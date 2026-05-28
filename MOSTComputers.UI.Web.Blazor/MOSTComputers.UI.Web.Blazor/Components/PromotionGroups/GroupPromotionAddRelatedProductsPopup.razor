@@ -1,0 +1,73 @@
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+
+@inject IManufacturerToPromotionGroupRelationService ManufacturerToPromotionGroupRelationService
+@inject IManufacturerService ManufacturerService
+
+<Popup PopupId="addRelatedProductsPopup"
+	PopupMarginOptions='new() { Left = "15vw", Right = "15vw", Top = "15vh", Bottom = "10vh" }'>
+
+	<ChildContent>
+		<div class="add-related-products-popup-body">
+			<header class="add-related-products-popup-search-header">
+
+				<select id="addRelatedProductManufacturerSelect"
+					class="manufacturer-select"
+					aria-label="Manufacturer">
+
+					@if (SelectedPromotionGroupId == null)
+					{
+						<option value="" selected>All Manufacturers</option>
+					}
+					else
+					{
+						<option value="">All Manufacturers</option>
+					}
+
+					@foreach (Manufacturer manufacturer in _manufacturersInSelect)
+					{
+						bool success = _groupIdsForManufacturers.TryGetValue(manufacturer.Id, out int groupId);
+
+						if (success && SelectedPromotionGroupId == groupId)
+						{
+							<option value="@manufacturer.Id" selected>@manufacturer.RealCompanyName</option>
+						}
+						else
+						{
+							<option value="@manufacturer.Id">@manufacturer.RealCompanyName</option>
+						}
+					}
+				</select>
+
+				<input id="addRelatedProductSearchInput" type="text" placeholder="Search..." class="search-input" />
+
+				<button id="addRelatedProductSearchButton" type="button" class="add-related-product-search-button">
+					<p>Search</p>
+					<div class="round-loader-default"></div>
+				</button>
+			</header>
+
+			<div id="addRelatedProductSearchResultsContainer">
+			</div>
+		</div>
+	</ChildContent>
+</Popup>
+
+@code {
+
+	[Parameter] public int? SelectedPromotionGroupId { get; set; } = null;
+
+	private List<Manufacturer> _manufacturersInSelect = new();
+	private Dictionary<int, int> _groupIdsForManufacturers = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		List<ManufacturerToPromotionGroupRelation> manufacturerToPromotionGroupRelations = await ManufacturerToPromotionGroupRelationService.GetAllAsync();
+		List<Manufacturer> manufacturersInSelect = await ManufacturerService.GetAllAsync();
+
+		_groupIdsForManufacturers = manufacturerToPromotionGroupRelations
+			.ToDictionary(x => x.ManufacturerId, x => x.PromotionGroupId);
+	}
+}

@@ -1,0 +1,31 @@
+﻿.single-group-promotions-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    -webkit-align-items: center;
+    align-items: center;
+    overflow: auto;
+}
+
+.single-group-no-promotions-text-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.single-group-no-promotions-text {
+    margin-bottom: 0px;
+}
+
+.single-group-promotion ::deep img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}

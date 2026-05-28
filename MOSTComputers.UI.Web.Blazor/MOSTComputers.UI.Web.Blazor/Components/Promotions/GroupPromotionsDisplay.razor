@@ -1,0 +1,213 @@
+﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+@using System.Text
+@using static MOSTComputers.Utils.Files.FilePathUtils
+
+
+@inject IPromotionGroupService PromotionGroupService
+@inject IGroupPromotionService GroupPromotionService
+@inject IGroupPromotionImageFileDataService _groupPromotionImageFileDataService
+
+@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
+
+@{
+    int promotionGroupButtonIndex = 0;
+
+    PromotionGroup? selectedGroup = null;
+
+	bool isDefaultGroupSelected = DisplayedGroupId == null;
+
+	string defaultGroupImageContainerSelectedClass = isDefaultGroupSelected ? "active" : string.Empty;
+}
+
+<div class="group-promotions-container">
+
+    <ul id="promotionGroups" class="promotion-groups-list">
+
+		<li id="promotionGroupItem-default"
+			class="promotion-group-item @(isDefaultGroupSelected ? "selected" : string.Empty)"
+			onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-default', 'promotionGroupItem-default')">
+
+			<button class="promotion-group-item-group-name-button">
+				<p class="promotion-group-item-group-name">All Promotions</p>
+			</button>
+		</li>
+
+		@foreach (KeyValuePair<PromotionGroup, List<GroupPromotionWithImageFileData>> kvp in GroupPromotions)
+		{
+            PromotionGroup? promotionGroup = kvp.Key;
+
+            bool isSelected = false;
+
+            if (DisplayedGroupId is not null)
+            {
+                isSelected = DisplayedGroupId == promotionGroup.Id;
+            }
+
+            if (isSelected)
+            {
+                selectedGroup = promotionGroup;
+            }
+
+            promotionGroupButtonIndex++;
+
+            <li id="promotionGroupItem-@promotionGroup.Id"
+                class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
+			    onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-@promotionGroup.Id', 'promotionGroupItem-@promotionGroup.Id')">
+
+                @if (promotionGroup.LogoContentType is not null && promotionGroup.LogoImage?.Length > 0)
+                {
+                    <button class="promotion-group-item-image-button"
+                        style="background-image: url(data:@promotionGroup.LogoContentType;base64,@Convert.ToBase64String(promotionGroup.LogoImage))">
+                    </button>
+                }
+                else
+                {
+                    <button class="promotion-group-item-group-name-button">
+						<p class="promotion-group-item-group-name">@kvp.Key.Name</p>
+                    </button>
+                }
+            </li>
+		}
+	</ul>
+
+    <div id="promotionImages" class="promotion-images-container" data-user-focused-promotion-id="@FocusedPromotionId">
+
+		<div id="promotionGroupImageContainer-default" class="promotion-group-images-container @defaultGroupImageContainerSelectedClass">
+
+			@foreach (GroupPromotionWithImageFileData promotionData in DefaultGroupPromotions)
+			{
+				<div id="groupPromotion-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
+
+                    @if (promotionData.ModifiedPromotionHtml != null)
+                    {
+						@((MarkupString)promotionData.ModifiedPromotionHtml)
+                    }
+				</div>
+			}
+		</div>
+
+		@foreach (KeyValuePair<PromotionGroup, List<GroupPromotionWithImageFileData>> kvp in GroupPromotions)
+        {
+            bool isSelectedGroup = kvp.Key.Id == selectedGroup?.Id;
+
+            string selectedClass = isSelectedGroup ? "active" : string.Empty;
+
+            <div id="promotionGroupImageContainer-@kvp.Key.Id" class="promotion-group-images-container @selectedClass">
+
+                @foreach (GroupPromotionWithImageFileData promotionData in kvp.Value)
+                {
+                    <div id="groupPromotion-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
+
+						@if (promotionData.ModifiedPromotionHtml != null)
+						{
+							@((MarkupString)promotionData.ModifiedPromotionHtml)
+						}
+					</div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    public sealed class GroupPromotionWithImageFileData
+    {
+        public required GroupPromotionContent GroupPromotionContent { get; set; }
+        public string? ModifiedPromotionHtml { get; set; }
+    } 
+
+    private const string _legacyImageRepresentationInHtmlContent = "PromViewImage.aspx?ImageId=";
+
+    private Dictionary<PromotionGroup, List<GroupPromotionWithImageFileData>> GroupPromotions { get; set; } = new();
+
+    private List<GroupPromotionWithImageFileData> DefaultGroupPromotions = new();
+
+    [Parameter] public int? DisplayedGroupId { get; set; }
+    [Parameter] public int? FocusedPromotionId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        List<PromotionGroup> promotionGroups = await PromotionGroupService.GetAllAsync();
+
+        List<GroupPromotionContent> groupPromotionContents
+            = await GroupPromotionService.GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime.Now);
+
+        List<int> promotionIds = groupPromotionContents.Select(x => x.Id)
+            .ToList();
+
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+            = await _groupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+
+        List<IGrouping<int?, GroupPromotionContent>> promotionContentsGrouped = groupPromotionContents
+            .GroupBy(x => x.GroupId)
+            .ToList();
+
+        foreach (PromotionGroup promotionGroup in promotionGroups)
+        {
+            IEnumerable<GroupPromotionContent>? promotionGroupContent
+                = promotionContentsGrouped.FirstOrDefault(x => x.Key == promotionGroup.Id)?
+                .OrderBy(x => x.DisplayOrder ?? int.MaxValue);
+
+            if (promotionGroupContent is null) continue;
+
+            GroupPromotions.Add(promotionGroup, new());
+
+            List<GroupPromotionWithImageFileData> groupPromotionDatas = GroupPromotions[promotionGroup];
+
+            foreach (GroupPromotionContent groupPromotionContent in promotionGroupContent)
+            {
+                IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles
+                    .FirstOrDefault(x => x.Key == groupPromotionContent.Id);
+
+                string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
+                    groupPromotionContent.HtmlContent,
+                    imageFilesForPromotion,
+					promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+                );
+
+                if (imageFilesForPromotion == null) continue;
+
+                GroupPromotionWithImageFileData promotionData = new()
+                {
+                    GroupPromotionContent = groupPromotionContent,
+                    ModifiedPromotionHtml = modifiedPromotionHtml,
+                };
+
+                groupPromotionDatas.Add(promotionData);
+            }
+        }
+
+        IEnumerable<GroupPromotionContent> defaultGroupPromotions = groupPromotionContents
+            .Where(x => x.MemberOfDefaultGroup == true)
+            .OrderBy(x => x.DefaultGroupPriority);
+
+        foreach (GroupPromotionContent defaultGroupPromotion in defaultGroupPromotions)
+        {
+            IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles
+                .FirstOrDefault(x => x.Key == defaultGroupPromotion.Id);
+
+			string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
+				defaultGroupPromotion.HtmlContent,
+				imageFilesForPromotion,
+				promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+			);
+
+            GroupPromotionWithImageFileData promotionData = new()
+			{
+				GroupPromotionContent = defaultGroupPromotion,
+				ModifiedPromotionHtml = modifiedPromotionHtml,
+			};
+
+            DefaultGroupPromotions.Add(promotionData);
+
+            if (imageFilesForPromotion == null) continue;
+        }
+    } 
+}

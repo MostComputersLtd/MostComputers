@@ -1,0 +1,27 @@
+@using MOSTComputers.Models.Product.Models;
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditorImage
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+<tr name="promotionEditRelatedProduct-@Product.Id"
+	class="promotion-edit-related-product"
+	data-promotion-edit-related-product-id="@Product.Id">
+
+	<td class="promotion-edit-related-product-entry">
+		<p class="promotion-edit-related-product-text">@Product.Id</p>
+	</td>
+
+	<td class="promotion-edit-related-product-entry">
+		<p class="promotion-edit-related-product-text">@Product.Name</p>
+	</td>
+
+	<td class="promotion-edit-related-product-entry">
+		<button class="promotion-edit-related-product-remove-button"
+			onclick="removePromotionEditRelatedProduct('promotionEditRelatedProduct-@Product.Id')">
+		</button>
+	</td>
+</tr>
+
+@code {
+	[Parameter, EditorRequired] public Product Product { get; set; }
+}

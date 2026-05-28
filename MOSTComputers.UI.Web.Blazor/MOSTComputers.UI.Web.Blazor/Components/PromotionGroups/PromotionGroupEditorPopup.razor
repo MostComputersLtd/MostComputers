@@ -1,0 +1,95 @@
+﻿@{
+	string? currentImageUrl = null;
+
+	if (PopupData.LogoImage != null && PopupData.LogoContentType != null)
+	{
+		string base64Image = Convert.ToBase64String(PopupData.LogoImage);
+
+		currentImageUrl = $"data:{PopupData.LogoContentType};base64,{base64Image}";
+	}
+
+	string imageButtonText = currentImageUrl != null ? "Change Image" : "Add Image";
+}
+
+<Popup PopupId="promotionGroupEditorPopup"
+	IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh", }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            @if (PopupData.Name is not null)
+            {
+                <h4 class="popup-header-text me-2 mb-0">@PopupData.Name</h4>
+            }
+
+            @if (PopupData.Id is not null)
+            {
+                <h4 class="popup-header-text me-3 mb-0">(ID: @PopupData.Id)</h4>
+            }
+
+			<button id="savePromotionButton" class="promotion-group-save-button"
+				onclick="savePromotionGroup(@(PopupData.Id != null ? PopupData.Id.ToString() : string.Empty))">
+
+				<p class="promotion-group-save-button-text">Save</p>
+
+				<div class="round-loader-default promotion-group-save-button-loader"></div>
+			</button>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+
+		<div class="promotion-group-edit-fields">
+
+			<div class="promotion-group-edit-row">
+				<label for="promotionGroupName" class="promotion-group-edit-input-label">Name</label>
+				<input id="promotionGroupName" class="promotion-group-edit-input" value="@PopupData.Name"/>
+			</div>	
+
+			<div class="promotion-group-edit-row">
+				<label for="promotionGroupDisplayOrder" class="promotion-group-edit-input-label">Display Order</label>
+				<input type="number" id="promotionGroupDisplayOrder" class="promotion-group-edit-input" value="@PopupData.DisplayOrder" />
+			</div>
+
+			<div class="promotion-group-edit-row">
+				<p class="promotion-group-edit-input-label">Logo</p>
+				<button id="promotionGroupLogoChangeButton"
+					type="button"
+					class="promotion-group-edit-logo-change-button"
+					onclick="changePromotionGroupLogo()"
+					aria-label="Add File">
+					@(imageButtonText)
+				</button>
+
+				<input type="file" id="promotionGroupLogoInput" class="promotion-group-edit-logo-input" accept="image/*" />
+			</div>
+
+			<div id="promotionGroupLogoImageDisplay" class="promotion-group-logo-image-display">
+
+				@if (currentImageUrl != null)
+				{
+					<PromotionGroupEditorPopupImage ImageUrl="@currentImageUrl" />
+				}
+			</div>	
+		</div>
+    </ChildContent>
+</Popup>
+
+@code {
+    public sealed class PromotionGroupEditorData
+    {
+        public required bool IsVisible { get; set; }
+
+        public int? Id { get; set; }
+		public string? Name { get; set; }
+		public string? Header { get; set; }
+		public byte[]? LogoImage { get; set; }
+		public string? LogoContentType { get; set; }
+		public int? DisplayOrder { get; set; }
+		public bool IsDefault { get; set; }
+		public bool ShowEmptyForLogged { get; set; }
+		public bool ShowEmptyForNonLogged { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required PromotionGroupEditorData PopupData { get; set; }
+}

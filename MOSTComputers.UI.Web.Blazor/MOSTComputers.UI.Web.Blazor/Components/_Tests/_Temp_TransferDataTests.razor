@@ -393,6 +393,8 @@
 </div>
 
 @code {
+    private const string _pageScriptUrl = "./Components/_Tests/_Temp_TransferDataTests.razor.js";
+
     private const int _defaultLinkCharacteristicId = 1693;
     private const int _maxProductImageUpdatesInOneOperation = 50;
 
@@ -444,7 +446,7 @@
     {
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/_Tests/_Temp_TransferDataTests.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_pageScriptUrl]);
         }
     }
 

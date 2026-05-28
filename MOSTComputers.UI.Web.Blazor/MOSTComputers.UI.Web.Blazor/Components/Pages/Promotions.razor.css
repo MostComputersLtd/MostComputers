@@ -1,0 +1,9 @@
+﻿.group-promotions-page {
+    width: 100%;
+    padding: 0.25em 0px 0px 0.2em;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    overflow-y: auto;
+}

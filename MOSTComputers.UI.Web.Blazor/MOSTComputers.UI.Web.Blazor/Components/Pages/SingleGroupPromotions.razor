@@ -1,0 +1,99 @@
+﻿@page "/promotionGroupImages/{PromotionGroupId:int}"
+
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using static MOSTComputers.Utils.Files.FilePathUtils;
+
+@inject IGroupPromotionService GroupPromotionService
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
+
+<div class="single-group-promotions-page">
+
+    @if (Promotions.Count == 0)
+    {
+        <div class="single-group-no-promotions-text-container">
+            <h3 class="single-group-no-promotions-text">No promotions right now.</h3>
+        </div>
+    }
+    else
+    {
+		@foreach (GroupPromotionWithHtml promotionData in Promotions)
+		{
+			<div id="groupPromotion-@promotionData.GroupPromotionContent.Id" class="single-group-promotion">
+
+				@if (promotionData.ModifiedPromotionHtml != null)
+				{
+					@((MarkupString)promotionData.ModifiedPromotionHtml)
+				}
+			</div>
+		}
+
+	    @* <PromotionGroupImages ImageFiles="PromotionGroupImageFiles" /> *@
+    }
+</div>
+
+@code {
+    [Parameter] public int PromotionGroupId { get; set; }
+
+    public sealed class GroupPromotionWithHtml
+    {
+        public required GroupPromotionContent GroupPromotionContent { get; set; }
+        public string? ModifiedPromotionHtml { get; set; }
+    }
+
+    // private List<PromotionGroupImages.GroupPromotionImageFileDisplayData> PromotionGroupImageFiles = new();
+    private List<GroupPromotionWithHtml> Promotions = new();
+
+    override protected async Task OnInitializedAsync()
+    {
+        List<GroupPromotionContent> promotions
+            = await GroupPromotionService.GetAllActiveInGroupAsync(PromotionGroupId);
+
+        promotions = promotions
+            .Where(x => (x.StartDate is null || x.StartDate <= DateTime.Now)
+                && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now))
+            .OrderBy(x => x.DisplayOrder)
+            .ToList();
+
+        List<int> promotionIds = promotions.Select(x => x.Id).ToList();
+
+        List<IGrouping<int, GroupPromotionImageFileData>> imageFilesForPromotions
+            = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+
+        // PromotionGroupImageFiles = new();
+
+        foreach (GroupPromotionContent promotion in promotions)
+        {
+            IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = imageFilesForPromotions.FirstOrDefault(x => x.Key == promotion.Id);
+
+            string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
+                promotion.HtmlContent,
+                imageFilesForPromotion,
+                promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+            );
+
+            GroupPromotionWithHtml groupPromotionWithHtml = new()
+            {
+                GroupPromotionContent = promotion,
+                ModifiedPromotionHtml = modifiedPromotionHtml,
+            };
+
+            Promotions.Add(groupPromotionWithHtml);
+
+            // if (imageFilesForPromotion is null) continue;
+
+            // foreach (GroupPromotionImageFileData imageFileForPromotion in imageFilesForPromotion)
+            // {
+            //     PromotionGroupImageFiles.Add(new()
+            //     {
+            //         Id = imageFileForPromotion.Id,
+            //         FileName = imageFileForPromotion.FileName,
+            //         PromotionGroupId = PromotionGroupId,
+            //         IsVisibleInitially = true,
+            //     });
+            // }
+        }
+	}
+}

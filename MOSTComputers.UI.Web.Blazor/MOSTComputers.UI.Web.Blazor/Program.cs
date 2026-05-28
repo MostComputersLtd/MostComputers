@@ -36,7 +36,6 @@ using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Cached;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
-using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Groups;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
@@ -45,6 +44,7 @@ using ZiggyCreatures.Caching.Fusion;
 using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing;
 using MOSTComputers.UI.Web.Blazor.Components.Home;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
+using MOSTComputers.Services.Identity.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -365,7 +365,7 @@ else
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseAntiforgery();
 
 app.UseRequestLocalization(options => 
@@ -384,7 +384,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MOSTComputers.UI.Web.Blazor.Client._Imports).Assembly);
 
-// Add additional endpoints required by the Identity /Account Razor components.
+// Add additional endpoints required by the Identity /account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
 app.MapProductXmlEndpoints();
@@ -402,7 +402,6 @@ app.MapProductImageFileDataEndpoints();
 app.MapGroupPromotionImageFileDataEndpoints();
 app.MapPromotionFileDataEndpoints();
 
-app.MapPromotionGroupComponentEndpoints();
 app.MapProductDataComponentEndpoints();
 app.MapPromotionGroupPageComponentEndpoints();
 

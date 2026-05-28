@@ -1,4 +1,5 @@
 ﻿@page "/promotions"
+
 @model MOSTComputers.UI.Web.Client.Pages.GroupPromotionsModel
 @{
     ViewData["Title"] = "Promotions";
@@ -67,7 +68,11 @@
 
         @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageFileData>> kvp in Model.GroupPromotions)
         {
-            string selectedClass = kvp.Key.Id == selectedGroup?.Id ? "active" : string.Empty;
+            bool isSelectedGroup = kvp.Key.Id == selectedGroup?.Id;
+
+            string selectedClass = isSelectedGroup ? "active" : string.Empty;
+
+            string imageLoadingType = isSelectedGroup && Model.FocusedImageId != null ? "eager" : "lazy";
 
             <div id="promotionGroupImageContainer-@kvp.Key.Id" class="promotion-group-images-container @selectedClass">
 
@@ -75,11 +80,10 @@
                 {
                     <div id="promotionGroupImage-@imageData.Id" class="promotion-group-image-item">
                         <img class="promotion-group-image" src="/api/promotionGroup/imageFiles/@imageData.Id"
-                            alt="@imageData.FileName" loading="lazy" />
+                            alt="@imageData.FileName" loading="@imageLoadingType" />
                     </div>
                 }
             </div>
-
         }
     </div>
 </div>

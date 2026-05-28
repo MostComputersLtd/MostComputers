@@ -53,7 +53,6 @@
 
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 <PageTitle>Documents - MOST Computers</PageTitle>
 
@@ -63,7 +62,7 @@
 
     <meta name="robots" content="NOINDEX,NOFOLLOW">
 
-	<link href="css/ScopeHtmlAndBodyHeightToViewport.css" rel="stylesheet" />
+	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 </HeadContent>
 
 <div class="documents-page">
@@ -972,7 +971,7 @@
     {
         if (firstRender)
         {
-            string pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_pageScriptUrl);
+            string pageScriptUrlWithVersion = Assets[_pageScriptUrl];
 
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", pageScriptUrlWithVersion);
         }

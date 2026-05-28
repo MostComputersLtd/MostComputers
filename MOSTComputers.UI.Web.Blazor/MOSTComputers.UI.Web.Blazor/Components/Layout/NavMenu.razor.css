@@ -169,7 +169,7 @@
     margin: 0px;
 }
 
-@media (max-width: 920px) {
+@media (max-width: 960px) {
 
     .nav-with-scrollable-part {
         -ms-flex-wrap: wrap;

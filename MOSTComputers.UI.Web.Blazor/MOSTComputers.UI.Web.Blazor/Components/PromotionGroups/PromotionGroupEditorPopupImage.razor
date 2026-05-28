@@ -1,0 +1,18 @@
+<div id="promotionGroupEditLogoImageContainer" class="promotion-group-edit-logo-image-container">
+
+	<img src="@ImageUrl" class="promotion-group-edit-logo-image" />
+
+	<div class="promotion-group-edit-image-delete-button-container">
+
+		<button id="promotionGroupImageDeleteButton"
+			name="promotionGroupImageDeleteButton"
+			type="button"
+			class="btn-close promotion-group-edit-image-delete-button"
+			onclick="removePromotionGroupImage()"
+			aria-label="Delete" />
+	</div>
+</div>
+
+@code {
+	[Parameter, EditorRequired] public required string ImageUrl { get; set; }
+}

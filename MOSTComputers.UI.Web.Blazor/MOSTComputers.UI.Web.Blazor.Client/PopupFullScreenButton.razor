@@ -71,9 +71,9 @@ else
 }
 
 @code {
-	private Popup.MarginOptions? _originalMarginOptions = null;
+    private Popup.MarginOptions? _originalMarginOptions = null;
 
-    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+    private bool IsRenderedInteractively => AssignedRenderMode != null;
 
     [Parameter] public string? DialogId { get; set; }
 

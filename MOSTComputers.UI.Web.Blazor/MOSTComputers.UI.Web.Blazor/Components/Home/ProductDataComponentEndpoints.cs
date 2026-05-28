@@ -13,7 +13,7 @@ using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using OneOf;
-using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2;
+using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
@@ -217,11 +217,11 @@ public static class ProductDataComponentEndpoints
     private static async Task<IResult> GetProductDataPopupAsync(
         HttpContext httpContext,
         [FromServices] IProductService productService,
-        [FromServices] IProductCharacteristicService ProductCharacteristicService,
-        [FromServices] IProductPropertyService ProductPropertyService,
-        [FromServices] IProductImageService ProductImageService,
-        [FromServices] IPromotionService PromotionService,
-        [FromServices] ISearchStringOriginService SearchStringOriginService,
+        [FromServices] IProductCharacteristicService productCharacteristicService,
+        [FromServices] IProductPropertyService productPropertyService,
+        [FromServices] IProductImageFileService productImageFileService,
+        [FromServices] IPromotionService promotionService,
+        [FromServices] ISearchStringOriginService searchStringOriginService,
         [FromServices] ICurrencyConversionService currencyConversionService,
         [FromServices] ICurrencyVATService currencyVATService,
         int productId)
@@ -245,45 +245,43 @@ public static class ProductDataComponentEndpoints
             ProductCharacteristicType.Link
         ];
 
-        List<ProductCharacteristic> productCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+        List<ProductCharacteristic> productCharacteristics = await productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
             relatedCategoryIds, productCharacteristicTypes, true);
 
-        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(product.Id);
+        List<ProductProperty> productProperties = await productPropertyService.GetAllInProductAsync(product.Id);
 
         List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData
             = GetProductPropertiesFromProductData(productProperties, productCharacteristics);
 
-        List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(product.Id);
-
-        if (productImages.Count == 0)
-        {
-            // var firstImage = await ProductImageService.GetByProductIdWithoutFileDataInFirstImagesAsync(product.Id);
-        }
-
         List<Client.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
 
-        foreach (ProductImageData productImageData in productImages)
+        List<ProductImageFileData> productImageFileNameInfos = await productImageFileService.GetAllInProductAsync(product.Id);
+
+        foreach (ProductImageFileData imageFileNameInfo in productImageFileNameInfos)
         {
-            Client.Product.ProductData.ProductImageDisplayData imageDisplayData = new()
+            if (imageFileNameInfo.FileName is null) continue;
+
+            Client.Product.ProductData.ProductImageDisplayData productImageDisplayData = new()
             {
-                ImageSrc = $"/api/images/originalImageData/{productImageData.Id}"
+                ImageSrc = $"/api/images/imageFileData/{imageFileNameInfo.FileName}",
             };
 
-            productImagesInData.Add(imageDisplayData);
+            productImagesInData.Add(productImageDisplayData);
         }
 
         List<MOSTComputers.Models.Product.Models.Promotions.Promotion> promotions
-            = await PromotionService.GetAllForProductAsync(product.Id);
+            = await promotionService.GetAllForProductAsync(product.Id);
 
         List<MOSTComputers.Models.Product.Models.Promotions.Promotion> productPromotions = promotions.Where(x =>
         {
             if (x.Id != product.PromotionPid && x.Id != product.PromotionRid) return false;
 
-            return (x.StartDate is null || x.StartDate <= DateTime.Now) && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+            return (x.StartDate is null || x.StartDate <= DateTime.Now)
+                && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
         })
             .ToList();
 
-        List<SearchStringPartOriginData>? productSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+        List<SearchStringPartOriginData>? productSearchStringParts = await searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             product.SearchString, product.CategoryId);
 
         Client.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(

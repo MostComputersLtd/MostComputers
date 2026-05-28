@@ -37,6 +37,7 @@ function scrollToUserFocusedElement() {
 }
 
 function changeActiveDisplayedGroup(newActiveImagesContainerId, newActiveGroupButtonId) {
+
     const promotionGroupsList = document.getElementById(promotionGroupsListId);
     const promotionImagesList = document.getElementById(promotionImagesListId);
 

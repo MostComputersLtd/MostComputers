@@ -8,11 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Welcome to portal.mostbg.com." />
     <base href="/" />
-    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="/css/app.css" />
-    <link rel="stylesheet" href="MOSTComputers.UI.Web.Blazor.styles.css" />
+    <link rel="stylesheet" href="@Assets["bootstrap/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["/css/app.css"]" />
+    <link rel="stylesheet" href="@Assets["MOSTComputers.UI.Web.Blazor.styles.css"]" />
+    <ImportMap />
     <link rel="icon" type="image/png" href="favicon.ico" />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="@RenderModeForPage" />
 </head>
 
 <body>
@@ -87,9 +88,9 @@
         });
     </script>
 
-    <Routes />
+    <Routes @rendermode="@RenderModeForPage" />
 
-    @if (!IsStaticPage)
+    @if (RenderModeForPage != null)
     {
         <ActivityTracker />
     }
@@ -102,12 +103,21 @@
     private static List<string> StaticPageRoutes = [
         "/",
         "/downloadXml",
+        "/promotions",
+        "/repairs",
         "/promotionGroups",
-        "/Account/Login",
+        "/notFound",
+        "/account/login",
     ];
 
     private static List<string> StaticPageRoutesWithExtraRoutes = [
         "/product/productData/",
+    ];
+
+    private static List<string> PagesThatShouldNotBeTracked = [
+        "/productEditor",
+        "/promotionFiles",
+        "/promotionGroups",
     ];
 
     private bool IsStaticPage
@@ -130,4 +140,23 @@
             return false;
         }
     }
+
+    private bool IsPageWithoutTracking
+    {
+        get
+        {
+            string? path = HttpContextAccessor.HttpContext?.Request.Path;
+
+            if (path == null) return false;
+
+            return PagesThatShouldNotBeTracked.Contains(path);
+        }
+    }
+
+    [CascadingParameter]
+	public HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage =>
+        HttpContext.GetEndpoint()?.Metadata.GetMetadata<RenderModeAttribute>()?
+            .Mode;
 }

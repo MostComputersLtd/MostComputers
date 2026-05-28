@@ -26,7 +26,7 @@
 
         if (authState.User.Identity is null || !authState.User.Identity.IsAuthenticated)
         {
-            NavigationManager.NavigateTo("Account/force-logout", true);
+            NavigationManager.NavigateTo("account/force-logout", true);
         }
     }
 

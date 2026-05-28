@@ -11,7 +11,7 @@ internal sealed class IdentityUserAccessor(UserManager<PasswordsTableOnlyUser> u
         if (user is null)
         {
             redirectManager.RedirectToWithStatus(
-                "Account/InvalidUser",
+                "account/invalidUser",
                 $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.",
                 context);
         }

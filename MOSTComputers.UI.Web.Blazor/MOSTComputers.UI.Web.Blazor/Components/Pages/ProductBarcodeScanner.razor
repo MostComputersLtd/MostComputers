@@ -27,8 +27,8 @@
 <HeadContent>
     <title>Barcode Scanner</title>
 
-    <script src="lib/ZXingLib.bundle.js"></script>
-    <script src="lib/ZXingBrowser.bundle.js"></script>
+    <script src="@Assets["lib/ZXingLib.bundle.js"]"></script>
+    <script src="@Assets["lib/ZXingBrowser.bundle.js"]"></script>
 </HeadContent>
 
 <div class="full-parent-width full-parent-height d-flex flex-column">
@@ -133,6 +133,8 @@
         public required bool IncludedInDatabase { get; set; }
     }
 
+    private const string _pageScriptUrl = "./Components/Pages/ProductBarcodeScanner.razor.js";
+
     private IJSObjectReference? _jsModule;
 
     public int? ProductId { get; set; } = null;
@@ -178,7 +180,7 @@
     {
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/ProductBarcodeScanner.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_pageScriptUrl]);
         }
     }
 
@@ -371,7 +373,7 @@
             return;
         }
 
-        OneOf<Success, NotFound> deleteResult = await _productGTINCodeService.DeleteAsync(ProductId.Value, gtinCodeModel.CodeType);
+        OneOf<Success, OneOf.Types.NotFound> deleteResult = await _productGTINCodeService.DeleteAsync(ProductId.Value, gtinCodeModel.CodeType);
 
         deleteResult.Switch(
             success =>

@@ -213,6 +213,8 @@
         public string? PreferredNameWithoutExtension { get; init; }
     }
 
+    private const string _componentScriptUrl = "./Components/Product/Promotion/Files/PromotionFileSingleEditorPopup.razor.js";
+
     [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
 
     [Parameter] public bool IsVisible { get; set; }
@@ -226,9 +228,10 @@
     }
 
     [Parameter, EditorRequired] public required OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> PromotionFileEditOptions { get; set; }
+
     private OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData>? _previousPromotionFileEditOptions = null;
 
-	private PromotionFileEditData _promotionFileEditData { get; set; } = default!;
+    private PromotionFileEditData _promotionFileEditData { get; set; } = default!;
 
     [Parameter] public bool ShouldDisplaySaveButton { get; set; } = false;
     [Parameter] public string SaveButtonText { get; set; } = "Save";
@@ -314,14 +317,14 @@
                 });
         }
 
-		_previousPromotionFileEditOptions = PromotionFileEditOptions;
+        _previousPromotionFileEditOptions = PromotionFileEditOptions;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Product/Promotion/Files/PromotionFileSingleEditorPopup.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_componentScriptUrl]);
         }
     }
 

@@ -12,6 +12,7 @@
     <div id="@CarouselId"
         @attributes='AdditionalAttributes' class="custom-carousel @_additionalClasses"
         @onmouseenter="StopAutoPlayAsync" @onmouseleave="StartAutoPlayAsync">
+
         <div @attributes='AdditionalViewportAttributes' class="custom-carousel-viewport @_additionalViewportClasses">
 
             @for (int i = 0; i < _carouselItems.Count; i++)
@@ -178,7 +179,7 @@ else
         return $"transition: all {TransitionMs}ms ease;";
     }
 
-    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+    private bool IsRenderedInteractively => AssignedRenderMode != null;
 
     [Parameter] public string CarouselId { get; set; } = string.Empty;
 
@@ -213,6 +214,8 @@ else
     private bool _isAutoPlayRunning = false;
 
     private IJSObjectReference? _jsModule;
+
+    private DotNetObjectReference<Carousel<TItem>>? _dotNetObjectReference = null;
 
     private long? _autoSlideIntervalId = null;
 
@@ -326,6 +329,8 @@ else
         {
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Carousel.razor.js");
 
+            _dotNetObjectReference = DotNetObjectReference.Create<Carousel<TItem>>(this);
+
             if (AutoPlayOptions.IsT0)
             {
                 await StartAutoPlayAsync();
@@ -334,10 +339,13 @@ else
             {
                 await StopAutoPlayAsync();
             }
+
+            await _jsModule.InvokeVoidAsync("init", CarouselId, _dotNetObjectReference);
         }
     }
 
-    private async Task StartAutoPlayAsync()
+    [JSInvokable]
+    public async Task StartAutoPlayAsync()
     {
         if (!IsRenderedInteractively) return;
 
@@ -348,7 +356,8 @@ else
         _autoSlideIntervalId = await _jsModule.InvokeAsync<int>("startAutoSlide", DotNetObjectReference.Create(this), AutoPlayOptions.AsT0.TotalMilliseconds);
     }
 
-    private async Task StopAutoPlayAsync()
+    [JSInvokable]
+    public async Task StopAutoPlayAsync()
     {
         if (!IsRenderedInteractively) return;
 
@@ -480,6 +489,8 @@ else
             {
                 await _jsModule.DisposeAsync();
             }
+
+            _dotNetObjectReference?.Dispose();
         }
         catch (JSDisconnectedException)
         {

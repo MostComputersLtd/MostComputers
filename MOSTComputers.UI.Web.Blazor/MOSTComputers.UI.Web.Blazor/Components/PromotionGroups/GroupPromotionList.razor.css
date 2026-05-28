@@ -1,0 +1,39 @@
+﻿.promotions-list {
+    width: 100%;
+    overflow-y: auto;
+    list-style: none;
+    border-right: 2px;
+    padding: 0px;
+    margin: 0px 0px 1rem 0px;
+    overflow-y: auto;
+}
+
+.promotion-list-item {
+    width: 100%;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.promotion-item-left {
+    margin-right: auto;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    text-align: left;
+}
+
+.promotion-item-right {
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    text-align: right;
+}

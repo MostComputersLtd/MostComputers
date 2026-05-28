@@ -25,7 +25,7 @@ public static class SitemapEndpoints
         "downloadXml",
         "repairs",
         "contactUs",
-        "Account/Login",
+        "account/login",
     ];
 
     private static string GetStaticPageSitemapUrl(int page)

@@ -82,7 +82,7 @@ else
 
                     @if (AddFullScreenButtonToHeader)
                     {
-                        <PopupFullScreenButton IsRenderedInteractively="false" DialogId="@PopupId" PopupContext="null!" />
+                        <PopupFullScreenButton DialogId="@PopupId" PopupContext="null!" />
                     }
 
                     <button class="btn-close popup-close-button ms-2"
@@ -141,7 +141,7 @@ else
         }
     }
 
-    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+    private bool IsRenderedInteractively => AssignedRenderMode != null;
 
     [Parameter] public bool DisplayHeader { get; set; } = true;
 

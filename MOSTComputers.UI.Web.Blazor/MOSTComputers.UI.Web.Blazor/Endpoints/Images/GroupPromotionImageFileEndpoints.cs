@@ -27,7 +27,7 @@ internal static class GroupPromotionImageFileEndpoints
 
         if (promotionFile is null || promotionFile.FileDataStream is null)
         {
-            return Results.NotFound(imageId);
+            return Results.NotFound();
         }
 
         string? contentType = GetContentTypeFromExtension(promotionFile.FileName);

@@ -5,6 +5,7 @@ const copyLinkButtonCheckmarkId = "copyLinkButtonCheckmark";
 const copyLinkButtonCheckedClass = "link-copied";
 
 async function copyLinkToClipboardAndAnimateCopyButton(uriRelativeToRoot) {
+
     const success = copyLinkToClipboard(uriRelativeToRoot);
 
     if (!success) return;
@@ -27,6 +28,7 @@ function removeCopyLinkButtonAnimation(copyLinkButtonText, copyLinkButtonCheckma
 }
 
 async function copyLinkToClipboard(uriRelativeToRoot) {
+
     const url = new URL(uriRelativeToRoot, window.location.origin).href;
 
     try {

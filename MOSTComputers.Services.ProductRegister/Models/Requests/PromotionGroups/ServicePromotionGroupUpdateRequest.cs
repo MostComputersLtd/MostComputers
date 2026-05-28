@@ -1,3 +1,5 @@
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
+
 public sealed class ServicePromotionGroupUpdateRequest
 {
 	public required int Id { get; set; }

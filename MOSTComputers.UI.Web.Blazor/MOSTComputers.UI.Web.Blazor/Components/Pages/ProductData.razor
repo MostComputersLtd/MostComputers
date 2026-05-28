@@ -1,5 +1,7 @@
 ﻿@page "/product/productData/{ProductId:int}"
 
+@attribute [ExcludeFromInteractiveRouting]
+
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.Promotions
@@ -27,7 +29,6 @@
 @inject ICurrencyVATService CurrencyVATService
 @inject ICurrencyConversionService CurrencyConversionService
 @inject NavigationManager NavigationManager
-@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 @{
 	string productNameInPageTitle = "Product Data";
@@ -53,9 +54,9 @@
     <meta name="keywords" content="MOST Computers, МОСТ Компютърс, компютри, компоненти, лаптопи, сървъри, принтери, консумативи, цени" />
     <meta name="robots" content="INDEX,FOLLOW">
 
-    <script src="@_carouselScriptUrlWithVersion"></script>
-    <script src="@_productDataScriptUrlWithVersion"></script>
-    <script src="@_pageScriptUrlWithVersion"></script>
+    <script src="@Assets[_carouselScriptUrl]"></script>
+    <script src="@Assets[_productDataScriptUrl]"></script>
+    <script src="@Assets[_pageScriptUrl]"></script>
 
     <style>
 		body > div.page > main > article {
@@ -105,7 +106,6 @@
 </div> *@
 
 <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
-	IsRenderedInteractively="false"
 	BaseProductPagePath="@NavigationManager.BaseUri"
     ShowProductIdData="true"
     Product="Product"
@@ -121,10 +121,6 @@
     private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
     private const string _pageScriptUrl = "js/Pages/ProductData.js";
 
-    private string? _productDataScriptUrlWithVersion = null;
-    private string? _carouselScriptUrlWithVersion = null;
-    private string? _pageScriptUrlWithVersion = null;
-
     [Parameter] public required int? ProductId { get; set; }
     private int? _previousProductId { get; set; }
 
@@ -138,11 +134,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _productDataScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_productDataScriptUrl);
-        _carouselScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_carouselScriptUrl);
-        _pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetWebRootAssetUrlWithVersion(_pageScriptUrl);
-
-        await SetProductDataAsync();
+		await SetProductDataAsync();
 
         StateHasChanged();
     }
@@ -209,27 +201,7 @@
             ProductProperties.Add(productPropertyDisplayData);
         }
 
-        List<ProductImage> productImages = await ProductImageService.GetAllInProductAsync(Product.Id);
-
         List<ProductImageFileData> productImageFileNameInfos = await ProductImageFileService.GetAllInProductAsync(Product.Id);
-
-        foreach (ProductImage image in productImages)
-        {
-            ProductImageFileData? productImageFileNameInfo = productImageFileNameInfos
-                .FirstOrDefault(imageFile => imageFile.ImageId == image.Id);
-
-            if (productImageFileNameInfo is not null)
-            {
-                productImageFileNameInfos.Remove(productImageFileNameInfo);
-            }
-
-            ProductImageDisplayData productImageDisplayData = new()
-            {
-                ImageSrc = $"/api/images/originalImageData/{image.Id}",
-            };
-
-            ProductImages.Add(productImageDisplayData);
-        }
 
         foreach (ProductImageFileData imageFileNameInfo in productImageFileNameInfos)
         {
@@ -261,10 +233,10 @@
 
         if (Product.Price is not null && Product.Currency is not null)
         {
-            OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
+            OneOf<decimal, OneOf.Types.NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
                 Product.Price.Value, Product.Currency.Value, Currency.EUR);
 
-            OneOf<decimal, NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
+            OneOf<decimal, OneOf.Types.NotFound> getPriceInBgnResult = await CurrencyConversionService.ChangeCurrencyAsync(
                 Product.Price.Value, Product.Currency.Value, Currency.BGN);
 
             if (getPriceInEurResult.IsT0)

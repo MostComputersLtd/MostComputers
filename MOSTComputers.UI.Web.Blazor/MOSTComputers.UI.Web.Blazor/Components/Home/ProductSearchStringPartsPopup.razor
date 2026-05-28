@@ -1,13 +1,12 @@
 ﻿@using MOSTComputers.Models.Product.Models;
 @using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
-@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home2
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home
 
 @{
     Product product = ProductSearchStringPartsPopupData.Product;
 }
 
 <Popup @bind-IsVisible="ProductSearchStringPartsPopupData.IsVisible"
-    IsRenderedInteractively="false"
     PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
     <HeaderContent>
         <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">

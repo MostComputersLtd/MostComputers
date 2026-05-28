@@ -1,6 +1,3 @@
-using OneOf;
-using OneOf.Types;
-
 namespace MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 
 public sealed class ServiceGroupPromotionContentUpdateRequest

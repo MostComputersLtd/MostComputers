@@ -1,0 +1,28 @@
+@using MOSTComputers.Models.Product.Models
+
+<table id="addRelatedProductSearchResultsTable"
+	class="add-related-product-search-results-table">
+
+	@foreach (Product product in Products)
+	{
+		<tr class="add-related-product-search-result"
+			onclick="addRelatedProductToPromotion(@product.Id)">
+
+			<td class="add-related-product-search-result-entry-with-margin">
+				<p>@product.Id</p>
+			</td>
+
+			<td class="add-related-product-search-result-entry-with-margin">
+				<p>@product.Name</p>
+			</td>
+
+			<td>
+				<p>@product.SearchString</p>
+			</td>
+		</tr>
+	}
+</table>
+
+@code {
+	[Parameter, EditorRequired] public List<Product> Products { get; set; } = new();
+}

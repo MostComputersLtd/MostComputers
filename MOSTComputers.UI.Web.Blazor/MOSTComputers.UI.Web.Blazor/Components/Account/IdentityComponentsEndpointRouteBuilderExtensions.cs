@@ -18,18 +18,18 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        RouteGroupBuilder accountGroup = endpoints.MapGroup("/Account");
+        RouteGroupBuilder accountGroup = endpoints.MapGroup("/account");
 
         accountGroup.MapGet("/force-logout", async (
             ClaimsPrincipal user,
             SignInManager<PasswordsTableOnlyUser> signInManager) =>
             {
                 await signInManager.SignOutAsync();
-                return TypedResults.LocalRedirect($"~/Account/Login");
+                return TypedResults.LocalRedirect($"~/account/login");
             });
 
 
-        accountGroup.MapPost("/Logout", async (
+        accountGroup.MapPost("/logout", async (
             ClaimsPrincipal user,
             SignInManager<PasswordsTableOnlyUser> signInManager,
             [FromForm] string returnUrl) =>
@@ -38,7 +38,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             return TypedResults.LocalRedirect($"~/{returnUrl}");
         });
 
-        RouteGroupBuilder manageGroup = accountGroup.MapGroup("/Manage").RequireAuthorization();
+        RouteGroupBuilder manageGroup = accountGroup.MapGroup("/manage").RequireAuthorization();
 
         return accountGroup;
     }

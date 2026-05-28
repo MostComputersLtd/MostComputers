@@ -30,6 +30,7 @@ internal static class CommonValueConstraints
     {
         internal const int NameMaxLength = 50;
         internal const int HtmlContentMaxLength = 5000;
+        internal static readonly DateTime MinInsertStartDate = new(2025, 1, 1);
     }
 
     internal static class GroupPromotionImageFileDataConstraints

@@ -1,0 +1,87 @@
+﻿.promotion-group-save-button {
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.125rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.promotion-group-save-button-text {
+    margin-bottom: 0px;
+    white-space: nowrap;
+}
+
+.promotion-group-save-button.loading > .promotion-group-save-button-text {
+    height: 0px;
+    visibility: hidden;
+}
+
+.promotion-group-save-button-loader {
+    display: none;
+    height: 1.5em;
+    width: 1.5em;
+    padding: initial;
+    border-width: 3px;
+}
+
+    .promotion-group-save-button.loading > .promotion-group-save-button-loader {
+        display: unset;
+    } 
+
+
+.promotion-group-edit-fields {
+    padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+.promotion-group-edit-row {
+    width: 100%;
+    padding: 0px 0px 0.5rem 0px;
+    margin: 0px;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.promotion-group-edit-input-label {
+    padding-right: 0.5rem;
+}
+
+.promotion-group-edit-input {
+    flex-grow: 1;
+    border: 0.0625rem solid #bbbbbb;
+    border-radius: 0.25rem;
+}
+
+.promotion-group-edit-logo-change-button {
+    height: min-content;
+    border: none;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.35rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-justify-content: center;
+    justify-content: center;
+    background: #25b822;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.promotion-group-edit-logo-input {
+    display: none;
+}
+
+.promotion-group-logo-image-display {
+    width: fit-content;
+    height: fit-content;
+}
