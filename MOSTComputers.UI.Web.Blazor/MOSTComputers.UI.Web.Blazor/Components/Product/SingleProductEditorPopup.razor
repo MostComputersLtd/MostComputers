@@ -97,7 +97,7 @@
                 }
             </select>
 
-            <h4 class="popup-header-text">CSTID: @Product.Id</h4>
+            <h4 class="popup-header-text header-product-id-text">CSTID: @Product.Id</h4>
             <h4 class="popup-header-text">@Product.Name</h4>
 
             <button class="btn btn-outline-success single-product-editor-popup-header-item" @onclick="ShowProductDisplayPopupAsync">
@@ -497,6 +497,15 @@
                     }
                 </ul>
             </div>
+
+            @if (ProductLinks.Count > 0)
+            {
+				<div class="properties-list-divider d-flex">
+					<p>Links:</p>
+
+                    <hr class="properties-list-divider-line" />
+				</div>
+            }
 
             <div class="full-parent-width pb-4 d-flex flex-column">
 
@@ -1530,7 +1539,11 @@
     {
         List<ProductData.ProductPropertyDisplayData> productProperties = new();
 
-        foreach (ProductPropertyDisplayData productProperty in ProductProperties)
+        List<ProductPropertyDisplayData> allProductProperties = new(ProductProperties);
+
+        allProductProperties.AddRange(ProductLinks);
+
+        foreach (ProductPropertyDisplayData productProperty in allProductProperties)
         {
             if (productProperty.ProductCharacteristic is null
                 || !productProperty.IsActive)

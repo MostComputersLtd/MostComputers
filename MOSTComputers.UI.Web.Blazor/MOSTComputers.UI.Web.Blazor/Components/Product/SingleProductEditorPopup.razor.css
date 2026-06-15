@@ -21,6 +21,10 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     margin-right: 1em;
 }
 
+.header-product-id-text {
+    margin-right: 0.5rem;
+}
+
 .single-product-editor-popup-header-buttons-container {
     display: flex;
     flex-wrap: nowrap;
@@ -295,6 +299,15 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 .property-delete-button-td {
     width: 6%;
     direction: rtl;
+}
+
+.properties-list-divider {
+    display: flex;
+    margin-bottom: 0.5rem;
+}
+.properties-list-divider-line {
+    width: 100%;
+    margin: auto 0.5rem auto 0.25rem;
 }
 
 .product-documents-list {
