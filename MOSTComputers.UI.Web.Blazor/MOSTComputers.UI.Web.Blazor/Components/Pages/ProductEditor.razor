@@ -182,11 +182,18 @@
 		<table class="product-data-table table-with-small-horizontal-padding-on-cells">
 			<thead class="product-data-table-head">
 				<tr>
-                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByPlShow">PLSH •</th>
+                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByPlShow">
+                        PLSH @GetDisplayedValueOnPlShowColumn(_productOrderByPlShow)
+					</th>
+
                     <th class="product-data-table-column-with-sort-options" @onclick="OrderProductDatasByStatusDate">
-                        Work Stat @GetDisplayedValueOnWorkStatusColumn()
+                        Work Stat @GetDisplayedValueOnWorkStatusColumn(_productOrderByStatusDate)
                     </th>
-                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByImagesCount">P •</th>
+
+                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByImagesCount">
+                        P @GetDisplayedValueOnImagesCountColumn(_productOrderByImages)
+					</th>
+
                     <th>Stat</th>
 					<th>CSTID</th>
 					<th>Name</th>
@@ -1072,7 +1079,7 @@
         {
             IOrderedEnumerable<ProductEditorProductData> productDatasOrderedByUpdateDate
                 = ProductDatas.OrderByDescending(x => x.Product.Id);
-                // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.LastUpdateDate ?? DateTime.MinValue);
+            // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.LastUpdateDate ?? DateTime.MinValue);
 
             ProductDatas = ThenOrderProductDatasInDefaultOrder(productDatasOrderedByUpdateDate);
 
@@ -1084,7 +1091,7 @@
         {
             IOrderedEnumerable<ProductEditorProductData> productDatasOrderedByCreateDate
                 = ProductDatas.OrderByDescending(x => x.Product.Id);
-                // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.CreateDate ?? DateTime.MinValue);
+            // = ProductDatas.OrderByDescending(x => x.ProductStatuses?.CreateDate ?? DateTime.MinValue);
 
             ProductDatas = ThenOrderProductDatasInDefaultOrder(productDatasOrderedByCreateDate);
 
@@ -1098,9 +1105,9 @@
         _productOrderByStatusDate = ProductOrderByStatusDate.None;
     }
 
-    private string GetDisplayedValueOnWorkStatusColumn()
+    private string GetDisplayedValueOnWorkStatusColumn(ProductOrderByStatusDate productOrderByStatusDate)
     {
-        return _productOrderByStatusDate switch
+        return productOrderByStatusDate switch
         {
             ProductOrderByStatusDate.LastUpdatedDate => "Update",
             ProductOrderByStatusDate.CreatedDate => "Create",
@@ -1130,6 +1137,16 @@
         _productOrderByPlShow = ProductOrderByPlShow.None;
     }
 
+
+    private static string GetDisplayedValueOnPlShowColumn(ProductOrderByPlShow order)
+    {
+        return order switch
+        {
+            ProductOrderByPlShow.FirstWithHiddenProducts => "▼",
+            ProductOrderByPlShow.None or _ => "•"
+        };
+    }
+
     private void OrderByImagesCount()
     {
         _productOrderByPlShow = ProductOrderByPlShow.None;
@@ -1143,6 +1160,8 @@
             ProductDatas = ThenOrderProductDatasInDefaultOrder(productsOrderedByImagesCount);
 
             _productOrderByImages = ProductOrderByImages.FirstWithNoImages;
+
+            
         }
         else if (_productOrderByImages == ProductOrderByImages.FirstWithNoImages)
         {
@@ -1159,6 +1178,16 @@
 
             _productOrderByImages = ProductOrderByImages.None;
         }
+    }
+
+    private static string GetDisplayedValueOnImagesCountColumn(ProductOrderByImages order)
+    {
+        return order switch
+        {
+            ProductOrderByImages.FirstWithImages => "▲",
+            ProductOrderByImages.FirstWithNoImages => "▼",
+            ProductOrderByImages.None or _ => "•"
+        };
     }
 
     private void OrderProductDatasInDefaultOrder()
