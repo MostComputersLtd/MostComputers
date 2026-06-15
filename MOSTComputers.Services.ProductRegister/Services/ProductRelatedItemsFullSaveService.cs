@@ -1729,30 +1729,28 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
     private NotFound LogNotFound(NotFound notFound, string searchedItemId, int productId, string operation)
     {
-        _logger?.LogCritical("Item (ID: {searchedItemId}) not found when {operation} for product ID {ProductId}", searchedItemId, operation, productId);
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return notFound;
+
+        _logger.LogCritical("Item (ID: {searchedItemId}) not found when {operation} for product ID {ProductId}", searchedItemId, operation, productId);
 
         return notFound;
     }
 
     private ValidationResult LogValidationResult(ValidationResult validationResult, int productId, string operation)
     {
-        if (_logger is not null)
-        {
-            string json = JsonSerializer.Serialize(validationResult.Errors);
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return validationResult;
 
-            _logger.LogCritical("Validation error when {operation} images for product ID {ProductId},\n Full Messages: {ValidationResult}",
-                operation, productId, json);
-        }
+        string json = JsonSerializer.Serialize(validationResult.Errors);
+
+        _logger.LogCritical("Validation error when {operation} images for product ID {ProductId},\n Full Messages: {ValidationResult}",
+            operation, productId, json);
 
         return validationResult;
     }
 
     private FileSaveFailureResult LogFileSaveFailureResult(FileSaveFailureResult fileSaveFailureResult, int productId, string operation)
     {
-        if (_logger is null)
-        {
-            return fileSaveFailureResult;
-        }
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return fileSaveFailureResult;
 
         if (fileSaveFailureResult.IsUnsupportedContentType)
         {
@@ -1788,7 +1786,9 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
     private FileDoesntExistResult LogFileDoesntExistResult(FileDoesntExistResult fileDoesntExistResult, int productId, string operation)
     {
-        _logger?.LogCritical("File doesn't exist when {operation} for product ID {ProductId}, File Name: {FileName}",
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return fileDoesntExistResult;
+
+        _logger.LogCritical("File doesn't exist when {operation} for product ID {ProductId}, File Name: {FileName}",
             operation, productId, fileDoesntExistResult.FileName);
 
         return fileDoesntExistResult;
@@ -1796,7 +1796,9 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
     private FileAlreadyExistsResult LogFileAlreadyExistsResult(FileAlreadyExistsResult fileAlreadyExistsResult, int productId, string operation)
     {
-        _logger?.LogCritical("File already exists when {operation} for product ID {ProductId}, File Name: {FileName}",
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return fileAlreadyExistsResult;
+
+        _logger.LogCritical("File already exists when {operation} for product ID {ProductId}, File Name: {FileName}",
             operation, productId, fileAlreadyExistsResult.FileName);
 
         return fileAlreadyExistsResult;
@@ -1804,7 +1806,9 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
 
     private UnexpectedFailureResult LogUnexpectedFailureResult(UnexpectedFailureResult unexpectedFailureResult, int productId, string operation)
     {
-        _logger?.LogCritical("Unexpected failure when {operation} for product ID {ProductId}", operation, productId);
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Critical)) return unexpectedFailureResult;
+
+        _logger.LogCritical("Unexpected failure when {operation} for product ID {ProductId}", operation, productId);
 
         return unexpectedFailureResult;
     }
