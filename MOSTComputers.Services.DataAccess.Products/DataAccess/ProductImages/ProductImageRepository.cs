@@ -763,13 +763,15 @@ internal sealed class ProductImageRepository : IProductImageRepository
             END
             """;
 
-        throw new NotImplementedException($"ImagesAll does not allow modification: {updateHtmlDataInFirstImagesByProductIdQuery}");
+        throw new NotImplementedException($"ImagesAll modification has not been tested: {updateHtmlDataInFirstImagesByProductIdQuery}");
 
+#pragma warning disable CS0162 // Unreachable code detected
         var parameters = new
         {
             productId,
             HtmlData = htmlData
         };
+#pragma warning restore CS0162 // Unreachable code detected
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
@@ -876,8 +878,9 @@ internal sealed class ProductImageRepository : IProductImageRepository
             WHERE {FirstImagesTable.IdColumnName} = @id;
             """;
 
-        throw new NotImplementedException($"ImagesAll does not allow modification: {deleteQuery}");
+        throw new NotImplementedException($"ImagesAll modification has not been tested: {deleteQuery}");
 
+#pragma warning disable CS0162 // Unreachable code detected
         try
         {
             var parameters = new
@@ -898,6 +901,7 @@ internal sealed class ProductImageRepository : IProductImageRepository
         {
             return false;
         }
+#pragma warning restore CS0162 // Unreachable code detected
     }
 
     public async Task<bool> DeleteAllInAllImagesByProductIdAsync(int productId)
