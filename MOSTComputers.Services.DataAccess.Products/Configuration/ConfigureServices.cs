@@ -82,6 +82,7 @@ public static class ConfigureServices
         services.AddScoped<IManufacturerToPromotionGroupRelationsRepository, ManufacturerToPromotionGroupRelationsRepository>();
         services.AddScoped<IGroupPromotionContentsRepository, GroupPromotionContentsRepository>();
         services.AddScoped<IGroupPromotionImagesRepository, GroupPromotionImagesRepository>();
+        services.AddScoped<IGroupPromotionContentsToProductsRepository, GroupPromotionContentsToProductsRepository>();
         services.AddScoped<IGroupPromotionImageFileDatasRepository, GroupPromotionImageFileDatasRepository>();
 
         services.AddScoped<IPromotionFileInfoRepository, PromotionFileInfoRepository>();

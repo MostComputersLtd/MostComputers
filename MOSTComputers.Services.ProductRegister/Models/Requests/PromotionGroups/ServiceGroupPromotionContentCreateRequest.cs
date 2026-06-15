@@ -13,4 +13,5 @@ public sealed class ServiceGroupPromotionContentCreateRequest
 	public bool? MemberOfDefaultGroup { get; set; }
 	public int? DefaultGroupPriority { get; set; }
 	public List<ServiceGroupPromotionImageCreateRequest>? PromotionImageCreateRequests { get; set; }
+	public List<int>? RelatedProductIds { get; set; }
 }

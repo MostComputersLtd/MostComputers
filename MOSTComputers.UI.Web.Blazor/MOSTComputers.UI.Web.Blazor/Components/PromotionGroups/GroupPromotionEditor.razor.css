@@ -134,7 +134,8 @@
     height: 1.125rem;
 }
 
-.promotion-edit-file-select-button {
+.promotion-edit-file-select-button,
+.promotion-edit-open-related-products-popup-button {
     height: min-content;
     border: none;
     border-radius: 0.25rem;
@@ -161,4 +162,24 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     list-style: none;
+}
+
+.promotion-edit-related-products-container {
+    width: 100%;
+    margin: 0.5rem 0px 0px 0px;
+    padding: 0px;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+}
+
+.promotion-edit-related-products-search {
+    margin-bottom: 0.75rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-justify-content: space-between;
+    justify-content: space-between;
 }

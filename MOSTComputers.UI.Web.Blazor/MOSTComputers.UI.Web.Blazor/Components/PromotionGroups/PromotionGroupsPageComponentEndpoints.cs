@@ -5,9 +5,11 @@ using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
+using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
@@ -29,6 +31,13 @@ public static class PromotionGroupsPageComponentEndpoints
         public string? SearchData { get; set; }
         public int? PromotionGroupId { get; set; }
         public bool? ActiveOnly { get; set; }
+    }
+
+    public sealed class PromotionAddRelatedProductSearchData
+    {
+        public string? SearchData { get; set; }
+        public int? ManufacturerId { get; set; }
+        public bool? AvailableOnly { get; set; }
     }
 
     public sealed class GroupPromotionImageData
@@ -55,6 +64,7 @@ public static class PromotionGroupsPageComponentEndpoints
         public bool? MemberOfDefaultGroup { get; set; }
         public int? DefaultGroupPriority { get; set; }
         public List<IFormFile>? PromotionImageCreateRequests { get; set; }
+        public List<int>? RelatedProductIds { get; set; }
     }
 
     public sealed class GroupPromotionUpdateRequest
@@ -72,6 +82,7 @@ public static class PromotionGroupsPageComponentEndpoints
         public int? DefaultGroupPriority { get; set; }
         public List<GroupPromotionImageKeepRequest>? ImageIdsToKeep { get; set; }
         public List<GroupPromotionImageCreateRequest>? PromotionImageCreateRequests { get; set; }
+        public List<int>? RelatedProductIds { get; set; }
     }
 
     public sealed class GroupPromotionImageKeepRequest
@@ -130,6 +141,7 @@ public static class PromotionGroupsPageComponentEndpoints
         endpointGroup.MapGet("/addRelatedProductsPopup", GetAddRelatedProductsToPromotionPopupComponentAsync);
 
         endpointGroup.MapPost("/search", GetGroupPromotionsListAsync);
+        endpointGroup.MapPost("/searchRelatedProducts", GetAddRelatedProductsSearchResultsComponentAsync);
 
         endpointGroup.MapPost("/images", GetGroupPromotionImageComponent);
         endpointGroup.MapPost("/groupImages", GetPromotionGroupImageComponent);
@@ -243,9 +255,18 @@ public static class PromotionGroupsPageComponentEndpoints
         HttpContext httpContext,
         [FromServices] IPromotionGroupService promotionGroupService,
         [FromServices] IGroupPromotionService groupPromotionService,
+        [FromServices] IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        [FromServices] IProductService productService,
         [FromServices] IGroupPromotionImageFileService groupPromotionImageFileService)
     {
-        return await GetGroupPromotionEditorAsync(httpContext, promotionGroupService, groupPromotionService, groupPromotionImageFileService, null);
+        return await GetGroupPromotionEditorAsync(
+            httpContext,
+            promotionGroupService,
+            groupPromotionService,
+            groupPromotionImageFileService,
+            groupPromotionProductBindingsService,
+            productService,
+            null);
     }
 
     private static async Task<IResult> GetGroupPromotionEditorForExistingItemAsync(
@@ -253,11 +274,20 @@ public static class PromotionGroupsPageComponentEndpoints
         [FromServices] IPromotionGroupService promotionGroupService,
         [FromServices] IGroupPromotionService groupPromotionService,
         [FromServices] IGroupPromotionImageFileService groupPromotionImageFileService,
+        [FromServices] IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        [FromServices] IProductService productService,
         [FromRoute] int? id = null)
     {
         if (id == null) return Results.NotFound();
 
-        return await GetGroupPromotionEditorAsync(httpContext, promotionGroupService, groupPromotionService, groupPromotionImageFileService, id);
+        return await GetGroupPromotionEditorAsync(
+            httpContext,
+            promotionGroupService,
+            groupPromotionService,
+            groupPromotionImageFileService,
+            groupPromotionProductBindingsService,
+            productService,
+            id);
     }
 
     private static async Task<IResult> GetGroupPromotionEditorAsync(
@@ -265,6 +295,8 @@ public static class PromotionGroupsPageComponentEndpoints
         IPromotionGroupService promotionGroupService,
         IGroupPromotionService groupPromotionService,
         IGroupPromotionImageFileService groupPromotionImageFileService,
+        IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        IProductService productService,
         int? id)
     {
         List<PromotionGroup> promotionGroups = await promotionGroupService.GetAllAsync();
@@ -326,6 +358,10 @@ public static class PromotionGroupsPageComponentEndpoints
             groupPromotionImageDatas.Add(imageData);
         }
 
+        List<int> relatedProductIds = await groupPromotionProductBindingsService.GetAllProductIdsBoundToPromotionAsync(id.Value);
+
+        List<MOSTComputers.Models.Product.Models.Product> relatedProducts = await productService.GetByIdsAsync(relatedProductIds);
+
         GroupPromotionContentEditorData groupPromotionContentEditorData = new()
         {
             Id = groupPromotionContent.Id,
@@ -342,6 +378,7 @@ public static class PromotionGroupsPageComponentEndpoints
             MemberOfDefaultGroup = groupPromotionContent.MemberOfDefaultGroup,
             DefaultGroupPriority = groupPromotionContent.DefaultGroupPriority,
             Images = groupPromotionImageDatas,
+            RelatedProducts = relatedProducts,
         };
 
         return new RazorComponentResult<GroupPromotionEditor>(new
@@ -403,6 +440,27 @@ public static class PromotionGroupsPageComponentEndpoints
         return new RazorComponentResult<GroupPromotionAddRelatedProductsPopup>(new
         {
             SelectedPromotionGroupId = selectedPromotionGroupId,
+        });
+    }
+
+    
+    private static async Task<RazorComponentResult<GroupPromotionAddRelatedProductsSearchResults>> GetAddRelatedProductsSearchResultsComponentAsync(
+        [FromServices] IProductSearchService productSearchService,
+        [FromBody] PromotionAddRelatedProductSearchData request)
+    {
+        ProductSearchRequest productSearchRequest = new()
+        {
+            UserInputString = request.SearchData,
+            ManufacturerId = request.ManufacturerId,
+            ProductStatus = request.AvailableOnly == true ? ProductStatusSearchOptions.AvailableAndCall : null,
+        };
+
+        List<MOSTComputers.Models.Product.Models.Product> searchResults
+            = await productSearchService.SearchProductsAsync(productSearchRequest);
+
+        return new RazorComponentResult<GroupPromotionAddRelatedProductsSearchResults>(new
+        {
+            Products = searchResults,
         });
     }
 
@@ -551,6 +609,7 @@ public static class PromotionGroupsPageComponentEndpoints
             MemberOfDefaultGroup = groupPromotionCreateRequest.MemberOfDefaultGroup,
             DefaultGroupPriority = groupPromotionCreateRequest.DefaultGroupPriority,
             PromotionImageCreateRequests = imageCreateRequests,
+            RelatedProductIds = groupPromotionCreateRequest.RelatedProductIds,
         };
 
         OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> result
@@ -707,6 +766,7 @@ public static class PromotionGroupsPageComponentEndpoints
             MemberOfDefaultGroup = groupPromotionUpdateRequest.MemberOfDefaultGroup,
             DefaultGroupPriority = groupPromotionUpdateRequest.DefaultGroupPriority,
             ImageRequests = imageUpsertRequests.ToList(),
+            RelatedProductIds = groupPromotionUpdateRequest.RelatedProductIds,
         };
 
         OneOf<Success, OneOf.Types.NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult> result

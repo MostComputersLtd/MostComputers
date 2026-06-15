@@ -23,6 +23,8 @@ internal sealed class GroupPromotionContentCreateRequestValidator : AbstractVali
 
         RuleFor(x => x.PromotionImageCreateRequests!).HasDuplicateValues(AreRequestsDuplicatingIds)
             .When(x => x.PromotionImageCreateRequests is not null);
+
+        RuleForEach(x => x.RelatedProductIds!).GreaterThan(0);
     }
 
     private static bool AreRequestsDuplicatingIds(ServiceGroupPromotionImageCreateRequest item1, ServiceGroupPromotionImageCreateRequest item2)

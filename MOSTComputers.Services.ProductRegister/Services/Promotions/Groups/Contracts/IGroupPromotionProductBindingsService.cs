@@ -1,6 +1,10 @@
-﻿namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+﻿using OneOf;
+using OneOf.Types;
 
-internal interface IGroupPromotionProductBindingsService
+namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+
+public interface IGroupPromotionProductBindingsService
 {
     Task<List<int>> GetAllProductIdsBoundToPromotionAsync(int promotionId);
+    Task<OneOf<Success, NotFound>> UpsertAllAsync(int promotionId, List<int>? relatedProductIds);
 }

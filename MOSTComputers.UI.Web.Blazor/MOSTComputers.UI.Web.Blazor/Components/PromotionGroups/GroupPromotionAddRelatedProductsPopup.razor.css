@@ -1,5 +1,16 @@
-﻿.add-related-products-popup-search-header {
+﻿.related-products-popup-body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.related-products-popup-search-header {
     width: 100%;
+    margin-bottom: 1rem;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
 }
 
 .manufacturer-select {
@@ -10,16 +21,26 @@
     margin-right: 1rem;
 }
 
-.add-related-product-search-button {
+.available-only-container {
+    display: flex;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.available-only-checkbox {
+    margin-left: 0.5rem;
+}
+
+.related-product-search-button {
     height: min-content;
     margin-left: auto;
     border: none;
     border-radius: 0.25rem;
     padding: 0.25rem 0.35rem;
     display: flex;
-    -ms-flex-direction: row;
-    -webkit-flex-direction: row;
-    flex-direction: row;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
     -webkit-justify-content: center;
     justify-content: center;
     background: #25b822;
@@ -27,11 +48,23 @@
     cursor: pointer;
 }
 
-.add-related-product-search-button.loading .add-related-product-search-button-text {
+.related-product-search-button.loading .related-product-search-button-text {
     height: 0px;
     visibility: hidden;
 }
 
-    .add-related-product-search-button.loading .round-loader-default {
+.related-product-search-button .round-loader-default {
+    display: none;
+    height: 1.5rem;
+    width: 1.5rem;
+    padding: unset;
+    border-width: 3px;
+}
+
+    .related-product-search-button.loading .round-loader-default {
         display: block;
     }
+
+.related-product-search-results-container {
+    overflow-y: auto;
+}

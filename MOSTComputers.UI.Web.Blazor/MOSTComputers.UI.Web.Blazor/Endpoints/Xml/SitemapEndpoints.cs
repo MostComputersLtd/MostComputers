@@ -4,7 +4,6 @@ using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.Sitemap;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
-using System.Text;
 using System.Xml;
 
 namespace MOSTComputers.UI.Web.Blazor.Endpoints.Xml;

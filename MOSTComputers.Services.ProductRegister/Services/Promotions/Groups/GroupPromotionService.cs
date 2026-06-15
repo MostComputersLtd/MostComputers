@@ -10,17 +10,14 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
-using MOSTComputers.Services.ProductRegister.Validation;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 using static MOSTComputers.Utils.Files.FileExtensionUtils;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints;
-using System.Transactions;
 using System.Text;
 using System.Diagnostics;
-using Microsoft.Extensions.Options;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 
@@ -29,6 +26,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
     private readonly IGroupPromotionContentsRepository _groupPromotionContentsRepository;
     private readonly IGroupPromotionImageCrudService _groupPromotionImageCrudService;
     private readonly IGroupPromotionImageFileService _groupPromotionImageFileService;
+    private readonly IGroupPromotionProductBindingsService _groupPromotionProductBindingsService;
     private readonly ITransactionExecuteService _transactionExecuteService;
     private readonly IValidator<ServiceGroupPromotionContentCreateRequest> _createRequestValidator;
     private readonly IValidator<ServiceGroupPromotionContentUpdateRequest> _updateRequestValidator;
@@ -37,12 +35,14 @@ public sealed class GroupPromotionService : IGroupPromotionService
         IGroupPromotionContentsRepository groupPromotionContentsRepository,
         IGroupPromotionImageCrudService groupPromotionImageCrudService,
         IGroupPromotionImageFileService groupPromotionImageFileService,
+        IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<ServiceGroupPromotionContentCreateRequest> createRequestValidator,
         IValidator<ServiceGroupPromotionContentUpdateRequest> updateRequestValidator)
     {
         _groupPromotionImageCrudService = groupPromotionImageCrudService;
         _groupPromotionImageFileService = groupPromotionImageFileService;
+        _groupPromotionProductBindingsService = groupPromotionProductBindingsService;
         _transactionExecuteService = transactionExecuteService;
         _createRequestValidator = createRequestValidator;
         _updateRequestValidator = updateRequestValidator;
@@ -231,6 +231,14 @@ public sealed class GroupPromotionService : IGroupPromotionService
                 unexpectedFailureResult => unexpectedFailureResult);
         }
 
+        OneOf<Success, NotFound> saveRelatedProductsResult
+            = await _groupPromotionProductBindingsService.UpsertAllAsync(promotionId, createRequest.RelatedProductIds);
+
+        if (!saveRelatedProductsResult.IsT0)
+        {
+            return new UnexpectedFailureResult();
+        }
+
         output.ImageIds = new();
         output.ImageFileIds = new();
 
@@ -317,6 +325,14 @@ public sealed class GroupPromotionService : IGroupPromotionService
         ServiceGroupPromotionContentUpdateRequest updateRequest)
     {
         int promotionId = updateRequest.Id;
+
+        OneOf<Success, NotFound> saveRelatedProductsResult
+           = await _groupPromotionProductBindingsService.UpsertAllAsync(promotionId, updateRequest.RelatedProductIds);
+
+        if (!saveRelatedProductsResult.IsT0)
+        {
+            return new UnexpectedFailureResult();
+        }
 
         List<ServiceGroupPromotionImageUpsertRequest>? imageRequests = updateRequest.ImageRequests;
 

@@ -196,14 +196,20 @@
 
 		<p>&lt;br&gt;&lt;br&gt;&lt;a href="https://www.mostbg.com"&gt;&lt;img src=""/&gt;&lt;/a&gt;&lt;br&gt;&lt;br&gt;</p>
 
-		<div class="promotion-edit-row">
+		<div class="promotion-edit-related-products-container">
 
-			<label class="promotion-edit-input-label">Related Products</label>
+			<div class="promotion-edit-related-products-search">
 
-			<button type="button" onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)">
-				Add Products
-			</button>
+				<p class="promotion-edit-input-label">Related Products:</p>
 
+				<button id="relatedProductsPopupOpenButton"
+					type="button"
+					class="promotion-edit-open-related-products-popup-button"
+					onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)">
+					Add Products
+				</button>
+			</div>
+			
 			<table id="promotionEditRelatedProductsTable" class="promotion-edit-related-products-table">
 
 				@if (PromotionData.RelatedProducts != null)

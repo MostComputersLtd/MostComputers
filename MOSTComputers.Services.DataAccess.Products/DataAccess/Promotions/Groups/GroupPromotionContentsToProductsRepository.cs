@@ -4,11 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.DataAccess.Common;
 using MOSTComputers.Services.DataAccess.Products.Configuration;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text;
-using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils;
 using static MOSTComputers.Services.DataAccess.Products.Utils.TableAndColumnNameUtils.GroupPromotionContentsToProductsTable;
 
@@ -42,5 +38,80 @@ internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromoti
         IEnumerable<int> productIds = await connection.QueryAsync<int>(query, parameters, commandType: CommandType.Text);
 
         return productIds.AsList();
+    }
+
+    public async Task UpsertAllAsync(int promotionId, List<int>? relatedProductIds)
+    {
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        await connection.OpenAsync();
+
+        using SqlTransaction transaction = connection.BeginTransaction();
+
+        try
+        {
+            if (relatedProductIds == null || relatedProductIds.Count == 0)
+            {
+                const string deleteAllQuery =
+                    $"""
+                    DELETE FROM {GroupPromotionContentsToProductsTableName}
+                    WHERE {PromotionIdColumnName} = @promotionId;
+                    """;
+
+                await connection.ExecuteAsync(deleteAllQuery, new { promotionId }, transaction: transaction);
+
+                transaction.Commit();
+
+                return;
+            }
+
+            DynamicParameters parameters = new();
+
+            parameters.Add("promotionId", promotionId);
+
+            List<string> valueEntries = new(relatedProductIds.Count);
+
+            for (int i = 0; i < relatedProductIds.Count; i++)
+            {
+                string paramName = $"p{i}";
+
+                parameters.Add(paramName, relatedProductIds[i], DbType.Int32);
+
+                valueEntries.Add($"(@{paramName})");
+            }
+
+            string valuesClause = string.Join(", ", valueEntries);
+
+            string query =
+                $"""
+                DECLARE @NewProducts TABLE (ProductId INT);
+
+                INSERT INTO @NewProducts (ProductId)
+                VALUES {valuesClause};
+
+                DELETE FROM {GroupPromotionContentsToProductsTableName}
+                WHERE {PromotionIdColumnName} = @promotionId
+                    AND {ProductIdColumnName} NOT IN (SELECT ProductId FROM @NewProducts);
+
+                INSERT INTO {GroupPromotionContentsToProductsTableName} ({PromotionIdColumnName}, {ProductIdColumnName})
+                SELECT @promotionId, newProducts.ProductId
+                FROM @NewProducts newProducts
+                WHERE NOT EXISTS
+                (
+                    SELECT 1
+                    FROM {GroupPromotionContentsToProductsTableName} groupPromotionContentsToProducts
+                    WHERE groupPromotionContentsToProducts.{PromotionIdColumnName} = @promotionId
+                        AND groupPromotionContentsToProducts.{ProductIdColumnName} = newProducts.ProductId
+                )
+                """;
+
+            await connection.ExecuteAsync(query, parameters, transaction: transaction);
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+        }
     }
 }

@@ -23,11 +23,8 @@ const promotionMemberDefaultId = "promotionMemberDefault";
 const promotionDefaultPriorityId = "promotionDefaultPriority";
 const promotionHtmlId = "promotionHtml";
 
-
 const promotionImagesInputId = "promotionImagesInput";
 const promotionImagesListId = "promotionImagesList";
-
-const promotionEditRelatedProductsTableId = "promotionEditRelatedProductsTable";
 
 function getImageListItemIdFromIndex(imageIndex) {
     return `promotionEditImageListItem-${imageIndex}`;
@@ -54,8 +51,13 @@ const promotionGroupEditLogoImageContainerId = "promotionGroupEditLogoImageConta
 
 const addRelatedProductsPopupContainerId = "addRelatedProductsPopupContainer";
 
-const addRelatedProductsPopupId = "addRelatedProductsPopup";
-const addRelatedProductSearchResultsContainerId = "addRelatedProductSearchResultsContainer";
+const relatedProductsPopupId = "relatedProductsPopup";
+const relatedProductManufacturerSelectId = "relatedProductManufacturerSelect";
+const relatedProductSearchInputId = "relatedProductSearchInput";
+const relatedProductSearchAvaliableOnlyCheckboxId = "relatedProductSearchAvaliableOnlyCheckbox";
+const relatedProductSearchButtonId = "relatedProductSearchButton";
+const addRelatedProductSearchResultsContainerId = "relatedProductSearchResultsContainer";
+const promotionEditRelatedProductsTableId = "promotionEditRelatedProductsTable";
 
 const antiforgeryTokenInputId = "__RequestVerificationToken";
 
@@ -64,6 +66,8 @@ const promotionImagesName = "promotionEditImage";
 const promotionImageDeleteButtonsName = "promotionEditImageDeleteButton";
 const htmlContentImageSpanName = "groupPromotionEditorHtmlContentImageSpan";
 
+const relatedProductSearchResultName = "relatedProductSearchResult";
+
 const promotionEditorPromotionIdAttribute = "data-current-promotion-id";
 const promotionEditorImageIdAttribute = "data-current-promotion-image-id";
 const promotionEditorImageIndexAttribute = "data-current-promotion-image-index";
@@ -71,9 +75,14 @@ const promotionEditorImageIndexAttribute = "data-current-promotion-image-index";
 const htmlContentImageSpanImageIndexAttribute = "data-promotion-image-index-in-span"
 const htmlContentImageSpanImageIdAttribute = "data-promotion-image-id-in-span"
 
+const promotionRelatedProductIdAttribute = "data-promotion-edit-related-product-id";
+const promotionRelatedSearchResultProductIdAttribute = "data-related-product-search-result-product-id";
+
 const loadingClass = "loading";
 
 const htmlContentImageSpanClass = "promotion-edit-html-content-image-span";
+
+const relatedProductSearchResultInactiveClass = "related-product-search-result-inactive";
 
 const promotionEditorImagesToUpload = [];
 
@@ -575,6 +584,10 @@ function getPromotionCreateRequestFromCurrentData()
     const promotionMemberOfDefaultGroup = document.getElementById(promotionMemberDefaultId);
     const promotionDefaultGroupPriority = document.getElementById(promotionDefaultPriorityId);
 
+    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = [...promotionEditRelatedProductsTable.querySelectorAll("tr")];
+
     const formData = new FormData();
 
     formData.append("Name", promotionName.value);
@@ -630,6 +643,17 @@ function getPromotionCreateRequestFromCurrentData()
 
         formData.append(`PromotionImageCreateRequests[${i}]`, blob);
     }
+ 
+    for (let i = 0; i < relatedProductElements.length; i++) {
+
+        const relatedProductElement = relatedProductElements[i];
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(promotionRelatedProductIdAttribute);
+
+        const relatedProductId = getIntegerOrNullFromString(relatedProductIdAsString);
+
+        formData.append(`RelatedProductIds[${i}]`, relatedProductId);
+    }
 
     return formData;
 }
@@ -677,6 +701,10 @@ function getPromotionUpdateRequestFromCurrentData(promotionId)
     const imageList = document.getElementById(promotionImagesListId);
 
     const imageElements = [...imageList.querySelectorAll(`[name='${promotionImagesName}']`)];
+
+    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = [...promotionEditRelatedProductsTable.querySelectorAll("tr")];
 
     const formData = new FormData();
 
@@ -747,9 +775,19 @@ function getPromotionUpdateRequestFromCurrentData(promotionId)
         else {
             formData.append(`ImageIdsToKeep[${i}].Id`, existingImageId);
             formData.append(`ImageIdsToKeep[${i}].ImageIndex`, imageIndex);
-        }
-        
-    } 
+        } 
+    }
+
+    for (let i = 0; i < relatedProductElements.length; i++) {
+
+        const relatedProductElement = relatedProductElements[i];
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(promotionRelatedProductIdAttribute);
+
+        const relatedProductId = getIntegerOrNullFromString(relatedProductIdAsString);
+
+        formData.append(`RelatedProductIds[${i}]`, relatedProductId);
+    }
 
     return formData;
 }
@@ -789,7 +827,6 @@ function extractTopLevelTextNodesFromHtml(html) {
 
     return extractedText;
 }
-
 
 function insertNodeAtEditorTextCaret(node) {
 
@@ -923,7 +960,7 @@ function removePromotionImage(imageListItemElementId, imageUrl) {
 
 async function openAddRelatedProductsToPromotionPopup(initialGroupId = null) {
 
-    const response = await fetch(`api/components/promotionGroups/addRelatedProductsPopup?selectedPromotionGroupId=${productId}`,
+    const response = await fetch(`api/components/promotionGroups/addRelatedProductsPopup?selectedPromotionGroupId=${initialGroupId}`,
     {
         method: "GET",
         headers: {
@@ -939,12 +976,141 @@ async function openAddRelatedProductsToPromotionPopup(initialGroupId = null) {
 
     addRelatedProductsPopupContainer.innerHTML = data;
 
-    const addRelatedProductsPopup = document.getElementById(addRelatedProductsPopupId);
+    const addRelatedProductsPopup = document.getElementById(relatedProductsPopupId);
 
     addRelatedProductsPopup.showModal();
 }
 
-async function addRelatedProductToPromotion(productId) {
+async function searchRelatedProductsAndDisplayResults() {
+
+    const searchData = getRelatedProductsSearchOptionsFromCurrentData();
+
+    const relatedProductSearchButton = document.getElementById(relatedProductSearchButtonId);
+
+    relatedProductSearchButton.classList.add(loadingClass);
+
+    try
+    {
+        const response = await fetch(`api/components/promotionGroups/searchRelatedProducts`,
+        {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+                "Accept": "application/html"
+            },
+            body: JSON.stringify(searchData)
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.text();
+
+        const addRelatedProductSearchResultsContainer = document.getElementById(addRelatedProductSearchResultsContainerId);
+
+        addRelatedProductSearchResultsContainer.innerHTML = data;
+
+        const existingRelatedProductIds = getExistingRelatedProductIds();
+
+        changeStyleOfSearchResultsForAlreadyAddedProducts(existingRelatedProductIds);
+
+    }
+    finally {
+
+        relatedProductSearchButton.classList.remove(loadingClass);
+    }
+}
+
+function getRelatedProductsSearchOptionsFromCurrentData() {
+
+    const relatedProductManufacturerSelect = document.getElementById(relatedProductManufacturerSelectId);
+    const relatedProductSearchInput = document.getElementById(relatedProductSearchInputId);
+    const relatedProductSearchAvaliableOnlyCheckbox = document.getElementById(relatedProductSearchAvaliableOnlyCheckboxId);
+
+    const manufacturerId = getIntegerOrNullFromString(relatedProductManufacturerSelect.value);
+
+    return {
+        ManufacturerId: manufacturerId,
+        SearchData: relatedProductSearchInput.value,
+        AvailableOnly: relatedProductSearchAvaliableOnlyCheckbox.checked,
+    };
+}
+
+function getExistingRelatedProductIds()
+{
+    const relatedProductIds = [];
+
+    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = promotionEditRelatedProductsTable.querySelectorAll("tr");
+
+    for (const relatedProductElement of relatedProductElements) {
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(promotionRelatedProductIdAttribute);
+
+        const relatedProductId = getIntegerOrNullFromString(relatedProductIdAsString);
+
+        relatedProductIds.push(relatedProductId);
+    }
+
+    return relatedProductIds;
+}
+
+function changeStyleOfSearchResultsForAlreadyAddedProducts(alreadyAddedProductIds) {
+
+    const relatedProductSearchResultsContainer = document.getElementById(addRelatedProductSearchResultsContainerId);
+
+    const relatedProductSearchResultElements
+        = relatedProductSearchResultsContainer.querySelectorAll(`[name='${relatedProductSearchResultName}']`)
+
+    for (const relatedProductSearchResultElement of relatedProductSearchResultElements) {
+
+        if (alreadyAddedProductIds.length === 0) break;
+
+        const productIdAttribute = relatedProductSearchResultElement.getAttribute(promotionRelatedSearchResultProductIdAttribute);
+
+        const searchResultProductId = getIntegerOrNullFromString(productIdAttribute);
+
+        for (let i = 0; i < alreadyAddedProductIds.length; i++) {
+
+            const alreadyAddedProductId = alreadyAddedProductIds[i];
+
+            if (searchResultProductId !== alreadyAddedProductId) continue;
+
+            relatedProductSearchResultElement.classList.add(relatedProductSearchResultInactiveClass);
+
+            alreadyAddedProductIds.splice(i, 1);
+
+            break;
+        }
+    }
+}
+
+async function addRelatedProductToPromotion(productId, relatedProductSearchResultElementId) {
+
+    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = promotionEditRelatedProductsTable.querySelectorAll("tr");
+
+    for (const relatedProductElement of relatedProductElements) {
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(promotionRelatedProductIdAttribute);
+
+        const relatedProductId = getIntegerOrNullFromString(relatedProductIdAsString);
+
+        if (relatedProductId === productId)
+        {
+            removePromotionEditRelatedProduct(relatedProductElement);
+
+            if (relatedProductSearchResultElementId != null) {
+
+                const relatedProductSearchResultElement = document.getElementById(relatedProductSearchResultElementId);
+
+                relatedProductSearchResultElement.classList.remove(relatedProductSearchResultInactiveClass);
+            }
+
+            return;
+        }
+    }
 
     const response = await fetch(`api/components/promotionGroups/relatedProduct/${productId}`,
     {
@@ -958,14 +1124,24 @@ async function addRelatedProductToPromotion(productId) {
 
     const data = await response.text();
 
-    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
-
     promotionEditRelatedProductsTable.insertAdjacentHTML("beforeend", data);
+
+    if (relatedProductSearchResultElementId != null) {
+
+        const relatedProductSearchResultElement = document.getElementById(relatedProductSearchResultElementId);
+
+        relatedProductSearchResultElement.classList.add(relatedProductSearchResultInactiveClass);
+    }
 }
 
-function removePromotionEditRelatedProduct(promotionEditRelatedProductElementId) {
+function removePromotionEditRelatedProductById(promotionEditRelatedProductElementId) {
 
     const promotionEditRelatedProductElement = document.getElementById(promotionEditRelatedProductElementId);
+
+    removePromotionEditRelatedProduct(promotionEditRelatedProductElement);
+}
+
+function removePromotionEditRelatedProduct(promotionEditRelatedProductElement) {
 
     promotionEditRelatedProductElement.remove();
 }

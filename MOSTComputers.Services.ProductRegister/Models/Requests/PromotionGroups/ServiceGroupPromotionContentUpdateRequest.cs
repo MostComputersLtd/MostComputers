@@ -15,4 +15,5 @@ public sealed class ServiceGroupPromotionContentUpdateRequest
 	public int? DefaultGroupPriority { get; init; }
 
 	public List<ServiceGroupPromotionImageUpsertRequest>? ImageRequests { get; init; }
+	public List<int>? RelatedProductIds { get; set; }
 }

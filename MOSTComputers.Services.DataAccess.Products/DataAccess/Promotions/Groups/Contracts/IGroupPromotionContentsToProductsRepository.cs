@@ -3,4 +3,5 @@
 public interface IGroupPromotionContentsToProductsRepository
 {
     Task<List<int>> GetAllProductIdsBoundToPromotionAsync(int promotionId);
+    Task UpsertAllAsync(int promotionId, List<int>? relatedProductIds);
 }
