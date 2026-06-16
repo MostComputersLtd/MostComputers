@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
+using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -9,15 +10,20 @@ using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
+using MOSTComputers.UI.Web.Blazor.Components.Pages;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using OneOf;
+using static MOSTComputers.Utils.Files.FilePathUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
-public static class ProductDataComponentEndpoints
+public static class HomePageComponentEndpoints
 {
     public sealed class ProductSearchData
     {
@@ -221,6 +227,9 @@ public static class ProductDataComponentEndpoints
         [FromServices] IProductPropertyService productPropertyService,
         [FromServices] IProductImageFileService productImageFileService,
         [FromServices] IPromotionService promotionService,
+        [FromServices] IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        [FromServices] IGroupPromotionService groupPromotionService,
+        [FromServices] IGroupPromotionImageFileDataService groupPromotionImageFileDataService,
         [FromServices] ISearchStringOriginService searchStringOriginService,
         [FromServices] ICurrencyConversionService currencyConversionService,
         [FromServices] ICurrencyVATService currencyVATService,
@@ -269,6 +278,44 @@ public static class ProductDataComponentEndpoints
             productImagesInData.Add(productImageDisplayData);
         }
 
+        List<int> groupPromotionIds = await groupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductAsync(productId);
+
+        List<Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
+
+        if (groupPromotionIds.Count > 0)
+        {
+            List<GroupPromotionContent> groupPromotionContents = await groupPromotionService.GetByIdsAsync(groupPromotionIds);
+
+            List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+                = await groupPromotionImageFileDataService.GetAllInPromotionsAsync(groupPromotionIds);
+
+            for (int i = 0; i < groupPromotionContents.Count; i++)
+            {
+                GroupPromotionContent groupPromotionContent = groupPromotionContents[i];
+
+                IGrouping<int, GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.Find(x => x.Key == groupPromotionContent.Id);
+
+                string? htmlContent = groupPromotionContent.HtmlContent;
+
+                if (string.IsNullOrEmpty(htmlContent)) continue;
+
+                string? modifiedPromotionHtmlContent = groupPromotionService.ChangeLegacyUrlsToNewOnes(
+                    groupPromotionContent.HtmlContent,
+                    imageFilesForPromotion,
+                    promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+                );
+
+                if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
+
+                Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+                {
+                    HtmlContent = modifiedPromotionHtmlContent,
+                };
+
+                productRelatedGroupPromotions.Add(productPromotionDisplayData);
+            }
+        }
+
         List<MOSTComputers.Models.Product.Models.Promotions.Promotion> promotions
             = await promotionService.GetAllForProductAsync(product.Id);
 
@@ -301,6 +348,7 @@ public static class ProductDataComponentEndpoints
                 ProductDataPopupPriceData = productPriceData,
                 ProductProperties = propertiesInData,
                 ProductImages = productImagesInData,
+                ProductRelatedGroupPromotions = productRelatedGroupPromotions,
                 Promotions = productPromotions,
                 ProductSearchStringParts = productSearchStringParts,
             }

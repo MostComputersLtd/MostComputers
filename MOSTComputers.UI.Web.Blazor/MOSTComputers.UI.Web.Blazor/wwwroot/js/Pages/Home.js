@@ -33,6 +33,7 @@ const searchInputTextWithoutOrderSummaryAttribute = "data-search-without-order-s
 const loadingClass = "loading";
 
 document.addEventListener("visibilitychange", handleVisibilityChange);
+window.addEventListener("resize", handleResize);
 
 function handleVisibilityChange() {
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
@@ -45,6 +46,15 @@ function handleVisibilityChange() {
     else {
         startAutoSlide(true, productDataDialogCarouselId);
     }
+}
+
+function handleResize() {
+
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (!productDataDialogCarousel) return;
+
+    resizeHtmlContentInCarousel(productDataDialogCarousel);
 }
 
 async function searchProductsAndDisplaySearchButtonLoader() {
@@ -325,6 +335,7 @@ function showSearchHelpPopup() {
 }
 
 async function showProductXmlPopup(productId) {
+    
     const data = await getProductXmlPopupDataAsync(productId);
 
     const productXmlPopupContainer = document.getElementById(productXmlPopupContainerId);
@@ -337,6 +348,7 @@ async function showProductXmlPopup(productId) {
 }
 
 async function showProductDisplayPopupAsync(productId) {
+
     const data = await getProductDisplayPopupDataAsync(productId);
 
     const productDisplayPopupContainer = document.getElementById(productDisplayPopupContainerId);
@@ -344,9 +356,12 @@ async function showProductDisplayPopupAsync(productId) {
     productDisplayPopupContainer.innerHTML = data;
 
     const productDataDialog = productDisplayPopupContainer.querySelector("dialog");
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
 
     requestAnimationFrame(function ()
     {
+        resizeHtmlContentInCarousel(productDataDialogCarousel);
+
         startAutoSlide(true, productDataDialogCarouselId);
 
         productDataDialog.addEventListener("close", function () {

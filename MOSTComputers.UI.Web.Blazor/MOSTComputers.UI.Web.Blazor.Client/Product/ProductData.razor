@@ -90,11 +90,39 @@ else
                 <div class="images-column">
                     <div class="carousel-container">
 
-                        @if (ProductImages?.Count > 0)
+                        @{
+                            List<ProductImageInCarouselDisplayData> productImages = new();
+
+							if (ProductRelatedGroupPromotions?.Count > 0)
+                            {
+                                @foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
+                                {
+                                    productImages.Add(new()
+                                    {
+                                        ImageSrcOrHtmlContent = promotionDisplayData.HtmlContent,
+                                        IsUsingHtmlContent = true,
+                                    });
+                                }
+                            }
+
+                            if (ProductImages?.Count > 0)
+                            {
+                                @foreach (ProductImageDisplayData productImageDisplayData in ProductImages)
+                                {
+                                    productImages.Add(new()
+                                    {
+                                        ImageSrcOrHtmlContent = productImageDisplayData.ImageSrc,
+                                        IsUsingHtmlContent = false,
+                                    });
+                                }
+                            } 
+						}
+
+                        @if (productImages.Count > 0)
                         {
-                            <Carousel TItem="ProductImageDisplayData"
+                            <Carousel TItem="ProductImageInCarouselDisplayData"
                                 CarouselId="@CarouselId"
-                                Items="ProductImages"
+                                Items="productImages"
                                 TransitionMs="1000"
                                 AutoPlayOptions="TimeSpan.FromSeconds(6)"
                                 AdditionalIndicatorsListAttributes='new()
@@ -103,9 +131,23 @@ else
                                 }'>
                                 <ItemTemplate>
 
-                                    <a class="carousel-item" href="@context.ImageSrc" target="_blank" rel="noopener noreferrer">
-                                        <img src="@context.ImageSrc" class="carousel-item-image" alt="Image">
-                                    </a>
+                                    @if (!context.IsUsingHtmlContent)
+                                    {
+										<a class="carousel-item" href="@context.ImageSrcOrHtmlContent" target="_blank" rel="noopener noreferrer">
+											<img src="@context.ImageSrcOrHtmlContent" class="carousel-item-image" alt="Image">
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <div class="carousel-html-content-item">
+                                            <div class="carousel-html-content-item-promo-marker">ПРОМОЦИЯ!</div>
+
+                                            <div class="carousel-html-content-container">
+												@((MarkupString)context.ImageSrcOrHtmlContent)
+                                            </div>
+                                        </div>
+                                    }
+
                                 </ItemTemplate>
 
                                 <ItemIndicatorTemplate>
@@ -116,9 +158,20 @@ else
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
 											@onclick="context.GoToItemAsync">
 
-                                            <img src="@context.Item.ImageSrc" class="carousel-indicator-image" alt="Navigate to image">
-                                        </button>
+											@if (!context.Item.IsUsingHtmlContent)
+											{
+												<img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
+											}
+											else
+											{
+												<div class="carousel-indicator-html-content-item">
+													<div class="carousel-indicator-html-content-container">
 
+														@((MarkupString)context.Item.ImageSrcOrHtmlContent)
+													</div>
+												</div>
+											}
+                                        </button>
                                     }
                                     else
                                     {
@@ -126,7 +179,19 @@ else
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
                                             onclick="goTo('@CarouselId', @context.Index)">
 
-                                            <img src="@context.Item.ImageSrc" class="carousel-indicator-image" alt="Navigate to image">
+											@if (!context.Item.IsUsingHtmlContent)
+											{
+												<img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
+											}
+											else
+											{
+												<div class="carousel-indicator-html-content-item">
+													<div class="carousel-indicator-html-content-container">
+
+														@((MarkupString)context.Item.ImageSrcOrHtmlContent)
+													</div>
+												</div>
+											}
                                         </button>
                                     }
 
@@ -384,6 +449,17 @@ else
         public required string ImageSrc { get; init; }
     }
 
+	public sealed class ProductImageInCarouselDisplayData
+    {
+        public required string ImageSrcOrHtmlContent { get; init; }
+        public bool IsUsingHtmlContent { get; init; } = false;
+    }
+
+    public sealed class ProductRelatedGroupPromotionDisplayData
+    {
+        public required string HtmlContent { get; init; }
+    }
+
     private const string copyLinkButtonId = "copyLinkButton";
     private const string copyLinkButtonTextId = "copyLinkButtonText";
     private const string copyLinkButtonCheckmarkId = "copyLinkButtonCheckmark";
@@ -403,6 +479,7 @@ else
 
     [Parameter] public List<ProductPropertyDisplayData>? ProductProperties { get; set; }
     [Parameter] public List<ProductImageDisplayData>? ProductImages { get; set; }
+    [Parameter] public List<ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
     [Parameter] public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
     [Parameter] public List<Models.Product.Models.Promotions.Promotion>? ProductPromotions { get; set; }
 

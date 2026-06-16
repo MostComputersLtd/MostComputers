@@ -5,17 +5,21 @@
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.Services.Currencies.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using OneOf
 @using OneOf.Types
 
+@using static MOSTComputers.Utils.Files.FilePathUtils;
 @using static MOSTComputers.UI.Web.Blazor.Client.Product.ProductData;
 @using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion;
 
@@ -25,6 +29,9 @@
 @inject IProductImageService ProductImageService
 @inject IProductImageFileService ProductImageFileService
 @inject IPromotionService PromotionService
+@inject IGroupPromotionProductBindingsService GroupPromotionProductBindingsService
+@inject IGroupPromotionService GroupPromotionService
+@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
 @inject ISearchStringOriginService SearchStringOriginService
 @inject ICurrencyVATService CurrencyVATService
 @inject ICurrencyConversionService CurrencyConversionService
@@ -82,29 +89,6 @@
     return;
 }
 
-@* <div class="product-data-header">
-
-    <div class="header-text-container category-and-manufacturer-container">
-        @if (Product.Manufacturer is not null)
-        {
-            <h4 class="popup-header-text me-2 mb-0">Manufacturer: @Product.Manufacturer.RealCompanyName</h4>
-        }
-
-        @if (Product.Category is not null)
-        {
-            <h4 class="popup-header-text me-2 mb-0">Category: @Product.Category?.Description</h4>
-        }
-    </div>
-
-    <div class="header-text-container">
-        <h4 class="popup-header-text me-2">ID: @(Product.Id)</h4>
-        <h4 class="popup-header-text me-2">@(Product.Name ?? "-")</h4>
-        <h4 class="popup-header-text me-2">
-            @(Product.Status is not null ? GetStringFromProductStatus(Product.Status.Value) : "-")
-        </h4>
-    </div>
-</div> *@
-
 <MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
 	BaseProductPagePath="@NavigationManager.BaseUri"
     ShowProductIdData="true"
@@ -112,6 +96,7 @@
     PriceData="ProductPriceData"
     ProductProperties="ProductProperties"
     ProductImages="ProductImages"
+	ProductRelatedGroupPromotions="ProductRelatedGroupPromotions"
     ProductPromotions="ProductPromotions"
     ProductSearchStringParts="ProductSearchStringParts"/>
 
@@ -128,6 +113,7 @@
 
     private List<ProductPropertyDisplayData> ProductProperties { get; set; } = new();
     private List<ProductImageDisplayData> ProductImages { get; set; } = new();
+    private List<ProductRelatedGroupPromotionDisplayData> ProductRelatedGroupPromotions { get; set; } = new();
     private List<Promotion>? ProductPromotions { get; set; }
     private List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
     private ProductPriceData? ProductPriceData { get; set; }
@@ -139,20 +125,7 @@
         StateHasChanged();
     }
 
-    // protected override async Task OnParametersSetAsync()
-    // {
-    //     if (_previousProductId is not null
-    //         && _previousProductId != ProductId)
-    //     {
-    //         await SetProductDataAsync();
-
-    //         StateHasChanged();
-    //     }
-
-    //     _previousProductId = ProductId;
-    // }
-
-    private async Task SetProductDataAsync()
+	private async Task SetProductDataAsync()
     {
         if (ProductId is null) return;
 
@@ -213,6 +186,42 @@
             };
 
             ProductImages.Add(productImageDisplayData);
+        }
+
+         List<int> groupPromotionIds = await GroupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductAsync(Product.Id);
+
+        if (groupPromotionIds.Count > 0)
+        {
+            List<GroupPromotionContent> groupPromotionContents = await GroupPromotionService.GetByIdsAsync(groupPromotionIds);
+
+            List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+                = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(groupPromotionIds);
+
+            for (int i = 0; i < groupPromotionContents.Count; i++)
+            {
+                GroupPromotionContent groupPromotionContent = groupPromotionContents[i];
+
+                IGrouping<int, GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.Find(x => x.Key == groupPromotionContent.Id);
+
+                string? htmlContent = groupPromotionContent.HtmlContent;
+
+                if (string.IsNullOrEmpty(htmlContent)) continue;
+
+                string? modifiedPromotionHtmlContent = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
+                    groupPromotionContent.HtmlContent,
+                    imageFilesForPromotion,
+                    promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+                );
+
+                if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
+
+                Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+                {
+                    HtmlContent = modifiedPromotionHtmlContent,
+                };
+
+                ProductRelatedGroupPromotions.Add(productPromotionDisplayData);
+            }
         }
 
         List<Promotion> productPromotions = await PromotionService.GetAllForProductAsync(ProductId.Value);
