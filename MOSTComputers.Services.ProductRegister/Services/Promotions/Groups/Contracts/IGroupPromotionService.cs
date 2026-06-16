@@ -24,4 +24,5 @@ public interface IGroupPromotionService
     string GetValidHtmlContentImageUrlReference(int imageRequestIndex);
     Task<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(ServiceGroupPromotionContentCreateRequest createRequest);
     Task<OneOf<Success, NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult>> UpdateAsync(ServiceGroupPromotionContentUpdateRequest updateRequest);
+    Task<List<GroupPromotionContent>> GetByIdsAsync(IEnumerable<int> groupIds);
 }

@@ -96,6 +96,11 @@ public sealed class GroupPromotionService : IGroupPromotionService
         return _groupPromotionContentsRepository.GetAllInGroupsAsync(groupIds);
     }
 
+    public Task<List<GroupPromotionContent>> GetByIdsAsync(IEnumerable<int> groupIds)
+    {
+        return _groupPromotionContentsRepository.GetByIdsAsync(groupIds);
+    }
+
     public Task<GroupPromotionContent?> GetByIdAsync(int id)
     {
         return _groupPromotionContentsRepository.GetByIdAsync(id);
