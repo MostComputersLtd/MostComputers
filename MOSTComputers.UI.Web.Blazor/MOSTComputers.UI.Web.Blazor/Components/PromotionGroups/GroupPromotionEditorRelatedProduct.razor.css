@@ -34,3 +34,9 @@
     color: #ffffff;
     cursor: pointer;
 }
+
+    .promotion-edit-related-product-remove-button svg line {
+        stroke: currentColor;
+        stroke-width: 15;
+        stroke-linecap: round;
+    }

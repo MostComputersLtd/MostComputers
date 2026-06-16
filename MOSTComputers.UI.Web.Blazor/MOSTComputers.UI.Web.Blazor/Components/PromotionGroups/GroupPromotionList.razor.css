@@ -21,6 +21,10 @@
     margin-bottom: 0.25rem;
 }
 
+    .promotion-list-item:hover {
+        background-color: #e5e4e4;
+    }
+
 .promotion-item-left {
     margin-right: auto;
     display: flex;

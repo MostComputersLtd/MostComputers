@@ -124,7 +124,7 @@
     word-break: break-word;
 }
 
-.promotion-edit-html-content-image-span {
+::deep .promotion-edit-html-content-image-span {
     white-space: nowrap;
     word-break: keep-all;
     background-color: #ffee10;
