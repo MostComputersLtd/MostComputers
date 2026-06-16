@@ -19,6 +19,11 @@ internal sealed class GroupPromotionProductBindingsService : IGroupPromotionProd
         return _groupPromotionContentsToProductsRepository.GetAllProductIdsBoundToPromotionAsync(promotionId);
     }
 
+    public Task<List<int>> GetAllPromotionIdsBoundToProductAsync(int productId)
+    {
+        return _groupPromotionContentsToProductsRepository.GetAllPromotionIdsBoundToProductAsync(productId);
+    }
+
     public async Task<OneOf<Success, NotFound>> UpsertAllAsync(int promotionId, List<int>? relatedProductIds)
     {
         if (promotionId <= 0) return new NotFound();
