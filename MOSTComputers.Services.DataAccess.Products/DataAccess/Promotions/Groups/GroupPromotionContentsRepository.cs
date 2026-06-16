@@ -199,6 +199,32 @@ internal sealed class GroupPromotionContentsRepository : IGroupPromotionContents
 
         return promotionGroups.AsList();
     }
+    
+    public async Task<List<GroupPromotionContent>> GetByIdsAsync(IEnumerable<int> ids)
+    {
+        const string query =
+            $"""
+            SELECT TOP 1 * FROM {GroupPromotionContentsTableName} WITH (NOLOCK)
+            WHERE {IdColumnName} IN @ids
+            ORDER BY {DisplayOrderColumnName};
+            """;
+
+        using TransactionScope suppressedTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            ids = ids,
+        };
+
+        IEnumerable<GroupPromotionContent> promotionContent
+            = await connection.QueryAsync<GroupPromotionContent>(query, parameters, commandType: CommandType.Text);
+
+        suppressedTransactionScope.Complete();
+
+        return promotionContent.AsList();
+    }
 
     public async Task<GroupPromotionContent?> GetByIdAsync(int id)
     {

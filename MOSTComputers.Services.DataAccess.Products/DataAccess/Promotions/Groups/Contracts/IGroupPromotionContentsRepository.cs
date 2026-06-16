@@ -15,6 +15,7 @@ public interface IGroupPromotionContentsRepository
     Task<List<GroupPromotionContent>> GetAllInGroupAsync(int groupId);
     Task<List<IGrouping<int, GroupPromotionContent>>> GetAllInGroupsAsync(List<int> groupIds);
     Task<GroupPromotionContent?> GetByIdAsync(int id);
+    Task<List<GroupPromotionContent>> GetByIdsAsync(IEnumerable<int> ids);
     Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(GroupPromotionContentCreateRequest createRequest);
     Task<OneOf<Success, NotFound>> UpdateAsync(GroupPromotionContentUpdateRequest updateRequest);
 }
