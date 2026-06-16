@@ -40,6 +40,26 @@ internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromoti
         return productIds.AsList();
     }
 
+    public async Task<List<int>> GetAllPromotionIdsBoundToProductAsync(int productId)
+    {
+        const string query =
+            $"""
+            SELECT {PromotionIdColumnName} FROM {GroupPromotionContentsToProductsTableName} WITH (NOLOCK)
+            WHERE {ProductIdColumnName} = @productId;
+            """;
+
+        var parameters = new
+        {
+            productId = productId,
+        };
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        IEnumerable<int> productIds = await connection.QueryAsync<int>(query, parameters, commandType: CommandType.Text);
+
+        return productIds.AsList();
+    }
+
     public async Task UpsertAllAsync(int promotionId, List<int>? relatedProductIds)
     {
         using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
