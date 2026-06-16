@@ -74,6 +74,21 @@ internal class CacheKeyUtils
         }
     }
 
+    internal static class ForGroupPromotionProductBinding
+    {
+        private const string _coreWord = "groupPromotionProductBinding";
+
+        internal static string GetAllForGroupPromotionKey(int promotionId)
+        {
+            return $"{_coreWord}:ByGroupPromotion:{promotionId}";
+        }
+
+        internal static string GetAllForProductKey(int productId)
+        {
+            return $"{_coreWord}:ByProduct:{productId}";
+        }
+    }
+
     internal static class ForProductProperty
     {
         private const string _coreWord = "productProperties";
