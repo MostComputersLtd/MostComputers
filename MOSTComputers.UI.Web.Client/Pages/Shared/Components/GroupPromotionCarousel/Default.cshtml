@@ -48,8 +48,8 @@
 
         @if (Model.DisplayArrowButtons)
         {
-            <button class="custom-carousel-control custom-prev" onclick="TEMP__prev('@Model.CarouselId')">&lt;</button>
-            <button class="custom-carousel-control custom-next" onclick="TEMP__next('@Model.CarouselId')">&gt;</button>
+            <button class="custom-carousel-control custom-prev" onclick="prevMultiItem('@Model.CarouselId')">&lt;</button>
+            <button class="custom-carousel-control custom-next" onclick="nextMultiItem('@Model.CarouselId')">&gt;</button>
         }
     </div>
 

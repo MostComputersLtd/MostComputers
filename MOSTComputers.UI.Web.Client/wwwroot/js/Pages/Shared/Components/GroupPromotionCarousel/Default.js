@@ -1,30 +1,30 @@
-﻿const TEMP__activeTransformStyle = "translateX(0%)";
-const TEMP__leftTransformStyle = "translateX(-100%)";
-const TEMP__rightTransformStyle = "translateX(100%)";
+﻿const activeTransformStyleMultiItem = "translateX(0%)";
+const leftTransformStyleMultiItem = "translateX(-100%)";
+const rightTransformStyleMultiItem = "translateX(100%)";
 
-const TEMP__carouselTransitionTimeMsAttribute = "data-custom-carousel-transition-time-ms";
-const TEMP__carouselGoToTransitionTimeMsAttribute = "data-custom-carousel-go-to-transition-time-ms";
-const TEMP__carouselAutoSlideAllowedAttribute = "data-custom-carousel-auto-slide-allowed";
-const TEMP__carouselAutoSlideIntervalIdAttribute = "data-custom-carousel-auto-slide-interval-id";
-const TEMP__carouselAutoSlideIntervalTimeMsAttribute = "data-custom-carousel-auto-slide-interval-time-ms";
-const TEMP__carouselDisplayedItemsAtOnceAttribute = "data-custom-carousel-items-displayed-at-once";
-const TEMP__carouselItemHopsPerMoveAttribute = "data-custom-carousel-item-hops-per-move";
+const carouselTransitionTimeMsAttributeMultiItem = "data-custom-carousel-transition-time-ms";
+const carouselGoToTransitionTimeMsAttributeMultiItem = "data-custom-carousel-go-to-transition-time-ms";
+const carouselAutoSlideAllowedAttributeMultiItem = "data-custom-carousel-auto-slide-allowed";
+const carouselAutoSlideIntervalIdAttributeMultiItem = "data-custom-carousel-auto-slide-interval-id";
+const carouselAutoSlideIntervalTimeMsAttributeMultiItem = "data-custom-carousel-auto-slide-interval-time-ms";
+const carouselDisplayedItemsAtOnceAttributeMultiItem = "data-custom-carousel-items-displayed-at-once";
+const carouselItemHopsPerMoveAttributeMultiItem = "data-custom-carousel-item-hops-per-move";
 
-const TEMP__carouselItemClass = "custom-carousel-slide";
-const TEMP__activeItemClass = "active-carousel-item";
+const carouselItemClassMultiItem = "custom-carousel-slide";
+const activeItemClassMultiItem = "active-carousel-item";
 
-const TEMP__carouselIndicatorsListClass = "custom-carousel-indicators";
-const TEMP__activeIndicatorClass = "active-carousel-indicator";
+const carouselIndicatorsListClassMultiItem = "custom-carousel-indicators";
+const activeIndicatorClassMultiItem = "active-carousel-indicator";
 
-function TEMP__getLeftTransformStyleWithPercent(percent) {
+function getLeftTransformStyleWithPercentMultiItem(percent) {
     return `translateX(-${percent}%)`
 }
 
-function TEMP__getRightTransformStyleWithPercent(percent) {
+function getRightTransformStyleWithPercentMultiItem(percent) {
     return `translateX(${percent}%)`
 }
 
-function TEMP__setDefaultTransitionStyle(element, transitionTimeMs) {
+function setDefaultTransitionStyleMultiItem(element, transitionTimeMs) {
 
     element.style.transitionProperty = "all"
     element.style.transitionTimingFunction = "ease"
@@ -32,6 +32,7 @@ function TEMP__setDefaultTransitionStyle(element, transitionTimeMs) {
 }
 
 function configureCarouselAutoSlideOnLoad(carouselId) {
+
     const carousel = document.getElementById(carouselId);
 
     if (carousel == null) return;
@@ -39,95 +40,95 @@ function configureCarouselAutoSlideOnLoad(carouselId) {
     carousel.addEventListener("mouseenter", onCarouselMouseEnter);
     carousel.addEventListener("mouseleave", onCarouselMouseLeave);
 
-    TEMP__startAutoSlide(carousel.id);
+    startAutoSlideMultiItem(carousel.id);
 }
 
 function onCarouselMouseEnter(e) {
     const carousel = e.currentTarget;
 
-    TEMP__stopAutoSlide(carousel.id);
+    stopAutoSlideMultiItem(carousel.id);
 }
 
 function onCarouselMouseLeave(e) {
     const carousel = e.currentTarget;
 
-    TEMP__startAutoSlide(carousel.id);
+    startAutoSlideMultiItem(carousel.id);
 }
 
-function TEMP__startAutoSlide(carouselId) {
+function startAutoSlideMultiItem(carouselId) {
 
     const carousel = document.getElementById(carouselId);
 
     if (!carousel) return;
 
-    const isAutoSlideAllowedString = carousel.getAttribute(TEMP__carouselAutoSlideAllowedAttribute);
+    const isAutoSlideAllowedString = carousel.getAttribute(carouselAutoSlideAllowedAttributeMultiItem);
 
     const isAutoSlideAllowed = isAutoSlideAllowedString === "true";
 
     if (!isAutoSlideAllowed) return;
 
-    const existingIntervalId = carousel.getAttribute(TEMP__carouselAutoSlideIntervalIdAttribute);
+    const existingIntervalId = carousel.getAttribute(carouselAutoSlideIntervalIdAttributeMultiItem);
 
     if (existingIntervalId != null) return;
 
-    const intervalMs = carousel.getAttribute(TEMP__carouselAutoSlideIntervalTimeMsAttribute);
+    const intervalMs = carousel.getAttribute(carouselAutoSlideIntervalTimeMsAttributeMultiItem);
 
     if (intervalMs == null) return;
 
     const intervalId = setInterval(() => {
-        TEMP__slideInDirection(carouselId, false)
+        slideInDirectionMultiItem(carouselId, false)
     },
     intervalMs);
 
-    carousel.setAttribute(TEMP__carouselAutoSlideIntervalIdAttribute, intervalId);
+    carousel.setAttribute(carouselAutoSlideIntervalIdAttributeMultiItem, intervalId);
 }
 
-function TEMP__stopAutoSlide(carouselId) {
+function stopAutoSlideMultiItem(carouselId) {
 
     const carousel = document.getElementById(carouselId);
 
     if (!carousel) return;
 
-    const intervalId = carousel.getAttribute(TEMP__carouselAutoSlideIntervalIdAttribute);
+    const intervalId = carousel.getAttribute(carouselAutoSlideIntervalIdAttributeMultiItem);
 
     if (!intervalId) return;
 
     if (intervalId !== null) {
         clearInterval(intervalId);
 
-        carousel.removeAttribute(TEMP__carouselAutoSlideIntervalIdAttribute);
+        carousel.removeAttribute(carouselAutoSlideIntervalIdAttributeMultiItem);
     }
 }
 
-function TEMP__slideInDirection(carouselId, goBackwards) {
+function slideInDirectionMultiItem(carouselId, goBackwards) {
 
     if (goBackwards) {
-        TEMP__prev(carouselId);
+        prevMultiItem(carouselId);
     }
     else {
-        TEMP__next(carouselId);
+        nextMultiItem(carouselId);
     }
 }
 
-function TEMP__next(carouselId) {
+function nextMultiItem(carouselId) {
     const carousel = document.getElementById(carouselId);
 
-    const carouselItems = [...carousel.querySelectorAll(`.${TEMP__carouselItemClass}`)];
+    const carouselItems = [...carousel.querySelectorAll(`.${carouselItemClassMultiItem}`)];
 
-    const transitionTimeMsString = carousel.getAttribute(TEMP__carouselTransitionTimeMsAttribute);
-    const displayedItemsAtOnceString = carousel.getAttribute(TEMP__carouselDisplayedItemsAtOnceAttribute);
-    const itemHopsPerMoveString = carousel.getAttribute(TEMP__carouselItemHopsPerMoveAttribute);
+    const transitionTimeMsString = carousel.getAttribute(carouselTransitionTimeMsAttributeMultiItem);
+    const displayedItemsAtOnceString = carousel.getAttribute(carouselDisplayedItemsAtOnceAttributeMultiItem);
+    const itemHopsPerMoveString = carousel.getAttribute(carouselItemHopsPerMoveAttributeMultiItem);
 
-    const transitionTimeMs = TEMP__getNumberOrDefaultFromString(transitionTimeMsString);
-    const displayedItemsAtOnce = TEMP__getNumberOrDefaultFromString(displayedItemsAtOnceString, 1);
-    const itemHopsPerMove = TEMP__getNumberOrDefaultFromString(itemHopsPerMoveString, 1);
+    const transitionTimeMs = getNumberOrDefaultFromStringMultiItem(transitionTimeMsString);
+    const displayedItemsAtOnce = getNumberOrDefaultFromStringMultiItem(displayedItemsAtOnceString, 1);
+    const itemHopsPerMove = getNumberOrDefaultFromStringMultiItem(itemHopsPerMoveString, 1);
 
-    const allRelatedItems = TEMP__getItemsToMoveForward(carouselItems, itemHopsPerMove, displayedItemsAtOnce);
+    const allRelatedItems = getItemsToMoveForwardMultiItem(carouselItems, itemHopsPerMove, displayedItemsAtOnce);
 
     allRelatedItems.forEach((item, i) => {
         const offset = i;
 
-        item.classList.remove(TEMP__activeItemClass);
+        item.classList.remove(activeItemClassMultiItem);
 
         item.style.transition = "";
         item.style.transform = `translateX(${offset * 100}%)`;
@@ -139,39 +140,39 @@ function TEMP__next(carouselId) {
         const offset = i - itemHopsPerMove;
 
         if (offset >= 0) {
-            item.classList.add(TEMP__activeItemClass);
+            item.classList.add(activeItemClassMultiItem);
         }
 
-        TEMP__setDefaultTransitionStyle(item, transitionTimeMs);
+        setDefaultTransitionStyleMultiItem(item, transitionTimeMs);
         item.style.transform = `translateX(${offset * 100}%)`;
     })
 
     const firstActiveElement = allRelatedItems[itemHopsPerMove];
 
-    TEMP__setActiveIndicatorForItem(carousel, displayedItemsAtOnce, carouselItems.indexOf(firstActiveElement));
+    setActiveIndicatorForItemMultiItem(carousel, displayedItemsAtOnce, carouselItems.indexOf(firstActiveElement));
 
     carousel.setAttribute("aria-activedescendant", firstActiveElement.id);
 }
 
-function TEMP__prev(carouselId) {
+function prevMultiItem(carouselId) {
     const carousel = document.getElementById(carouselId);
 
-    const carouselItems = [...carousel.querySelectorAll(`.${TEMP__carouselItemClass}`)];
+    const carouselItems = [...carousel.querySelectorAll(`.${carouselItemClassMultiItem}`)];
 
-    const transitionTimeMsString = carousel.getAttribute(TEMP__carouselTransitionTimeMsAttribute);
-    const displayedItemsAtOnceString = carousel.getAttribute(TEMP__carouselDisplayedItemsAtOnceAttribute);
-    const itemHopsPerMoveString = carousel.getAttribute(TEMP__carouselItemHopsPerMoveAttribute);
+    const transitionTimeMsString = carousel.getAttribute(carouselTransitionTimeMsAttributeMultiItem);
+    const displayedItemsAtOnceString = carousel.getAttribute(carouselDisplayedItemsAtOnceAttributeMultiItem);
+    const itemHopsPerMoveString = carousel.getAttribute(carouselItemHopsPerMoveAttributeMultiItem);
 
-    const transitionTimeMs = TEMP__getNumberOrDefaultFromString(transitionTimeMsString);
-    const displayedItemsAtOnce = TEMP__getNumberOrDefaultFromString(displayedItemsAtOnceString, 1);
-    const itemHopsPerMove = TEMP__getNumberOrDefaultFromString(itemHopsPerMoveString, 1);
+    const transitionTimeMs = getNumberOrDefaultFromStringMultiItem(transitionTimeMsString);
+    const displayedItemsAtOnce = getNumberOrDefaultFromStringMultiItem(displayedItemsAtOnceString, 1);
+    const itemHopsPerMove = getNumberOrDefaultFromStringMultiItem(itemHopsPerMoveString, 1);
 
-    const allRelatedItems = TEMP__getItemsToMoveBackwards(carouselItems, itemHopsPerMove, displayedItemsAtOnce);
+    const allRelatedItems = getItemsToMoveBackwardsMultiItem(carouselItems, itemHopsPerMove, displayedItemsAtOnce);
 
     allRelatedItems.forEach((item, i) => {
         const offset = i - itemHopsPerMove;
 
-        item.classList.remove(TEMP__activeItemClass);
+        item.classList.remove(activeItemClassMultiItem);
 
         item.style.transition = "";
         item.style.transform = `translateX(${offset * 100}%)`;
@@ -183,39 +184,39 @@ function TEMP__prev(carouselId) {
         const offset = i;
 
         if (offset < displayedItemsAtOnce) {
-            item.classList.add(TEMP__activeItemClass);
+            item.classList.add(activeItemClassMultiItem);
         }
 
-        TEMP__setDefaultTransitionStyle(item, transitionTimeMs);
+        setDefaultTransitionStyleMultiItem(item, transitionTimeMs);
         item.style.transform = `translateX(${offset * 100}%)`;
     });
 
     const firstActiveElement = allRelatedItems[0];
 
-    TEMP__setActiveIndicatorForItem(carousel, displayedItemsAtOnce, carouselItems.indexOf(firstActiveElement));
+    setActiveIndicatorForItemMultiItem(carousel, displayedItemsAtOnce, carouselItems.indexOf(firstActiveElement));
 
     carousel.setAttribute("aria-activedescendant", firstActiveElement.id);
 }
 
-function TEMP__goTo(carouselId, firstItemIndex) {
+function goToMultiItem(carouselId, firstItemIndex) {
 
     const carousel = document.getElementById(carouselId);
 
-    const carouselItems = [...carousel.querySelectorAll(`.${TEMP__carouselItemClass}`)];
+    const carouselItems = [...carousel.querySelectorAll(`.${carouselItemClassMultiItem}`)];
 
-    const transitionTimeMsString = carousel.getAttribute(TEMP__carouselTransitionTimeMsAttribute);
-    const goToTransitionTimeMsString = carousel.getAttribute(TEMP__carouselGoToTransitionTimeMsAttribute);
-    const displayedItemsAtOnceString = carousel.getAttribute(TEMP__carouselDisplayedItemsAtOnceAttribute);
+    const transitionTimeMsString = carousel.getAttribute(carouselTransitionTimeMsAttributeMultiItem);
+    const goToTransitionTimeMsString = carousel.getAttribute(carouselGoToTransitionTimeMsAttributeMultiItem);
+    const displayedItemsAtOnceString = carousel.getAttribute(carouselDisplayedItemsAtOnceAttributeMultiItem);
 
-    const transitionTimeMs = TEMP__getNumberOrDefaultFromString(transitionTimeMsString);
-    const goToTransitionTimeMs = TEMP__getNumberOrDefaultFromString(goToTransitionTimeMsString);
-    const displayedItemsAtOnce = TEMP__getNumberOrDefaultFromString(displayedItemsAtOnceString, 1);
+    const transitionTimeMs = getNumberOrDefaultFromStringMultiItem(transitionTimeMsString);
+    const goToTransitionTimeMs = getNumberOrDefaultFromStringMultiItem(goToTransitionTimeMsString);
+    const displayedItemsAtOnce = getNumberOrDefaultFromStringMultiItem(displayedItemsAtOnceString, 1);
 
     const actualTransitionTimeMs = goToTransitionTimeMs != 0 ? goToTransitionTimeMs : transitionTimeMs;
 
     if (carouselItems.length <= 1) return;
 
-    const activeItems = TEMP__getActiveItemsOrderedLTR(carouselItems);
+    const activeItems = getActiveItemsOrderedLTRMultiItem(carouselItems);
 
     activeItems.forEach((item) => {
         item.style.zIndex = 1
@@ -290,20 +291,20 @@ function TEMP__goTo(carouselId, firstItemIndex) {
         activeItems.forEach((item, i) => {
             const offset = i - moveAmount;
 
-            item.classList.remove(TEMP__activeItemClass);
+            item.classList.remove(activeItemClassMultiItem);
 
-            TEMP__setDefaultTransitionStyle(item, actualTransitionTimeMs);
+            setDefaultTransitionStyleMultiItem(item, actualTransitionTimeMs);
             item.style.transform = `translateX(${offset * 100}%)`;
         });
 
         itemsToShow.forEach((item, i) => {
-            item.classList.add(TEMP__activeItemClass);
+            item.classList.add(activeItemClassMultiItem);
 
-            TEMP__setDefaultTransitionStyle(item, actualTransitionTimeMs);
+            setDefaultTransitionStyleMultiItem(item, actualTransitionTimeMs);
             item.style.transform = `translateX(${i * 100}%)`;
         });
 
-        TEMP__setActiveIndicatorAt(carousel, targetPageIndex);
+        setActiveIndicatorAtMultiItem(carousel, targetPageIndex);
 
         return;
     }
@@ -323,23 +324,23 @@ function TEMP__goTo(carouselId, firstItemIndex) {
     activeItems.forEach((item, i) => {
         const offset = i + moveAmount;
 
-        item.classList.remove(TEMP__activeItemClass);
+        item.classList.remove(activeItemClassMultiItem);
 
-        TEMP__setDefaultTransitionStyle(item, actualTransitionTimeMs);
+        setDefaultTransitionStyleMultiItem(item, actualTransitionTimeMs);
         item.style.transform = `translateX(${offset * 100}%)`;
     });
 
     itemsToShow.forEach((item, i) => {
-        item.classList.add(TEMP__activeItemClass);
+        item.classList.add(activeItemClassMultiItem);
 
-        TEMP__setDefaultTransitionStyle(item, actualTransitionTimeMs);
+        setDefaultTransitionStyleMultiItem(item, actualTransitionTimeMs);
         item.style.transform = `translateX(${i * 100}%)`;
     });
 
-    TEMP__setActiveIndicatorAt(carousel, targetPageIndex);
+    setActiveIndicatorAtMultiItem(carousel, targetPageIndex);
 }
 
-function TEMP__getActiveItemsOrderedLTR(carouselItems) {
+function getActiveItemsOrderedLTRMultiItem(carouselItems) {
 
     const items = [];
 
@@ -347,7 +348,7 @@ function TEMP__getActiveItemsOrderedLTR(carouselItems) {
 
         const item = carouselItems[i];
 
-        if (item.classList.contains(TEMP__activeItemClass)) {
+        if (item.classList.contains(activeItemClassMultiItem)) {
 
             items.push(item);
         }
@@ -365,7 +366,7 @@ function TEMP__getActiveItemsOrderedLTR(carouselItems) {
     });
 }
 
-function TEMP__getItemsToMoveForward(carouselItems, hopsInMove, visibleItems) {
+function getItemsToMoveForwardMultiItem(carouselItems, hopsInMove, visibleItems) {
 
     const items = [];
 
@@ -375,7 +376,7 @@ function TEMP__getItemsToMoveForward(carouselItems, hopsInMove, visibleItems) {
 
         const item = carouselItems[i];
 
-        if (item.classList.contains(TEMP__activeItemClass)) {
+        if (item.classList.contains(activeItemClassMultiItem)) {
 
             items.push(item);
         }
@@ -412,7 +413,7 @@ function TEMP__getItemsToMoveForward(carouselItems, hopsInMove, visibleItems) {
     return items;
 }
 
-function TEMP__getItemsToMoveBackwards(carouselItems, hopsInMove, visibleItems) {
+function getItemsToMoveBackwardsMultiItem(carouselItems, hopsInMove, visibleItems) {
 
     const items = [];
 
@@ -422,7 +423,7 @@ function TEMP__getItemsToMoveBackwards(carouselItems, hopsInMove, visibleItems) 
 
         const item = carouselItems[i];
 
-        if (item.classList.contains(TEMP__activeItemClass)) {
+        if (item.classList.contains(activeItemClassMultiItem)) {
 
             items.push(item);
         }
@@ -465,19 +466,19 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
     const carousel = document.getElementById(carouselId);
 
-    const carouselItems = [...carousel.querySelectorAll(`.${TEMP__carouselItemClass}`)];
+    const carouselItems = [...carousel.querySelectorAll(`.${carouselItemClassMultiItem}`)];
 
-    const displayedItemsAtOnceString = carousel.getAttribute(TEMP__carouselDisplayedItemsAtOnceAttribute);
+    const displayedItemsAtOnceString = carousel.getAttribute(carouselDisplayedItemsAtOnceAttributeMultiItem);
 
-    const displayedItemsAtOnce = TEMP__getNumberOrDefaultFromString(displayedItemsAtOnceString, 1);
+    const displayedItemsAtOnce = getNumberOrDefaultFromStringMultiItem(displayedItemsAtOnceString, 1);
 
     if (displayedItemsAtOnce === newDisplayedItemsAtOnce) return;
 
     const differenceBetweenOldAndNewItems = newDisplayedItemsAtOnce - displayedItemsAtOnce;
 
-    var activeItems = TEMP__getActiveItemsOrderedLTR(carouselItems);
+    var activeItems = getActiveItemsOrderedLTRMultiItem(carouselItems);
 
-    carousel.setAttribute(TEMP__carouselDisplayedItemsAtOnceAttribute, newDisplayedItemsAtOnce);
+    carousel.setAttribute(carouselDisplayedItemsAtOnceAttributeMultiItem, newDisplayedItemsAtOnce);
 
     if (differenceBetweenOldAndNewItems > 0) {
 
@@ -495,7 +496,7 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
             const newItem = carouselItems[lastItemIndex];
 
-            newItem.classList.add(TEMP__activeItemClass);
+            newItem.classList.add(activeItemClassMultiItem);
 
             activeItems.push(newItem);
         }
@@ -506,7 +507,7 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
             const itemToRemoveIndex = activeItems.length - 1;
 
-            activeItems[itemToRemoveIndex].classList.remove(TEMP__activeItemClass);
+            activeItems[itemToRemoveIndex].classList.remove(activeItemClassMultiItem);
 
             activeItems.pop();
         }
@@ -534,7 +535,7 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
     const firstActiveItemIndex = carouselItems.indexOf(firstActiveItem);
 
-    const carouselList = carousel.querySelector(`.${TEMP__carouselIndicatorsListClass}`);
+    const carouselList = carousel.querySelector(`.${carouselIndicatorsListClassMultiItem}`);
 
     const indicators = [...carouselList.children];
 
@@ -546,7 +547,7 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
     const targetPageIndex = Math.floor(firstActiveItemIndex / newDisplayedItemsAtOnce);
 
-    firstIndicator.classList.remove(TEMP__activeIndicatorClass);
+    firstIndicator.classList.remove(activeIndicatorClassMultiItem);
 
     carouselList.innerHTML = "";
 
@@ -557,7 +558,7 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
 
         if (i === targetPageIndex)
         {
-            indicator.classList.add(TEMP__activeIndicatorClass);
+            indicator.classList.add(activeIndicatorClassMultiItem);
         }
 
         indicator.id = `carousel-option-${i}`;
@@ -565,31 +566,31 @@ function resizeCarousel(carouselId, newDisplayedItemsAtOnce) {
         indicator.onclick = null;
 
         indicator.addEventListener("click", function () {
-            TEMP__goTo(carouselId, startIndex);
+            goToMultiItem(carouselId, startIndex);
         });
 
         carouselList.appendChild(indicator);
     }
 }
 
-function TEMP__getCarouselIndicators(carousel)
+function getCarouselIndicatorsMultiItem(carousel)
 {
-    const carouselList = carousel.querySelector(`.${TEMP__carouselIndicatorsListClass}`);
+    const carouselList = carousel.querySelector(`.${carouselIndicatorsListClassMultiItem}`);
 
     const carouselIndicators = [...carouselList.children];
 
     return carouselIndicators;
 }
 
-function TEMP__setActiveIndicatorForItem(carousel, displayedItemsAtOnce, index) {
+function setActiveIndicatorForItemMultiItem(carousel, displayedItemsAtOnce, index) {
     const targetPageIndex = Math.floor(index / displayedItemsAtOnce);
 
-    TEMP__setActiveIndicatorAt(carousel, targetPageIndex);
+    setActiveIndicatorAtMultiItem(carousel, targetPageIndex);
 }
 
-function TEMP__setActiveIndicatorAt(carousel, index)
+function setActiveIndicatorAtMultiItem(carousel, index)
 {
-    const carouselIndicators = TEMP__getCarouselIndicators(carousel);
+    const carouselIndicators = getCarouselIndicatorsMultiItem(carousel);
 
     if (index < 0 || index >= carouselIndicators.length) return;
 
@@ -597,18 +598,18 @@ function TEMP__setActiveIndicatorAt(carousel, index)
 
         const indicator = carouselIndicators[i]
 
-        if (indicator.classList.contains(TEMP__activeIndicatorClass))
+        if (indicator.classList.contains(activeIndicatorClassMultiItem))
         {
-            indicator.classList.remove(TEMP__activeIndicatorClass);
+            indicator.classList.remove(activeIndicatorClassMultiItem);
 
             break;
         }
     }
 
-    carouselIndicators[index].classList.add(TEMP__activeIndicatorClass);
+    carouselIndicators[index].classList.add(activeIndicatorClassMultiItem);
 }
 
-function TEMP__getNumberOrDefaultFromString(stringValue, defaultValue = 0) {
+function getNumberOrDefaultFromStringMultiItem(stringValue, defaultValue = 0) {
     if (stringValue == null && stringValue != "") return defaultValue;
 
     var output = 0;
