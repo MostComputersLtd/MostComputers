@@ -219,7 +219,7 @@ else
 
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Popup.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Primitives/Popup.razor.js");
 
             await _jsModule.InvokeVoidAsync("attachAutoCloseEvent", PopupId, dotNetObjectReference);
 

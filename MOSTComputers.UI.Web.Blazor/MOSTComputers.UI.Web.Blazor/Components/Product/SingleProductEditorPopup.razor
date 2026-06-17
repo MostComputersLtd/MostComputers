@@ -32,8 +32,9 @@
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
-@using MOSTComputers.UI.Web.Blazor.Client.Product
-@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product
+@using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
@@ -1604,8 +1605,8 @@
     {
         if (Product.Price is null || Product.Currency is null) return null;
 
-        Client.Product.ProductData.DisplayPrice? displayPrice = null;
-        Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
+        Components.Product.ProductData.DisplayPrice? displayPrice = null;
+        Components.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
 
         OneOf<decimal, NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
             Product.Price.Value, Product.Currency.Value, Currency.EUR);
@@ -1721,7 +1722,7 @@
 
         try
         {
-            imageInfo = await Image.IdentifyAsync(memoryStream);
+            imageInfo = await SixLabors.ImageSharp.Image.IdentifyAsync(memoryStream);
         }
         catch (UnknownImageFormatException)
         {

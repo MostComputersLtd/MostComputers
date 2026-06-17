@@ -15,13 +15,12 @@
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using OneOf
 @using OneOf.Types
 
 @using static MOSTComputers.Utils.Files.FilePathUtils;
-@using static MOSTComputers.UI.Web.Blazor.Client.Product.ProductData;
-@using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion;
+@using static MOSTComputers.UI.Web.Blazor.Components.Product.ProductData;
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
 
 @inject IProductService ProductService
 @inject IProductPropertyService ProductPropertyService
@@ -89,7 +88,7 @@
     return;
 }
 
-<MOSTComputers.UI.Web.Blazor.Client.Product.ProductData
+<MOSTComputers.UI.Web.Blazor.Components.Product.ProductData
 	BaseProductPagePath="@NavigationManager.BaseUri"
     ShowProductIdData="true"
     Product="Product"
@@ -215,7 +214,7 @@
 
                 if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
 
-                Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+                Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
                 {
                     HtmlContent = modifiedPromotionHtmlContent,
                 };
@@ -237,8 +236,8 @@
         ProductSearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             Product.SearchString, Product.CategoryId);
 
-        Client.Product.ProductData.DisplayPrice? displayPrice = null;
-        Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
+        Components.Product.ProductData.DisplayPrice? displayPrice = null;
+        Components.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
 
         if (Product.Price is not null && Product.Currency is not null)
         {

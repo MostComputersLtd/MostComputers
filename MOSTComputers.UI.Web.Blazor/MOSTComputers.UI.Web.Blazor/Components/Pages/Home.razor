@@ -24,11 +24,9 @@
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
-@using MOSTComputers.UI.Web.Blazor.Client.Product
-@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using OneOf
@@ -280,10 +278,10 @@
         public bool IsVisible { get; set; } = false;
         public required Product Product { get; set; }
         public required string BaseProductPagePath { get; set; }
-        public Client.Product.ProductData.ProductPriceData? ProductDataPopupPriceData { get; set; }
-        public List<Client.Product.ProductData.ProductPropertyDisplayData>? ProductProperties { get; set; }
-        public List<Client.Product.ProductData.ProductImageDisplayData>? ProductImages { get; set; }
-        public List<Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
+        public Components.Product.ProductData.ProductPriceData? ProductDataPopupPriceData { get; set; }
+        public List<Components.Product.ProductData.ProductPropertyDisplayData>? ProductProperties { get; set; }
+        public List<Components.Product.ProductData.ProductImageDisplayData>? ProductImages { get; set; }
+        public List<Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
         public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
         public List<MOSTComputers.Models.Product.Models.Promotions.Promotion>? Promotions { get; set; }
     }

@@ -74,18 +74,18 @@ h1, h2, h3, h4, h5, h6 {
     visibility: hidden;
 }
 
-.copy-link-button-checkmark {
+::deep .copy-link-button-checkmark {
     display: none;
 }
 
-    .copy-link-button-checkmark.link-copied {
+    ::deep .copy-link-button-checkmark.link-copied {
         width: 1.4rem;
         height: 1.4rem;
         margin: 0px auto;
         display: block;
     }
 
-    .copy-link-button-checkmark.link-copied > path {
+    ::deep .copy-link-button-checkmark.link-copied > path {
         stroke-dasharray: 40;
         stroke-dashoffset: 40;
         animation: draw-checkmark 0.35s ease-out forwards;

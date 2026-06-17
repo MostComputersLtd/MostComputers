@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 
-namespace MOSTComputers.UI.Web.Blazor.Client.Localization;
+namespace MOSTComputers.UI.Web.Blazor.Services.Localization;
 
 public class CultureService
 {

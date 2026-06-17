@@ -256,15 +256,37 @@ else
 
         if (!itemsHaveChanged)
         {
+            EqualityComparer<TItem> comparer = EqualityComparer<TItem>.Default;
+
             foreach (TItem item in Items)
             {
-                CarouselItem? matchingCarouselItem = _carouselItems.FirstOrDefault(x => EqualityComparer<TItem>.Default.Equals(x.Item, item));
+                bool found = false;
 
-                if (matchingCarouselItem is not null) continue;
+                foreach (CarouselItem carouselItems in _carouselItems)
+                {
+                    if (object.ReferenceEquals(carouselItems.Item, item))
+                    {
+                        found = true;
 
-                itemsHaveChanged = true;
+                        break;
+                    }
 
-                break;
+                    if (carouselItems.Item == null || item == null) continue;
+
+                    if (comparer.Equals(carouselItems.Item, item))
+                    {
+                        found = true;
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    itemsHaveChanged = true;
+
+                    break;
+                }
             }
         }
 
@@ -327,7 +349,7 @@ else
 
         if (firstRender)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Carousel.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Primitives/Carousel.razor.js");
 
             _dotNetObjectReference = DotNetObjectReference.Create<Carousel<TItem>>(this);
 

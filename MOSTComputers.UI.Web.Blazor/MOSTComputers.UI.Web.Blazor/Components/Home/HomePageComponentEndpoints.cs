@@ -259,10 +259,10 @@ public static class HomePageComponentEndpoints
 
         List<ProductProperty> productProperties = await productPropertyService.GetAllInProductAsync(product.Id);
 
-        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData
+        List<Components.Product.ProductData.ProductPropertyDisplayData> propertiesInData
             = GetProductPropertiesFromProductData(productProperties, productCharacteristics);
 
-        List<Client.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
+        List<Components.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
 
         List<ProductImageFileData> productImageFileNameInfos = await productImageFileService.GetAllInProductAsync(product.Id);
 
@@ -270,7 +270,7 @@ public static class HomePageComponentEndpoints
         {
             if (imageFileNameInfo.FileName is null) continue;
 
-            Client.Product.ProductData.ProductImageDisplayData productImageDisplayData = new()
+            Components.Product.ProductData.ProductImageDisplayData productImageDisplayData = new()
             {
                 ImageSrc = $"/api/images/imageFileData/{imageFileNameInfo.FileName}",
             };
@@ -280,7 +280,7 @@ public static class HomePageComponentEndpoints
 
         List<int> groupPromotionIds = await groupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductAsync(productId);
 
-        List<Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
+        List<Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
 
         if (groupPromotionIds.Count > 0)
         {
@@ -307,7 +307,7 @@ public static class HomePageComponentEndpoints
 
                 if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
 
-                Client.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+                Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
                 {
                     HtmlContent = modifiedPromotionHtmlContent,
                 };
@@ -331,7 +331,7 @@ public static class HomePageComponentEndpoints
         List<SearchStringPartOriginData>? productSearchStringParts = await searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             product.SearchString, product.CategoryId);
 
-        Client.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(
+        Components.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(
             currencyConversionService, currencyVATService, product);
 
         HttpRequest httpRequest = httpContext.Request;
@@ -355,18 +355,18 @@ public static class HomePageComponentEndpoints
         });
     }
 
-    private static List<Client.Product.ProductData.ProductPropertyDisplayData> GetProductPropertiesFromProductData(
+    private static List<Components.Product.ProductData.ProductPropertyDisplayData> GetProductPropertiesFromProductData(
         List<ProductProperty> productProperties,
         List<ProductCharacteristic> productCharacteristics)
     {
-        List<Client.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
+        List<Components.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
 
         foreach (ProductProperty property in productProperties)
         {
             ProductCharacteristic productCharacteristic = productCharacteristics
                 .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
 
-            Client.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
+            Components.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
             {
                 ProductCharacteristic = new()
                 {
@@ -386,13 +386,13 @@ public static class HomePageComponentEndpoints
         return propertiesInData;
     }
 
-    private static async Task<Client.Product.ProductData.ProductPriceData?> GetProductPriceDataAsync(
+    private static async Task<Components.Product.ProductData.ProductPriceData?> GetProductPriceDataAsync(
         ICurrencyConversionService currencyConversionService,
         ICurrencyVATService currencyVATService,
         MOSTComputers.Models.Product.Models.Product product)
     {
-        Client.Product.ProductData.DisplayPrice? displayPrice = null;
-        Client.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
+        Components.Product.ProductData.DisplayPrice? displayPrice = null;
+        Components.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
 
        if (product.Price is not null && product.Currency is not null)
         {

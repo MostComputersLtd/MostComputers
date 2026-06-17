@@ -2,9 +2,11 @@
 @using MOSTComputers.Models.Product.Models.ProductIdentifiers
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Services.SearchStringOrigin.Models
-@using MOSTComputers.UI.Web.Blazor.Client.Product.SearchString
+@using MOSTComputers.UI.Web.Blazor.Components.Icons
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
 @using Microsoft.AspNetCore.Http
-@using static MOSTComputers.UI.Web.Blazor.Client.Utils.DataToTextConversion
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JSRuntime
@@ -53,7 +55,10 @@ else
 									<button id="copyLinkButton" class="btn download-button copy-link-button"
 										@onclick='() => CopyLinkToClipboardAndAnimateCopyButton(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))'>
 										<p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
-										<svg id="copyLinkButtonCheckmark"
+
+										<CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
+
+										@* <svg id="copyLinkButtonCheckmark"
 											class="copy-link-button-checkmark"
 											viewBox="0 0 24 24">
 											<path d="M4 12 L10 18 L20 6"
@@ -62,7 +67,7 @@ else
 												stroke-width="3"
 												stroke-linecap="round"
 												stroke-linejoin="round"/>
-										</svg>
+										</svg> *@
                                     </button>
                                 }
                                 else
@@ -70,6 +75,9 @@ else
 									<button id="copyLinkButton" class="btn download-button copy-link-button"
 										onclick="copyLinkToClipboardAndAnimateCopyButton('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
 										<p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+
+										<CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
+
 										<svg id="copyLinkButtonCheckmark"
 											class="copy-link-button-checkmark"
 											viewBox="0 0 24 24">
@@ -90,39 +98,11 @@ else
                 <div class="images-column">
                     <div class="carousel-container">
 
-                        @{
-                            List<ProductImageInCarouselDisplayData> productImages = new();
-
-							if (ProductRelatedGroupPromotions?.Count > 0)
-                            {
-                                @foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
-                                {
-                                    productImages.Add(new()
-                                    {
-                                        ImageSrcOrHtmlContent = promotionDisplayData.HtmlContent,
-                                        IsUsingHtmlContent = true,
-                                    });
-                                }
-                            }
-
-                            if (ProductImages?.Count > 0)
-                            {
-                                @foreach (ProductImageDisplayData productImageDisplayData in ProductImages)
-                                {
-                                    productImages.Add(new()
-                                    {
-                                        ImageSrcOrHtmlContent = productImageDisplayData.ImageSrc,
-                                        IsUsingHtmlContent = false,
-                                    });
-                                }
-                            } 
-						}
-
-                        @if (productImages.Count > 0)
+                        @if (AllCarouselContent.Count > 0)
                         {
                             <Carousel TItem="ProductImageInCarouselDisplayData"
                                 CarouselId="@CarouselId"
-                                Items="productImages"
+                                Items="AllCarouselContent"
                                 TransitionMs="1000"
                                 AutoPlayOptions="TimeSpan.FromSeconds(6)"
                                 AdditionalIndicatorsListAttributes='new()
@@ -249,7 +229,7 @@ else
                         @if (promotionPictureId > 0 && isInfoPromotionActive)
                         {
                             <div class="promotion-picture-container red-and-white-theme">
-                               <MOSTComputers.UI.Web.Blazor.Client.Product.Promotion.PromotionImage PromotionPictureId="@promotionPictureId.Value"/>
+                               <MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.PromotionImage PromotionPictureId="@promotionPictureId.Value"/>
                             </div>
                         }
 
@@ -257,7 +237,7 @@ else
                         {
                             <div class="promotions red-and-white-theme">
 
-                                @foreach (Models.Product.Models.Promotions.Promotion promotion in ProductPromotions)
+                                @foreach (MOSTComputers.Models.Product.Models.Promotions.Promotion promotion in ProductPromotions)
                                 {
                                     string? promotionTypeString = null;
 
@@ -405,7 +385,7 @@ else
                         {
                             <li class="links-section-item">
                                 <p>@property.Name:&nbsp;</p>
-                                <a href="@property.Value" class="related-link">@property.Value</a>
+                                <a href="@property.Value" class="related-link" target="_blank">@property.Value</a>
                             </li>
                         }
                     </ul>
@@ -449,7 +429,7 @@ else
         public required string ImageSrc { get; init; }
     }
 
-	public sealed class ProductImageInCarouselDisplayData
+    public sealed class ProductImageInCarouselDisplayData
     {
         public required string ImageSrcOrHtmlContent { get; init; }
         public bool IsUsingHtmlContent { get; init; } = false;
@@ -479,17 +459,47 @@ else
 
     [Parameter] public List<ProductPropertyDisplayData>? ProductProperties { get; set; }
     [Parameter] public List<ProductImageDisplayData>? ProductImages { get; set; }
+
+	private List<ProductImageInCarouselDisplayData> AllCarouselContent = new();
+
     [Parameter] public List<ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
     [Parameter] public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
-    [Parameter] public List<Models.Product.Models.Promotions.Promotion>? ProductPromotions { get; set; }
+    [Parameter] public List<MOSTComputers.Models.Product.Models.Promotions.Promotion>? ProductPromotions { get; set; }
 
     private IJSObjectReference? _jsModule = null;
+
+    protected override void OnInitialized()
+    {
+		if (ProductRelatedGroupPromotions?.Count > 0)
+		{
+			@foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
+			{
+				AllCarouselContent.Add(new()
+				{
+					ImageSrcOrHtmlContent = promotionDisplayData.HtmlContent,
+					IsUsingHtmlContent = true,
+				});
+			}
+		}
+
+		if (ProductImages?.Count > 0)
+		{
+			@foreach (ProductImageDisplayData productImageDisplayData in ProductImages)
+			{
+				AllCarouselContent.Add(new()
+				{
+					ImageSrcOrHtmlContent = productImageDisplayData.ImageSrc,
+					IsUsingHtmlContent = false,
+				});
+			}
+		}
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && IsRenderedInteractively)
         {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Product/ProductData.razor.js");
+            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Product/ProductData.razor.js");
         }
     }
 

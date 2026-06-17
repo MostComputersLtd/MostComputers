@@ -9,8 +9,8 @@
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using MOSTComputers.UI.Web.Blazor.Components.Icons
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts
 @using Microsoft.Extensions.Caching.Memory
 @using System.Text.Json
@@ -65,15 +65,17 @@
 
 			<p class="copy-url-button-text">Copy Url</p>
 
-			<svg class="copy-url-button-checkmark"
+			@* <svg class="copy-url-button-checkmark"
 				viewBox="0 0 24 24">
 				<path d="M4 12 L10 18 L20 6"
 					fill="none"
-					stroke="#6C757D"
+					stroke="currentColor"
 					stroke-width="3"
 					stroke-linecap="round"
 					stroke-linejoin="round"/>
-			</svg>
+			</svg> *@
+
+            <CopyConfirmationCheckmarkIcon Classes="copy-url-button-checkmark" />
 		</button>
     </div>
 
@@ -97,15 +99,7 @@
 
             <p class="copy-url-button-text">Copy Url</p>
 
-			<svg class="copy-url-button-checkmark"
-				viewBox="0 0 24 24">
-				<path d="M4 12 L10 18 L20 6"
-					fill="none"
-					stroke="#6C757D"
-					stroke-width="3"
-					stroke-linecap="round"
-					stroke-linejoin="round"/>
-			</svg>
+            <CopyConfirmationCheckmarkIcon Classes="copy-url-button-checkmark" />
 		</button>
     </div>
 
@@ -128,16 +122,8 @@
             onclick="onCopyDownloadXmlForManufacturerUrlButtonClick()">
 
 			<p class="copy-url-button-text">Copy Url</p>
-
-			<svg class="copy-url-button-checkmark"
-				viewBox="0 0 24 24">
-				<path d="M4 12 L10 18 L20 6"
-					fill="none"
-					stroke="#6C757D"
-					stroke-width="3"
-					stroke-linecap="round"
-					stroke-linejoin="round"/>
-			</svg>
+	
+            <CopyConfirmationCheckmarkIcon Classes="copy-url-button-checkmark" />
         </button>
     </div>
 
@@ -153,15 +139,7 @@
 
 			<p class="copy-url-button-text">Copy Url</p>
 
-			<svg class="copy-url-button-checkmark"
-				viewBox="0 0 24 24">
-				<path d="M4 12 L10 18 L20 6"
-					fill="none"
-					stroke="#6C757D"
-					stroke-width="3"
-					stroke-linecap="round"
-					stroke-linejoin="round"/>
-			</svg>
+            <CopyConfirmationCheckmarkIcon Classes="copy-url-button-checkmark" />
 		</button>
     </div>
 
@@ -177,15 +155,7 @@
 
             <p class="copy-url-button-text">Copy Url</p>
 
-			<svg class="copy-url-button-checkmark"
-				viewBox="0 0 24 24">
-				<path d="M4 12 L10 18 L20 6"
-					fill="none"
-					stroke="#6C757D"
-					stroke-width="3"
-					stroke-linecap="round"
-					stroke-linejoin="round"/>
-			</svg>
+            <CopyConfirmationCheckmarkIcon Classes="copy-url-button-checkmark" />
 		</button>
     </div>
 

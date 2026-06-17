@@ -2,7 +2,6 @@
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Primitives
 @using System.Text
@@ -12,8 +11,6 @@
 @inject IPromotionGroupService PromotionGroupService
 @inject IGroupPromotionService GroupPromotionService
 @inject IGroupPromotionImageFileDataService _groupPromotionImageFileDataService
-
-@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 
 @{
     int promotionGroupButtonIndex = 0;

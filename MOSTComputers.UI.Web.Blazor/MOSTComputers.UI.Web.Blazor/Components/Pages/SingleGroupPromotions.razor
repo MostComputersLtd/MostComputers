@@ -29,8 +29,6 @@
 				}
 			</div>
 		}
-
-	    @* <PromotionGroupImages ImageFiles="PromotionGroupImageFiles" /> *@
     }
 </div>
 
@@ -43,7 +41,6 @@
         public string? ModifiedPromotionHtml { get; set; }
     }
 
-    // private List<PromotionGroupImages.GroupPromotionImageFileDisplayData> PromotionGroupImageFiles = new();
     private List<GroupPromotionWithHtml> Promotions = new();
 
     override protected async Task OnInitializedAsync()
@@ -62,8 +59,6 @@
         List<IGrouping<int, GroupPromotionImageFileData>> imageFilesForPromotions
             = await GroupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
 
-        // PromotionGroupImageFiles = new();
-
         foreach (GroupPromotionContent promotion in promotions)
         {
             IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = imageFilesForPromotions.FirstOrDefault(x => x.Key == promotion.Id);
@@ -81,19 +76,6 @@
             };
 
             Promotions.Add(groupPromotionWithHtml);
-
-            // if (imageFilesForPromotion is null) continue;
-
-            // foreach (GroupPromotionImageFileData imageFileForPromotion in imageFilesForPromotion)
-            // {
-            //     PromotionGroupImageFiles.Add(new()
-            //     {
-            //         Id = imageFileForPromotion.Id,
-            //         FileName = imageFileForPromotion.FileName,
-            //         PromotionGroupId = PromotionGroupId,
-            //         IsVisibleInitially = true,
-            //     });
-            // }
         }
 	}
 }

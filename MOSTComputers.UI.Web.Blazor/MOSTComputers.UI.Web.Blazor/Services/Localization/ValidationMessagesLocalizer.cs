@@ -3,7 +3,7 @@ using FluentValidation.Results;
 using Microsoft.Extensions.Localization;
 using MOSTComputers.UI.Web.Blazor.Client.Localization.Resources.Validation;
 
-namespace MOSTComputers.UI.Web.Blazor.Client.Localization;
+namespace MOSTComputers.UI.Web.Blazor.Services.Localization;
 
 public sealed class ValidationMessagesLocalizer
 {

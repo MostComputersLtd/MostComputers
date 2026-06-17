@@ -4,15 +4,35 @@
     border: 0.0625rem solid #ddd;
     border-radius: 0.25rem;
     padding: 0.6rem;
-    background: #fafafa;
+    background-color: #fafafa;
+}
+
+.promotion-edit-image-list-item:hover {
+    background-color: #e5e4e4;
+}
+
+.promotion-edit-image-copy-confirmation-container {
+    position: absolute;
+    left: 0.1rem;
+    top: 0.1rem;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+    user-select: none;
+}
+
+.promotion-edit-image-delete-button {
+    width: 0.3em;
+    height: 0.3em;
+    pointer-events: none;
 }
 
 .promotion-edit-image-delete-button-container {
     position: absolute;
-    display: flex;
-    justify-content: flex-end;
     right: 0.1rem;
     top: 0.1rem;
+    display: flex;
+    justify-content: flex-end;
     pointer-events: none;
     user-select: none;
 }

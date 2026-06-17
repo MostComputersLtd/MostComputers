@@ -75,18 +75,24 @@
     visibility: hidden;
 }
 
-.copy-url-button-checkmark {
+::deep .copy-url-button-checkmark {
     display: none;
 }
 
-    .copy-url-button.url-copied .copy-url-button-checkmark {
-        width: 1.5rem;
-        height: 1.5rem;
-        margin: 0px auto;
-        display: block;
-    }
+::deep .copy-url-button.url-copied .copy-url-button-checkmark {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0px auto;
+    display: block;
+    color: #6C757D;
+}
 
-    .copy-url-button.url-copied .copy-url-button-checkmark > path {
+    ::deep .copy-url-button.url-copied .copy-url-button-checkmark > path {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
         stroke-dasharray: 40;
         stroke-dashoffset: 40;
         animation: draw-checkmark 0.35s ease-out forwards;
