@@ -1,16 +1,14 @@
 ﻿@using MOSTComputers.UI.Web.Blazor.Services
-@using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing
 @using Microsoft.AspNetCore.Authentication
 @rendermode InteractiveServer
 
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@inject WebResourceUrlsStorageService WebResourceUrlsStorageService
 @inject UserActivityTrackerService UserActivityTrackerService
 
 @code {
-    private const string _pageScriptUrl = "./Components/ActivityTracker.razor.js";
+    private const string _collocatedJsRelativePath = "./Components/ActivityTracker.razor.js";
 
     private PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
     private IJSObjectReference? _module;
@@ -34,7 +32,7 @@
     {
         if (firstRender)
         {
-            string pageScriptUrlWithVersion = WebResourceUrlsStorageService.GetBlazorAssetUrlWithVersion(_pageScriptUrl);
+            string pageScriptUrlWithVersion = Assets[_collocatedJsRelativePath];
 
             _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", pageScriptUrlWithVersion);
 

@@ -19,7 +19,6 @@ using MOSTComputers.Services.PromotionFileManagement.Configuration;
 using MOSTComputers.Services.SearchStringOrigin.Configuration;
 using MOSTComputers.Services.TransactionalFileManagement.Services;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
-using MOSTComputers.UI.Web.Blazor.Client.Localization;
 using MOSTComputers.UI.Web.Blazor.Components;
 using MOSTComputers.UI.Web.Blazor.Components._Tests;
 using MOSTComputers.UI.Web.Blazor.Components.Account;
@@ -41,10 +40,9 @@ using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
 using System.Data;
 using ZiggyCreatures.Caching.Fusion;
-using MOSTComputers.UI.Web.Blazor.Services.BrowserResourceHashing;
 using MOSTComputers.UI.Web.Blazor.Components.Home;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
-using MOSTComputers.Services.Identity.Services;
+using MOSTComputers.UI.Web.Blazor.Services.Localization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -306,9 +304,6 @@ builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionStri
 builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
 
 builder.Services.AddScoped<ICustomAuthenticationService, CustomersAndEmployeesAuthenticationService>();
-
-builder.Services.AddSingleton<WebResourceUrlsHashingService>();
-builder.Services.AddSingleton<WebResourceUrlsStorageService>();
 
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
 
