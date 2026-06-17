@@ -33,6 +33,7 @@ const downloadXmlListOpenClass = "open";
 const productListBottomIndicatorId = "productListBottomIndicator";
 
 document.addEventListener("DOMContentLoaded", function () {
+
     const categorySelect = document.getElementById(categorySelectId);
     const manufacturerSelect = document.getElementById(manufacturerSelectId);
     const searchButton = document.getElementById(searchButtonId);
@@ -100,9 +101,11 @@ document.addEventListener("click", hideDownloadXmlListIfClickedOutsideIt);
 let lastSizeLevel = getCurrentWindowSizeLevel();
 
 function handleWindowResize() {
+
     const sizeLevel = getCurrentWindowSizeLevel();
 
     if (sizeLevel !== lastSizeLevel) {
+
         const carouselDisplayedItemsCount = getCarouselItemCountFromWindowSizeLevel(sizeLevel);
 
         resizeCarousel(groupPromotionsCarouselId, carouselDisplayedItemsCount);
@@ -116,7 +119,8 @@ function handleVisibilityChange() {
     const productDataDialog = document.getElementById(productDataDialogCarouselId);
 
     if (document.hidden) {
-        TEMP__stopAutoSlide(groupPromotionsCarouselId);
+
+        stopAutoSlideMultiItem(groupPromotionsCarouselId);
 
         if (productDataDialog != null)
         {
@@ -124,7 +128,7 @@ function handleVisibilityChange() {
         }
     }
     else {
-        TEMP__startAutoSlide(groupPromotionsCarouselId);
+        startAutoSlideMultiItem(groupPromotionsCarouselId);
 
         if (productDataDialog != null)
         {
@@ -145,11 +149,11 @@ const rootMarginForBottomOfPageInPixels = 300;
 
 function addObserverToSearchMoreProductsWhenWeReachBottom(productListBottomIndicator) {
 
-    //if (!("IntersectionObserver" in window)) {
+    if (!("IntersectionObserver" in window)) {
         startObserveProductListBottomPolyfill(productListBottomIndicator);
 
         return;
-    //}
+    }
 
     let options = {
         root: null,
@@ -181,7 +185,12 @@ async function searchMoreProductsWhenScrollToBottom(entries, observer) {
 
     observer.unobserve(targetElement);
 
-    await searchProductsAndAddToTable(currentPageNumber);
+    const success = await searchProductsAndAddToTable(currentPageNumber);
+
+    if (!success) {
+
+        currentPageNumber--;
+    }
 
     loadingMoreProducts = false;
 
@@ -204,7 +213,12 @@ function startObserveProductListBottomPolyfill(productListBottomIndicator) {
 
         currentPageNumber++;
 
-        await searchProductsAndAddToTable(currentPageNumber);
+        const success = await searchProductsAndAddToTable(currentPageNumber);
+
+        if (!success) {
+
+            currentPageNumber--;
+        }
 
         window.addEventListener("scroll", check);
 
@@ -478,9 +492,7 @@ async function searchProductsAndReplaceInTable(pageNumber = null) {
 
     const productList = document.getElementById(productListId);
 
-    if (!productList) {
-        return;
-    }
+    if (!productList || productsTableHtml == null || productsTableHtml == '') return;
 
     productList.innerHTML = productsTableHtml;
 
@@ -489,18 +501,20 @@ async function searchProductsAndReplaceInTable(pageNumber = null) {
 }
 
 async function searchProductsAndAddToTable(pageNumber = null) {
+
     const productsHtml = await searchProducts(pageNumber);
 
     const productList = document.getElementById(productListId);
 
-    if (!productList) {
-        return;
-    }
+    if (!productList || productsHtml == null || productsHtml == '') return false;
 
     productList.innerHTML += productsHtml;
+
+    return true;
 }
 
 async function searchProducts(pageNumber = null) {
+
     const url = "/Index" + "?handler=SearchProducts";
 
     const searchOptions = getProductSearchOptions(pageNumber);
@@ -515,6 +529,10 @@ async function searchProducts(pageNumber = null) {
     });
 
     if (!response.ok) {
+        return null;
+    }
+
+    if (response.status === 204) {
         return null;
     }
 
@@ -595,6 +613,7 @@ function getProductSearchOptions(pageNumber = null) {
 }
 
 async function openProductDataDialogWithData(productId) {
+
     const productDataDialog = document.getElementById(productDataDialogId);
 
     if (!productDataDialog) return;

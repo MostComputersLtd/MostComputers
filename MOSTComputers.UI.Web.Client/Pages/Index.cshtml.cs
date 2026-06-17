@@ -138,9 +138,11 @@ public class IndexModel : PageModel
         return result;
     }
 
-    public async Task<ViewComponentResult> OnPostSearchProductsAsync([FromBody] ProductSearchOptions productSearchOptions)
+    public async Task<IActionResult> OnPostSearchProductsAsync([FromBody] ProductSearchOptions productSearchOptions)
     {
         List<Product> productsToAdd = await SearchProductsAsync(productSearchOptions);
+
+        if (productsToAdd.Count == 0) return new NoContentResult();
 
         return ViewComponent(
             ProductListItemsViewComponent.ComponentName,
@@ -158,6 +160,12 @@ public class IndexModel : PageModel
 
         List<Product> products = await _productSearchService.SearchProductsAsync(productSearchRequest);
 
+        int currentPageNumber = (productSearchOptions.PageNumber - 1) ?? 0;
+
+        int productsToDisplayStartIndex = currentPageNumber * _searchResultsPageCount;
+
+        if (products.Count <= productsToDisplayStartIndex) return new();
+
         List<Product>? productsToAdd = null;
 
         if (productSearchOptions.SortingMethod != null)
@@ -170,10 +178,6 @@ public class IndexModel : PageModel
         {
             SortProductsFromSecondCategoryUp(products);
         }
-
-        int currentPageNumber = (productSearchOptions.PageNumber - 1) ?? 0;
-
-        int productsToDisplayStartIndex = currentPageNumber * _searchResultsPageCount;
 
         int productsToDisplayCount = Math.Min(_searchResultsPageCount, products.Count - productsToDisplayStartIndex);
 
