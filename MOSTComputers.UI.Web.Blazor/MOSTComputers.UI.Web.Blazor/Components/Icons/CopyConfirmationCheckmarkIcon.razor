@@ -1,0 +1,17 @@
+﻿<svg @attributes="AdditionalAttributes"
+	class="@Classes"
+	viewBox="0 0 24 24"
+	stroke="@LineStroke">
+
+	<path d="M4 12 L10 18 L20 6"
+		fill="none"
+		stroke-width="3"
+		stroke-linecap="round"
+		stroke-linejoin="round" />
+</svg>
+
+@code {
+	[Parameter] public string Classes { get; set; } = string.Empty;
+	[Parameter] public string LineStroke { get; set; } = "currentColor";
+	[Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> AdditionalAttributes { get; set; } = new();
+}
