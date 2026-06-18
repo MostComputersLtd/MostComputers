@@ -28,8 +28,8 @@ public sealed class GroupPromotionService : IGroupPromotionService
     private readonly IGroupPromotionImageFileService _groupPromotionImageFileService;
     private readonly IGroupPromotionProductBindingsService _groupPromotionProductBindingsService;
     private readonly ITransactionExecuteService _transactionExecuteService;
-    private readonly IValidator<ServiceGroupPromotionContentCreateRequest> _createRequestValidator;
-    private readonly IValidator<ServiceGroupPromotionContentUpdateRequest> _updateRequestValidator;
+    private readonly IValidator<ServiceGroupPromotionContentCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServiceGroupPromotionContentUpdateRequest>? _updateRequestValidator;
 
     public GroupPromotionService(
         IGroupPromotionContentsRepository groupPromotionContentsRepository,
@@ -37,8 +37,8 @@ public sealed class GroupPromotionService : IGroupPromotionService
         IGroupPromotionImageFileService groupPromotionImageFileService,
         IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
         ITransactionExecuteService transactionExecuteService,
-        IValidator<ServiceGroupPromotionContentCreateRequest> createRequestValidator,
-        IValidator<ServiceGroupPromotionContentUpdateRequest> updateRequestValidator)
+        IValidator<ServiceGroupPromotionContentCreateRequest>? createRequestValidator = null,
+        IValidator<ServiceGroupPromotionContentUpdateRequest>? updateRequestValidator = null)
     {
         _groupPromotionImageCrudService = groupPromotionImageCrudService;
         _groupPromotionImageFileService = groupPromotionImageFileService;

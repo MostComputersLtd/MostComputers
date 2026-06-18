@@ -16,12 +16,12 @@ namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 public sealed class PromotionGroupService : IPromotionGroupService
 {
     private readonly IPromotionGroupsRepository _promotionGroupsRepository;
-    private readonly IValidator<ServicePromotionGroupCreateRequest> _createRequestValidator;
-    private readonly IValidator<ServicePromotionGroupUpdateRequest> _updateRequestValidator;
+    private readonly IValidator<ServicePromotionGroupCreateRequest>? _createRequestValidator;
+    private readonly IValidator<ServicePromotionGroupUpdateRequest>? _updateRequestValidator;
 
     public PromotionGroupService(IPromotionGroupsRepository promotionGroupsRepository,
-        IValidator<ServicePromotionGroupCreateRequest> createRequestValidator,
-        IValidator<ServicePromotionGroupUpdateRequest> updateRequestValidator)
+        IValidator<ServicePromotionGroupCreateRequest>? createRequestValidator = null,
+        IValidator<ServicePromotionGroupUpdateRequest>? updateRequestValidator = null)
     {
         _promotionGroupsRepository = promotionGroupsRepository;
         _createRequestValidator = createRequestValidator;
