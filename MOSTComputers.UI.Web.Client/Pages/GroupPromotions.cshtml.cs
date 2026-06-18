@@ -1,55 +1,120 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
-using MOSTComputers.UI.Web.Client.Services;
-using System.Collections.Generic;
-using static MOSTComputers.UI.Web.Client.Services.ActivePromotionGroupsService;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+using MOSTComputers.UI.Web.Client.Endpoints.Images;
+
+using static MOSTComputers.Utils.Files.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Client.Pages;
 
 public class GroupPromotionsModel : PageModel
 {
-    private readonly ActivePromotionGroupsService _activePromotionGroupsService;
-
-#pragma warning disable 8618 // Disabled nullability warnings as all affected variables are always not-null when we return
-    public GroupPromotionsModel(ActivePromotionGroupsService activePromotionGroupsService)
-#pragma warning restore 8618
+    public sealed class GroupPromotionWithImageFileData
     {
-        _activePromotionGroupsService = activePromotionGroupsService;
+        public required GroupPromotionContent GroupPromotionContent { get; set; }
+        public string? ModifiedPromotionHtml { get; set; }
     }
 
-    public Dictionary<PromotionGroup, List<GroupPromotionImageFileData>> GroupPromotions { get; set; }
-    public int? DisplayedGroupId { get; set; }
-    public int? FocusedImageId { get; set; }
+    private readonly IPromotionGroupService _promotionGroupService;
+    private readonly IGroupPromotionReadService _groupPromotionReadService;
+    private readonly IGroupPromotionImageFileDataService _groupPromotionImageFileDataService;
 
-    public async Task OnGetAsync([FromQuery] int? displayedGroupId = null, [FromQuery] int? focusedImageId = null)
+    public GroupPromotionsModel(
+        IPromotionGroupService promotionGroupService,
+        IGroupPromotionReadService groupPromotionReadService,
+        IGroupPromotionImageFileDataService groupPromotionImageFileDataService)
     {
-        Dictionary<PromotionGroup, List<PromotionGroupImagesResult>> groupPromotionsSearched
-            = await _activePromotionGroupsService.GetAllActivePromotionImagesAsync();
+        _promotionGroupService = promotionGroupService;
+        _groupPromotionReadService = groupPromotionReadService;
+        _groupPromotionImageFileDataService = groupPromotionImageFileDataService;
+    }
 
-        IOrderedEnumerable<KeyValuePair<PromotionGroup, List<PromotionGroupImagesResult>>> groupPromotionsOrdered
-            = groupPromotionsSearched.OrderBy(x => x.Key.DisplayOrder ?? int.MaxValue);
+    public Dictionary<PromotionGroup, List<GroupPromotionWithImageFileData>> GroupPromotions { get; set; } = new();
+    public List<GroupPromotionWithImageFileData> DefaultGroupPromotions { get; set; } = new();
 
-        Dictionary<PromotionGroup, List<GroupPromotionImageFileData>> groupPromotions = new();
+    public int? DisplayedGroupId { get; set; }
+    public int? FocusedPromotionId { get; set; }
 
-        foreach (KeyValuePair<PromotionGroup, List<PromotionGroupImagesResult>> kvp in groupPromotionsOrdered)
+    public async Task OnGetAsync([FromQuery] int? displayedGroupId = null, [FromQuery] int? focusedPromotionId = null)
+    {
+        List<PromotionGroup> promotionGroups = await _promotionGroupService.GetAllAsync();
+
+        List<GroupPromotionContent> groupPromotionContents
+            = await _groupPromotionReadService.GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime.Now);
+
+        List<int> promotionIds = groupPromotionContents.Select(x => x.Id)
+            .ToList();
+
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+            = await _groupPromotionImageFileDataService.GetAllInPromotionsAsync(promotionIds);
+
+        List<IGrouping<int?, GroupPromotionContent>> promotionContentsGrouped = groupPromotionContents
+            .GroupBy(x => x.GroupId)
+            .ToList();
+
+        foreach (PromotionGroup promotionGroup in promotionGroups)
         {
-            groupPromotions.Add(kvp.Key, new());
+            IEnumerable<GroupPromotionContent>? promotionGroupContent
+                = promotionContentsGrouped.FirstOrDefault(x => x.Key == promotionGroup.Id)?
+                .OrderBy(x => x.DisplayOrder ?? int.MaxValue);
 
-            List<GroupPromotionImageFileData> groupPromotionImageFileDatas = groupPromotions[kvp.Key];
+            if (promotionGroupContent is null) continue;
 
-            IOrderedEnumerable<PromotionGroupImagesResult> orderedResults
-                = kvp.Value.OrderBy(x => x.GroupPromotionContent.DisplayOrder ?? int.MaxValue);
+            GroupPromotions.Add(promotionGroup, new());
 
-            foreach (PromotionGroupImagesResult imageResult in orderedResults)
+            List<GroupPromotionWithImageFileData> groupPromotionDatas = GroupPromotions[promotionGroup];
+
+            foreach (GroupPromotionContent groupPromotionContent in promotionGroupContent)
             {
-                groupPromotionImageFileDatas.AddRange(imageResult.GroupPromotionImages);
+                IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles
+                    .FirstOrDefault(x => x.Key == groupPromotionContent.Id);
+
+                string? modifiedPromotionHtml = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
+                    groupPromotionContent.HtmlContent,
+                    imageFilesForPromotion,
+					promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+                );
+
+                if (imageFilesForPromotion == null) continue;
+
+                GroupPromotionWithImageFileData promotionData = new()
+                {
+                    GroupPromotionContent = groupPromotionContent,
+                    ModifiedPromotionHtml = modifiedPromotionHtml,
+                };
+
+                groupPromotionDatas.Add(promotionData);
             }
         }
 
-        GroupPromotions = groupPromotions;
+        IEnumerable<GroupPromotionContent> defaultGroupPromotions = groupPromotionContents
+            .Where(x => x.MemberOfDefaultGroup == true)
+            .OrderBy(x => x.DefaultGroupPriority);
+
+        foreach (GroupPromotionContent defaultGroupPromotion in defaultGroupPromotions)
+        {
+            IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles
+                .FirstOrDefault(x => x.Key == defaultGroupPromotion.Id);
+
+			string? modifiedPromotionHtml = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
+				defaultGroupPromotion.HtmlContent,
+				imageFilesForPromotion,
+				promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+			);
+
+            GroupPromotionWithImageFileData promotionData = new()
+			{
+				GroupPromotionContent = defaultGroupPromotion,
+				ModifiedPromotionHtml = modifiedPromotionHtml,
+			};
+
+            DefaultGroupPromotions.Add(promotionData);
+
+            if (imageFilesForPromotion == null) continue;
+        }
 
         DisplayedGroupId = displayedGroupId;
-        FocusedImageId = focusedImageId;
-    }
+        FocusedPromotionId = focusedPromotionId;
+    } 
 }

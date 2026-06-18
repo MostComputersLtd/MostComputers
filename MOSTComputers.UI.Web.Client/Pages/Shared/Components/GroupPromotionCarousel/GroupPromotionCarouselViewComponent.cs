@@ -46,7 +46,7 @@ public class GroupPromotionCarouselViewComponent : ViewComponent
                     ImageUrls = [$"api/promotionGroup/imageFiles/{image.Id}"],
                     CarouselId = carouselId,
                     Index = index,
-                    PromotionImageFileId = image.Id,
+                    PromotionId = image.PromotionId,
                     PromotionGroupId = groupId,
                     IsActive = index < viewportItemsCount,
                 });

@@ -6,7 +6,7 @@
 <div class="group-promotions-carousel-item">
 	@foreach (string imageUrl in Model.ImageUrls)
 	{
-		<a class="group-promotions-carousel-image-link" href="/promotions?displayedGroupId=@(Model.PromotionGroupId)&focusedImageId=@(Model.PromotionImageFileId)">
+		<a class="group-promotions-carousel-image-link" href="/promotions?displayedGroupId=@(Model.PromotionGroupId)&focusedPromotionId=@(Model.PromotionId)">
 			<img class="group-promotions-carousel-image" src="@imageUrl" />
 		</a>
 	}

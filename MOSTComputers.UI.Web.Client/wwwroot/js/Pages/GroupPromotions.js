@@ -1,10 +1,17 @@
 ﻿const promotionGroupsListId = "promotionGroups";
 const promotionImagesListId = "promotionImages";
 
-const userFocusedImageIdAttribute = "data-user-focused-image-id";
+const displayedGroupIdAttribute = "data-displayed-group-id";
+const userFocusedPromotionIdAttribute = "data-user-focused-promotion-id";
 
-function getPromotionGroupImageId(imageFileId) {
-    return `promotionGroupImage-${imageFileId}`;
+function getPromotionElementId(promotionId, groupId = null) {
+
+    if (groupId == null) {
+
+        return `groupPromotion-default-${promotionId}`;
+    }
+
+    return `groupPromotion-${promotionId}`;
 }
 
 const activePromotionImagesClass = "active";
@@ -17,13 +24,22 @@ function scrollToUserFocusedElement() {
 
     const promotionImagesList = document.getElementById(promotionImagesListId);
 
-    const userFocusedImageIdString = promotionImagesList.getAttribute(userFocusedImageIdAttribute);
+    const displayedGroupIdString = promotionImagesList.getAttribute(displayedGroupIdAttribute);
 
-    const userFocusedImageId = parseInt(userFocusedImageIdString);
+    let displayedGroupId = parseInt(displayedGroupIdString);
 
-    if (userFocusedImageId == null || isNaN(userFocusedImageId)) return;
+    if (displayedGroupId == null || isNaN(displayedGroupId)) {
 
-    const elementToShowId = getPromotionGroupImageId(userFocusedImageId);
+        displayedGroupId = null;
+    }
+
+    const userFocusedPromotionIdString = promotionImagesList.getAttribute(userFocusedPromotionIdAttribute);
+
+    const userFocusedPromotionId = parseInt(userFocusedPromotionIdString);
+
+    if (userFocusedPromotionId == null || isNaN(userFocusedPromotionId)) return;
+
+    const elementToShowId = getPromotionElementId(userFocusedPromotionId, displayedGroupId);
 
     const elementToShow = document.getElementById(elementToShowId);
 

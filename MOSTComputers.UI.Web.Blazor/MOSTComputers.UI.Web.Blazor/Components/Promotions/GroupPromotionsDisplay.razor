@@ -73,13 +73,16 @@
 		}
 	</ul>
 
-    <div id="promotionImages" class="promotion-images-container" data-user-focused-promotion-id="@FocusedPromotionId">
+    <div id="promotionImages"
+        class="promotion-images-container"
+		data-displayed-group-id="@DisplayedGroupId"
+        data-user-focused-promotion-id="@FocusedPromotionId">
 
 		<div id="promotionGroupImageContainer-default" class="promotion-group-images-container @defaultGroupImageContainerSelectedClass">
 
 			@foreach (GroupPromotionWithImageFileData promotionData in DefaultGroupPromotions)
 			{
-				<div id="groupPromotion-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
+				<div id="groupPromotion-default-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
 
                     @if (promotionData.ModifiedPromotionHtml != null)
                     {
@@ -119,8 +122,6 @@
         public required GroupPromotionContent GroupPromotionContent { get; set; }
         public string? ModifiedPromotionHtml { get; set; }
     } 
-
-    private const string _legacyImageRepresentationInHtmlContent = "PromViewImage.aspx?ImageId=";
 
     private Dictionary<PromotionGroup, List<GroupPromotionWithImageFileData>> GroupPromotions { get; set; } = new();
 

@@ -41,6 +41,15 @@ body {
     overflow-y: auto;
 }
 
+.group-promotions-container {
+    width: 100%;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    overflow-y: auto;
+}
+
 .promotion-groups-list {
     width: 20%;
     min-width: 6rem;
@@ -70,6 +79,14 @@ body {
     }
 
     .promotion-group-item.selected .promotion-group-item-image-button {
+        border-color: black;
+    }
+
+    .promotion-group-item:hover .promotion-group-item-group-name-button {
+        border-color: #878787;
+    }
+
+    .promotion-group-item.selected .promotion-group-item-group-name-button {
         border-color: black;
     }
 
@@ -112,6 +129,23 @@ body {
         border-color: black;
     }
 
+.promotion-group-item-group-name {
+    font-size: 1.25rem;
+    margin-bottom: 0px;
+}
+
+@media (max-width: 952px) {
+    .promotion-group-item-group-name {
+        font-size: 1.15rem;
+    }
+}
+
+@media (max-width: 550px) {
+    .promotion-group-item-group-name {
+        font-size: 1.05rem;
+    }
+}
+
 .promotion-images-container {
     flex-grow: 1;
     width: 80%;
@@ -126,6 +160,7 @@ body {
 }
 
 .promotion-group-images-container {
+    width: 100%;
     display: flex;
     -ms-flex-direction: column;
     -webkit-flex-direction: column;
@@ -143,6 +178,12 @@ body {
     max-height: 100%;
     margin-bottom: 1em;
 }
+
+    .promotion-group-image-item img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
 
 .promotion-group-image {
     max-width: 100%;

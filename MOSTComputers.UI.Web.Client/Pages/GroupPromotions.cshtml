@@ -1,5 +1,14 @@
 ﻿@page "/promotions"
 
+@using MOSTComputers.Models.Product.Models.Promotions.Groups
+@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+@using System.Text
+@using static MOSTComputers.UI.Web.Client.Pages.GroupPromotionsModel
+@using static MOSTComputers.Utils.Files.FilePathUtils
+
 @model MOSTComputers.UI.Web.Client.Pages.GroupPromotionsModel
 @{
     ViewData["Title"] = "Promotions";
@@ -7,9 +16,11 @@
     int promotionGroupButtonIndex = 0;
 
     PromotionGroup? selectedGroup = null;
-}
 
-@using MOSTComputers.Models.Product.Models.Promotions.Groups
+	bool isDefaultGroupSelected = Model.DisplayedGroupId == null;
+
+	string defaultGroupImageContainerSelectedClass = isDefaultGroupSelected ? "active" : string.Empty;
+}
 
 @section Styles {
 	<link rel="stylesheet" href="~/css/Pages/GroupPromotions.css" asp-append-version="true" />
@@ -19,10 +30,20 @@
     <script src="~/js/Pages/GroupPromotions.js" asp-append-version="true"></script>
 }
 
-<div class="group-promotions-page">
+<div class="group-promotions-container">
+
     <ul id="promotionGroups" class="promotion-groups-list">
 
-		@foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageFileData>> kvp in Model.GroupPromotions)
+		<li id="promotionGroupItem-default"
+			class="promotion-group-item @(isDefaultGroupSelected ? "selected" : string.Empty)"
+			onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-default', 'promotionGroupItem-default')">
+
+			<button class="promotion-group-item-group-name-button">
+				<p class="promotion-group-item-group-name">All Promotions</p>
+			</button>
+		</li>
+
+		@foreach (KeyValuePair<PromotionGroup, List<GroupPromotionWithImageFileData>> kvp in Model.GroupPromotions)
 		{
             PromotionGroup? promotionGroup = kvp.Key;
 
@@ -31,10 +52,6 @@
             if (Model.DisplayedGroupId is not null)
             {
                 isSelected = Model.DisplayedGroupId == promotionGroup.Id;
-            }
-            else
-            {
-                isSelected = promotionGroupButtonIndex == 0;
             }
 
             if (isSelected)
@@ -45,8 +62,8 @@
             promotionGroupButtonIndex++;
 
             <li id="promotionGroupItem-@promotionGroup.Id"
-                 class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
-                onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-@promotionGroup.Id', 'promotionGroupItem-@promotionGroup.Id' )">
+                class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
+			    onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-@promotionGroup.Id', 'promotionGroupItem-@promotionGroup.Id')">
 
                 @if (promotionGroup.LogoContentType is not null && promotionGroup.LogoImage?.Length > 0)
                 {
@@ -57,31 +74,49 @@
                 else
                 {
                     <button class="promotion-group-item-group-name-button">
-                        <h3>@kvp.Key.Name</h3>
+						<p class="promotion-group-item-group-name">@kvp.Key.Name</p>
                     </button>
                 }
             </li>
 		}
 	</ul>
 
-    <div id="promotionImages" class="promotion-images-container" data-user-focused-image-id="@Model.FocusedImageId">
+    <div id="promotionImages"
+        class="promotion-images-container"
+        data-displayed-group-id="@Model.DisplayedGroupId"
+        data-user-focused-promotion-id="@Model.FocusedPromotionId">
 
-        @foreach (KeyValuePair<PromotionGroup, List<GroupPromotionImageFileData>> kvp in Model.GroupPromotions)
+		<div id="promotionGroupImageContainer-default" class="promotion-group-images-container @defaultGroupImageContainerSelectedClass">
+
+			@foreach (GroupPromotionWithImageFileData promotionData in Model.DefaultGroupPromotions)
+			{
+				<div id="groupPromotion-default-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
+
+                    @if (promotionData.ModifiedPromotionHtml != null)
+                    {
+						@Html.Raw(promotionData.ModifiedPromotionHtml)
+                    }
+				</div>
+			}
+		</div>
+
+		@foreach (KeyValuePair<PromotionGroup, List<GroupPromotionWithImageFileData>> kvp in Model.GroupPromotions)
         {
             bool isSelectedGroup = kvp.Key.Id == selectedGroup?.Id;
 
             string selectedClass = isSelectedGroup ? "active" : string.Empty;
 
-            string imageLoadingType = isSelectedGroup && Model.FocusedImageId != null ? "eager" : "lazy";
-
             <div id="promotionGroupImageContainer-@kvp.Key.Id" class="promotion-group-images-container @selectedClass">
 
-                @foreach (GroupPromotionImageFileData imageData in kvp.Value)
+                @foreach (GroupPromotionWithImageFileData promotionData in kvp.Value)
                 {
-                    <div id="promotionGroupImage-@imageData.Id" class="promotion-group-image-item">
-                        <img class="promotion-group-image" src="/api/promotionGroup/imageFiles/@imageData.Id"
-                            alt="@imageData.FileName" loading="@imageLoadingType" />
-                    </div>
+                    <div id="groupPromotion-@promotionData.GroupPromotionContent.Id" class="promotion-group-image-item">
+
+						@if (promotionData.ModifiedPromotionHtml != null)
+						{
+							@Html.Raw(promotionData.ModifiedPromotionHtml)
+						}
+					</div>
                 }
             </div>
         }
