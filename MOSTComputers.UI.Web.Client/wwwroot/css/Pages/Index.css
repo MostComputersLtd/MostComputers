@@ -46,7 +46,10 @@ body {
 
 .product-search-container {
     display: flex;
-    padding: 0.5em calc(1rem + 0.5em) 1em calc(1rem + 0.5em);
+    padding-top: 0.5em;
+    padding-bottom: 1em;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
     -ms-flex-direction: column;
     -webkit-flex-direction: column;
     flex-direction: column;
