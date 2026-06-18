@@ -58,6 +58,8 @@ builder.Services.AddScoped<IManufacturerToPromotionGroupRelationService, Manufac
 
 builder.Services.AddScoped<IOriginalLocalChangesReadService, OriginalLocalChangesReadService>();
 builder.Services.AddScoped<IProductSearchService, ProductSearchService>();
+builder.Services.AddScoped<IPromotionGroupService, PromotionGroupService>();
+builder.Services.AddScoped<IGroupPromotionReadService, GroupPromotionReadService>();
 builder.Services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
 builder.Services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
 builder.Services.AddScoped<ITransactionExecuteService, TransactionExecuteService>();
