@@ -2,20 +2,12 @@
 
 @attribute [ExcludeFromInteractiveRouting]
 
-@using System.Text
 @using MOSTComputers.Models.Product.Models
-@using MOSTComputers.Models.Product.Models.ProductIdentifiers
-@using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.Promotions
-@using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.Services.Currencies.Contracts
-@using MOSTComputers.Services.Currencies.Models
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
 @using MOSTComputers.Services.ProductRegister.Models.Requests.Product
-@using MOSTComputers.Services.ProductRegister.Models.Responses
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
@@ -25,15 +17,8 @@
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
-@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
-@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using MOSTComputers.UI.Web.Blazor.Utils
-@using Microsoft.AspNetCore.Authorization
-@using OneOf
-@using OneOf.Types
 
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
-@using static MOSTComputers.Utils.Files.FilePathUtils
 
 @inject ICategoryService CategoryService
 @inject IManufacturerService ManufacturerService
