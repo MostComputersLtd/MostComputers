@@ -12,6 +12,12 @@ namespace MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Group
 
 internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromotionContentsToProductsRepository
 {
+    private readonly struct PromotionContentsToProductsBinding
+    {
+        public required int PromotionId { get; init; }
+        public required int ProductId { get; init; }
+    }
+
     public GroupPromotionContentsToProductsRepository(
         [FromKeyedServices(ConfigureServices.OriginalDBConnectionStringProviderServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
@@ -19,6 +25,57 @@ internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromoti
     }
 
     private readonly IConnectionStringProvider _connectionStringProvider;
+
+    public async Task<Dictionary<int, List<int>>> GetAllAsync()
+    {
+        const string query =
+            $"""
+            SELECT {ProductIdColumnName} AS ProductId, {PromotionIdColumnName} AS PromotionId
+            FROM {GroupPromotionContentsToProductsTableName} WITH (NOLOCK)
+            ORDER BY {ProductIdColumnName}, {PromotionIdColumnName};
+            """;
+
+        var parameters = new
+        {
+        };
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        IEnumerable<PromotionContentsToProductsBinding> promotionContentsToProductBindings
+            = await connection.QueryAsync<PromotionContentsToProductsBinding>(query, parameters, commandType: CommandType.Text);
+
+        Dictionary<int, List<int>> promotionIdsForProducts = new();
+
+        int? currentProductId = null;
+
+        List<int> currentPromotionIds = [];
+
+        foreach (PromotionContentsToProductsBinding binding in promotionContentsToProductBindings)
+        {
+            if (currentProductId != binding.ProductId)
+            {
+                if (currentProductId is not null)
+                {
+                    promotionIdsForProducts.Add(currentProductId.Value, currentPromotionIds);
+                }
+
+                currentProductId = binding.ProductId;
+                
+                currentPromotionIds = [binding.PromotionId];
+            }
+            else
+            {
+                currentPromotionIds.Add(binding.PromotionId);
+            }
+        }
+
+        if (currentProductId is not null)
+        {
+            promotionIdsForProducts.Add(currentProductId.Value, currentPromotionIds);
+        }
+
+        return promotionIdsForProducts;
+    }
 
     public async Task<List<int>> GetAllProductIdsBoundToPromotionAsync(int promotionId)
     {
@@ -40,6 +97,59 @@ internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromoti
         return productIds.AsList();
     }
 
+    public async Task<Dictionary<int, List<int>>> GetAllPromotionIdsBoundToProductsAsync(IEnumerable<int> productIds)
+    {
+        const string query =
+            $"""
+            SELECT {ProductIdColumnName} AS ProductId, {PromotionIdColumnName} AS PromotionId
+            FROM {GroupPromotionContentsToProductsTableName} WITH (NOLOCK)
+            WHERE {ProductIdColumnName} IN @productIds
+            ORDER BY {ProductIdColumnName}, {PromotionIdColumnName};
+            """;
+
+        var parameters = new
+        {
+            productIds = productIds,
+        };
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        IEnumerable<PromotionContentsToProductsBinding> promotionContentsToProductBindings
+            = await connection.QueryAsync<PromotionContentsToProductsBinding>(query, parameters, commandType: CommandType.Text);
+
+        Dictionary<int, List<int>> promotionIdsForProducts = new();
+
+        int? currentProductId = null;
+
+        List<int> currentPromotionIds = [];
+
+        foreach (PromotionContentsToProductsBinding binding in promotionContentsToProductBindings)
+        {
+            if (currentProductId != binding.ProductId)
+            {
+                if (currentProductId is not null)
+                {
+                    promotionIdsForProducts.Add(currentProductId.Value, currentPromotionIds);
+                }
+
+                currentProductId = binding.ProductId;
+                
+                currentPromotionIds = [binding.PromotionId];
+            }
+            else
+            {
+                currentPromotionIds.Add(binding.PromotionId);
+            }
+        }
+
+        if (currentProductId is not null)
+        {
+            promotionIdsForProducts.Add(currentProductId.Value, currentPromotionIds);
+        }
+
+        return promotionIdsForProducts;
+    }
+
     public async Task<List<int>> GetAllPromotionIdsBoundToProductAsync(int productId)
     {
         const string query =
@@ -55,9 +165,9 @@ internal sealed class GroupPromotionContentsToProductsRepository : IGroupPromoti
 
         using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
 
-        IEnumerable<int> productIds = await connection.QueryAsync<int>(query, parameters, commandType: CommandType.Text);
+        IEnumerable<int> promotionIds = await connection.QueryAsync<int>(query, parameters, commandType: CommandType.Text);
 
-        return productIds.AsList();
+        return promotionIds.AsList();
     }
 
     public async Task UpsertAllAsync(int promotionId, List<int>? relatedProductIds)

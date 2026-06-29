@@ -14,9 +14,21 @@ internal sealed class GroupPromotionProductBindingsService : IGroupPromotionProd
         _groupPromotionContentsToProductsRepository = groupPromotionContentsToProductsRepository;
     }
 
+    public Task<Dictionary<int, List<int>>> GetAllAsync()
+    {
+        return _groupPromotionContentsToProductsRepository.GetAllAsync();
+    }
+
     public Task<List<int>> GetAllProductIdsBoundToPromotionAsync(int promotionId)
     {
         return _groupPromotionContentsToProductsRepository.GetAllProductIdsBoundToPromotionAsync(promotionId);
+    }
+
+    public Task<Dictionary<int, List<int>>> GetAllPromotionIdsBoundToProductsAsync(IEnumerable<int> productIds)
+    {
+        if (!productIds.Any()) return Task.FromResult(new Dictionary<int, List<int>>());
+
+        return _groupPromotionContentsToProductsRepository.GetAllPromotionIdsBoundToProductsAsync(productIds);
     }
 
     public Task<List<int>> GetAllPromotionIdsBoundToProductAsync(int productId)
