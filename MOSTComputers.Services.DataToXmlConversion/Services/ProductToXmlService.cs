@@ -4,7 +4,8 @@ using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.Currencies.Models;
-using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contracts;
+using MOSTComputers.Services.DataToXmlConversion.Models;
+using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts;
@@ -17,28 +18,20 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
-using MOSTComputers.UI.Web.Client.Services.Xml.Contracts;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.Utils.Files.FilePathUtils;
 
-namespace MOSTComputers.UI.Web.Client.Services.Xml;
-
+namespace MOSTComputers.Services.DataToXmlConversion.Services;
 public sealed class ProductToXmlService : IProductToXmlService
 {
-    public sealed class ProductXmlOptions
-    {
-        public string? ImageFilesBasePath { get; set; }
-        public string? PromotionGroupImagesBasePath { get; set; }
-        public Func<int, string>? GetPromotionPictureSourceUrlById { get; set; }
-        public Currency? PrefferedPriceCurrency { get; set; }
-    }
-
     private readonly IProductService _productService;
     private readonly IProductSearchService _productSearchService;
-    private readonly IProductPropertyCrudService _productPropertyService;
-    private readonly IProductImageFileDataRepository _productImageFileService;
+    private readonly IProductPropertyCrudService _productPropertyCrudService;
+    private readonly IProductImageFileReadService _productImageFileReadService;
     private readonly IPromotionService _promotionService;
+    private readonly IGroupPromotionProductBindingsService _groupPromotionProductBindingsService;
+    private readonly IGroupPromotionReadService _groupPromotionReadService;
     private readonly IManufacturerToPromotionGroupRelationService _manufacturerToPromotionGroupRelationService;
     private readonly ISubCategoryService _subCategoryService;
     private readonly IExchangeRateService _exchangeRateService;
@@ -70,19 +63,25 @@ public sealed class ProductToXmlService : IProductToXmlService
     public ProductToXmlService(
         IProductService productService,
         IProductSearchService productSearchService,
-        IProductPropertyCrudService productPropertyService,
-        IProductImageFileDataRepository productImageFileService,
+        IProductPropertyCrudService productPropertyCrudService,
+        IProductImageFileReadService productImageFileReadService,
         IPromotionService promotionService,
+        IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        IGroupPromotionReadService groupPromotionReadService,
         IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService,
         ISubCategoryService subCategoryService,
         IExchangeRateService exchangeRateService,
         ICurrencyConversionService currencyConversionService,
         IProductXmlService productXmlService,
         ISearchStringOriginService searchStringOriginService,
-        IProductToXmlProductMappingService productToXmlProductMappingService)
+        IProductToXmlProductMappingService productToXmlProductMappingService) 
     {
         _productService = productService;
+        _productPropertyCrudService = productPropertyCrudService;
+        _productImageFileReadService = productImageFileReadService;
         _promotionService = promotionService;
+        _groupPromotionProductBindingsService = groupPromotionProductBindingsService;
+        _groupPromotionReadService = groupPromotionReadService;
         _subCategoryService = subCategoryService;
         _exchangeRateService = exchangeRateService;
         _productXmlService = productXmlService;
@@ -90,8 +89,6 @@ public sealed class ProductToXmlService : IProductToXmlService
         _productToXmlProductMappingService = productToXmlProductMappingService;
         _manufacturerToPromotionGroupRelationService = manufacturerToPromotionGroupRelationService;
         _productSearchService = productSearchService;
-        _productPropertyService = productPropertyService;
-        _productImageFileService = productImageFileService;
         _currencyConversionService = currencyConversionService;
     }
 
@@ -124,7 +121,6 @@ public sealed class ProductToXmlService : IProductToXmlService
 
         await _productXmlService.TrySerializeProductsXmlAsync(outputStream, xmlObjectData);
     }
-
 
     public async Task<ProductsXmlFullData> GetXmlObjectDataForProductsAsync(List<XmlProduct> xmlProducts)
     {
@@ -160,13 +156,12 @@ public sealed class ProductToXmlService : IProductToXmlService
         Dictionary<int, List<SearchStringPartOriginData>> searchStringOriginDatas
             = await _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginForProductsAsync(products);
 
-        List<ProductProperty> properties = await _productPropertyService.GetAllAsync();
+        List<ProductProperty> allProductProperties = await _productPropertyCrudService.GetAllAsync();
 
-        List<IGrouping<int, ProductProperty>> productProperties = properties
-            .GroupBy(x => x.ProductId)
+        List<IGrouping<int, ProductProperty>> productProperties = allProductProperties.GroupBy(x => x.ProductId)
             .ToList();
 
-        List<ProductImageFileData> productImageFileNameInfos = await _productImageFileService.GetAllAsync();
+        List<ProductImageFileData> productImageFileNameInfos = await _productImageFileReadService.GetAllAsync();
 
         List<IGrouping<int, ProductImageFileData>> productImageFileNameInfosGrouped = productImageFileNameInfos.GroupBy(x => x.ProductId)
             .ToList();
@@ -174,6 +169,10 @@ public sealed class ProductToXmlService : IProductToXmlService
         List<Promotion> promotions = await _promotionService.GetAllAsync();
 
         List<ManufacturerToPromotionGroupRelation> promotionGroupRelations = await _manufacturerToPromotionGroupRelationService.GetAllAsync();
+
+        Dictionary<int, List<int>> groupPromotionsRelatedToProducts = await _groupPromotionProductBindingsService.GetAllAsync();
+
+        Dictionary<int, List<GroupPromotionContent>> groupPromotions = await GetGroupPromotionsSortedAsync(groupPromotionsRelatedToProducts);
 
         List<SubCategory> subCategories = await _subCategoryService.GetAllAsync();
 
@@ -214,6 +213,15 @@ public sealed class ProductToXmlService : IProductToXmlService
             List<XmlProductImage> xmlProductImages = GetXmlProductImagesFromProductImages(
                 relatedProductImageFileNameInfos, productXmlOptions?.ImageFilesBasePath);
 
+            bool doesProductHavePromotions = groupPromotions.TryGetValue(product.Id, out List<GroupPromotionContent>? groupPromotionContent);
+
+            List<GroupPromotionContent>? groupPromotionContents = doesProductHavePromotions ? groupPromotionContent : null;
+
+            List<XmlProductImage> xmlGroupPromotions = GetXmlProductImagesFromGroupPromotions(
+                groupPromotionContents, productXmlOptions?.GroupPromotionsBasePath);
+
+            xmlProductImages.InsertRange(0, xmlGroupPromotions);
+
             IEnumerable<Promotion>? productPromotions = promotions.Where(x =>
             {
                 if (x.Id != product.PromotionPid && x.Id != product.PromotionRid) return false;
@@ -223,7 +231,7 @@ public sealed class ProductToXmlService : IProductToXmlService
 
             List<XmlPromotion> xmlPromotions = GetXmlPromotionsFromPromotions(product, productPromotions, productXmlOptions);
 
-            XmlGroupPromotion? xmlGroupPromotion = null;
+            XmlPromotionGroup? xmlPromotionGroup = null;
 
             ManufacturerToPromotionGroupRelation? promotionGroupRelation
                 = promotionGroupRelations.FirstOrDefault(x => x.ManufacturerId == product.ManufacturerId);
@@ -232,14 +240,14 @@ public sealed class ProductToXmlService : IProductToXmlService
 
             if (promotionGroupRelation is not null)
             {
-                promotionGroupImagesPageUrl = GetPromotionGroupImagesPageUrl(promotionGroupRelation.PromotionGroupId, productXmlOptions?.PromotionGroupImagesBasePath);
+                promotionGroupImagesPageUrl = GetPromotionGroupImagesPageUrl(promotionGroupRelation.PromotionGroupId, productXmlOptions?.PromotionGroupsBasePath);
 
-                xmlGroupPromotion = new()
+                xmlPromotionGroup = new()
                 {
                     VendorName = product.Manufacturer?.RealCompanyName,
                     GroupPromotionsUrl = promotionGroupImagesPageUrl,
                 };
-            }
+            } 
 
             XmlProduct xmlProduct = _productToXmlProductMappingService.MapProductDataToXmlProduct(
                 product: product,
@@ -248,7 +256,7 @@ public sealed class ProductToXmlService : IProductToXmlService
                 productSubCategory: productSubCategory,
                 searchStringPartInfos: searchStringParts,
                 xmlProductPromotions: xmlPromotions,
-                xmlGroupPromotion: xmlGroupPromotion);
+                xmlGroupPromotion: xmlPromotionGroup);
 
             if (pricesForProductsInPrefferedCurrency is not null
                 && pricesForProductsInPrefferedCurrency.TryGetValue(product, out OneOf<decimal, NotFound> getCurrencyResult)
@@ -284,8 +292,8 @@ public sealed class ProductToXmlService : IProductToXmlService
         Dictionary<int, List<SearchStringPartOriginData>> searchStringOriginDatas
             = await _searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginForProductsAsync(products);
 
-        List<IGrouping<int, ProductProperty>> productProperties = await _productPropertyService.GetAllInProductsAsync(productIds);
-        List<IGrouping<int, ProductImageFileData>> productImageFileNameInfos = await _productImageFileService.GetAllInProductsAsync(productIds);
+        List<IGrouping<int, ProductProperty>> productProperties = await _productPropertyCrudService.GetAllInProductsAsync(productIds);
+        List<IGrouping<int, ProductImageFileData>> productImageFileNameInfos = await _productImageFileReadService.GetAllInProductsAsync(productIds);
 
         List<int> subCategoryIds = products.Select(x => x.SubCategoryId)
             .Distinct()
@@ -298,6 +306,11 @@ public sealed class ProductToXmlService : IProductToXmlService
         List<IGrouping<int?, Promotion>> promotions = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
 
         List<ManufacturerToPromotionGroupRelation> promotionGroupRelations = await _manufacturerToPromotionGroupRelationService.GetAllAsync();
+
+        Dictionary<int, List<int>> groupPromotionsRelatedToProducts
+            = await _groupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductsAsync(productIds);
+
+        Dictionary<int, List<GroupPromotionContent>> groupPromotions = await GetGroupPromotionsSortedAsync(groupPromotionsRelatedToProducts);
 
         Dictionary<Product, OneOf<decimal, NotFound>>? pricesForProductsInPrefferedCurrency = null;
 
@@ -335,6 +348,15 @@ public sealed class ProductToXmlService : IProductToXmlService
             List<XmlProductImage> xmlProductImages = GetXmlProductImagesFromProductImages(
                 relatedProductImageFileNameInfos, productXmlOptions?.ImageFilesBasePath);
 
+            bool doesProductHavePromotions = groupPromotions.TryGetValue(product.Id, out List<GroupPromotionContent>? groupPromotionContent);
+
+            List<GroupPromotionContent>? groupPromotionContents = doesProductHavePromotions ? groupPromotionContent : null;
+
+            List<XmlProductImage> xmlGroupPromotions = GetXmlProductImagesFromGroupPromotions(
+                groupPromotionContents, productXmlOptions?.GroupPromotionsBasePath);
+
+            xmlProductImages.InsertRange(0, xmlGroupPromotions);
+
             IEnumerable<Promotion>? productPromotions = promotions
                 .FirstOrDefault(x => x.Key == product.Id)?
                 .Where(x =>
@@ -346,7 +368,7 @@ public sealed class ProductToXmlService : IProductToXmlService
 
             List<XmlPromotion> xmlPromotions = GetXmlPromotionsFromPromotions(product, productPromotions, productXmlOptions);
 
-            XmlGroupPromotion? xmlGroupPromotion = null;
+            XmlPromotionGroup? xmlGroupPromotion = null;
 
             ManufacturerToPromotionGroupRelation? promotionGroupRelation
                 = promotionGroupRelations.FirstOrDefault(x => x.ManufacturerId == product.ManufacturerId);
@@ -355,7 +377,7 @@ public sealed class ProductToXmlService : IProductToXmlService
 
             if (promotionGroupRelation is not null)
             {
-                promotionGroupImagesPageUrl = GetPromotionGroupImagesPageUrl(promotionGroupRelation.PromotionGroupId, productXmlOptions?.PromotionGroupImagesBasePath);
+                promotionGroupImagesPageUrl = GetPromotionGroupImagesPageUrl(promotionGroupRelation.PromotionGroupId, productXmlOptions?.PromotionGroupsBasePath);
 
                 xmlGroupPromotion = new()
                 {
@@ -385,6 +407,40 @@ public sealed class ProductToXmlService : IProductToXmlService
         }
 
         return xmlProducts;
+    }
+
+    private async Task<Dictionary<int, List<GroupPromotionContent>>> GetGroupPromotionsSortedAsync(
+        Dictionary<int, List<int>> groupPromotionsRelatedToProducts)
+    {
+        HashSet<int> groupPromotionIds = new();
+
+        foreach (KeyValuePair<int, List<int>> kvp in groupPromotionsRelatedToProducts)
+        {
+            groupPromotionIds.UnionWith(kvp.Value);
+        }
+
+        List<GroupPromotionContent> groupPromotionsUnsorted = await _groupPromotionReadService.GetByIdsAsync(groupPromotionIds);
+
+        Dictionary<int, GroupPromotionContent> groupPromotionsLookup = groupPromotionsUnsorted
+            .ToDictionary(x => x.Id, x => x);
+
+        Dictionary<int, List<GroupPromotionContent>> groupPromotions = new(groupPromotionsRelatedToProducts.Count);
+
+        foreach (KeyValuePair<int, List<int>> kvp in groupPromotionsRelatedToProducts)
+        {
+            if (kvp.Value.Count == 0) continue;
+
+            List<GroupPromotionContent> currentPromotions = new(kvp.Value.Count);
+
+            foreach (int promotionId in kvp.Value)
+            {
+                currentPromotions.Add(groupPromotionsLookup[promotionId]);
+            }
+
+            groupPromotions.Add(kvp.Key, currentPromotions);
+        }
+
+        return groupPromotions;
     }
 
     private async Task<Dictionary<Product, OneOf<decimal, NotFound>>> GetChangedCurrenciesForProductsAsync(List<Product> products, Currency currency)
@@ -437,12 +493,40 @@ public sealed class ProductToXmlService : IProductToXmlService
         return output;
     }
 
+    private static List<XmlProductImage> GetXmlProductImagesFromGroupPromotions(
+        List<GroupPromotionContent>? groupPromotions = null,
+        string? groupPromotionsBasePath = null)
+    {
+        List<XmlProductImage> output = new();
+
+        if (groupPromotions is null) return output;
+
+        foreach (GroupPromotionContent groupPromotion in groupPromotions)
+        {
+            XmlProductImage xmlImage = GetXmlImageFromGroupPromotionId(
+                groupPromotion.Id, groupPromotionsBasePath);
+
+            output.Add(xmlImage);
+        }
+
+        return output;
+    }
+
     private static XmlProductImage GetXmlImageFromProductImageFileName(string fileName, string? imageFilesBasePath = null)
     {
         return new()
         {
             PictureUrl = CombinePathsWithSeparator(
                 '/', imageFilesBasePath ?? string.Empty, fileName),
+        };
+    }
+
+    private static XmlProductImage GetXmlImageFromGroupPromotionId(int groupPromotionId, string? groupPromotionsBasePath = null)
+    {
+        return new()
+        {
+            PictureUrl = CombinePathsWithSeparator(
+                '/', groupPromotionsBasePath ?? string.Empty, groupPromotionId.ToString()),
         };
     }
 

@@ -1,14 +1,14 @@
 ﻿using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.Caching.Models;
 using MOSTComputers.Services.Caching.Services.Contracts;
+using MOSTComputers.Services.DataToXmlConversion.Models;
+using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
-using MOSTComputers.UI.Web.Client.Services.Xml.Contracts;
 using OneOf;
 using ZiggyCreatures.Caching.Fusion;
-using static MOSTComputers.UI.Web.Client.Services.Xml.ProductToXmlService;
 
-namespace MOSTComputers.UI.Web.Client.Services.Xml.Cached;
+namespace MOSTComputers.Services.DataToXmlConversion.Services.Cached;
 
 public class CachedProductToXmlService : IProductToXmlService
 {
@@ -37,22 +37,6 @@ public class CachedProductToXmlService : IProductToXmlService
     //    AbsoluteExpirationRelativeToNow = _defaultCacheItemAbsoluteExpiration,
     //};
 
-
-    public Task TryGetXmlForAllPublicProductsAsync(Stream outputStream, ProductXmlOptions? productXmlOptions = null)
-    {
-        return _innerService.TryGetXmlForAllPublicProductsAsync(outputStream, productXmlOptions);
-    }
-
-    public Task<OneOf<string, InvalidXmlResult>> TryGetXmlForProductsAsync(List<Product> products, ProductXmlOptions? productXmlOptions = null)
-    {
-        return _innerService.TryGetXmlForProductsAsync(products, productXmlOptions);
-    }
-
-    public Task TryGetXmlForProductsAsync(Stream outputStream, List<Product> products, ProductXmlOptions? productXmlOptions = null)
-    {
-        return _innerService.TryGetXmlForProductsAsync(outputStream, products, productXmlOptions);
-    }
-
     public async Task<ProductsXmlFullData> GetXmlObjectDataForProductsAsync(List<XmlProduct> xmlProducts)
     {
         //XmlObjectData data = await _cache.GetOrAddAsync(_xmlObjectDataCacheKey,
@@ -66,5 +50,20 @@ public class CachedProductToXmlService : IProductToXmlService
             DateOfExport = data.DateOfExport,
             ExchangeRates = data.ExchangeRates,
         };
+    }
+
+    public Task TryGetXmlForAllPublicProductsAsync(Stream outputStream, ProductXmlOptions? productXmlOptions = null)
+    {
+        return _innerService.TryGetXmlForAllPublicProductsAsync(outputStream, productXmlOptions);
+    }
+
+    public async Task<OneOf<string, InvalidXmlResult>> TryGetXmlForProductsAsync(List<Product> products, ProductXmlOptions? productXmlOptions = null)
+    {
+        return await _innerService.TryGetXmlForProductsAsync(products, productXmlOptions);
+    }
+
+    public Task TryGetXmlForProductsAsync(Stream outputStream, List<Product> products, ProductXmlOptions? productXmlOptions = null)
+    {
+        return _innerService.TryGetXmlForProductsAsync(outputStream, products, productXmlOptions);
     }
 }
