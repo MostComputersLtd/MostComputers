@@ -33,7 +33,6 @@ using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
-using MOSTComputers.UI.Web.Blazor.Services.Xml.Cached;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
@@ -225,14 +224,14 @@ builder.Services.Configure<LegacyPricelistSiteOptions>(legacyPricelistOptionsCon
 
 builder.Services.TryAddSingleton<IProductXmlProvidingService, ProductXmlProvidingService>();
 
-builder.Services.TryAddKeyedScoped<IProductToXmlService, ProductToXmlService>("MOSTComputers.UI.Web.Blazor.ProductToXmlService");
-builder.Services.AddScoped<IProductToXmlService, CachedProductToXmlService>(context =>
+builder.Services.TryAddKeyedScoped<MOSTComputers.Services.DataToXmlConversion.Services.Contracts.IProductToXmlService, MOSTComputers.Services.DataToXmlConversion.Services.ProductToXmlService>("MOSTComputers.UI.Web.Blazor.ProductToXmlService");
+builder.Services.AddScoped<MOSTComputers.Services.DataToXmlConversion.Services.Contracts.IProductToXmlService, MOSTComputers.Services.DataToXmlConversion.Services.Cached.CachedProductToXmlService>(context =>
 {
-    IProductToXmlService innerService = context.GetRequiredKeyedService<IProductToXmlService>("MOSTComputers.UI.Web.Blazor.ProductToXmlService");
+    MOSTComputers.Services.DataToXmlConversion.Services.Contracts.IProductToXmlService innerService = context.GetRequiredKeyedService<MOSTComputers.Services.DataToXmlConversion.Services.Contracts.IProductToXmlService>("MOSTComputers.UI.Web.Blazor.ProductToXmlService");
     //ICache<string> cache = context.GetRequiredService<ICache<string>>();
     IFusionCache fusionCache = context.GetRequiredService<IFusionCache>();
 
-    return new CachedProductToXmlService(
+    return new MOSTComputers.Services.DataToXmlConversion.Services.Cached.CachedProductToXmlService(
         innerService,
         //cache,
         fusionCache);
