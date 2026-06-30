@@ -38,11 +38,23 @@ public sealed class DefaultModel
         public required string ImageSrc { get; init; }
     }
 
+    public sealed class CarouselItemDisplayData
+    {
+        public required string ImageSrcOrHtmlContent { get; init; }
+        public bool IsUsingHtmlContent { get; init; } = false;
+    }
+
+    public sealed class ProductRelatedGroupPromotionDisplayData
+    {
+        public required string HtmlContent { get; init; }
+    }
+
     public Product? Product { get; set; }
     public ProductPriceData? PriceData { get; set; }
 
     public List<ProductPropertyDisplayData>? ProductProperties { get; set; }
     public List<ProductImageDisplayData>? ProductImages { get; set; }
+    public List<ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
     public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
     public bool ShowProductIdData { get; set; } = true;
     public List<Models.Product.Models.Promotions.Promotion>? ProductPromotions { get; set; }

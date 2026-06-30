@@ -27,6 +27,32 @@ else
         isValidEAN13Code = ProductGTINCodeType.EAN13.IsValid(Model.Product.PartNumber1);
     }
 
+    List<CarouselItemDisplayData> allCarouselItems = new();
+
+	if (Model.ProductRelatedGroupPromotions?.Count > 0)
+	{
+        foreach (ProductRelatedGroupPromotionDisplayData groupPromotionDisplayData in Model.ProductRelatedGroupPromotions)
+        {
+            allCarouselItems.Add(new()
+			{
+				ImageSrcOrHtmlContent = groupPromotionDisplayData.HtmlContent,
+				IsUsingHtmlContent = true,
+			});
+		}
+    }
+
+    if (Model.ProductImages?.Count > 0)
+    {
+        foreach (ProductImageDisplayData imageDisplayData in Model.ProductImages)
+        {
+            allCarouselItems.Add(new()
+			{
+				ImageSrcOrHtmlContent = imageDisplayData.ImageSrc,
+				IsUsingHtmlContent = false,
+			});
+		}
+    }	
+
     <div class="product-data">
         <div class="main-info-and-images-container">
             <div class="name-column">
@@ -74,18 +100,18 @@ else
             <div class="images-column">
                 <div class="carousel-container">
 
-                    @if (Model.ProductImages?.Count > 0)
+                    @if (allCarouselItems.Count > 0)
                     {
                         List<object> carouselItems = new();
 
-                        @for (int i = 0; i < Model.ProductImages.Count; i++)
+                        @for (int i = 0; i < allCarouselItems.Count; i++)
                         {
-                            ProductImageDisplayData productImageDisplayData = Model.ProductImages[i];
+                            CarouselItemDisplayData productImageDisplayData = allCarouselItems[i];
 
                             CarouselPartialsModel carouselItem = new()
                             {
                                 CarouselId = carouselId,
-                                Image = productImageDisplayData,
+                                Item = productImageDisplayData,
                                 ImageCarouselIndex = i,
                                 IsActive = i == 0
                             };

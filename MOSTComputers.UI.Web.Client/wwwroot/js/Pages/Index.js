@@ -112,6 +112,12 @@ function handleWindowResize() {
 
         lastSizeLevel = sizeLevel;
     }
+
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (!productDataDialogCarousel) return;
+
+    resizeHtmlContentInCarousel(productDataDialogCarousel);
 }
 
 function handleVisibilityChange() {
@@ -620,8 +626,12 @@ async function openProductDataDialogWithData(productId) {
 
     await setContentOfProductDataDialog(productId);
 
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
     requestAnimationFrame(function ()
     {
+        resizeHtmlContentInCarousel(productDataDialogCarousel)
+
         startAutoSlide(true, productDataDialogCarouselId);
 
         productDataDialog.addEventListener("close", function () {

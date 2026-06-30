@@ -1,10 +1,23 @@
 ﻿@model CarouselPartialsModel
 @{
 	Layout = null;
-
-	string imagePath = Url.Content(Model.Image.ImageSrc);
 }
 
-<a class="carousel-item" href="@imagePath" target="_blank" rel="noopener noreferrer">
-	<img src="@imagePath" class="carousel-item-image" alt="Image">
-</a>
+@if (!Model.Item.IsUsingHtmlContent)
+{
+	string imagePath = Url.Content(Model.Item.ImageSrcOrHtmlContent);
+
+	<a class="carousel-item" href="@imagePath" target="_blank" rel="noopener noreferrer">
+		<img src="@imagePath" class="carousel-item-image" alt="Image">
+	</a>
+}
+else
+{
+	<div class="carousel-html-content-item">
+		<div class="carousel-html-content-item-promo-marker">ПРОМОЦИЯ!</div>
+
+		<div class="carousel-html-content-container">
+			@Html.Raw(Model.Item.ImageSrcOrHtmlContent)
+		</div>
+	</div>
+}

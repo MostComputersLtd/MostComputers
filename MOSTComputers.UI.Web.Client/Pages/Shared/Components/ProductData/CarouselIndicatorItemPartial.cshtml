@@ -3,7 +3,21 @@
 	Layout = null;
 }
 
-<button type="button" class="btn carousel-indicator @(Model.IsActive ? "active-carousel-indicator" : string.Empty)"
-	onclick="goTo('@Model.CarouselId', @Model.ImageCarouselIndex)">
-	<img src="@Url.Content(Model.Image.ImageSrc)" class="carousel-indicator-image" alt="Navigate to image">
+<button type="button"
+		class="btn carousel-indicator @(Model.IsActive ? "active-carousel-indicator" : string.Empty)"
+		onclick="goTo('@Model.CarouselId', @Model.ImageCarouselIndex)">
+
+	@if (!Model.Item.IsUsingHtmlContent)
+	{
+		<img src="@Url.Content(Model.Item.ImageSrcOrHtmlContent)" class="carousel-indicator-image" alt="Navigate to image">
+	}
+	else
+	{
+		<div class="carousel-indicator-html-content-item">
+			<div class="carousel-indicator-html-content-container">
+
+				@Html.Raw(Model.Item.ImageSrcOrHtmlContent)
+			</div>
+		</div>
+	}
 </button>

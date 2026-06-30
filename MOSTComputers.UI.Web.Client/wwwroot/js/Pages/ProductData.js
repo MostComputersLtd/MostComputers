@@ -1,16 +1,39 @@
 ﻿const productDataDialogCarouselId = "productDataCarousel";
 
-document.addEventListener("visibilitychange", handleVisibilityChange);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", onStartOfPage);
+}
+else {
+    onStartOfPage();
+}
 
-function handleVisibilityChange() {
+document.addEventListener("visibilitychange", handleVisibilityChange);
+window.addEventListener("resize", handleResize);
+
+function onStartOfPage() {
+
+    startAutoSlide(true, productDataDialogCarouselId);
+
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
 
-    if (productDataDialogCarousel == null) return;
+    resizeHtmlContentInCarousel(productDataDialogCarousel);
+}
+
+function handleVisibilityChange() {
 
     if (document.hidden) {
         stopAutoSlide(productDataDialogCarouselId);
     }
     else {
-        startAutoSlide(productDataDialogCarouselId);
+        startAutoSlide(true, productDataDialogCarouselId);
     }
+}
+
+function handleResize() {
+
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (!productDataDialogCarousel) return;
+
+    resizeHtmlContentInCarousel(productDataDialogCarousel);
 }

@@ -2,12 +2,14 @@
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Promotions;
+using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.UI.Web.Client.Endpoints.Images;
@@ -38,6 +40,9 @@ public sealed class ProductDataViewComponent : ViewComponent
     private readonly IProductCharacteristicService _productCharacteristicService;
     private readonly IProductImageFileDataRepository _productImageFileDataRepository;
     private readonly IPromotionService _promotionService;
+    private readonly IGroupPromotionReadService _groupPromotionReadService;
+    private readonly IGroupPromotionImageFileDataService _groupPromotionImageFileDataService;
+    private readonly IGroupPromotionProductBindingsService _groupPromotionProductBindingsService;
     private readonly ISearchStringOriginService _searchStringOriginService;
     private readonly ICurrencyConversionService _currencyConversionService;
     private readonly ICurrencyVATService _currencyVATService;
@@ -47,6 +52,9 @@ public sealed class ProductDataViewComponent : ViewComponent
         IProductCharacteristicService productCharacteristicService,
         IProductImageFileDataRepository productImageFileDataRepository,
         IPromotionService promotionService,
+        IGroupPromotionReadService groupPromotionReadService,
+        IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
+        IGroupPromotionImageFileDataService groupPromotionImageFileDataService,
         ISearchStringOriginService searchStringOriginService,
         ICurrencyConversionService currencyConversionService,
         ICurrencyVATService currencyVATService)
@@ -55,12 +63,18 @@ public sealed class ProductDataViewComponent : ViewComponent
         _productCharacteristicService = productCharacteristicService;
         _productImageFileDataRepository = productImageFileDataRepository;
         _promotionService = promotionService;
+        _groupPromotionReadService = groupPromotionReadService;
+        _groupPromotionProductBindingsService = groupPromotionProductBindingsService;
+        _groupPromotionImageFileDataService = groupPromotionImageFileDataService;
         _searchStringOriginService = searchStringOriginService;
         _currencyConversionService = currencyConversionService;
         _currencyVATService = currencyVATService;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync(ProductDataExistingData existingData, bool showProductIdData = true, string? dialogId = null)
+    public async Task<IViewComponentResult> InvokeAsync(
+        ProductDataExistingData existingData,
+        bool showProductIdData = true,
+        string? dialogId = null)
     {
         if (dialogId is not null)
         {
@@ -90,6 +104,8 @@ public sealed class ProductDataViewComponent : ViewComponent
         List<ProductPropertyDisplayData>? propertiesInData = existingData.ProductProperties;
 
         propertiesInData ??= await GetPropertiesForProductAsync(product);
+
+        List<ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = await GetProductRelatedPromotionsAsync(product);
 
         List<ProductImageDisplayData>? productImagesInData = existingData.ProductImages;
 
@@ -142,12 +158,58 @@ public sealed class ProductDataViewComponent : ViewComponent
             PriceData = productPriceData,
             ProductProperties = propertiesInData,
             ProductImages = productImagesInData,
+            ProductRelatedGroupPromotions = productRelatedGroupPromotions,
             ProductPromotions = productPromotions,
             ProductSearchStringParts = productSearchStringParts,
             ShowProductIdData = showProductIdData,
         };
 
         return productDataModel;
+    }
+
+    private async Task<List<ProductRelatedGroupPromotionDisplayData>> GetProductRelatedPromotionsAsync(Product product)
+    {
+        List<int> groupPromotionIds = await _groupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductAsync(product.Id);
+
+        List<ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
+
+        if (groupPromotionIds.Count <= 0)
+        {
+            return productRelatedGroupPromotions;
+        }
+
+        List<GroupPromotionContent> groupPromotionContents = await _groupPromotionReadService.GetByIdsAsync(groupPromotionIds);
+
+        List<IGrouping<int, GroupPromotionImageFileData>> promotionImageFiles
+            = await _groupPromotionImageFileDataService.GetAllInPromotionsAsync(groupPromotionIds);
+
+        for (int i = 0; i < groupPromotionContents.Count; i++)
+        {
+            GroupPromotionContent groupPromotionContent = groupPromotionContents[i];
+
+            IGrouping<int, GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.Find(x => x.Key == groupPromotionContent.Id);
+
+            string? htmlContent = groupPromotionContent.HtmlContent;
+
+            if (string.IsNullOrEmpty(htmlContent)) continue;
+
+            string? modifiedPromotionHtmlContent = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
+                groupPromotionContent.HtmlContent,
+                imageFilesForPromotion,
+                promotionImageFile => "/" + CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+            );
+
+            if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
+
+            ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+            {
+                HtmlContent = modifiedPromotionHtmlContent,
+            };
+
+            productRelatedGroupPromotions.Add(productPromotionDisplayData);
+        }
+
+        return productRelatedGroupPromotions;
     }
 
     private async Task<List<ProductPropertyDisplayData>> GetPropertiesForProductAsync(Product product)
