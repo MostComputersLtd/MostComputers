@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 
 namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 
-public sealed class XmlGroupPromotion : IXmlAsyncSerializable
+public sealed class XmlPromotionGroup : IXmlAsyncSerializable
 {
     [XmlAttribute(AttributeName = "vendor")]
     public string? VendorName { get; set; }

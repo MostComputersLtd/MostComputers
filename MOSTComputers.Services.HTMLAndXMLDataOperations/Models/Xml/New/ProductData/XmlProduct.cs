@@ -36,7 +36,7 @@ public class XmlProduct : IXmlAsyncSerializable
     public List<XmlPromotion>? Promotions { get; set; } = null;
 
     [XmlElement("promoGroup")]
-    public XmlGroupPromotion? GroupPromotion { get; set; } = null;
+    public XmlPromotionGroup? GroupPromotion { get; set; } = null;
 
     public bool ShouldSerializePromotions()
     {

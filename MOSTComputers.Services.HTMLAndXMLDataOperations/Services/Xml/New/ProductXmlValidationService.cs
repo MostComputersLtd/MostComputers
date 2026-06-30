@@ -113,7 +113,7 @@ internal sealed class ProductXmlValidationService : IProductXmlValidationService
 
         if (xmlProduct.GroupPromotion is not null)
         {
-            XmlGroupPromotion groupPromotion = xmlProduct.GroupPromotion;
+            XmlPromotionGroup groupPromotion = xmlProduct.GroupPromotion;
 
             if (!IsNullOrValidXmlString(groupPromotion.VendorName)
                 || !IsNullOrValidXmlString(groupPromotion.GroupPromotionsUrl))

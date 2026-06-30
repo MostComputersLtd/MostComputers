@@ -70,7 +70,7 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
         List<ProductProperty>? productProperties = null,
         List<XmlProductImage>? xmlProductImages = null,
         List<XmlPromotion>? xmlProductPromotions = null,
-        XmlGroupPromotion? xmlGroupPromotion = null,
+        XmlPromotionGroup? xmlGroupPromotion = null,
         SubCategory? productSubCategory = null,
         List<XmlSearchStringPartInfo>? searchStringPartInfos = null)
     {
