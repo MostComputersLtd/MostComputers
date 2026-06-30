@@ -2,6 +2,8 @@ using MOSTComputers.Services.Caching.Configuration;
 using MOSTComputers.Services.Currencies;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Configuration;
+using MOSTComputers.Services.DataToXmlConversion.Services;
+using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Configuration;
 using MOSTComputers.Services.ProductImageFileManagement.Configuration;
 using MOSTComputers.Services.ProductRegister.Configuration;
@@ -11,8 +13,6 @@ using MOSTComputers.Services.ProductRegister.Services.ProductProperties;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.Products;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
-using MOSTComputers.Services.ProductRegister.Services.Promotions;
-using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.Services.PromotionFileManagement.Configuration;
@@ -22,8 +22,6 @@ using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using MOSTComputers.UI.Web.Client.Endpoints.Images;
 using MOSTComputers.UI.Web.Client.Endpoints.Xml;
 using MOSTComputers.UI.Web.Client.Services;
-using MOSTComputers.UI.Web.Client.Services.Xml;
-using MOSTComputers.UI.Web.Client.Services.Xml.Contracts;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -47,8 +45,10 @@ builder.Services.AddCachedProductService();
 builder.Services.AddCachedProductWorkStatusesService();
 builder.Services.AddCachedCategoryService();
 builder.Services.AddCachedManufacturerService();
+builder.Services.AddCachedProductImageFileReadService();
 builder.Services.AddCachedPromotionService();
-
+builder.Services.AddCachedGroupPromotionToProductBindingsService();
+   
 builder.Services.AddScoped<ISubCategoryService, SubCategoryService>();
 builder.Services.AddScoped<IProductCharacteristicService, ProductCharacteristicService>();
 builder.Services.AddScoped<IProductPropertyCrudService, ProductPropertyCrudService>();
@@ -57,7 +57,9 @@ builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddScoped<IManufacturerToPromotionGroupRelationService, ManufacturerToPromotionGroupRelationService>();
 
 builder.Services.AddScoped<IOriginalLocalChangesReadService, OriginalLocalChangesReadService>();
+
 builder.Services.AddScoped<IProductSearchService, ProductSearchService>();
+
 builder.Services.AddScoped<IPromotionGroupService, PromotionGroupService>();
 builder.Services.AddScoped<IGroupPromotionReadService, GroupPromotionReadService>();
 builder.Services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
