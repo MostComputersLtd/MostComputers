@@ -460,7 +460,7 @@ else
     [Parameter] public List<ProductPropertyDisplayData>? ProductProperties { get; set; }
     [Parameter] public List<ProductImageDisplayData>? ProductImages { get; set; }
 
-	private List<ProductImageInCarouselDisplayData> AllCarouselContent = new();
+    private List<ProductImageInCarouselDisplayData> AllCarouselContent = new();
 
     [Parameter] public List<ProductRelatedGroupPromotionDisplayData>? ProductRelatedGroupPromotions { get; set; }
     [Parameter] public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
@@ -468,9 +468,11 @@ else
 
     private IJSObjectReference? _jsModule = null;
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-		if (ProductRelatedGroupPromotions?.Count > 0)
+        AllCarouselContent.Clear();
+
+        if (ProductRelatedGroupPromotions?.Count > 0)
 		{
 			@foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
 			{
