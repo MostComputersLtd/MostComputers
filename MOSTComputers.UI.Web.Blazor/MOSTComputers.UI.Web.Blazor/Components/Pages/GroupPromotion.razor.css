@@ -1,0 +1,14 @@
+﻿.group-promotion-page {
+    width: 100%;
+    display: flex;
+    -webkit-justify-content: center;
+    justify-content: center;
+    -webkit-align-items: center;
+    align-items: center;
+    overflow-x: auto;
+}
+
+.missing-promotion-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
