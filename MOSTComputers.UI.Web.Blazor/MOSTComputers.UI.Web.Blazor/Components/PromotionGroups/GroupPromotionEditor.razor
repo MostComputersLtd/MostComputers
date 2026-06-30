@@ -212,13 +212,17 @@
 			
 			<table id="promotionEditRelatedProductsTable" class="promotion-edit-related-products-table">
 
-				@if (PromotionData.RelatedProducts != null)
-				{
-					foreach (Product product in PromotionData.RelatedProducts)
+				<tbody>
+
+					@if (PromotionData.RelatedProducts != null)
 					{
-						<GroupPromotionEditorRelatedProduct Product="product" />
+						foreach (Product product in PromotionData.RelatedProducts)
+						{
+							<GroupPromotionEditorRelatedProduct Product="product" />
+						}
 					}
-				}
+				</tbody>
+				
 			</table>
 		</div>
 	</div>
