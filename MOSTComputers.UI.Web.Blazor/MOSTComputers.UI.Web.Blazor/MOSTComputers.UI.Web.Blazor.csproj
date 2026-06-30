@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.DataToXmlConversion\MOSTComputers.Services.DataToXmlConversion.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.Identity\MOSTComputers.Services.Identity.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.PDF\MOSTComputers.Services.PDF.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.ProductImageFileManagement\MOSTComputers.Services.ProductImageFileManagement.csproj" />

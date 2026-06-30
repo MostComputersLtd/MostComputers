@@ -10,6 +10,7 @@
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.DataToXmlConversion\MOSTComputers.Services.DataToXmlConversion.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
   </ItemGroup>
