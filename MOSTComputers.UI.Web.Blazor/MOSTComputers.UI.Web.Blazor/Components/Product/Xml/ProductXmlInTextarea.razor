@@ -12,6 +12,7 @@
 @using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Html
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using OneOf
 @using static MOSTComputers.Utils.Files.FilePathUtils;
@@ -116,7 +117,7 @@
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUri, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUri, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUri, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUri, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUri, GetPromotionPictureSource(id) ?? "")
         };

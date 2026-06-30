@@ -21,6 +21,7 @@ using MOSTComputers.Services.TransactionalFileManagement.Services;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
 using MOSTComputers.UI.Web.Client.Endpoints.Images;
 using MOSTComputers.UI.Web.Client.Endpoints.Xml;
+using MOSTComputers.UI.Web.Client.Endpoints.Html;
 using MOSTComputers.UI.Web.Client.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -141,5 +142,6 @@ app.MapRazorPages();
 app.MapProductXmlEndpoints();
 app.MapProductImageFileDataEndpoints();
 app.MapGroupPromotionImageFileDataEndpoints();
+app.MapGroupPromotionHtmlEndpoints();
 
 app.Run();

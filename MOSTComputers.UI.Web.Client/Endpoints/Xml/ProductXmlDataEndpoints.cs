@@ -6,6 +6,7 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Products;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
+using MOSTComputers.UI.Web.Client.Endpoints.Html;
 using MOSTComputers.UI.Web.Client.Endpoints.Images;
 using static MOSTComputers.UI.Web.Client.Endpoints.PromotionPictureSource;
 using static MOSTComputers.Utils.Files.FilePathUtils;
@@ -53,7 +54,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
@@ -94,7 +95,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
@@ -132,7 +133,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
@@ -173,7 +174,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
@@ -214,7 +215,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,
@@ -264,7 +265,7 @@ public static class ProductXmlDataEndpoints
         ProductXmlOptions productXmlOptions = new()
         {
             ImageFilesBasePath = CombinePathsWithSeparator('/', baseUrl, ProductImageFileDataEndpoints.EndpointGroupRoute),
-            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotions"), 
+            GroupPromotionsBasePath = CombinePathsWithSeparator('/', baseUrl, GroupPromotionHtmlEndpoints.EndpointGroupRoute), 
             PromotionGroupsBasePath = CombinePathsWithSeparator('/', baseUrl, "promotionGroupImages"),
             GetPromotionPictureSourceUrlById = id => CombinePathsWithSeparator('/', baseUrl, GetPromotionPictureSource(id) ?? ""),
             PrefferedPriceCurrency = prefferedCurrency,

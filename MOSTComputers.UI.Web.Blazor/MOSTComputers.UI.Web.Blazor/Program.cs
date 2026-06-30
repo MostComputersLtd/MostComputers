@@ -25,6 +25,7 @@ using MOSTComputers.UI.Web.Blazor.Components.Account;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Documents;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Xml;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Html;
 using MOSTComputers.UI.Web.Blazor.Logging;
 using MOSTComputers.UI.Web.Blazor.Models.Configuration;
 using MOSTComputers.UI.Web.Blazor.Services;
@@ -386,6 +387,8 @@ app.MapPromotionGroupXmlEndpoints();
 app.MapInvoiceXmlEndpoints();
 app.MapWarrantyCardXmlEndpoints();
 app.MapSitemapEndpoints();
+
+app.MapGroupPromotionHtmlEndpoints();
 
 app.MapPdfInvoiceDataEndpoints();
 app.MapPdfWarrantyCardDataWithoutPricesEndpoints();
