@@ -20,12 +20,57 @@ internal sealed class CachedGroupPromotionProductBindingsService : IGroupPromoti
         _fusionCache = fusionCache;
     }
 
+    public async Task<Dictionary<int, List<int>>> GetAllAsync()
+    {
+        return await _fusionCache.GetOrSetAsync(GetAllKey,
+            async (cancellationToken) => await _groupPromotionContentsToProductsService.GetAllAsync());
+    }
+
     public async Task<List<int>> GetAllProductIdsBoundToPromotionAsync(int promotionId)
     {
         if (promotionId <= 0) return new();
 
         return await _fusionCache.GetOrSetAsync(GetAllForGroupPromotionKey(promotionId),
             async (cancellationToken) => await _groupPromotionContentsToProductsService.GetAllProductIdsBoundToPromotionAsync(promotionId));
+    }
+
+    public async Task<Dictionary<int, List<int>>> GetAllPromotionIdsBoundToProductsAsync(IEnumerable<int> productIds)
+    {
+        if (!productIds.Any()) return new Dictionary<int, List<int>>();
+
+        IEnumerable<int> distinctProductIds = productIds.Distinct();
+
+        Dictionary<int, List<int>> cachedPromotionIds = new();
+
+        List<int> missingProductIds = new();
+
+        foreach (int productId in distinctProductIds)
+        {
+            MaybeValue<List<int>> cached = await _fusionCache.TryGetAsync<List<int>>(GetAllForProductKey(productId));
+
+            if (cached.HasValue && cached.Value.Count > 0)
+            {
+                cachedPromotionIds.Add(productId, cached.Value);
+            }
+            else
+            {
+                missingProductIds.Add(productId);
+            }
+        }
+
+        if (missingProductIds.Count == 0) return cachedPromotionIds;
+
+        Dictionary<int, List<int>> results
+            = await _groupPromotionContentsToProductsService.GetAllPromotionIdsBoundToProductsAsync(missingProductIds);
+
+        foreach (KeyValuePair<int, List<int>> kvp in results)
+        {
+            await _fusionCache.SetAsync(GetAllForProductKey(kvp.Key), kvp.Value);
+
+            cachedPromotionIds.Add(kvp.Key, kvp.Value);
+        }
+
+        return cachedPromotionIds;
     }
 
     public async Task<List<int>> GetAllPromotionIdsBoundToProductAsync(int productId)

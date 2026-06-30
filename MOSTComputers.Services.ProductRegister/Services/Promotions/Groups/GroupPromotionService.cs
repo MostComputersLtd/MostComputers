@@ -24,6 +24,7 @@ namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 public sealed class GroupPromotionService : IGroupPromotionService
 {
     private readonly IGroupPromotionContentsRepository _groupPromotionContentsRepository;
+    private readonly IGroupPromotionReadService _readService;
     private readonly IGroupPromotionImageCrudService _groupPromotionImageCrudService;
     private readonly IGroupPromotionImageFileService _groupPromotionImageFileService;
     private readonly IGroupPromotionProductBindingsService _groupPromotionProductBindingsService;
@@ -33,6 +34,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
 
     public GroupPromotionService(
         IGroupPromotionContentsRepository groupPromotionContentsRepository,
+        IGroupPromotionReadService readService,
         IGroupPromotionImageCrudService groupPromotionImageCrudService,
         IGroupPromotionImageFileService groupPromotionImageFileService,
         IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
@@ -47,6 +49,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
         _createRequestValidator = createRequestValidator;
         _updateRequestValidator = updateRequestValidator;
         _groupPromotionContentsRepository = groupPromotionContentsRepository;
+        _readService = readService;
     }
 
     private const string _imageRepresentationStart = "|/imageStart/%|";
@@ -58,52 +61,52 @@ public sealed class GroupPromotionService : IGroupPromotionService
 
     public DateTime GetMinStartDate()
     {
-        return GroupPromotionContentConstraints.MinInsertStartDate;
+        return _readService.GetMinStartDate();
     }
 
     public Task<List<GroupPromotionContent>> GetAllAsync()
     {
-        return _groupPromotionContentsRepository.GetAllAsync();
+        return _readService.GetAllAsync();
     }
 
     public Task<List<GroupPromotionContent>> GetAllActiveAsync()
     {
-        return _groupPromotionContentsRepository.GetAllActiveAsync();
+        return _readService.GetAllActiveAsync();
     }
 
     public Task<List<GroupPromotionContent>> GetAllActiveInGroupAsync(int groupId)
     {
-        return _groupPromotionContentsRepository.GetAllActiveInGroupAsync(groupId);
+        return _readService.GetAllActiveInGroupAsync(groupId);
     }
 
     public Task<List<IGrouping<int, GroupPromotionContent>>> GetAllActiveInGroupsAsync(List<int> groupIds)
     {
-        return _groupPromotionContentsRepository.GetAllActiveInGroupsAsync(groupIds);
+        return _readService.GetAllActiveInGroupsAsync(groupIds);
     }
 
     public Task<List<GroupPromotionContent>> GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(DateTime dateTime)
     {
-        return _groupPromotionContentsRepository.GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(dateTime);
+        return _readService.GetAllActiveAndNotExpiredDuringGivenDateTimeAsync(dateTime);
     } 
 
     public Task<List<GroupPromotionContent>> GetAllInGroupAsync(int groupId)
     {
-        return _groupPromotionContentsRepository.GetAllInGroupAsync(groupId);
+        return _readService.GetAllInGroupAsync(groupId);
     }
 
     public Task<List<IGrouping<int, GroupPromotionContent>>> GetAllInGroupsAsync(List<int> groupIds)
     {
-        return _groupPromotionContentsRepository.GetAllInGroupsAsync(groupIds);
+        return _readService.GetAllInGroupsAsync(groupIds);
     }
 
     public Task<List<GroupPromotionContent>> GetByIdsAsync(IEnumerable<int> groupIds)
     {
-        return _groupPromotionContentsRepository.GetByIdsAsync(groupIds);
+        return _readService.GetByIdsAsync(groupIds);
     }
 
     public Task<GroupPromotionContent?> GetByIdAsync(int id)
     {
-        return _groupPromotionContentsRepository.GetByIdAsync(id);
+        return _readService.GetByIdAsync(id);
     }
 
     public string? ChangeLegacyUrlsToNewOnes(
@@ -111,65 +114,21 @@ public sealed class GroupPromotionService : IGroupPromotionService
         IEnumerable<GroupPromotionImageFileData>? promotionImageFiles,
         Func<GroupPromotionImageFileData, string> getNewUrlFromFileData)
     {
-        if (string.IsNullOrWhiteSpace(htmlContent)
-            || promotionImageFiles == null)
-        {
-            return htmlContent;
-        }
+        return _readService.ChangeLegacyUrlsToNewOnes(
+            htmlContent,
+            promotionImageFiles,
+            getNewUrlFromFileData);
+    }
 
-        int indexToScanFrom = 0;
+    public string GetValidHtmlContentImageUrlReference(int imageRequestIndex)
+    {
+        string imageRepresentationInHtmlContent = _imageRepresentationStart;
 
-        StringBuilder stringBuilder = new();
+        imageRepresentationInHtmlContent += _imageIndexPrefix + imageRequestIndex.ToString();
 
-        while (true)
-        {
-            int indexOfLegacyHtmlImageRepresentation = htmlContent.IndexOf(_legacyImageRepresentationInHtmlContent, indexToScanFrom);
+        imageRepresentationInHtmlContent += _imageRepresentationEnd;
 
-            if (indexOfLegacyHtmlImageRepresentation < 0)
-            {
-                stringBuilder.Append(htmlContent[indexToScanFrom..]);
-
-                break;
-            }
-
-            string contentBeforeImageRepresentation = htmlContent[indexToScanFrom..indexOfLegacyHtmlImageRepresentation];
-
-            stringBuilder.Append(contentBeforeImageRepresentation);
-
-            int currentImageIdCharacterIndex = indexOfLegacyHtmlImageRepresentation + _legacyImageRepresentationInHtmlContent.Length;
-
-            char nextDigitInId;
-
-            string imageIdAsString = string.Empty;
-
-            while (currentImageIdCharacterIndex < htmlContent.Length)
-            {
-                nextDigitInId = htmlContent[currentImageIdCharacterIndex];
-
-                if (!char.IsDigit(nextDigitInId)) break;
-
-                imageIdAsString += nextDigitInId;
-
-                currentImageIdCharacterIndex++;
-            }
-
-            int imageId = int.Parse(imageIdAsString);
-
-            foreach (GroupPromotionImageFileData promotionImageFile in promotionImageFiles)
-            {
-                if (promotionImageFile.ImageId != imageId) continue;
-
-                string newFileName = getNewUrlFromFileData(promotionImageFile);
-
-                stringBuilder.Append(newFileName);
-
-                break;
-            }
-
-            indexToScanFrom = currentImageIdCharacterIndex;
-        }
-
-        return stringBuilder.ToString();
+        return imageRepresentationInHtmlContent;
     }
 
     public async Task<OneOf<GroupPromotionCreateResult, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(
@@ -630,18 +589,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
             validationResult => validationResult,
             imageFileAlreadyExistsResult => imageFileAlreadyExistsResult,
             unexpectedFailureResult => unexpectedFailureResult);
-    }
-
-    public string GetValidHtmlContentImageUrlReference(int imageRequestIndex)
-    {
-        string imageRepresentationInHtmlContent = _imageRepresentationStart;
-
-        imageRepresentationInHtmlContent += _imageIndexPrefix + imageRequestIndex.ToString();
-
-        imageRepresentationInHtmlContent += _imageRepresentationEnd;
-
-        return imageRepresentationInHtmlContent;
-    }
+    } 
 
     private static string ReplaceHtmlContentImageUrlReferencesWithLegacyImageUrls(
         string htmlContent,

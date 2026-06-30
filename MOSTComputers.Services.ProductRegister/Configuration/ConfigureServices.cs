@@ -79,6 +79,7 @@ public static class ConfigureServices
     internal const string ManufacturerServiceKey = "MOSTComputers.Services.ProductRegister.ManufactuererServiceKey";
     internal const string PromotionServiceKey = "MOSTComputers.Services.ProductRegister.PromotionServiceKey";
     internal const string ProductPropertyCrudServiceKey = "MOSTComputers.Services.ProductRegister.ProductPropertyServiceKey";
+    internal const string ProductImageFileReadServiceKey = "MOSTComputers.Services.ProductRegister.ProductImageFileReadServiceKey";
     internal const string ProductImageFileServiceKey = "MOSTComputers.Services.ProductRegister.ProductImageFileServiceKey";
     internal const string GroupPromotionToProductBindingServiceKey = "MOSTComputers.Services.ProductRegister.GroupPromotionToProductBindingServiceKey";
     internal const string PromotionFileServiceKey = "MOSTComputers.Services.ProductRegister.PromotionFileServiceKey";
@@ -101,6 +102,7 @@ public static class ConfigureServices
         services.AddScoped<IManufacturerService, ManufacturerService>();
 
         services.AddScoped<IProductImageCrudService, ProductImageCrudService>();
+        services.AddScoped<IProductImageFileReadService, ProductImageFileReadService>();
         services.AddScoped<IProductImageFileService, ProductImageFileService>();
         services.AddScoped<IProductImageAndFileService, ProductImageAndFileService>();
         services.AddScoped<IProductImageService, ProductImageService>();
@@ -116,6 +118,7 @@ public static class ConfigureServices
         services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
         services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
         services.AddScoped<IGroupPromotionImageCrudService, GroupPromotionImageCrudService>();
+        services.AddScoped<IGroupPromotionReadService, GroupPromotionReadService>();
         services.AddScoped<IGroupPromotionService, GroupPromotionService>();
         services.AddScoped<IGroupPromotionProductBindingsService, GroupPromotionProductBindingsService>();
         services.AddScoped<IPromotionGroupService, PromotionGroupService>();
@@ -168,6 +171,7 @@ public static class ConfigureServices
 
         AddCachedManufacturerService(services);
 
+        AddCachedProductImageFileReadService(services);
         AddCachedProductImageFileService(services);
 
         services.AddScoped<IProductImageCrudService, ProductImageCrudService>();
@@ -192,14 +196,10 @@ public static class ConfigureServices
         services.AddScoped<IGroupPromotionImageFileDataService, GroupPromotionImageFileDataService>();
         services.AddScoped<IGroupPromotionImageFileService, GroupPromotionImageFileService>();
         services.AddScoped<IGroupPromotionImageCrudService, GroupPromotionImageCrudService>();
+        services.AddScoped<IGroupPromotionReadService, GroupPromotionReadService>();
         services.AddScoped<IGroupPromotionService, GroupPromotionService>();
 
-        services.AddKeyedScoped<IGroupPromotionProductBindingsService, GroupPromotionProductBindingsService>(GroupPromotionToProductBindingServiceKey);
-        services.AddScoped<IGroupPromotionProductBindingsService, CachedGroupPromotionProductBindingsService>(serviceProvider =>
-        {
-            return new(serviceProvider.GetRequiredKeyedService<IGroupPromotionProductBindingsService>(GroupPromotionToProductBindingServiceKey),
-                serviceProvider.GetRequiredService<IFusionCache>());
-        });
+        AddCachedGroupPromotionToProductBindingsService(services);
 
         services.AddScoped<IPromotionGroupService, PromotionGroupService>();
 
@@ -291,6 +291,17 @@ public static class ConfigureServices
         });
     }
 
+    public static void AddCachedProductImageFileReadService(this IServiceCollection services)
+    {
+        services.AddScoped<IProductImageFileReadService, ProductImageFileReadService>();
+        services.AddKeyedScoped<IProductImageFileReadService, ProductImageFileReadService>(ProductImageFileReadServiceKey);
+        services.AddScoped<IProductImageFileReadService, CachedProductImageFileReadService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IProductImageFileReadService>(ProductImageFileReadServiceKey),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
     public static void AddCachedProductImageFileService(this IServiceCollection services)
     {
         services.AddKeyedScoped<IProductImageFileService, ProductImageFileService>(ProductImageFileServiceKey);
@@ -298,6 +309,16 @@ public static class ConfigureServices
         {
             return new(serviceProvider.GetRequiredKeyedService<IProductImageFileService>(ProductImageFileServiceKey),
                 //serviceProvider.GetRequiredService<ICache<string>>(),
+                serviceProvider.GetRequiredService<IFusionCache>());
+        });
+    }
+
+    public static void AddCachedGroupPromotionToProductBindingsService(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IGroupPromotionProductBindingsService, GroupPromotionProductBindingsService>(GroupPromotionToProductBindingServiceKey);
+        services.AddScoped<IGroupPromotionProductBindingsService, CachedGroupPromotionProductBindingsService>(serviceProvider =>
+        {
+            return new(serviceProvider.GetRequiredKeyedService<IGroupPromotionProductBindingsService>(GroupPromotionToProductBindingServiceKey),
                 serviceProvider.GetRequiredService<IFusionCache>());
         });
     }

@@ -78,6 +78,8 @@ internal class CacheKeyUtils
     {
         private const string _coreWord = "groupPromotionProductBinding";
 
+        internal const string GetAllKey = _coreWord;
+
         internal static string GetAllForGroupPromotionKey(int promotionId)
         {
             return $"{_coreWord}:ByGroupPromotion:{promotionId}";

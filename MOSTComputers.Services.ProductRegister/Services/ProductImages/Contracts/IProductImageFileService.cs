@@ -7,13 +7,9 @@ using OneOf;
 using OneOf.Types;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
-public interface IProductImageFileService
+
+public interface IProductImageFileService : IProductImageFileReadService
 {
-    Task<List<ProductImageFileData>> GetAllAsync();
-    Task<List<IGrouping<int, ProductImageFileData>>> GetAllInProductsAsync(IEnumerable<int> productIds);
-    Task<List<ProductImageFileData>> GetAllInProductAsync(int productId);
-    Task<ProductImageFileData?> GetByIdAsync(int id);
-    Task<ProductImageFileData?> GetByProductIdAndImageIdAsync(int productId, int imageId);
     Task<OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertFileAsync(ProductImageFileCreateRequest createRequest);
     Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> ChangeFileAsync(ProductImageFileChangeRequest updateRequest);
     Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateFileAsync(ProductImageFileUpdateRequest updateRequest);
