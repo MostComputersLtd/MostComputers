@@ -1,0 +1,10 @@
+@using MOSTComputers.Models.Product.Models;
+
+@foreach (Product product in Products)
+{
+	<GroupPromotionEditorRelatedProduct Product="product"/>
+}
+
+@code {
+	[Parameter, EditorRequired] public List<Product> Products { get; set; }
+}

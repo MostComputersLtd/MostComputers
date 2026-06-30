@@ -1,29 +1,34 @@
 @using MOSTComputers.Models.Product.Models
 
-<table id="addRelatedProductSearchResultsTable"
+<table id="relatedProductSearchResultsTable"
 	class="related-product-search-results-table">
 
-	@foreach (Product product in Products)
-	{
-		<tr id="relatedProductSearchResult-@product.Id"
-			name="relatedProductSearchResult"
-			class="related-product-search-result"
-			onclick="addRelatedProductToPromotion(@product.Id, 'relatedProductSearchResult-@product.Id')"
-			data-related-product-search-result-product-id="@product.Id">
+	<tbody>
 
-			<td class="related-product-search-result-entry-with-margin">
-				<p>@product.Id</p>
-			</td>
+		@for (int i = 0; i < Products.Count; i++)
+		{
+			Product product = Products[i];
 
-			<td class="related-product-search-result-entry-with-margin">
-				<p>@product.Name</p>
-			</td>
+			<tr id="relatedProductSearchResult-@product.Id"
+				name="relatedProductSearchResult"
+				class="related-product-search-result"
+				onclick="toggleRelatedProductSelection(@product.Id, 'relatedProductSearchResult-@product.Id')"
+				data-related-product-search-result-product-id="@product.Id">
 
-			<td>
-				<p>@product.SearchString</p>
-			</td>
-		</tr>
-	}
+				<td class="related-product-search-result-entry-with-margin">
+					<p>@product.Id</p>
+				</td>
+
+				<td class="related-product-search-result-entry-with-margin">
+					<p>@product.Name</p>
+				</td>
+
+				<td>
+					<p>@product.SearchString</p>
+				</td>
+			</tr>
+		}
+	</tbody>
 </table>
 
 @code {

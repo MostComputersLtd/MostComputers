@@ -138,7 +138,10 @@ public static class PromotionGroupsPageComponentEndpoints
         endpointGroup.MapGet("/groupEditorPopup/{id:int?}", GetPromotionGroupEditorForExistingItemAsync);
 
         endpointGroup.MapGet("/relatedProduct/{productId:int?}", GetGroupPromotionRelatedProductComponentAsync);
+
         endpointGroup.MapGet("/addRelatedProductsPopup", GetAddRelatedProductsToPromotionPopupComponentAsync);
+
+        endpointGroup.MapPost("/relatedProduct", GetGroupPromotionRelatedProductComponentsAsync);
 
         endpointGroup.MapPost("/search", GetGroupPromotionsListAsync);
         endpointGroup.MapPost("/searchRelatedProducts", GetAddRelatedProductsSearchResultsComponentAsync);
@@ -475,6 +478,24 @@ public static class PromotionGroupsPageComponentEndpoints
         return new RazorComponentResult<GroupPromotionEditorRelatedProduct>(new
         {
             Product = product,
+        });
+    }
+
+    private static async Task<IResult> GetGroupPromotionRelatedProductComponentsAsync(
+        [FromBody] List<int>? productIds,
+        [FromServices] IProductService productService)
+    {
+        if (productIds == null) return Results.BadRequest();
+
+        List<MOSTComputers.Models.Product.Models.Product> products = await productService.GetByIdsAsync(productIds);
+        
+        List<MOSTComputers.Models.Product.Models.Product> orderedProducts = products
+            .OrderBy(x => productIds.IndexOf(x.Id))
+            .ToList();
+
+        return new RazorComponentResult<GroupPromotionEditorRelatedProducts>(new
+        {
+            Products = orderedProducts,
         });
     }
 

@@ -6,6 +6,11 @@
 
 .related-product-search-result {
     padding: 0.25rem 0.5rem;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
     .related-product-search-result.related-product-search-result-inactive {
@@ -14,6 +19,10 @@
 
     .related-product-search-result:hover {
         background-color: #e5e4e4;
+    }
+
+    .related-product-search-result.related-product-search-result-in-selection {
+        background-color: #ffdcdc;
     }
 
     .related-product-search-result.related-product-search-result-inactive:hover {

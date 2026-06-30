@@ -57,6 +57,7 @@ const relatedProductSearchInputId = "relatedProductSearchInput";
 const relatedProductSearchAvaliableOnlyCheckboxId = "relatedProductSearchAvaliableOnlyCheckbox";
 const relatedProductSearchButtonId = "relatedProductSearchButton";
 const addRelatedProductSearchResultsContainerId = "relatedProductSearchResultsContainer";
+const relatedProductSearchResultsTableId = "relatedProductSearchResultsTable";
 const promotionEditRelatedProductsTableId = "promotionEditRelatedProductsTable";
 
 const antiforgeryTokenInputId = "__RequestVerificationToken";
@@ -83,10 +84,13 @@ const loadingClass = "loading";
 const htmlContentImageSpanClass = "promotion-edit-html-content-image-span";
 
 const relatedProductSearchResultInactiveClass = "related-product-search-result-inactive";
+const relatedProductSearchResultInSelectionClass = "related-product-search-result-in-selection";
 
 const promotionEditorImagesToUpload = [];
 
 let promotionGroupImageToUpload = null;
+
+let existingRelatedProductIds = [];
 
 async function searchGroupPromotions()
 {
@@ -187,6 +191,8 @@ async function openPromotionEditorForPromotion(id = null)
             document.execCommand("insertLineBreak");
         }
     });
+
+    existingRelatedProductIds = getExistingRelatedProductIds();
 }
 
 function clearAndFreeImagesToUpload() {
@@ -1009,10 +1015,12 @@ async function searchRelatedProductsAndDisplayResults() {
 
         addRelatedProductSearchResultsContainer.innerHTML = data;
 
-        const existingRelatedProductIds = getExistingRelatedProductIds();
-
         changeStyleOfSearchResultsForAlreadyAddedProducts(existingRelatedProductIds);
 
+        const relatedProductSearchResultsContainer = document.getElementById(addRelatedProductSearchResultsContainerId);
+        const relatedProductSearchResultsTable = document.getElementById(relatedProductSearchResultsTableId);
+
+        addEventListenersToSearchResults(relatedProductSearchResultsContainer, relatedProductSearchResultsTable);
     }
     finally {
 
@@ -1057,6 +1065,8 @@ function getExistingRelatedProductIds()
 
 function changeStyleOfSearchResultsForAlreadyAddedProducts(alreadyAddedProductIds) {
 
+    const alreadyAddedProductIdsCopy = [...alreadyAddedProductIds];
+
     const relatedProductSearchResultsContainer = document.getElementById(addRelatedProductSearchResultsContainerId);
 
     const relatedProductSearchResultElements
@@ -1064,28 +1074,189 @@ function changeStyleOfSearchResultsForAlreadyAddedProducts(alreadyAddedProductId
 
     for (const relatedProductSearchResultElement of relatedProductSearchResultElements) {
 
-        if (alreadyAddedProductIds.length === 0) break;
+        if (alreadyAddedProductIdsCopy.length === 0) break;
 
         const productIdAttribute = relatedProductSearchResultElement.getAttribute(promotionRelatedSearchResultProductIdAttribute);
 
         const searchResultProductId = getIntegerOrNullFromString(productIdAttribute);
 
-        for (let i = 0; i < alreadyAddedProductIds.length; i++) {
+        for (let i = 0; i < alreadyAddedProductIdsCopy.length; i++) {
 
-            const alreadyAddedProductId = alreadyAddedProductIds[i];
+            const alreadyAddedProductId = alreadyAddedProductIdsCopy[i];
 
             if (searchResultProductId !== alreadyAddedProductId) continue;
 
             relatedProductSearchResultElement.classList.add(relatedProductSearchResultInactiveClass);
 
-            alreadyAddedProductIds.splice(i, 1);
+            alreadyAddedProductIdsCopy.splice(i, 1);
 
             break;
         }
     }
 }
 
-async function addRelatedProductToPromotion(productId, relatedProductSearchResultElementId) {
+let mouseX = 0;
+let mouseY = 0;
+
+let rangeSelectionStartIndex = -1;
+
+let startSearchResultElement = null;
+let currentSearchResultElement = null;
+
+let elementIndexesThatWereHandledThisSelection = [];
+let elementsThatWereHandledThisSelection = [];
+
+let isHolding = false;
+
+function addEventListenersToSearchResults(relatedProductSearchResultsTableContainer, relatedProductSearchResultsTable) {
+
+
+    relatedProductSearchResultsTableContainer.addEventListener("wheel", e => {
+
+        e.preventDefault();
+
+        const step = 40;
+
+        relatedProductSearchResultsTableContainer.scrollTop += Math.sign(e.deltaY) * step;
+    }, { passive: false });
+
+    relatedProductSearchResultsTable.addEventListener('mousedown', (e) => {
+
+        if (e.button === 0) {
+
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            currentSearchResultElement = getProductRelatedSearchResultAtLocation(mouseX, mouseY);
+
+            startSearchResultElement = currentSearchResultElement;
+
+            rangeSelectionStartIndex = getRelatedProductSearchResultIndex(currentSearchResultElement);
+
+            elementIndexesThatWereHandledThisSelection.length = 0;
+            elementsThatWereHandledThisSelection.length = 0;
+
+            isHolding = true;
+        }
+    });
+
+    relatedProductSearchResultsTable.addEventListener('mouseup', (e) => {
+
+        if (isHolding && e.button === 0) {
+
+            saveChangesFromSelection();
+
+            isHolding = false;
+        }
+    });
+
+    relatedProductSearchResultsTable.addEventListener('pointermove', (e) => {
+
+        if (!isHolding) return;
+
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        addSearchResultItemsOnMouseChanges();
+    });
+
+
+    relatedProductSearchResultsTableContainer.addEventListener('scroll', () => {
+
+        if (!isHolding) return;
+
+        addSearchResultItemsOnMouseChanges();
+    });
+}
+
+async function saveChangesFromSelection() {
+
+    if (elementsThatWereHandledThisSelection.length == 0) return;
+
+    rangeSelectionStartIndex = -1;
+    startSearchResultElement = null;
+    currentSearchResultElement = null;
+
+    elementIndexesThatWereHandledThisSelection.length = 0;
+
+    await updateRelatedProductsSelection(elementsThatWereHandledThisSelection);
+
+    for (const searchResult of elementsThatWereHandledThisSelection) {
+
+        searchResult.classList.remove(relatedProductSearchResultInSelectionClass);
+    }
+
+    elementsThatWereHandledThisSelection.length = 0;
+}
+
+function addSearchResultItemsOnMouseChanges() {
+
+    const newSearchResultElement = getProductRelatedSearchResultAtLocation(mouseX, mouseY);
+
+    if (!newSearchResultElement) {
+
+        return;
+    }
+
+    if (newSearchResultElement === currentSearchResultElement) {
+
+        if (newSearchResultElement === startSearchResultElement
+            && !elementIndexesThatWereHandledThisSelection.includes(rangeSelectionStartIndex)) {
+
+            toggleRelatedProductSelectionWithoutChangingDataFromElement(newSearchResultElement);
+
+            elementIndexesThatWereHandledThisSelection.push(rangeSelectionStartIndex);
+            elementsThatWereHandledThisSelection.push(newSearchResultElement);
+
+            newSearchResultElement.classList.add(relatedProductSearchResultInSelectionClass);
+        }
+
+        return;
+    }
+
+    currentSearchResultElement = newSearchResultElement;
+
+    const relatedProductSearchResultsTable = document.getElementById(relatedProductSearchResultsTableId);
+
+    const relatedProductSearchResultElements = [...relatedProductSearchResultsTable.querySelectorAll(`[name='${relatedProductSearchResultName}']`)];
+
+    const newElementIndex = relatedProductSearchResultElements.indexOf(currentSearchResultElement);
+
+    const min = Math.min(rangeSelectionStartIndex, newElementIndex);
+    const max = Math.max(rangeSelectionStartIndex, newElementIndex);
+
+    for (let i = min; i <= max; i++) {
+
+        if (elementIndexesThatWereHandledThisSelection.includes(i)) continue;
+
+        const elementToChangeSelection = relatedProductSearchResultElements[i];
+
+        toggleRelatedProductSelectionWithoutChangingDataFromElement(elementToChangeSelection);
+
+        elementToChangeSelection.classList.add(relatedProductSearchResultInSelectionClass);
+
+        elementIndexesThatWereHandledThisSelection.push(i);
+        elementsThatWereHandledThisSelection.push(elementToChangeSelection);
+    }
+}
+
+function getProductRelatedSearchResultAtLocation(x, y) {
+
+    const currentTouchedElement = document.elementFromPoint(x, y);
+
+    return currentTouchedElement?.closest(`[name='${relatedProductSearchResultName}']`);
+}
+
+function getRelatedProductSearchResultIndex(searchResultElement) {
+
+    const relatedProductSearchResultsTable = document.getElementById(relatedProductSearchResultsTableId);
+
+    const relatedProductSearchResultElements = [...relatedProductSearchResultsTable.querySelectorAll(`[name='${relatedProductSearchResultName}']`)];
+
+    return relatedProductSearchResultElements.indexOf(searchResultElement);
+}
+
+async function toggleRelatedProductSelection(productId, relatedProductSearchResultElementId) {
 
     const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
 
@@ -1099,18 +1270,20 @@ async function addRelatedProductToPromotion(productId, relatedProductSearchResul
 
         if (relatedProductId === productId)
         {
-            removePromotionEditRelatedProduct(relatedProductElement);
+            removePromotionEditRelatedProduct(relatedProductElement, relatedProductId);
 
             if (relatedProductSearchResultElementId != null) {
 
                 const relatedProductSearchResultElement = document.getElementById(relatedProductSearchResultElementId);
 
                 relatedProductSearchResultElement.classList.remove(relatedProductSearchResultInactiveClass);
-            }
+            } 
 
             return;
         }
     }
+
+    existingRelatedProductIds.push(productId);
 
     const response = await fetch(`api/components/promotionGroups/relatedProduct/${productId}`,
     {
@@ -1124,7 +1297,9 @@ async function addRelatedProductToPromotion(productId, relatedProductSearchResul
 
     const data = await response.text();
 
-    promotionEditRelatedProductsTable.insertAdjacentHTML("beforeend", data);
+    const promotionEditRelatedProductsTableBody = promotionEditRelatedProductsTable.querySelector('tbody');
+
+    promotionEditRelatedProductsTableBody.insertAdjacentHTML("beforeend", data);
 
     if (relatedProductSearchResultElementId != null) {
 
@@ -1134,16 +1309,116 @@ async function addRelatedProductToPromotion(productId, relatedProductSearchResul
     }
 }
 
-function removePromotionEditRelatedProductById(promotionEditRelatedProductElementId) {
+async function updateRelatedProductsSelection(relatedProductSearchResultElements) {
+
+    const productSearchResultIdsInPromotion = [];
+    const productSearchResultIdsNotInPromotion = [];
+
+    for (const searchResult of relatedProductSearchResultElements) {
+
+        let isIdPartOfPromotion = false;
+
+        const productIdAttribute = searchResult.getAttribute(promotionRelatedSearchResultProductIdAttribute);
+
+        const searchResultProductId = getIntegerOrNullFromString(productIdAttribute);
+
+        for (const existingProductId of existingRelatedProductIds) {
+
+            if (searchResultProductId !== existingProductId) continue;
+
+            isIdPartOfPromotion = true;
+
+            break;
+        }
+
+        if (isIdPartOfPromotion) {
+
+            productSearchResultIdsInPromotion.push(searchResultProductId);
+        }
+        else {
+
+            productSearchResultIdsNotInPromotion.push(searchResultProductId);
+        }
+    }
+
+    const promotionEditRelatedProductsTable = document.getElementById(promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = promotionEditRelatedProductsTable.querySelectorAll("tr");
+
+    for (const relatedProductElement of relatedProductElements) {
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(promotionRelatedProductIdAttribute);
+
+        const relatedProductId = getIntegerOrNullFromString(relatedProductIdAsString);
+
+        if (!productSearchResultIdsNotInPromotion.includes(relatedProductId)) continue;
+
+        relatedProductElement.remove();
+    }
+   
+    const response = await fetch(`api/components/promotionGroups/relatedProduct`,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/html"
+        },
+        body: JSON.stringify(productSearchResultIdsInPromotion)
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.text();
+
+    const promotionEditRelatedProductsTableBody = promotionEditRelatedProductsTable.querySelector('tbody');
+
+    promotionEditRelatedProductsTableBody.insertAdjacentHTML("beforeend", data);
+}
+
+async function toggleRelatedProductSelectionWithoutChangingDataFromElement(elementToChangeSelection) {
+
+    const productIdAttribute = elementToChangeSelection.getAttribute(promotionRelatedSearchResultProductIdAttribute);
+
+    const searchResultProductId = getIntegerOrNullFromString(productIdAttribute);
+
+    await toggleRelatedProductSelectionWithoutChangingData(searchResultProductId, elementToChangeSelection);
+}
+
+async function toggleRelatedProductSelectionWithoutChangingData(productId, relatedProductSearchResultElement) {
+
+    for (const relatedProductId of existingRelatedProductIds) {
+
+        if (relatedProductId === productId)
+        {
+            const indexOfProductId = existingRelatedProductIds.indexOf(productId);
+
+            existingRelatedProductIds.splice(indexOfProductId, 1);
+
+            relatedProductSearchResultElement.classList.remove(relatedProductSearchResultInactiveClass);
+
+            return;
+        }
+    }
+
+    existingRelatedProductIds.push(productId);
+
+    relatedProductSearchResultElement.classList.add(relatedProductSearchResultInactiveClass);
+}
+
+function removePromotionEditRelatedProductById(promotionEditRelatedProductElementId, productId) {
 
     const promotionEditRelatedProductElement = document.getElementById(promotionEditRelatedProductElementId);
 
-    removePromotionEditRelatedProduct(promotionEditRelatedProductElement);
+    removePromotionEditRelatedProduct(promotionEditRelatedProductElement, productId);
 }
 
-function removePromotionEditRelatedProduct(promotionEditRelatedProductElement) {
+function removePromotionEditRelatedProduct(promotionEditRelatedProductElement, productId) {
 
     promotionEditRelatedProductElement.remove();
+
+    const removedIdIndex = existingRelatedProductIds.indexOf(productId);
+
+    existingRelatedProductIds.splice(removedIdIndex, 1);
 }
 
 async function openPromotionGroupEditorPopup(id = null) {
