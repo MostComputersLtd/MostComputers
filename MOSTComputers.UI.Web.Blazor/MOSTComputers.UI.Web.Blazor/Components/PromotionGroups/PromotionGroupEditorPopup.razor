@@ -28,8 +28,8 @@
                 <h4 class="popup-header-text me-3 mb-0">(ID: @PopupData.Id)</h4>
             }
 
-			<button id="savePromotionButton" class="promotion-group-save-button"
-				onclick="savePromotionGroup(@(PopupData.Id != null ? PopupData.Id.ToString() : string.Empty))">
+			<button id="promotionGroupSaveButton" class="promotion-group-save-button">
+				@* onclick="savePromotionGroup(@(PopupData.Id != null ? PopupData.Id.ToString() : string.Empty))"> *@
 
 				<p class="promotion-group-save-button-text">Save</p>
 
@@ -57,9 +57,9 @@
 				<button id="promotionGroupLogoChangeButton"
 					type="button"
 					class="promotion-group-edit-logo-change-button"
-					onclick="changePromotionGroupLogo()"
 					aria-label="Add File">
-					@(imageButtonText)
+					@* onclick="changePromotionGroupLogo()" *@
+					@imageButtonText
 				</button>
 
 				<input type="file" id="promotionGroupLogoInput" class="promotion-group-edit-logo-input" accept="image/*" />

@@ -92,8 +92,8 @@ let promotionGroupImageToUpload = null;
 
 let existingRelatedProductIds = [];
 
-async function searchGroupPromotions()
-{
+async function searchGroupPromotions() {
+
     const searchOptions = getGroupPromotionSearchOptionsFromCurrentData();
 
     const response = await fetch("api/components/promotionGroups/search", {
@@ -112,8 +112,8 @@ async function searchGroupPromotions()
     promotionListContainer.innerHTML = searchResultHtml;
 }
 
-function getGroupPromotionSearchOptionsFromCurrentData()
-{
+function getGroupPromotionSearchOptionsFromCurrentData() {
+
     const searchInput = document.getElementById(promotionSearchInputId);
     const groupSelect = document.getElementById(groupSelectId);
     const onlyActiveCheckbox = document.getElementById(onlyActiveCheckboxId);
@@ -129,8 +129,8 @@ function getGroupPromotionSearchOptionsFromCurrentData()
     };
 }
 
-async function openPromotionEditorForPromotion(id = null)
-{
+async function openPromotionEditorForPromotion(id = null) {
+
     let response;
 
     if (id == null)
@@ -156,26 +156,18 @@ async function openPromotionEditorForPromotion(id = null)
 
     const promotionEditPanelContainer = document.getElementById(promotionEditPanelContainerId);
 
-    clearAndFreeImagesToUpload();
-
     promotionEditPanelContainer.innerHTML = promotionEditorHtml;
+
+    resetImageData();
 
     expandTextAreaToNeededHeight(promotionHtmlId);
 
-    const imageList = document.getElementById(promotionImagesListId);
+    addEventsToHtmlContent();
 
-    const imageListItemElements = [...imageList.querySelectorAll(`[name='${promotionImageListItemsName}']`)];
+    setExistingRelatedProductIdsFromCurrentData();
+}
 
-    for (const imageListItemElement of imageListItemElements) {
-
-        const imageElement = imageListItemElement.querySelector(`[name='${promotionImagesName}']`);
-        const imageDeleteButton = imageListItemElement.querySelector(`[name='${promotionImageDeleteButtonsName}']`);
-
-        const imageElementId = imageElement.id;
-
-        imageListItemElement.addEventListener('click', () => copyPromotionImageForHtml(imageElementId));
-        imageDeleteButton.addEventListener('click', removePromotionImageOnClick);
-    }
+function addEventsToHtmlContent() {
 
     const promotionHtml = document.getElementById(promotionHtmlId);
 
@@ -191,6 +183,29 @@ async function openPromotionEditorForPromotion(id = null)
             document.execCommand("insertLineBreak");
         }
     });
+}
+
+function resetImageData() {
+
+    clearAndFreeImagesToUpload();
+
+    const imageList = document.getElementById(promotionImagesListId);
+
+    const imageListItemElements = [...imageList.querySelectorAll(`[name='${promotionImageListItemsName}']`)];
+
+    for (const imageListItemElement of imageListItemElements) {
+
+        const imageElement = imageListItemElement.querySelector(`[name='${promotionImagesName}']`);
+        const imageDeleteButton = imageListItemElement.querySelector(`[name='${promotionImageDeleteButtonsName}']`);
+
+        const imageElementId = imageElement.id;
+
+        imageListItemElement.addEventListener('click', () => copyPromotionImageForHtml(imageElementId));
+        imageDeleteButton.addEventListener('click', removePromotionImageOnClick);
+    }
+}
+
+function setExistingRelatedProductIdsFromCurrentData() {
 
     existingRelatedProductIds = getExistingRelatedProductIds();
 }
@@ -799,6 +814,7 @@ function getPromotionUpdateRequestFromCurrentData(promotionId)
 }
 
 function replaceImageElementsWithTextualRepresentationsInHtmlContent(htmlContentEditor) {
+
     const htmlContentEditorClone = htmlContentEditor.cloneNode(true);
 
     const imageReferencesInHtmlContent = [...htmlContentEditorClone.querySelectorAll(`[name='${htmlContentImageSpanName}']`)];
@@ -1140,7 +1156,7 @@ function addEventListenersToSearchResults(relatedProductSearchResultsTableContai
         }
     });
 
-    relatedProductSearchResultsTable.addEventListener('mouseup', (e) => {
+    document.addEventListener('mouseup', (e) => {
 
         if (isHolding && e.button === 0) {
 
@@ -1665,8 +1681,8 @@ function getTextNodesInRootElement(rootElement) {
     return nodes;
 }
 
-function expandTextAreaToNeededHeight(textareaId)
-{
+function expandTextAreaToNeededHeight(textareaId) {
+
     const textarea = document.getElementById(textareaId);
 
     textarea.style.height = 'auto';

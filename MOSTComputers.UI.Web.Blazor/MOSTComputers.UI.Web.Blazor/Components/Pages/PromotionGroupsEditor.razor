@@ -20,7 +20,8 @@
 <HeadContent>
 	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-	<script src="@Assets[_pageScriptUrl]"></script>
+	<script type="module" src="@Assets[_pageScriptUrl]"></script>
+
 	<script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
     <script src="@Assets[_popupScriptUrl]"></script>
 </HeadContent>
@@ -45,19 +46,22 @@
 			<input id="groupPromotionOnlyActivePromotionsCheckbox" type="checkbox" class="group-promotion-only-active-promotions-checkbox" checked />
 		</div>
 
-		<button id="searchPromotionButton" class="group-promotion-search-button" onclick="searchGroupPromotions()">
+		@* <button id="searchPromotionButton" class="group-promotion-search-button" onclick="searchGroupPromotions()"> *@
+		<button id="searchPromotionButton" class="group-promotion-search-button">
 			<p class="group-promotion-search-button-text">
 				Search
 			</p>
 		</button>
 
-        <button id="addPromotionButton" class="group-promotion-add-button" onclick="openPromotionEditorForPromotion()">
+        @* <button id="addPromotionButton" class="group-promotion-add-button" onclick="openPromotionEditorForPromotion()"> *@
+        <button id="addPromotionButton" class="group-promotion-add-button">
 			<p class="group-promotion-add-button-text">
 				Add Promotion
 			</p>
 		</button>
 
-        <button id="addPromotionGroupButton" class="promotion-group-add-button" onclick="openPromotionGroupEditorPopup()">
+        @* <button id="addPromotionGroupButton" class="promotion-group-add-button" onclick="openPromotionGroupEditorPopup()"> *@
+        <button id="addPromotionGroupButton" class="promotion-group-add-button">
 			<p class="group-promotion-add-button-text">
 				Add Group
 			</p>
@@ -86,7 +90,9 @@
 
 	private const string _popupFullScreenButtonScriptUrl = "/js/Popup/PopupFullScreenButton.js";
 	private const string _popupScriptUrl = "/js/Popup/Popup.js";
-	internal const string _pageScriptUrl = "/js/Pages/PromotionGroups.js";
+
+	// internal const string _pageScriptUrl = "/js/Pages/PromotionGroups.js";
+	internal const string _pageScriptUrl = "/js/Pages/PromotionGroups/Page.js";
 
 	public List<PromotionGroup> PromotionGroupsInSelect = new();	
 

@@ -19,7 +19,8 @@
 			}
 		}
 
-		<li class="promotion-list-item" onclick="openPromotionEditorForPromotion(@promotion.Id)">
+		<li name="promotionListItem" class="promotion-list-item" data-promotion-id="@promotion.Id">
+			@* onclick="openPromotionEditorForPromotion(@promotion.Id)" *@
 
 			<div class="promotion-item-left">
 				<p>@promotion.Name</p>

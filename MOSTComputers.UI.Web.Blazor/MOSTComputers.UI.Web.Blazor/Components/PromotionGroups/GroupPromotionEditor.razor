@@ -29,7 +29,8 @@
 
 	<div class="promotion-edit-actions">
 
-		<button id="savePromotionButton" class="promotion-save-button" onclick="savePromotion()">
+		@* <button id="savePromotionButton" class="promotion-save-button" onclick="savePromotion()"> *@
+		<button id="savePromotionButton" class="promotion-save-button">
 
 			<p class="promotion-save-button-text">Save</p>
 
@@ -40,7 +41,8 @@
 		{
 			<button id="editPromotionGroupButton" type="button"
 				class="promotion-group-edit-button"
-				onclick="openPromotionGroupEditorPopup(@PromotionData.GroupId)">
+				data-current-promotion-group-id="@PromotionData.GroupId">
+		 		@* onclick="openPromotionGroupEditorPopup(@PromotionData.GroupId)"> *@
 				Edit Group@(promotionGroupName != null ? $" {promotionGroupName}" : string.Empty)
 			</button>
 		}
@@ -51,8 +53,8 @@
 		}
 
 		<button id="resetPromotionGroupEditorButton" type="button"
-			class="promotion-group-editor-reset-button"
-			onclick="openPromotionEditorForPromotion(@(PromotionData.Id != null ? PromotionData.Id.Value.ToString() : string.Empty))">
+			class="promotion-group-editor-reset-button">
+			@* onclick="openPromotionEditorForPromotion(@(PromotionData.Id != null ? PromotionData.Id.Value.ToString() : string.Empty))"> *@
 			Reset
 		</button>
 	</div>
@@ -165,8 +167,8 @@
 			<button id="promotionImagesAddFileButton"
 				type="button"
 				class="promotion-edit-file-select-button"
-				onclick="addNewImageToEditor()"
 				aria-label="Add File">
+				@* onclick="addNewImageToEditor()" *@
 				Add File
 			</button>
 
@@ -187,8 +189,8 @@
 
 			<div id="promotionHtml"
 				contenteditable="true"
-				class="promotion-edit-input promotion-edit-html-content"
-				oninput='expandTextAreaToNeededHeight("promotionHtml")'>
+				class="promotion-edit-input promotion-edit-html-content">
+				@* oninput='expandTextAreaToNeededHeight("promotionHtml")' *@
 				@PromotionData.HtmlContent
 			</div>
 
@@ -204,8 +206,8 @@
 
 				<button id="relatedProductsPopupOpenButton"
 					type="button"
-					class="promotion-edit-open-related-products-popup-button"
-					onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)">
+					class="promotion-edit-open-related-products-popup-button">
+					@* onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)" *@
 					Add Products
 				</button>
 			</div>
