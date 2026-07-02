@@ -36,7 +36,8 @@
     margin-left: auto;
 }
 
-.related-product-search-button {
+.related-product-search-button,
+.related-product-select-all-button {
     height: min-content;
     margin-left: 2rem;
     border: none;
@@ -51,6 +52,10 @@
     background: #25b822;
     color: #ffffff;
     cursor: pointer;
+}
+
+.related-product-select-all-button {
+    margin-left: 0.5rem;
 }
 
 .related-product-search-button.loading .related-product-search-button-text {

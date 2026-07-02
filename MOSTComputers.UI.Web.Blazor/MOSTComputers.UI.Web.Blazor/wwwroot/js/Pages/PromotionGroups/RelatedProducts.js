@@ -1,10 +1,15 @@
 ﻿import * as common from "./Common.js";
 import * as promotionEditorRelatedProducts from "./PromotionEditorRelatedProducts.js";
 
+const selectAllButtonId = "relatedProductsSelectAllButton";
+const relatedProductsSelectAllButtonTextId = "relatedProductsSelectAllButtonText";
+
 const relatedProductSearchResultInactiveClass = "related-product-search-result-inactive";
 const relatedProductSearchResultInSelectionClass = "related-product-search-result-in-selection";
 
 let existingRelatedProductIds = [];
+
+const addedRelatedProductSearchResultsInSelectAll = [];
 
 export function removeFromExistingProductIds(productId) {
 
@@ -52,6 +57,10 @@ export async function openAddRelatedProductsToPromotionPopup(initialGroupId = nu
     const relatedProductSearchButton = document.getElementById(common.relatedProductSearchButtonId);
 
     relatedProductSearchButton.addEventListener("click", searchRelatedProductsAndDisplayResults);
+
+    const selectAllButton = document.getElementById(selectAllButtonId);
+
+    selectAllButton.addEventListener("click", onSelectAllButtonClicked);
 
     const addRelatedProductsPopup = document.getElementById(common.relatedProductsPopupId);
 
@@ -173,7 +182,25 @@ function getExistingRelatedProductIds()
     return relatedProductIds;
 }
 
-export function addEventListenersToSearchResults(
+async function onSelectAllButtonClicked() {
+
+    const relatedProductsSelectAllButtonText = document.getElementById(relatedProductsSelectAllButtonTextId);
+
+    if (relatedProductsSelectAllButtonText.innerText === "Undo Changes") {
+
+        undoSelectAll();
+
+        relatedProductsSelectAllButtonText.innerText = "Select All";
+
+        return;
+    }
+
+    await selectAllCurrentSearchResults();
+
+    relatedProductsSelectAllButtonText.innerText = "Undo Changes";
+}
+
+function addEventListenersToSearchResults(
     relatedProductSearchResultsTableContainer,
     relatedProductSearchResultsTable,
     relatedProductSearchResultElements) {
@@ -353,9 +380,7 @@ async function toggleRelatedProductSelection(productId, relatedProductSearchResu
         {
             promotionEditorRelatedProducts.removeItem(relatedProductElement);
 
-            const removedIdIndex = existingRelatedProductIds.indexOf(productId);
-
-            existingRelatedProductIds.splice(removedIdIndex, 1);
+            removeFromExistingProductIds(productId);
 
             if (relatedProductSearchResultElement != null) {
 
@@ -441,6 +466,11 @@ async function updateRelatedProductsSelection(relatedProductSearchResultElements
         relatedProductElement.remove();
     }
    
+    await addRelatedProductsToPromotionEditor(promotionEditRelatedProductsTable, productSearchResultIdsInPromotion);
+}
+
+async function addRelatedProductsToPromotionEditor(promotionEditRelatedProductsTable, productIds) {
+
     const response = await fetch(`api/components/promotionGroups/relatedProduct`,
     {
         method: "POST",
@@ -448,7 +478,7 @@ async function updateRelatedProductsSelection(relatedProductSearchResultElements
             "Content-Type": "application/json",
             "Accept": "application/html"
         },
-        body: JSON.stringify(productSearchResultIdsInPromotion)
+        body: JSON.stringify(productIds)
     });
 
     if (!response.ok) return;
@@ -461,7 +491,16 @@ async function updateRelatedProductsSelection(relatedProductSearchResultElements
 
     promotionEditRelatedProductsTableBody.insertAdjacentHTML("beforeend", data);
 
-    let newRelatedProductElement = promotionEditRelatedProductsTableBodyLastChild.nextElementSibling;
+    let newRelatedProductElement;
+
+    if (promotionEditRelatedProductsTableBodyLastChild) {
+
+        newRelatedProductElement = promotionEditRelatedProductsTableBodyLastChild.nextElementSibling;
+    }
+    else {
+
+        newRelatedProductElement = promotionEditRelatedProductsTableBody.firstElementChild;
+    }
 
     while (newRelatedProductElement) {
 
@@ -473,9 +512,7 @@ async function updateRelatedProductsSelection(relatedProductSearchResultElements
 
 async function toggleRelatedProductSelectionWithoutChangingDataFromElement(elementToChangeSelection) {
 
-    const productIdAttribute = elementToChangeSelection.getAttribute(common.promotionRelatedSearchResultProductIdAttribute);
-
-    const searchResultProductId = common.getIntegerOrNullFromString(productIdAttribute);
+    const searchResultProductId = getSearchResultProductId(elementToChangeSelection);
 
     await toggleRelatedProductSelectionWithoutChangingData(searchResultProductId, elementToChangeSelection);
 }
@@ -486,17 +523,94 @@ async function toggleRelatedProductSelectionWithoutChangingData(productId, relat
 
         if (relatedProductId === productId)
         {
-            const indexOfProductId = existingRelatedProductIds.indexOf(productId);
-
-            existingRelatedProductIds.splice(indexOfProductId, 1);
-
-            relatedProductSearchResultElement.classList.remove(relatedProductSearchResultInactiveClass);
+            deselectSearchResult(relatedProductSearchResultElement, productId);
 
             return;
         }
     }
 
+    selectSearchResult(relatedProductSearchResultElement, productId);
+}
+
+function selectSearchResult(searchResult, productId) {
+
     existingRelatedProductIds.push(productId);
 
-    relatedProductSearchResultElement.classList.add(relatedProductSearchResultInactiveClass);
+    searchResult.classList.add(relatedProductSearchResultInactiveClass);
+}
+
+function deselectSearchResult(searchResult, productId) {
+
+    removeFromExistingProductIds(productId);
+
+    searchResult.classList.remove(relatedProductSearchResultInactiveClass);
+}
+
+async function selectAllCurrentSearchResults() {
+
+    const relatedProductSearchResultsTable = document.getElementById(common.relatedProductSearchResultsTableId);
+
+    if (!relatedProductSearchResultsTable) return;
+
+    const relatedProductSearchResultElements
+        = [...relatedProductSearchResultsTable.querySelectorAll(`[name='${common.relatedProductSearchResultName}']`)];
+
+    if (relatedProductSearchResultElements.length == 0) return;
+
+    const addedRelatedProductIds = [];
+
+    for (const searchResult of relatedProductSearchResultElements) {
+
+        const searchResultProductId = getSearchResultProductId(searchResult);
+
+        if (existingRelatedProductIds.includes(searchResultProductId)) continue;
+
+        selectSearchResult(searchResult, searchResultProductId);
+
+        addedRelatedProductIds.push(searchResultProductId);
+        addedRelatedProductSearchResultsInSelectAll.push(searchResult);
+    }
+
+    const promotionEditRelatedProductsTable = document.getElementById(common.promotionEditRelatedProductsTableId);
+
+    await addRelatedProductsToPromotionEditor(promotionEditRelatedProductsTable, addedRelatedProductIds);
+}
+
+function undoSelectAll() {
+
+    const promotionEditRelatedProductsTable = document.getElementById(common.promotionEditRelatedProductsTableId);
+
+    const relatedProductElements = promotionEditRelatedProductsTable.querySelectorAll("tr");
+
+    const relatedProductElementsToIdsMap = {};
+
+    for (const relatedProductElement of relatedProductElements) {
+
+        const relatedProductIdAsString = relatedProductElement.getAttribute(common.promotionRelatedProductIdAttribute);
+
+        const relatedProductId = common.getIntegerOrNullFromString(relatedProductIdAsString);
+
+        relatedProductElementsToIdsMap[relatedProductId] = relatedProductElement;
+    }
+
+    for (const searchResult of addedRelatedProductSearchResultsInSelectAll) {
+
+        const searchResultProductId = getSearchResultProductId(searchResult);
+
+        deselectSearchResult(searchResult, searchResultProductId);
+
+        const relatedProductElement = relatedProductElementsToIdsMap[searchResultProductId];
+
+        if (relatedProductElement) {
+
+            promotionEditorRelatedProducts.removeItem(relatedProductElement);
+        }
+    }
+}
+
+function getSearchResultProductId(searchResultElement) {
+
+    const productIdAttribute = searchResultElement.getAttribute(common.promotionRelatedSearchResultProductIdAttribute);
+
+    return common.getIntegerOrNullFromString(productIdAttribute);
 }
