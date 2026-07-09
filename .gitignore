@@ -376,3 +376,6 @@ ChromeHeadlessForPdfUserData/**/*
 
 # TEMP folder for product images for testing
 TestImages
+/.github/copilot-instructions.md
+/MOSTComputers.UI.Web.Blazor/MOSTComputers.UI.Web.Blazor/appsettings.json
+/MOSTComputers.UI.Web.Client/appsettings.json
