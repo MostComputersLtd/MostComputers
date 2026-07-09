@@ -83,7 +83,9 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		List<ManufacturerToPromotionGroupRelation> manufacturerToPromotionGroupRelations = await ManufacturerToPromotionGroupRelationService.GetAllAsync();
+		List<ManufacturerToPromotionGroupRelation> manufacturerToPromotionGroupRelations
+            = await ManufacturerToPromotionGroupRelationService.GetAllAsync();
+
 		List<Manufacturer> manufacturersInSelect = await ManufacturerService.GetAllAsync();
 
 		_manufacturersInSelect = manufacturersInSelect;
