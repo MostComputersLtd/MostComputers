@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\MOSTComputers.Services.ProductRegister\MOSTComputers.Services.ProductRegister.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.PromotionFileManagement\MOSTComputers.Services.PromotionFileManagement.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.SearchStringOrigin\MOSTComputers.Services.SearchStringOrigin.csproj" />
+    <ProjectReference Include="..\..\MOSTComputers.Services.Orders\MOSTComputers.Services.Orders.csproj" />
     <ProjectReference Include="..\MOSTComputers.UI.Web.Blazor.Client\MOSTComputers.UI.Web.Blazor.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
     <PackageReference Include="Serilog" Version="4.3.1" />

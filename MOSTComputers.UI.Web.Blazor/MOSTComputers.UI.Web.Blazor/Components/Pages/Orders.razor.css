@@ -1,0 +1,57 @@
+button:not(:focus-visible), .btn:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+p {
+    margin-bottom: 0px;
+}
+
+.orders-page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.search-bar {
+    margin-bottom: 0.5em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex-grow: 1;
+    max-width: 15rem;
+    margin-right: 0.5em;
+}
+
+.orders-page-menus-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    overflow-y: auto;
+}
+
+.search-results-container {
+    width: 35%;
+    border-right: 3px solid black;
+    overflow-y: auto;
+}
+    .search-results-container.loading {
+        height: 100%;
+        display: flex;
+        -ms-flex-direction: column;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+.order-view-container {
+    flex-grow: 1;
+    border-right: 3px solid black;
+    overflow-y: auto;
+}

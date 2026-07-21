@@ -1,0 +1,48 @@
+@using MOSTComputers.Models.Product.Models;
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+<table class="search-results-table">
+    <thead>
+        <th>Id</th>
+        <th>Date</th>
+        <th>Name</th>
+    </thead>
+
+    <tbody>
+
+        @foreach (OrderDisplayData order in Orders)
+        {
+            string orderDateString = order.OrderDate?.ToString("yyyy/MM/dd") ?? "-";
+
+            string orderNameString = string.IsNullOrEmpty(order.OrderName) ? "-" : order.OrderName;
+
+            string totalPriceString = $"{order.TotalPrice.ToString("F2")} {GetPriceSuffixStringFromCurrency(order.TotalPriceCurrency)}";
+
+            <tr>
+                <td class="search-result-id-and-date">
+                    <p class="search-result-id">@order.Id.ToString()</p>
+                    <p class="search-result-date">@orderDateString</p>
+                </td>
+
+                <td class="search-result-total-price-and-name">
+                    <p>@totalPriceString</p>
+                    <p>@orderNameString</p>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code{
+
+    public sealed class OrderDisplayData
+    {
+        public required int Id { get; init; }
+        public DateTime? OrderDate { get; init; }
+        public string? OrderName { get; init; }
+        public required decimal TotalPrice { get; init; }
+        public required Currency TotalPriceCurrency { get; init; }
+    }
+
+    [Parameter, EditorRequired] public required List<OrderDisplayData> Orders { get; init; }
+}

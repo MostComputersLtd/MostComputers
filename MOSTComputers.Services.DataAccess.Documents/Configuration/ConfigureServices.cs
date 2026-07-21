@@ -24,6 +24,8 @@ public static class ConfigureServices
         services.TryAddScoped<IWarrantyCardItemRepository, WarrantyCardItemRepository>();
         services.TryAddScoped<IWarrantyCardRepository, WarrantyCardRepository>();
 
+        services.TryAddScoped<IOrderRepository, OrderRepository>();
+
         services.TryAddScoped<IInvoiceDownloadStatusRepository, InvoiceDownloadStatusRepository>();
         services.TryAddScoped<IWarrantyCardDownloadStatusRepository, WarrantyCardDownloadStatusRepository>();
 
@@ -44,7 +46,10 @@ public static class ConfigureServices
             config.AddMap(new WarrantyCardItemDAOEntityMap());
             config.AddMap(new WarrantyCardDAOEntityMap());
             config.AddMap(new WarrantyCardCustomerDataEntityMap());
-            
+
+            config.AddMap(new OrderEntityMap());
+            config.AddMap(new OrderItemEntityMap());
+
             config.AddMap(new FirmDataEntityMap());
         });
     }

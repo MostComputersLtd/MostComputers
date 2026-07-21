@@ -7,6 +7,9 @@ internal static class TableAndColumnNameUtils
     internal const string WarrantyCardsTableName = "[dbo].[ExportedWarrantyCards]";
     internal const string WarrantyCardItemsTableName = "[dbo].[ExportedWarrantyCardItems]";
 
+    internal const string OrdersTableName = "[dbo].[InternetOrders]";
+    internal const string OrderItemsTableName = "[dbo].[InternetOrderItems]";
+
     internal const string InvoiceDownloadStatusesTableName = "[dbo].[ImportedInvoiceStatuses]";
     internal const string WarrantyCardDownloadStatusesTableName = "[dbo].[ImportedWCStatuses]";
 
@@ -103,6 +106,50 @@ internal static class TableAndColumnNameUtils
         internal const string WarrantyCardItemTermInMonthsAlias = "WarrantyCardItemWCTerm";
 
         internal const string DisplayOrderColumn = "S";
+    }
+
+    internal static class OrdersTable
+    {
+        internal const string IdColumn = "InternetOrderID";
+        internal const string StatusColumn = "Status";
+        internal const string AutoReplyColumn = "AutoReply";
+        internal const string QuoteIdColumn = "QuoteID";
+        internal const string UserIdColumn = "UserID";
+        internal const string OrderDateColumn = "OrderDate";
+        internal const string OrderNameColumn = "OrderName";
+        internal const string ReadTimeColumn = "ReadTime";
+        internal const string ReadUserIdColumn = "ReadUserID";
+        internal const string BIDColumn = "BID";
+        internal const string DealIdColumn = "DealID";
+        internal const string MOST3DealIdColumn = "MOST3DealID";
+        internal const string IsConfigurationColumn = "IsConfiguration";
+        internal const string CfgProfitColumn = "CfgProfit";
+        internal const string CurrencyColumn = "Currency";
+        internal const string OriginalInternetOrderIdColumn = "OriginalInternetOrderID";
+        internal const string RepliedInternetOrderIdColumn = "RepliedInternetOrderID";
+        internal const string InfoColumn = "Info";
+    }
+
+    internal static class OrderItemsTable
+    {
+        internal const string IdColumn = "InternetOrderItemID";
+        internal const string OrderIdColumn = "InternetOrderID";
+        internal const string OrderIdColumnAlias = "ParentInternetOrderID";
+        internal const string ProductIdColumn = "CSTID";
+        internal const string QuantityColumn = "Qty";
+        internal const string PriceColumn = "Price";
+        internal const string AdditionalWarrantyColumn = "AddWrr";
+        internal const string FDDCColumn = "FDDC";
+        internal const string PriceGroupColumn = "PriceGroup";
+        internal const string ProfitPercentColumn = "ProfitPercent";
+        internal const string PromotionPIDColumn = "PromPID";
+        internal const string PromotionRIDColumn = "PromRID";
+        internal const string PromotionPAmountColumn = "PromPAmount";
+        internal const string PromotionRAmountColumn = "PromRAmount";
+        internal const string STInfoColumn = "STInfo";
+        internal const string STInfoWColumn = "STInfoW";
+        internal const string ExternalInfoColumn = "InfoExternal";
+        internal const string InternalInfoColumn = "InfoInternal";
     }
 
     internal static class CustomerDataView

@@ -1,0 +1,38 @@
+@page "/documents"
+@rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Admin,Employee,CustomerOrderViewer")]
+
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Orders - MOST Computers</PageTitle>
+
+<HeadContent>
+	<meta name="description"
+        content="Преглед и експорт на ордери за нашите клиенти" />
+
+    <meta name="robots" content="NOINDEX,NOFOLLOW">
+
+	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+</HeadContent>
+
+<div class="orders-page">
+    <header class="search-bar">
+        <input id="ordersSearchInput" type="text" class="search-input"/>
+
+        <button id="ordersSearchButton" type="button" class="search-button">
+            Search
+        </button>
+    </header>
+
+    <div class="orders-page-menus-container">
+        <div id="searchResultsContainer" class="search-results-container">
+        </div>
+
+        <div id="orderViewContainer" class="order-view-container">
+        </div>
+    </div>
+</div>
+
+@code{
+}
