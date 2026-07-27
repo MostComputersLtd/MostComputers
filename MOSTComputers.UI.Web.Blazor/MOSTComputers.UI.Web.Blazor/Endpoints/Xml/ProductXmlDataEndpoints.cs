@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.XmlDownloads;

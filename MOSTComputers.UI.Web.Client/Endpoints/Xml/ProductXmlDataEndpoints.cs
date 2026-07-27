@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.DataToXmlConversion.Models;
 using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.ProductRegister.Services.Products;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.UI.Web.Client.Endpoints.Html;
 using MOSTComputers.UI.Web.Client.Endpoints.Images;

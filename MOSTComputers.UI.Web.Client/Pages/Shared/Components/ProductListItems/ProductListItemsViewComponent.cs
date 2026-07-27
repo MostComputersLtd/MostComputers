@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Promotions;
-using MOSTComputers.Services.Currencies;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.Currencies.Models;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contracts;

@@ -1,4 +1,5 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts;

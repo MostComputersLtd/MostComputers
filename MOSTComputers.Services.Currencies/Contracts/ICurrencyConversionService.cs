@@ -1,4 +1,4 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
 using MOSTComputers.Services.Currencies.Models;
 using OneOf;
 using OneOf.Types;

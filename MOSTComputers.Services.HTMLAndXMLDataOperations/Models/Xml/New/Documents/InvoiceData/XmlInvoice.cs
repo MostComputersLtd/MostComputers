@@ -1,5 +1,4 @@
-﻿using MOSTComputers.Models.Product.MappingUtils;
-using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using System.Xml;
 

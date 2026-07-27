@@ -1,12 +1,7 @@
 ﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
-@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
-@using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.Extensions.Primitives
-@using System.Text
 @using static MOSTComputers.Utils.Files.FilePathUtils
-
 
 @inject IPromotionGroupService PromotionGroupService
 @inject IGroupPromotionService GroupPromotionService
@@ -167,7 +162,8 @@
                 string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
                     groupPromotionContent.HtmlContent,
                     imageFilesForPromotion,
-					promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+					promotionImageFile =>
+                        CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
                 );
 
                 if (imageFilesForPromotion == null) continue;
@@ -194,7 +190,8 @@
 			string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
 				defaultGroupPromotion.HtmlContent,
 				imageFilesForPromotion,
-				promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+				promotionImageFile =>
+                    CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
 			);
 
             GroupPromotionWithImageFileData promotionData = new()

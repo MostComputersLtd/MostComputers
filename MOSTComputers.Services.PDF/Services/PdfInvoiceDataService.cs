@@ -1,11 +1,9 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.PDF.Models.Invoices;
 using MOSTComputers.Services.PDF.Services.Contracts;
-using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using static MOSTComputers.Services.PDF.Utils.CurrencyToWordsConversionUtils;
 
 namespace MOSTComputers.Services.PDF.Services;
 internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService

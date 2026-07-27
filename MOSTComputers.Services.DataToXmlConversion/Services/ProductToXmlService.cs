@@ -1,4 +1,5 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;

@@ -1,4 +1,4 @@
-﻿namespace MOSTComputers.Models.Product.Models;
+namespace MOSTComputers.Models.Common;
 
 public enum Currency
 {

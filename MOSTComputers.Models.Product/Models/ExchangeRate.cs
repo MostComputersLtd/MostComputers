@@ -1,4 +1,6 @@
-﻿namespace MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
+
+namespace MOSTComputers.Models.Product.Models;
 public sealed class ExchangeRate
 {
     public Currency CurrencyFrom { get; init; }

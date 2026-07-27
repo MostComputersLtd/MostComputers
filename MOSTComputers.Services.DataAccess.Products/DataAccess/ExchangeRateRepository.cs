@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.DataAccess.Common;
 using MOSTComputers.Services.DataAccess.Products.Configuration;

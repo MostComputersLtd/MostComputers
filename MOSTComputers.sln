@@ -49,6 +49,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Services.Data
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Services.Orders", "MOSTComputers.Services.Orders\MOSTComputers.Services.Orders.csproj", "{0A3BB3E1-807A-4CB7-852A-56C0033FCA95}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Models.Common", "MOSTComputers.Models.Common\MOSTComputers.Models.Common.csproj", "{69EC2245-6F2A-4151-B727-1AFEF5C382F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -323,6 +325,18 @@ Global
 		{0A3BB3E1-807A-4CB7-852A-56C0033FCA95}.Release|x64.Build.0 = Release|Any CPU
 		{0A3BB3E1-807A-4CB7-852A-56C0033FCA95}.Release|x86.ActiveCfg = Release|Any CPU
 		{0A3BB3E1-807A-4CB7-852A-56C0033FCA95}.Release|x86.Build.0 = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|x64.Build.0 = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Debug|x86.Build.0 = Debug|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x64.ActiveCfg = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x64.Build.0 = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x86.ActiveCfg = Release|Any CPU
+		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

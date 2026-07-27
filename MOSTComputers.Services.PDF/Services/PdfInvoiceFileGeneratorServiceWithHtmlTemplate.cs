@@ -1,7 +1,7 @@
 ﻿using HtmlAgilityPack;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
-using MOSTComputers.Models.Product.Models;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.PDF.Models.Invoices;
 using MOSTComputers.Services.PDF.Services.Contracts;

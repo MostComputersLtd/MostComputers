@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.Common\MOSTComputers.Models.Common.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Common\MOSTComputers.Services.DataAccess.Common.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,5 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
+using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Contracts;
 public interface IExchangeRateService

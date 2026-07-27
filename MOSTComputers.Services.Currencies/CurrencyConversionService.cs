@@ -1,4 +1,5 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.Currencies.Models;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;

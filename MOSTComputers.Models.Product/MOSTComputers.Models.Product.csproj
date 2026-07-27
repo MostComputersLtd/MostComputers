@@ -10,4 +10,8 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.Common\MOSTComputers.Models.Common.csproj" />
+  </ItemGroup>
+
 </Project>

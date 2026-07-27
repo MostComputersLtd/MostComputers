@@ -1,3 +1,4 @@
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 

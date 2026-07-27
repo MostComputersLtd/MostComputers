@@ -1,3 +1,4 @@
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 
 namespace MOSTComputers.UI.Web.Client.Pages.Shared.Components.ProductListItems;

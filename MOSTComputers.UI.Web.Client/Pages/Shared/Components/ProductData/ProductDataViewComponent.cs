@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Promotions;
@@ -6,7 +7,6 @@ using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.Currencies.Contracts;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
-using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;

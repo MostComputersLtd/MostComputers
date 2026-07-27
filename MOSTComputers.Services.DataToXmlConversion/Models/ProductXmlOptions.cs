@@ -1,4 +1,4 @@
-﻿using MOSTComputers.Models.Product.Models;
+﻿using MOSTComputers.Models.Common;
 
 namespace MOSTComputers.Services.DataToXmlConversion.Models;
 
