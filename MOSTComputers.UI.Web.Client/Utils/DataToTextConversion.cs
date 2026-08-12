@@ -48,52 +48,49 @@ internal static class DataToTextConversion
     {
         const ulong scaleChangingValue = 1024;
 
-        ulong currentlyReadBytes = 0;
-
-        Span<ulong> scaleSizes = stackalloc ulong[_byteScalesDisplayValues.Length];
-
-        ulong scaleDivider = scaleChangingValue;
-
-        int dataInsertIndex;
-
-        for (dataInsertIndex = 0; dataInsertIndex < _byteScalesDisplayValues.Length; dataInsertIndex++)
+        if (byteSize == 0)
         {
-            ulong currentValue = (byteSize - currentlyReadBytes) % scaleDivider;
-
-            if (currentValue == 0) break;
-
-            currentlyReadBytes += currentValue;
-
-            scaleDivider *= scaleChangingValue;
-
-            scaleSizes[dataInsertIndex] = currentValue;
+            return "0 B";
         }
 
-        int accuracy = (int)byteSizeStringAccuracy.GetAccuracy((uint)dataInsertIndex);
+        int maxScaleIndex = 0;
 
-        int endPrintingIndex = dataInsertIndex - accuracy;
+        ulong tempSize = byteSize;
+
+        while (tempSize >= scaleChangingValue && maxScaleIndex < _byteScalesDisplayValues.Length - 1)
+        {
+            tempSize /= scaleChangingValue;
+
+            maxScaleIndex++;
+        }
+
+        int accuracy = (int)byteSizeStringAccuracy.GetAccuracy((uint)(maxScaleIndex + 1));
+
+        int minScaleIndex = Math.Max(0, maxScaleIndex - accuracy + 1);
 
         StringBuilder stringBuilder = new();
 
-        ulong scaleValueDividerForPrinting = 1;
+        ulong remainingBytes = byteSize;
 
-        for (int i = 0; i < dataInsertIndex - 1; i++)
+        for (int i = maxScaleIndex; i >= minScaleIndex; i--)
         {
-            scaleValueDividerForPrinting *= scaleChangingValue;
-        }
+            ulong unitSize = 1;
 
-        for (int dataPrintingIndex = dataInsertIndex - 1; dataPrintingIndex >= endPrintingIndex; dataPrintingIndex--)
-        {
-            ulong valueForPrinting = scaleSizes[dataPrintingIndex] / scaleValueDividerForPrinting;
+            for (int j = 0; j < i; j++)
+            {
+                unitSize *= scaleChangingValue;
+            }
 
-            stringBuilder.Append($"{valueForPrinting} {_byteScalesDisplayValues[dataPrintingIndex]}");
+            ulong valueForPrinting = remainingBytes / unitSize;
 
-            scaleValueDividerForPrinting /= scaleChangingValue;
+            remainingBytes %= unitSize;
 
-            if (dataPrintingIndex != endPrintingIndex)
+            if (stringBuilder.Length > 0)
             {
                 stringBuilder.Append(' ');
             }
+
+            stringBuilder.Append($"{valueForPrinting} {_byteScalesDisplayValues[i]}");
         }
 
         return stringBuilder.ToString();
