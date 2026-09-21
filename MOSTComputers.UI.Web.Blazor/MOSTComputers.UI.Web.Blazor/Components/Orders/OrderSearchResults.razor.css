@@ -17,6 +17,11 @@
         border: none;
     }
 
+    .search-results-table tr th:last-child,
+    .search-results-table tr td:last-child {
+        padding-right: 0.5rem;
+    }
+
     .search-results-table.loading
     {
         display: none;
@@ -42,14 +47,36 @@
     border-top: 1px darkgray solid !important
 }
 
+.search-result-item p {
+    margin-bottom: 0px;
+}
+
     .search-result-item > td {
         padding-bottom: 0.20em;
     }
 
     .search-result-item:hover {
-        background-color: lightgray;
+        background-color: #E7E7E7;
     }
     
     .search-result-item.search-result-item-selected {
-        background-color: gray;
+        background-color: #D5D5D5;
     }
+
+.search-result-id-and-name {
+    text-align: left;
+    white-space: normal;
+}
+
+.search-result-id {
+    padding-bottom: 0.35rem;
+}
+
+.search-result-date-and-status {
+    text-align: right;
+    white-space: normal;
+}
+
+.search-result-date {
+    padding-bottom: 0.35rem;
+}

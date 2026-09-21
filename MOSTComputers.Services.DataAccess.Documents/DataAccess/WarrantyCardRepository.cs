@@ -1,4 +1,7 @@
-﻿using Dapper;
+﻿using System.Data;
+using System.Text;
+using System.Transactions;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Services.DataAccess.Common;
@@ -6,11 +9,7 @@ using MOSTComputers.Services.DataAccess.Documents.Configuration;
 using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.DataAccess.Documents.Models.DAO;
-using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Invoice;
 using MOSTComputers.Services.DataAccess.Documents.Models.Requests.WarrantyCard;
-using System.Data;
-using System.Text;
-using System.Transactions;
 using static MOSTComputers.Services.DataAccess.Documents.Mapping.ResponseMapper;
 using static MOSTComputers.Services.DataAccess.Documents.Utils.SqlGenerateUtils;
 using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNameUtils;
@@ -226,7 +225,7 @@ internal sealed class WarrantyCardRepository : IWarrantyCardRepository
 
     public async Task<List<WarrantyCard>> GetWarrantyCardByOrderIdsAsync(List<int> warrantyCardOrderIds)
     {
-        string query = SelectLastVersionOfWarrantyCards("WHERE warrantyCards.{OrderIdColumn} IN @warrantyCardOrderIds");
+        string query = SelectLastVersionOfWarrantyCards($"WHERE warrantyCards.{OrderIdColumn} IN @warrantyCardOrderIds");
 
         var parameters = new
         {

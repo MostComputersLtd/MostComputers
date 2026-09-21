@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Models.Common\MOSTComputers.Models.Common.csproj" />
     <ProjectReference Include="..\MOSTComputers.Models.Product\MOSTComputers.Models.Product.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Caching\MOSTComputers.Services.Caching.csproj" />
     <ProjectReference Include="..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />

@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Services.Orde
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Models.Common", "MOSTComputers.Models.Common\MOSTComputers.Models.Common.csproj", "{69EC2245-6F2A-4151-B727-1AFEF5C382F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MOSTComputers.Services.Authentication", "MOSTComputers.Services.Authentication\MOSTComputers.Services.Authentication.csproj", "{7F67C012-E354-47E1-A820-5FA3E3FB53F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -337,6 +339,18 @@ Global
 		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x64.Build.0 = Release|Any CPU
 		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x86.ActiveCfg = Release|Any CPU
 		{69EC2245-6F2A-4151-B727-1AFEF5C382F9}.Release|x86.Build.0 = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|x64.Build.0 = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Debug|x86.Build.0 = Debug|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|x64.ActiveCfg = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|x64.Build.0 = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|x86.ActiveCfg = Release|Any CPU
+		{7F67C012-E354-47E1-A820-5FA3E3FB53F7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

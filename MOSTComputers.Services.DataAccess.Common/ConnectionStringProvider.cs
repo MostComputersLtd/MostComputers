@@ -1,4 +1,5 @@
 ﻿namespace MOSTComputers.Services.DataAccess.Common;
+
 public class ConnectionStringProvider : IConnectionStringProvider
 {
     public ConnectionStringProvider(string connectionString)

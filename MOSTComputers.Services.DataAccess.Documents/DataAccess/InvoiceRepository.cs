@@ -8,7 +8,6 @@ using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.DataAccess.Documents.Models.DAO;
 using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Invoice;
 using System.Data;
-using System.Data.Common;
 using System.Text;
 using System.Transactions;
 
@@ -18,16 +17,16 @@ using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNam
 using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNameUtils.InvoicesTable;
 
 namespace MOSTComputers.Services.DataAccess.Documents.DataAccess;
-internal class InvoiceRepository : IInvoiceRepository
+internal sealed class InvoiceRepository : IInvoiceRepository
 {
     public InvoiceRepository([FromKeyedServices(ConfigureServices.DocumentsDataAccessServiceKey)] IConnectionStringProvider connectionStringProvider)
     {
         _connectionStringProvider = connectionStringProvider;
     }
 
-    const string _selectWithItemsQueryBase =
+    const string _selectWithItemsQueryBody =
         $"""
-        SELECT invoices.{ExportIdColumn},
+        invoices.{ExportIdColumn},
             {ExportDateColumn},
             {ExportUserIDColumn},
             {ExportUserColumn},
@@ -88,7 +87,7 @@ internal class InvoiceRepository : IInvoiceRepository
 
         string query =
             $"""
-            {_selectWithItemsQueryBase}
+            SELECT {_selectWithItemsQueryBody}
             {whereClause}
             """;
 
@@ -244,7 +243,7 @@ internal class InvoiceRepository : IInvoiceRepository
 
         string query =
             $"""
-            {_selectWithItemsQueryBase}
+            SELECT {_selectWithItemsQueryBody}
             WHERE invoices.{InvoiceIdColumn} IN @invoiceIds;
             """;
 
@@ -294,7 +293,7 @@ internal class InvoiceRepository : IInvoiceRepository
     {
         string query =
             $"""
-            {_selectWithItemsQueryBase}
+            SELECT TOP 1 {_selectWithItemsQueryBody}
             WHERE invoices.{InvoiceIdColumn} = @invoiceId;
             """;
 
@@ -340,13 +339,14 @@ internal class InvoiceRepository : IInvoiceRepository
     {
         const string query =
             $"""
-            {_selectWithItemsQueryBase}
-            WHERE invoices.{InvoiceNumberColumn} = @invoiceNumber;
+            SELECT TOP 1 {_selectWithItemsQueryBody}
+            WHERE invoices.{InvoiceNumberColumn} IN (@cInvoiceNumber, @hInvoiceNumber);
             """;
 
         var parameters = new
         {
-            invoiceNumber = invoiceNumber,
+            cInvoiceNumber = 'C' + invoiceNumber,
+            hInvoiceNumber = 'H' + invoiceNumber,
         };
 
         InvoiceDAO? output = null;

@@ -11,7 +11,7 @@ internal static class TableAndColumnNameUtils
     internal const string OrderItemsTableName = "[dbo].[InternetOrderItems]";
 
     internal const string InvoiceDownloadStatusesTableName = "[dbo].[ImportedInvoiceStatuses]";
-    internal const string WarrantyCardDownloadStatusesTableName = "[dbo].[ImportedWCStatuses]";
+    internal const string WarrantyCardDownloadStatusesTableName = "[dbo].[ImportedWCStatuses]"; 
 
     internal const string CustomerDataViewName = "[dbo].[ViewCustomersID]";
 
@@ -193,5 +193,5 @@ internal static class TableAndColumnNameUtils
         internal const string ImportedStatusColumn = "ImportedStatus";
         internal const string DateColumn = "ImportedStatusDate";
         internal const string UserNameColumn = "ImportedStatusUser";
-    }
+    } 
 }

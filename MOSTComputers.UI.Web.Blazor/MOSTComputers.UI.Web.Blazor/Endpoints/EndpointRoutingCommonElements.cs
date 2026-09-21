@@ -3,4 +3,5 @@
 internal static class EndpointRoutingCommonElements
 {
     internal const string ApiEndpointPathPrefix = "api/";
+    internal const string ApiEndpointPathPrefixAsRequestUrlStart = "/api";
 }

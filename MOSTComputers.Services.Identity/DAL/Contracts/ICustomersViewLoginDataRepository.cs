@@ -3,6 +3,8 @@
 namespace MOSTComputers.Services.Identity.DAL.Contracts;
 public interface ICustomersViewLoginDataRepository
 {
+
+    Task<List<CustomerData>> GetByIdsAsync(IEnumerable<int> ids);
     Task<CustomerData?> GetByIdAsync(int id);
     Task<CustomerData?> GetByUsernameAsync(string username);
     Task<CustomerLoginData?> GetLoginDataByIdAsync(int id);

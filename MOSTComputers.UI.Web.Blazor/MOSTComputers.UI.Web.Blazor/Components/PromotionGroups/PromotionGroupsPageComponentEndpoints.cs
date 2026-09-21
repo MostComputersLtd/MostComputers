@@ -1,4 +1,6 @@
-﻿using FluentValidation.Results;
+﻿using System.Diagnostics;
+using System.Text;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.FileManagement.Models;
@@ -15,9 +17,6 @@ using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using OneOf;
 using OneOf.Types;
-using System.Diagnostics;
-using System.Text;
-using System.Threading.Tasks;
 using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditor;
 using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditorImage;
 using static MOSTComputers.Utils.Files.FilePathUtils;
@@ -129,7 +128,8 @@ public static class PromotionGroupsPageComponentEndpoints
     public static IEndpointConventionBuilder MapPromotionGroupPageComponentEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute)
-            .RequireAuthorization(x => x.RequireRole("PromotionEditor"));
+            .RequireAuthorization(x => x.RequireRole("PromotionEditor"))
+            .DisableCookieRedirect();
 
         endpointGroup.MapGet("/editor/new", GetGroupPromotionEditorForNewItemAsync);
         endpointGroup.MapGet("/editor/{id:int?}", GetGroupPromotionEditorForExistingItemAsync);

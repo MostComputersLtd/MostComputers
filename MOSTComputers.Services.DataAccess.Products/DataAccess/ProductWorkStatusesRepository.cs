@@ -361,7 +361,6 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
             await transaction.CommitAsync();
         }
         catch
-                
         {
             await transaction.RollbackAsync();
 

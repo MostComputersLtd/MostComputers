@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MOSTComputers.Services.DataAccess.Common\MOSTComputers.Services.DataAccess.Common.csproj" />
+    <ProjectReference Include="..\MOSTComputers.Services.Identity\MOSTComputers.Services.Identity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.86" />
+    <PackageReference Include="Dapper.FluentMap" Version="3.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.3.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.13" />
+  </ItemGroup>
+
+</Project>

@@ -298,7 +298,6 @@ public static class ProductXmlDataEndpoints
         string? username = claimsPrincipal.FindFirst(ClaimTypes.Name)?.Value;
         string? contactPerson = claimsPrincipal.FindFirst("ContactPerson")?.Value;
 
-
         XmlDownloadData xmlDownloadData = new()
         {
             TimeStamp = DateTime.Now,

@@ -1,0 +1,109 @@
+.order-display {
+    width: 100%;
+    padding: 0px 0.75rem 0.75rem 0.75rem;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+}
+
+.order-name-container {
+    display: flex;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+.order-name {
+    font-weight: bold;
+}
+
+.main-order-information {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+}
+
+.order-information {
+    display: list-item;
+}
+
+.order-information-property {
+    padding: 0px 1rem;
+    margin: 0px;
+    text-indent: -1rem;
+}
+
+.order-information-property-name {
+    font-weight: bold;
+}
+
+.order-info-container {
+    margin-top: 0.5rem;
+}
+
+.order-info-text {
+    font-weight: bold;
+}
+
+.order-info-textarea {
+    width: 100%;
+    resize: none;
+}
+
+.order-items-container {
+    margin: 0.5rem 0px 0px 0px;
+}
+
+.order-items-table {
+    width: 100%;
+    margin: 0.5rem 0px 0px 0px;
+    border-collapse: collapse;
+    border: 1px solid #000000;
+}
+
+.order-items-table-header {
+    padding: 0.1rem;
+    white-space: nowrap;
+    border-bottom: 1px solid #000000;
+    font-weight: bold;
+}
+
+.order-items-table-header.item-number {
+    padding: 0.15rem;
+    border-right: 1px solid #000000;
+}
+
+.order-items-table-header.promotion {
+    padding-right: 0.5rem;
+}
+
+.order-item-table-cell {
+    padding: 0.1rem;
+    white-space: normal;
+    border-bottom: 1px solid #000000;
+}
+
+.order-item-table-cell.item-number {
+    padding: 0.15rem;
+    border-right: 1px solid #000000;
+}
+
+.order-item-table-cell.promotion {
+    padding-right: 0.5rem;
+}
+
+.order-items-table-header.text-centered,
+.order-item-table-cell.text-centered {
+    text-align: center;
+}
+
+.order-items-table-header.text-right,
+.order-item-table-cell.text-right {
+    text-align: right;
+}
+
+.order-item-table-cell p {
+    margin-bottom: 0px;
+    vertical-align: middle;
+}
+

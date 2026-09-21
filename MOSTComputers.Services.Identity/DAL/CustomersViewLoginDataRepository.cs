@@ -23,9 +23,92 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
 
     private readonly string _connectionString;
 
+    private const int _maxParametersPerInstruction = 2000;
+
     public CustomersViewLoginDataRepository(string connectionString)
     {
         _connectionString = connectionString;
+    }
+
+    public async Task<List<CustomerData>> GetByIdsAsync(IEnumerable<int> ids)
+    {
+        const string query =
+            $"""
+            SELECT {CustomerDataView.IdColumn},
+                {CustomerDataView.NameColumn},
+                {CustomerDataView.ContactPersonNameColumn},
+                {CustomerDataView.CountryColumn},
+                {CustomerDataView.AddressColumn},
+                {CustomerDataView.EmployeeIdColumn},
+                {CustomerDataView.LoginNameColumn}
+            FROM {CustomerDataView.Name} WITH (NOLOCK)
+            """; 
+
+        List<CustomerData> output = new();
+
+        foreach (int[] idsBatch in ids.Chunk(_maxParametersPerInstruction))
+        {
+            using SqlCommand sqlCommand = new()
+            {
+                CommandType = CommandType.Text
+            };
+
+            List<string> parameterNamesInSql = new();
+
+            for (int i = 0; i < idsBatch.Length; i++)
+            {
+                int id = idsBatch[i];
+
+                string parameterName = $"id{i}";
+
+                string parameterNameInSql = "@" + parameterName;
+
+                SqlParameter idParameter = new()
+                {
+                    ParameterName = parameterName,
+                    SqlDbType = SqlDbType.Int,
+                    Value = id,
+                };
+
+                sqlCommand.Parameters.Add(idParameter);
+
+                parameterNamesInSql.Add(parameterNameInSql);
+            }
+
+            string currentIdsInClauseSelection = string.Join(", ", parameterNamesInSql);
+
+            sqlCommand.CommandText =
+                $"""
+                {query}
+                WHERE {CustomerDataView.IdColumn} IN ({currentIdsInClauseSelection});
+                """;
+
+            using SqlConnection sqlConnection = new(_connectionString);
+
+            await sqlConnection.OpenAsync();
+
+            sqlCommand.Connection = sqlConnection;
+
+            using SqlDataReader resultReader = await sqlCommand.ExecuteReaderAsync(CommandBehavior.SingleResult);
+
+            while(await resultReader.ReadAsync())
+            {
+                CustomerData customerData = new()
+                {
+                    Id = resultReader.GetInt32(0),
+                    Name = GetFieldValueOrDefault<string?>(resultReader, 1),
+                    ContactPersonName = GetFieldValueOrDefault<string?>(resultReader, 2),
+                    Country = GetFieldValueOrDefault<string?>(resultReader, 3),
+                    Address = GetFieldValueOrDefault<string?>(resultReader, 4),
+                    EmployeeId = GetFieldValueOrDefault<int?>(resultReader, 5),
+                    Username = GetFieldValueOrDefault<string?>(resultReader, 6)
+                };
+
+                output.Add(customerData);
+            }
+        }
+
+        return output;
     }
 
     public async Task<CustomerData?> GetByIdAsync(int id)
@@ -108,7 +191,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         SqlParameter usernameParameter = new()
         {
             ParameterName = "@username",
-            SqlDbType = SqlDbType.VarChar,
+            SqlDbType = SqlDbType.NVarChar,
             Value = username,
         };
 
@@ -204,7 +287,7 @@ internal sealed class CustomersViewLoginDataRepository : ICustomersViewLoginData
         SqlParameter usernameParameter = new()
         {
             ParameterName = "@username",
-            SqlDbType = SqlDbType.VarChar,
+            SqlDbType = SqlDbType.NVarChar,
             Value = username,
         };
 

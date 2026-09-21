@@ -1,7 +1,12 @@
+using System.Collections.ObjectModel;
+using System.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
+using MOSTComputers.Services.Authentication;
+using MOSTComputers.Services.Authentication.Configuration;
 using MOSTComputers.Services.Caching.Configuration;
 using MOSTComputers.Services.Currencies;
 using MOSTComputers.Services.Currencies.Contracts;
@@ -10,6 +15,7 @@ using MOSTComputers.Services.DataAccess.Products.Configuration;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Configuration;
 using MOSTComputers.Services.Identity.Confuguration;
 using MOSTComputers.Services.Identity.Models;
+using MOSTComputers.Services.Orders.Configuration;
 using MOSTComputers.Services.PDF.Configuration;
 using MOSTComputers.Services.ProductImageFileManagement.Configuration;
 using MOSTComputers.Services.ProductRegister.Configuration;
@@ -19,30 +25,32 @@ using MOSTComputers.Services.PromotionFileManagement.Configuration;
 using MOSTComputers.Services.SearchStringOrigin.Configuration;
 using MOSTComputers.Services.TransactionalFileManagement.Services;
 using MOSTComputers.Services.TransactionalFileManagement.Services.Contracts;
+using MOSTComputers.UI.Web.Blazor.Authentication;
 using MOSTComputers.UI.Web.Blazor.Components;
 using MOSTComputers.UI.Web.Blazor.Components._Tests;
 using MOSTComputers.UI.Web.Blazor.Components.Account;
+using MOSTComputers.UI.Web.Blazor.Components.Home;
+using MOSTComputers.UI.Web.Blazor.Components.Orders;
+using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Authentication;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Documents;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Html;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Xml;
-using MOSTComputers.UI.Web.Blazor.Endpoints.Html;
 using MOSTComputers.UI.Web.Blazor.Logging;
 using MOSTComputers.UI.Web.Blazor.Models.Configuration;
 using MOSTComputers.UI.Web.Blazor.Services;
 using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport;
 using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts;
+using MOSTComputers.UI.Web.Blazor.Services.Localization;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
-using System.Collections.ObjectModel;
-using System.Data;
 using ZiggyCreatures.Caching.Fusion;
-using MOSTComputers.UI.Web.Blazor.Components.Home;
-using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
-using MOSTComputers.UI.Web.Blazor.Services.Localization;
+using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -129,6 +137,8 @@ if (!Path.IsPathFullyQualified(productXslTemplateFilePath!))
     productXslTemplateFilePath = Path.Combine(currentDirectory, productXslTemplateFilePath!);
 }
 
+builder.Services.AddOrderServices();
+
 builder.Services.AddScoped<ICurrencyVATPercentageProvider, CurrencyVATPercentageProvider>();
 builder.Services.AddScoped<ICurrencyVATService, CurrencyVATService>();
 builder.Services.AddScoped<ICurrencyConversionService, CurrencyConversionService>();
@@ -139,6 +149,7 @@ builder.Services.AddNewProductXmlServices();
 builder.Services.AddGroupPromotionXmlServices();
 builder.Services.AddInvoiceXmlServices();
 builder.Services.AddWarrantyCardXmlServices();
+builder.Services.AddOrderXmlServices();
 
 builder.Services.AddLegacyProductHtmlService();
 
@@ -258,8 +269,8 @@ builder.Services.AddRazorComponents()
     .AddCircuitOptions(options =>
     {
         options.DetailedErrors = true;
-    })
-    .AddInteractiveWebAssemblyComponents();
+    });
+    //.AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddScoped<UserActivityTrackerService>();
 
@@ -269,11 +280,68 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+})
+    .AddScheme<ApiAuthenticationSchemeOptions, ApiAuthenticationHandler>(
+        ApiAuthenticationScheme, options =>
+        {
+        })
     .AddIdentityCookies();
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(Policies.ReadInvoicesThatAllowApi, policy =>
+    {
+        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
+
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new DocumentReadRequirement()
+        {
+            Type = DocumentReadRequirement.DocumentType.Invoice,
+        });
+    })
+    .AddPolicy(Policies.ReadInvoiceResource, policy =>
+    {
+        policy.AddRequirements(new InvoiceReadResourceRequirement());
+    })
+    .AddPolicy(Policies.ReadWarrantyCardsThatAllowApi, policy =>
+    {
+        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
+
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new DocumentReadRequirement()
+        {
+            Type = DocumentReadRequirement.DocumentType.WarrantyCard,
+        });
+    })
+    .AddPolicy(Policies.ReadWarrantyCardResource, policy =>
+    {
+        policy.AddRequirements(new WarrantyCardReadResourceRequirement());
+    }) 
+    .AddPolicy(Policies.ReadOrders, policy =>
+    {
+        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
+
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new OrderReadRequirement());
+    })
+    .AddPolicy(Policies.ReadOrdersThatAllowApi, policy =>
+    {
+        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, ApiAuthenticationScheme);
+
+        policy.RequireAuthenticatedUser();
+        policy.AddRequirements(new OrderReadRequirement());
+    })
+    .AddPolicy(Policies.ReadOrderResource, policy =>
+    {
+        policy.AddRequirements(new OrderReadResourceRequirement());
+    });
+
+builder.Services.AddScoped<IAuthorizationHandler, DocumentReadHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, InvoiceReadResourceHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, WarrantyCardReadResourceHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OrderReadHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, OrderReadResourceHandler>();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -295,6 +363,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 
     options.LoginPath = "/account/login";
+    options.AccessDeniedPath = "/account/accessDenied";
 });
 
 builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionString)
@@ -303,7 +372,8 @@ builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionStri
 
 builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
 
-builder.Services.AddScoped<ICustomAuthenticationService, CustomersAndEmployeesAuthenticationService>();
+builder.Services.AddUserAuthServices(productDBConnectionString);
+builder.Services.AddRemoteAuthServices(productDBConnectionString);
 
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
 
@@ -376,16 +446,18 @@ app.UseRequestLocalization(options =>
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
+    //.AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MOSTComputers.UI.Web.Blazor.Client._Imports).Assembly);
 
 // Add additional endpoints required by the Identity /account Razor components.
 app.MapAdditionalIdentityEndpoints();
+app.MapApiAuthenticationEndpoints();
 
 app.MapProductXmlEndpoints();
 app.MapPromotionGroupXmlEndpoints();
 app.MapInvoiceXmlEndpoints();
 app.MapWarrantyCardXmlEndpoints();
+app.MapOrderXmlEndpoints();
 app.MapSitemapEndpoints();
 
 app.MapGroupPromotionHtmlEndpoints();
@@ -401,5 +473,16 @@ app.MapPromotionFileDataEndpoints();
 
 app.MapProductDataComponentEndpoints();
 app.MapPromotionGroupPageComponentEndpoints();
+app.MapOrdersPageComponentEndpoints();
+
+// using (IServiceScope sp = app.Services.CreateScope())
+// {
+//     RoleManager<PasswordsTableOnlyRole> roleManager = sp.ServiceProvider.GetRequiredService<RoleManager<PasswordsTableOnlyRole>>();
+// 
+//     await roleManager.CreateAsync(new ()
+//     {
+//         Name = "CustomerOrderViewer",
+//     });
+// }
 
 app.Run();

@@ -1,8 +1,13 @@
-﻿import * as common from "./Common.js";
+﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as common from "./Common.js";
 
 export async function openPromotionGroupEditorPopup(id = null) {
 
-    const promotionGroupEditorPopupHtml = await getPromotionGroupEditorPopupData(id);
+    const promotionGroupEditorPopupHtmlResponse = await getPromotionGroupEditorPopupDataResponse(id);
+
+    if (promotionGroupEditorPopupHtmlResponse == null) return;
+
+    const promotionGroupEditorPopupHtml = await promotionGroupEditorPopupHtmlResponse.text();
 
     const promotionGroupEditorPopupContainer = document.getElementById(common.promotionGroupEditorPopupContainerId);
 
@@ -28,7 +33,7 @@ export async function openPromotionGroupEditorPopup(id = null) {
     promotionGroupEditorPopup.showModal();
 }
 
-async function getPromotionGroupEditorPopupData(id = null) {
+async function getPromotionGroupEditorPopupDataResponse(id = null) {
 
     let response;
 
@@ -51,7 +56,13 @@ async function getPromotionGroupEditorPopupData(id = null) {
         });
     }
 
-    return await response.text();
+    if (response == null) return null;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return null;
+
+    return response;
 }
 
 export function changePromotionGroupLogo() {

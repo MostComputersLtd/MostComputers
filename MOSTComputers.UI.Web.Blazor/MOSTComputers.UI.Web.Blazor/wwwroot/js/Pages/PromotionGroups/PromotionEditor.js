@@ -1,4 +1,5 @@
-﻿import * as common from "./Common.js";
+﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as common from "./Common.js";
 import * as imageEditor from "./ImageEditor.js";
 import * as htmlEditor from "./HtmlEditor.js";
 import * as relatedProducts from "./RelatedProducts.js";
@@ -32,6 +33,12 @@ export async function openPromotionEditorForPromotion(id = null) {
             }
         });
     }
+
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const promotionEditorHtml = await response.text();
 
@@ -129,7 +136,11 @@ async function createPromotion() {
         body: createRequest
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const newPromotionIdAsString = await response.text();
 
@@ -253,7 +264,11 @@ async function updatePromotion() {
         body: updateRequest
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     await openPromotionEditorForPromotion(promotionId);
 }

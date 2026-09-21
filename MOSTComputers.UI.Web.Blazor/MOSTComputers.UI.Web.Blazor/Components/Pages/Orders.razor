@@ -1,8 +1,19 @@
 @page "/orders"
 
+@attribute [ExcludeFromInteractiveRouting]
 @attribute [Authorize(Roles = "Admin,Employee,CustomerOrderViewer")]
 
+@using System.Security.Claims
+@using MOSTComputers.Services.DataAccess.Documents.Models
+@using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Orders
+@using MOSTComputers.Services.Identity.DAL.Contracts
+@using MOSTComputers.Services.Identity.Models.Customers
+@using MOSTComputers.Services.Orders.Services
 @using Microsoft.AspNetCore.Authorization
+
+@inject IOrdersService OrdersService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject ICustomersViewLoginDataRepository CustomersViewLoginDataRepository
 
 <PageTitle>Orders - MOST Computers</PageTitle>
 
@@ -13,15 +24,54 @@
     <meta name="robots" content="NOINDEX,NOFOLLOW">
 
 	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
 </HeadContent>
 
 <div class="orders-page">
     <header class="search-bar">
-        <input id="ordersSearchInput" type="text" class="search-input"/>
 
-        <button id="ordersSearchButton" type="button" class="search-button">
-            Search
+        <select id="ordersSearchStatusesSelect" class="search-status-select">
+
+            @foreach (KeyValuePair<int, string> kvp in _statusSelectValues)
+            {
+                <option value="@kvp.Key">@kvp.Value</option>
+            }
+        </select>
+
+        @if (_isAdmin && _adminInitialClients != null)
+        {
+            <select id="ordersSearchClientSelect" class="search-client-select">
+
+                <option value="">Всички фирми</option>
+
+                @foreach (KeyValuePair<int, string?> kvp in _adminInitialClients)
+                {
+                    string clientName = string.IsNullOrEmpty(kvp.Value) ? "-" : kvp.Value;
+
+                    <option value="@kvp.Key">@clientName</option>
+                }
+            </select>
+        }
+
+        <input id="ordersSearchInput" type="text" class="search-input" placeholder="Номер или име на поръчка..."/>
+
+        <button id="ordersSearchButton" type="button" class="btn btn-outline-primary button-with-loader">
+            <p>Search</p>
+            <div class="round-loader-default"></div>
         </button>
+
+        <div class="export-options">
+            <button id="exportPricesButton" type="button" class="btn btn-outline-secondary button-with-loader export-button">
+                <p>Export Prices XML</p>
+                <div class="round-loader-default"></div>
+            </button>
+
+            <button id="exportXmlButton" type="button" class="btn btn-outline-secondary button-with-loader export-button">
+                <p>Export Order XML</p>
+                <div class="round-loader-default"></div>
+            </button>
+        </div>
     </header>
 
     <div class="orders-page-menus-container">
@@ -34,4 +84,56 @@
 </div>
 
 @code{
+    private const string _pageScriptUrl = "js/Pages/Orders.js";
+
+    private static readonly IReadOnlyDictionary<int, string> _statusSelectValues = new Dictionary<int, string>()
+    {
+        {-1, "Всички"},
+        {1, "Статус 1"},
+        {2, "Статус 2"},
+        {3, "Статус 3"},
+        {5, "Статус 5"},
+        {10, "Статус 10"},
+        {11, "Статус 11"},
+    };
+
+    private bool _isAdmin = false;
+    private Dictionary<int, string?>? _adminInitialClients = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpContext? httpContext = HttpContextAccessor.HttpContext;
+
+        if (httpContext?.User == null) return;
+
+        _isAdmin = httpContext.User.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Admin");
+
+        _adminInitialClients = await GetInitialClients();
+    }
+
+    private async Task<Dictionary<int, string?>> GetInitialClients()
+    {
+        OrderSearchRequest searchRequest = new()
+        {
+            SearchStartDateTime = DateTime.Today.AddDays(-7),
+        };
+
+        List<Order> orders = await OrdersService.GetAllMatchingAsync(searchRequest);
+
+        HashSet<int> clientIds = new();
+
+        foreach (Order order in orders)
+        {
+            if (order.BusinessId == null) continue;
+
+            clientIds.Add(order.BusinessId.Value);
+        }
+
+        List<CustomerData> customerData = await CustomersViewLoginDataRepository.GetByIdsAsync(clientIds);
+
+        return customerData
+            .OrderBy(x => string.IsNullOrEmpty(x.Name))
+            .ThenBy(x => x.Name)
+            .ToDictionary(x => x.Id, x => x.Name);
+    }
 }

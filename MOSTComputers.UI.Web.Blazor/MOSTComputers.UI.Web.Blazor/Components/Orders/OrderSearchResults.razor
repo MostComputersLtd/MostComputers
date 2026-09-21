@@ -1,32 +1,35 @@
-@using MOSTComputers.Models.Common
-@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
-
 <table class="search-results-table">
-    <thead>
-        <th>Id</th>
-        <th>Date</th>
-        <th>Name</th>
+    <thead class="search-results-table-head">
+        <tr class="search-results-table-head-row">
+            <th>Order Nº</th>
+            <th class="search-results-table-head-row-centered-item">Date</th>
+        </tr>
     </thead>
 
     <tbody>
 
         @foreach (OrderDisplayData order in Orders)
         {
-            string orderDateString = order.OrderDate?.ToString("yyyy/MM/dd") ?? "-";
-
             string orderNameString = string.IsNullOrEmpty(order.OrderName) ? "-" : order.OrderName;
 
-            string totalPriceString = $"{order.TotalPrice.ToString("F2")} {GetPriceSuffixStringFromCurrency(order.TotalPriceCurrency)}";
+            string orderDateString = order.OrderDate?.ToString("yyyy/MM/dd") ?? "-";
+            string orderStatusString = order.OrderStatus?.ToString() ?? "-";
 
-            <tr>
-                <td class="search-result-id-and-date">
+            //string totalPriceString = $"{order.TotalPrice.ToString("F2")} {GetPriceSuffixStringFromCurrency(order.TotalPriceCurrency)}";
+
+            <tr id="searchResultItem-@order.Id"
+                name="searchResultItem"
+                class="search-result-item"
+                data-order-id="@order.Id">
+                <!-- onclick="getOrderByIdAndDisplayAsync(@order.Id, 'searchResultItem-@order.Id')" -->
+                <td class="search-result-id-and-name">
                     <p class="search-result-id">@order.Id.ToString()</p>
-                    <p class="search-result-date">@orderDateString</p>
+                    <p>@orderNameString</p>
                 </td>
 
-                <td class="search-result-total-price-and-name">
-                    <p>@totalPriceString</p>
-                    <p>@orderNameString</p>
+                <td class="search-result-date-and-status">
+                    <p class="search-result-date">@orderDateString</p>
+                    <p class="search-result-status">@orderStatusString</p>
                 </td>
             </tr>
         }
@@ -40,8 +43,10 @@
         public required int Id { get; init; }
         public DateTime? OrderDate { get; init; }
         public string? OrderName { get; init; }
-        public required decimal TotalPrice { get; init; }
-        public required Currency TotalPriceCurrency { get; init; }
+        public int? OrderStatus { get; init; }
+
+        //public required decimal TotalPrice { get; init; }
+        //public required Currency TotalPriceCurrency { get; init; }
     }
 
     [Parameter, EditorRequired] public required List<OrderDisplayData> Orders { get; init; }

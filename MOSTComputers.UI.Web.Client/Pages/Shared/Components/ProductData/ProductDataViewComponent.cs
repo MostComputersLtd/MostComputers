@@ -315,7 +315,7 @@ public sealed class ProductDataViewComponent : ViewComponent
             return new()
             {
                 Amount = priceWithVAT,
-                Currency = Currency.EUR,
+                Currency = newCurrency,
             };
         }
 

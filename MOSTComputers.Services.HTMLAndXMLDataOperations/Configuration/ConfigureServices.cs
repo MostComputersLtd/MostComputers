@@ -61,6 +61,13 @@ public static class ConfigureServices
         return services;
     }
 
+    public static IServiceCollection AddOrderXmlServices(this IServiceCollection services)
+    {
+        services.TryAddScoped<IOrderXmlService, OrderXmlService>();
+
+        return services;
+    }
+
     public static IServiceCollection AddLegacyProductHtmlService(this IServiceCollection services)
     {
         services.TryAddScoped<ILegacyProductHtmlService, LegacyProductHtmlService>();

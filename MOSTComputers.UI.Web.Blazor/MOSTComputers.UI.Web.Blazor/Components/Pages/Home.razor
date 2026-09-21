@@ -5,44 +5,16 @@
 @using MOSTComputers.Models.Common
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.Models.Product.Models.Promotions
-@using MOSTComputers.Services.Currencies.Contracts
-@using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
 @using MOSTComputers.Services.ProductRegister.Models.Requests.Product
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
-@using MOSTComputers.Services.ProductRegister.Services.Products.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
+
 @using MOSTComputers.Services.SearchStringOrigin.Models
-@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 
 @inject ICategoryService CategoryService
 @inject IManufacturerService ManufacturerService
-
-@inject IProductService ProductService
-@inject IProductSearchService ProductSearchService
-
-@inject IProductPropertyService ProductPropertyService
-@inject IProductCharacteristicService ProductCharacteristicService
-@inject IProductImageService ProductImageService
-@inject IProductImageFileService ProductImageFileService
-@inject IPromotionService PromotionService
-@inject IGroupPromotionContentsRepository GroupPromotionContentsRepository
-@inject IGroupPromotionImageFileDataService GroupPromotionImageFileDataService
-@inject IManufacturerToPromotionGroupRelationService ManufacturerToPromotionGroupRelationService
-@inject IProductHtmlService ProductHtmlService
-@inject ISearchStringOriginService SearchStringOriginService
-@inject ICurrencyVATService CurrencyVATService
-@inject ICurrencyConversionService CurrencyConversionService
-
-@inject NavigationManager NavigationManager
-
-@inject IJSRuntime JSRuntime
 
 <PageTitle>MOST Computers</PageTitle>
 
@@ -188,6 +160,8 @@
                             @resultCount
                         </option>
                     }
+
+                    <option value="2000">All</option>
                 </select>
             </li>
 

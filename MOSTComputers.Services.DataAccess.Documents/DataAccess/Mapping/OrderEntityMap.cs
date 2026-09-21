@@ -5,7 +5,7 @@ namespace MOSTComputers.Services.DataAccess.Documents.DataAccess.Mapping;
 
 using static MOSTComputers.Services.DataAccess.Documents.Utils.TableAndColumnNameUtils.OrdersTable;
 
-internal class OrderEntityMap : EntityMap<Order>
+internal sealed class OrderEntityMap : EntityMap<Order>
 {
     public OrderEntityMap()
     {

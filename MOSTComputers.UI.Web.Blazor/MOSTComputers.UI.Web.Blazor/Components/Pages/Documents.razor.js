@@ -1,4 +1,6 @@
-﻿export async function fetchAndDownloadFile(url, fileName, acceptHeader)
+﻿import { handleAuthRedirect } from "/js/Authentication/FetchWithAuthRedirect.js";
+
+export async function fetchAndDownloadFile(url, fileName, acceptHeader)
 {
     const response = await fetch(url,
     {
@@ -9,7 +11,11 @@
         }
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     await downloadFile(response, fileName);
 }
@@ -27,7 +33,11 @@ export async function fetchAndDownloadFileWithBody(url, fileName, acceptHeader, 
         body: (requestBodyAsJson == null) ? null : requestBodyAsJson
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     await downloadFile(response, fileName);
 }

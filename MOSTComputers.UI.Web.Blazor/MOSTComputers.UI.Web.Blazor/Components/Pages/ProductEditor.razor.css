@@ -45,12 +45,13 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 }
 
 .header-list {
+    padding: 0px;
+    margin-bottom: 0.5em;
     display: flex;
     flex-direction: row;
     list-style-type: none;
     flex-wrap: wrap;
-    padding: 0px;
-    margin-bottom: 0.5em;
+    gap: 0px 0.5rem;
 }
 
 .header-list-item {
@@ -60,7 +61,6 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 
 .header-user-input-list-item {
     flex-grow: 1;
-    margin: 0em 0.5em;
 }
 
 .user-input {
@@ -69,11 +69,14 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 
 .header-search-button-list-item {
     justify-content: center;
-    margin-right: 0.5em;
 }
 
 .search-button {
     width: 100%;
+}
+
+.manufacturer-select {
+    min-width: 9.75em;
 }
 
 .product-data-table-scrollable-container {

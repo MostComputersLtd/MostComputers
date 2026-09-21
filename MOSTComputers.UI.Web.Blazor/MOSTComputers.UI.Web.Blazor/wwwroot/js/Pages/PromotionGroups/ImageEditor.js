@@ -1,4 +1,5 @@
-﻿import * as common from "./Common.js";
+﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as common from "./Common.js";
 import * as imageAndHtmlEditorCommon from "./CreateHtmlImageRepresentation.js";
 
 const promotionEditorImagesToUpload = [];
@@ -96,7 +97,11 @@ async function getPromotionImage(imageUrl) {
         body: JSON.stringify(promotionImageOptions)
     });
 
-    if (!response.ok) return null;
+    if (response == null) return null;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return null;
 
     return await response.text();
 }

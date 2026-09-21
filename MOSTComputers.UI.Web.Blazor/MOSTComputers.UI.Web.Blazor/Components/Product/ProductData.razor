@@ -5,10 +5,8 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Icons
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
-@using Microsoft.AspNetCore.Http
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 
-@inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JSRuntime
 
 @if (Product is null)
@@ -31,12 +29,12 @@ else
                     <div class="main-info-and-download-buttons-container">
                         <div class="col-lg-7 main-info-container">
                             <div class="name-and-partnumber-container">
-                                
-								@if (ShowProductIdData)
-								{
-									<h4 class="main-product-info-text">ID: @Product.Id</h4>
-									<h4 class="main-product-info-text">@Product.Name</h4>
-								}
+
+                                @if (ShowProductIdData)
+                                {
+                                    <h4 class="main-product-info-text">ID: @Product.Id</h4>
+                                    <h4 class="main-product-info-text">@Product.Name</h4>
+                                }
 
                                 <h4 class="main-product-info-text @(isValidEAN13Code ? string.Empty : "invalid-ean-code")">EAN: @Product.PartNumber1</h4>
 
@@ -52,48 +50,48 @@ else
 
                                 @if (IsRenderedInteractively)
                                 {
-									<button id="copyLinkButton" class="btn download-button copy-link-button"
-										@onclick='() => CopyLinkToClipboardAndAnimateCopyButton(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))'>
-										<p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+                                    <button id="copyLinkButton" class="btn download-button copy-link-button"
+                                        @onclick='() => CopyLinkToClipboardAndAnimateCopyButton(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))'>
+                                        <p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
 
-										<CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
+                                        <CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
 
-										@* <svg id="copyLinkButtonCheckmark"
-											class="copy-link-button-checkmark"
-											viewBox="0 0 24 24">
-											<path d="M4 12 L10 18 L20 6"
-												fill="none"
-												stroke="#FFFFFF"
-												stroke-width="3"
-												stroke-linecap="round"
-												stroke-linejoin="round"/>
-										</svg> *@
+                                        @* <svg id="copyLinkButtonCheckmark"
+                                            class="copy-link-button-checkmark"
+                                            viewBox="0 0 24 24">
+                                            <path d="M4 12 L10 18 L20 6"
+                                                fill="none"
+                                                stroke="#FFFFFF"
+                                                stroke-width="3"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"/>
+                                        </svg> *@
                                     </button>
                                 }
                                 else
                                 {
-									<button id="copyLinkButton" class="btn download-button copy-link-button"
-										onclick="copyLinkToClipboardAndAnimateCopyButton('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
-										<p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+                                    <button id="copyLinkButton" class="btn download-button copy-link-button"
+                                        onclick="copyLinkToClipboardAndAnimateCopyButton('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
+                                        <p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
 
-										<CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
+                                        <CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
 
-										<svg id="copyLinkButtonCheckmark"
-											class="copy-link-button-checkmark"
-											viewBox="0 0 24 24">
-											<path d="M4 12 L10 18 L20 6"
-												fill="none"
-												stroke="#FFFFFF"
-												stroke-width="3"
-												stroke-linecap="round"
-												stroke-linejoin="round"/>
-										</svg>
-									</button>
-								}
-							</div>
-						</div>
-					</div>
-				</div>
+                                        <svg id="copyLinkButtonCheckmark"
+                                            class="copy-link-button-checkmark"
+                                            viewBox="0 0 24 24">
+                                            <path d="M4 12 L10 18 L20 6"
+                                                fill="none"
+                                                stroke="#FFFFFF"
+                                                stroke-width="3"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="images-column">
                     <div class="carousel-container">
@@ -113,8 +111,8 @@ else
 
                                     @if (!context.IsUsingHtmlContent)
                                     {
-										<a class="carousel-item" href="@context.ImageSrcOrHtmlContent" target="_blank" rel="noopener noreferrer">
-											<img src="@context.ImageSrcOrHtmlContent" class="carousel-item-image" alt="Image">
+                                        <a class="carousel-item" href="@context.ImageSrcOrHtmlContent" target="_blank" rel="noopener noreferrer">
+                                            <img src="@context.ImageSrcOrHtmlContent" class="carousel-item-image" alt="Image">
                                         </a>
                                     }
                                     else
@@ -123,7 +121,7 @@ else
                                             <div class="carousel-html-content-item-promo-marker">ПРОМОЦИЯ!</div>
 
                                             <div class="carousel-html-content-container">
-												@((MarkupString)context.ImageSrcOrHtmlContent)
+                                                @((MarkupString)context.ImageSrcOrHtmlContent)
                                             </div>
                                         </div>
                                     }
@@ -136,21 +134,21 @@ else
                                     {
                                         <button type="button"
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
-											@onclick="context.GoToItemAsync">
+                                            @onclick="context.GoToItemAsync">
 
-											@if (!context.Item.IsUsingHtmlContent)
-											{
-												<img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
-											}
-											else
-											{
-												<div class="carousel-indicator-html-content-item">
-													<div class="carousel-indicator-html-content-container">
+                                            @if (!context.Item.IsUsingHtmlContent)
+                                            {
+                                                <img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
+                                            }
+                                            else
+                                            {
+                                                <div class="carousel-indicator-html-content-item">
+                                                    <div class="carousel-indicator-html-content-container">
 
-														@((MarkupString)context.Item.ImageSrcOrHtmlContent)
-													</div>
-												</div>
-											}
+                                                        @((MarkupString)context.Item.ImageSrcOrHtmlContent)
+                                                    </div>
+                                                </div>
+                                            }
                                         </button>
                                     }
                                     else
@@ -159,19 +157,19 @@ else
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
                                             onclick="goTo('@CarouselId', @context.Index)">
 
-											@if (!context.Item.IsUsingHtmlContent)
-											{
-												<img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
-											}
-											else
-											{
-												<div class="carousel-indicator-html-content-item">
-													<div class="carousel-indicator-html-content-container">
+                                            @if (!context.Item.IsUsingHtmlContent)
+                                            {
+                                                <img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
+                                            }
+                                            else
+                                            {
+                                                <div class="carousel-indicator-html-content-item">
+                                                    <div class="carousel-indicator-html-content-container">
 
-														@((MarkupString)context.Item.ImageSrcOrHtmlContent)
-													</div>
-												</div>
-											}
+                                                        @((MarkupString)context.Item.ImageSrcOrHtmlContent)
+                                                    </div>
+                                                </div>
+                                            }
                                         </button>
                                     }
 
@@ -312,12 +310,12 @@ else
                                         else if (promotion.DiscountUSD is not null && promotion.DiscountUSD > 0.00M)
                                         {
                                             <p>Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)</p>
-									    }
+                                        }
 
                                     </div>
-						        }
+                                }
                             </div>
-					    }
+                        }
                     </div>
                 </div>
             </div>
@@ -473,28 +471,28 @@ else
         AllCarouselContent.Clear();
 
         if (ProductRelatedGroupPromotions?.Count > 0)
-		{
-			@foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
-			{
-				AllCarouselContent.Add(new()
-				{
-					ImageSrcOrHtmlContent = promotionDisplayData.HtmlContent,
-					IsUsingHtmlContent = true,
-				});
-			}
-		}
+        {
+            @foreach (ProductRelatedGroupPromotionDisplayData promotionDisplayData in ProductRelatedGroupPromotions)
+            {
+                AllCarouselContent.Add(new()
+                {
+                    ImageSrcOrHtmlContent = promotionDisplayData.HtmlContent,
+                    IsUsingHtmlContent = true,
+                });
+            }
+        }
 
-		if (ProductImages?.Count > 0)
-		{
-			@foreach (ProductImageDisplayData productImageDisplayData in ProductImages)
-			{
-				AllCarouselContent.Add(new()
-				{
-					ImageSrcOrHtmlContent = productImageDisplayData.ImageSrc,
-					IsUsingHtmlContent = false,
-				});
-			}
-		}
+        if (ProductImages?.Count > 0)
+        {
+            @foreach (ProductImageDisplayData productImageDisplayData in ProductImages)
+            {
+                AllCarouselContent.Add(new()
+                {
+                    ImageSrcOrHtmlContent = productImageDisplayData.ImageSrc,
+                    IsUsingHtmlContent = false,
+                });
+            }
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

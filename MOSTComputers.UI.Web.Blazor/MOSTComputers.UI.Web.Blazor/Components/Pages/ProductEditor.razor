@@ -28,6 +28,7 @@
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
 @using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
+@using MOSTComputers.Services.ProductRegister.Services
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
@@ -40,9 +41,9 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @using MOSTComputers.UI.Web.Blazor.Components.Product
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Image
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Property
 @using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
-@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
@@ -51,15 +52,14 @@
 @using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.Data.SqlClient
 @using OneOf
 @using OneOf.Types
-
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 @using static MOSTComputers.Utils.Files.ContentTypeUtils
 
-@using Microsoft.Data.SqlClient
-
 @inject ICategoryService CategoryService
+@inject IManufacturerService ManufacturerService
 
 @inject IProductService ProductService
 @inject IProductSearchService ProductSearchService
@@ -126,13 +126,25 @@
             </li>
 
             <li class="header-list-item">
-                <select id="categorySelect" @bind="SelectedCategoryId">
+                <select id="categorySelect" value="@SelectedCategoryId" @onchange="OnChangeCategorySelectAsync">
 
                     <option value="">All</option>
 
                     @foreach (Category category in CategoriesInSelect)
                     {
                         <option value="@category.Id">@category.Description</option>
+                    }
+                </select>
+            </li>
+
+            <li class="header-list-item">
+                <select id="manufacturerSelect" class="manufacturer-select" @bind="SelectedManufacturerId" @key="_manufacturerSelectKey">
+
+                    <option value="-1">All</option>
+
+                    @foreach (Manufacturer manufacturer in ManufacturersInSelect)
+                    {
+                        <option value="@manufacturer.Id">@manufacturer.RealCompanyName</option>
                     }
                 </select>
             </li>
@@ -172,6 +184,10 @@
                             @resultCount
                         </option>
                     }
+
+                    <option value="@_allResultCount">
+                        All
+                    </option>
                 </select>
             </li>
         </ul>
@@ -929,13 +945,65 @@
     private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
     private const string _productDataScriptUrl = "js/Product/ProductData.js";
 
+    private const int _allResultCount = 2000;
+
     public const int LastAddedProductsSearchCount = 200;
 
     public string? UserInputString { get; set; }
 
     public List<Category> CategoriesInSelect { get; set; } = new();
 
-    public string SelectedCategoryId { get; set; } = string.Empty;
+    public string? SelectedCategoryId { get; set; } = string.Empty;
+
+    private async Task OnChangeCategorySelectAsync(ChangeEventArgs e)
+    {
+        SelectedCategoryId = e.Value?.ToString();
+
+        bool isCategoryIdNumber = int.TryParse(SelectedCategoryId, out int categoryId);
+
+        List<Product> productsInCategory;
+
+        if (!isCategoryIdNumber)
+        {
+            SelectedCategoryId = null;
+
+            productsInCategory = await ProductService.GetAllAsync();
+        }
+        else
+        {
+            productsInCategory = await ProductService.GetAllInCategoryAsync(categoryId);
+        }
+
+
+        Dictionary<int, Manufacturer> manufacturersDict = new();
+
+        foreach (Product product in productsInCategory)
+        {
+            Manufacturer? manufacturer = product.Manufacturer;
+
+            if (manufacturer == null) continue;
+
+            manufacturersDict.TryAdd(manufacturer.Id, manufacturer);
+        }
+
+        int? currentManufacturerIdParsed = int.TryParse(SelectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
+
+        ManufacturersInSelect.Clear();
+        ManufacturersInSelect.AddRange(manufacturersDict.Values);
+
+        if (!ManufacturersInSelect.Any(x => x.Id == currentManufacturerIdParsed))
+        {
+             SelectedManufacturerId = "-1";
+        }
+
+        _manufacturerSelectKey = _manufacturerSelectKey == 0 ? 1 : 0;
+    }
+
+    public List<Manufacturer> AllManufacturers { get; set; } = new();
+    public List<Manufacturer> ManufacturersInSelect { get; set; } = new();
+
+    private int _manufacturerSelectKey { get; set; } = 0;
+    public string? SelectedManufacturerId { get; set; } = "-1";
 
     public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
         ProductStatusSearchOptions.AvailableAndCall,
@@ -1032,6 +1100,14 @@
         List<Category> allCategories = await CategoryService.GetAllAsync();
 
         CategoriesInSelect = allCategories
+            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+            .ToList();
+
+        List<Manufacturer> manufacturers = await ManufacturerService.GetAllAsync();
+
+        AllManufacturers = manufacturers;
+
+        ManufacturersInSelect = manufacturers
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
     }
@@ -1399,6 +1475,12 @@
         try
         {
             int? selectedCategoryId = int.TryParse(SelectedCategoryId, out int categoryId) ? categoryId : null;
+            int? selectedManufacturerId = int.TryParse(SelectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
+
+            if (selectedManufacturerId == -1)
+            {
+                selectedManufacturerId = null;
+            }
 
             ProductStatusSearchOptions? selectedProductStatus = ProductStatusSearchOptions.TryParse(
                 SelectedProductStatus, out ProductStatusSearchOptions productStatus)
@@ -1422,7 +1504,7 @@
                     ? resultCount
                     : ResultCountsInSelect.Min();
 
-            selectedResultCount = Math.Min(selectedResultCount, ResultCountsInSelect.Max());
+            selectedResultCount = Math.Min(selectedResultCount, _allResultCount);
 
             bool orderProductsByLastAddedDate = selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAdded
                 || selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
@@ -1432,6 +1514,7 @@
             List<Product> products = await GetProductsFromSearchOptionsAsync(
                 UserInputString,
                 selectedCategoryId,
+                selectedManufacturerId,
                 selectedProductStatus,
                 selectedProductEditorNewStatus,
                 selectedPromotionSearchOptions,
@@ -1463,6 +1546,7 @@
     private async Task<List<Product>> GetProductsFromSearchOptionsAsync(
         string? userInputString = null,
         int? categoryId = null,
+        int? manufacturerId = null,
         ProductStatusSearchOptions? productStatusSearchOptions = null,
         ProductEditorProductNewStatusSearchOptions? productEditorNewStatusSearchOptions = null,
         PromotionSearchOptions? promotionSearchOptions = null,
@@ -1485,6 +1569,7 @@
             OnlyVisibleByEndUsers = false,
             UserInputString = userInputString,
             CategoryId = categoryId,
+            ManufacturerId = manufacturerId,
             ProductNewStatuses = productNewStatusSearchOptions,
             ProductStatus = productStatusSearchOptions,
             PromotionSearchOptions =  promotionSearchOptions,

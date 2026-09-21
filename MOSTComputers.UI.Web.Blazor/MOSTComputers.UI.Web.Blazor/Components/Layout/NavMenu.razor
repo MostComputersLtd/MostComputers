@@ -108,8 +108,16 @@
                             Match Characteristics (HTML)
                         </NavLink>
                     </div> *@
-                    
+
                 </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Admin">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="orders" data-enhance-nav="false">
+                        Orders
+                    </NavLink>
+                </div>
             </AuthorizeView>
 
             <AuthorizeView Roles="Admin,Employee,CustomerInvoiceViewer">

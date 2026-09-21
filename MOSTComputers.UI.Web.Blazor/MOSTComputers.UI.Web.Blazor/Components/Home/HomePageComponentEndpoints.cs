@@ -34,6 +34,7 @@ public static class HomePageComponentEndpoints
         public Currency? Currency { get; set; } = null;
         public int? MaxSearchResults { get; set; } = null;
     }
+
     private sealed class ManufacturerSearchResponse
     {
         public int? id { get; set; }
@@ -41,6 +42,8 @@ public static class HomePageComponentEndpoints
     }
 
     internal const string EndpointGroupRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "components/" + "home";
+
+    private const int _maxProductsSearchCount = 2000;
 
     public static IEndpointConventionBuilder MapProductDataComponentEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -84,7 +87,7 @@ public static class HomePageComponentEndpoints
         IProductSearchService productSearchService,
         ProductSearchData productSearchData)
     {
-        int selectedResultCount = Math.Min(productSearchData.MaxSearchResults ?? int.MaxValue, 300);
+        int selectedResultCount = Math.Min(productSearchData.MaxSearchResults ?? int.MaxValue, _maxProductsSearchCount);
         int? finalResultCount = selectedResultCount;
 
         bool orderProductsFromSecondCategoryUp = productSearchData.CategoryId == null

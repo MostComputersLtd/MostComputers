@@ -1,4 +1,5 @@
-﻿import * as common from "./Common.js";
+﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as common from "./Common.js";
 import * as promotionEditorRelatedProducts from "./PromotionEditorRelatedProducts.js";
 
 const selectAllButtonId = "relatedProductsSelectAllButton";
@@ -46,7 +47,11 @@ export async function openAddRelatedProductsToPromotionPopup(initialGroupId = nu
         }
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const data = await response.text();
 
@@ -87,7 +92,11 @@ export async function searchRelatedProductsAndDisplayResults() {
             body: JSON.stringify(searchData)
         });
 
-        if (!response.ok) return;
+        if (response == null) return;
+
+        const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+        if (!didNotRedirect || !response.ok) return;
 
         const data = await response.text();
 
@@ -401,7 +410,11 @@ async function toggleRelatedProductSelection(productId, relatedProductSearchResu
         }
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const data = await response.text();
 
@@ -481,7 +494,11 @@ async function addRelatedProductsToPromotionEditor(promotionEditRelatedProductsT
         body: JSON.stringify(productIds)
     });
 
-    if (!response.ok) return;
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const data = await response.text();
 

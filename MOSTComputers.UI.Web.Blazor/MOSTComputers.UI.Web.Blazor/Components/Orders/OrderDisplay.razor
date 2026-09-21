@@ -1,14 +1,185 @@
-@using MOSTComputers.Services.DataAccess.Documents.Models
-
+@using MOSTComputers.Models.Common
+@using MOSTComputers.Models.Product.Models
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
 
 @{
+    string orderDisplayName = string.IsNullOrEmpty(Order.OrderName) ? "Без Име" : Order.OrderName;
+    string orderDisplayDealId = (Order.DealId == null || Order.DealId == 0)  ? "Нова Сделка" : Order.DealId.ToString();
+
     string? orderDateTimeStartingValue = GetDateTimeAsStringForDateInput(Order.OrderDate ?? _defaultOrderDate);
-    string? readDateTimeStartingValue = Order.ReadTime != null ? GetDateTimeAsStringForDateInput(Order.ReadTime) : "-";
+    string orderDateFormatted = "-";
+
+    if (Order.OrderDate != null)
+    {
+        orderDateFormatted = Order.OrderDate.Value.ToString("MMM dd, yyyy HH:mm");
+    }
 }
 
+<div class="order-display">
+    <div class="order-name-container">
+        <h2 class="order-name">@orderDisplayName</h2>
+    </div>
+
+    <ol class="main-order-information">
+        <li class="order-information">
+            <p class="order-information-property">
+                <span class="order-information-property-name">Deal Number:&nbsp;</span>
+                @orderDisplayDealId
+            </p>
+        </li>
+        <li class="order-information">
+            <p class="order-information-property">
+                <span class="order-information-property-name">Reference Number:&nbsp;</span>
+                @Order.Id
+            </p>
+        </li>
+        <li class="order-information">
+            <p class="order-information-property">
+                <span class="order-information-property-name">Sent On:&nbsp;</span>
+                @orderDateFormatted
+            </p>
+        </li>
+        <li class="order-information">
+            <p class="order-information-property">
+                <span class="order-information-property-name">Response from Dealer:&nbsp;</span>
+                @(Order.UserId?.ToString() ?? "-")
+            </p>
+        </li>
+        <li class="order-information">
+            <p class="order-information-property">
+                <span class="order-information-property-name">Currency:&nbsp;</span>
+                @GetPriceNameStringFromCurrency(Order.Currency.Value)
+            </p>
+        </li>
+    </ol>
+
+    <div class="order-info-container">
+        <p class="order-info-text">Info:</p>
+
+        <textarea class="order-info-textarea" spellcheck="false" readonly aria-readonly="true" aria-label="Order Info">
+            @Order.Info
+        </textarea>
+    </div>
+
+    <div class="order-items-container">
+        <table class="order-items-table">
+            <thead class="order-items-table-head">
+                <tr>
+                    <th class="order-items-table-header item-number">#</th>
+                    <th class="order-items-table-header">Наименование на продукта</th>
+                    <th class="order-items-table-header text-centered">Количество</th>
+                    <th class="order-items-table-header text-right">Ед. Цена</th>
+                    <th class="order-items-table-header text-right">Наличност</th>
+                    <th class="order-items-table-header promotion text-right">Промоция</th>
+                    <th class="order-items-table-header">Инфо</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @for (int i = 0; i < Order.Items.Count; i++)
+                {
+                    OrderItemDisplayData orderItem = Order.Items[i];
+
+                    int orderItemDisplayNumber = i + 1;
+
+                    string? productStatusString = string.Empty;
+
+                    if (orderItem.ProductStatus != null)
+                    {
+                        productStatusString = GetStringFromProductStatus(orderItem.ProductStatus.Value);
+                    }
+
+                    string promotionInfoString = string.Empty;
+
+                    if (orderItem.PromotionPAmount != null)
+                    {
+                        promotionInfoString = orderItem.PromotionPAmount.Value.ToString();
+                    }
+                    else if (orderItem.PromotionRAmount != null)
+                    {
+                        promotionInfoString = orderItem.PromotionRAmount.Value.ToString();
+                    }
+
+                    string infoString = string.IsNullOrEmpty(orderItem.ExternalInfo) ? string.Empty : orderItem.ExternalInfo;
+
+                    <tr>
+                        <td class="order-item-table-cell item-number">
+                            <p>@orderItemDisplayNumber</p>
+                        </td>
+
+                        <td class="order-item-table-cell">
+                            <p>@orderItem.ProductName</p>
+                        </td>
+
+                        <td class="order-item-table-cell text-centered">
+                            <p>@orderItem.Quantity</p>
+                        </td>
+
+                        <td class="order-item-table-cell text-right">
+                            <p>@orderItem.Price</p>
+                        </td>
+
+                        <td class="order-item-table-cell text-right">
+                            <p>@orderItem.ProductStatus</p>
+                        </td>
+
+                        <td class="order-item-table-cell promotion text-right">
+                            <p>@promotionInfoString</p>
+                        </td>
+
+                        <td class="order-item-table-cell">
+                            <p>@infoString</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
 @code{
+
+    public sealed class OrderDisplayData
+    {
+        public required int Id { get; set; }
+        public byte? Status { get; set; }
+        public int? UserId { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public string? OrderName { get; set; }
+        public int? BusinessId { get; set; }
+        public int? DealId { get; set; }
+        public Currency? Currency { get; set; }
+        public string? Info { get; set; }
+
+        public required List<OrderItemDisplayData> Items { get; set; }
+    }
+
+    public sealed class OrderItemDisplayData
+    {
+        public int? ProductId { get; set; }
+        public string? ProductName { get; set; }
+        public ProductStatus? ProductStatus { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? Price { get; set; }
+        public decimal? AdditionalWarranty { get; set; }
+        public decimal? PromotionPAmount { get; set; }
+        public decimal? PromotionRAmount { get; set; }
+        public string? ExternalInfo { get; set; }
+    }
+
     private static readonly DateTime _defaultOrderDate = DateTime.Today;
 
-    [Parameter, EditorRequired] public required Order Order { get; set; }
+    [Parameter, EditorRequired] public required OrderDisplayData Order { get; set; }
+
+    private static string? GetPriceNameStringFromCurrency(Currency currencyEnum)
+    {
+        return currencyEnum switch
+        {
+            Currency.BGN => "BGN",
+            Currency.EUR => "EUR",
+            Currency.USD => "USD",
+            _ => null
+        };
+    }
 }

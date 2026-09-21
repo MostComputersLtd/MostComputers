@@ -1,8 +1,16 @@
-﻿import * as common from "./Common.js";
+﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as common from "./Common.js";
 import * as promotionEditor from "./PromotionEditor.js";
 import * as promotionGroupEditor from "./PromotionGroupEditor.js";
 
-document.addEventListener("DOMContentLoaded", function ()
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initEvents);
+}
+else {
+    initEvents();
+}
+
+function initEvents()
 {
     const searchPromotionButton = document.getElementById(common.searchPromotionButtonId);
     const addPromotionButton = document.getElementById(common.addPromotionButtonId);
@@ -11,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function ()
     searchPromotionButton.addEventListener("click", searchGroupPromotions);
     addPromotionButton.addEventListener("click", openGroupPromotionEditorPopup);
     addPromotionGroupButton.addEventListener("click", openPromotionGroupEditorPopup);
-});
+}
 
 export async function searchGroupPromotions() {
 
@@ -26,6 +34,12 @@ export async function searchGroupPromotions() {
         },
         body: JSON.stringify(searchOptions)
     });
+
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect || !response.ok) return;
 
     const searchResultHtml = await response.text();
 

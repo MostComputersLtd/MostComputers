@@ -19,13 +19,70 @@ p {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 0.5rem 0rem;
+}
+
+.search-status-select {
+    min-width: 2rem;
+    margin-right: 0.5rem;
+}
+
+.search-client-select {
+    min-width: 6rem;
+    margin-right: 0.5rem;
 }
 
 .search-input {
     flex-grow: 1;
     max-width: 15rem;
-    margin-right: 0.5em;
+    margin-right: 1rem;
 }
+
+.export-options {
+    padding-left: 0.5rem;
+    margin-left: auto;
+    gap: 0px 0.5rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.export-button {
+    display: none;
+}
+
+.export-button.displayed {
+    display: unset;
+}
+
+.button-with-loader.loading {
+    display: flex;
+    flex-direction: column;
+    -webkit-align-items: center;
+    align-items: center;
+}
+
+    .button-with-loader > p {
+        border: 0px;
+        padding: 0px;
+        margin: 0px;
+    }
+
+    .button-with-loader.loading > p {
+        height: 0px;
+        visibility: hidden;
+    }
+
+    .button-with-loader > .round-loader-default {
+        display: none;
+    }
+
+        .button-with-loader.loading > .round-loader-default {
+            display: block;
+            padding: initial;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-width: 3.25px;
+        }
 
 .orders-page-menus-container {
     width: 100%;
@@ -40,18 +97,8 @@ p {
     border-right: 3px solid black;
     overflow-y: auto;
 }
-    .search-results-container.loading {
-        height: 100%;
-        display: flex;
-        -ms-flex-direction: column;
-        -webkit-flex-direction: column;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
 
 .order-view-container {
     flex-grow: 1;
-    border-right: 3px solid black;
     overflow-y: auto;
 }
