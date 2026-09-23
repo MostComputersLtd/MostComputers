@@ -37,5 +37,7 @@ internal class PasswordsTableOnlyAuthenticationDBContext : DbContext
         builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
 
         builder.Entity<IdentityRoleClaim<string>>().ToTable("UserRoleClaims");
+
+        builder.UseOpenIddict<ApiApplication, ApiAuthorization, ApiScope, ApiToken, string>();
     }
 }

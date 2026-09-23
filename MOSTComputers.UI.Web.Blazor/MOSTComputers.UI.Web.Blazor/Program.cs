@@ -372,6 +372,20 @@ builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionStri
 
 builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
 
+builder.Services.AddOpenIddictToDatabase()
+    .AddServer(options =>
+    {
+        options.SetTokenEndpointUris("connect/token");
+
+        options.AllowClientCredentialsFlow();
+
+        options.AddDevelopmentEncryptionCertificate()
+           .AddDevelopmentSigningCertificate();
+
+        options.UseAspNetCore()
+           .EnableTokenEndpointPassthrough();
+    });
+
 builder.Services.AddUserAuthServices(productDBConnectionString);
 builder.Services.AddRemoteAuthServices(productDBConnectionString);
 

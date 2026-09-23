@@ -6,6 +6,7 @@ using MOSTComputers.Services.Identity.DAL.Contracts;
 using MOSTComputers.Services.Identity.Models;
 using MOSTComputers.Services.Identity.Services;
 using MOSTComputers.Services.Identity.Services.Cached;
+using OpenIddict.EntityFrameworkCore.Models;
 
 namespace MOSTComputers.Services.Identity.Confuguration;
 public static class ConfigureServices
@@ -22,6 +23,13 @@ public static class ConfigureServices
         services.AddDbContext<PasswordsTableOnlyAuthenticationDBContext>(options =>
         {
             options.UseSqlServer(authenticationDBConnString);
+
+            options.UseOpenIddict<
+                ApiApplication,
+                ApiAuthorization,
+                ApiScope,
+                ApiToken,
+                string>();
         });
 
         IdentityBuilder identityBuilder = services
@@ -34,6 +42,22 @@ public static class ConfigureServices
         services.AddScoped<IIdentityService<PasswordsTableOnlyUser, PasswordsTableOnlyRole>, CachedPasswordsTableOnlyIdentityService>();
 
         return identityBuilder;
+    }
+
+    public static OpenIddictBuilder AddOpenIddictToDatabase(this IServiceCollection services)
+    {
+        return services.AddOpenIddict()
+            .AddCore(options =>
+            {
+                options.UseEntityFrameworkCore()
+                    .UseDbContext<PasswordsTableOnlyAuthenticationDBContext>()
+                    .ReplaceDefaultEntities<
+                        ApiApplication,
+                        ApiAuthorization,
+                        ApiScope,
+                        ApiToken,
+                        string>();
+            });
     }
 
     public static IServiceCollection AddCustomerUsersRepository(this IServiceCollection services, string connectionString)
