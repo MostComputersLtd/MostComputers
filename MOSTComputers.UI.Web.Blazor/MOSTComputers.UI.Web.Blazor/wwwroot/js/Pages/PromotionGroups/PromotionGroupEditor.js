@@ -1,6 +1,8 @@
 ﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
 import * as common from "./Common.js";
 
+let promotionGroupImageToUpload = null;
+
 export async function openPromotionGroupEditorPopup(id = null) {
 
     const promotionGroupEditorPopupHtmlResponse = await getPromotionGroupEditorPopupDataResponse(id);
@@ -101,6 +103,10 @@ async function onLogoImageInputChanged(e) {
      const promotionGroupLogoChangeButton = document.getElementById(common.promotionGroupLogoChangeButtonId);
 
     promotionGroupLogoChangeButton.innerText = "Change Image";
+
+    const promotionGroupImageDeleteButton = document.getElementById(common.promotionGroupImageDeleteButtonId);
+
+    promotionGroupImageDeleteButton.addEventListener("click", removePromotionGroupImage);
 }
 
 async function getPromotionGroupLogoImage(imageUrl) {
@@ -130,13 +136,24 @@ function getPromotionGroupLogoImageOptions(imageUrl) {
 
 export async function savePromotionGroup(id = null) {
 
-    if (id == null) {
-        await createPromotionGroup();
+    const promotionGroupSaveButton = document.getElementById(common.promotionGroupSaveButtonId);
 
-        return;
+    try {
+
+        promotionGroupSaveButton.classList.add(common.loadingClass);
+
+        if (id == null) {
+
+            await createPromotionGroup();
+
+            return;
+        }
+
+        await updatePromotionGroup(id);
     }
-
-    await updatePromotionGroup(id);
+    finally {
+        promotionGroupSaveButton.classList.remove(common.loadingClass);
+    }
 }
 
 async function createPromotionGroup() {

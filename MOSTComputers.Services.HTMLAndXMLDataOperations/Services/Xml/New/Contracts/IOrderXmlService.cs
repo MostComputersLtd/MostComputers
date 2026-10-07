@@ -6,6 +6,7 @@ namespace MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contr
 
 public interface IOrderXmlService
 {
+    Task TrySerializeXmlAsync(Stream outputStream, OrderXmlFullData xmlData);
     Task TrySerializeXmlAsync(Stream outputStream, XmlOrder xmlData);
     Task<OneOf<string, InvalidXmlResult>> TrySerializeXmlAsync(XmlOrder xmlData);
 }

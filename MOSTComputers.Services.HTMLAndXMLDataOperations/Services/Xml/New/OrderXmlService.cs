@@ -10,6 +10,38 @@ internal sealed class OrderXmlService : IOrderXmlService
 {
     private const string _invalidXmlDefaultMessage = "Something went wrong";
 
+    private const string _fullDataElementName = "data";
+    private const string _rootXmlOrderElementName = "order";
+    private const string _errorElementName = "Error";
+
+    public async Task TrySerializeXmlAsync(Stream outputStream, OrderXmlFullData xmlData)
+    {
+        XmlWriter? xmlWriter = null;
+
+        try
+        {
+            xmlWriter = XmlWriter.Create(outputStream, new XmlWriterSettings { Async = true, Indent = true });
+
+            await xmlData.WriteXmlAsync(xmlWriter, _fullDataElementName);
+        }
+        catch (InvalidOperationException)
+        {
+            if (xmlWriter is not null)
+            {
+                string errorMessage = _invalidXmlDefaultMessage;
+
+                await xmlWriter.WriteElementStringAsync(null, localName: _errorElementName, null, errorMessage);
+            }
+        }
+        finally
+        {
+            if (xmlWriter is not null)
+            {
+                await xmlWriter.DisposeAsync();
+            }
+        }
+    }
+
     public async Task TrySerializeXmlAsync(Stream outputStream, XmlOrder xmlData)
     {
         XmlWriter? xmlWriter = null;
@@ -18,7 +50,7 @@ internal sealed class OrderXmlService : IOrderXmlService
         {
             xmlWriter = XmlWriter.Create(outputStream, new XmlWriterSettings { Async = true, Indent = true });
 
-            await xmlData.WriteXmlAsync(xmlWriter, "order");
+            await xmlData.WriteXmlAsync(xmlWriter, _rootXmlOrderElementName);
         }
         catch (InvalidOperationException)
         {
@@ -26,7 +58,7 @@ internal sealed class OrderXmlService : IOrderXmlService
             {
                 string errorMessage = _invalidXmlDefaultMessage;
 
-                await xmlWriter.WriteElementStringAsync(null, "Error", null, errorMessage);
+                await xmlWriter.WriteElementStringAsync(null, _errorElementName, null, errorMessage);
             }
         }
         finally

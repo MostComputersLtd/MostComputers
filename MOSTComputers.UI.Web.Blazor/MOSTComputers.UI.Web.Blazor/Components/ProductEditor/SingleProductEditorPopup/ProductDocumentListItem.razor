@@ -1,0 +1,55 @@
+@using MOSTComputers.Models.Product.Models
+@{
+    ProductDocument? document = ItemData.ExistingDocument;
+
+    int index = ItemData.Index;
+}
+
+<li id="@ItemData.EditorId" name="productDocumentItem class="product-document-list-item">
+
+    @if (document is not null)
+    {
+        <p class="product-document-file-name-text">@document.FileName</p>
+    }
+
+    <input id="productDocumentDescription-@index"
+        name="productDocumentDescription"
+        type="text"
+        class="product-document-description-input"
+        aria-label="Description"
+        placeholder="Description (optional)" />
+
+    <button type="button" name="productDocumentShowPopupButton"
+        class="btn btn-secondary product-document-view-button"
+        data-product-id="@ProductId"
+        data-document-id="@document?.Id"
+        data-browser-file-path="@ItemData.BrowserFilePath">
+        View
+    </button>
+
+    @if (document != null)
+    {
+        <button type="button" name="productDocumentSaveUrlButton"
+            class="btn btn-secondary product-document-copy-url-button"
+            data-document-id="@document.Id">
+            Copy Url
+        </button>
+    }
+
+    <button type="button" name="productDocumentRemoveButton" class="btn btn-danger">
+        X
+    </button>
+
+    @if (JsonData != null)
+    {
+        <script name="productImageItemData" type="application/json">
+            @JsonData
+        </script>
+    }
+</li>
+
+@code{
+    [Parameter, EditorRequired] public required SingleProductEditorPopup.ProductDocumentDisplayData ItemData { get; set; }
+    [Parameter, EditorRequired] public int ProductId { get; set; }
+    [Parameter] public string? JsonData { get; set; } = null;
+}

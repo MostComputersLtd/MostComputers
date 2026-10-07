@@ -4,7 +4,7 @@ namespace MOSTComputers.Services.Identity.Models;
 
 public sealed class ApiApplication
     : OpenIddictEntityFrameworkCoreApplication<
-        string,
+        Guid,
         ApiAuthorization,
         ApiToken>
 {
@@ -13,7 +13,7 @@ public sealed class ApiApplication
 
 public sealed class ApiAuthorization
     : OpenIddictEntityFrameworkCoreAuthorization<
-        string,
+        Guid,
         ApiApplication,
         ApiToken>
 {
@@ -21,13 +21,13 @@ public sealed class ApiAuthorization
 
 public sealed class ApiToken
     : OpenIddictEntityFrameworkCoreToken<
-        string,
+        Guid,
         ApiApplication,
         ApiAuthorization>
 {
 }
 
 public sealed class ApiScope
-    : OpenIddictEntityFrameworkCoreScope<string>
+    : OpenIddictEntityFrameworkCoreScope<Guid>
 {
 }

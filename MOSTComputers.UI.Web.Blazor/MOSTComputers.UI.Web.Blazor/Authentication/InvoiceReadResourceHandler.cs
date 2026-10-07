@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using MOSTComputers.Services.DataAccess.Documents.Models;
+using OpenIddict.Validation.AspNetCore;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace MOSTComputers.UI.Web.Blazor.Authentication;
 
@@ -32,18 +35,7 @@ public sealed class InvoiceReadResourceHandler
 
         if (isLoggedUser)
         {
-            bool isAdmin = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Admin");
-
-            if (isAdmin)
-            {
-                context.Succeed(requirement);
-
-                return Task.CompletedTask;
-            }
-
-            bool isEmployee = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Employee");
-
-            DateTime minSearchDateTime = DateTime.Now.AddDays(-7);
+            DateTime minSearchDateTime = DateTime.Now.AddMonths(-3);
 
             if (documentDate < minSearchDateTime)
             {
@@ -52,7 +44,10 @@ public sealed class InvoiceReadResourceHandler
                 return Task.CompletedTask;
             }
 
-            if (isEmployee)
+            bool isAdmin = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Admin");
+            bool isEmployee = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Employee");  
+
+            if (isAdmin || isEmployee)
             {
                 context.Succeed(requirement);
 
@@ -75,16 +70,17 @@ public sealed class InvoiceReadResourceHandler
         }
         else
         {
-            bool isRemoteConnection = claimsPrincipal.Identities.Any(x => x.AuthenticationType == ApiAuthenticationScheme);
+            ClaimsIdentity? remoteConnection = claimsPrincipal.Identities.FirstOrDefault(
+                x => x.AuthenticationType == TokenValidationParameters.DefaultAuthenticationType);
 
-            if (!isRemoteConnection)
+            if (remoteConnection == null)
             {
                 context.Fail();
 
                 return Task.CompletedTask;
             }
 
-            DateTime minSearchDateTime = DateTime.Now.AddMonths(-3);
+            DateTime minSearchDateTime = DateTime.Now.AddDays(-14);
 
             if (documentDate < minSearchDateTime)
             {
@@ -93,7 +89,7 @@ public sealed class InvoiceReadResourceHandler
                 return Task.CompletedTask;
             }
 
-            string? customerBIDAsString = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+            string? customerBIDAsString = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == Claims.Subject)?.Value;
 
             if (int.TryParse(customerBIDAsString, out int customerBIDParsed)
                 && customerBID == customerBIDParsed)

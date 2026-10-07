@@ -3,32 +3,15 @@
 
 @attribute [Authorize(Roles = "ProductEditor")]
 
-@using System.Text
-@using FluentValidation.Results
-@using MOSTComputers.Models.FileManagement.Models
 @using MOSTComputers.Models.Product.Models
-@using MOSTComputers.Models.Product.Models.ExternalXmlImport
 @using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.ProductStatuses
 @using MOSTComputers.Models.Product.Models.Promotions
 @using MOSTComputers.Models.Product.Models.Promotions.Files
-@using MOSTComputers.Models.Product.Models.Promotions.Groups
-@using MOSTComputers.Models.Product.Models.Validation
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
-@using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups
-@using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.Legacy
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New
 @using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.Legacy.Contracts
 @using MOSTComputers.Services.Identity.Models
 @using MOSTComputers.Services.ProductRegister.Models.Requests.Product
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageFileData
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
-@using MOSTComputers.Services.ProductRegister.Services
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
@@ -49,14 +32,9 @@
 @using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.UI.Web.Blazor.Services.ProductEditor
 @using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts
-@using MOSTComputers.UI.Web.Blazor.Utils
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
-@using Microsoft.Data.SqlClient
-@using OneOf
-@using OneOf.Types
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
-@using static MOSTComputers.Utils.Files.ContentTypeUtils
 
 @inject ICategoryService CategoryService
 @inject IManufacturerService ManufacturerService

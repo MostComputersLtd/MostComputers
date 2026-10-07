@@ -1,0 +1,129 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+@{
+    ProductImageListItemDisplayData listItemData = ItemData;
+
+    BrowserFileData? browserFile = listItemData.UploadedImageFileData;
+    ProductImageDisplayData? relatedImage = listItemData.RelatedImage;
+    ProductImageFileDisplayData? relatedImageFile = listItemData.RelatedImageFile;
+    PromotionProductFileInfoDisplayData? relatedPromotionFile = listItemData.RelatedPromotionFile;
+
+    string? imageDataRoute = listItemData.ImageFileUrl; 
+
+    int index = listItemData.Index;
+    string elementIndex = index.ToString();
+}
+
+<li id="@listItemData.EditorId"
+    name="productImageItem"
+    class="image-list-item"
+    draggable="true">
+
+    @if (listItemData.ImageFileUrl is not null)
+    {
+        <button name="productImageButton" aria-label="Image #@(index)" class="btn image-button"
+            data-image-url="@listItemData.ImageFileUrl"
+            style="background-image: url('@listItemData.ImageFileUrl');">
+        </button>
+    }
+    else
+    {
+        <button name="productImageButton" aria-label="Image #@(index)" class="btn image-button without-image">
+        </button>
+    }
+
+    @if (browserFile is not null)
+    {
+        <p class="align-text-center">
+            @($"{GetByteSizeString((ulong)browserFile.FileSize, ByteSizeStringAccuracy.WithGivenScalesDown(1))} ({browserFile.ImageSize.WidthPixels} X {browserFile.ImageSize.HeightPixels} px)")
+        </p>
+    }
+
+    @if (relatedImageFile is not null)
+    {
+        <div class="image-active-checkbox-container">
+            <input id="imageActiveCheckbox-@index" name="imageFileActiveCheckbox"
+                checked="@relatedImageFile.Active" type="checkbox"
+                class="image-active-checkbox"
+                aria-label="Toggle image active" />
+        </div>
+    }
+
+    <div class="image-delete-button-container">
+        <button name="productImageDeleteButton" type="button" class="btn-close image-delete-button"
+            aria-label="Delete"/>
+    </div>
+
+    <div>
+        @if (relatedImage?.DateModified is not null)
+        {
+            <p class="image-date-text">
+                @relatedImage.DateModified.Value.ToString("MM.dd.yyyy")
+            </p>
+        }
+        else if (browserFile is null)
+        {
+            <p class="image-date-text">
+                No date provided
+            </p>
+        }
+    </div>
+
+    @if (relatedPromotionFile?.FileInfoFileName is not null)
+    {
+        string promotionFileDataRoute = $"/api/images/promotionFileData/{relatedPromotionFile.FileInfoFileName}";
+
+        <div id="@relatedPromotionFile.EditorId" name="promotionFileItem"
+            class="promotion-product-file-name-container">
+            <p class="promotion-product-file-name-text">Promo:</p>
+
+            <a href="@promotionFileDataRoute" target="_blank" rel="noopener noreferrer" class="promotion-product-file-name">
+                @(relatedPromotionFile.FileInfoName ?? relatedPromotionFile.FileInfoFileName)
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="file-empty-placeholder"></p>
+    }
+
+    @if (relatedImageFile?.FileName is not null)
+    {
+        string imageFileDataRoute = $"/api/images/imageFileData/{relatedImageFile.FileName}";
+
+        string? imageDisplayOrderString = (relatedImageFile.DisplayOrder is not null)
+            ? $"{relatedImageFile.DisplayOrder}: "
+            : null;
+
+        string imageFileDisplayData = imageDisplayOrderString + relatedImageFile.FileName;
+
+        <div class="image-file-name-container">
+            <a href="@imageFileDataRoute" target="_blank" rel="noopener noreferrer" class="image-file-name">
+                @imageFileDisplayData
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="file-empty-placeholder"></p>
+    }
+
+    @if (listItemData.ValidationMessages.Count > 0)
+    {
+        <ValidationMessages Messages="listItemData.ValidationMessages" />
+    }
+
+    @if (JsonData != null)
+    {
+        <script name="productImageItemData" type="application/json">
+            @JsonData
+        </script>
+    }
+</li>
+
+@code{
+    [Parameter, EditorRequired] public required ProductImageListItemDisplayData ItemData { get; set; }
+    [Parameter] public string? JsonData { get; set; } = null;
+}

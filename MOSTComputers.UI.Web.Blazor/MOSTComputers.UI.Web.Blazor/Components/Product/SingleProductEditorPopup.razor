@@ -2527,7 +2527,7 @@
                     }
                     else if (validationFailure.PropertyName.StartsWith(documentRequestsStartString))
                     {
-                        int startIndexOfDocumentIndex = imageRequestsStartString.Length;
+                        int startIndexOfDocumentIndex = documentRequestsStartString.Length;
 
                         int indexOfEndOfDocumentIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfDocumentIndex);
 
@@ -2535,9 +2535,9 @@
                         {
                             string documentIndexAsString = validationFailure.PropertyName.Substring(startIndexOfDocumentIndex, indexOfEndOfDocumentIndex - startIndexOfDocumentIndex);
 
-                            if (int.TryParse(documentIndexAsString, out int imageIndex))
+                            if (int.TryParse(documentIndexAsString, out int documentIndex))
                             {
-                                documentDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
+                                documentDatas[documentIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
                             }
                         }
                     }

@@ -1,10 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.JSInterop;
+using Microsoft.OpenApi;
 using MOSTComputers.Services.Authentication;
 using MOSTComputers.Services.Authentication.Configuration;
 using MOSTComputers.Services.Caching.Configuration;
@@ -32,6 +35,7 @@ using MOSTComputers.UI.Web.Blazor.Components.Account;
 using MOSTComputers.UI.Web.Blazor.Components.Home;
 using MOSTComputers.UI.Web.Blazor.Components.Orders;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
+using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Authentication;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Documents;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Html;
@@ -47,10 +51,16 @@ using MOSTComputers.UI.Web.Blazor.Services.ProductEditor;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using MOSTComputers.UI.Web.Blazor.Services.Xml;
 using MOSTComputers.UI.Web.Blazor.Services.Xml.Contracts;
+using MOSTComputers.UI.Web.Blazor.Utils;
+using OpenIddict.Abstractions;
+using OpenIddict.Core;
+using OpenIddict.Validation.AspNetCore;
+using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
 using ZiggyCreatures.Caching.Fusion;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
+using static MOSTComputers.UI.Web.Blazor.Utils.OpenApiUtils;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -270,7 +280,7 @@ builder.Services.AddRazorComponents()
     {
         options.DetailedErrors = true;
     });
-    //.AddInteractiveWebAssemblyComponents();
+//.AddInteractiveWebAssemblyComponents();
 
 builder.Services.AddScoped<UserActivityTrackerService>();
 
@@ -283,16 +293,66 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
 })
-    .AddScheme<ApiAuthenticationSchemeOptions, ApiAuthenticationHandler>(
-        ApiAuthenticationScheme, options =>
+    .AddApplicationCookie()
+    .Configure(options =>
+    {
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.IsEssential = true;
+
+        //options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        //options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromDays(1);
+        options.SlidingExpiration = false;
+
+        options.LoginPath = "/account/login";
+        options.AccessDeniedPath = "/account/accessDenied";
+
+        options.Events = new()
         {
-        })
-    .AddIdentityCookies();
+            OnSigningIn = context =>
+            {
+                bool isAdmin = context.Principal?.IsInRole("Admin") ?? false;
+                bool isProductEditor = context.Principal?.IsInRole("ProductEditor") ?? false;
+                bool isXmlRelationEditor = context.Principal?.IsInRole("XmlRelationEditor") ?? false;
+
+                TimeSpan authTicketExpirationTime = TimeSpan.FromMinutes(30);
+
+                if (isAdmin || isProductEditor || isXmlRelationEditor)
+                {
+                    authTicketExpirationTime = TimeSpan.FromDays(1);
+                }
+
+                DateTimeOffset utcNow = TimeProvider.System.GetUtcNow();
+
+                context.Properties.ExpiresUtc = utcNow.Add(authTicketExpirationTime);
+
+                return Task.CompletedTask;
+            },
+        //     OnRedirectToLogin = ctx =>
+        //     {
+        //         ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        //         return Task.CompletedTask;
+        //     },
+        //     OnRedirectToAccessDenied = ctx =>
+        //     {
+        //         ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        //         return Task.CompletedTask;
+        //     }
+        };
+    });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.ReadInvoicesThatAllowApi, policy =>
+    .AddPolicy(Policies.Cookie, policy =>
     {
         policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
+
+        policy.RequireAuthenticatedUser();
+    })
+    .AddPolicy(Policies.ReadInvoices, policy =>
+    {
+        policy.AddAuthenticationSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme, IdentityConstants.ApplicationScheme);
 
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new DocumentReadRequirement()
@@ -304,9 +364,9 @@ builder.Services.AddAuthorizationBuilder()
     {
         policy.AddRequirements(new InvoiceReadResourceRequirement());
     })
-    .AddPolicy(Policies.ReadWarrantyCardsThatAllowApi, policy =>
+    .AddPolicy(Policies.ReadWarrantyCards, policy =>
     {
-        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
+        policy.AddAuthenticationSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme, IdentityConstants.ApplicationScheme);
 
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new DocumentReadRequirement()
@@ -317,17 +377,17 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Policies.ReadWarrantyCardResource, policy =>
     {
         policy.AddRequirements(new WarrantyCardReadResourceRequirement());
-    }) 
-    .AddPolicy(Policies.ReadOrders, policy =>
+    })
+    .AddPolicy(Policies.ReadOrderPageComponents, policy =>
     {
         policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme);
 
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new OrderReadRequirement());
     })
-    .AddPolicy(Policies.ReadOrdersThatAllowApi, policy =>
+    .AddPolicy(Policies.ReadOrders, policy =>
     {
-        policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, ApiAuthenticationScheme);
+        policy.AddAuthenticationSchemes(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme, IdentityConstants.ApplicationScheme);
 
         policy.RequireAuthenticatedUser();
         policy.AddRequirements(new OrderReadRequirement());
@@ -353,41 +413,66 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireUppercase = false;
 });
 
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
-
-    options.Cookie.IsEssential = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-    options.SlidingExpiration = true;
-
-    options.LoginPath = "/account/login";
-    options.AccessDeniedPath = "/account/accessDenied";
-});
-
 builder.Services.AddCustomIdentityWithPasswordsTableOnly(productDBConnectionString)
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+    .AddSignInManager();
+    // .AddDefaultTokenProviders();
 
 builder.Services.AddCustomerUsersRepository(most4WebDBConnectionString);
+
+builder.Services.AddUserAuthServices(productDBConnectionString);
 
 builder.Services.AddOpenIddictToDatabase()
     .AddServer(options =>
     {
-        options.SetTokenEndpointUris("connect/token");
+        options.SetTokenEndpointUris("api/auth/connect/token");
 
         options.AllowClientCredentialsFlow();
 
-        options.AddDevelopmentEncryptionCertificate()
-           .AddDevelopmentSigningCertificate();
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30));
+
+#if DEBUG
+        // if (builder.Environment.IsDevelopment())
+        // {
+            options.AddDevelopmentEncryptionCertificate()
+                .AddDevelopmentSigningCertificate();
+        // }
+#else
+        // else
+        // {
+            using X509Store certificateStore = new(StoreName.My, StoreLocation.LocalMachine);
+
+            certificateStore.Open(OpenFlags.ReadOnly);
+
+            X509Certificate2Collection encryptionCertificates = certificateStore.Certificates.Find(
+                X509FindType.FindBySubjectDistinguishedName,
+                "CN=portal.mostbg.com Server Encryption Certificate",
+                false);
+
+            foreach (X509Certificate2 encryptionCertificate in encryptionCertificates)
+            {
+                options.AddEncryptionCertificate(encryptionCertificate);
+            }
+
+            X509Certificate2Collection signingCertificates = certificateStore.Certificates.Find(
+                X509FindType.FindBySubjectDistinguishedName,
+                "CN=portal.mostbg.com Server Signing Certificate",
+                false);
+
+            foreach (X509Certificate2 signingCertificate in signingCertificates)
+            {
+                options.AddSigningCertificate(signingCertificate);
+            }
+        // }
+#endif
 
         options.UseAspNetCore()
            .EnableTokenEndpointPassthrough();
+    })
+    .AddValidation(options =>
+    {
+        options.UseLocalServer();
+        options.UseAspNetCore();
     });
-
-builder.Services.AddUserAuthServices(productDBConnectionString);
-builder.Services.AddRemoteAuthServices(productDBConnectionString);
 
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
 
@@ -409,6 +494,77 @@ builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOp
 //            });
 //    });
 //});
+
+builder.Services.AddOpenApi(options =>
+{
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+
+    options.ShouldInclude = apiDescription =>
+    {
+        foreach (object metadata in apiDescription.ActionDescriptor.EndpointMetadata)
+        {
+            if (metadata is IncludeInOpenApiSpecMetadata)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info = new()
+        {
+            Title = DocumentTitle,
+            Version = "v1",
+            Description = DocumentDescription,
+        };
+
+        if (document.Tags != null)
+        {
+            document.Tags = new HashSet<OpenApiTag>(document.Tags.OrderBy(x => x.Name));
+        }
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();  
+
+        document.Components.SecuritySchemes[SecuritySchemes.CookieApplicationSchemeName] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Cookie,
+            Name = ".AspNetCore.Identity.Application",
+        };
+
+        document.Components.SecuritySchemes[SecuritySchemes.ApiClientRegisterSchemeName] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "basic",
+        };
+
+        document.Components.SecuritySchemes[SecuritySchemes.ApiClientSchemeName] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.OAuth2,
+            Flows = new OpenApiOAuthFlows()
+            {
+                ClientCredentials = new()
+                {
+                    TokenUrl = new Uri("/api/auth/connect/token", UriKind.Relative),
+                    Scopes = new Dictionary<string, string>()
+                    {
+                        [Scopes.ReadInvoices] = "Allows user to read relevant invoices",
+                        [Scopes.ReadWarrantyCards] = "Allows user to read relevant warranty cards",
+                        [Scopes.ReadOrders] = "Allows user to read relevant orders",
+                    },
+                },
+            }
+        };
+
+        return Task.CompletedTask;
+    }); 
+
+    options.AddOperationTransformer<SecurityRequirementOperationTransformer>();
+});
 
 builder.Services.AddLocalization();
 
@@ -433,7 +589,7 @@ app.UseSerilogRequestLogging(options =>
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
+    app.UseWebAssemblyDebugging(); 
 }
 else
 {
@@ -442,12 +598,58 @@ else
     app.UseHsts();
 }
 
+app.MapOpenApi();
+
+app.MapScalarApiReference(options =>
+{
+    options.Title = "Portal - MOST Computers API Reference";
+    options.DarkMode = true;
+    options.Theme = ScalarTheme.Mars;
+    options.WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch);
+    options.ShowDeveloperTools = app.Environment.IsDevelopment() ? DeveloperToolsVisibility.Never : DeveloperToolsVisibility.Never;
+    options.Authentication = new ScalarAuthenticationOptions()
+    {
+        PreferredSecuritySchemes = [
+            SecuritySchemes.ApiClientSchemeName,
+        ],
+
+        SecuritySchemes = new Dictionary<string, ScalarSecurityScheme>()
+        {
+            [SecuritySchemes.CookieApplicationSchemeName] = new ScalarApiKeySecurityScheme()
+            {
+                Name = Microsoft.Net.Http.Headers.HeaderNames.Cookie,
+                Description = "Basic", 
+            },
+
+            [SecuritySchemes.ApiClientRegisterSchemeName] = new ScalarHttpSecurityScheme()
+            {
+                Username = "",
+                Password = "",
+            },
+
+            [SecuritySchemes.ApiClientSchemeName] = new ScalarOAuth2SecurityScheme()
+            {
+                Flows = new()
+                {
+                    ClientCredentials = new()
+                    {
+                        TokenUrl = "/api/auth/connect/token",
+                        SelectedScopes = [Scopes.ReadInvoices, Scopes.ReadWarrantyCards, Scopes.ReadOrders],
+                    }
+                },
+
+                DefaultScopes = [Scopes.ReadInvoices, Scopes.ReadWarrantyCards, Scopes.ReadOrders],
+            }
+        },
+    };
+});
+
 app.UseHttpsRedirection();
 
 app.MapStaticAssets();
 app.UseAntiforgery();
 
-app.UseRequestLocalization(options => 
+app.UseRequestLocalization(options =>
 {
     string defaultCulture = "en-US";
 
@@ -488,15 +690,5 @@ app.MapPromotionFileDataEndpoints();
 app.MapProductDataComponentEndpoints();
 app.MapPromotionGroupPageComponentEndpoints();
 app.MapOrdersPageComponentEndpoints();
-
-// using (IServiceScope sp = app.Services.CreateScope())
-// {
-//     RoleManager<PasswordsTableOnlyRole> roleManager = sp.ServiceProvider.GetRequiredService<RoleManager<PasswordsTableOnlyRole>>();
-// 
-//     await roleManager.CreateAsync(new ()
-//     {
-//         Name = "CustomerOrderViewer",
-//     });
-// }
 
 app.Run();

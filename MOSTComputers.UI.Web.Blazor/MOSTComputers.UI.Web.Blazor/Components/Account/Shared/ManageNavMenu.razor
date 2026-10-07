@@ -13,32 +13,13 @@
     <li class="nav-item">
         <NavLink class="nav-link" href="account/manage/changePassword">Password</NavLink>
     </li>
-    @if (hasExternalLogins)
-    {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="account/manage/externalLogins">External logins</NavLink>
-        </li>
-    }
-
-    @if (isTwoFactorAuthenticationEnabled)
-    {
-        <li class="nav-item">
-            <NavLink class="nav-link" href="account/manage/twoFactorAuthentication">Two-factor authentication</NavLink>
-        </li>
-    }
-
     <li class="nav-item">
         <NavLink class="nav-link" href="account/manage/personalData">Personal data</NavLink>
     </li>
 </ul>
 
 @code {
-    private static readonly bool isTwoFactorAuthenticationEnabled = false;
-
-    private bool hasExternalLogins;
-
     protected override async Task OnInitializedAsync()
     {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
     }
 }

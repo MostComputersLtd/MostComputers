@@ -1,0 +1,33 @@
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Property
+
+<Popup IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            <h5 class="popup-header-text me-3">New XML:</h5>
+
+            <h4 class="popup-header-text me-3">CSTID: @PopupData.Product?.Id</h4>
+            <h4 class="popup-header-text me-3">@PopupData.Product?.Name</h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <ProductPropertiesTable Product="@PopupData.Product"
+            ProductProperties="@PopupData.Properties">
+        </ProductPropertiesTable>
+    </ChildContent>
+</Popup>
+
+@code{
+    public sealed class ProductEditorPropertiesPopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required Product Product { get; set; }
+        public required List<ProductProperty> Properties { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required ProductEditorPropertiesPopupData PopupData { get; set; }
+}

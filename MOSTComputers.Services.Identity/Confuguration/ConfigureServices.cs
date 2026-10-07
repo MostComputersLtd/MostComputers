@@ -29,7 +29,7 @@ public static class ConfigureServices
                 ApiAuthorization,
                 ApiScope,
                 ApiToken,
-                string>();
+                Guid>();
         });
 
         IdentityBuilder identityBuilder = services
@@ -56,7 +56,7 @@ public static class ConfigureServices
                         ApiAuthorization,
                         ApiScope,
                         ApiToken,
-                        string>();
+                        Guid>();
             });
     }
 

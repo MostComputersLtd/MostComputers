@@ -77,7 +77,7 @@ function openGroupPromotionEditorPopup() {
 }
 
 function openPromotionGroupEditorPopup() {
-    promotionGroupEditor.openPromotionGroupEditorPopup(null)
+    promotionGroupEditor.openPromotionGroupEditorPopup(null);
 }
 
 function openPromotionGroupEditorPopupFromListItem(promotionListItem) {

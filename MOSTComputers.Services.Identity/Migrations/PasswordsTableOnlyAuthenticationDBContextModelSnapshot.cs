@@ -24,9 +24,9 @@ namespace MOSTComputers.Services.Identity.Migrations
 
             modelBuilder.Entity("MOSTComputers.Services.Identity.Models.ApiApplication", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ApplicationType")
                         .HasMaxLength(50)
@@ -93,12 +93,12 @@ namespace MOSTComputers.Services.Identity.Migrations
 
             modelBuilder.Entity("MOSTComputers.Services.Identity.Models.ApiAuthorization", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyToken")
                         .IsConcurrencyToken()
@@ -119,8 +119,8 @@ namespace MOSTComputers.Services.Identity.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Subject")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
 
                     b.Property<string>("Type")
                         .HasMaxLength(50)
@@ -135,9 +135,9 @@ namespace MOSTComputers.Services.Identity.Migrations
 
             modelBuilder.Entity("MOSTComputers.Services.Identity.Models.ApiScope", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyToken")
                         .IsConcurrencyToken()
@@ -177,15 +177,15 @@ namespace MOSTComputers.Services.Identity.Migrations
 
             modelBuilder.Entity("MOSTComputers.Services.Identity.Models.ApiToken", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ApplicationId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid?>("ApplicationId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AuthorizationId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid?>("AuthorizationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ConcurrencyToken")
                         .IsConcurrencyToken()
@@ -216,8 +216,8 @@ namespace MOSTComputers.Services.Identity.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Subject")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)");
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
 
                     b.Property<string>("Type")
                         .HasMaxLength(150)

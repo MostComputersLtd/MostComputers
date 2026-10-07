@@ -1,0 +1,55 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@{
+    Product product = PopupData.Product;
+    ProductDocumentDisplayData productDocumentData = PopupData.ProductDocumentDisplayData; 
+}
+
+<Popup IsVisible='@PopupData.IsVislble'
+    PopupMarginOptions='new() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" }'
+    AddFullScreenButtonToHeader="true">
+    <HeaderContent>
+
+        <div class="product-data-popup-header">
+
+            @if (product.Manufacturer is not null)
+            {
+                <h4 class="popup-header-text product-data-popup-header-text">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+            }
+
+            @if (product.Category is not null)
+            {
+                <h4 class="popup-header-text me-2 product-data-popup-header-text">Category: @product.Category.Description</h4>
+            }
+
+            <h4 class="popup-header-text product-data-popup-header-text">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text product-data-popup-header-text">@(product.Name ?? "-")</h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="product-document-pdf-display-container">
+
+            @if (PopupData.DocumentPath != null)
+            {
+                <iframe id="productDocumentPdfDisplay" class="product-document-pdf-display"
+                    src="@PopupData.DocumentPath"></iframe>
+            }
+            else
+            {
+                <p>File is invalid</p>
+            }
+        </div>
+    </ChildContent>
+</Popup>
+
+@code{
+
+    public sealed class ProductDocumentPopupData
+    {
+        public required bool IsVislble { get; set; }
+        public required MOSTComputers.Models.Product.Models.Product Product { get; set; }
+        public required string DocumentPath { get; init; }
+    }
+
+    [Parameter, EditorRequired] public required ProductDocumentPopupData PopupData { get; set; }
+}

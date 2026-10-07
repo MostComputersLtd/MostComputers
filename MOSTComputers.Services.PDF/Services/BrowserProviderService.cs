@@ -77,8 +77,6 @@ internal sealed class BrowserProviderService : IBrowserProviderService, IDisposa
     {
         if (_disposed) return;
 
-        Console.WriteLine("Disposing BrowserProviderService...");
-
         _browser?.Dispose();
 
         _browser = null;
@@ -89,8 +87,6 @@ internal sealed class BrowserProviderService : IBrowserProviderService, IDisposa
     public async ValueTask DisposeAsync()
     {
         if (_disposed) return;
-
-        Console.WriteLine("ASYNC Disposing BrowserProviderService...");
 
         if (_browser is not null)
         {

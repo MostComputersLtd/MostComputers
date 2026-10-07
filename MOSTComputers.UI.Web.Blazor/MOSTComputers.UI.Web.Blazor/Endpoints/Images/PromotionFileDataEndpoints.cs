@@ -42,6 +42,6 @@ public static class PromotionFileDataEndpoints
             return Results.NotFound($"The file was not found: {fullFileName}.");
         }
 
-        return Results.File(fileStream, contentType!);
+        return Results.File(fileStream, contentType);
     }
 }

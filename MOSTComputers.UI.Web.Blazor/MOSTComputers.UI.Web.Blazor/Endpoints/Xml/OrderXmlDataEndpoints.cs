@@ -1,11 +1,15 @@
+using System.ComponentModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.DataAccess.Documents.Models;
+using MOSTComputers.Services.DataAccess.Documents.Models.Requests.Orders;
 using MOSTComputers.Services.DataToXmlConversion.Models;
 using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.Documents.OrderData;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Xml.New.Contracts;
 using MOSTComputers.Services.Orders.Services;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
@@ -19,26 +23,54 @@ namespace MOSTComputers.UI.Web.Blazor.Endpoints.Xml;
 
 public static class OrderXmlDataEndpoints
 {
-    internal const string EndpointGroupRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "order/" + "xml";
+    internal const string EndpointGroupRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "documents/" + "order/" + "xml";
 
     public static IEndpointConventionBuilder MapOrderXmlEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
         endpointGroup.MapGet("/{orderId:int}", GetOrderXmlAsync)
-            .RequireAuthorization(Policies.ReadOrdersThatAllowApi)
-            .DisableCookieRedirect();
+            .RequireAuthorization(Policies.ReadOrders)
+            .DisableCookieRedirect()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithMetadata(new OpenApiOAuthEndpointDescriptionMetadata([Scopes.ReadOrders]))
+            .WithTags("Order XML")
+            .WithName("GetOrderXml")
+            .WithSummary("Returns XML data for an order")
+            .WithDescription("Returns the XML data for the specified order.");
 
         endpointGroup.MapGet("/{orderId:int}/prices", GetXmlPricesForOrderAsync)
-            .RequireAuthorization(Policies.ReadOrdersThatAllowApi)
-            .DisableCookieRedirect();
+            .RequireAuthorization(Policies.ReadOrders)
+            .DisableCookieRedirect()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithMetadata(new OpenApiOAuthEndpointDescriptionMetadata([Scopes.ReadOrders]))
+            .WithTags("Order XML")
+            .WithName("GetXmlPricesForOrder")
+            .WithSummary("Returns XML price data for an order")
+            .WithDescription("Returns the XML price data for the specified order.");
+
+        endpointGroup.MapGet("/recent", GetXmlForRecentOrdersAsync)
+            .RequireAuthorization(Policies.ReadOrders)
+            .DisableCookieRedirect()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithMetadata(new OpenApiOAuthEndpointDescriptionMetadata([Scopes.ReadOrders]))
+            .WithTags("Order XML")
+            .WithName("GetXmlForRecentOrders")
+            .WithSummary("Returns XML data for recent orders")
+            .WithDescription("Returns the XML data for recent orders.");
 
         return endpointGroup;
     }
 
+    [ProducesResponseType<XmlOrder>(200, "application/xml",
+        Description = "The XML data for the specified order.")]
+    [ProducesResponseType(403, Description = "The authenticated user is not authorized to access the order.")]
+    [ProducesResponseType(404, Description = "The specified order does not exist.")]
     private static async Task<IResult> GetOrderXmlAsync(
         HttpContext httpContext,
-        [FromRoute] int orderId,
+        [FromRoute(Name = "orderId")]
+        [Description("The ID of the order.")]
+        int orderId,
         [FromServices] IAuthorizationService authorizationService,
         [FromServices] IOrdersService ordersService,
         [FromServices] IOrderXmlService orderXmlService)
@@ -58,35 +90,7 @@ public static class OrderXmlDataEndpoints
             return Results.Forbid();
         }
 
-        XmlOrder xmlOrder = new()
-        {
-            Id = order.Id,
-            Status = order.Status,
-            QuoteId = order.QuoteId,
-            UserId = order.UserId,
-            OrderDate = order.OrderDate,
-            OrderName = order.OrderName,
-            BusinessId = order.BusinessId,
-            DealId = order.DealId,
-            Currency = order.Currency,
-            Info = order.Info,
-        };
-
-        foreach (OrderItem orderItem in order.Items)
-        {
-            XmlOrderItem xmlOrderItem = new()
-            {
-                ProductId = orderItem.ProductId,
-                Quantity = orderItem.Quantity,
-                Price = orderItem.Price,
-                AdditionalWarranty = orderItem.AdditionalWarranty,
-                PromotionPAmount = orderItem.PromotionPAmount,
-                PromotionRAmount = orderItem.PromotionRAmount,
-                ExternalInfo = orderItem.ExternalInfo,
-            };
-
-            xmlOrder.Items.Add(xmlOrderItem);
-        }
+        XmlOrder xmlOrder = MapToXmlOrder(order);
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
@@ -94,11 +98,17 @@ public static class OrderXmlDataEndpoints
         await orderXmlService.TrySerializeXmlAsync(httpContext.Response.Body, xmlOrder);
 
         return Results.Empty;
-    }
+    } 
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml",
+        Description = "The XML price data for the specified order.")]
+    [ProducesResponseType(403, Description = "The authenticated user is not authorized to access the order.")]
+    [ProducesResponseType(404, Description = "The specified order does not exist.")]
     private static async Task<IResult> GetXmlPricesForOrderAsync(
         HttpContext httpContext,
-        [FromRoute] int orderId,
+        [FromRoute(Name = "orderId")]
+        [Description("The ID of the order.")]
+        int orderId,
         [FromServices] IAuthorizationService authorizationService,
         [FromServices] IOrdersService ordersService,
         [FromServices] IProductService productService,
@@ -190,75 +200,112 @@ public static class OrderXmlDataEndpoints
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
 
         await productToXmlService.TryGetXmlForProductsAsync(
-                httpContext.Response.Body, productsWithNewPrices, productXmlOptions);
+            httpContext.Response.Body, productsWithNewPrices, productXmlOptions);
 
         //await RecordXmlDownloadAsync(xmlDownloadsRepository, httpContext, _allProductsResourceType);
 
         return Results.Empty;
     }
 
-    // public static async Task<OneOf<Order, IResult>> GetOrderByIdIfUserIsAllowedAsync(
-    //     IOrdersService ordersService,
-    //     ClaimsPrincipal claimsPrincipal,
-    //     int orderId)
-    // {
-    //     bool isAdmin = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Admin");
-    //     bool isEmployee = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Employee");
-    //     bool isCustomer = claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "CustomerInvoiceViewer");
+    [ProducesResponseType<List<XmlOrder>>(200, "application/xml",
+        Description = "The XML data for the recent orders.")]
+    [ProducesResponseType(400, Description = "The start time is missing or is more than one week in the past.")]
+    [ProducesResponseType(403,
+        Description = "The authenticated user is not authorized to access one or more orders.")]
+    [ProducesResponseType(404, Description = "No orders exist in the specified time period.")]
+    private static async Task<IResult> GetXmlForRecentOrdersAsync(
+        [FromQuery(Name = "startTime")]
+        [Description("The start date and time from which to retrieve recent orders.")]
+        DateTime? startTime,
+        HttpContext httpContext,
+        [FromServices] IAuthorizationService authorizationService,
+        [FromServices] IOrdersService ordersService,
+        [FromServices] IOrderXmlService orderXmlService)
+    {
+        DateTime maxStartTime = DateTime.Today.AddDays(-7);
 
-    //     bool isAdminOrEmployee = isAdmin || isEmployee;
+        if (startTime == null || startTime < maxStartTime)
+        {
+            return Results.BadRequest("Provide a valid start time");
+        }
 
-    //     int? clientId = null;
+        int? clientId = InvoiceXmlDataEndpoints.GetClientIdFromRequest(httpContext.User);
 
-    //     DateTime? searchStartDateTime = null;
+        OrderSearchRequest orderSearchRequest = new()
+        {
+            SearchStartDateTime = startTime,
+            CustomerId = clientId,
+        };
 
-    //     if (isAdminOrEmployee)
-    //     {
-    //         searchStartDateTime = DateTime.Today.AddDays(-7);
-    //     }
-    //     else if (isCustomer)
-    //     {
-    //         string? customerBIDAsString = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+        List<Order> orders = await ordersService.GetAllMatchingAsync(orderSearchRequest);
 
-    //         if (customerBIDAsString == null)
-    //         {
-    //             return OneOf<Order, IResult>.FromT1(Results.StatusCode(500));
-    //         }
+        if (orders.Count == 0) return Results.NotFound();
 
-    //         bool parseSuccess = int.TryParse(customerBIDAsString, out int customerBIDParsed);
+        foreach (Order order in orders)
+        {
+            AuthorizationResult authorizationResult = await authorizationService.AuthorizeAsync(
+                httpContext.User, order, Policies.ReadOrderResource);
 
-    //         if (!parseSuccess)
-    //         {
-    //             return OneOf<Order, IResult>.FromT1(Results.BadRequest());
-    //         }
+            if (!authorizationResult.Succeeded)
+            {
+                return Results.Forbid();
+            }
+        }
 
-    //         clientId = customerBIDParsed;
+        List<XmlOrder> xmlOrders = [];
 
-    //         searchStartDateTime = DateTime.Today.AddDays(-7);
-    //     }
-    //     else
-    //     {
-    //         return OneOf<Order, IResult>.FromT1(Results.Unauthorized());
-    //     }
+        foreach (Order order in orders)
+        {
+            XmlOrder xmlOrder = MapToXmlOrder(order);
 
-    //     Order? order = await ordersService.GetByIdAsync(orderId);
+            xmlOrders.Add(xmlOrder);
+        }
 
-    //     if (order == null)
-    //     {
-    //         return OneOf<Order, IResult>.FromT1(Results.NotFound());
-    //     }
+        OrderXmlFullData orderXmlFullData = new()
+        {
+            Orders = xmlOrders,
+        };
 
-    //     if (searchStartDateTime != null
-    //         && order.OrderDate < searchStartDateTime)
-    //     {
-    //         return OneOf<Order, IResult>.FromT1(Results.NotFound());
-    //     }
+        httpContext.Response.ContentType = "application/xml";
+        httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml"); 
 
-    //     if (!isAdmin && isCustomer && order.BusinessId != clientId)
-    //     {
-    //         return OneOf<Order, IResult>.FromT1(Results.NotFound());
-    //     }
+        await orderXmlService.TrySerializeXmlAsync(httpContext.Response.Body, orderXmlFullData);
 
-    //     return order;
-    // }
+        return Results.Empty;
+    }
+
+    private static XmlOrder MapToXmlOrder(Order order)
+    {
+        XmlOrder xmlOrder = new()
+        {
+            Id = order.Id,
+            Status = order.Status,
+            QuoteId = order.QuoteId,
+            UserId = order.UserId,
+            OrderDate = order.OrderDate,
+            OrderName = order.OrderName,
+            BusinessId = order.BusinessId,
+            DealId = order.DealId,
+            Currency = order.Currency,
+            Info = order.Info,
+        };
+
+        foreach (OrderItem orderItem in order.Items)
+        {
+            XmlOrderItem xmlOrderItem = new()
+            {
+                ProductId = orderItem.ProductId,
+                Quantity = orderItem.Quantity,
+                Price = orderItem.Price,
+                AdditionalWarranty = orderItem.AdditionalWarranty,
+                PromotionPAmount = orderItem.PromotionPAmount,
+                PromotionRAmount = orderItem.PromotionRAmount,
+                ExternalInfo = orderItem.ExternalInfo,
+            };
+
+            xmlOrder.Items.Add(xmlOrderItem);
+        }
+
+        return xmlOrder;
+    }
 }

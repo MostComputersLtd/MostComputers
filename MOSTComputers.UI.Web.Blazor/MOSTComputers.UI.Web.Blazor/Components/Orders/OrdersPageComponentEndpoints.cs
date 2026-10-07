@@ -28,11 +28,11 @@ internal static class OrdersPageComponentEndpoints
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
         endpointGroup.MapGet("/order/{orderId:int?}", GetOrderAsync)
-            .RequireAuthorization(Policies.ReadOrders)
+            .RequireAuthorization(Policies.ReadOrderPageComponents)
             .DisableCookieRedirect();
 
         endpointGroup.MapPost("/search", GetSearchResultsAsync)
-            .RequireAuthorization(Policies.ReadOrders)
+            .RequireAuthorization(Policies.ReadOrderPageComponents)
             .DisableCookieRedirect();
 
         return endpointGroup;
@@ -55,7 +55,7 @@ internal static class OrdersPageComponentEndpoints
 
         int? clientId = null;
 
-        DateTime? searchStartDateTime = DateTime.Today.AddDays(-7);
+        DateTime? searchStartDateTime = DateTime.Today.AddDays(-14);
 
         if (isAdminOrEmployee)
         {
@@ -65,9 +65,8 @@ internal static class OrdersPageComponentEndpoints
             }
 
             clientId = ordersSearchRequest.ClientId;
-
         }
-        else if (claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "CustomerInvoiceViewer"))
+        else if (claimsPrincipal.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "CustomerOrderViewer"))
         {
             string? customerBIDAsString = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
 
@@ -78,8 +77,6 @@ internal static class OrdersPageComponentEndpoints
             }
 
             clientId = customerBIDParsed;
-
-            searchStartDateTime = DateTime.Today.AddDays(-7);
         }
         else
         {

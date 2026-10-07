@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.Sitemap;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
+using System.ComponentModel;
 using System.Xml;
 
 namespace MOSTComputers.UI.Web.Blazor.Endpoints.Xml;
@@ -43,13 +45,36 @@ public static class SitemapEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet(_sitemapIndexUrl, GetSitemapIndexForAllResourcesAsync);
-        endpointGroup.MapGet(_staticPageSitemapUrl, GetStaticPagesSitemapAsync);
-        endpointGroup.MapGet(_productSitemapUrl, GetProductsSitemapAsync);
+        endpointGroup.MapGet(_sitemapIndexUrl, GetSitemapIndexForAllResourcesAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Sitemap")
+            .WithName("GetSitemapIndexForAllResources")
+            .WithSummary("Returns the sitemap index for all resources")
+            .WithDescription("Returns the sitemap index containing references to all resource sitemaps.");
+
+        endpointGroup.MapGet(_staticPageSitemapUrl, GetStaticPagesSitemapAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Sitemap")
+            .WithName("GetStaticPagesSitemap")
+            .WithSummary("Returns a sitemap for static pages")
+            .WithDescription("Returns a sitemap containing a page of application's static pages.");
+
+        endpointGroup.MapGet(_productSitemapUrl, GetProductsSitemapAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Sitemap")
+            .WithName("GetProductsSitemap")
+            .WithSummary("Returns a sitemap for products")
+            .WithDescription("Returns a sitemap containing a page of application's products.");
 
         return endpointGroup;
     }
 
+
+    [ProducesResponseType<SitemapIndex>(200, "application/xml",
+        Description = "The sitemap containing references to all resource sitemaps.")]
     private static async Task<IResult> GetSitemapIndexForAllResourcesAsync(
         [FromServices] EndpointDataSource EndpointsDataSource,
         HttpContext httpContext,
@@ -100,8 +125,12 @@ public static class SitemapEndpoints
         return Results.Empty;
     }
     
+    [ProducesResponseType<Sitemap>(200, "application/xml", Description = "The sitemap containing static pages.")]
+    [ProducesResponseType(404, Description = "The requested sitemap page does not exist.")]
     private static async Task<IResult> GetStaticPagesSitemapAsync(
-        [FromRoute] int page,
+        [FromRoute(Name = "page")]
+        [Description("The page number of the static pages sitemap.")]
+        int page,
         HttpContext httpContext)
     {
         if (page < 1)
@@ -144,8 +173,12 @@ public static class SitemapEndpoints
         return Results.Empty;
     }
 
+    [ProducesResponseType<Sitemap>(200, "application/xml", Description = "The sitemap containing product pages.")]
+    [ProducesResponseType(404, Description = "The requested sitemap page does not exist.")]
     private static async Task<IResult> GetProductsSitemapAsync(
-        [FromRoute] int page,
+        [FromRoute(Name = "page")]
+        [Description("The page number of the static pages sitemap.")]
+        int page,
         HttpContext httpContext,
         [FromServices] IProductSearchService productSearchService)
     {

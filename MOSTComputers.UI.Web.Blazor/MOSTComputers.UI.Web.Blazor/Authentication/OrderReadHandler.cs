@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using MOSTComputers.Services.Authentication.Contracts;
-using MOSTComputers.Services.Authentication.Models;
+using Microsoft.IdentityModel.Tokens;
+using OpenIddict.Abstractions;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Authentication;
@@ -11,11 +11,9 @@ public sealed class OrderReadRequirement : IAuthorizationRequirement
 {
 }
 
-public sealed class OrderReadHandler(IApiSecretAuthService apiSecretAuthService)
+public sealed class OrderReadHandler
     : AuthorizationHandler<OrderReadRequirement>
 {
-    private readonly IApiSecretAuthService _apiSecretAuthService = apiSecretAuthService;
-
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, OrderReadRequirement requirement)
     {
@@ -26,7 +24,7 @@ public sealed class OrderReadHandler(IApiSecretAuthService apiSecretAuthService)
         if (!isLoggedUser)
         {
             ClaimsIdentity? remoteConnection = claimsPrincipal.Identities.FirstOrDefault(
-                x => x.AuthenticationType == ApiAuthenticationScheme);
+                x => x.AuthenticationType == TokenValidationParameters.DefaultAuthenticationType);
 
             if (remoteConnection == null)
             {
@@ -35,12 +33,7 @@ public sealed class OrderReadHandler(IApiSecretAuthService apiSecretAuthService)
                 return;
             }
 
-            Claim apiSecretIdClaim = remoteConnection.Claims.First(x => x.Type == "ApiSecretId");
-
-            long apiSecretId = long.Parse(apiSecretIdClaim.Value);
-
-            bool hasPermission = await _apiSecretAuthService.SecretHasActivePermissionAsync(
-                apiSecretId, ApiSecretPermissions.ReadOrders);
+            bool hasPermission = remoteConnection.HasScope(Scopes.ReadOrders);
 
             if (!hasPermission)
             {

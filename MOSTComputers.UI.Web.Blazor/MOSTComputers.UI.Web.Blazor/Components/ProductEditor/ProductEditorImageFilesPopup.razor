@@ -1,0 +1,73 @@
+@using MOSTComputers.Models.Product.Models.ProductImages
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+
+<Popup IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+            <h5 class="popup-header-text me-3">Upload:</h5>
+
+            <h4 class="popup-header-text me-3">CSTID: @PopupData.Product.Id</h4>
+            <h4 class="popup-header-text me-3">@PopupData.Product.Name</h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="d-flex flex-column p-2 full-parent-width">
+
+            <ul class="full-parent-width list-unstyled d-flex mb-0" style="height: 13em;">
+
+                @if (PopupData.FileNameData is not null
+                    && PopupData.FileNameData.Count > 0)
+                {
+                    for (int i = 0; i < PopupData.FileNameData.Count; i++)
+                    {
+                        ProductImageFileData imageFileNameInfo = PopupData.FileNameData[i];
+
+                        string? imageDataRoute = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{imageFileNameInfo.FileName}";
+
+                        float opacityOfLi = imageFileNameInfo.Active ? 1.0F : 0.3F;
+
+                        <li style="position: relative; min-width: 20%; opacity: @opacityOfLi;">
+
+                            <div class="product-image-file-active-button-container">
+
+                                @if (imageFileNameInfo.Active)
+                                {
+                                    <input type="checkbox" aria-label="Close" checked class="product-image-file-active-button" />
+                                }
+                                else
+                                {
+                                    <input type="checkbox" aria-label="Close" class="product-image-file-active-button" />
+                                }
+                            </div>
+
+                            <button name="imageFileButton" class="btn full-parent-width full-parent-height"
+                                data-image-route="@imageDataRoute"
+                                style="background: url('@imageDataRoute') no-repeat center; background-size: contain; background-origin: content-box;">
+                            </button>
+
+                            <div class="d-flex flex-column justify-content-center">
+                                <p class="align-text-center mb-0">
+                                    @imageFileNameInfo.FileName
+                                </p>
+                            </div>
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code{
+    public sealed class ProductEditorImageFilesPopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required MOSTComputers.Models.Product.Models.Product Product { get; set; }
+        public required List<ProductImageFileData>? FileNameData { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required ProductEditorImageFilesPopupData PopupData { get; set; }
+}

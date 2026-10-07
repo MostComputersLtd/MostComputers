@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using MOSTComputers.Services.Authentication.Contracts;
-using MOSTComputers.Services.Authentication.Models;
+using Microsoft.IdentityModel.Tokens;
+using OpenIddict.Abstractions;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Authentication;
@@ -18,11 +18,9 @@ public sealed class DocumentReadRequirement : IAuthorizationRequirement
     public required DocumentType Type { get; init; }
 }
 
-public sealed class DocumentReadHandler(IApiSecretAuthService apiSecretAuthService)
+public sealed class DocumentReadHandler
     : AuthorizationHandler<DocumentReadRequirement>
 {
-    private readonly IApiSecretAuthService _apiSecretAuthService = apiSecretAuthService;
-
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context, DocumentReadRequirement requirement)
     {
@@ -33,7 +31,7 @@ public sealed class DocumentReadHandler(IApiSecretAuthService apiSecretAuthServi
         if (!isLoggedUser)
         {
             ClaimsIdentity? remoteConnection = claimsPrincipal.Identities.FirstOrDefault(
-                x => x.AuthenticationType == ApiAuthenticationScheme);
+                x => x.AuthenticationType == TokenValidationParameters.DefaultAuthenticationType);
 
             if (remoteConnection == null)
             {
@@ -42,18 +40,14 @@ public sealed class DocumentReadHandler(IApiSecretAuthService apiSecretAuthServi
                 return;
             }
 
-            ApiSecretPermissions permissionToCheck = requirement.Type switch
+            string scopeToCheck = requirement.Type switch
             {
-                DocumentReadRequirement.DocumentType.Invoice => ApiSecretPermissions.ReadInvoices,
-                DocumentReadRequirement.DocumentType.WarrantyCard => ApiSecretPermissions.ReadWarrantyCards,
+                DocumentReadRequirement.DocumentType.Invoice => Scopes.ReadInvoices,
+                DocumentReadRequirement.DocumentType.WarrantyCard => Scopes.ReadWarrantyCards,
                 _ => throw new NotSupportedException()
             };
 
-            Claim apiSecretIdClaim = remoteConnection.Claims.First(x => x.Type == "ApiSecretId");
-
-            long apiSecretId = long.Parse(apiSecretIdClaim.Value);
-
-            bool hasPermission = await _apiSecretAuthService.SecretHasActivePermissionAsync(apiSecretId, permissionToCheck);
+            bool hasPermission = remoteConnection.HasScope(scopeToCheck);
 
             if (!hasPermission)
             {

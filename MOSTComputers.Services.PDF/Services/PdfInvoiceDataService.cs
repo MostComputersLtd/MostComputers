@@ -18,10 +18,7 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
         _currencyVATService = currencyVATService;
     }
 
-    private const string _defaultFirmAddress = "бул. Шипченски проход, бл. 240, вх. Г";
-
-    private const char _invoiceNumberStartingChar1 = 'C';
-    private const char _invoiceNumberStartingChar2 = 'H';
+    private const string _defaultFirmAddress = "бул. Шипченски проход, бл. 240, вх. Г"; 
 
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IFirmDataRepository _firmDataRepository;
@@ -42,13 +39,11 @@ internal sealed class PdfInvoiceDataService : IPdfInvoiceDataService
     {
         if (string.IsNullOrWhiteSpace(invoiceNumber)) return null;
 
-        if (invoiceNumber.StartsWith(_invoiceNumberStartingChar1)
-            || invoiceNumber.StartsWith(_invoiceNumberStartingChar2))
-        {
-            invoiceNumber = invoiceNumber[1..];
-        }
+        int? invoiceNumberParsed = _invoiceRepository.GetInvoiceNumberWithoutPrefix(invoiceNumber);
 
-        Invoice? invoice = await _invoiceRepository.GetInvoiceByNumberAsync(invoiceNumber);
+        if (invoiceNumberParsed == null) return null;
+
+        Invoice? invoice = await _invoiceRepository.GetInvoiceByNumberWithoutPrefixAsync(invoiceNumberParsed.Value);
 
         if (invoice is null) return null;
 

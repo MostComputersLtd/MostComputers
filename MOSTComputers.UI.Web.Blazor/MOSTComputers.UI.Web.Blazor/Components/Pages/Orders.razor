@@ -115,7 +115,7 @@
     {
         OrderSearchRequest searchRequest = new()
         {
-            SearchStartDateTime = DateTime.Today.AddDays(-7),
+            SearchStartDateTime = DateTime.Today.AddDays(-14),
         };
 
         List<Order> orders = await OrdersService.GetAllMatchingAsync(searchRequest);

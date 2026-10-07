@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.ComponentModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using MOSTComputers.Services.DataAccess.Documents.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Documents.Models;
 using MOSTComputers.Services.PDF.Models.Invoices;
@@ -17,35 +19,74 @@ public static class PdfInvoiceDataEndpoints
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
         endpointGroup.MapGet("/{invoiceNumber}", GetInvoicePdfFromInvoiceNumberAsync)
-            .RequireAuthorization(Policies.ReadInvoicesThatAllowApi)
-            .DisableCookieRedirect();
+            .RequireAuthorization(Policies.ReadInvoices)
+            .DisableCookieRedirect()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithMetadata(new OpenApiOAuthEndpointDescriptionMetadata([Scopes.ReadInvoices]))
+            .WithTags("Invoice PDF")
+            .WithName("GetInvoicePdfFromInvoiceNumber")
+            .WithSummary("Returns an invoice PDF")
+            .WithDescription("Returns the PDF document for the specified invoice number.")
+            .AddOpenApiOperationTransformer((operation, context, cancellationToken) =>
+            {
+                OpenApiResponses currentResponses = operation.Responses ?? new();
+
+                operation.Responses = new()
+                {
+                    ["200"] = new OpenApiResponse()
+                    {
+                        Description = "The PDF document for the specified invoice.",
+                        Content = new Dictionary<string, OpenApiMediaType>()
+                        {
+                            ["image/*"] = new OpenApiMediaType
+                            {
+                                Schema = new OpenApiSchema
+                                {
+                                    Type = JsonSchemaType.String,
+                                    Format = "binary"
+                                }
+                            }
+                        }
+                    }
+                };
+
+                foreach (KeyValuePair<string, IOpenApiResponse> kvp in currentResponses)
+                {
+                    operation.Responses.Add(kvp.Key, kvp.Value);
+                }
+
+                return Task.CompletedTask;
+            });
 
         return endpointGroup;
     }
 
+    [ProducesResponseType(400, Description = "The invoice number is missing or invalid.")]
+    [ProducesResponseType(403, Description = "The authenticated user is not authorized to access the invoice.")]
+    [ProducesResponseType(404, Description = "The specified invoice does not exist.")]
     private static async Task<IResult> GetInvoicePdfFromInvoiceNumberAsync(
         HttpContext httpContext,
-        [FromRoute] string invoiceNumber,
+        [FromRoute(Name = "invoiceNumber")]
+        [Description("The invoice number.")]
+        string invoiceNumber,
         [FromServices] IAuthorizationService authorizationService,
         [FromServices] IInvoiceRepository invoiceRepository,
         [FromServices] IPdfInvoiceDataService pdfInvoiceDataService,
         [FromServices] IPdfInvoiceFileGeneratorService pdfInvoiceFileGeneratorService)
     {
-        const char _invoiceNumberStartingChar1 = 'C';
-        const char _invoiceNumberStartingChar2 = 'H';
-
         if (string.IsNullOrWhiteSpace(invoiceNumber))
         {
             return Results.BadRequest("The invoice number cannot be null or empty.");
         }
 
-        if (invoiceNumber.StartsWith(_invoiceNumberStartingChar1)
-            || invoiceNumber.StartsWith(_invoiceNumberStartingChar2))
+        int? invoiceNumberParsed = invoiceRepository.GetInvoiceNumberWithoutPrefix(invoiceNumber);
+
+        if (invoiceNumberParsed == null)
         {
-            invoiceNumber = invoiceNumber[1..];
+            return Results.BadRequest("The invoice number is invalid.");
         }
 
-        Invoice? invoice = await invoiceRepository.GetInvoiceByNumberAsync(invoiceNumber);
+        Invoice? invoice = await invoiceRepository.GetInvoiceByNumberWithoutPrefixAsync(invoiceNumberParsed.Value);
 
         if (invoice == null) return Results.NotFound();
 

@@ -8,12 +8,22 @@
     <UserSecretsId>aspnet-MOSTComputers.UI.Web.Blazor-3225e848-2710-452a-af46-5b21a9ec2929</UserSecretsId>
   </PropertyGroup>
 
+  <!-- <PropertyGroup> -->
+  <!--     <DefaultItemExcludes> -->
+  <!--         $(DefaultItemExcludes); -->
+  <!--        Components\ProductEditor\**; -->
+  <!--        Components\Pages\ProductEditor2.razor; -->
+  <!--     </DefaultItemExcludes> -->
+  <!-- </PropertyGroup> -->
+
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="OpenIddict.Server.AspNetCore" Version="7.7.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.17.11" />
     <ProjectReference Include="..\..\MOSTComputers.Services.Currencies\MOSTComputers.Services.Currencies.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.DataAccess.Documents\MOSTComputers.Services.DataAccess.Documents.csproj" />
     <ProjectReference Include="..\..\MOSTComputers.Services.DataToXmlConversion\MOSTComputers.Services.DataToXmlConversion.csproj" />
@@ -35,9 +45,9 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PdfDocumentTemplates Include="..\..\PdfDocumentTemplates\**\*" />
-	<ProductHtmlFileTemplates Include="..\..\ProductHtmlFileTemplates\**\*" />
-	<LegacyXmlFiles Include="..\..\LegacyXmlFiles\**\*" />
+    <PdfDocumentTemplates Include="..\..\PdfDocumentTemplates\**\*" />
+    <ProductHtmlFileTemplates Include="..\..\ProductHtmlFileTemplates\**\*" />
+    <LegacyXmlFiles Include="..\..\LegacyXmlFiles\**\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +56,13 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
+  <!--
+  <ItemGroup>
+    <None Remove="wwwroot\js\ProductEditor\**" />
+    <Content Remove="wwwroot\js\ProductEditor\**" />
+  </ItemGroup>
+  -->
 
   <ItemGroup>
     <Content Update="wwwroot\favicon.ico">

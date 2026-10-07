@@ -1,0 +1,52 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+
+@{
+    MOSTComputers.Models.Product.Models.Product product = PopupData.Product;
+}
+
+<Popup IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new () { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            <h5 class="popup-header-text me-3">Promotion:</h5>
+            <h4 class="popup-header-text me-3">CSTID: @product.Id</h4>
+            <h4 class="popup-header-text me-3">@product.Name</h4>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="container d-flex flex-column p-2 full-parent-width full-parent-height">
+
+            @{
+                int? promotionPictureId = product.AlertPictureId;
+
+                if (promotionPictureId is null || promotionPictureId <= 0)
+                {
+                    promotionPictureId = product.PromotionPictureId;
+                }
+            }
+
+            <div class="col-12">
+                <div class="col-6 col-md-12">
+                    <p>Picture Id: @(promotionPictureId?.ToString() ?? "-")</p>
+                </div>
+
+                <div class="col-6 col-md-12">
+                    <p>Expire Date: @(product.PromotionExpireDate?.ToString() ?? "-")</p>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code{
+
+    public sealed class ProductEditorInfoPromotionPopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required MOSTComputers.Models.Product.Models.Product Product { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required ProductEditorInfoPromotionPopupData PopupData { get; set; }
+}

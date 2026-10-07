@@ -24,9 +24,12 @@ internal sealed class InvoiceRepository : IInvoiceRepository
         _connectionStringProvider = connectionStringProvider;
     }
 
+    private const char _invoiceNumberStartingChar1 = 'C';
+    private const char _invoiceNumberStartingChar2 = 'H';
+
     const string _selectWithItemsQueryBody =
         $"""
-        invoices.{ExportIdColumn},
+        SELECT invoices.{ExportIdColumn},
             {ExportDateColumn},
             {ExportUserIDColumn},
             {ExportUserColumn},
@@ -87,7 +90,7 @@ internal sealed class InvoiceRepository : IInvoiceRepository
 
         string query =
             $"""
-            SELECT {_selectWithItemsQueryBody}
+            {_selectWithItemsQueryBody}
             {whereClause}
             """;
 
@@ -243,7 +246,7 @@ internal sealed class InvoiceRepository : IInvoiceRepository
 
         string query =
             $"""
-            SELECT {_selectWithItemsQueryBody}
+            {_selectWithItemsQueryBody}
             WHERE invoices.{InvoiceIdColumn} IN @invoiceIds;
             """;
 
@@ -293,7 +296,7 @@ internal sealed class InvoiceRepository : IInvoiceRepository
     {
         string query =
             $"""
-            SELECT TOP 1 {_selectWithItemsQueryBody}
+            {_selectWithItemsQueryBody}
             WHERE invoices.{InvoiceIdColumn} = @invoiceId;
             """;
 
@@ -335,13 +338,15 @@ internal sealed class InvoiceRepository : IInvoiceRepository
         return (output is not null) ? Map(output) : null;
     }
 
-    public async Task<Invoice?> GetInvoiceByNumberAsync(string invoiceNumber)
+    public async Task<Invoice?> GetInvoiceByNumberWithoutPrefixAsync(int invoiceNumberWithoutPrefix)
     {
         const string query =
             $"""
-            SELECT TOP 1 {_selectWithItemsQueryBody}
+            {_selectWithItemsQueryBody}
             WHERE invoices.{InvoiceNumberColumn} IN (@cInvoiceNumber, @hInvoiceNumber);
             """;
+
+        string invoiceNumber = invoiceNumberWithoutPrefix.ToString();
 
         var parameters = new
         {
@@ -351,7 +356,8 @@ internal sealed class InvoiceRepository : IInvoiceRepository
 
         InvoiceDAO? output = null;
 
-        using TransactionScope transactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
+        using TransactionScope transactionScope = new(
+            TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
 
         using SqlConnection dbConnection = new(_connectionStringProvider.ConnectionString);
 
@@ -380,6 +386,19 @@ internal sealed class InvoiceRepository : IInvoiceRepository
         transactionScope.Complete();
 
         return (output is not null) ? Map(output) : null;
+    }
+
+    public int? GetInvoiceNumberWithoutPrefix(string invoiceNumber)
+    {
+        if (invoiceNumber.StartsWith(_invoiceNumberStartingChar1)
+            || invoiceNumber.StartsWith(_invoiceNumberStartingChar2))
+        {
+            invoiceNumber = invoiceNumber[1..];
+        }
+
+        bool isValidInvoiceNumber = int.TryParse(invoiceNumber, out int invoiceNumberParsed);
+
+        return isValidInvoiceNumber ? invoiceNumberParsed : null;
     }
 
     private static (string whereClause, DynamicParameters parameters) GetQueryAndAssignParametersFromSearchData(

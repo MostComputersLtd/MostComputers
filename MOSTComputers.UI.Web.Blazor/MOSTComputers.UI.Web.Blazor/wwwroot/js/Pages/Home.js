@@ -377,6 +377,7 @@ async function showProductDisplayPopupAsync(productId) {
 }
 
 async function showPromotionGroupImagesPopup(promotionGroupId, productId) {
+
     const data = await getPromotionGroupImagesPopupDataAsync(promotionGroupId, productId);
 
     const promotionGroupImagesPopupContainer = document.getElementById(promotionGroupImagesPopupContainerId);

@@ -1,15 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.XmlDownloads;
 using MOSTComputers.Services.DataToXmlConversion.Models;
 using MOSTComputers.Services.DataToXmlConversion.Services.Contracts;
+using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.ProductData;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Html;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
+using System.ComponentModel;
 using System.Security.Claims;
 using static MOSTComputers.UI.Web.Blazor.Endpoints.PromotionPictureSource;
 using static MOSTComputers.Utils.Files.FilePathUtils;
@@ -38,23 +41,60 @@ public static class ProductXmlDataEndpoints
     {
         return _rootResourceType + "/id=" + productId.ToString();
     }
-
+ 
     public static IEndpointConventionBuilder MapProductXmlEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet("/all", GetXmlForAllProductsAsync);
-        endpointGroup.MapGet("/promotions", GetXmlForAllProductsWithPromotionsAsync);
-        endpointGroup.MapGet("/manufacturerId={manufacturerId:int}", GetXmlForAllProductsInManufacturerAsync);
-        endpointGroup.MapGet("/categoryId={categoryId:int}", GetXmlForAllProductsInCategoryAsync);
-        endpointGroup.MapGet("/id={productId:int}", GetXmlForProductAsync);
+        endpointGroup.MapGet("/all", GetXmlForAllProductsAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Product XML")
+            .WithName("GetXmlForAllProducts")
+            .WithSummary("Returns XML data for all products")
+            .WithDescription("Returns the XML data for all products.");
+
+        endpointGroup.MapGet("/promotions", GetXmlForAllProductsWithPromotionsAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Product XML")
+            .WithName("GetXmlForAllProductsWithPromotions")
+            .WithSummary("Returns XML data for all products with promotions")
+            .WithDescription("Returns the XML data for all products with promotions.");
+
+        endpointGroup.MapGet("/manufacturerId={manufacturerId:int}", GetXmlForAllProductsInManufacturerAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Product XML")
+            .WithName("GetXmlForAllProductsInManufacturer")
+            .WithSummary("Returns XML data for all products from a manufacturer")
+            .WithDescription("Returns the XML data for all products from the specified manufacturer.");
+
+        endpointGroup.MapGet("/categoryId={categoryId:int}", GetXmlForAllProductsInCategoryAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Product XML")
+            .WithName("GetXmlForAllProductsInCategory")
+            .WithSummary("Returns XML data for all products in a category")
+            .WithDescription("Returns the XML data for all products in the specified category.");
+
+        endpointGroup.MapGet("/id={productId:int}", GetXmlForProductAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Product XML")
+            .WithName("GetXmlForProduct")
+            .WithSummary("Returns XML data for a product")
+            .WithDescription("Returns the XML data for the specified product.");
 
         return endpointGroup;
     }
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml", Description = "The XML data for all products.")]
     private static async Task<IResult> GetXmlForAllProductsAsync(
         HttpContext httpContext,
-        [FromQuery(Name = "currency")] string? currency,
+        [FromQuery(Name = "currency")]
+        [Description("The three-letter currency code to use for prices. If omitted, the original currency is used.")]
+        string? currency,
         [FromServices] IProductToXmlService productXmlService,
         [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
     {
@@ -83,8 +123,12 @@ public static class ProductXmlDataEndpoints
         return Results.Empty;
     }
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml",
+        Description = "The XML data for all products with promotions.")]
     private static async Task<IResult> GetXmlForAllProductsWithPromotionsAsync(
-        [FromQuery(Name = "currency")] string? currency,
+        [FromQuery(Name = "currency")]
+        [Description("The three-letter currency code to use for prices. If omitted, the original currency is used.")]
+        string? currency,
         HttpContext httpContext,
         [FromServices] IProductSearchService productSearchService,
         [FromServices] IProductToXmlService productXmlService,
@@ -124,10 +168,17 @@ public static class ProductXmlDataEndpoints
         return Results.Empty;
     }
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml",
+        Description = "The XML data for products in the specified manufacturer.")]
+    [ProducesResponseType(404, Description = "The specified manufacturer ID is invalid.")]
     private static async Task<IResult> GetXmlForAllProductsInManufacturerAsync(
-        [FromRoute] int? manufacturerId,
-        [FromQuery(Name = "currency")] string? currency,
+        [FromRoute(Name = "manufacturerId")]
+        [Description("The ID of the manufacturer.")]
+        int? manufacturerId,
         HttpContext httpContext,
+        [FromQuery(Name = "currency")]
+        [Description("The three-letter currency code to use for prices. If omitted, the original currency is used.")]
+        string? currency,
         [FromServices] IProductSearchService productSearchService,
         [FromServices] IProductToXmlService productXmlService,
         [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
@@ -168,10 +219,17 @@ public static class ProductXmlDataEndpoints
         return Results.Empty;
     }
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml",
+        Description = "The XML data for products in the specified category.")]
+    [ProducesResponseType(404, Description = "The specified category ID is invalid.")]
     private static async Task<IResult> GetXmlForAllProductsInCategoryAsync(
-        [FromRoute] int? categoryId,
-        [FromQuery(Name = "currency")] string? currency,
+        [FromRoute(Name = "categoryId")]
+        [Description("The ID of the category.")]
+        int? categoryId,
         HttpContext httpContext,
+        [FromQuery(Name = "currency")]
+        [Description("The three-letter currency code to use for prices. If omitted, the original currency is used.")]
+        string? currency,
         [FromServices] IProductSearchService productSearchService,
         [FromServices] IProductToXmlService productXmlService,
         [FromServices] IXmlDownloadsRepository xmlDownloadsRepository)
@@ -212,9 +270,16 @@ public static class ProductXmlDataEndpoints
         return Results.Empty;
     }
 
+    [ProducesResponseType<ProductsXmlFullData>(200, "application/xml",
+        Description = "The XML data for the specified product.")]
+    [ProducesResponseType(404, Description = "The specified product does not exist or is not available.")]
     private static async Task<IResult> GetXmlForProductAsync(
-        [FromRoute] int productId,
-        [FromQuery(Name = "currency")] string? currency,
+        [FromRoute(Name = "productId")]
+        [Description("The ID of the product.")]
+        int productId,
+        [FromQuery(Name = "currency")]
+        [Description("The three-letter currency code to use for prices. If omitted, the original currency is used.")]
+        string? currency,
         HttpContext httpContext,
         [FromServices] IProductService productService,
         [FromServices] IProductSearchService productSearchService,

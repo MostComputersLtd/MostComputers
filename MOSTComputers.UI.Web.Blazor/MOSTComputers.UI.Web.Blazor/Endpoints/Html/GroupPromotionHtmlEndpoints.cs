@@ -14,7 +14,8 @@ public static class GroupPromotionHtmlEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet("/{promotionId:int}", GetHtmlForGroupPromotionAsync);
+        endpointGroup.MapGet("/{promotionId:int}", GetHtmlForGroupPromotionAsync)
+            .AllowAnonymous();
 
         return endpointGroup;
     }

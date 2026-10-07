@@ -166,7 +166,7 @@ async function exportPricesToXmlAsync() {
 
     const orderId = selectedElement.getAttribute(searchResultItemOrderIdAttribute);
 
-    const url = `api/order/xml/${orderId}/prices`;
+    const url = `api/documents/order/xml/${orderId}/prices`;
 
     const exportPricesButton = document.getElementById(exportPricesButtonId);
 
@@ -207,7 +207,7 @@ async function exportOrderToXmlAsync() {
 
     const orderId = selectedElement.getAttribute(searchResultItemOrderIdAttribute);
 
-    const url = `api/order/xml/${orderId}`;
+    const url = `api/documents/order/xml/${orderId}`;
 
     const exportXmlButton = document.getElementById(exportXmlButtonId);
 
@@ -238,27 +238,33 @@ async function exportOrderToXmlAsync() {
     await downloadFile(response, fileName);
 }
 
-async function applyForRemoteAccessSecret() {
+async function applyForRemoteAccessClient() {
 
-    // To Request a secret you need to use HTTP Basic Authentication,
+    // To Request an API client_id and client_secret you need to use HTTP Basic Authentication,
     // by concatenating your current username and password with a single ':' and no space in between,
-    // then encode the whole string using base64 and send a POST Request to 'https://portal.mostbg.com/api/auth/secret',
+    // then encode the whole string using base64 and send a POST Request to 'https://portal.mostbg.com/api/auth/register/secret',
     // including the base64 data in your Authorization header.
     // If successful you should recieve a 201 Created response with json data in the form of:
     // {
-    //     secret: "<YOUR_SECRET>"
+    //     client_id: "<YOUR_CLIENT_ID>"
+    //     client_secret: "<YOUR_CLIENT_SECRET>"
     // }
     //
     // NOTE: You must use HTTPS, HTTP-only Requests are denied
-    // WARNING: You can only have 1 secret per-user, if you try again after obtaining one, you will get a 409 Confict result
+    // WARNING: You can only have 1 client per-user, if you try again after obtaining one, you will get a 409 Confict result
 
-    const url = "https://portal.mostbg.com/api/auth/secret";
+    const username = "<YOUR_USERNAME>";
+    const password = "<YOUR_PASSWORD>";
+
+    const authenticationData = btoa(`${username}:${password}`);
+
+    const url = "https://portal.mostbg.com/api/auth/register/secret";
 
     const response = await fetch(url, {
         method: "POST",
         headers: {
             'Accept': 'application/json',
-            'Authorization': 'Basic <base64(username:password)>'
+            'Authorization': `Basic ${authenticationData}`
         }
     });
 
@@ -278,38 +284,48 @@ async function applyForRemoteAccessSecret() {
 
     const secretJson = await response.json();
 
-    const secret = secretJson.secret;
+    const client_id = secretJson.client_id;
+    const client_secret = secretJson.client_secret;
 
-    console.log(secret);
+    console.log(client_id);
+    console.log(client_secret);
 }
 
 async function applyForAnAccessToken() {
 
-    // To Request a token you need to use HTTP Bearer Authentication,
-    // by including the secret (no-encoding needed) in the Authorization header.
+    // To Request a token you need to use OAuth 2.0 Client Credentials Flow Authentication,
+    // by including the client_id and client_secret (no-encoding needed) in the Authorization header.
     // You need to send a POST request to 'https://portal.mostbg.com/api/auth/token'
     // If successful you should recieve a 201 Created response with json data in the form of:
     // {
-    //     token: "<YOUR_TOKEN>",
-    //     createdAt: "<ISO8601_DATE>",
-    //     expiresAt: "<ISO8601_DATE>"
+    //     "access_token": "<YOUR_TOKEN>",
+    //     "token_type": "Bearer",
+    //     "expires_in": "<SECONDS_UNTIL_EXPIRATION>"
     // }
     //
     // NOTE: you must use HTTPS, HTTP-only Requests are denied
 
-    const url = "https://portal.mostbg.com/api/auth/token";
+    // Scopes specify what operations you are requesting to do with this token:
+    const scopes = "invoices.read warrantyCards.read orders.read";
 
-    const response = await fetch(url, {
+    const url = "https://portal.mostbg.com/api/auth/connect/token";
+    
+    const response = fetch(url, {
         method: "POST",
         headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer <YOUR_SECRET>'
-        }
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+            grant_type: "client_credentials",
+            client_id: "<YOUR_CLIENT_ID>",
+            client_secret: "<YOUR_CLIENT_SECRET>",
+            scope: scopes
+        })
     });
 
     if (response.status === 401) {
 
-        console.log("This only happens with malformed header, expired or revoked secret");
+        console.log("This only happens with malformed request or invalid client_id and client_secret");
 
         return;
     }
@@ -323,45 +339,47 @@ async function applyForAnAccessToken() {
 
     const tokenJson = await response.json();
 
-    const token = tokenJson.token;
-    const createdAt = tokenJson.createdAt;
-    const expiresAt = tokenJson.expiresAt;
+    const access_token = tokenJson.access_token;
+    const token_type = tokenJson.token_type;
+    const expires_in = tokenJson.expires_in;
 
-    console.log(token);
-    console.log(createdAt);
-    console.log(expiresAt);
+    console.log(access_token);
+    console.log(token_type);
+    console.log(expires_in);
 }
 
 async function readInvoice() {
 
-    const url = "https://portal.mostbg.com/api/documents/invoice/xml";
+    const invoiceNumber = "<YOUR_INVOICE_NUMBER>"
+
+    const url = `https://portal.mostbg.com/api/documents/invoice/xml/number=${invoiceNumber}`;
 
     const response = await fetch(url, {
         method: "POST",
         headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer <YOUR_SECRET>'
+            'Accept': 'application/xml',
+            'Authorization': 'Bearer <YOUR_ACCESS_TOKEN>'
         }
     });
 
     if (response.status === 401) {
 
-        console.log("This only happens with malformed header, expired or revoked secret");
+        console.log("This only happens with malformed header, expired or revoked token");
 
         return;
     }
 
-    if (response.status !== 201) {
+    if (response.status !== 200) {
 
         console.log(response.statusText);
 
         return;
     }
 
-    const tokenJson = await response.json();
+    const invoiceXmlData = response.text();
+
+    console.log(invoiceXmlData);
 }
-
-
 
 function getNumberOrNullFromString(stringValue) {
 

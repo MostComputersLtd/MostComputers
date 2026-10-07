@@ -61,7 +61,7 @@ export function attachEventsOnPopupVisible(dotNetReference, isFirstCall = false)
 }
 
 function saveOnShortcut(e) {
-    if (!e.ctrlKey || e.key !== "s") return;
+    if (!e.isTrusted || !e.ctrlKey || e.key !== "s") return;
 
     console.log("EVENT Single Editor");
 

@@ -38,6 +38,16 @@ internal class PasswordsTableOnlyAuthenticationDBContext : DbContext
 
         builder.Entity<IdentityRoleClaim<string>>().ToTable("UserRoleClaims");
 
-        builder.UseOpenIddict<ApiApplication, ApiAuthorization, ApiScope, ApiToken, string>();
+        builder.UseOpenIddict<ApiApplication, ApiAuthorization, ApiScope, ApiToken, Guid>();
+
+        builder.Entity<ApiAuthorization>(entity =>
+        {
+            entity.Property(model => model.Subject).HasMaxLength(11);
+        });
+
+        builder.Entity<ApiToken>(entity =>
+        {
+            entity.Property(model => model.Subject).HasMaxLength(11);
+        });
     }
 }

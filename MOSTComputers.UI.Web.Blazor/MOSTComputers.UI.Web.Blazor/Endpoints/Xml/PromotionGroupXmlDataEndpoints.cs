@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel;
+using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts;
 using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml.New.PromotionGroupData;
@@ -19,12 +20,27 @@ internal static class PromotionGroupXmlDataEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
-        endpointGroup.MapGet("/all", GetXmlForAllPromotionGroupsAsync);
-        endpointGroup.MapGet("/id={promotionGroupId:int}", GetXmlForAllPromotionGroupAsync);
+        endpointGroup.MapGet("/all", GetXmlForAllPromotionGroupsAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Promotion Group XML")
+            .WithName("GetXmlForAllPromotionGroups")
+            .WithSummary("Returns XML data for all promotion groups")
+            .WithDescription("Returns the XML data for all promotion groups.");
+
+        endpointGroup.MapGet("/id={promotionGroupId:int}", GetXmlForPromotionGroupAsync)
+            .AllowAnonymous()
+            .WithMetadata(new IncludeInOpenApiSpecMetadata())
+            .WithTags("Promotion Group XML")
+            .WithName("GetXmlForPromotionGroup")
+            .WithSummary("Returns XML data for a promotion group")
+            .WithDescription("Returns the XML data for the specified promotion group.");
 
         return endpointGroup;
     }
 
+    [ProducesResponseType<GroupPromotionsXmlFullData>(200, "application/xml",
+        Description = "The XML data for all promotion groups.")]
     private static async Task<IResult> GetXmlForAllPromotionGroupsAsync(
         HttpContext httpContext,
         [FromServices] IPromotionGroupsRepository promotionGroupsRepository,
@@ -54,8 +70,13 @@ internal static class PromotionGroupXmlDataEndpoints
         return Results.Empty;
     }
 
-    private static async Task<IResult> GetXmlForAllPromotionGroupAsync(
-        [FromRoute] int promotionGroupId,
+    [ProducesResponseType<GroupPromotionsXmlFullData>(200, "application/xml",
+        Description = "The XML data for the specified promotion group.")]
+    [ProducesResponseType(404, Description = "The specified promotion group does not exist.")]
+    private static async Task<IResult> GetXmlForPromotionGroupAsync(
+        [FromRoute(Name = "promotionGroupId")]
+        [Description("The ID of the promotion group.")]
+        int promotionGroupId,
         HttpContext httpContext,
         [FromServices] IPromotionGroupsRepository promotionGroupsRepository,
         [FromServices] IGroupPromotionContentsRepository groupPromotionContentsRepository,

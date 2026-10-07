@@ -1,0 +1,31 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+
+<Popup IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new() { Left = "10vw", Right = "10vw", Top = "10vh", Bottom = "10vh" }'>
+    <HeaderContent>
+        <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
+
+            <h5 class="popup-header-text me-3">XML:</h5>
+
+            <h4 class="popup-header-text me-3">CSTID: @PopupData.Product.Id</h4>
+            <h4 class="popup-header-text me-3">@PopupData.Product.Name</h4>
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <ProductXmlInTextarea DataOptions="new ProductXmlInTextarea.GetDataFromServer()
+        {
+            ProductIds = [PopupData.Product.Id]
+        }" />
+    </ChildContent>
+</Popup>
+
+@code{
+    public sealed class ProductEditorProductXmlPopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required MOSTComputers.Models.Product.Models.Product Product { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required ProductEditorProductXmlPopupData PopupData { get; set; }
+}

@@ -80,25 +80,11 @@
             </div>
 
             <button type="submit" class="login-submit-btn">Вход</button>
-
-            @* <div class="login-links-row">
-                <a href="/Account/ForgotPassword">Забравена парола?</a>
-                <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))>
-                    Регистрация
-                </a>
-            </div> *@
         </EditForm>
 
         <p class="login-footer-note">
             При проблем с достъпа, свържете се с администратор на Мост Компютърс.
         </p>
-     @* <div class="col-md-6 col-md-offset-2">
-            <section>
-                <h3>Use another service to log in.</h3>
-                <hr />
-                <ExternalLoginPicker />
-            </section>
-        </div> *@
     </div>
 </section>
 
@@ -116,11 +102,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
-        {
-            // Clear the existing external cookie to ensure a clean login process
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        }
     }
 
     public async Task LoginUser()
@@ -147,7 +128,7 @@
         {
             Logger.LogWarning("User account locked out.");
 
-            NavigationManager.NavigateTo("Account/Lockout");
+            NavigationManager.NavigateTo("account/lockout");
             // RedirectManager.RedirectTo("Account/Lockout");
         }
         else

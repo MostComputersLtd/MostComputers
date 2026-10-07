@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.FileManagement.Models;
@@ -19,6 +20,7 @@ using OneOf;
 using OneOf.Types;
 using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditor;
 using static MOSTComputers.UI.Web.Blazor.Components.PromotionGroups.GroupPromotionEditorImage;
+using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
 using static MOSTComputers.Utils.Files.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
@@ -128,6 +130,7 @@ public static class PromotionGroupsPageComponentEndpoints
     public static IEndpointConventionBuilder MapPromotionGroupPageComponentEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute)
+            .RequireAuthorization(Policies.Cookie)
             .RequireAuthorization(x => x.RequireRole("PromotionEditor"))
             .DisableCookieRedirect();
 
@@ -149,11 +152,17 @@ public static class PromotionGroupsPageComponentEndpoints
         endpointGroup.MapPost("/images", GetGroupPromotionImageComponent);
         endpointGroup.MapPost("/groupImages", GetPromotionGroupImageComponent);
 
-        endpointGroup.MapPost("/create", InsertNewPromotionAsync);
-        endpointGroup.MapPost("/createGroup", InsertNewPromotionGroupAsync);
+        endpointGroup.MapPost("/create", InsertNewPromotionAsync)
+            .WithMetadata(new RequireAntiforgeryTokenAttribute());
 
-        endpointGroup.MapPut("/update", UpdatePromotionAsync);
-        endpointGroup.MapPut("/updateGroup", UpdatePromotionGroupAsync);
+        endpointGroup.MapPost("/createGroup", InsertNewPromotionGroupAsync)
+            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+
+        endpointGroup.MapPut("/update", UpdatePromotionAsync)
+            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+
+        endpointGroup.MapPut("/updateGroup", UpdatePromotionGroupAsync)
+            .WithMetadata(new RequireAntiforgeryTokenAttribute());
 
         return endpointGroup;
     }
