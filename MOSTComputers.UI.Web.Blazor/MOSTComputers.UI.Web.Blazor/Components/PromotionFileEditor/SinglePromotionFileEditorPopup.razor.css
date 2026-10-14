@@ -32,7 +32,7 @@ p {
 }
 
 .header-updated-date-text {
-    margin: 0px 0px 0px 1rem;
+    margin: 0px 0.5rem 0px 1rem;
 }
 
 .header-modified-date-text {
@@ -89,6 +89,12 @@ p {
 .new-file-name-container {
     width: 100%;
     margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.new-file-name-text-container {
     display: flex;
     flex-direction: row;
     align-items: center;

@@ -36,7 +36,8 @@ public class LocalFileManagementService : ILocalFileManagementService
 
         string filePath = Path.Combine(_directoryFullPath, fullFileName);
 
-        return new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+        return new FileStream(
+            filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
     }
 
     public async Task<byte[]?> GetFileAsync(string fullFileName)

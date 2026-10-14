@@ -137,14 +137,7 @@ async function onShowSinglePromotionFileEditorPopupButtonClicked(e) {
 
     const promotionFileId = promotionFileEditorItem.getAttribute(promotionFileItemPromotionFileIdAttribute);
 
-    const url = `api/components/promotionFileEditor/single/${promotionFileId}`;
-
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Accept": "text/html, application/problem+json"
-        }
-    });
+    const response = await getSinglePromotionFileEditorPopup(promotionFileId);
 
     const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
 
@@ -161,6 +154,20 @@ async function onShowSinglePromotionFileEditorPopupButtonClicked(e) {
     singlePromotionFileEditorPopup.initEvents(dialog, onSingleEditorPopupSaveButtonClicked);
 
     dialog.showModal();
+}
+
+async function getSinglePromotionFileEditorPopup(promotionFileId) {
+
+    const url = `api/components/promotionFileEditor/single/${promotionFileId}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Accept": "text/html, application/problem+json"
+        }
+    });
+
+    return response;
 }
 
 async function onSingleEditorPopupSaveButtonClicked() {
@@ -208,7 +215,31 @@ async function createPromotionFileAsync(popupData) {
 
     promotionFileEditorTableBody.insertAdjacentHTML("beforeend", data);
 
-    initPromotionFilesTableItemEvents(promotionFileEditorTableBody.lastElementChild);
+    const promotionFileItem = promotionFileEditorTableBody.lastElementChild;
+
+    initPromotionFilesTableItemEvents(promotionFileItem);
+
+    const promotionFileId = promotionFileItem.getAttribute(promotionFileItemPromotionFileIdAttribute);
+
+    const getSingleEditorPopupResponse = await getSinglePromotionFileEditorPopup(promotionFileId);
+
+    const didNotRedirectSingleEditor = fetchWithAuthRedirect.handleAuthRedirect(getSingleEditorPopupResponse);
+
+    if (!didNotRedirectSingleEditor || !getSingleEditorPopupResponse.ok) return;
+
+    const singleEditorPopupData = await getSingleEditorPopupResponse.text();
+
+    const promotionFileSingleEditorPopupContainer = document.getElementById(promotionFileSingleEditorPopupContainerId);
+
+    promotionFileSingleEditorPopupContainer.innerHTML = singleEditorPopupData;
+
+    const dialog = promotionFileSingleEditorPopupContainer.querySelector("dialog");
+
+    singlePromotionFileEditorPopup.clearFileData();
+
+    singlePromotionFileEditorPopup.initEvents(dialog, onSingleEditorPopupSaveButtonClicked);
+
+    dialog.showModal();
 }
 
 async function updatePromotionDataAsync(popupData) {
@@ -256,6 +287,28 @@ async function updatePromotionDataAsync(popupData) {
     const newPromotionFileItem = document.getElementById(existingPromotionFileItemId);
 
     initPromotionFilesTableItemEvents(newPromotionFileItem);
+
+    const promotionFileId = newPromotionFileItem.getAttribute(promotionFileItemPromotionFileIdAttribute);
+
+    const getSingleEditorPopupResponse = await getSinglePromotionFileEditorPopup(promotionFileId);
+
+    const didNotRedirectSingleEditor = fetchWithAuthRedirect.handleAuthRedirect(getSingleEditorPopupResponse);
+
+    if (!didNotRedirectSingleEditor || !getSingleEditorPopupResponse.ok) return;
+
+    const singleEditorPopupData = await getSingleEditorPopupResponse.text();
+
+    const promotionFileSingleEditorPopupContainer = document.getElementById(promotionFileSingleEditorPopupContainerId);
+
+    promotionFileSingleEditorPopupContainer.innerHTML = singleEditorPopupData;
+
+    const dialog = promotionFileSingleEditorPopupContainer.querySelector("dialog");
+
+    singlePromotionFileEditorPopup.clearFileData();
+
+    singlePromotionFileEditorPopup.initEvents(dialog, onSingleEditorPopupSaveButtonClicked);
+
+    dialog.showModal();
 }
 
 async function onDeletePromotionFileButtonClicked(e) {

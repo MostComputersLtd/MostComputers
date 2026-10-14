@@ -160,7 +160,8 @@ internal sealed class PromotionFileService : IPromotionFileService
         {
             ValidationResult invalidIdValidationResult = new();
 
-            ValidationFailure invalidIdValidationFailure = new(nameof(UpdatePromotionFileRequest.Id), _idDoesNotExistErrorMessage);
+            ValidationFailure invalidIdValidationFailure = new(
+                nameof(UpdatePromotionFileRequest.Id), _idDoesNotExistErrorMessage);
 
             invalidIdValidationResult.Errors.Add(invalidIdValidationFailure);
 
@@ -199,10 +200,7 @@ internal sealed class PromotionFileService : IPromotionFileService
             {
                 if (updateRequest.NewFileData is null) return new Success();
 
-                string currentFileExtension = Path.GetExtension(currentPromotionFileInfo.FileName);
-                string newFileExtension = Path.GetExtension(updateRequest.NewFileData.FileName);
-
-                if (currentFileExtension == newFileExtension)
+                if (currentPromotionFileInfo.FileName == updateRequest.NewFileData.FileName)
                 {
                     OneOf<Success, FileDoesntExistResult> updateFileResult = await _promotionFileManagementService.UpdateFileAsync(
                         currentPromotionFileInfo.FileName, updateRequest.NewFileData.Data);

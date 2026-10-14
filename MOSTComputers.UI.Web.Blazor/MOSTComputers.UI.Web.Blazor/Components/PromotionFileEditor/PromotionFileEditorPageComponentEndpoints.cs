@@ -417,7 +417,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
         }
         else if (!string.IsNullOrWhiteSpace(preferredNameWithoutExtension))
         {
-            Stream? promotionFileDataStream = await promotionFileService.GetFileDataByIdAsync(existingPromotionFileId);
+            using Stream? promotionFileDataStream = await promotionFileService.GetFileDataByIdAsync(existingPromotionFileId);
 
             if (promotionFileDataStream is null)
             {

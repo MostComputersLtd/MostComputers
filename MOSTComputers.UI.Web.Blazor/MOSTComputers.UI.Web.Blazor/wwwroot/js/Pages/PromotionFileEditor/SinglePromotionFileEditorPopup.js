@@ -84,6 +84,11 @@ export function initEvents(dialogElement, saveButtonCallback = null) {
 
 function onClose() {
 
+    clearFileData();
+}
+
+export function clearFileData() {
+
     if (selectedFileObjectUrl != null) {
 
         URL.revokeObjectURL(selectedFileObjectUrl); 

@@ -110,16 +110,18 @@
                             <div id="singlePromotionFileNewFileNameContainer"
                                 class="new-file-name-container hidden-until-any-file @visibleClass">
 
-                                <p class="change-file-name-text">Change file name:</p>
+                                <div class="new-file-name-text-container">
+                                    <p class="change-file-name-text">Change file name:</p>
 
-                                <input id="singlePromotionFileNewFileNameInput" type="text"
-                                    class="new-file-name-input"
-                                    placeholder="New file name"
-                                    aria-label="New file name" />
+                                    <input id="singlePromotionFileNewFileNameInput" type="text"
+                                        class="new-file-name-input"
+                                        placeholder="New file name"
+                                        aria-label="New file name" />
 
-                                <p id="singlePromotionFileNewFileNameExtensionText" class="file-name-extension-text">
-                                    @Path.GetExtension(currentFileName)
-                                </p>
+                                    <p id="singlePromotionFileNewFileNameExtensionText" class="file-name-extension-text">
+                                        @Path.GetExtension(currentFileName)
+                                    </p>
+                                </div>
 
                                 <ValidationMessages id="singlePromotionFileNewFileNameInputValidationMessages" RenderEvenIfNull="true" />
                             </div>
