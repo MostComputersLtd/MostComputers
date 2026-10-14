@@ -1,5 +1,4 @@
-﻿@page "/promotionFiles"
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 
 @attribute [Authorize(Roles = "ProductEditor")]
 
@@ -13,7 +12,6 @@
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.Extensions.Localization
 @using OneOf
 @using OneOf.Types
 
@@ -26,7 +24,7 @@
 <PageTitle>Promotion Files</PageTitle>
 
 <HeadContent>
-	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+    <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 </HeadContent>
 
 <div class="full-parent-width full-parent-height">
@@ -89,7 +87,7 @@
                                 {
                                     <input id="promotionFileActiveInput-@i" type="checkbox" tabindex="-1" style="pointer-events: none;"
                                         aria-readonly="true" aria-label="Active" />
-								}
+                                }
                             </td>
                             <td>@promotionFileInfo.Id</td>
                             <td>@(promotionFileInfo.Name ?? "-")</td>
@@ -144,8 +142,6 @@
             SaveButtonText="@_promotionFileSingleEditorSaveButtonText">
         </PromotionFileSingleEditorPopup>
     }
-
-    <ul class="top-notification-box mb-0"></ul>
 </div>
 
 @code {
@@ -185,10 +181,10 @@
             FileName = existingPromotionFileToEdit.FileName,
             Description = existingPromotionFileToEdit.Description,
             RelatedProductsString = existingPromotionFileToEdit.RelatedProductsString,
-			CreateUserName = existingPromotionFileToEdit.CreateUserName,
-			CreateDate = existingPromotionFileToEdit.CreateDate,
-			LastUpdateUserName = existingPromotionFileToEdit.LastUpdateUserName,
-			LastUpdateDate = existingPromotionFileToEdit.LastUpdateDate,
+            CreateUserName = existingPromotionFileToEdit.CreateUserName,
+            CreateDate = existingPromotionFileToEdit.CreateDate,
+            LastUpdateUserName = existingPromotionFileToEdit.LastUpdateUserName,
+            LastUpdateDate = existingPromotionFileToEdit.LastUpdateDate,
         };
 
         _promotionFileSingleEditorSaveButtonText = "Save";
@@ -244,8 +240,8 @@
                 FileName = newFileName,
                 Description = createPromotionFileEditData.Description,
                 RelatedProductsString = createPromotionFileEditData.RelatedProductsString,
-				CreateUserName = currentUserName,
-			};
+                CreateUserName = currentUserName,
+            };
 
             OneOf<int, ValidationResult, FileAlreadyExistsResult, UnexpectedFailureResult> createResult
                 = await PromotionFileService.InsertAsync(createPromotionFileRequest);

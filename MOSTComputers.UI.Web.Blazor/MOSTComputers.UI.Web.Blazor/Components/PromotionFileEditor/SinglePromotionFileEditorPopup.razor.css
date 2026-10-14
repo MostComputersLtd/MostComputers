@@ -1,0 +1,152 @@
+utton:not(:focus-visible), .btn:not(:focus-visible) {
+    box-shadow: none !important;
+}
+
+p {
+    margin-bottom: 0px;
+}
+
+.promotion-file-single-editor-popup-header {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.promotion-file-single-editor-popup-header-text {
+    margin: 0px 0.5rem 0px 0px;
+    white-space: nowrap;
+}
+
+.header-right-part-container {
+    height: 100%;
+    margin-left: 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.header-created-date-text {
+    margin: 0px 0.5rem 0px 0px;
+}
+
+.header-updated-date-text {
+    margin: 0px 0px 0px 1rem;
+}
+
+.header-modified-date-text {
+    white-space: nowrap;
+    color: darkgray;
+    font-size: smaller;
+}
+
+.save-button-container {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    display: flex;
+    -webkit-justify-content: end;
+    justify-content: end;
+    -webkit-align-items: center;
+    align-items: center;
+    margin-right: 0.5em;
+}
+
+.promotion-file-single-editor-popup-body-container {
+    width: 100%;
+}
+
+.promotion-file-single-editor-popup-body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-width: 2px;
+}
+
+.editor-inputs {
+    flex-grow: 1;
+}
+
+.editor-input-item {
+    margin: 0px 0px 0.5rem 0px;
+}
+
+.editor-input-item-label {
+    margin: 0.5rem 0px 0px 0px;
+}
+
+.hidden-until-any-file:not(.element-show), .hidden-until-selected-file:not(.element-show) {
+    display: none;
+}
+
+.file-names-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 0px 0.5rem 0px;
+}
+
+.new-file-name-container {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.change-file-name-text {
+    margin: 0px 0.5rem 0px 0px;
+}
+
+.new-file-name-input {
+    flex-grow: 1;
+    text-align: end;
+}
+
+.file-name-extension-text {
+    margin: 0px;
+}
+
+.selected-file-text-container {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.selected-file-announcement-text {
+    margin: 0px;
+}
+
+.selected-file-text {
+    margin: 0px;
+    white-space: pre-wrap;
+}
+
+.file-container {
+    flex-grow: 1;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.original-file-text-container {
+    margin: 0px 0.25rem 0.5rem 0px;
+    word-break: break-all;
+}
+
+.original-file-announcement-text {
+    margin: 0px;
+}
+
+.original-file-text {
+    margin: 0px;
+    white-space: pre-wrap;
+}
+
+::deep .file {
+    width: 100%;
+    height: 100%;
+}

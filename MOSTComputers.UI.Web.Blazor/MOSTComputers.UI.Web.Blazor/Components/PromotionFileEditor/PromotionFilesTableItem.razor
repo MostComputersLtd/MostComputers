@@ -1,0 +1,66 @@
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+
+<tr id="promotionFileItem-@PromotionFileInfo.Id"
+    name="promotionFileItem"
+    data-promotion-file-id="@PromotionFileInfo.Id">
+    <td>
+        @if (PromotionFileInfo.Active)
+        {
+            <input id="promotionFileActiveInput-@PromotionFileInfo.Id"
+                name="promotionFileActiveInput"
+                type="checkbox"
+                tabindex="-1"
+                class="promotion-file-active-input"
+                checked
+                aria-readonly="true"
+                aria-label="Active" />
+        }
+        else
+        {
+            <input id="promotionFileActiveInput-@PromotionFileInfo.Id"
+                name="promotionFileActiveInput"
+                type="checkbox"
+                tabindex="-1"
+                class="promotion-file-active-input"
+                aria-readonly="true"
+                aria-label="Active" />
+        }
+    </td>
+    <td>@PromotionFileInfo.Id</td>
+    <td>@(PromotionFileInfo.Name ?? "-")</td>
+    <td>@(PromotionFileInfo.ValidFrom?.ToString("yyyy.MM.dd") ?? "-")</td>
+    <td>@(PromotionFileInfo.ValidTo?.ToString("yyyy.MM.dd") ?? "-")</td>
+    <td>@PromotionFileInfo.FileName</td>
+    <td>
+        <p class="create-user-text">
+            Created:
+            <span>@PromotionFileInfo.CreateUserName</span>
+            <span>@PromotionFileInfo.CreateDate</span>
+        </p>
+
+        <p class="create-user-text no-margin">
+            Last Update:
+            <span>@PromotionFileInfo.LastUpdateUserName</span>
+            <span>@PromotionFileInfo.LastUpdateDate</span>
+        </p>
+    </td>
+    <td class="promotion-file-container">
+        <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(PromotionFileInfo.FileName)"
+            class="promotion-file">
+        </PromotionFile>
+    </td>
+    <td>
+        <button name="promotionFileItemEditButton" type="button" class="edit-button">
+            <img src="/img/General/EditIcon.jpg" alt="Edit" />
+        </button>
+    </td>
+    <td>
+        <button name="promotionFileItemDeleteButton" type="button" class="btn btn-close delete-button">
+        </button>
+    </td>
+</tr>
+
+@code{
+    [Parameter, EditorRequired] public required PromotionFileInfo PromotionFileInfo { get; set; }
+}

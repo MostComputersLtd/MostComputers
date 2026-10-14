@@ -5,6 +5,17 @@ import * as propertiesEditor from "./PropertiesEditor.js"
 import * as productDocumentsEditor from "./ProductDocumentsEditor.js"
 import * as productImagesEditor from "./ProductImagesEditor.js"
 
+const singleEditorProductIdHiddenInputId = "singleEditorProductIdHiddenInput";
+
+const singleEditorShowProductDataPopupButtonId = "singleEditorShowProductDataPopupButton";
+const singleEditorShowProductLegacyDisplayPopupButtonId = "singleEditorShowProductLegacyDisplayPopupButton";
+const singleEditorShowSearchStringPopupButtonId = "singleEditorShowSearchStringPopupButton";
+
+const singleEditorProductDataPopupContainerId = "singleEditorProductDataPopupContainer";
+const singleEditorProductLegacyDisplayPopupContainerId = "singleEditorProductLegacyDisplayPopupContainer";
+const singleEditorPromotionProductFileEditorPopupContainerId = "singleEditorPromotionProductFileEditorPopupContainer";
+const singleEditorSearchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
+
 const singleEditorProductNewStatusSelectId = "singleEditorProductNewStatusSelect";
 const singleEditorAddImageFileButtonId = "singleEditorAddImageFileButton";
 const singleEditorAddImageFileInputId = "singleEditorAddImageFileInput";
@@ -16,7 +27,19 @@ export function initEvents(dialogElement) {
 
     const singleEditorProductNewStatusSelect = document.getElementById(singleEditorProductNewStatusSelectId);
 
-    singleEditorProductNewStatusSelect.addEventListener("change", onProductStatusSelectChangedAsync)
+    singleEditorProductNewStatusSelect.addEventListener("change", onProductStatusSelectChangedAsync);
+
+    const singleEditorShowProductDataPopupButton = document.getElementById(singleEditorShowProductDataPopupButtonId);
+
+    singleEditorShowProductDataPopupButton.addEventListener("click", showProductDataPopupAsync)
+
+    const singleEditorShowProductLegacyDisplayPopupButton = document.getElementById(singleEditorShowProductLegacyDisplayPopupButtonId);
+
+    singleEditorShowProductLegacyDisplayPopupButton.addEventListener("click", showProductLegacyDisplayPopupAsync)
+
+    const singleEditorShowSearchStringPopupButton = document.getElementById(singleEditorShowSearchStringPopupButtonId);
+
+    singleEditorShowSearchStringPopupButton.addEventListener("click", showProductSearchStringPopupAsync);
 
     const singleEditorAddImageFileButton = document.getElementById(singleEditorAddImageFileButtonId);
 
@@ -120,6 +143,11 @@ async function onAddDocumentFileInputChangeAsync(e) {
     }
 
     const file = singleEditorAddImageFileInput.files.item(0);
+
+    const success = await productDocumentsEditor.addFileToProductDocumentsAsync(file);
+
+    if (!success) {
+    }
 }
 
 async function onAddImageFromClipboardButtonClickAsync() {
@@ -151,9 +179,133 @@ async function onAddImageFromClipboardButtonClickAsync() {
     }
 }
 
-async function showProductDataPopup(productId) {
+async function showProductDataPopupAsync() {
+
+    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+
+    const productId = singleEditorProductIdHiddenInput.value;
 
     const url = `api/components/productEditor/single/productDataPopup/${productId}`;
+
+    const dataStoreData = dataStore.loadData();
+
+    const body = {
+        productProperties: dataStoreData.productProperties,
+        productLinks: dataStoreData.productLinks,
+        productImages: dataStoreData.productImages
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        return;
+    }
+
+    const data = await response.text();
+
+    const singleEditorProductDataPopupContainer = document.getElementById(singleEditorProductDataPopupContainerId);
+
+    singleEditorProductDataPopupContainer.innerHTML = data;
+
+    const dialog = singleEditorProductDataPopupContainer.querySelector("dialog");
+
+    dialog.showModal();
+}
+
+async function showProductLegacyDisplayPopupAsync() {
+
+    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+
+    const productId = singleEditorProductIdHiddenInput.value;
+
+    const url = `api/components/productEditor/single/productLegacyDisplayPopup/${productId}`;
+
+    const dataStoreData = dataStore.loadData();
+
+    const body = {
+        productProperties: dataStoreData.productProperties,
+        productLinks: dataStoreData.productLinks,
+        productImages: dataStoreData.productImages
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        return;
+    }
+
+    const data = await response.text();
+
+    const singleEditorProductLegacyDisplayPopupContainer = document.getElementById(singleEditorProductLegacyDisplayPopupContainerId);
+
+    singleEditorProductLegacyDisplayPopupContainer.innerHTML = data;
+
+    const dialog = singleEditorProductLegacyDisplayPopupContainer.querySelector("dialog");
+
+    dialog.showModal();
+}
+
+async function showPromotionProductFileEditorPopupAsync() {
+
+    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+
+    const productId = singleEditorProductIdHiddenInput.value;
+
+    const url = `api/components/productEditor/single/promotionProductFile/showPopup/${productId}`;
+
+    const dataStoreData = dataStore.loadData();
+
+    const body = {
+        productProperties: dataStoreData.productProperties,
+        productLinks: dataStoreData.productLinks,
+        productImages: dataStoreData.productImages
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        return;
+    }
+
+    const data = await response.text();
+
+    const singleEditorPromotionProductFileEditorPopupContainer = document.getElementById(singleEditorPromotionProductFileEditorPopupContainerId);
+
+    singleEditorPromotionProductFileEditorPopupContainer.innerHTML = data;
+
+    const dialog = singleEditorPromotionProductFileEditorPopupContainer.querySelector("dialog");
+
+    dialog.showModal();
+}
+
+async function showProductSearchStringPopupAsync() {
+
+    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+
+    const productId = singleEditorProductIdHiddenInput.value;
+
+    const url = `api/components/productEditor/productSearchStringPopup/${productId}`;
 
     const response = await fetch(url, {
         method: "GET",
@@ -163,11 +315,11 @@ async function showProductDataPopup(productId) {
 
     const data = await response.text();
 
-    const productDataPopupContainer = document.getElementById(common.productDataPopupContainerId);
+    const singleEditorSearchStringPopupContainer = document.getElementById(singleEditorSearchStringPopupContainerId);
 
-    productDataPopupContainer.innerHTML = data;
+    singleEditorSearchStringPopupContainer.innerHTML = data;
 
-    const dialog = productDataPopupContainer.querySelector("dialog");
+    const dialog = singleEditorSearchStringPopupContainer.querySelector("dialog");
 
     dialog.showModal();
 }

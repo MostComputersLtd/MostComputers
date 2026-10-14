@@ -1,0 +1,7 @@
+.promotion-files-table {
+    width: 100%;
+}
+
+.promotion-files-table-body {
+    overflow-y: auto;
+}

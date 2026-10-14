@@ -104,3 +104,7 @@ async function copyLinkToClipboard(uriRelativeToRoot) {
         return false;
     }
 }
+
+function openDataUrlInNewWindow(url) {
+    window.open(url, '_blank');
+}

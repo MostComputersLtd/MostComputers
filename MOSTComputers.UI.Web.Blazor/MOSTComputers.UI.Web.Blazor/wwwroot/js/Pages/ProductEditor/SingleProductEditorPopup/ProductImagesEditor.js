@@ -7,11 +7,10 @@ const productImageListId = "singleEditorProductImageList";
 const productImageItemName = "productImageItem";
 const promotionFileItemName = "promotionFileItem";
 
-const productImageItemDataId = "productImageItemData";
-
 const productImageButtonName = "productImageButton";
 const productImageDeleteButtonName = "productImageDeleteButton";
 const imageFileActiveCheckboxName = "imageFileActiveCheckbox";
+const productImageItemDataName = "productImageItemData";
 
 const productImageButtonImageRouteAttribute = "data-image-url";
 
@@ -79,7 +78,7 @@ export async function addFileToImagesAsync(blob) {
     formData.append(productImageFileWidthFormFieldName, imageDimensions.width);
     formData.append(productImageFileHeightFormFieldName, image.height);
 
-    const url = "api/components/productEditor/single/addImage";
+    const url = "api/components/productEditor/single/image/add";
 
     const response = await fetch(url, {
         method: "POST",
@@ -123,7 +122,7 @@ function addNewImageFromElementHtml(productImageHtml) {
         productImageItem = lastItem.nextElementSibling;
     }
 
-    const jsonDataScriptElement = document.getElementById(productImageItemDataId);
+    const jsonDataScriptElement = productImageItem.querySelector(`[name='${productImageItemDataName}']`);
 
     const jsonData = JSON.parse(jsonDataScriptElement.textContent);
 
@@ -223,9 +222,35 @@ function onProductImageItemDrop() {
     const smallerDragIndex = Math.min(draggedItemIndex, draggedItemStartIndex);
     const largerDragIndex = Math.max(draggedItemIndex, draggedItemStartIndex);
 
-    for (let i = smallerDragIndex; i < largerDragIndex; i++) {
+    let movedItemsIndexChange = 1;
+
+    if (draggedItemStartIndex < draggedItemIndex) {
+        movedItemsIndexChange = -1;
+    }
+
+    for (let i = smallerDragIndex; i <= largerDragIndex; i++) {
 
         const productImageItem = container.children[i];
+
+        const editorId = productImageItem.id;
+
+        if (productImageItem == draggedImageItem) {
+
+            dataStore.updateProductImageAndSave(editorId, image => {
+
+                if (image.relatedImageFile?.displayOrder == null) return;
+
+                image.relatedImageFile.displayOrder = draggedItemIndex;
+            });
+        }
+        else {
+            dataStore.updateProductImageAndSave(editorId, image => {
+
+                if (image.relatedImageFile?.displayOrder == null) return;
+
+                image.relatedImageFile.displayOrder += movedItemsIndexChange;
+            });
+        }
 
         editorChanges.setImageChanged(productImageItem.id, editorChanges.ItemChangeState.Updated);
     }

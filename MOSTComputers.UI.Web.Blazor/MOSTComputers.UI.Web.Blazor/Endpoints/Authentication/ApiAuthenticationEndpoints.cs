@@ -1,12 +1,15 @@
+using System.Buffers.Text;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using MOSTComputers.Services.Authentication.Contracts;
@@ -18,6 +21,7 @@ using OpenIddict.Abstractions;
 using OpenIddict.Core;
 using OpenIddict.Server.AspNetCore;
 using static MOSTComputers.UI.Web.Blazor.Utils.OpenApiUtils;
+using static MOSTComputers.UI.Web.Blazor.Endpoints.EndpointErrorHandlingCommonElements;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace MOSTComputers.UI.Web.Blazor.Endpoints.Authentication;
@@ -27,12 +31,10 @@ public static class ApiAuthenticationEndpoints
     internal sealed class ApiClientRequest
     {
         [Required]
-        [Description("The name of the created client")]
-        public string name { get; init; }
+        public string? name { get; init; }
 
         [Required]
-        [Description("The permitted scopes of the created client")]
-        public string[] Scopes { get; init; } = [];
+        public string[] scopes { get; init; } = [];
     }
 
     internal sealed record ApiClientResponse(
@@ -97,25 +99,19 @@ public static class ApiAuthenticationEndpoints
             .WithSummary("Registers an API client")
             .WithDescription("Registers a new API client for third-party authentication.")
             .Accepts<ApiClientRequest>("application/json")
-            .AddOpenApiOperationTransformer((operation, context, cancellationToken) =>
+            .AddOpenApiOperationTransformer(async (operation, context, cancellationToken) =>
             {
-                IOpenApiSchema? schema = operation.RequestBody?.Content!["application/json"].Schema;
-
-                schema!.Properties!["scopes"] = new OpenApiSchema
+                operation.RequestBody = new OpenApiRequestBody
                 {
-                    Type = JsonSchemaType.Array,
-                    Items = new OpenApiSchema
+                    Required = true,
+                    Description = "The client identifier and secret for the newly registered API client.",
+                    Content = new Dictionary<string, OpenApiMediaType>()
                     {
-                        Type = JsonSchemaType.String,
-                        Enum =
-                        [
-                            AuthenticationUtils.Scopes.ReadInvoices,
-                            AuthenticationUtils.Scopes.ReadWarrantyCards,
-                            AuthenticationUtils.Scopes.ReadOrders,
-                        ]
-                    },
-                    MinItems = 1,
-                    UniqueItems = true
+                        ["application/json"] = new OpenApiMediaType
+                        {
+                            Schema = new OpenApiSchemaReference(nameof(ApiClientRequest), context.Document), 
+                        }
+                    }
                 };
 
                 operation.Security ??= [];
@@ -129,8 +125,6 @@ public static class ApiAuthenticationEndpoints
                 };
 
                 operation.Security.Add(securityRequirement);
-
-                return Task.CompletedTask;
             });
 
         endpointGroup.MapPost("/connect/token", ExchangeAsync)
@@ -146,6 +140,55 @@ public static class ApiAuthenticationEndpoints
         return endpointGroup;
     }
 
+    public static Task TransformApiClientRequestAsync(
+        OpenApiSchema schema,
+        OpenApiSchemaTransformerContext context,
+#pragma warning disable IDE0060 // Remove unused parameter
+        CancellationToken cancellationToken)
+#pragma warning restore IDE0060 // Remove unused parameter
+    {
+        if (context.JsonTypeInfo.Type != typeof(ApiClientRequest)) return Task.CompletedTask;
+
+        schema!.Properties!["name"] = new OpenApiSchema
+        {
+            Type = JsonSchemaType.String,
+            Description = "The name of the created client",
+        };
+
+        schema!.Properties!["scopes"] = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Array,
+            Description = "The permitted scopes of the created client",
+            Items = new OpenApiSchema
+            {
+                Type = JsonSchemaType.String,
+                Enum =
+                [
+                    AuthenticationUtils.Scopes.ReadInvoices,
+                    AuthenticationUtils.Scopes.ReadWarrantyCards,
+                    AuthenticationUtils.Scopes.ReadOrders,
+                ]
+            },
+            MinItems = 1,
+            UniqueItems = true
+        };
+
+        schema.Examples =
+        [
+            JsonNode.Parse("""
+                {
+                    "name": "My API client",
+                    "scopes": [
+                        "invoices.read",
+                        "orders.read"
+                    ]
+                }
+                """)!
+        ];
+
+        return Task.CompletedTask;
+    }
+
     [ProducesResponseType<ApiClientResponse>(200, "application/json",
         Description = "The client identifier and secret for the newly registered API client.")]
     [ProducesResponseType(400, Description = "The request must use HTTPS.")]
@@ -157,49 +200,80 @@ public static class ApiAuthenticationEndpoints
         string authorizationHeader,
         [FromBody]
         [Description("The client information to request")]
-        ApiClientRequest request,
+        ApiClientRequest? request,
         HttpContext httpContext,
         [FromServices] ICustomAuthenticationService customAuthenticationService,
         [FromServices] ICustomersViewLoginDataRepository customersViewLoginDataRepository,
         [FromServices] OpenIddictApplicationManager<ApiApplication> openIddictApplicationManager)
     {
-        if (!httpContext.Request.IsHttps) return Results.BadRequest("HTTPS is required");
+        if (!httpContext.Request.IsHttps)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"HTTPS is required");
+        }
 
         if (request == null)
         {
-            return Results.BadRequest("Request body cannot be empty.");
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"Request body cannot be empty.");
         }
 
         if (string.IsNullOrWhiteSpace(request.name))
         {
-            return Results.BadRequest("Name cannot be empty.");
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"Name cannot be empty.");
         }
 
-        if (request.Scopes.Length == 0)
+        if (request.scopes.Length == 0)
         {
-            return Results.BadRequest("There must be at least 1 scope selected.");
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"There must be at least 1 scope selected.");
         }
 
-        foreach (string scope in request.Scopes)
+        foreach (string scope in request.scopes)
         {
             bool isValidScope = ValidateScopeIsPartOfExistingScopes(scope);
 
-            if (!isValidScope) return Results.BadRequest($"{scope} is not a valid scope.");
+            if (isValidScope) continue;
+
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"'{scope}' is not a valid scope.");
         }
 
         if (string.IsNullOrEmpty(authorizationHeader)
             || !authorizationHeader.StartsWith(_basicTokenPrefix))
         {
-            return Results.Unauthorized();
+            return Results.Problem(statusCode: StatusCodes.Status401Unauthorized);
         }
 
         string userCredentialsData = authorizationHeader[_basicTokenPrefix.Length..];
+
+        bool areCredentialsValidBase64 = Base64.IsValid(userCredentialsData);
+
+        if (!areCredentialsValidBase64)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"Credentials must be valid base64 string");
+        }
 
         byte[] unencodedUserCredentialsBytes = Convert.FromBase64String(userCredentialsData);
 
         string userCredentials = Encoding.UTF8.GetString(unencodedUserCredentialsBytes);
 
         int userCredentialsSplitIndex = userCredentials.IndexOf(_usernameAndPasswordSplitCharacter);
+
+        if (userCredentialsSplitIndex < 0)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"Credentials must be separated by a colon ('{_usernameAndPasswordSplitCharacter}')");
+        }
 
         string username = userCredentials[..userCredentialsSplitIndex];
         string password = userCredentials[(userCredentialsSplitIndex + 1)..];
@@ -209,14 +283,16 @@ public static class ApiAuthenticationEndpoints
 
         if (checkPasswordResult != CheckPasswordResult.Success)
         {
-            return Results.Unauthorized();
+            return Results.Problem(statusCode: StatusCodes.Status401Unauthorized);
         };
 
         CustomerLoginData? userInCustomersView = await customersViewLoginDataRepository.GetLoginDataByUsernameAsync(username);
 
         if (userInCustomersView == null)
         {
-            return Results.Problem(statusCode: 500);
+            return Results.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                detail: GenericErrorDetail);
         }
 
         string clientId = Guid.NewGuid().ToString("N");
@@ -226,7 +302,7 @@ public static class ApiAuthenticationEndpoints
 
         List<string> allApplicationPermissions = new(_defaultApplicationPermissions);
 
-        foreach (string scope in request.Scopes)
+        foreach (string scope in request.scopes)
         {
             string scopePermission = Permissions.Prefixes.Scope + scope;
 
@@ -257,11 +333,16 @@ public static class ApiAuthenticationEndpoints
         HttpContext httpContext,
         OpenIddictApplicationManager<ApiApplication> openIddictApplicationManager)
     {
-        if (!httpContext.Request.IsHttps) return Results.BadRequest("HTTPS is required");
+        if (!httpContext.Request.IsHttps)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"HTTPS is required");
+        }
 
         OpenIddictRequest? request = httpContext.GetOpenIddictServerRequest();
 
-        if (request == null || request.ClientId == null) return Results.Unauthorized();
+        if (request == null || request.ClientId == null) return Results.Problem(statusCode: StatusCodes.Status401Unauthorized);
 
         if (request.IsClientCredentialsGrantType())
         {
@@ -289,7 +370,7 @@ public static class ApiAuthenticationEndpoints
                 authenticationScheme: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        return Results.Unauthorized();
+        return Results.Problem(statusCode: StatusCodes.Status401Unauthorized);
     }
 
     private static bool ValidateScopeIsPartOfExistingScopes(string scope)

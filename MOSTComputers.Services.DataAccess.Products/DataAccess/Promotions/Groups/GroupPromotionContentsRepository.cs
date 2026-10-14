@@ -204,7 +204,7 @@ internal sealed class GroupPromotionContentsRepository : IGroupPromotionContents
     {
         const string query =
             $"""
-            SELECT TOP 1 * FROM {GroupPromotionContentsTableName} WITH (NOLOCK)
+            SELECT * FROM {GroupPromotionContentsTableName} WITH (NOLOCK)
             WHERE {IdColumnName} IN @ids
             ORDER BY {DisplayOrderColumnName};
             """;

@@ -173,6 +173,8 @@ else
         }
     }
 
+    private bool IsRenderedInteractively => AssignedRenderMode != null;
+
     [Parameter, EditorRequired] public required FilePathOptions FileOptions { get; set; }
 
     private FilePathOptions? _previousFileOptions { get; set; }
@@ -189,6 +191,8 @@ else
 
     protected override void OnParametersSet()
     {
+        if (!IsRenderedInteractively) return;
+
         if (_previousFileOptions is not null && !_previousFileOptions.Equals(FileOptions))
         {
             SetPromotionFileData();
@@ -286,7 +290,7 @@ else
     {
         return filePathOptions.FilePathOption.Match(
             fromExistingFile => GetPromotionFileDisplayTypeFromExtension(fromExistingFile.ExistingFileName),
-			fromOtherFile => GetPromotionFileDisplayTypeFromContentType(fromOtherFile.NewFileContentType));
+            fromOtherFile => GetPromotionFileDisplayTypeFromContentType(fromOtherFile.NewFileContentType));
     }
 
     private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromContentType(string contentType)

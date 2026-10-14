@@ -102,6 +102,22 @@ export function updatePropertyAndSave(editorId, isLink, mutator) {
     saveData(data);
 }
 
+export function addProductDocumentAndSave(editorId, productDocumentData, file) {
+
+    const data = loadData();
+
+    const productDocument = data.productDocuments.find(x => x.editorId === editorId); 
+
+    if (productDocument) return false;
+
+    data.productDocuments.push(productDocumentData);
+    localFileData.productDocuments.push(file);
+
+    saveData(data);
+
+    return true;
+}
+
 export function updateProductDocumentAndSave(editorId, mutator) {
 
     const data = loadData();

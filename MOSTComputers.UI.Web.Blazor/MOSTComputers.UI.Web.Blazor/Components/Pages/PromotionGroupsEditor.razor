@@ -15,11 +15,11 @@
 <PageTitle>Promotion Groups</PageTitle>
 
 <HeadContent>
-	<link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+    <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-	<script type="module" src="@Assets[_pageScriptUrl]"></script>
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
 
-	<script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
+    <script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
     <script src="@Assets[_popupScriptUrl]"></script>
 </HeadContent>
 
@@ -28,73 +28,73 @@
 
         <select id="promotionGroupSelect" class="promotion-group-select">
 
-			<option selected value="">All Groups</option>
+            <option selected value="">All Groups</option>
 
-			@foreach (PromotionGroup promotionGroup in PromotionGroupsInSelect)
-			{
-				<option value="@promotionGroup.Id">@promotionGroup.Name</option>
-			}
-		</select>
+            @foreach (PromotionGroup promotionGroup in PromotionGroupsInSelect)
+            {
+                <option value="@promotionGroup.Id">@promotionGroup.Name</option>
+            }
+        </select>
 
         <input id="groupPromotionSearchInput" class="group-promotion-search-input" spellcheck="false" />
 
-		<div class="group-promotion-only-active-promotions-checkbox-container">
-			<label for="groupPromotionOnlyActivePromotionsCheckbox">Active Only</label>
-			<input id="groupPromotionOnlyActivePromotionsCheckbox" type="checkbox" class="group-promotion-only-active-promotions-checkbox" checked />
-		</div>
+        <div class="group-promotion-only-active-promotions-checkbox-container">
+            <label for="groupPromotionOnlyActivePromotionsCheckbox">Active Only</label>
+            <input id="groupPromotionOnlyActivePromotionsCheckbox" type="checkbox" class="group-promotion-only-active-promotions-checkbox" checked />
+        </div>
 
-		@* <button id="searchPromotionButton" class="group-promotion-search-button" onclick="searchGroupPromotions()"> *@
-		<button id="searchPromotionButton" class="group-promotion-search-button">
-			<p class="group-promotion-search-button-text">
-				Search
-			</p>
-		</button>
+        @* <button id="searchPromotionButton" class="group-promotion-search-button" onclick="searchGroupPromotions()"> *@
+        <button id="searchPromotionButton" class="group-promotion-search-button">
+            <p class="group-promotion-search-button-text">
+                Search
+            </p>
+        </button>
 
         @* <button id="addPromotionButton" class="group-promotion-add-button" onclick="openPromotionEditorForPromotion()"> *@
         <button id="addPromotionButton" class="group-promotion-add-button">
-			<p class="group-promotion-add-button-text">
-				Add Promotion
-			</p>
-		</button>
+            <p class="group-promotion-add-button-text">
+                Add Promotion
+            </p>
+        </button>
 
         @* <button id="addPromotionGroupButton" class="promotion-group-add-button" onclick="openPromotionGroupEditorPopup()"> *@
         <button id="addPromotionGroupButton" class="promotion-group-add-button">
-			<p class="group-promotion-add-button-text">
-				Add Group
-			</p>
-		</button>
+            <p class="group-promotion-add-button-text">
+                Add Group
+            </p>
+        </button>
     </div>
 
     <div class="promotion-editor-display">
-		<div id="promotionListContainer" class="promotion-list-container">
-		</div>
+        <div id="promotionListContainer" class="promotion-list-container">
+        </div>
 
-		<div id="promotionEditPanelContainer" class="promotion-edit-panel-container">
-		</div>
+        <div id="promotionEditPanelContainer" class="promotion-edit-panel-container">
+        </div>
     </div>
 </div>
 
 <div id="promotionGroupEditorPopupContainer">
 </div>
 
-<div id="addRelatedProductsPopupContainer">	
+<div id="addRelatedProductsPopupContainer"> 
 </div>
 
 <input type="hidden" id="__RequestVerificationToken" hidden
-	value="@Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!).RequestToken" />
+    value="@Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!).RequestToken" />
 
 @code {
 
-	private const string _popupFullScreenButtonScriptUrl = "/js/Popup/PopupFullScreenButton.js";
-	private const string _popupScriptUrl = "/js/Popup/Popup.js";
+    private const string _popupFullScreenButtonScriptUrl = "/js/Popup/PopupFullScreenButton.js";
+    private const string _popupScriptUrl = "/js/Popup/Popup.js";
 
-	// internal const string _pageScriptUrl = "/js/Pages/PromotionGroups.js";
-	internal const string _pageScriptUrl = "/js/Pages/PromotionGroups/Page.js";
+    // internal const string _pageScriptUrl = "/js/Pages/PromotionGroups.js";
+    internal const string _pageScriptUrl = "/js/Pages/PromotionGroups/Page.js";
 
-	public List<PromotionGroup> PromotionGroupsInSelect = new();	
+    public List<PromotionGroup> PromotionGroupsInSelect = new();    
 
-	protected override async Task OnInitializedAsync()
-	{
-		PromotionGroupsInSelect = await PromotionGroupService.GetAllAsync();
-	}
+    protected override async Task OnInitializedAsync()
+    {
+        PromotionGroupsInSelect = await PromotionGroupService.GetAllAsync();
+    }
 }

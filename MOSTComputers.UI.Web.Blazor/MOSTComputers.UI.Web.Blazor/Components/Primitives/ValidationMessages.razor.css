@@ -4,7 +4,7 @@
     margin: 0px;
 }
 
-    .validation-list li {
+    .validation-list ::deep li {
         font-size: 0.9rem;
         color: #dc3545;
         margin-left: 0px;

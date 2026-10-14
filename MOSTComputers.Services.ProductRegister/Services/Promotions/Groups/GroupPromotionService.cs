@@ -150,7 +150,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
         DateTime minStartDate = GetMinStartDate();
 
         if (createRequest.StartDate == null
-            || minStartDate < createRequest.StartDate)
+            || minStartDate > createRequest.StartDate)
         {
             createRequest.StartDate = minStartDate;
         }
@@ -159,7 +159,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
         {
             createRequest.ExpirationDate = DateTime.MaxValue;
         }
-        else if (minStartDate < createRequest.ExpirationDate)
+        else if (minStartDate > createRequest.ExpirationDate)
         {
             createRequest.ExpirationDate = minStartDate;
         }
@@ -169,8 +169,8 @@ public sealed class GroupPromotionService : IGroupPromotionService
             Name = createRequest.Name,
             GroupId = createRequest.GroupId,
             HtmlContent = createRequest.HtmlContent ?? string.Empty,
-            StartDate = createRequest.StartDate ?? createRequest.StartDate,
-            ExpirationDate = createRequest.ExpirationDate ?? DateTime.MaxValue,
+            StartDate = createRequest.StartDate,
+            ExpirationDate = createRequest.ExpirationDate,
             DisplayOrder = createRequest.DisplayOrder ?? 0,
             DateModified = DateTime.Now,
             Disabled = createRequest.Disabled ?? false,

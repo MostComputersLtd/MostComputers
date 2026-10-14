@@ -155,7 +155,8 @@ else
                                     {
                                         <button type="button"
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
-                                            onclick="goTo('@CarouselId', @context.Index)">
+                                            onclick="goTo('@CarouselId', @context.Index)"
+                                            ondblclick="openDataUrlInNewWindow('@context.Item.ImageSrcOrHtmlContent')">
 
                                             @if (!context.Item.IsUsingHtmlContent)
                                             {

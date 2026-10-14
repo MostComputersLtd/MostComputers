@@ -39,4 +39,9 @@ internal static class EditorIdsGenerateUtils
     {
         return $"product-document-{productDocumentId}";
     }
+
+    internal static string GenerateDocumentIdForNewDocument()
+    {
+        return $"product-document-{Guid.NewGuid()}";
+    }
 }

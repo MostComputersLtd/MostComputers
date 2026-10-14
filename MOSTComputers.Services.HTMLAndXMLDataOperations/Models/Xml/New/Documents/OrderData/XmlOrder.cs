@@ -127,15 +127,13 @@ public sealed class XmlOrder : IXmlAsyncSerializable
 
         if (Items?.Count > 0)
         {
-            await writer.WriteStartElementAsync(null, "items", null);
-
             foreach (XmlOrderItem item in Items)
             {
                 await item.WriteXmlAsync(writer, "item");
             }
-
-            await writer.WriteEndElementAsync();
         }
+
+        await writer.WriteEndElementAsync();
     }
 
     private static string? GetStringFromCurrencyInOrder(Currency? currencyEnum)

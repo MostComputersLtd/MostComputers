@@ -83,7 +83,7 @@
 }
 
 .promotion-list-container {
-    width: 35%;
+    width: 45%;
     border-right: 3px solid black;
     overflow-y: auto;
 }

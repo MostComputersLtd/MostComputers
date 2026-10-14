@@ -94,5 +94,7 @@ public sealed class XmlOrderItem : IXmlAsyncSerializable
         {
             await writer.WriteElementStringAsync(null, "info", null, ExternalInfo!);
         }
+
+        await writer.WriteEndElementAsync();
     }
 }

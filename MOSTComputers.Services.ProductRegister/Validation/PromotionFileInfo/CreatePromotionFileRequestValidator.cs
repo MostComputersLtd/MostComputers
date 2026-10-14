@@ -8,6 +8,11 @@ internal sealed class CreatePromotionFileRequestValidator : AbstractValidator<Cr
     public CreatePromotionFileRequestValidator()
     {
         RuleFor(x => x.Name).NotEmptyOrWhiteSpace().MaximumLength(NameMaxLength);
+
+        RuleFor(x => x.ValidTo)
+            .GreaterThan(x => x.ValidFrom)
+            .When(x => x.ValidFrom != null && x.ValidTo != null);
+
         RuleFor(x => x.FileName).NotNullOrWhiteSpace().MaximumLength(FileNameMaxLength);
         RuleFor(x => x.FileData).NotNull().NotEmpty();
         RuleFor(x => x.Description).NotEmptyOrWhiteSpace().MaximumLength(DescriptionMaxLength);

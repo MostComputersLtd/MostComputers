@@ -153,36 +153,45 @@ public static class PromotionGroupsPageComponentEndpoints
         endpointGroup.MapPost("/groupImages", GetPromotionGroupImageComponent);
 
         endpointGroup.MapPost("/create", InsertNewPromotionAsync)
-            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+            .AddEndpointFilter<AntiforgeryEndpointFilter>();
 
         endpointGroup.MapPost("/createGroup", InsertNewPromotionGroupAsync)
-            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+            .AddEndpointFilter<AntiforgeryEndpointFilter>();
 
         endpointGroup.MapPut("/update", UpdatePromotionAsync)
-            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+            .AddEndpointFilter<AntiforgeryEndpointFilter>();
 
         endpointGroup.MapPut("/updateGroup", UpdatePromotionGroupAsync)
-            .WithMetadata(new RequireAntiforgeryTokenAttribute());
+            .AddEndpointFilter<AntiforgeryEndpointFilter>();
 
         return endpointGroup;
     }
 
     private static async Task<IResult> GetGroupPromotionsListAsync(
         HttpContext httpContext,
+        [FromServices] IPromotionGroupService promotionGroupService,
         [FromServices] IGroupPromotionService groupPromotionService,
         [FromBody] GroupPromotionSearchData? searchData = null)
     {
         httpContext.Response.ContentType = "application/html";
 
         List<GroupPromotionContent> groupPromotions;
+        List<PromotionGroup> promotionGroups;
 
         if (searchData?.PromotionGroupId != null)
         {
-            groupPromotions = await groupPromotionService.GetAllInGroupAsync(searchData.PromotionGroupId.Value);
+            int groupId = searchData.PromotionGroupId.Value;
+
+            groupPromotions = await groupPromotionService.GetAllInGroupAsync(groupId);
+
+            PromotionGroup? promotionGroup = await promotionGroupService.GetByIdAsync(groupId);
+
+            promotionGroups = promotionGroup != null ? [promotionGroup] : [];
         }
         else
         {
             groupPromotions = await groupPromotionService.GetAllAsync();
+            promotionGroups = await promotionGroupService.GetAllAsync();
         }
 
         if (searchData?.ActiveOnly == true)
@@ -192,7 +201,7 @@ public static class PromotionGroupsPageComponentEndpoints
 
         if (searchData?.SearchData is not null)
         {
-            List<GroupPromotionContent> filteredGroupPromotions = new();
+            GroupPromotionContent? promotionById = null;
 
             string searchDataTrimmed = searchData.SearchData.Trim();
 
@@ -204,11 +213,13 @@ public static class PromotionGroupsPageComponentEndpoints
                 {
                     GroupPromotionContent contentWithId = groupPromotions[contentWithIdIndex];
 
-                    filteredGroupPromotions.Add(contentWithId);
+                    promotionById = contentWithId;
 
                     groupPromotions.RemoveAt(contentWithIdIndex);
                 }
             }    
+
+            List<GroupPromotionContent> filteredGroupPromotions = new();
 
             string[] searchTerms = searchData.SearchData.Split(' ');
 
@@ -234,12 +245,37 @@ public static class PromotionGroupsPageComponentEndpoints
                 }
             }
 
+            if (searchData.PromotionGroupId == null)
+            {
+                filteredGroupPromotions = filteredGroupPromotions
+                    .OrderBy(x => x.DefaultGroupPriority ?? int.MaxValue)
+                    .ToList();
+            }
+
+            if (promotionById != null)
+            {
+                filteredGroupPromotions.Insert(0, promotionById);
+            }
+
             groupPromotions = filteredGroupPromotions;
+        }
+
+        List<GroupPromotionList.PromotionDisplayData> promotionDatas = [];
+
+        foreach (GroupPromotionContent groupPromotion in groupPromotions)
+        {
+            GroupPromotionList.PromotionDisplayData promotionData = new()
+            {
+                Promotion = groupPromotion,
+                PromotionGroup = promotionGroups.FirstOrDefault(x => x.Id == groupPromotion.GroupId),
+            };
+
+            promotionDatas.Add(promotionData);
         }
 
         return new RazorComponentResult<GroupPromotionList>(new
         {
-            Promotions = groupPromotions,
+            Promotions = promotionDatas,
         });
     }
 

@@ -8,13 +8,13 @@
     <UserSecretsId>aspnet-MOSTComputers.UI.Web.Blazor-3225e848-2710-452a-af46-5b21a9ec2929</UserSecretsId>
   </PropertyGroup>
 
-  <!-- <PropertyGroup> -->
-  <!--     <DefaultItemExcludes> -->
-  <!--         $(DefaultItemExcludes); -->
-  <!--        Components\ProductEditor\**; -->
-  <!--        Components\Pages\ProductEditor2.razor; -->
-  <!--     </DefaultItemExcludes> -->
-  <!-- </PropertyGroup> -->
+  <PropertyGroup>
+      <DefaultItemExcludes>
+          $(DefaultItemExcludes);
+         Components\ProductEditor\**;
+         Components\Pages\ProductEditor2.razor;
+      </DefaultItemExcludes>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
@@ -57,12 +57,10 @@
     </Content>
   </ItemGroup>
 
-  <!--
   <ItemGroup>
     <None Remove="wwwroot\js\ProductEditor\**" />
     <Content Remove="wwwroot\js\ProductEditor\**" />
   </ItemGroup>
-  -->
 
   <ItemGroup>
     <Content Update="wwwroot\favicon.ico">

@@ -1,0 +1,50 @@
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+
+<li id="@ItemData.EditorId" name="propertyItem" class="properties-list-item" data-is-link="@IsLink">
+    <table class="property-table">
+        <tbody>
+            <tr class="property-data-row">
+
+                <td class="property-td-alignedOnTop property-is-active-td">
+                    <input name="propertyValueActiveCheckbox"
+                        type="checkbox" value="@ItemData.IsActive" tabindex="-1" />
+                </td>
+
+                <td class="property-td-alignedOnTop property-characteristic-td">
+                    <p>@ItemData.ProductCharacteristic?.Name</p>
+                </td>
+
+                <td class="property-value-td property-td-alignedOnTop">
+                    <div class="property-value-textarea-container">
+                        <textarea name="propertyValueInput"
+                            class="property-value-textarea"
+                            value="@ItemData.Value"
+                            spellcheck="false"
+                            aria-label="Value"
+                            rows="1"
+                            maxlength="4000">
+                        </textarea>
+                    </div>
+                </td>
+            </tr>
+
+            @if (ItemData.ValidationMessages.Count > 0)
+            {
+                <tr>
+                    <td colspan="1">
+                    </td>
+                    <td colspan="4">
+                        <ValidationMessages Messages="ItemData.ValidationMessages" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</li>
+
+@code{
+    [Parameter, EditorRequired] public required SingleProductEditorPopup.ProductPropertyDisplayData ItemData { get; set; }
+
+    private bool IsLink => ItemData.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.Link;
+}

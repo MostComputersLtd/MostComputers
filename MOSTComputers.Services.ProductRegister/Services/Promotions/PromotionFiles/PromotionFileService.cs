@@ -232,7 +232,7 @@ internal sealed class PromotionFileService : IPromotionFileService
         int promotionFileInfoId)
     {
         return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            x => DeleteInternalAsync(x),
+            DeleteInternalAsync,
             result => result.Match(
                 success => true,
                 notFound => false,
@@ -247,7 +247,8 @@ internal sealed class PromotionFileService : IPromotionFileService
 
         if (promotionFileInfoToDelete is null) return new NotFound();
 
-        bool doesPromotionFileHaveRelatedProducts = await _promotionProductFileInfoRepository.DoesExistForPromotionFileAsync(promotionFileInfoId);
+        bool doesPromotionFileHaveRelatedProducts
+            = await _promotionProductFileInfoRepository.DoesExistForPromotionFileAsync(promotionFileInfoId);
 
         if (doesPromotionFileHaveRelatedProducts)
         {
@@ -261,7 +262,8 @@ internal sealed class PromotionFileService : IPromotionFileService
 
         if (!deletePromotionFileInfoResult) return new NotFound();
 
-        OneOf<Success, FileDoesntExistResult> deleteFileResult = _promotionFileManagementService.DeleteFile(promotionFileInfoToDelete.FileName);
+        OneOf<Success, FileDoesntExistResult> deleteFileResult
+            = _promotionFileManagementService.DeleteFile(promotionFileInfoToDelete.FileName);
 
         return deleteFileResult.Map<Success, NotFound, PromotionFileHasRelationsResult, FileDoesntExistResult>();
     }

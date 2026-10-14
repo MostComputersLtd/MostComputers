@@ -60,7 +60,8 @@ internal static class PromotionGroupXmlDataEndpoints
             groupPromotionContentsRepository,
             groupPromotionImageFileDataService,
             promotionGroupsOrdered,
-            baseUrl);
+            baseUrl,
+            true);
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
@@ -95,7 +96,8 @@ internal static class PromotionGroupXmlDataEndpoints
             groupPromotionContentsRepository,
             groupPromotionImageFileDataService,
             promotionGroupsInXml,
-            baseUrl);
+            baseUrl,
+            false);
 
         httpContext.Response.ContentType = "application/xml";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
@@ -109,7 +111,8 @@ internal static class PromotionGroupXmlDataEndpoints
         IGroupPromotionContentsRepository groupPromotionContentsRepository,
         IGroupPromotionImageFileDataService groupPromotionImageFileDataService,
         IEnumerable<PromotionGroup> promotionGroups,
-        string baseUrl)
+        string baseUrl,
+        bool excludeIfNoPromotions)
     {
         List<int> groupIds = promotionGroups.Select(x => x.Id).ToList();
 
@@ -138,27 +141,31 @@ internal static class PromotionGroupXmlDataEndpoints
 
         foreach (PromotionGroup promotionGroup in promotionGroups)
         {
+            List<GroupPromotionContent>? promotionsInGroup = activePromotionGroupContentsGrouped
+                .FirstOrDefault(x => x.Key == promotionGroup.Id)?
+                .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
+                .ToList();
+
             XmlPromotionGroup xmlPromotionGroup = new()
             {
                 Name = promotionGroup.Name,
                 Promotions = new(),
             };
 
-            List<GroupPromotionContent>? promotionsInGroup = activePromotionGroupContentsGrouped
-                .FirstOrDefault(x => x.Key == promotionGroup.Id)?
-                .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
-                .ToList();
-
             if (promotionsInGroup is null || promotionsInGroup.Count <= 0)
             {
-                xmlData.PromotionGroups.Add(xmlPromotionGroup);
+                if (!excludeIfNoPromotions)
+                {
+                    xmlData.PromotionGroups.Add(xmlPromotionGroup);
+                }
 
                 continue;
             }
 
             foreach (GroupPromotionContent groupPromotionContent in promotionsInGroup)
             {
-                IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.FirstOrDefault(x => x.Key == groupPromotionContent.Id);
+                IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles.FirstOrDefault(
+                    x => x.Key == groupPromotionContent.Id);
 
                 if (imageFilesForPromotion is null) continue;
 

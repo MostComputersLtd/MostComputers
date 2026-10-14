@@ -1,0 +1,23 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+
+<Popup IsVisible="PopupData.IsVisible"
+    PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'
+    AddFullScreenButtonToHeader="true">
+    <ChildContent>
+        <ProductHtmlAndImages Product="PopupData.Product"
+            ProductImages="PopupData.ProductImages"
+            ProductHtml="@PopupData.ProductHtml" />
+    </ChildContent>
+</Popup>
+
+@code{
+    public sealed class ProductLegacyDisplayPopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required MOSTComputers.Models.Product.Models.Product Product { get; set; }
+        public List<Product.ProductHtmlAndImages.ProductImageDisplayData>? ProductImages { get; set; }
+        public string? ProductHtml { get; set; }
+    }
+
+    [Parameter, EditorRequired] public required ProductLegacyDisplayPopupData PopupData { get; set; }
+}

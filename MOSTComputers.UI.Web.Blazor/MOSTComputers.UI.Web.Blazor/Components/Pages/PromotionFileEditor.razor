@@ -1,0 +1,51 @@
+@page "/promotionFiles"
+
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [Authorize(Roles = "ProductEditor")]
+
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Promotion Files</PageTitle>
+
+<HeadContent>
+    <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
+
+    <script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
+    <script src="@Assets[_popupScriptUrl]"></script>
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
+</HeadContent>
+
+<div class="promotion-file-editor-page">
+    <header class="promotion-file-search-header">
+
+        <label for="promotionFileEditorValidOnInput" class="valid-on-input-label">
+            Active on:
+        </label>
+
+        <input id="promotionFileEditorValidOnInput" type="date" class="valid-on-input" placeholder="From" />
+
+        <input id="promotionFileEditorSearchInput" type="text" placeholder="Search..."
+            class="search-input"
+            aria-label="Text Search" />
+
+        <button id="promotionFileEditorSearchButton" type="button" class="btn btn-outline-primary search-button">
+            Search
+        </button>
+
+        <button id="promotionFileEditorAddButton" class="btn btn-primary add-button">
+            +
+        </button>
+    </header>
+
+    <div id="promotionFileEditorContainer" class="promotion-file-table-container">
+    </div>
+
+    <div id="promotionFileSingleEditorPopupContainer">
+    </div>
+</div>
+
+@code {
+    private const string _popupFullScreenButtonScriptUrl = "js/Popup/PopupFullScreenButton.js";
+    private const string _popupScriptUrl = "js/Popup/Popup.js";
+    private const string _pageScriptUrl = "js/Pages/PromotionFileEditor/Page.js";
+}

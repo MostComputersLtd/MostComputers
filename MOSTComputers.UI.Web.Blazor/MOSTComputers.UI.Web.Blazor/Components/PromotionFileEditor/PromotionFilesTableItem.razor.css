@@ -1,0 +1,36 @@
+.promotion-file-active-input {
+    pointer-events: none;
+}
+
+.promotion-file-container {
+    max-width: 8em;
+    max-height: 4em;
+}
+
+::deep .promotion-file {
+    width: 100%;
+    height: 100%;
+}
+
+.create-user-text {
+    margin: 0px 0px 1rem 0px;
+}
+
+.create-user-text.no-margin {
+    margin: 0px;
+}
+
+.edit-button {
+    padding: 0.3em;
+    margin-inline: auto;
+    display: flex;
+}
+
+.edit-button img {
+    height: 1em;
+}
+
+.delete-button {
+    margin-inline: auto;
+    display: block;
+}

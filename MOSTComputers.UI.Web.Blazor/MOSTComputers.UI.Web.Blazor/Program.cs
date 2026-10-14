@@ -34,6 +34,7 @@ using MOSTComputers.UI.Web.Blazor.Components._Tests;
 using MOSTComputers.UI.Web.Blazor.Components.Account;
 using MOSTComputers.UI.Web.Blazor.Components.Home;
 using MOSTComputers.UI.Web.Blazor.Components.Orders;
+using MOSTComputers.UI.Web.Blazor.Components.PromotionFileEditor;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Authentication;
@@ -474,6 +475,19 @@ builder.Services.AddOpenIddictToDatabase()
         options.UseAspNetCore();
     });
 
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        HttpRequest request = context.HttpContext.Request;
+
+        context.ProblemDetails.Instance = $"{request.Method} {request.Scheme}://{request.Host}{request.PathBase}{request.Path}";
+
+        context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
+        context.ProblemDetails.Extensions.TryAdd("connectionId", context.HttpContext.Connection.Id);
+    };
+});
+
 builder.Services.AddSingleton<IEmailSender<PasswordsTableOnlyUser>, IdentityNoOpEmailSender>();
 
 //builder.Services.AddRateLimiter(options =>
@@ -561,9 +575,11 @@ builder.Services.AddOpenApi(options =>
         };
 
         return Task.CompletedTask;
-    }); 
+    });
 
     options.AddOperationTransformer<SecurityRequirementOperationTransformer>();
+
+    options.AddSchemaTransformer(ApiAuthenticationEndpoints.TransformApiClientRequestAsync);
 });
 
 builder.Services.AddLocalization();
@@ -598,7 +614,8 @@ else
     app.UseHsts();
 }
 
-app.MapOpenApi();
+app.MapOpenApi("/openapi/{documentName}.json");
+app.MapOpenApi("/openapi/{documentName}.yml");
 
 app.MapScalarApiReference(options =>
 {
@@ -689,6 +706,7 @@ app.MapPromotionFileDataEndpoints();
 
 app.MapProductDataComponentEndpoints();
 app.MapPromotionGroupPageComponentEndpoints();
+app.MapPromotionFileEditorPageComponentEndpoints();
 app.MapOrdersPageComponentEndpoints();
 
 app.Run();

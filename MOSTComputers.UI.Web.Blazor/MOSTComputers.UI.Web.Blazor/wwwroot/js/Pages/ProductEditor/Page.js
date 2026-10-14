@@ -183,7 +183,7 @@ async function showProductSearchStringPopup(productId) {
 
 async function showSingleProductEditorPopup(productId) {
 
-    const url = `api/components/productEditor/singleProductEditorPopup/${productId}`;
+    const url = `api/components/productEditor/single/${productId}`;
 
     const response = await fetch(url, {
         method: "GET",

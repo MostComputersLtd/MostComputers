@@ -1,0 +1,263 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using OneOf
+
+<Popup IsVisible="@IsVisible" PopupMarginOptions="PopupMarginOptions">
+    <HeaderContent>
+        <div class="promotion-file-single-editor-popup-header">
+
+            <h5 class="popup-header-text promotion-file-single-editor-popup-header-text">Promotion File:</h5>
+
+            @if (_promotionFileEditData.Id is not null)
+            {
+                <h4 class="popup-header-text promotion-file-single-editor-popup-header-text">
+                    PrId: @_promotionFileEditData.Id
+                </h4>
+
+                <input id="singlePromotionFileEditorHiddenIdInput" type="hidden" value="@_promotionFileEditData.Id"/>
+            }
+
+            <div class="header-right-part-container">
+
+                @if (_promotionFileEditData.CreateUserName is not null)
+                {
+                    <p class="header-created-date-text">
+                        Created:
+                        <span>@_promotionFileEditData.CreateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@_promotionFileEditData.CreateDate)
+                        </span>
+                    </p>
+                }
+
+                @if (_promotionFileEditData.LastUpdateUserName is not null)
+                {
+                    <p class="header-updated-date-text">
+                        Last Update:
+                        <span>@_promotionFileEditData.LastUpdateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@_promotionFileEditData.LastUpdateDate)
+                        </span>
+                    </p>
+                }
+
+                @if (ShouldDisplaySaveButton)
+                {
+                    <div class="save-button-container">
+                        <button id="singlePromotionFileEditorSaveButton" class="btn btn-primary">
+                            @SaveButtonText
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="promotion-file-single-editor-popup-body-container">
+            <div class="container promotion-file-single-editor-popup-body">
+                <div class="row editor-inputs">
+                    <div class="col-12 col-md-6">
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorNameInput" class="editor-input-item-label">Name:</label>
+                            <input id="singlePromotionFileEditorNameInput" value="@_promotionFileEditData.Name"
+                                   placeholder="Promotion File Name" />
+                            <ValidationMessages id="singlePromotionFileEditorNameInputValidationMessages" RenderEvenIfNull="true" />
+                        </div>
+
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorActiveInput" class="editor-input-item-label">Active:</label>
+                            <input id="singlePromotionFileEditorActiveInput" type="checkbox" value="@_promotionFileEditData.Active" />
+                        </div>
+
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorValidFromInput" class="editor-input-item-label">From:</label>
+                            <input id="singlePromotionFileEditorValidFromInput" type="date"
+                                value="@GetDateTimeAsStringForDateInput(_promotionFileEditData.ValidFrom)" />
+                        </div>
+
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorValidToInput" class="editor-input-item-label">To:</label>
+                            <input id="singlePromotionFileEditorValidToInput" type="date"
+                                value="@GetDateTimeAsStringForDateInput(_promotionFileEditData.ValidTo)" />
+                            <ValidationMessages id="singlePromotionFileEditorValidToInputValidationMessages" RenderEvenIfNull="true" />
+                        </div>
+
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorDescriptionInput" class="editor-input-item-label">Description:</label>
+                            <input id="singlePromotionFileEditorDescriptionInput" type="text" value="@_promotionFileEditData.Description" />
+                            <ValidationMessages id="singlePromotionFileEditorDescriptionInputValidationMessages" RenderEvenIfNull="true" />
+                        </div>
+
+                        <div class="editor-input-item">
+                            <label for="singlePromotionFileEditorRequiredProductsInput" class="editor-input-item-label">Required CSTIDs:</label>
+                            <input id="singlePromotionFileEditorRequiredProductsInput" type="text"
+                                value="@_promotionFileEditData.RelatedProductsString" />
+                            <ValidationMessages id="singlePromotionFileEditorRequiredProductsInputValidationMessages" RenderEvenIfNull="true" />
+                        </div>
+                    </div>
+
+                    <div id="singlePromotionFileEditorImageDropZone" class="col-12 col-md-6">
+
+                        <div class="file-names-container">
+
+                            @{
+                                string? currentFileName = _promotionFileEditData.FileName;
+                                string visibleClass = currentFileName != null ? "element-show" : string.Empty;
+                            }
+
+                            <div id="singlePromotionFileNewFileNameContainer"
+                                class="new-file-name-container hidden-until-any-file @visibleClass">
+
+                                <p class="change-file-name-text">Change file name:</p>
+
+                                <input id="singlePromotionFileNewFileNameInput" type="text"
+                                    class="new-file-name-input"
+                                    placeholder="New file name"
+                                    aria-label="New file name" />
+
+                                <p id="singlePromotionFileNewFileNameExtensionText" class="file-name-extension-text">
+                                    @Path.GetExtension(currentFileName)
+                                </p>
+
+                                <ValidationMessages id="singlePromotionFileNewFileNameInputValidationMessages" RenderEvenIfNull="true" />
+                            </div>
+
+                            <button id="singlePromotionFileEditorFileButton" class="btn btn-secondary mb-2">
+                                Select file
+                            </button>
+
+                            <div id="singlePromotionFileEditorSelectedFileTextContainer"
+                                class="selected-file-text-container hidden-until-selected-file">
+                                <p class="selected-file-announcement-text">Selected File:&nbsp;</p>
+
+                                <p id="singlePromotionFileEditorSelectedFileText" class="selected-file-text">
+                                </p>
+                            </div>
+
+                            <input id="singlePromotionFileEditorFileInput" type="file" accept="*" class="display-none" />
+                        </div>
+
+                        <div id="singlePromotionFileEditorSelectedFileDisplayContainer"
+                            class="file-container hidden-until-selected-file">
+                        </div>
+
+                        @if (_promotionFileEditData.Id != null
+                            && _promotionFileEditData.FileName != null)
+                        {
+                            <div id="singlePromotionFileEditorOriginalFileTextContainer"
+                                class="original-file-text-container">
+                                <p class="original-file-announcement-text">Current file:&nbsp;</p>
+
+                                <p id="singlePromotionFileEditorOriginalFileText" class="original-file-text">
+                                    @_promotionFileEditData.FileName
+                                </p>
+                            </div>
+
+                        <div id="singlePromotionFileEditorOriginalFileContainer" class="file-container">
+
+                            <PromotionFile FileOptions="PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName)"
+                                class="file"/>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+    public sealed class CreatePromotionFileEditData
+    {
+        public string? Name { get; set; }
+        public bool Active { get; set; } = false;
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+    }
+
+    public sealed class UpdatePromotionFileEditData
+    {
+        public required int Id { get; init; }
+        public string? Name { get; init; }
+        public required bool Active { get; init; }
+        public DateTime? ValidFrom { get; init; }
+        public DateTime? ValidTo { get; init; }
+        public required string FileName { get; init; }
+        public string? Description { get; init; }
+        public string? RelatedProductsString { get; init; }
+        public required string CreateUserName { get; init; }
+        public required DateTime CreateDate { get; init; }
+        public required string LastUpdateUserName { get; init; }
+        public required DateTime LastUpdateDate { get; init; }
+    }
+
+    public sealed class PromotionFileEditData
+    {
+        public int? Id { get; set; }
+        public string? Name { get; set; }
+        public bool Active { get; set; } = false;
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? FileName { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+        public string? CreateUserName { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public string? LastUpdateUserName { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
+    }
+
+    public sealed class EditedPromotionFileData
+    {
+        public required OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> PromotionFileEditedData { get; init; }
+        public IBrowserFile? BrowserFile { get; init; }
+        public string? PreferredNameWithoutExtension { get; init; }
+    }
+
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; }
+
+    [Parameter, EditorRequired] public required OneOf<CreatePromotionFileEditData, UpdatePromotionFileEditData> PromotionFileEditOptions { get; set; }
+
+    private PromotionFileEditData _promotionFileEditData { get; set; } = default!;
+
+    [Parameter] public bool ShouldDisplaySaveButton { get; set; } = false;
+    [Parameter] public string SaveButtonText { get; set; } = "Save";
+    [Parameter] public Dictionary<string, object> SaveButtonAdditionalAttributes { get; set; } = new();
+
+    private string? _selectedFileObjectUrl = null;
+
+    protected override void OnInitialized()
+    {
+        _promotionFileEditData = PromotionFileEditOptions.Match(
+            create => new PromotionFileEditData
+            {
+                Name = create.Name,
+                Active = create.Active,
+                ValidFrom = create.ValidFrom,
+                ValidTo = create.ValidTo,
+                Description = create.Description,
+                RelatedProductsString = create.RelatedProductsString,
+            },
+            update => new PromotionFileEditData
+            {
+                Id = update.Id,
+                Name = update.Name,
+                Active = update.Active,
+                ValidFrom = update.ValidFrom,
+                ValidTo = update.ValidTo,
+                FileName = update.FileName,
+                Description = update.Description,
+                RelatedProductsString = update.RelatedProductsString,
+                CreateUserName = update.CreateUserName,
+                CreateDate = update.CreateDate,
+                LastUpdateUserName = update.LastUpdateUserName,
+                LastUpdateDate = update.LastUpdateDate
+            });
+    }
+}

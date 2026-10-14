@@ -1,0 +1,33 @@
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+
+<table class="promotion-files-table table-with-all-borders table-with-small-horizontal-padding-on-cells">
+    <thead>
+        <tr>
+            <th>Active</th>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Valid From</th>
+            <th>Valid To</th>
+            <th>File Name</th>
+            <th>File</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody id="promotionFileEditorTableBody" class="promotion-files-table-body">
+
+        @if (PromotionFileInfos is not null
+            && PromotionFileInfos.Count > 0)
+        {
+            for (int i = 0; i < PromotionFileInfos.Count; i++)
+            {
+                <PromotionFilesTableItem PromotionFileInfo="PromotionFileInfos[i]" />
+            }
+        }
+    </tbody>
+</table>
+
+@code{
+    [Parameter, EditorRequired] public required List<PromotionFileInfo> PromotionFileInfos { get; set; }
+}
