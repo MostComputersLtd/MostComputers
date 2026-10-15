@@ -8,7 +8,7 @@
     BrowserFileData? browserFile = listItemData.UploadedImageFileData;
     ProductImageDisplayData? relatedImage = listItemData.RelatedImage;
     ProductImageFileDisplayData? relatedImageFile = listItemData.RelatedImageFile;
-    PromotionProductFileInfoDisplayData? relatedPromotionFile = listItemData.RelatedPromotionFile;
+    PromotionProductFileInfoDisplayData? relatedPromotionFile = RelatedPromotionFileData;
 
     string? imageDataRoute = listItemData.ImageFileUrl; 
 
@@ -75,8 +75,8 @@
     {
         string promotionFileDataRoute = $"/api/images/promotionFileData/{relatedPromotionFile.FileInfoFileName}";
 
-        <div id="@relatedPromotionFile.EditorId" name="promotionFileItem"
-            class="promotion-product-file-name-container">
+        <div class="promotion-product-file-name-container">
+
             <p class="promotion-product-file-name-text">Promo:</p>
 
             <a href="@promotionFileDataRoute" target="_blank" rel="noopener noreferrer" class="promotion-product-file-name">
@@ -125,5 +125,6 @@
 
 @code{
     [Parameter, EditorRequired] public required ProductImageListItemDisplayData ItemData { get; set; }
+    [Parameter] public PromotionProductFileInfoDisplayData? RelatedPromotionFileData { get; set; }
     [Parameter] public string? JsonData { get; set; } = null;
 }

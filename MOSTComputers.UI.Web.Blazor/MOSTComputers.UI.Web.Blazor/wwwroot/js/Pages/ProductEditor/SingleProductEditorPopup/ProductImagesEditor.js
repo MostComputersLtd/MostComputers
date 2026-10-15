@@ -5,7 +5,6 @@ import * as urlUtils from "../../../Common/UrlUtils.js"
 const productImageListId = "singleEditorProductImageList";
 
 const productImageItemName = "productImageItem";
-const promotionFileItemName = "promotionFileItem";
 
 const productImageButtonName = "productImageButton";
 const productImageDeleteButtonName = "productImageDeleteButton";
@@ -305,16 +304,13 @@ function onProductImageDeleteButtonClicked(e) {
         URL.revokeObjectURL(productImage.uploadedImageFileData?.previewUrl);
     }
 
-    if (productImage.relatedPromotionFile) {
+    if (productImage.relatedPromotionFileEditorId) {
 
-        const relatedPromotionFileItem = productImageItem.querySelector(`[name='${promotionFileItemName}']`);
+        const promotionFileEditorId = productImage.relatedPromotionFileEditorId;
 
-        if (relatedPromotionFileItem) {
+        dataStore.removePromotionProductFileAndSave(promotionFileEditorId);
 
-            const promotionFileEditorId = relatedPromotionFileItem.id;
-
-            editorChanges.setPromotionProductFileChanged(promotionFileEditorId, editorChanges.ItemChangeState.Deleted);
-        }
+        editorChanges.setPromotionProductFileChanged(promotionFileEditorId, editorChanges.ItemChangeState.Deleted);
     }
 
     dataStore.removeImageAndSave(editorId);

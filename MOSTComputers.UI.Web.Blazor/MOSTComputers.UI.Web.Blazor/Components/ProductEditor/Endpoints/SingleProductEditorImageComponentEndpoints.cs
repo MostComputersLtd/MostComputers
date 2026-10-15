@@ -12,7 +12,7 @@ namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
 internal static class SingleProductEditorImageComponentEndpoints
 {
-    internal const string EndpointGroupUniqueRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "components/" + "productEditor";
+    internal const string EndpointGroupUniqueRoute = "productImage";
 
     private static readonly JsonSerializerOptions _jsonDataOptions = new()
     {
@@ -125,7 +125,7 @@ internal static class SingleProductEditorImageComponentEndpoints
 
             RelatedImage = productImageDisplayData,
             RelatedImageFile = productImageFileDisplayData,
-            RelatedPromotionFile = null
+            RelatedPromotionFileEditorId = null,
         };
 
         string parametersJsonData = JsonSerializer.Serialize(productImageListItemDisplayData, _jsonDataOptions);

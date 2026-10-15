@@ -1,0 +1,46 @@
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+
+<ul class="promotion-file-list">
+
+    @for (int i = 0; i < PromotionFiles.Count; i++)
+    {
+        PromotionFileInfoListItem promotionFileInfoListItem = PromotionFiles[i];
+
+        string selectedListItemClassName = string.Empty;
+
+        if (promotionFileInfoListItem.IsSelected)
+        {
+            selectedListItemClassName = "selected-list-item";
+        }
+
+        <li class="promotion-file-list-item @selectedListItemClassName"
+            data-promotion-file-id="@promotionFileInfoListItem.PromotionFile.Id"
+            data-promotion-file-name="@promotionFileInfoListItem.PromotionFile.FileName">
+
+            <div class="col-2 pe-2">
+                <p>@promotionFileInfoListItem.PromotionFile.Id</p>
+            </div>
+            <div class="col-4 pe-2">
+                <p>@promotionFileInfoListItem.PromotionFile.Name</p>
+            </div>
+            <div class="col-6 pe-2 promotion-file-data-entry">
+                <div class="promotion-file-data-container">
+                    <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfoListItem.PromotionFile.FileName)"
+                        class="promotion-file" />
+                </div>
+            </div>
+        </li>
+    }
+</ul>
+
+@code {
+    public sealed class PromotionFileInfoListItem
+    {
+        public required PromotionFileInfo PromotionFile { get; set; }
+
+        public bool IsSelected { get; set; } = false;
+    }
+
+    [Parameter] public List<PromotionFileInfoListItem> PromotionFiles { get; init; } = new();
+}

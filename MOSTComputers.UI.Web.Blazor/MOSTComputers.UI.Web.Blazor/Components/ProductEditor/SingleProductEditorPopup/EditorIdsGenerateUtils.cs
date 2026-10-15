@@ -30,8 +30,13 @@ internal static class EditorIdsGenerateUtils
         return $"from-random-value-{Guid.NewGuid()}";
     }
     
-    internal static string GeneratePromotionFileId(int promotionFileId)
+    internal static string GeneratePromotionFileId(int? promotionFileId)
     {
+        if (promotionFileId == null)
+        {
+            return $"promotion-file-{Guid.NewGuid()}";
+        }
+
         return $"promotion-file-{promotionFileId}";
     }
 

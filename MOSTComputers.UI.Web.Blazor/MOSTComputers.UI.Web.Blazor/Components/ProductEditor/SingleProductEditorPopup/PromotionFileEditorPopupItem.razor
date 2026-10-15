@@ -1,0 +1,70 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+@{
+    PromotionFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileInfo = ItemData;
+
+    string validFromValueAsString = string.Empty;
+    string validToValueAsString = string.Empty;
+
+    if (promotionProductFileInfo.ValidFrom is not null)
+    {
+        validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
+    }
+
+    if (promotionProductFileInfo.ValidTo is not null)
+    {
+        validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
+    }
+}
+
+<tr id="@promotionProductFileInfo.EditorId" name="promotionProductFileEditorItem">
+    <td>@promotionProductFileInfo.Id</td>
+    <td>
+        <input id="promotionProductFileEditorActiveInput-@Index" type="checkbox"
+            tabindex="-1" class="promotion-product-file-active-input" checked="@promotionProductFileInfo.Active" />
+    </td>
+    <td>@promotionProductFileInfo.PromotionFileInfoData?.Id</td>
+    <td>@(promotionProductFileInfo.ProductImageId?.ToString() ?? "-")</td>
+    <td>
+        <input id="promotionProductFileEditorValidFromInput-@Index" type="date"
+            value="@validFromValueAsString" readonly />
+    </td>
+    <td>
+        <input id="promotionProductFileEditorValidToInput-@Index" type="date"
+            value="@validToValueAsString" readonly />
+    </td>
+    <td class="promotion-product-file-file-column">
+
+        @if (promotionProductFileInfo.PromotionFileInfoData is not null)
+        {
+            <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(
+                promotionProductFileInfo.PromotionFileInfoData.FileName)"
+                class="full-parent-width full-parent-height" />
+        }
+        else
+        {
+            <p>No File</p>
+        }
+    </td>
+    <td>
+        <button name="promotionProductFileEditorEditButton" class="btn btn-light promotion-product-file-edit-button">
+            <img src="/img/General/EditIcon.jpg" alt="Edit" class="promotion-product-file-edit-button-image" />
+        </button>
+    </td>
+
+    @if (ShouldDisplayDeleteButton)
+    {
+        <td>
+            <button id="promotionProductFileEditorDeleteButton" type="button" class="btn btn-danger">
+                del
+            </button>
+        </td>
+    }
+</tr>
+
+@code{
+    [Parameter, EditorRequired] public required PromotionFileEditorPopup.PromotionProductFileInfoDisplayData ItemData { get; set; }
+    [Parameter, EditorRequired] public required int Index { get; set; }
+    [Parameter, EditorRequired] public required bool ShouldDisplayDeleteButton { get; set; }
+}

@@ -49,6 +49,7 @@ export function addProductImageAndSave(editorId, productImageData, file) {
     if (productImage) return false;
 
     data.productImages.push(productImageData);
+
     localFileData.productImages.push(file);
 
     saveData(data);
@@ -76,6 +77,30 @@ export function removeImageAndSave(editorId) {
     if (productImageIndex === -1) return false;
 
     data.productImages.splice(productImageIndex, 1);
+
+    saveData(data);
+
+    return true;
+}
+
+export function loadPromotionProductFileData(editorId) {
+
+    const data = loadData();
+
+    const promotionProductFile = data.promotionProductFiles.find(x => x.editorId === editorId);
+
+    return promotionProductFile ? promotionProductFile : null;
+}
+
+export function removePromotionProductFileAndSave(editorId) {
+
+    const data = loadData();
+
+    const promotionProductFileIndex = data.promotionProductFiles.findIndex(x => x.editorId === editorId);
+
+    if (promotionProductFileIndex === -1) return false;
+
+    data.promotionProductFiles.splice(promotionProductFileIndex, 1);
 
     saveData(data);
 

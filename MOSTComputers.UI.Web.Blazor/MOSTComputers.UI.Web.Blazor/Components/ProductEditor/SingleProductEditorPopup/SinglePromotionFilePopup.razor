@@ -1,0 +1,143 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using static MOSTComputers.Utils.Files.ContentTypeUtils;
+
+<Popup IsVisible="IsVisible" PopupMarginOptions="PopupMarginOptions">
+    <HeaderContent>
+
+        <div class="promotion-product-file-single-editor-header">
+
+            <h5 class="popup-header-text header-name-text">Promotion Product File:</h5>
+
+            @if (PopupData.Id is not null)
+            {
+                <h4 class="popup-header-text header-product-id-text">
+                    PrCID: @PopupData.Id
+                </h4>
+            }
+
+            @if (PopupData.PromotionFileId is not null)
+            {
+                <input id="singleProductPromotionFileEditorPromotionFileIdHiddenInput"
+                    type="hidden"
+                    class="display-none"
+                    value="@PopupData.PromotionFileId" />
+            }
+
+            <div class="header-modified-container">
+
+                @if (PopupData.CreateUserName is not null)
+                {
+                    <p>
+                        Created:
+                        <span>@PopupData.CreateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@PopupData.CreateDate)
+                        </span>
+                    </p>
+
+                    <p class="ms-lg-2">
+                        Last Update:
+                        <span>@PopupData.LastUpdateUserName</span>
+                        <span class="header-modified-date-text">
+                            (@PopupData.LastUpdateDate)
+                        </span>
+                    </p>
+                }
+            </div>
+
+            @if (ShouldDisplaySaveButton)
+            {
+                <div class="save-button-container">
+                    <button id="singleProductPromotionFileEditorSaveButton" class="btn btn-primary">
+                        @SaveButtonText
+                    </button>
+                </div>
+            }
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="container promotion-product-file-single-editor-body">
+            <div class="row body-inputs-container">
+                <div class="col-12 col-md-6">
+
+                    <div class="basic-input-container">
+                        <label for="singleProductPromotionFileEditorActiveInput" class="basic-input-label">Active:</label>
+                        <input id="singleProductPromotionFileEditorActiveInput" type="checkbox"
+                            checked="@PopupData.Active" />
+                    </div>
+
+                    <div class="basic-input-container">
+                        <label for="singleProductPromotionFileEditorValidFromInput" class="basic-input-label">From:</label>
+                        <input id="singleProductPromotionFileEditorValidFromInput" type="date"
+                            value="@GetDateTimeAsStringForDateInput(PopupData.ValidFrom)" />
+                    </div>
+
+                    <div class="basic-input-container">
+                        <label for="singleProductPromotionFileEditorValidToInput" class="basic-input-label">To:</label>
+                        <input id="singleProductPromotionFileEditorValidToInput" type="date"
+                            value="@GetDateTimeAsStringForDateInput(PopupData.ValidTo)" />
+                    </div>
+
+                    <div class="basic-input-container">
+                        <label for="singleProductPromotionFileEditorShouldAddToImagesInput" class="basic-input-label">Add to images:</label>
+
+                        <input id="singleProductPromotionFileEditorShouldAddToImagesInput" type="checkbox"
+                            checked="@PopupData.IsInImage"
+                            data-is-in-image="@(PopupData.IsInImage ? "true" : "false")" />
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 file-select-container">
+                    <div class="file-search-container">
+                        <label for="singlePromotionProductFileEditorPromotionFileValidOnInput" class="file-search-active-on-label">
+                            Active on:
+                        </label>
+                        <input id="singlePromotionProductFileEditorPromotionFileValidOnInput"
+                            type="date" class="file-search-active-on-input" placeholder="Date" />
+
+                        <input id="singlePromotionProductFileEditorPromotionFileSearchInput" type="text" class="file-search-text-input"
+                            placeholder="Search..." aria-label="Search"/>
+
+                        <div class="file-search-button-container">
+
+                            <button id="singlePromotionProductFileEditorSearchButton" type="button" class="btn btn-info">
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="singlePromotionProductFileEditorPromotionFileListContainer" class="file-search-list-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code {
+    public sealed class PromotionProductFileInfoEditData
+    {
+        public required string EditorId { get; set; }
+        public int? Id { get; set; }
+        public int? PromotionFileId { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public bool Active { get; set; } = false;
+        public string? CreateUserName { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public string? LastUpdateUserName { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
+        public bool IsInImage { get; set; } = true;
+    }
+
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; }
+
+    [Parameter] public required PromotionProductFileInfoEditData PopupData { get; set; }
+
+    [Parameter] public bool ShouldDisplaySaveButton { get; set; } = true;
+    [Parameter] public string SaveButtonText { get; set; } = "Save";
+}

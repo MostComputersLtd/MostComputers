@@ -101,6 +101,20 @@ internal static class PromotionFileEditorPageComponentEndpoints
         string? userInputString = request.UserInputString;
         DateOnly? validOnDate = request.ValidOnDate;
 
+        List<PromotionFileInfo> promotionFileInfos
+            = await SearchPromotionFilesInternalAsync(userInputString, validOnDate, promotionFileService);
+
+        return new RazorComponentResult<PromotionFilesTable>(new
+        {
+            PromotionFileInfos = promotionFileInfos,
+        });
+    }
+
+    public static async Task<List<PromotionFileInfo>> SearchPromotionFilesInternalAsync(
+        string? userInputString,
+        DateOnly? validOnDate,
+        IPromotionFileService promotionFileService)
+    { 
         List<PromotionFileInfo> promotionFileInfos = new();
 
         List<PromotionFileInfo> promotionFiles = await promotionFileService.GetAllAsync();
@@ -153,10 +167,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
             }
         }
 
-        return new RazorComponentResult<PromotionFilesTable>(new
-        {
-            PromotionFileInfos = promotionFileInfos,
-        });
+        return promotionFileInfos;
     }
 
     private static async Task<IResult> GetNewSinglePromotionFileEditorPopupAsync()

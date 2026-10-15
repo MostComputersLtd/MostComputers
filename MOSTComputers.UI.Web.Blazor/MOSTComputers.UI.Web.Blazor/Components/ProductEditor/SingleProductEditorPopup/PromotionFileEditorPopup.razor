@@ -1,0 +1,460 @@
+@using System.Diagnostics.CodeAnalysis
+@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.Models.Product.Models.Promotions
+@using MOSTComputers.Models.Product.Models.Promotions.Files
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using OneOf
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+
+@inject IPromotionService PromotionService
+@inject IPromotionFileService PromotionFileService
+@inject IPromotionProductFileService PromotionProductFileService
+
+<Popup IsVisible="IsVisible" IsVisibleChanged="OnVisibleChanged" PopupMarginOptions="PopupMarginOptions">
+    <HeaderContent>
+
+        <div class="promotion-product-file-editor-header">
+
+            <div class="header-text-container">
+                <h5 class="popup-header-text">Promotions:</h5>
+
+                <h4 class="popup-header-text">CSTID: @Product.Id</h4>
+
+                @if (Product.Manufacturer is not null)
+                {
+                    <h4 class="popup-header-text">Mfr: @Product.Manufacturer.RealCompanyName</h4>
+                }
+                @if (Product.Category is not null)
+                {
+                    <h4 class="popup-header-text">@Product.Category.Description</h4>
+                }
+
+                <h4 class="popup-header-text">@Product.Name</h4>
+            </div>
+
+            @if (ShouldDisplayAddButton)
+            {
+                <div id="promotionProductEditorAddButton" class="add-button-container">
+                    <button class="btn btn-primary add-button"
+                        @onclick="() => ShowPromotionProductFileSingleEditorPopupAsync()">
+                        +
+                    </button>
+                </div>
+            }
+        </div>
+    </HeaderContent>
+
+    <ChildContent>
+        <div class="promotion-product-file-editor-body">
+            @{
+                int? promotionPictureId = Product.AlertPictureId;
+
+                if (promotionPictureId is null || promotionPictureId <= 0)
+                {
+                    promotionPictureId = Product.PromotionPictureId;
+                }
+            }
+
+            @if (promotionPictureId > 0)
+            {
+                <div class="info-promotion-container">
+                    <p>IID: @(Product.AlertPictureId.ToString() ?? "-")</p>
+
+                    <p class="info-promotion-expire-date">Expire Date: @(Product.AlertExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+                </div>
+            }
+
+            @if (PidPromotion is not null)
+            {
+                <PromotionOnOneLine Promotion="PidPromotion" />
+            }
+
+            @if (RidPromotion is not null)
+            {
+                <PromotionOnOneLine Promotion="RidPromotion" />
+            }
+
+            <div class="promotion-product-files-table-container">
+                @if (PromotionProductFiles.Count > 0)
+                {
+                    <table class="promotion-product-files-table">
+
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Active</th>
+                                <th>File Id</th>
+                                <th>Img All Id</th>
+                                <th>Valid From</th>
+                                <th>Valid To</th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        @for (int i = 0; i < PromotionProductFiles.Count; i++)
+                        {
+                            PromotionProductFileInfoDisplayData promotionProductFileInfo = PromotionProductFiles[i];
+
+                            <PromotionFileEditorPopupItem
+                                ItemData="promotionProductFileInfo"
+                                Index="i"
+                                ShouldDisplayDeleteButton="ShouldDisplayDeleteButton"/>
+                        }
+                    </table>
+                }
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+<div id="singlePromotionProductEditorPopupContainer">
+</div>
+
+@if (_singleEditorPromotionFileData is not null)
+{
+    <SinglePromotionFilePopup IsVisible="_isPromotionProductFileSingleEditorPopupVisible"
+        PopupMarginOptions='new() { Left = "15vw", Right = "15vw", Top = "15vh", Bottom = "15vh" }'
+        PopupData="_singleEditorPromotionFileData"
+        ShouldDisplaySaveButton="ShouldDisplaySaveButtonInSingleEditor"
+        SaveButtonText="@_singleEditorSaveButtonText"
+         />
+}
+
+@code {
+    public readonly struct GetDataFromServer {}
+
+    public sealed class PromotionProductFileInfoDisplayData
+    {
+        public required Guid EditorItemId { get; set; }
+        public required string EditorId { get; set; }
+        public int? Id { get; set; }
+        public required int ProductId { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public bool Active { get; set; } = false;
+        public int? ProductImageId { get; set; }
+        public string? CreateUserName { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public string? LastUpdateUserName { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
+        public PromotionFileInfoDisplayData? PromotionFileInfoData { get; set; }
+
+        public bool? ShouldAddToImagesAllInSingleEditor { get; set; }
+    }
+
+    public sealed class PromotionFileInfoDisplayData
+    {
+        public required int Id { get; set; }
+        public required string FileName { get; set; }
+        public required bool Active { get; set; }
+        public string? Name { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public string? Description { get; set; }
+        public string? RelatedProductsString { get; set; }
+        public required string CreateUserName { get; set; }
+        public required DateTime CreateDate { get; set; }
+        public required string LastUpdateUserName { get; set; }
+        public required DateTime LastUpdateDate { get; set; }
+    }
+
+    public sealed class PromotionProductFileInfoAddedEventData
+    {
+        public required int NewElementIndex { get; set; }
+        public required int ProductId { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public bool Active { get; set; } = false;
+        public PromotionFileInfoDisplayData? PromotionFileInfoData { get; set; }
+        public required bool ShouldAddToImages { get; set; }
+    }
+
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private void OnVisibleChanged(bool isVisible)
+    {
+        IsVisible = isVisible;
+
+        IsVisibleChanged.InvokeAsync(isVisible);
+    }
+
+    [Parameter] public required Product Product { get; set; }
+    private int? _previousProductId;
+
+    private Promotion? PidPromotion { get; set; }
+    private Promotion? RidPromotion { get; set; }
+
+    [Parameter, EditorRequired] public required List<PromotionProductFileInfoDisplayData> PromotionProductFiles { get; set; }
+
+    [Parameter] public EventCallback<PromotionProductFileInfoDisplayData> PromotionProductFileAdded { get; set; }
+    [Parameter] public EventCallback<PromotionProductFileInfoDisplayData> PromotionProductFileUpdated { get; set; }
+    [Parameter] public EventCallback<PromotionProductFileInfoDisplayData> PromotionProductFileRemoved { get; set; }
+
+    [Parameter] public bool ShouldDisplaySaveButtonInSingleEditor { get; set; } = true;
+    [Parameter] public bool ShouldDisplayAddButton { get; set; } = true;
+    [Parameter] public bool ShouldDisplayDeleteButton { get; set; } = true;
+
+    private SinglePromotionFilePopup.PromotionProductFileInfoEditData? _singleEditorPromotionFileData { get; set; }
+    private Guid? _singleEditorPromotionFileDataActiveItemId;
+
+    private string _singleEditorSaveButtonText { get; set; } = "Save";
+
+    private bool _isPromotionProductFileSingleEditorPopupVisible { get; set; } = false;
+
+    private void OnPromotionProductFileSingleEditorPopupSaveButtonClicked(
+       PromotionProductFileSingleEditorPopup.PromotionProductFileInfoEditData singleEditorPromotionProductFileEditData)
+    {
+        int? indexToUpdateAt = PromotionProductFiles.FindIndex(
+            x => x.EditorItemId == _singleEditorPromotionFileDataActiveItemId);
+
+        PromotionFileInfoDisplayData? promotionFileInfoDisplayData = null;
+
+        if (singleEditorPromotionProductFileEditData.PromotionFileInfo is not null)
+        {
+            promotionFileInfoDisplayData = Map(singleEditorPromotionProductFileEditData.PromotionFileInfo);
+        }
+
+        if (indexToUpdateAt < 0)
+        {
+            PromotionProductFileInfoDisplayData promotionProductFileInfo = new()
+            {
+                EditorItemId = Guid.NewGuid(),
+                Id = null,
+                ProductId = singleEditorPromotionProductFileEditData.ProductId,
+                ProductImageId = singleEditorPromotionProductFileEditData.ProductImageId,
+                PromotionFileInfoData = promotionFileInfoDisplayData,
+                ValidFrom = singleEditorPromotionProductFileEditData.ValidFrom,
+                ValidTo = singleEditorPromotionProductFileEditData.ValidTo,
+                Active = singleEditorPromotionProductFileEditData.Active,
+                CreateDate = singleEditorPromotionProductFileEditData.CreateDate,
+                CreateUserName = singleEditorPromotionProductFileEditData.CreateUserName,
+                LastUpdateUserName = singleEditorPromotionProductFileEditData.LastUpdateUserName,
+                LastUpdateDate = singleEditorPromotionProductFileEditData.LastUpdateDate,
+                ShouldAddToImagesAllInSingleEditor = singleEditorPromotionProductFileEditData.ShouldAddToImages,
+
+            };
+
+            PromotionProductFileAdded.InvokeAsync(promotionProductFileInfo);
+
+            _singleEditorPromotionFileDataActiveItemId = promotionProductFileInfo.EditorItemId;
+
+            _singleEditorSaveButtonText = "Save";
+
+            return;
+        }
+
+        PromotionProductFileInfoDisplayData existingPromotionProductFileInfo = PromotionProductFiles[indexToUpdateAt.Value];
+
+        PromotionProductFileInfoDisplayData newPromotionProductFileInfo = new()
+        {
+            EditorItemId = existingPromotionProductFileInfo.EditorItemId,
+            Id = singleEditorPromotionProductFileEditData.Id,
+            ProductId = singleEditorPromotionProductFileEditData.ProductId,
+            PromotionFileInfoData = promotionFileInfoDisplayData,
+            ProductImageId = singleEditorPromotionProductFileEditData.ProductImageId,
+            ValidFrom = singleEditorPromotionProductFileEditData.ValidFrom,
+            ValidTo = singleEditorPromotionProductFileEditData.ValidTo,
+            Active = singleEditorPromotionProductFileEditData.Active,
+            CreateDate = singleEditorPromotionProductFileEditData.CreateDate,
+            CreateUserName = singleEditorPromotionProductFileEditData.CreateUserName,
+            LastUpdateUserName = singleEditorPromotionProductFileEditData.LastUpdateUserName,
+            LastUpdateDate = singleEditorPromotionProductFileEditData.LastUpdateDate,
+            ShouldAddToImagesAllInSingleEditor = singleEditorPromotionProductFileEditData.ShouldAddToImages,
+        };
+
+        PromotionProductFileUpdated.InvokeAsync(newPromotionProductFileInfo);
+    }
+
+    private void OnPromotionProductFileSingleEditorPopupVisibleChanged(bool isVisible)
+    {
+        _isPromotionProductFileSingleEditorPopupVisible = isVisible;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SetProductDataAsync();
+    }
+
+    override protected async Task OnParametersSetAsync()
+    {
+        if (_previousProductId is not null && _previousProductId != Product.Id)
+        {
+            await SetProductDataAsync();
+        }
+
+        _previousProductId = Product.Id;
+    }
+
+    private async Task SetProductDataAsync()
+    {
+        List<Promotion> promotionsForProduct = await PromotionService.GetAllForProductAsync(Product.Id);
+
+        IEnumerable<Promotion> promotions = promotionsForProduct
+            .Where(x => x.Active ?? false);
+
+        PidPromotion = promotions?.FirstOrDefault(x => x.Id == Product.PromotionPid);
+        RidPromotion = promotions?.FirstOrDefault(x => x.Id == Product.PromotionRid);
+    }
+
+    private async Task ShowPromotionProductFileSingleEditorPopupAsync(PromotionProductFileInfoDisplayData? promotionProductFileInfo = null)
+    {
+        if (promotionProductFileInfo is not null)
+        {
+            _singleEditorPromotionFileData = new()
+            {
+                Id = promotionProductFileInfo.Id,
+                PromotionFileId = promotionProductFileInfo.PromotionFileInfoData?.Id,
+                IsInImage = promotionProductFileInfo.ShouldAddToImagesAllInSingleEditor ?? promotionProductFileInfo.ProductImageId is not null,
+                Active = promotionProductFileInfo.Active,
+                ValidFrom = promotionProductFileInfo.ValidFrom,
+                ValidTo = promotionProductFileInfo.ValidTo,
+                CreateUserName = promotionProductFileInfo.CreateUserName,
+                CreateDate = promotionProductFileInfo.CreateDate,
+                LastUpdateUserName = promotionProductFileInfo.LastUpdateUserName,
+                LastUpdateDate = promotionProductFileInfo.LastUpdateDate,
+            };
+
+            _singleEditorPromotionFileDataActiveItemId = promotionProductFileInfo.EditorItemId;
+
+            _singleEditorSaveButtonText = "Save";
+        }
+        else
+        {
+            _singleEditorPromotionFileData = new()
+            {
+                Active = true,
+                IsInImage = true,
+            };
+
+            _singleEditorPromotionFileDataActiveItemId = null;
+
+            _singleEditorSaveButtonText = "Add";
+        }
+
+        _isPromotionProductFileSingleEditorPopupVisible = true;
+    }
+
+    private void DeletePromotionProductFile(PromotionProductFileInfoDisplayData promotionProductFile)
+    {
+        int promotionProductFileIndex = PromotionProductFiles.FindIndex(x => x == promotionProductFile);
+
+        if (promotionProductFileIndex < 0) return;
+
+        PromotionProductFileRemoved.InvokeAsync(promotionProductFile);
+    }
+
+    public static List<PromotionProductFileInfoDisplayData> MapRangeToNewEditorItems(IEnumerable<PromotionProductFileInfo> promotionProductFileInfos)
+    {
+        List<PromotionProductFileInfoDisplayData> output = new();
+
+        foreach (PromotionProductFileInfo promotionProductFileInfo in promotionProductFileInfos)
+        {
+            PromotionProductFileInfoDisplayData promotionProductFileInfoDisplayData = MapToNewEditorItem(promotionProductFileInfo);
+
+            output.Add(promotionProductFileInfoDisplayData);
+        }
+
+        return output;
+    }
+
+    private static PromotionProductFileInfoDisplayData MapToNewEditorItem(PromotionProductFileInfo promotionProductFileInfo)
+    {
+        return new()
+        {
+			EditorItemId = Guid.NewGuid(),
+            Id = promotionProductFileInfo.Id,
+            ProductId = promotionProductFileInfo.ProductId,
+            PromotionFileInfoData = Map(promotionProductFileInfo.PromotionFileInfo),
+            ProductImageId = promotionProductFileInfo.ProductImageId,
+            Active = promotionProductFileInfo.Active,
+            ValidFrom = promotionProductFileInfo.ValidFrom,
+            ValidTo = promotionProductFileInfo.ValidTo,
+            CreateUserName = promotionProductFileInfo.CreateUserName,
+            CreateDate = promotionProductFileInfo.CreateDate,
+            LastUpdateUserName = promotionProductFileInfo.LastUpdateUserName,
+            LastUpdateDate = promotionProductFileInfo.LastUpdateDate,
+        };
+    }
+
+    private static PromotionFileInfoDisplayData Map(PromotionFileInfo promotionFileInfo)
+    {
+        return new()
+        {
+            Id = promotionFileInfo.Id,
+            Name = promotionFileInfo.Name,
+            Active = promotionFileInfo.Active,
+            FileName = promotionFileInfo.FileName,
+            ValidFrom = promotionFileInfo.ValidFrom,
+            ValidTo = promotionFileInfo.ValidTo,
+            Description = promotionFileInfo.Description,
+            RelatedProductsString = promotionFileInfo.RelatedProductsString,
+            CreateUserName = promotionFileInfo.CreateUserName,
+            CreateDate = promotionFileInfo.CreateDate,
+            LastUpdateUserName = promotionFileInfo.LastUpdateUserName,
+            LastUpdateDate = promotionFileInfo.LastUpdateDate,
+        };
+    }
+
+    private PromotionFileInfoDisplayData Map(PromotionFileList.PromotionFileInfoListItem promotionFileInfo)
+    {
+        return new()
+        {
+            Id = promotionFileInfo.Id,
+            Name = promotionFileInfo.Name,
+            Active = promotionFileInfo.Active,
+            FileName = promotionFileInfo.FileName,
+            ValidFrom = promotionFileInfo.ValidFrom,
+            ValidTo = promotionFileInfo.ValidTo,
+            Description = promotionFileInfo.Description,
+            RelatedProductsString = promotionFileInfo.RelatedProductsString,
+            CreateUserName = promotionFileInfo.CreateUserName,
+            CreateDate = promotionFileInfo.CreateDate,
+            LastUpdateUserName = promotionFileInfo.LastUpdateUserName,
+            LastUpdateDate = promotionFileInfo.LastUpdateDate,
+        };
+    }
+
+    private List<PromotionFileList.PromotionFileInfoListItem> MapRangeToListItems(
+        List<PromotionFileInfo> promotionFiles)
+    {
+        List<PromotionFileList.PromotionFileInfoListItem> output = new();
+
+        foreach (PromotionFileInfo promotionFile in promotionFiles)
+        {
+            PromotionFileList.PromotionFileInfoListItem promotionFileInfoListItem = MapToListItem(promotionFile);
+
+            output.Add(promotionFileInfoListItem);
+        }
+
+        return output;
+    }
+
+    private PromotionFileList.PromotionFileInfoListItem MapToListItem(PromotionFileInfo promotionFile)
+    {
+        return new()
+        {
+            Id = promotionFile.Id,
+            Name = promotionFile.Name,
+            Active = promotionFile.Active,
+            FileName = promotionFile.FileName,
+            ValidFrom = promotionFile.ValidFrom,
+            ValidTo = promotionFile.ValidTo,
+            Description = promotionFile.Description,
+            RelatedProductsString = promotionFile.RelatedProductsString,
+            CreateUserName = promotionFile.CreateUserName,
+            CreateDate = promotionFile.CreateDate,
+            LastUpdateDate = promotionFile.LastUpdateDate,
+            LastUpdateUserName = promotionFile.LastUpdateUserName,
+        };
+    }
+}

@@ -171,7 +171,10 @@
                     {
                         ProductImageListItemDisplayData listItemData = ProductImages[i];
 
-                        <ProductImageListItem ItemData="listItemData" />
+                        PromotionProductFileInfoDisplayData? relatedPromotionFile = PromotionProductFiles.FirstOrDefault(
+                            x => x.EditorId == listItemData.RelatedPromotionFileEditorId);
+
+                        <ProductImageListItem ItemData="listItemData" RelatedPromotionFileData="relatedPromotionFile" />
                     }
 
                     <li class="image-add-button-list-item">
@@ -352,7 +355,7 @@
         [JsonPropertyName("imageFileUrl")] public required string ImageFileUrl { get; set; }
         [JsonPropertyName("relatedImage")] public ProductImageDisplayData? RelatedImage { get; set; }
         [JsonPropertyName("relatedImageFile")] public ProductImageFileDisplayData? RelatedImageFile { get; set; }
-        [JsonPropertyName("relatedPromotionFile")] public PromotionProductFileInfoDisplayData? RelatedPromotionFile { get; set; }
+        [JsonPropertyName("relatedPromotionFileEditorId")] public string? RelatedPromotionFileEditorId { get; set; }
 
         [JsonPropertyName("uploadedImageFileData")] public BrowserFileData? UploadedImageFileData { get; set; } = null;
 
@@ -394,10 +397,13 @@
     {
         [JsonPropertyName("editorId")] public required string EditorId { get; set; }
         [JsonPropertyName("id")] public int? Id { get; set; }
-        [JsonPropertyName("fileInfoId")] public required int FileInfoId { get; set; }
+        [JsonPropertyName("fileInfoId")] public int? FileInfoId { get; set; }
         [JsonPropertyName("productImageId")] public int? ProductImageId { get; set; }
         [JsonPropertyName("fileInfoName")] public string? FileInfoName { get; set; }
         [JsonPropertyName("fileInfoFileName")] public string? FileInfoFileName { get; set; }
+        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
+        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; } = false;
     }
 
     public sealed class ProductPropertyDisplayData
@@ -509,6 +515,7 @@
     private List<ProductPropertyDisplayData> ProductLinks { get; set; } = new();
 
     private List<ProductImageListItemDisplayData> ProductImages { get; set; } = new();
+    private List<PromotionProductFileInfoDisplayData> PromotionProductFiles { get; set; } = new();
 
     private List<SearchStringPartOriginData> SearchStringParts { get; set; } = new();
 

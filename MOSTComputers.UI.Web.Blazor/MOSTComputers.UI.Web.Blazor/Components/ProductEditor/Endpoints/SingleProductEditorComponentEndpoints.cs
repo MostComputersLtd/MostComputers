@@ -65,6 +65,12 @@ internal static class SingleProductEditorComponentEndpoints
         public List<ProductImageListItemDisplayData>? ProductImages { get; init; }
     }
 
+    private sealed class PromotionProductFilePopupRequest
+    {
+        [JsonPropertyName("promotionProductFiles")]
+        public List<PromotionProductFileInfoDisplayData>? PromotionProductFiles { get; init; }
+    }
+
     internal const string EndpointGroupUniqueRoute = "single/";
 
     private static readonly JsonSerializerOptions _jsonDataOptions = new()
@@ -86,6 +92,7 @@ internal static class SingleProductEditorComponentEndpoints
 
         SingleProductEditorDocumentComponentEndpoints.MapSingleProductEditorDocumentComponentEndpoints(endpointGroup);
         SingleProductEditorImageComponentEndpoints.MapSingleProductEditorImageComponentEndpoints(endpointGroup);
+        SingleProductEditorPromotionFileComponentEndpoints.MapSingleProductEditorPromotionFileComponentEndpoints(endpointGroup);
 
         return endpointGroup;
     }
@@ -155,6 +162,9 @@ internal static class SingleProductEditorComponentEndpoints
                 ProductImageId = promotionProductFileInfo.ProductImageId,
                 FileInfoName = promotionProductFileInfo.PromotionFileInfo.Name,
                 FileInfoFileName = promotionProductFileInfo.PromotionFileInfo.FileName,
+                ValidFrom = promotionProductFileInfo.ValidFrom,
+                ValidTo = promotionProductFileInfo.ValidTo,
+                Active = promotionProductFileInfo.Active,
             };
             
             promotionProductFileInfoDisplayDatas.Add(promotionFileDisplayData);
@@ -196,7 +206,7 @@ internal static class SingleProductEditorComponentEndpoints
                 ImageFileUrl = imageFileUrl!,
                 RelatedImage = productImageDisplayData,
                 RelatedImageFile = relatedImageFile,
-                RelatedPromotionFile = relatedPromotionFile,
+                RelatedPromotionFileEditorId = relatedPromotionFile?.EditorId,
             };
 
             productImageDatas.Add(productImageListItemDisplayData);
@@ -219,7 +229,7 @@ internal static class SingleProductEditorComponentEndpoints
                 ImageFileUrl = imageFileUrl!,
                 RelatedImage = null,
                 RelatedImageFile = productImageFile,
-                RelatedPromotionFile = null
+                RelatedPromotionFileEditorId = null,
             };
 
             productImageDatas.Add(productImageListItemDisplayData);
@@ -279,6 +289,7 @@ internal static class SingleProductEditorComponentEndpoints
             productProperties = productProperties,
             productLinks = productLinks,
             productImages = productImages,
+            promotionProductFiles = promotionProductFileInfoDisplayDatas,
             searchStringParts = searchStringParts,
             productDocuments = productDocuments,
             productPromotions = productPromotions,
@@ -293,6 +304,7 @@ internal static class SingleProductEditorComponentEndpoints
             ProductProperties = productProperties,
             ProductLinks = productLinks,
             ProductImages = productImages,
+            PromotionProductFiles = promotionProductFileInfoDisplayDatas,
             SearchStringParts = searchStringParts,
             ProductDocuments = productDocuments,
             ProductPromotions = productPromotions,
@@ -691,6 +703,13 @@ internal static class SingleProductEditorComponentEndpoints
         };
 
         return productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
+    }
+
+    private static async Task<IResult> ShowPromotionProductFilePopupAsync(
+        [FromRoute] int productId,
+        [FromBody] PromotionProductFilePopupRequest request)
+    {
+
     }
 
     private static async Task<IResult> UpdateProductWorkStatusAsync(
