@@ -121,6 +121,7 @@ async function onSingleEditorPopupSaveButtonClicked() {
     const popupData = singlePromotionFilePopup.getPopupData();
 
     const newItemData = {
+        editorId: popupData.editorId,
         active: popupData.active,
         validFrom: popupData.validFrom,
         validTo: popupData.validTo,

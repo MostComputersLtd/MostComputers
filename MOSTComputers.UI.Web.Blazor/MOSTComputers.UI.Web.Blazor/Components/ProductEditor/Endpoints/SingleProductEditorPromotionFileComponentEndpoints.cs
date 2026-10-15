@@ -54,9 +54,11 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
             promotionProductFile = await promotionProductFileService.GetByIdAsync(request.Id.Value);
         }
 
+        string editorId = request.ExistingEditorId ?? GeneratePromotionFileId(null);
+
         SinglePromotionFilePopup.PromotionProductFileInfoEditData? popupData = new()
         {
-            EditorId = request.ExistingEditorId ?? GenerateImage
+            EditorId = editorId,
             Id = request.Id,
             PromotionFileId = request.PromotionFileId,
             ValidFrom = request.ValidFrom,

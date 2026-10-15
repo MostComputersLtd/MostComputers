@@ -1,6 +1,7 @@
 import * as promotionFileSelectList from "./PromotionFileSelectList.js";
 import { initEvents } from "./PropertiesEditor";
 
+const editorFileIdHiddenInputId = "singleProductPromotionFileEditorEditorFileIdHiddenInput";
 const promotionFileIdHiddenInputId = "singleProductPromotionFileEditorPromotionFileIdHiddenInput";
 
 const saveButtonId = "singleProductPromotionFileEditorSaveButton";
@@ -82,6 +83,7 @@ export async function initializePromotionFile() {
 
 export function getPopupData() {
 
+    const editorFileIdHiddenInput = document.getElementById(editorFileIdHiddenInputId);
     const activeInput = document.getElementById(activeInputId);
     const validFromInput = document.getElementById(validFromInputId);
     const validToInput = document.getElementById(validToInputId);
@@ -94,6 +96,7 @@ export function getPopupData() {
     const selectedPromotionFileData = promotionFileSelectList.getSelectedElementData(promotionFileList);
 
     return {
+        editorId: editorFileIdHiddenInput.value,
         active: activeInput.checked,
         validFrom: validFromInput.value,
         validTo: validToInput.value,
