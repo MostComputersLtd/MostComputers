@@ -1,9 +1,11 @@
 import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
-import * as common from "./Common.js"
+import * as antiforgeryUtils from "../../Common/AntiforgeryUtils.js";
 import * as dataStore from "./DataStore.js"
+import * as editorChanges from "./EditorChanges.js"
 import * as propertiesEditor from "./PropertiesEditor.js"
 import * as productDocumentsEditor from "./ProductDocumentsEditor.js"
 import * as productImagesEditor from "./ProductImagesEditor.js"
+import * as promotionFilePopup from "./PromotionFilePopup.js"
 
 const singleEditorProductIdHiddenInputId = "singleEditorProductIdHiddenInput";
 
@@ -22,6 +24,8 @@ const singleEditorAddImageFileInputId = "singleEditorAddImageFileInput";
 const singleEditorAddDocumentFileButtonId = "singleEditorAddDocumentFileButton";
 const singleEditorAddDocumentFileInputId = "singleEditorAddDocumentFileInput";
 const singleEditorAddImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
+
+const singleProductEditorSaveButtonId = "singleProductEditorSaveButton";
 
 export function initEvents(dialogElement) {
 
@@ -61,9 +65,19 @@ export function initEvents(dialogElement) {
 
     singleEditorAddImageFromClipboardFileButton.addEventListener("click", onAddImageFromClipboardButtonClickAsync);
 
+    const singleProductEditorSaveButton = document.getElementById(singleProductEditorSaveButtonId);
+
+    singleProductEditorSaveButton.addEventListener("click", onSaveButtonClicked);
+
     propertiesEditor.initEvents(dialogElement);
     productDocumentsEditor.initEvents(dialogElement);
     productImagesEditor.initEvents(dialogElement);
+}
+
+export function clearCurrentChanges() {
+
+    productImagesEditor.clearObjectUrls();
+    editorChanges.clearChanges();
 }
 
 export function registerData(jsonDataObject) {
@@ -265,14 +279,13 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const productId = singleEditorProductIdHiddenInput.value;
 
-    const url = `api/components/productEditor/single/promotionProductFile/showPopup/${productId}`;
+    const url = `api/components/productEditor/single/promotionFile/showPopup/${productId}`;
 
     const dataStoreData = dataStore.loadData();
 
     const body = {
-        productProperties: dataStoreData.productProperties,
-        productLinks: dataStoreData.productLinks,
-        productImages: dataStoreData.productImages
+        productId: productId,
+        promotionProductFiles: dataStoreData.promotionProductFiles,
     };
 
     const response = await fetch(url, {
@@ -296,7 +309,67 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const dialog = singleEditorPromotionProductFileEditorPopupContainer.querySelector("dialog");
 
+    promotionFilePopup.initEvents(
+        dialog,
+        onPromotionProductFileEditorItemAddedAsync,
+        onPromotionProductFileEditorItemUpdatedAsync,
+        onPromotionProductFileEditorItemDeletedAsync);
+
     dialog.showModal();
+}
+
+async function onPromotionProductFileEditorItemAddedAsync(promotionProductFileData) {
+
+    if (!promotionProductFileData.shouldAddToImages) return;
+
+    const imageCreateResult = await productImagesEditor.addNewPromotionProductFileToImagesAsync(
+        promotionProductFileData.editorId,
+        promotionProductFileData.selectedFileId);
+}
+
+async function onPromotionProductFileEditorItemUpdatedAsync(promotionProductFileData) {
+
+    const editorId = promotionProductFileData.editorId;
+
+    const dataStoreData = dataStore.loadData();
+
+    const relatedImageData = dataStoreData.productImages.find(x => x.relatedPromotionFileEditorId == editorId);
+
+    if (!promotionProductFileData.shouldAddToImages) {
+
+        if (relatedImageData != null) {
+
+            const relatedImageItem = document.getElementById(editorId);
+
+            productImagesEditor.removeProductImage(relatedImageItem);
+        }
+
+        return;
+    }
+
+    if (relatedImageData == null) {
+
+        const imageCreateResult = await productImagesEditor.addNewPromotionProductFileToImagesAsync(
+            editorId,
+            promotionProductFileData.selectedFileId);
+    }
+    else if (relatedImageData.relatedImageFile != null) {
+
+        productImagesEditor.changeProductImageFileActive(editorId, promotionProductFileData.active);
+    }
+}
+
+async function onPromotionProductFileEditorItemDeletedAsync(editorId) {
+
+    const dataStoreData = dataStore.loadData();
+
+    const relatedImageData = dataStoreData.productImages.find(x => x.relatedPromotionFileEditorId == editorId);
+
+    if (relatedImageData == null) return;
+
+    const relatedImageItem = document.getElementById(editorId);
+
+    productImagesEditor.removeProductImage(relatedImageItem);
 }
 
 async function showProductSearchStringPopupAsync() {
@@ -322,4 +395,51 @@ async function showProductSearchStringPopupAsync() {
     const dialog = singleEditorSearchStringPopupContainer.querySelector("dialog");
 
     dialog.showModal();
+}
+
+async function onSaveButtonClicked() {
+
+    const dataStoreData = dataStore.loadData();
+
+    const allProperties = dataStoreData.productProperties.concat(dataStoreData.productLinks);
+
+    const activeProperties = [];
+
+    for (const property of allProperties) {
+
+        if (!property.active) continue;
+
+        activeProperties.push(property);
+    }
+
+    const request = {
+        productProperties: activeProperties,
+        productImages: dataStoreData.productImages,
+        promotionProductFiles: dataStoreData.promotionProductFiles,
+        productDocuments: dataStoreData.productDocuments,
+    };
+
+    const url = `api/components/productEditor/single/save`;
+
+    const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
+        },
+        body: JSON.stringify(request)
+    });
+
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
+    if (!response.ok) {
+
+        return;
+    }
+
+    const data = await response.json();
 }

@@ -2,44 +2,42 @@
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
 
 @{
-    PromotionFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileInfo = ItemData;
-
     string validFromValueAsString = string.Empty;
     string validToValueAsString = string.Empty;
 
-    if (promotionProductFileInfo.ValidFrom is not null)
+    if (ItemData.ValidFrom is not null)
     {
-        validFromValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidFrom);
+        validFromValueAsString = GetDateTimeAsStringForDateInput(ItemData.ValidFrom);
     }
 
-    if (promotionProductFileInfo.ValidTo is not null)
+    if (ItemData.ValidTo is not null)
     {
-        validToValueAsString = GetDateTimeAsStringForDateInput(promotionProductFileInfo.ValidTo);
+        validToValueAsString = GetDateTimeAsStringForDateInput(ItemData.ValidTo);
     }
 }
 
-<tr id="@promotionProductFileInfo.EditorId" name="promotionProductFileEditorItem">
-    <td>@promotionProductFileInfo.Id</td>
+<tr id="@ItemData.EditorId" name="promotionProductFileEditorItem">
+    <td>@ItemData.Id</td>
     <td>
-        <input id="promotionProductFileEditorActiveInput-@Index" type="checkbox"
-            tabindex="-1" class="promotion-product-file-active-input" checked="@promotionProductFileInfo.Active" />
+        <input id="@ItemData.EditorId-activeInput" type="checkbox"
+            tabindex="-1" class="promotion-product-file-active-input" checked="@ItemData.Active" />
     </td>
-    <td>@promotionProductFileInfo.PromotionFileInfoData?.Id</td>
-    <td>@(promotionProductFileInfo.ProductImageId?.ToString() ?? "-")</td>
+    <td>@ItemData.PromotionFileInfo?.Id</td>
+    <td>@(ItemData.ProductImageId?.ToString() ?? "-")</td>
     <td>
-        <input id="promotionProductFileEditorValidFromInput-@Index" type="date"
+        <input id="@ItemData.EditorId-validFromInput" type="date"
             value="@validFromValueAsString" readonly />
     </td>
     <td>
-        <input id="promotionProductFileEditorValidToInput-@Index" type="date"
+        <input id="@ItemData.EditorId-validToInput" type="date"
             value="@validToValueAsString" readonly />
     </td>
     <td class="promotion-product-file-file-column">
 
-        @if (promotionProductFileInfo.PromotionFileInfoData is not null)
+        @if (ItemData.PromotionFileInfo is not null)
         {
             <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(
-                promotionProductFileInfo.PromotionFileInfoData.FileName)"
+                ItemData.PromotionFileInfo.FileName)"
                 class="full-parent-width full-parent-height" />
         }
         else
@@ -65,6 +63,5 @@
 
 @code{
     [Parameter, EditorRequired] public required PromotionFileEditorPopup.PromotionProductFileInfoDisplayData ItemData { get; set; }
-    [Parameter, EditorRequired] public required int Index { get; set; }
     [Parameter, EditorRequired] public required bool ShouldDisplayDeleteButton { get; set; }
 }

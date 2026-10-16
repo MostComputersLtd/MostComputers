@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Models.Product.Models.Promotions.Files;
+using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
 using MOSTComputers.UI.Web.Blazor.Components.Primitives;
 using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup;
@@ -12,6 +13,36 @@ namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
 internal static class SingleProductEditorPromotionFileComponentEndpoints
 {
+    private sealed class PromotionProductFilePopupRequest
+    {
+        [JsonPropertyName("productId")] public required int ProductId { get; set; }
+        [JsonPropertyName("promotionProductFiles")]
+        public List<SingleProductEditorPopup.SingleProductEditorPopup.PromotionProductFileInfoDisplayData>? PromotionProductFiles { get; init; }
+    }
+
+    private sealed class PromotionProductFileEditorPopupItemRequest
+    {
+        [JsonPropertyName("existingEditorId")] public string? ExistingEditorId { get; set; }
+        [JsonPropertyName("id")] public int? Id { get; set; }
+        [JsonPropertyName("promotionFileId")] public int? PromotionFileId { get; set; }
+        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
+        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; } = false;
+        [JsonPropertyName("shouldDisplayDeleteButton")] public bool ShouldDisplayDeleteButton { get; set; } = false;
+    } 
+
+    private sealed class SinglePromotionProductFileEditorPopupRequest
+    {
+        [JsonPropertyName("existingEditorId")] public string? ExistingEditorId { get; set; }
+        [JsonPropertyName("id")] public int? Id { get; set; }
+        [JsonPropertyName("promotionFileId")] public int? PromotionFileId { get; set; }
+        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
+        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; } = false;
+        [JsonPropertyName("saveButtonText")] public string SaveButtonText { get; set; } = "Save";
+        [JsonPropertyName("isInImage")] public bool IsInImage { get; set; } = false;
+    } 
+
     private sealed class SearchPromotionFilesRequest
     {
         [JsonPropertyName("userInputString")] public string? UserInputString { get; init; }
@@ -24,23 +55,109 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupUniqueRoute);
 
-        endpointGroup.MapGet("/single/showPopup", ShowSinglePromotionProductFileEditorPopupAsync);
+        endpointGroup.MapPost("/showPopup", ShowPromotionProductFilePopupAsync);
+        endpointGroup.MapPost("/item", GetPromotionProductFileEditorItemAsync);
 
+        endpointGroup.MapPost("/single/showPopup", ShowSinglePromotionProductFileEditorPopupAsync);
         endpointGroup.MapPost("/single/search", SearchPromotionFilesAsync);
 
         return endpointGroup;
     }
 
-    private sealed class SinglePromotionProductFileEditorPopupRequest
+    private static async Task<IResult> ShowPromotionProductFilePopupAsync(
+        [FromRoute] int productId,
+        [FromBody] PromotionProductFilePopupRequest request,
+        [FromServices] IProductService productService,
+        [FromServices] IPromotionProductFileService promotionProductFileService)
     {
-        [JsonPropertyName("existingEditorId")] public string? ExistingEditorId { get; set; }
-        [JsonPropertyName("id")] public int? Id { get; set; }
-        [JsonPropertyName("promotionFileId")] public int? PromotionFileId { get; set; }
-        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
-        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
-        [JsonPropertyName("active")] public bool Active { get; set; } = false;
-        [JsonPropertyName("saveButtonText")] public string SaveButtonText { get; set; } = "Save";
-        [JsonPropertyName("isInImage")] public bool IsInImage { get; set; } = false;
+        MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
+
+        if (product == null)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status404NotFound);
+        }
+
+        List<PromotionProductFileInfo> promotionProductFiles
+            = await promotionProductFileService.GetAllForProductAsync(request.ProductId);
+
+        List<PromotionFileEditorPopup.PromotionProductFileInfoDisplayData> promotionFileData = new();
+
+        if  (request.PromotionProductFiles != null)
+        {
+            foreach (SingleProductEditorPopup.SingleProductEditorPopup.PromotionProductFileInfoDisplayData promotionFileEditorData
+                in request.PromotionProductFiles)
+            {
+                PromotionProductFileInfo? promotionProductFile = null;
+
+                if (promotionFileEditorData.Id != null)
+                {
+                    promotionProductFile = promotionProductFiles.Find(x => x.Id == promotionFileEditorData.Id);
+                }
+
+                PromotionFileEditorPopup.PromotionProductFileInfoDisplayData editorData = new()
+                {
+                    EditorId = promotionFileEditorData.EditorId,
+                    Id = promotionFileEditorData.Id,
+                    ValidFrom = promotionFileEditorData.ValidFrom,
+                    ValidTo = promotionFileEditorData.ValidTo,
+                    Active = promotionFileEditorData.Active,
+                    CreateUserName = promotionProductFile?.CreateUserName,
+                    CreateDate = promotionProductFile?.CreateDate,
+                    LastUpdateUserName = promotionProductFile?.LastUpdateUserName,
+                    LastUpdateDate = promotionProductFile?.LastUpdateDate,
+                    ProductImageId = promotionProductFile?.ProductImageId,
+                    PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
+                };
+
+                promotionFileData.Add(editorData);
+            }
+        } 
+
+        return new RazorComponentResult<PromotionFileEditorPopup>(new
+        {
+            IsVisible = true,
+            Product = product,
+            PromotionProductFiles = promotionFileData,
+            PopupMarginOptions = new Popup.MarginOptions() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" },
+            ShouldDisplaySaveButtonInSingleEditor = true,
+            ShouldDisplayAddButton = true,
+            ShouldDisplayDeleteButton = true,
+        });
+    }
+
+    private static async Task<IResult> GetPromotionProductFileEditorItemAsync(
+        [FromBody] PromotionProductFileEditorPopupItemRequest request,
+        [FromServices] IPromotionProductFileService promotionProductFileService)
+    {
+        PromotionProductFileInfo? promotionProductFile = null;
+
+        if (request.Id != null)
+        {
+            promotionProductFile = await promotionProductFileService.GetByIdAsync(request.Id.Value);
+        }
+
+        string editorId = request.ExistingEditorId ?? GeneratePromotionFileId(null);
+
+        PromotionFileEditorPopup.PromotionProductFileInfoDisplayData itemData = new()
+        {
+            EditorId = editorId,
+            Id = request.Id,
+            Active = request.Active,
+            ValidFrom = request.ValidFrom,
+            ValidTo = request.ValidTo,
+            CreateUserName = promotionProductFile?.CreateUserName,
+            CreateDate = promotionProductFile?.CreateDate,
+            LastUpdateUserName = promotionProductFile?.LastUpdateUserName,
+            LastUpdateDate = promotionProductFile?.LastUpdateDate,
+            ProductImageId = promotionProductFile?.ProductImageId,
+            PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
+        };
+
+        return new RazorComponentResult<PromotionFileEditorPopupItem>(new
+        {
+            ItemData = itemData,
+            ShouldDisplayDeleteButton = request.ShouldDisplayDeleteButton,
+        });
     }
 
     private static async Task<IResult> ShowSinglePromotionProductFileEditorPopupAsync(

@@ -82,9 +82,41 @@ export async function addFileToImagesAsync(blob) {
     const response = await fetch(url, {
         method: "POST",
         headers: {
-            "Accept": "application/json"
+            "Accept": "text/html"
         },
         body: formData
+    });
+
+    if (!response.ok) {
+        return false;
+    }
+
+    const data = await response.text();
+
+    const success = addNewImageFromElementHtml(data);
+
+    return success;
+}
+
+export async function addNewPromotionProductFileToImagesAsync(promotionProductFileEditorId, promotionFileId) {
+
+    const url = "api/components/productEditor/single/image/add/promotionFile";
+
+    const dataStoreData = dataStore.loadData();
+
+    const newImageItemRequest = {
+        editorId: promotionProductFileEditorId,
+        index: dataStoreData.productImages.length,
+        promotionFileId: promotionFileId,
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(newImageItemRequest)
     });
 
     if (!response.ok) {
@@ -291,9 +323,37 @@ function onProductImageFileActiveCheckboxChecked(e) {
     editorChanges.setImageChanged(editorId, editorChanges.ItemChangeState.Updated);
 }
 
+export function changeProductImageFileActive(editorId, active) {
+
+    dataStore.updateProductImageAndSave(editorId, image =>
+    {
+        image.relatedImageFile.Active = active;
+    });
+
+    editorChanges.setImageChanged(editorId, editorChanges.ItemChangeState.Updated);
+}
+
 function onProductImageDeleteButtonClicked(e) {
 
     const productImageItem = e.currentTarget.closest(`[name='${productImageItemName}']`);
+
+    removeProductImage(productImageItem);
+}
+
+export function clearObjectUrls() {
+
+    const dataStoreData = dataStore.loadData();
+
+    for (const productImage of dataStoreData.productImages) {
+
+        if (productImage.uploadedImageFileData?.previewUrl) {
+
+            URL.revokeObjectURL(productImage.uploadedImageFileData?.previewUrl);
+        }
+    }
+}
+
+export function removeProductImage(productImageItem) {
 
     const editorId = productImageItem.id; 
 
@@ -312,6 +372,8 @@ function onProductImageDeleteButtonClicked(e) {
 
         editorChanges.setPromotionProductFileChanged(promotionFileEditorId, editorChanges.ItemChangeState.Deleted);
     }
+
+    productImageItem.remove();
 
     dataStore.removeImageAndSave(editorId);
 

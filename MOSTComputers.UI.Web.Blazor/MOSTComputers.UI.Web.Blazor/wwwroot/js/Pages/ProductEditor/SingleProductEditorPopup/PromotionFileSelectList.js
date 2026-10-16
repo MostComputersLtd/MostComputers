@@ -2,7 +2,8 @@ const itemClass = "promotion-file-list-item";
 const selectedItemClass = "selected-list-item";
 
 const listItemPromotionFileIdAttribute = "data-promotion-file-id";
-const listItemPromotionFilenameAttribute = "data-promotion-file-name";
+const listItemPromotionFileNameAttribute = "data-promotion-file-name";
+const listItemPromotionFileFilenameAttribute = "data-promotion-file-file-name";
 
 
 export function initEvents(promotionFileList, selectionChangedCallback) {
@@ -79,11 +80,13 @@ export function selectElement(elementToSelect) {
 function getElementData(promotionFileListItem) {
 
     const promotionFileId = promotionFileListItem.getAttribute(listItemPromotionFileIdAttribute);
-    const promotionFilename = promotionFileListItem.getAttribute(listItemPromotionFilenameAttribute);
+    const promotionFileName = promotionFileListItem.getAttribute(listItemPromotionFileNameAttribute);
+    const promotionFileFilename = promotionFileListItem.getAttribute(listItemPromotionFileFilenameAttribute);
 
     return {
         id: promotionFileId,
-        filename: promotionFilename,
+        name: promotionFileName,
+        filename: promotionFileFilename,
         element: promotionFileListItem,
     };
 }

@@ -63,13 +63,7 @@ internal static class SingleProductEditorComponentEndpoints
 
         [JsonPropertyName("productImages")]
         public List<ProductImageListItemDisplayData>? ProductImages { get; init; }
-    }
-
-    private sealed class PromotionProductFilePopupRequest
-    {
-        [JsonPropertyName("promotionProductFiles")]
-        public List<PromotionProductFileInfoDisplayData>? PromotionProductFiles { get; init; }
-    }
+    } 
 
     internal const string EndpointGroupUniqueRoute = "single/";
 
@@ -93,6 +87,7 @@ internal static class SingleProductEditorComponentEndpoints
         SingleProductEditorDocumentComponentEndpoints.MapSingleProductEditorDocumentComponentEndpoints(endpointGroup);
         SingleProductEditorImageComponentEndpoints.MapSingleProductEditorImageComponentEndpoints(endpointGroup);
         SingleProductEditorPromotionFileComponentEndpoints.MapSingleProductEditorPromotionFileComponentEndpoints(endpointGroup);
+        SingleProductEditorSaveEndpoints.MapSingleProductEditorSaveEndpoint(endpointGroup);
 
         return endpointGroup;
     }
@@ -159,7 +154,6 @@ internal static class SingleProductEditorComponentEndpoints
                 EditorId = GeneratePromotionFileId(promotionProductFileInfo.Id),
                 Id = promotionProductFileInfo.Id,
                 FileInfoId = promotionProductFileInfo.PromotionFileInfoId,
-                ProductImageId = promotionProductFileInfo.ProductImageId,
                 FileInfoName = promotionProductFileInfo.PromotionFileInfo.Name,
                 FileInfoFileName = promotionProductFileInfo.PromotionFileInfo.FileName,
                 ValidFrom = promotionProductFileInfo.ValidFrom,
@@ -182,8 +176,15 @@ internal static class SingleProductEditorComponentEndpoints
                 productImageFileDisplayDatas.Remove(relatedImageFile);
             }
 
-            PromotionProductFileInfoDisplayData? relatedPromotionFile
-                = promotionProductFileInfoDisplayDatas.FirstOrDefault(x => x.ProductImageId == productImage.Id);
+            PromotionProductFileInfo? relatedPromotionFileInfo
+                = promotionProductFileInfos.FirstOrDefault(x => x.ProductImageId == productImage.Id);
+
+            PromotionProductFileInfoDisplayData? relatedPromotionFile = null;
+
+            if (relatedPromotionFileInfo != null)
+            {
+                relatedPromotionFile = promotionProductFileInfoDisplayDatas.First(x => x.Id == relatedPromotionFileInfo.Id);
+            }
 
             ProductImageDisplayData productImageDisplayData = new()
             {
@@ -703,14 +704,7 @@ internal static class SingleProductEditorComponentEndpoints
         };
 
         return productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
-    }
-
-    private static async Task<IResult> ShowPromotionProductFilePopupAsync(
-        [FromRoute] int productId,
-        [FromBody] PromotionProductFilePopupRequest request)
-    {
-
-    }
+    } 
 
     private static async Task<IResult> UpdateProductWorkStatusAsync(
         HttpContext httpContext,

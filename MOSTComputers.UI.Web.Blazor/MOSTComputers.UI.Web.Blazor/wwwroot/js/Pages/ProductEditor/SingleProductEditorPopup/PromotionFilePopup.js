@@ -1,7 +1,11 @@
+import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
 import * as dataStore from "./DataStore.js";
+import * as editorChanges from "./EditorChanges.js";
 import * as singlePromotionFilePopup from "./SinglePromotionFilePopup.js";
 
-const addButtonId = "promotionProductEditorAddButton";
+const addButtonId = "promotionProductFileEditorAddButton";
+
+const itemTableId = "promotionProductFileEditorItemTable";
 
 const singleEditorPopupContainerId = "singlePromotionProductEditorPopupContainer";
 
@@ -34,11 +38,26 @@ export function initEvents(dialogElement, onAddCallback, onUpdateCallback, onDel
     dialogElement.__onDeleteCallback = onDeleteCallback;
 }
 
+async function getEditorItem(request) {
+
+    const url = "api/components/productEditor/single/promotionFile/item";
+
+    return await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(request)
+    });
+}
+
 async function onAddPromotionProductFileButtonClicked() {
 
     const saveButtonText = "Add";
 
     const request = {
+        existingEditorId: null,
         id: null,
         promotionFileId: null,
         validFrom: null,
@@ -66,6 +85,7 @@ async function onEditorItemEditButtonClicked(e) {
     const relatedImage = dataStoreData.productImages.find(x => x.relatedPromotionFileEditorId == editorId);
 
     const request = {
+        existingEditorId: editorId,
         id: promotionData.id,
         promotionFileId: promotionData.fileInfoId,
         validFrom: promotionData.validFrom,
@@ -110,7 +130,7 @@ async function showSinglePromotionProductFileEditorPopup(request) {
 
     const dialog = singleEditorPopupContainer.querySelector("dialog");
 
-    singlePromotionFilePopup.initEvents();
+    singlePromotionFilePopup.initEvents(onSingleEditorPopupSaveButtonClicked);
     singlePromotionFilePopup.initializePromotionFile();
 
     dialog.showModal();
@@ -120,14 +140,102 @@ async function onSingleEditorPopupSaveButtonClicked() {
 
     const popupData = singlePromotionFilePopup.getPopupData();
 
+    const editorId = popupData.editorId;
+
+    const existingPromotionProductFile = dataStore.loadPromotionProductFileData(editorId);
+
     const newItemData = {
-        editorId: popupData.editorId,
+        editorId: editorId,
+        id: existingPromotionProductFile?.id,
+        fileInfoId: popupData.selectedFileId,
+        fileInfoName: popupData.selectedFileName,
+        fileInfoFileName: popupData.selectedFileFilename,
+        validFrom: popupData.validFrom,
+        validTo: popupData.validTo, 
+        active: popupData.active,
+    };
+
+    const newItemCallbackData = {
+        editorId: editorId,
+        shouldAddToImages: popupData.shouldAddToImages,
+        selectedFileId: popupData.selectedFileId,
+        validFrom: popupData.validFrom,
+        validTo: popupData.validTo, 
+        active: popupData.active,
+    };
+
+    const itemTable = document.getElementById(itemTableId);
+
+    const itemTableBody = itemTable.querySelector("tbody");
+
+    const editorPopup = itemTable.closest("dialog");
+
+    if (existingPromotionProductFile == null) {
+
+        const newItemRequest = {
+            existingEditorId: editorId,
+            id: null,
+            promotionFileId: popupData.selectedFileId,
+            active: popupData.active,
+            validFrom: popupData.validFrom,
+            validTo: popupData.validTo,
+            shouldDisplayDeleteButton: true,
+        };
+
+        const newItemResponse = getEditorItem(newItemRequest);
+
+        const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(newItemResponse);
+
+        if (!didNotRedirect || !newItemResponse.ok) return;
+
+        const newItemElementData = newItemResponse.text();
+
+        itemTableBody.appendChild(newItemElementData);
+        
+        dataStore.addPromotionProductFileAndSave(editorId, newItemData);
+
+        editorChanges.setPromotionProductFileChanged(editorId, editorChanges.ItemChangeState.Added);
+
+        editorPopup.__onAddCallback(newItemCallbackData);
+
+        return;
+    }
+
+    const itemRequest = {
+        existingEditorId: editorId,
+        id: existingPromotionProductFile.id,
+        promotionFileId: popupData.selectedFileId,
         active: popupData.active,
         validFrom: popupData.validFrom,
         validTo: popupData.validTo,
-        shouldAddToImages: popupData.shouldAddToImages,
-        selectedFileId: popupData.selectedFileId,
+        shouldDisplayDeleteButton: true,
     };
+
+    const itemResponse = getEditorItem(itemRequest);
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(itemResponse);
+
+    if (!didNotRedirect || !itemResponse.ok) return;
+
+    const existingItemElementData = itemResponse.text();
+
+    const existingEditorItem = document.getElementById(editorId);
+
+    itemTableBody.replaceChild(existingItemElementData, existingEditorItem);
+
+    dataStore.updatePromotionProductFileAndSave(editorId, promotionProductFile =>
+    {
+        promotionProductFile.fileInfoId = newItemData.fileInfoId;
+        promotionProductFile.fileInfoName = newItemData.fileInfoName;
+        promotionProductFile.fileInfoFileName = newItemData.fileInfoFileName;
+        promotionProductFile.validFrom = newItemData.validFrom;
+        promotionProductFile.validTo = newItemData.validTo;
+        promotionProductFile.active = newItemData.active;
+    });
+
+    editorChanges.setPromotionProductFileChanged(editorId, editorChanges.ItemChangeState.Updated);
+
+    editorPopup.__onUpdateCallback(newItemCallbackData);
 }
 
 function onEditorItemDeleteButtonClicked(e) {
@@ -137,6 +245,8 @@ function onEditorItemDeleteButtonClicked(e) {
     const editorId = editorItem.id;
 
     dataStore.removePromotionProductFileAndSave(editorId);
+
+    editorChanges.setPromotionProductFileChanged(editorId, editorChanges.ItemChangeState.Deleted);
 
     const editorPopup = editorItem.closest("dialog");
 

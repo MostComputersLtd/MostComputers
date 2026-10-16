@@ -1,5 +1,5 @@
+import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
 import * as promotionFileSelectList from "./PromotionFileSelectList.js";
-import { initEvents } from "./PropertiesEditor";
 
 const editorFileIdHiddenInputId = "singleProductPromotionFileEditorEditorFileIdHiddenInput";
 const promotionFileIdHiddenInputId = "singleProductPromotionFileEditorPromotionFileIdHiddenInput";
@@ -102,6 +102,8 @@ export function getPopupData() {
         validTo: validToInput.value,
         shouldAddToImages: shouldAddToImagesInput.checked,
         selectedFileId: selectedPromotionFileData.id,
+        selectedFileName: selectedPromotionFileData.name,
+        selectedFileFilename: selectedPromotionFileData.filename,
     };
 }
 

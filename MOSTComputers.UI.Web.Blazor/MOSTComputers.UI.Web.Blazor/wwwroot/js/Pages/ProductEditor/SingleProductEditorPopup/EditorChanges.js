@@ -77,3 +77,11 @@ export function markDataSaved(productDocumentData)
 {
     changedDocuments.delete(productDocumentData);
 }
+
+export function clearChanges() {
+
+    changedProperties.clear();
+    changedImages.clear();
+    changedPromotionFiles.clear();
+    changedDocuments.clear();
+}

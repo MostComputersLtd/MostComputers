@@ -1,9 +1,14 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using MOSTComputers.Models.Product.Models.Promotions.Files;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
 using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
+using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
 using static MOSTComputers.Utils.Files.ContentTypeUtils;
@@ -12,6 +17,13 @@ namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
 internal static class SingleProductEditorImageComponentEndpoints
 {
+    private sealed class ProductImageFromNewPromotionRequest
+    {
+        [JsonPropertyName("editorId")] public required string EditorId { get; init; }
+        [JsonPropertyName("promotionFileId")] public int PromotionFileId { get; init; }
+        [JsonPropertyName("index")] public int Index { get; init; }
+    }
+
     internal const string EndpointGroupUniqueRoute = "productImage";
 
     private static readonly JsonSerializerOptions _jsonDataOptions = new()
@@ -126,6 +138,61 @@ internal static class SingleProductEditorImageComponentEndpoints
             RelatedImage = productImageDisplayData,
             RelatedImageFile = productImageFileDisplayData,
             RelatedPromotionFileEditorId = null,
+        };
+
+        string parametersJsonData = JsonSerializer.Serialize(productImageListItemDisplayData, _jsonDataOptions);
+
+        var output = new
+        {
+            ItemData = productImageListItemDisplayData,
+            JsonData = parametersJsonData,
+        };
+
+        return new RazorComponentResult<ProductImageListItem>(output);
+    }
+
+    private static async Task<IResult> GetProductImageFromNewPromotionFileAsync(
+        [FromBody] ProductImageFromNewPromotionRequest request,
+        [FromServices] IPromotionFileService promotionFileService)
+    {
+        PromotionFileInfo? promotionFile = await promotionFileService.GetByIdAsync(request.PromotionFileId);
+
+        if (promotionFile is null)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        string? contentType = GetContentTypeFromExtension(promotionFile.FileName);
+
+        if (!IsImageContentType(contentType))
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        ProductImageDisplayData? productImageDisplayData = new()
+        {
+            ExistingImageId = null,
+            ContentType = contentType,
+            DateModified = DateTime.Now,
+        };
+
+        ProductImageFileDisplayData? productImageFileDisplayData = new()
+        {
+            ExistingFileInfoId = null,
+            ExistingImageId = null,
+            FileName = null,
+            DisplayOrder = request.Index + 1,
+            Active = true
+        };
+
+        ProductImageListItemDisplayData productImageListItemDisplayData = new()
+        {
+            EditorId = EditorIdsGenerateUtils.GenerateImageId(null, null, null),
+            Index = request.Index,
+            ImageFileUrl = $"{PromotionFileDataEndpoints.EndpointGroupRoute}/{promotionFile.FileName}",
+            RelatedImage = productImageDisplayData,
+            RelatedImageFile = productImageFileDisplayData,
+            RelatedPromotionFileEditorId = request.EditorId,
         };
 
         string parametersJsonData = JsonSerializer.Serialize(productImageListItemDisplayData, _jsonDataOptions);

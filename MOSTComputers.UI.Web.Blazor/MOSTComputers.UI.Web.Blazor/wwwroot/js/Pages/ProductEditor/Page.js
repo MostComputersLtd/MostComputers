@@ -207,6 +207,7 @@ async function showSingleProductEditorPopup(productId) {
 
     const dialog = singleProductEditorPopupContainer.querySelector("dialog");
 
+    singleProductEditorPopup.clearCurrentChanges();
     singleProductEditorPopup.initEvents(dialog);
 
     dialog.showModal();

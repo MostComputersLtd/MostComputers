@@ -3,8 +3,8 @@ const jsonDataLocalStorageKey = "single-product-editor-data";
 let localData = null;
 
 let localFileData = {
-    productImages: [],
-    productDocuments: [],
+    productImages: new Map(),
+    productDocuments: new Map(),
 };
 
 export function loadData() {
@@ -49,8 +49,7 @@ export function addProductImageAndSave(editorId, productImageData, file) {
     if (productImage) return false;
 
     data.productImages.push(productImageData);
-
-    localFileData.productImages.push(file);
+    localFileData.productImages.set(editorId, file);
 
     saveData(data);
 
@@ -90,6 +89,32 @@ export function loadPromotionProductFileData(editorId) {
     const promotionProductFile = data.promotionProductFiles.find(x => x.editorId === editorId);
 
     return promotionProductFile ? promotionProductFile : null;
+}
+
+export function addPromotionProductFileAndSave(editorId, promotionProductFileData) {
+
+    const data = loadData();
+
+    const promotionProductFile = data.promotionProductFiles.find(x => x.editorId === editorId); 
+
+    if (promotionProductFile) return false;
+
+    data.promotionProductFiles.push(promotionProductFileData);
+
+    saveData(data);
+
+    return true;
+}
+
+export function updatePromotionProductFileAndSave(editorId, mutator) {
+
+    const data = loadData();
+
+    const promotionProductFile = data.promotionProductFiles.find(x => x.editorId === editorId);
+
+    mutator(promotionProductFile);
+
+    saveData(data);
 }
 
 export function removePromotionProductFileAndSave(editorId) {
@@ -136,7 +161,7 @@ export function addProductDocumentAndSave(editorId, productDocumentData, file) {
     if (productDocument) return false;
 
     data.productDocuments.push(productDocumentData);
-    localFileData.productDocuments.push(file);
+    localFileData.productDocuments.set(editorId, file);
 
     saveData(data);
 
