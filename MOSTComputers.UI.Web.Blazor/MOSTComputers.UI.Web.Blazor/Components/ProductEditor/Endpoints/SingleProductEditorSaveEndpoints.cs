@@ -1,10 +1,16 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models.ProductImages;
+using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated;
 using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo;
+using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
+using OneOf;
 using OneOf.Types;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup;
 using static MOSTComputers.Utils.Files.ContentTypeUtils;
@@ -30,104 +36,81 @@ internal static class SingleProductEditorSaveEndpoints
     }
 
     private static async Task<IResult> SaveAllAsync(
-        [FromBody] SaveAllRequest request)
+        HttpRequest httpRequest,
+        [FromServices] IProductImageService productImageService,
+        [FromServices] IProductImageFileManagementService productImageFileManagementService)
     {
-    }
+        IFormCollection form = await httpRequest.ReadFormAsync();
 
-    private static IResult? ValidateImageListItem(
-        ProductImageListItemDisplayData imageListItem,
-        PromotionProductFileInfoDisplayData relatedPromotionFile,
-        byte[]? imageFileData)
-    {
-        if (imageFileData is null || imageFileData.Length == 0)
+        string? metadata = form["metadata"].FirstOrDefault();
+
+        if (metadata is null)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
-                detail: "File is empty");
+                detail: "Metadata is required");
         }
 
-        if (imageListItem.UploadedImageFileData is not null)
-        {
-            if (!IsImageContentType(imageListItem.UploadedImageFileData.ContentType))
-            {
-                return Results.Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    detail: "File is not in a supported image format");
-            }
+        SaveAllRequest? editorRequest = JsonSerializer.Deserialize<SaveAllRequest>(metadata);
 
-            string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFileData.FileName);
-
-            if (imageFileExtension is null)
-            {
-                return Results.Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    detail: "Invalid file extension");
-            }
-        }
-        else if (relatedPromotionFile is not null)
-        {
-            if (relatedPromotionFile?.FileInfoId is null)
-            {
-                return Results.Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    detail: "Promotion file not selected");
-            }
-        }
-        else if (imageListItem.RelatedImage is not null)
-        {
-            if (!IsImageContentType(imageListItem.RelatedImage.ContentType))
-            {
-                return Results.Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    detail: "File is not in a supported image format");
-            }
-        }
-        else if (imageListItem.RelatedImageFile?.FileName is not null)
-        {
-            string? contentType = GetContentTypeFromExtension(imageListItem.RelatedImageFile.FileName);
-
-            if (!IsImageContentType(contentType))
-            {
-                return Results.Problem(
-                    statusCode: StatusCodes.Status400BadRequest,
-                    detail: "File is not in a supported image format");
-            }
-        }
-        else
+        if (editorRequest is null)
         {
             return Results.Problem(
-                statusCode: StatusCodes.Status400BadRequest);
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: "Invalid metadata");
         }
 
-        return null;
-    }
+        Dictionary<string, IFormFile> localFileData = form.Files
+            .ToDictionary(file => file.Name, StringComparer.Ordinal);
+    } 
 
     private async Task<List<ProductImageAndPromotionFileUpsertRequest>> GetImageUpsertRequestsFromEditorDataAsync(
-        List<ProductImageListItemDisplayData> listItems)
+        List<ProductImageListItemDisplayData> productImages,
+        List<PromotionProductFileInfoDisplayData> promotionProductFiles,
+        Dictionary<string, IFormFile> files,
+        IProductImageService productImageService,
+        IProductImageFileManagementService productImageFileManagementService)
     {
         List<ProductImageAndPromotionFileUpsertRequest> imageRequests = new();
 
-        for (int i = 0; i < listItems.Count; i++)
+        for (int i = 0; i < productImages.Count; i++)
         {
-            ProductImageListItemDisplayData imageListItem = listItems[i];
+            ProductImageListItemDisplayData imageListItem = productImages[i];
+            PromotionProductFileInfoDisplayData? relatedPromotionFile = null;
 
-            bool flowControl = await NewMethod(imageListItem, imageRequests, i);
-            if (!flowControl)
+            if (imageListItem.RelatedPromotionFileEditorId != null)
             {
-                continue;
+                int relatedPromotionFileIndex = promotionProductFiles.FindIndex(
+                    x => x.EditorId == imageListItem.RelatedPromotionFileEditorId);
+
+                relatedPromotionFile = promotionProductFiles[relatedPromotionFileIndex];
+
+                promotionProductFiles.RemoveAt(relatedPromotionFileIndex);
             }
+
+            bool hasFile = files.TryGetValue(imageListItem.EditorId, out IFormFile? uploadedFile);
+
+            byte[]? imageFileData = await GetImageDataFromListItemAsync(imageListItem, uploadedFile);
+
+            IResult? problemDetailsResult = ValidateImageListItem(imageListItem, relatedPromotionFile, imageFileData);
+
+            if (problemDetailsResult != null) return problemDetailsResult;
+
+            ProductImageAndPromotionFileUpsertRequest request = await GetImageAndPromotionFileRequestAsync(
+                imageListItem, relatedPromotionFile, imageFileData, i);
+
+            imageRequests.Add(request);
         }
 
         return imageRequests;
     }
 
-    private static async Task<ProductImageAndPromotionFileUpsertRequest> NewMethod(
+    private static async Task<ProductImageAndPromotionFileUpsertRequest> GetImageAndPromotionFileRequestAsync(
         ProductImageListItemDisplayData imageListItem,
-        PromotionProductFileInfoDisplayData relatedPromotionFile,
+        PromotionProductFileInfoDisplayData? relatedPromotionFile,
+        byte[]? imageFileData,
         int i)
     {
-        byte[]? imageFileData = await GetImageDataFromListItemAsync(imageListItem);
-
         if (imageListItem.UploadedImageFileData is not null)
         {
             string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFileData.FileName);
@@ -184,7 +167,7 @@ internal static class SingleProductEditorSaveEndpoints
             }
             else
             {
-                List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(imageListItem.RelatedImage.ContentType);
+                List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(imageListItem.RelatedImage.ContentType!);
 
                 imageFileExtension = possibleFileExtensions.First();
             }
@@ -225,9 +208,7 @@ internal static class SingleProductEditorSaveEndpoints
                     },
                 };
 
-                imageRequests.Add(new(imageFileCreateRequest));
-
-                return false;
+                return new(imageFileCreateRequest);
             }
 
             ProductImageFileForProductUpdateRequest imageFileUpdateRequest = new()
@@ -248,50 +229,142 @@ internal static class SingleProductEditorSaveEndpoints
         return default!;
     }
 
-    private async Task<byte[]?> GetImageDataFromListItemAsync(ProductImageListItemDisplayData imageListItem)
+    private static IResult? ValidateImageListItem(
+        ProductImageListItemDisplayData imageListItem,
+        PromotionProductFileInfoDisplayData? relatedPromotionFile,
+        byte[]? imageFileData)
     {
         if (imageListItem.UploadedImageFileData is not null)
         {
-            return imageListItem.UploadedImageFileData.Data;
+            if (imageFileData is null || imageFileData.Length == 0)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is empty");
+            }
+
+            if (!IsImageContentType(imageListItem.UploadedImageFileData.ContentType))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is not in a supported image format");
+            }
+
+            string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFileData.FileName);
+
+            if (imageFileExtension is null)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "Invalid file extension");
+            }
+        }
+        else if (relatedPromotionFile is not null)
+        {
+            if (relatedPromotionFile?.FileInfoId is null)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "Promotion file not selected");
+            }
+        }
+        else if (imageListItem.RelatedImage is not null)
+        {
+            if (imageFileData is null || imageFileData.Length == 0)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is empty");
+            }
+
+            if (!IsImageContentType(imageListItem.RelatedImage.ContentType))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is not in a supported image format");
+            }
+        }
+        else if (imageListItem.RelatedImageFile?.FileName is not null)
+        {
+            if (imageFileData is null || imageFileData.Length == 0)
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is empty");
+            }
+
+            string? contentType = GetContentTypeFromExtension(imageListItem.RelatedImageFile.FileName);
+
+            if (!IsImageContentType(contentType))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    detail: "File is not in a supported image format");
+            }
+        }
+        else
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        return null;
+    }
+
+    private static async Task<byte[]?> GetImageDataFromListItemAsync(
+        ProductImageListItemDisplayData imageListItem,
+        IFormFile? uploadedFile,
+        IProductImageService productImageService,
+        IProductImageFileManagementService productImageFileManagementService)
+    {
+        if (imageListItem.UploadedImageFileData is not null)
+        {
+            if (uploadedFile == null) return null;
+
+            using MemoryStream memoryStream = new();
+
+            await uploadedFile.CopyToAsync(memoryStream);
+
+            return memoryStream.ToArray();
         }
 
         int? existingImageId = imageListItem.RelatedImage?.ExistingImageId;
         string? existingImageFileName = imageListItem.RelatedImageFile?.FileName;
-        int? existingPromotionFileId = imageListItem.RelatedPromotionFile?.PromotionFileInfoData?.Id;
 
         if (existingImageId is not null)
         {
-            ProductImage? productImage = await ProductImageService.GetByIdInAllImagesAsync(existingImageId.Value);
+            ProductImage? productImage = await productImageService.GetByIdInAllImagesAsync(existingImageId.Value);
 
             return productImage?.ImageData;
         }
         else if (existingImageFileName is not null)
         {
             OneOf<byte[], FileDoesntExistResult> getImageFileDataResult
-                = await ProductImageFileManagementService.GetImageAsync(existingImageFileName);
+                = await productImageFileManagementService.GetImageAsync(existingImageFileName);
 
             return getImageFileDataResult.Match<byte[]?>(
                 fileData => fileData,
                 fileDoesntExistResult => null);
         }
-        else if (existingPromotionFileId is not null)
-        {
-            Stream? promotionFileDataStream = await PromotionFileService.GetFileDataByIdAsync(existingPromotionFileId.Value);
-
-            byte[]? fileData = null;
-
-            if (promotionFileDataStream is not null)
-            {
-                using var memoryStream = new MemoryStream();
-
-                await promotionFileDataStream.CopyToAsync(memoryStream);
-
-                fileData = memoryStream.ToArray();
-            }
-
-            return fileData;
-        }
 
         return null;
+    }
+
+    private static string GetImageRequestValidationErrorPath(ProductImageAndPromotionFileUpsertRequest upsertRequest, int requestIndex)
+    {
+        string requestType = GetImageRequestTypeInResultErrorPath(upsertRequest);
+
+        string prefix = $"ImageRequests[{requestIndex}].Request.{requestType}.";
+
+        return prefix;
+    }
+
+    private static string GetImageRequestTypeInResultErrorPath(ProductImageAndPromotionFileUpsertRequest upsertRequest)
+    {
+        return upsertRequest.Request.Match(
+            x => "AsT0",
+            x => "AsT1",
+            x => "AsT2",
+            x => "AsT3");
     }
 }

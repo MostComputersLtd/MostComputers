@@ -7,67 +7,59 @@ import * as productDocumentsEditor from "./ProductDocumentsEditor.js"
 import * as productImagesEditor from "./ProductImagesEditor.js"
 import * as promotionFilePopup from "./PromotionFilePopup.js"
 
-const singleEditorProductIdHiddenInputId = "singleEditorProductIdHiddenInput";
+const productIdHiddenInputId = "singleEditorProductIdHiddenInput";
 
-const singleEditorShowProductDataPopupButtonId = "singleEditorShowProductDataPopupButton";
-const singleEditorShowProductLegacyDisplayPopupButtonId = "singleEditorShowProductLegacyDisplayPopupButton";
-const singleEditorShowSearchStringPopupButtonId = "singleEditorShowSearchStringPopupButton";
+const showProductDataPopupButtonId = "singleEditorShowProductDataPopupButton";
+const showProductLegacyDisplayPopupButtonId = "singleEditorShowProductLegacyDisplayPopupButton";
+const showSearchStringPopupButtonId = "singleEditorShowSearchStringPopupButton";
 
-const singleEditorProductDataPopupContainerId = "singleEditorProductDataPopupContainer";
-const singleEditorProductLegacyDisplayPopupContainerId = "singleEditorProductLegacyDisplayPopupContainer";
-const singleEditorPromotionProductFileEditorPopupContainerId = "singleEditorPromotionProductFileEditorPopupContainer";
-const singleEditorSearchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
+const productDataPopupContainerId = "singleEditorProductDataPopupContainer";
+const productLegacyDisplayPopupContainerId = "singleEditorProductLegacyDisplayPopupContainer";
+const promotionProductFileEditorPopupContainerId = "singleEditorPromotionProductFileEditorPopupContainer";
+const searchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
 
-const singleEditorProductNewStatusSelectId = "singleEditorProductNewStatusSelect";
-const singleEditorAddImageFileButtonId = "singleEditorAddImageFileButton";
-const singleEditorAddImageFileInputId = "singleEditorAddImageFileInput";
-const singleEditorAddDocumentFileButtonId = "singleEditorAddDocumentFileButton";
-const singleEditorAddDocumentFileInputId = "singleEditorAddDocumentFileInput";
-const singleEditorAddImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
+const productNewStatusSelectId = "singleEditorProductNewStatusSelect";
+const addImageFileButtonId = "singleEditorAddImageFileButton";
+const addImageFileInputId = "singleEditorAddImageFileInput";
+const addDocumentFileButtonId = "singleEditorAddDocumentFileButton";
+const addDocumentFileInputId = "singleEditorAddDocumentFileInput";
+const addImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
 
-const singleProductEditorSaveButtonId = "singleProductEditorSaveButton";
+const saveButtonId = "singleProductEditorSaveButton";
 
 export function initEvents(dialogElement) {
 
-    const singleEditorProductNewStatusSelect = document.getElementById(singleEditorProductNewStatusSelectId);
+    const productNewStatusSelect = document.getElementById(productNewStatusSelectId);
 
-    singleEditorProductNewStatusSelect.addEventListener("change", onProductStatusSelectChangedAsync);
+    const showProductDataPopupButton = document.getElementById(showProductDataPopupButtonId);
+    const showProductLegacyDisplayPopupButton = document.getElementById(showProductLegacyDisplayPopupButtonId);
+    const showSearchStringPopupButton = document.getElementById(showSearchStringPopupButtonId);
 
-    const singleEditorShowProductDataPopupButton = document.getElementById(singleEditorShowProductDataPopupButtonId);
+    const addImageFileButton = document.getElementById(addImageFileButtonId);
+    const addImageFileInput = document.getElementById(addImageFileInputId);
 
-    singleEditorShowProductDataPopupButton.addEventListener("click", showProductDataPopupAsync)
+    const addDocumentFileButton = document.getElementById(addDocumentFileButtonId);
+    const addDocumentFileInput = document.getElementById(addDocumentFileInputId);
 
-    const singleEditorShowProductLegacyDisplayPopupButton = document.getElementById(singleEditorShowProductLegacyDisplayPopupButtonId);
+    const addImageFromClipboardFileButton = document.getElementById(addImageFromClipboardFileButtonId);
 
-    singleEditorShowProductLegacyDisplayPopupButton.addEventListener("click", showProductLegacyDisplayPopupAsync)
+    const saveButton = document.getElementById(saveButtonId);
 
-    const singleEditorShowSearchStringPopupButton = document.getElementById(singleEditorShowSearchStringPopupButtonId);
+    productNewStatusSelect.addEventListener("change", onProductStatusSelectChangedAsync);
 
-    singleEditorShowSearchStringPopupButton.addEventListener("click", showProductSearchStringPopupAsync);
+    showProductDataPopupButton.addEventListener("click", showProductDataPopupAsync)
+    showProductLegacyDisplayPopupButton.addEventListener("click", showProductLegacyDisplayPopupAsync)
+    showSearchStringPopupButton.addEventListener("click", showProductSearchStringPopupAsync);
 
-    const singleEditorAddImageFileButton = document.getElementById(singleEditorAddImageFileButtonId);
+    addImageFileButton.addEventListener("click", onAddImageFileButtonClick);
+    addImageFileInput.addEventListener("change", onAddImageFileInputChangeAsync);
 
-    singleEditorAddImageFileButton.addEventListener("click", onAddImageFileButtonClick);
+    addDocumentFileButton.addEventListener("click", onAddDocumentFileButtonClick);
+    addDocumentFileInput.addEventListener("change", onAddDocumentFileInputChangeAsync);
 
-    const singleEditorAddImageFileInput = document.getElementById(singleEditorAddImageFileInputId);
+    addImageFromClipboardFileButton.addEventListener("click", onAddImageFromClipboardButtonClickAsync);
 
-    singleEditorAddImageFileInput.addEventListener("change", onAddImageFileInputChangeAsync);
-
-    const singleEditorAddDocumentFileButton = document.getElementById(singleEditorAddDocumentFileButtonId);
-
-    singleEditorAddDocumentFileButton.addEventListener("click", onAddDocumentFileButtonClick);
-
-    const singleEditorAddDocumentFileInput = document.getElementById(singleEditorAddDocumentFileInputId);
-
-    singleEditorAddDocumentFileInput.addEventListener("change", onAddDocumentFileInputChangeAsync);
-
-    const singleEditorAddImageFromClipboardFileButton = document.getElementById(singleEditorAddImageFromClipboardFileButtonId);
-
-    singleEditorAddImageFromClipboardFileButton.addEventListener("click", onAddImageFromClipboardButtonClickAsync);
-
-    const singleProductEditorSaveButton = document.getElementById(singleProductEditorSaveButtonId);
-
-    singleProductEditorSaveButton.addEventListener("click", onSaveButtonClicked);
+    saveButton.addEventListener("click", onSaveButtonClicked);
 
     propertiesEditor.initEvents(dialogElement);
     productDocumentsEditor.initEvents(dialogElement);
@@ -118,7 +110,7 @@ async function onProductStatusSelectChangedAsync(e) {
 
 function onAddImageFileButtonClick() {
 
-    const singleEditorAddImageFileInput = document.getElementById(singleEditorAddImageFileInputId);
+    const singleEditorAddImageFileInput = document.getElementById(addImageFileInputId);
 
     singleEditorAddImageFileInput.click();
 }
@@ -142,7 +134,7 @@ async function onAddImageFileInputChangeAsync(e) {
 
 function onAddDocumentFileButtonClick() {
 
-    const singleEditorAddDocumentFileInput = document.getElementById(singleEditorAddDocumentFileInputId);
+    const singleEditorAddDocumentFileInput = document.getElementById(addDocumentFileInputId);
 
     singleEditorAddDocumentFileInput.click();
 }
@@ -195,7 +187,7 @@ async function onAddImageFromClipboardButtonClickAsync() {
 
 async function showProductDataPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
     const productId = singleEditorProductIdHiddenInput.value;
 
@@ -224,7 +216,7 @@ async function showProductDataPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorProductDataPopupContainer = document.getElementById(singleEditorProductDataPopupContainerId);
+    const singleEditorProductDataPopupContainer = document.getElementById(productDataPopupContainerId);
 
     singleEditorProductDataPopupContainer.innerHTML = data;
 
@@ -235,7 +227,7 @@ async function showProductDataPopupAsync() {
 
 async function showProductLegacyDisplayPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
     const productId = singleEditorProductIdHiddenInput.value;
 
@@ -264,7 +256,7 @@ async function showProductLegacyDisplayPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorProductLegacyDisplayPopupContainer = document.getElementById(singleEditorProductLegacyDisplayPopupContainerId);
+    const singleEditorProductLegacyDisplayPopupContainer = document.getElementById(productLegacyDisplayPopupContainerId);
 
     singleEditorProductLegacyDisplayPopupContainer.innerHTML = data;
 
@@ -275,7 +267,7 @@ async function showProductLegacyDisplayPopupAsync() {
 
 async function showPromotionProductFileEditorPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
     const productId = singleEditorProductIdHiddenInput.value;
 
@@ -303,7 +295,7 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorPromotionProductFileEditorPopupContainer = document.getElementById(singleEditorPromotionProductFileEditorPopupContainerId);
+    const singleEditorPromotionProductFileEditorPopupContainer = document.getElementById(promotionProductFileEditorPopupContainerId);
 
     singleEditorPromotionProductFileEditorPopupContainer.innerHTML = data;
 
@@ -374,7 +366,7 @@ async function onPromotionProductFileEditorItemDeletedAsync(editorId) {
 
 async function showProductSearchStringPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(singleEditorProductIdHiddenInputId);
+    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
     const productId = singleEditorProductIdHiddenInput.value;
 
@@ -388,7 +380,7 @@ async function showProductSearchStringPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorSearchStringPopupContainer = document.getElementById(singleEditorSearchStringPopupContainerId);
+    const singleEditorSearchStringPopupContainer = document.getElementById(searchStringPopupContainerId);
 
     singleEditorSearchStringPopupContainer.innerHTML = data;
 
@@ -412,6 +404,8 @@ async function onSaveButtonClicked() {
         activeProperties.push(property);
     }
 
+    const formData = new FormData();
+
     const request = {
         productProperties: activeProperties,
         productImages: dataStoreData.productImages,
@@ -419,15 +413,24 @@ async function onSaveButtonClicked() {
         productDocuments: dataStoreData.productDocuments,
     };
 
+    formData.append("metadata", JSON.stringify(request));
+
+    for (const [editorId, file] of dataStoreData.localFileData.productImages) {
+        formData.append(editorId, file);
+    }
+
+    for (const [editorId, file] of dataStoreData.localFileData.productDocuments) {
+        formData.append(editorId, file);
+    }
+
     const url = `api/components/productEditor/single/save`;
 
     const response = await fetch(url, {
         method: "PUT",
         headers: {
-            "Content-Type": "application/json",
             [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
         },
-        body: JSON.stringify(request)
+        body: formData
     });
 
     if (response == null) return;
