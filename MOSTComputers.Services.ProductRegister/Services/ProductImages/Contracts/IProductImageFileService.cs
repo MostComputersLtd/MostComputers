@@ -11,11 +11,16 @@ namespace MOSTComputers.Services.ProductRegister.Services.ProductImages.Contract
 public interface IProductImageFileService : IProductImageFileReadService
 {
     Task<OneOf<int, ValidationResult, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertFileAsync(ProductImageFileCreateRequest createRequest);
+    Task<OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_InsertFileInternalAsync(ProductImageFileCreateRequest createRequest);
     Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> ChangeFileAsync(ProductImageFileChangeRequest updateRequest);
     Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateFileAsync(ProductImageFileUpdateRequest updateRequest);
+    Task<OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_UpdateFileInternalAsync(
+        ProductImageFileUpdateRequest updateRequest,
+        ProductImageFileData fileNameInfo);
     Task<OneOf<Success, ValidationResult, NotFound, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> RenameFileAsync(ProductImageFileRenameRequest renameRequest);
     Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteAllFilesForProductAsync(int productId, string deleteUserName);
     Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteFileAsync(int id, string deleteUserName);
     Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteFileAsync(ProductImageFileData fileNameInfo, string deleteUserName);
+    Task<OneOf<Success, NotFound, FileDoesntExistResult>> FullSave_DeleteFileInternalAsync(ProductImageFileData fileNameInfo);
     Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteFileByProductIdAndImageIdAsync(int productId, int imageId, string deleteUserName);
 }

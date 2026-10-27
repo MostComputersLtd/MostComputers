@@ -1,6 +1,7 @@
 ﻿@using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using Microsoft.AspNetCore.WebUtilities
 @using static MOSTComputers.Utils.Files.FilePathUtils
 
 @inject IPromotionGroupService PromotionGroupService
@@ -165,8 +166,12 @@
                     groupPromotionContent.HtmlContent,
                     imageFilesForPromotion,
                     promotionImageFile =>
-                        CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-                );
+                    {
+                        string imageUrl = CombinePathsWithSeparator(
+                        '/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString());
+
+                        return QueryHelpers.AddQueryString(imageUrl, "v", promotionImageFile.Version.ToString());
+                    });
 
                 GroupPromotionWithImageFileData promotionData = new()
                 {
@@ -191,8 +196,12 @@
                 defaultGroupPromotion.HtmlContent,
                 imageFilesForPromotion,
                 promotionImageFile =>
-                    CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-            );
+                {
+                    string imageUrl = CombinePathsWithSeparator(
+                    '/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString());
+
+                    return QueryHelpers.AddQueryString(imageUrl, "v", promotionImageFile.Version.ToString());
+                });
 
             GroupPromotionWithImageFileData promotionData = new()
             {

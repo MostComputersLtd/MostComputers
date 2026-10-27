@@ -61,6 +61,10 @@
     border-radius: 0.25rem;
 }
 
+.promotion-group-edit-select {
+    min-width: 9.75em;
+}
+
 .promotion-group-edit-logo-change-button {
     height: min-content;
     border: none;

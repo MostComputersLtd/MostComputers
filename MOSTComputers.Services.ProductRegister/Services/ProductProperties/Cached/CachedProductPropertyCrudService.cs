@@ -448,6 +448,29 @@ internal sealed class CachedProductPropertyCrudService : IProductPropertyCrudSer
         return result;
     }
 
+    public async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpsertAllProductPropertiesInternalAsync(
+        int productId,
+        List<ProductPropertyForProductUpsertRequest> newProperties,
+        List<ProductProperty> oldProperties,
+        List<ProductCharacteristic> allCharacteristics)
+    {
+        OneOf<Success, UnexpectedFailureResult> result
+            = await _productPropertyCrudService.FullSave_UpsertAllProductPropertiesInternalAsync(
+                productId,
+                newProperties,
+                oldProperties,
+                allCharacteristics);
+
+        if (result.IsT0)
+        {
+            //InvalidateAllEntriesForProduct(productPropertyChangeAllForProductRequest.ProductId);
+
+            await _fusionCache.RemoveByTagAsync(GetProductIdTag(productId));
+        }
+
+        return result;
+    }
+
     public async Task<bool> DeleteAsync(int productId, int characteristicId)
     {
         bool result = await _productPropertyCrudService.DeleteAsync(productId, characteristicId);
@@ -504,5 +527,5 @@ internal sealed class CachedProductPropertyCrudService : IProductPropertyCrudSer
         await _fusionCache.RemoveByTagAsync(GetCharacteristicIdTag(characteristicId));
 
         return result;
-    }
+    } 
 }

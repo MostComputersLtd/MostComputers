@@ -12,5 +12,7 @@ internal sealed class GroupPromotionImageFileDataEntityMap : EntityMap<GroupProm
         Map(p => p.PromotionId).ToColumn(PromotionIdColumnName);
         Map(p => p.ImageId).ToColumn(ImageIdColumnName);
         Map(p => p.FileName).ToColumn(FileNameColumnName);
+        Map(p => p.ContentType).ToColumn(ContentTypeColumnName);
+        Map(p => p.Version).ToColumn(VersionColumnName);
     }
 }

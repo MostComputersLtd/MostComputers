@@ -1,4 +1,4 @@
-using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
+namespace MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 
 public sealed class ServicePromotionGroupUpdateRequest
 {
@@ -10,4 +10,5 @@ public sealed class ServicePromotionGroupUpdateRequest
 	public required bool IsDefault { get; set; }
 	public required bool ShowEmptyForLogged { get; set; }
 	public required bool ShowEmptyForNonLogged { get; set; }
+    public int? RelatedManufacturerId { get; set; }
 }

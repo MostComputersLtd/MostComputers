@@ -10,15 +10,6 @@ public interface IProductToXmlProductMappingService
         Product product,
         List<ProductProperty>? productProperties = null,
         List<XmlProductImage>? xmlProductImages = null,
-        IEnumerable<Promotion>? productPromotions = null,
-        SubCategory? productSubCategory = null,
-        List<XmlSearchStringPartInfo>? searchStringPartInfos = null,
-        string? promotionPictureUrl = null);
-
-    XmlProduct MapProductDataToXmlProduct(
-        Product product,
-        List<ProductProperty>? productProperties = null,
-        List<XmlProductImage>? xmlProductImages = null,
         List<XmlPromotion>? xmlProductPromotions = null,
         XmlPromotionGroup? xmlGroupPromotion = null,
         SubCategory? productSubCategory = null,

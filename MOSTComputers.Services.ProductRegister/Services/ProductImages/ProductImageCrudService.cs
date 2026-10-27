@@ -156,6 +156,18 @@ internal class ProductImageCrudService : IProductImageCrudService
             id => id, unexpectedFailure => unexpectedFailure);
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_InsertInAllImagesAsync(
+        ServiceProductImageCreateRequest createRequest)
+    {
+        ProductImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<int, UnexpectedFailureResult> result = await _productImageRepository.InsertInAllImagesAsync(createRequestInternal);
+
+        return result;
+    }
+
     public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> InsertInFirstImagesAsync(ServiceProductFirstImageCreateRequest createRequest)
     {
         ValidationResult validationResult = ValidateDefault(_firstImageCreateRequestValidator, createRequest);
@@ -170,6 +182,18 @@ internal class ProductImageCrudService : IProductImageCrudService
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
+    }
+
+    private async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_InsertInFirstImagesAsync(
+        ServiceProductFirstImageCreateRequest createRequest)
+    {
+        ProductFirstImageCreateRequest createRequestInternal = _productMapper.Map(createRequest);
+
+        createRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = await _productImageRepository.InsertInFirstImagesAsync(createRequestInternal);
+
+        return result;
     }
 
     public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInAllImagesAsync(ServiceProductImageUpdateRequest updateRequest)
@@ -188,6 +212,18 @@ internal class ProductImageCrudService : IProductImageCrudService
             success => success, unexpectedFailure => unexpectedFailure);
     }
 
+    private async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpdateInAllImagesAsync(
+        ServiceProductImageUpdateRequest updateRequest)
+    {
+        ProductImageUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = await _productImageRepository.UpdateInAllImagesAsync(updateRequestInternal);
+
+        return result;
+    }
+
     public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInFirstImagesAsync(ServiceProductFirstImageUpdateRequest updateRequest)
     {
         ValidationResult validationResult = ValidateDefault(_firstImageUpdateRequestValidator, updateRequest);
@@ -202,6 +238,18 @@ internal class ProductImageCrudService : IProductImageCrudService
 
         return result.Match<OneOf<Success, ValidationResult, UnexpectedFailureResult>>(
             success => success, unexpectedFailure => unexpectedFailure);
+    }
+
+    private async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpdateInFirstImagesAsync(
+        ServiceProductFirstImageUpdateRequest updateRequest)
+    {
+        ProductFirstImageUpdateRequest updateRequestInternal = _productMapper.Map(updateRequest);
+
+        updateRequestInternal.DateModified = DateTime.Today;
+
+        OneOf<Success, UnexpectedFailureResult> result = await _productImageRepository.UpdateInFirstImagesAsync(updateRequestInternal);
+
+        return result;
     }
 
     public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> UpsertInAllImagesAsync(ProductImageUpsertRequest productImageUpsertRequest)
@@ -239,6 +287,38 @@ internal class ProductImageCrudService : IProductImageCrudService
             unexpectedFailureResult => unexpectedFailureResult);
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_UpsertInAllImagesAsync(
+        ProductImageUpsertRequest productImageUpsertRequest)
+    {
+        if (productImageUpsertRequest.ExistingImageId is null)
+        {
+            ServiceProductImageCreateRequest productImageCreateRequest = new()
+            {
+                ProductId = productImageUpsertRequest.ProductId,
+                ImageContentType = productImageUpsertRequest.ImageContentType,
+                ImageData = productImageUpsertRequest.ImageData,
+                HtmlData = productImageUpsertRequest.HtmlData,
+            };
+
+            return await FullSave_InsertInAllImagesAsync(productImageCreateRequest);
+        }
+
+        ServiceProductImageUpdateRequest productImageUpdateRequest = new()
+        {
+            Id = productImageUpsertRequest.ExistingImageId.Value,
+            ImageContentType = productImageUpsertRequest.ImageContentType,
+            ImageData = productImageUpsertRequest.ImageData,
+            HtmlData = productImageUpsertRequest.HtmlData,
+        };
+
+        OneOf<Success, UnexpectedFailureResult> updateImageResult
+            = await FullSave_UpdateInAllImagesAsync(productImageUpdateRequest);
+
+        return updateImageResult.Match<OneOf<int, UnexpectedFailureResult>>(
+            success => productImageUpsertRequest.ExistingImageId.Value,
+            unexpectedFailureResult => unexpectedFailureResult);
+    }
+
     public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertInFirstImagesAsync(ServiceProductFirstImageUpsertRequest upsertRequest)
     {
         ValidationResult validationResult = ValidateDefault(_firstImageUpsertRequestValidator, upsertRequest);
@@ -269,6 +349,35 @@ internal class ProductImageCrudService : IProductImageCrudService
         };
 
         return await UpdateInFirstImagesAsync(productFirstImageUpdateRequest);
+    }
+
+    public async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpsertInFirstImagesAsync(
+        ServiceProductFirstImageUpsertRequest upsertRequest)
+    {
+        ProductImage? existingFirstImage = await GetByProductIdInFirstImagesAsync(upsertRequest.ProductId);
+
+        if (existingFirstImage is null)
+        {
+            ServiceProductFirstImageCreateRequest productFirstImageCreateRequest = new()
+            {
+                ProductId = upsertRequest.ProductId,
+                ImageContentType = upsertRequest.ImageContentType,
+                ImageData = upsertRequest.ImageData,
+                HtmlData = upsertRequest.HtmlData,
+            };
+
+            return await FullSave_InsertInFirstImagesAsync(productFirstImageCreateRequest);
+        }
+
+        ServiceProductFirstImageUpdateRequest productFirstImageUpdateRequest = new()
+        {
+            ProductId = upsertRequest.ProductId,
+            ImageContentType = upsertRequest.ImageContentType,
+            ImageData = upsertRequest.ImageData,
+            HtmlData = upsertRequest.HtmlData,
+        };
+
+        return await FullSave_UpdateInFirstImagesAsync(productFirstImageUpdateRequest);
     }
 
     public async Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInAllImagesByIdAsync(int imageId, string htmlData)

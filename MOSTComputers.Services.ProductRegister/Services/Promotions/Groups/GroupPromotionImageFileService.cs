@@ -13,7 +13,6 @@ using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
-using System.IO;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.Groups;
 public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileService
@@ -45,75 +44,19 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
         return await _groupPromotionImageFileDataService.GetAllInPromotionAsync(promotionId);
     }
 
-    public async Task<List<GroupPromotionImageFile>> GetAllInPromotionWithFilesAsync(int promotionId)
-    {
-        List<GroupPromotionImageFileData> imageFileDatas = await _groupPromotionImageFileDataService.GetAllInPromotionAsync(promotionId);
-
-        List<GroupPromotionImageFile> output = new();
-
-        foreach (GroupPromotionImageFileData imageFileData in imageFileDatas)
-        {
-            Stream? fileStream = _groupPromotionFileManagementService.GetFileStream(imageFileData.FileName);
-
-            GroupPromotionImageFile imageFile = new()
-            {
-                Id = imageFileData.Id,
-                PromotionId = imageFileData.PromotionId,
-                ImageId = imageFileData.ImageId,
-                FileName = imageFileData.FileName,
-                FileDataStream = fileStream,
-            };
-
-            output.Add(imageFile);
-        }
-
-        return output;
-    }
-
     public async Task<GroupPromotionImageFileData?> GetByIdAsync(int id)
     {
         return await _groupPromotionImageFileDataService.GetByIdAsync(id);
     }
 
-    public async Task<GroupPromotionImageFile?> GetByIdWithFileAsync(int id)
+    public Stream? GetFileStream(GroupPromotionImageFileData imageFile)
     {
-        GroupPromotionImageFileData? imageFile = await _groupPromotionImageFileDataService.GetByIdAsync(id);
-
-        if (imageFile is null) return null;
-
-        Stream? fileStream = _groupPromotionFileManagementService.GetFileStream(imageFile.FileName);
-
-        return new()
-        {
-            Id = imageFile.Id,
-            PromotionId = imageFile.PromotionId,
-            ImageId = imageFile.ImageId,
-            FileName = imageFile.FileName,
-            FileDataStream = fileStream,
-        };
+        return _groupPromotionFileManagementService.GetFileStream(imageFile.FileName);
     }
 
     public async Task<GroupPromotionImageFileData?> GetByImageIdAsync(int imageId)
     {
         return await _groupPromotionImageFileDataService.GetByImageIdAsync(imageId);
-    }
-
-    public async Task<GroupPromotionImageFile?> GetByImageIdWithFileAsync(int imageId)
-    {
-        GroupPromotionImageFileData? imageFile = await _groupPromotionImageFileDataService.GetByImageIdAsync(imageId);
-
-        if (imageFile is null) return null;
-
-        Stream? fileStream = _groupPromotionFileManagementService.GetFileStream(imageFile.FileName);
-
-        return new()
-        {
-            Id = imageFile.Id,
-            PromotionId = imageFile.PromotionId,
-            ImageId = imageFile.ImageId,
-            FileName = imageFile.FileName,
-            FileDataStream = fileStream,
-        };
     }
 
     public async Task<OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(
@@ -143,47 +86,6 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
             fileAlreadyExists => new ImageFileAlreadyExistsResult { ExistingImageId = image.Id });
     }
 
-    public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileNameAsync(
-        GroupPromotionImageFileDataUpdateRequest updateRequest)
-    {
-        return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            () => ChangeFileNameInternalAsync(updateRequest),
-            result => result.IsT0);
-    }
-
-    private async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileNameInternalAsync(
-        GroupPromotionImageFileDataUpdateRequest updateRequest)
-    {
-        GroupPromotionImageFileData? existingImageFileData = await _groupPromotionImageFileDataService.GetByIdAsync(updateRequest.Id);
-
-        if (existingImageFileData is null) return new NotFound();
-
-        if (Path.GetExtension(existingImageFileData.FileName) != Path.GetExtension(updateRequest.NewFileName))
-        {
-            ValidationFailure validationFailure = new()
-            {
-                ErrorMessage = "The file extension cannot be changed.",
-                PropertyName = nameof(updateRequest.NewFileName),
-            };
-
-            return new ValidationResult([validationFailure]);
-        }
-
-        OneOf<Success, NotFound, ValidationResult> result = await _groupPromotionImageFileDataService.UpdateAsync(updateRequest);
-
-        if (!result.IsT0)
-        {
-            return result.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
-        }
-
-        string newFileNameWithoutExtension = Path.GetFileNameWithoutExtension(updateRequest.NewFileName);
-
-        OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> renameFileResult
-            = _groupPromotionFileManagementService.RenameFile(existingImageFileData.FileName, newFileNameWithoutExtension);
-
-        return renameFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
-    }
-
     public async Task<OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>> ChangeFileAsync(
         GroupPromotionImageFileUpdateRequest updateRequest)
     {
@@ -199,18 +101,30 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 
         if (existingImageFileData is null) return new NotFound();
 
-        if (existingImageFileData.FileName == updateRequest.FileName)
+        if (existingImageFileData.FileName == updateRequest.FileName
+            && existingImageFileData.ContentType == updateRequest.ContentType)
         {
+            Console.WriteLine($"IN THE UPDATE FILE SECTION {updateRequest.FileName}, {updateRequest.ContentType}, {updateRequest.Image.Length}");
+
             OneOf<Success, FileDoesntExistResult> updateFileResult
                 = await _groupPromotionFileManagementService.UpdateFileAsync(updateRequest.FileName, updateRequest.Image);
 
-            return updateFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+            if (!updateFileResult.IsT0)
+            {
+                return updateFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
+            }
+
+            OneOf<Success, NotFound> changeRowVersionResult
+                = await _groupPromotionImageFileDataService.ChangeRowVersionAsync(updateRequest.Id);
+
+            return changeRowVersionResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
         }
 
         GroupPromotionImageFileDataUpdateRequest fileDataUpdateRequest = new()
         {
             Id = updateRequest.Id,
             NewFileName = updateRequest.FileName,
+            NewContentType = updateRequest.ContentType,
         };
 
         OneOf<Success, NotFound, ValidationResult> result = await _groupPromotionImageFileDataService.UpdateAsync(fileDataUpdateRequest);

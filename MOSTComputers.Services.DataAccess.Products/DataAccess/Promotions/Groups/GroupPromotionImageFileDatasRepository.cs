@@ -139,9 +139,10 @@ internal sealed class GroupPromotionImageFileDatasRepository : IGroupPromotionIm
                 WHERE {ImageIdColumnName} = @imageId
             )
             BEGIN
-                INSERT INTO {GroupPromotionImageFileDatasTableName} ({ImageIdColumnName}, {PromotionIdColumnName}, {FileNameColumnName})
+                INSERT INTO {GroupPromotionImageFileDatasTableName} (
+                    {ImageIdColumnName}, {PromotionIdColumnName}, {FileNameColumnName}, {ContentTypeColumnName}, {VersionColumnName})
                 OUTPUT INSERTED.Id INTO @NewIdTable (Id)
-                VALUES (@imageId, @promotionId, @FileName);
+                VALUES (@imageId, @promotionId, @FileName, @ContentType, @Version);
 
                 SELECT TOP 1 Id FROM @NewIdTable;
             END
@@ -158,6 +159,8 @@ internal sealed class GroupPromotionImageFileDatasRepository : IGroupPromotionIm
             promotionId = createRequest.PromotionId,
             imageId = createRequest.ImageId,
             FileName = createRequest.FileName,
+            ContentType = createRequest.ContentType,
+            Version = 1,
         };
 
         int? newId = await connection.ExecuteScalarAsync<int>(query, parameters, commandType: CommandType.Text);
@@ -180,7 +183,9 @@ internal sealed class GroupPromotionImageFileDatasRepository : IGroupPromotionIm
         const string query =
             $"""
             UPDATE {GroupPromotionImageFileDatasTableName}
-            SET {FileNameColumnName} = @fileName
+            SET {FileNameColumnName} = @FileName
+            SET {ContentTypeColumnName} = @ContentType
+            SET {VersionColumnName} = {VersionColumnName} + 1
             WHERE {IdColumnName} = @id;
             """;
 
@@ -189,7 +194,29 @@ internal sealed class GroupPromotionImageFileDatasRepository : IGroupPromotionIm
         var parameters = new
         {
             id = updateRequest.Id,
-            fileName = updateRequest.NewFileName,
+            FileName = updateRequest.NewFileName,
+            ContentType = updateRequest.NewContentType,
+        };
+
+        int affectedRows = await connection.ExecuteAsync(query, parameters, commandType: CommandType.Text);
+
+        return affectedRows > 0 ? new Success() : new NotFound();
+    }
+
+    public async Task<OneOf<Success, NotFound>> ChangeRowVersionAsync(int id)
+    {
+        const string query =
+            $"""
+            UPDATE {GroupPromotionImageFileDatasTableName}
+            SET {VersionColumnName} = {VersionColumnName} + 1
+            WHERE {IdColumnName} = @id;
+            """;
+
+        using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
+
+        var parameters = new
+        {
+            id = id,
         };
 
         int affectedRows = await connection.ExecuteAsync(query, parameters, commandType: CommandType.Text);

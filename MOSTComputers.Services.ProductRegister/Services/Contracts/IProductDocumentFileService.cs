@@ -14,6 +14,8 @@ public interface IProductDocumentFileService
     Stream? GetFileStreamByFileName(string fullFileName);
     Task<Stream?> GetFileStreamByIdAsync(int id);
     Task<OneOf<ProductDocument, ValidationResult, FileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(ServiceProductDocumentCreateRequest createRequest);
+    Task<OneOf<ProductDocument, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_InsertAsync(ServiceProductDocumentCreateRequest createRequest);
     Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServiceProductDocumentUpdateRequest updateRequest);
+    Task<OneOf<Success, NotFound>> FullSave_UpdateAsync(ServiceProductDocumentUpdateRequest updateRequest);
     Task<OneOf<Success, NotFound>> DeleteAsync(OneOf<int, string> idOrFileName);
 }

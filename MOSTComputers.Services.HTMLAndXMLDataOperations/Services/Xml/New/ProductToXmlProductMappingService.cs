@@ -33,43 +33,6 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
         Product product,
         List<ProductProperty>? productProperties = null,
         List<XmlProductImage>? xmlProductImages = null,
-        IEnumerable<Promotion>? productPromotions = null,
-        SubCategory? productSubCategory = null,
-        List<XmlSearchStringPartInfo>? searchStringPartInfos = null,
-        string? promotionPictureUrl = null)
-    {
-        List<XmlPromotion>? xmlPromotions = productPromotions is not null ? GetXmlPromotionsFromPromotions(product, productPromotions, promotionPictureUrl) : null;
-
-        List<XmlProductProperty> xmlProductProperties = productProperties is not null ? GetXmlPropertiesFromProductProperties(productProperties) : new();
-
-        XmlProduct xmlProduct = new()
-        {
-            Id = product.Id,
-            Name = product.Name ?? string.Empty,
-            StatusString = GetBGStatusStringFromStatusEnum(product.Status) ?? string.Empty,
-            GeneralDescription = product.PriceListDescription ?? string.Empty,
-            Price = product.Price ?? 0,
-            CurrencyCode = GetCurrencyCodeFromCurrency(product.Currency),
-            SearchString = product.SearchString ?? string.Empty,
-            Category = product.Category is not null ? Map(product.Category) : new(),
-            SubCategory = productSubCategory is not null ? Map(productSubCategory) : null,
-            WarrantyInMonths = product.StandardWarrantyTermMonths,
-            SearchStringParts = searchStringPartInfos,
-            Images = xmlProductImages ?? new(),
-            Promotions = xmlPromotions,
-            PartNumber1 = product.PartNumber1,
-            PartNumber2 = product.PartNumber2,
-            Manufacturer = product.Manufacturer is not null ? Map(product.Manufacturer) : new(),
-            Properties = xmlProductProperties,
-        };
-
-        return xmlProduct;
-    }
-
-    public XmlProduct MapProductDataToXmlProduct(
-        Product product,
-        List<ProductProperty>? productProperties = null,
-        List<XmlProductImage>? xmlProductImages = null,
         List<XmlPromotion>? xmlProductPromotions = null,
         XmlPromotionGroup? xmlGroupPromotion = null,
         SubCategory? productSubCategory = null,
@@ -135,7 +98,8 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
         };
     }
     
-    private static List<XmlPromotion> GetXmlPromotionsFromPromotions(Product product, IEnumerable<Promotion> promotions, string? promotionPictureUrl = null)
+    private static List<XmlPromotion> GetXmlPromotionsFromPromotions(
+        Product product, IEnumerable<Promotion> promotions, string? promotionPictureUrl = null)
     {
         List<XmlPromotion> output = new();
 
@@ -171,6 +135,9 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
                 ValidTo = promotion.ExpirationDate,
                 PromotionUSD = promotion.DiscountUSD,
                 PromotionEUR = promotion.DiscountEUR,
+                MinimumQuantity = promotion.MinimumQuantity,
+                MaximumQuantity = promotion.MaximumQuantity,
+                ExpireQuantity = promotion.ExpQuantity,
             };
 
             output.Add(xmlPromotion);

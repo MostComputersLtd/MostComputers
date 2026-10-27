@@ -1,4 +1,5 @@
-﻿@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+﻿@using MOSTComputers.Models.Product.Models
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @{
     string? currentImageUrl = null;
 
@@ -10,6 +11,10 @@
     }
 
     string imageButtonText = currentImageUrl != null ? "Change Image" : "Add Image";
+
+    bool existsRelated = PopupData.ManufacturersThatCanBeRelated.Exists(x => x.Id == PopupData?.Id);
+
+    bool defaultOptionIsSelected = !existsRelated;
 }
 
 <Popup PopupId="promotionGroupEditorPopup"
@@ -53,6 +58,21 @@
             </div>
 
             <div class="promotion-group-edit-row">
+                <label for="promotionGroupRelatedManufacturer" class="promotion-group-edit-input-label">Related Manufacturer</label>
+                <select id="promotionGroupRelatedManufacturer" class="promotion-group-edit-select">
+
+                    <option value="" selected="@defaultOptionIsSelected" disabled>Select</option>
+
+                    @foreach (Manufacturer manufacturer in PopupData.ManufacturersThatCanBeRelated)
+                    {
+                        bool isOptionSelected = manufacturer.Id == PopupData?.Id;
+
+                        <option value="@manufacturer.Id" selected="@isOptionSelected">@manufacturer.RealCompanyName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="promotion-group-edit-row">
                 <p class="promotion-group-edit-input-label">Logo</p>
                 <button id="promotionGroupLogoChangeButton"
                     type="button"
@@ -69,7 +89,7 @@
 
                 @if (currentImageUrl != null)
                 {
-                    <PromotionGroupEditorPopupImage ImageUrl="@currentImageUrl" />
+                    <PromotionGroupEditorPopupImage ImageUrl="@currentImageUrl" ContentType="@PopupData!.LogoContentType" />
                 }
             </div>  
         </div>
@@ -90,6 +110,7 @@
         public bool IsDefault { get; set; }
         public bool ShowEmptyForLogged { get; set; }
         public bool ShowEmptyForNonLogged { get; set; }
+        public required List<Manufacturer> ManufacturersThatCanBeRelated { get; set; }
     }
 
     [Parameter, EditorRequired] public required PromotionGroupEditorData PopupData { get; set; }

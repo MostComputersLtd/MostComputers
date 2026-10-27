@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using FluentValidation.Results;
-using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using MOSTComputers.Models.FileManagement.Models;
+using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Models.Product.Models.Validation;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
@@ -14,6 +16,7 @@ using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Products.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+using MOSTComputers.UI.Web.Blazor.Components.Primitives;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using OneOf;
@@ -45,11 +48,34 @@ public static class PromotionGroupsPageComponentEndpoints
     {
         public int? Index { get; set; }
         public string? ImageUrl { get; set; }
+        public string? ContentType { get; set; }
+    }
+
+    public sealed class GroupPromotionImageResizePopupData
+    {
+        public string? ImageIdentifierText { get; set; }
+        public string? ImageUrl { get; set; }
+        public int? CurrentWidth { get; set; }
+        public int? CurrentHeight { get; set; }
+        public int? PreferredResizeWidth { get; set; }
+        public int? PreferredResizeHeight { get; set; }
+		public string? OriginalFileName { get; set; }
+		public string? OriginalContentType { get; set; }
+        public MarginOptions? MarginOptions { get; set; }
+    }
+
+    public sealed class MarginOptions
+    {
+        public string Top { get; set; } = "0px";
+        public string Right { get; set; } = "0px";
+        public string Bottom { get; set; } = "0px";
+        public string Left { get; set; } = "0px";
     }
 
     public sealed class PromotionGroupLogoImageData
     {
         public string? ImageUrl { get; set; }
+        public string? ContentType { get; set; }
     }
 
     public sealed class GroupPromotionCreateRequest
@@ -83,6 +109,7 @@ public static class PromotionGroupsPageComponentEndpoints
         public int? DefaultGroupPriority { get; set; }
         public List<GroupPromotionImageKeepRequest>? ImageIdsToKeep { get; set; }
         public List<GroupPromotionImageCreateRequest>? PromotionImageCreateRequests { get; set; }
+        public List<GroupPromotionImageChangeFileRequest>? PromotionImageChangeFileRequests { get; set; }
         public List<int>? RelatedProductIds { get; set; }
     }
 
@@ -90,6 +117,13 @@ public static class PromotionGroupsPageComponentEndpoints
     {
         public int? Id { get; set; }
         public int? ImageIndex { get; set; }
+    }
+
+    public sealed class GroupPromotionImageChangeFileRequest
+    {
+        public int? Id { get; set; }
+        public int? ImageIndex { get; set; }
+        public IFormFile? NewImageFile { get; set; }
     }
 
     public sealed class GroupPromotionImageCreateRequest
@@ -102,6 +136,7 @@ public static class PromotionGroupsPageComponentEndpoints
     {
         public string? Name { get; init; }
         public int? DisplayOrder { get; init; }
+        public int? RelatedManufacturerId { get; init; }
         public IFormFile? LogoImage { get; init; }
     }
 
@@ -110,6 +145,7 @@ public static class PromotionGroupsPageComponentEndpoints
         public int? Id { get; init; }
         public string? Name { get; init; }
         public int? DisplayOrder { get; init; }
+        public int? RelatedManufacturerId { get; init; }
         public bool? PreserveOldImage { get; init; }
         public IFormFile? NewLogoImage { get; init; }
     }
@@ -127,6 +163,8 @@ public static class PromotionGroupsPageComponentEndpoints
     private const int _maxPromotionImageSize = 10 * 1024 * 1024;
     private const int _maxPromotionGroupLogoImageSize = 10 * 1024 * 1024;
 
+    private const string _promotionFileVersionQueryParameter = "v";
+
     public static IEndpointConventionBuilder MapPromotionGroupPageComponentEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute)
@@ -137,7 +175,7 @@ public static class PromotionGroupsPageComponentEndpoints
         endpointGroup.MapGet("/editor/new", GetGroupPromotionEditorForNewItemAsync);
         endpointGroup.MapGet("/editor/{id:int?}", GetGroupPromotionEditorForExistingItemAsync);
 
-        endpointGroup.MapGet("/groupEditorPopup/new", GetPromotionGroupEditorForNewItem);
+        endpointGroup.MapGet("/groupEditorPopup/new", GetPromotionGroupEditorForNewItemAsync);
         endpointGroup.MapGet("/groupEditorPopup/{id:int?}", GetPromotionGroupEditorForExistingItemAsync);
 
         endpointGroup.MapGet("/relatedProduct/{productId:int?}", GetGroupPromotionRelatedProductComponentAsync);
@@ -151,6 +189,8 @@ public static class PromotionGroupsPageComponentEndpoints
 
         endpointGroup.MapPost("/images", GetGroupPromotionImageComponent);
         endpointGroup.MapPost("/groupImages", GetPromotionGroupImageComponent);
+
+        endpointGroup.MapPost("/imagesResizePopup", GetGroupPromotionImageResizePopup);
 
         endpointGroup.MapPost("/create", InsertNewPromotionAsync)
             .AddEndpointFilter<AntiforgeryEndpointFilter>();
@@ -395,12 +435,18 @@ public static class PromotionGroupsPageComponentEndpoints
         {
             GroupPromotionImageFileData imageFile = groupPromotionImageFiles[i];
 
+            string imageUrl = CombinePathsWithSeparator('/', baseUrl, GroupPromotionImageFileEndpoints.EndpointGroupRoute, imageFile.Id.ToString());
+
+            imageUrl = QueryHelpers.AddQueryString(imageUrl, _promotionFileVersionQueryParameter, imageFile.Version.ToString());
+
             GroupPromotionImageEditorData imageData = new()
             {
                 Index = i,
                 ImageId = imageFile.ImageId,
-                ImageUrl = CombinePathsWithSeparator('/', baseUrl, GroupPromotionImageFileEndpoints.EndpointGroupRoute, imageFile.Id.ToString()),
+                ImageUrl = imageUrl,
                 Title = imageFile.FileName,
+                FileName = imageFile.FileName,
+                ContentType = imageFile.ContentType,
             };
 
             groupPromotionImageDatas.Add(imageData);
@@ -436,13 +482,44 @@ public static class PromotionGroupsPageComponentEndpoints
         });
     }
 
+    private static async Task<RazorComponentResult<PromotionGroupEditorPopup>> GetPromotionGroupEditorForNewItemAsync(
+        [FromServices] IManufacturerService manufacturerService,
+        [FromServices] IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService)
+    {
+        List<Manufacturer> manufacturers = await GetManufacturersForGroupEditorPopupAsync(
+            null, manufacturerService, manufacturerToPromotionGroupRelationService);
+
+        return new RazorComponentResult<PromotionGroupEditorPopup>(new
+        {
+            PopupData = new PromotionGroupEditorPopup.PromotionGroupEditorData()
+            {
+                IsVisible = false,
+                Id = null,
+                Name = null,
+                Header = null,
+                LogoImage = null,
+                LogoContentType = null,
+                DisplayOrder = null,
+                IsDefault = false,
+                ShowEmptyForLogged = false,
+                ShowEmptyForNonLogged = false,
+                ManufacturersThatCanBeRelated = manufacturers,
+            }
+        });
+    }
+
     private static async Task<IResult> GetPromotionGroupEditorForExistingItemAsync(
         [FromRoute] int id,
-        [FromServices] IPromotionGroupService promotionGroupService)
+        [FromServices] IPromotionGroupService promotionGroupService,
+        [FromServices] IManufacturerService manufacturerService,
+        [FromServices] IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService)
     {
         PromotionGroup? promotionGroup = await promotionGroupService.GetByIdAsync(id);
 
         if (promotionGroup == null) return Results.NotFound();
+
+        List<Manufacturer> manufacturers = await GetManufacturersForGroupEditorPopupAsync(
+            promotionGroup, manufacturerService, manufacturerToPromotionGroupRelationService);
 
         return new RazorComponentResult<PromotionGroupEditorPopup>(new
         {
@@ -458,28 +535,34 @@ public static class PromotionGroupsPageComponentEndpoints
                 IsDefault = promotionGroup.IsDefault,
                 ShowEmptyForLogged = promotionGroup.ShowEmptyForLogged,
                 ShowEmptyForNonLogged = promotionGroup.ShowEmptyForNonLogged,
+                ManufacturersThatCanBeRelated = manufacturers,
             }
         });
     }
 
-    private static RazorComponentResult<PromotionGroupEditorPopup> GetPromotionGroupEditorForNewItem()
+    private static async Task<List<Manufacturer>> GetManufacturersForGroupEditorPopupAsync(
+        PromotionGroup? promotionGroup,
+        IManufacturerService manufacturerService,
+        IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService)
     {
-        return new RazorComponentResult<PromotionGroupEditorPopup>(new
+        List<Manufacturer> manufacturers = await manufacturerService.GetAllAsync();
+
+        List<ManufacturerToPromotionGroupRelation> manufacturerToPromotionGroupRelations
+            = await manufacturerToPromotionGroupRelationService.GetAllAsync();
+
+        List<Manufacturer> manufacturersWithNoRelations = [];
+
+        foreach (Manufacturer manufacturer in manufacturers)
         {
-            PopupData = new PromotionGroupEditorPopup.PromotionGroupEditorData()
-            {
-                IsVisible = false,
-                Id = null,
-                Name = null,
-                Header = null,
-                LogoImage = null,
-                LogoContentType = null,
-                DisplayOrder = null,
-                IsDefault = false,
-                ShowEmptyForLogged = false,
-                ShowEmptyForNonLogged = false,
-            }
-        });
+            bool relationToOtherGroupExists = manufacturerToPromotionGroupRelations.Exists(
+                x => x.ManufacturerId == manufacturer.Id && x.PromotionGroupId != promotionGroup?.Id);
+
+            if (relationToOtherGroupExists) continue;
+
+            manufacturersWithNoRelations.Add(manufacturer);
+        }
+
+        return manufacturersWithNoRelations;
     }
 
     private static RazorComponentResult<GroupPromotionAddRelatedProductsPopup> GetAddRelatedProductsToPromotionPopupComponentAsync(
@@ -552,7 +635,8 @@ public static class PromotionGroupsPageComponentEndpoints
 
         if (imageUrlData?.Index == null
             || imageUrl == null
-            || !Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute))
+            || !Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute)
+            || imageUrlData.ContentType == null)
         {
             return Results.NotFound();
         }
@@ -577,9 +661,10 @@ public static class PromotionGroupsPageComponentEndpoints
                 Index = imageUrlData.Index.Value,
                 ImageUrl = imageUrl,
                 Title = imageUrl,
+                ContentType = imageUrlData.ContentType,
             }
         });
-    }
+    } 
 
     private static IResult GetPromotionGroupImageComponent(
         HttpContext httpContext,
@@ -588,7 +673,8 @@ public static class PromotionGroupsPageComponentEndpoints
         string? imageUrl = imageUrlData?.ImageUrl;
 
         if (imageUrl == null
-            || !Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute))
+            || !Uri.IsWellFormedUriString(imageUrl, UriKind.Absolute)
+            || imageUrlData!.ContentType == null)
         {
             return Results.NotFound();
         }
@@ -609,6 +695,48 @@ public static class PromotionGroupsPageComponentEndpoints
         return new RazorComponentResult<PromotionGroupEditorPopupImage>(new
         {
             ImageUrl = imageUrl,
+            ContentType = imageUrlData.ContentType
+        });
+    }
+
+    private static IResult GetGroupPromotionImageResizePopup(
+        [FromBody] GroupPromotionImageResizePopupData request)
+    {
+        if (string.IsNullOrEmpty(request.ImageIdentifierText)
+            || string.IsNullOrEmpty(request.ImageUrl)
+            || request.CurrentWidth == null
+            || request.CurrentHeight == null)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        Popup.MarginOptions marginOptions = new();
+
+        if (request.MarginOptions != null)
+        {
+            marginOptions.Top = request.MarginOptions.Top;
+            marginOptions.Right = request.MarginOptions.Right;
+            marginOptions.Bottom = request.MarginOptions.Bottom;
+            marginOptions.Left = request.MarginOptions.Left;
+        }
+
+        GroupPromotionEditorImageResizePopup.GroupPromotionEditorImageResizePopupData popupData = new()
+        {
+            IsVisible = true,
+            ImageIdentifierText = request.ImageIdentifierText,
+            ImageUrl = request.ImageUrl,
+            CurrentWidth = request.CurrentWidth.Value,
+            CurrentHeight = request.CurrentHeight.Value,
+            PreferredResizeWidth = request.PreferredResizeWidth,
+            PreferredResizeHeight = request.PreferredResizeHeight,
+            OriginalFileName = request.OriginalFileName,
+            OriginalContentType = request.OriginalContentType,
+            MarginOptions = marginOptions,
+        };
+
+        return new RazorComponentResult<GroupPromotionEditorImageResizePopup>(new
+        {
+            PopupData = popupData,
         });
     }
 
@@ -697,9 +825,12 @@ public static class PromotionGroupsPageComponentEndpoints
         if (groupPromotionUpdateRequest.Id == null) return Results.BadRequest();
 
         List<GroupPromotionImageCreateRequest>? promotionImageCreateRequests = groupPromotionUpdateRequest.PromotionImageCreateRequests;
+        List<GroupPromotionImageChangeFileRequest>? promotionImageChangeFileRequests = groupPromotionUpdateRequest.PromotionImageChangeFileRequests;
         List<GroupPromotionImageKeepRequest>? imageIdsToKeep = groupPromotionUpdateRequest.ImageIdsToKeep;
 
-        int totalImagesCount = (promotionImageCreateRequests?.Count ?? 0) + (imageIdsToKeep?.Count ?? 0);
+        int totalImagesCount = (promotionImageCreateRequests?.Count ?? 0)
+            + (promotionImageChangeFileRequests?.Count ?? 0)
+            + (imageIdsToKeep?.Count ?? 0);
 
         ServiceGroupPromotionImageUpsertRequest[] imageUpsertRequests = new ServiceGroupPromotionImageUpsertRequest[totalImagesCount];
 
@@ -744,15 +875,84 @@ public static class PromotionGroupsPageComponentEndpoints
             }
         }
 
-        if (imageIdsToKeep != null)
+        List<GroupPromotionImage>? currentImages = null;
+        List<GroupPromotionImageFileData>? currentImageFiles = null;
+
+        bool areThereAnyFilesToChange = promotionImageChangeFileRequests?.Count > 0;
+        bool areThereAnyImagesToKeep = imageIdsToKeep?.Count > 0;
+
+        if (areThereAnyFilesToChange || areThereAnyImagesToKeep)
         {
-            List<GroupPromotionImage> currentImages
-                = await groupPromotionImageService.GetAllInPromotionAsync(groupPromotionUpdateRequest.Id.Value);
+            currentImages = await groupPromotionImageService.GetAllInPromotionAsync(groupPromotionUpdateRequest.Id.Value);
+            currentImageFiles = await groupPromotionImageFileService.GetAllInPromotionAsync(groupPromotionUpdateRequest.Id.Value);
+        }
 
-            List<GroupPromotionImageFileData> currentImageFiles
-                = await groupPromotionImageFileService.GetAllInPromotionAsync(groupPromotionUpdateRequest.Id.Value);
+        if (areThereAnyFilesToChange)
+        {
+            foreach (GroupPromotionImageChangeFileRequest changeFileRequest in promotionImageChangeFileRequests!)
+            {
+                if (changeFileRequest.ImageIndex == null
+                    || changeFileRequest.ImageIndex < 0
+                    || changeFileRequest.ImageIndex > totalImagesCount)
+                {
+                    return Results.BadRequest();
+                }
 
-            foreach (GroupPromotionImageKeepRequest imageKeepRequest in imageIdsToKeep)
+                int? imageId = changeFileRequest.Id;
+
+                if (imageId == null) return Results.BadRequest();
+
+                GroupPromotionImage? existingImage = currentImages!.FirstOrDefault(x => x.Id == imageId);
+                GroupPromotionImageFileData? existingImageFile = currentImageFiles!.FirstOrDefault(x => x.ImageId == imageId);
+
+                IFormFile? imageFile = changeFileRequest.NewImageFile;
+
+                if (imageFile == null
+                    || imageFile.Length > _maxPromotionImageSize)
+                {
+                    return Results.BadRequest();
+                }
+
+                if (existingImage == null)
+                {
+                    return Results.BadRequest();
+                }
+
+                string imageFileExtension = Path.GetExtension(imageFile.FileName);
+
+                if (existingImageFile == null
+                    || Path.GetExtension(existingImageFile.FileName) != imageFileExtension
+                    || existingImageFile.ContentType != imageFile.ContentType)
+                {
+                    return Results.BadRequest();
+                }
+
+                Stream imageStream = imageFile.OpenReadStream();
+
+                using MemoryStream memoryStream = new();
+
+                await imageStream.CopyToAsync(memoryStream);
+
+                ServiceGroupPromotionImageUpsertRequest imageUpsertRequest = new()
+                {
+                    ExistingImageId = imageId,
+                    Image = memoryStream.ToArray(),
+                    ContentType = imageFile.ContentType,
+                    FileExtension = imageFileExtension,
+                    CustomFileNameWithoutExtension = null,
+                };
+
+                int imageIndex = changeFileRequest.ImageIndex.Value;
+
+                if (imageUpsertRequests[imageIndex] != null) return Results.BadRequest();
+
+                imageUpsertRequests[imageIndex] = imageUpsertRequest;
+            }
+        }
+
+        if (areThereAnyImagesToKeep)
+        { 
+            foreach (GroupPromotionImageKeepRequest imageKeepRequest in imageIdsToKeep!)
             {
                 if (imageKeepRequest.ImageIndex == null
                     || imageKeepRequest.ImageIndex < 0
@@ -761,35 +961,21 @@ public static class PromotionGroupsPageComponentEndpoints
                     return Results.BadRequest();
                 }
 
-                if (imageKeepRequest.Id == null || imageKeepRequest.ImageIndex == null) return Results.BadRequest();
+                if (imageKeepRequest.Id == null) return Results.BadRequest();
 
                 int idToKeep = imageKeepRequest.Id.Value;
 
-                GroupPromotionImage? image = currentImages.FirstOrDefault(x => x.Id == idToKeep);
-                GroupPromotionImageFileData? imageFile = currentImageFiles.FirstOrDefault(x => x.ImageId == idToKeep);
+                GroupPromotionImage? existingImage = currentImages!.FirstOrDefault(x => x.Id == idToKeep);
+                GroupPromotionImageFileData? existingImageFile = currentImageFiles!.FirstOrDefault(x => x.ImageId == idToKeep);
 
-                if (image == null || imageFile == null) continue;
-
-                string contentTypeFromImage = image.ContentType!.Trim();
-
-                if (contentTypeFromImage.StartsWith("image/."))
-                {
-                    int indexOfDot = contentTypeFromImage.IndexOf('.');
-
-                    contentTypeFromImage = contentTypeFromImage.Remove(indexOfDot, 1);
-                }
-
-                if (contentTypeFromImage.Equals("image/jpg", StringComparison.OrdinalIgnoreCase))
-                {
-                    contentTypeFromImage = "image/jpeg";
-                }
+                if (existingImage == null || existingImageFile == null) continue;
 
                 ServiceGroupPromotionImageUpsertRequest imageUpsertRequest = new()
                 {
                     ExistingImageId = idToKeep,
-                    ContentType = contentTypeFromImage,
-                    Image = image.Image!,
-                    FileExtension = Path.GetExtension(imageFile.FileName),
+                    ContentType = existingImageFile.ContentType,
+                    Image = existingImage.Image!,
+                    FileExtension = Path.GetExtension(existingImageFile.FileName),
                     CustomFileNameWithoutExtension = null,
                 };
 
@@ -834,6 +1020,17 @@ public static class PromotionGroupsPageComponentEndpoints
             ImageRequests = imageUpsertRequests.ToList(),
             RelatedProductIds = groupPromotionUpdateRequest.RelatedProductIds,
         };
+
+        Console.WriteLine(JsonSerializer.Serialize(new {
+            images = imageUpsertRequests.Select(x => new {
+                    x.ExistingImageId,
+                    x.ContentType,
+                    x.FileExtension,
+                    length = x.Image.Length,
+                    x.CustomFileNameWithoutExtension
+                }),
+            htmlContent = htmlContent,
+        }));
 
         OneOf<Success, OneOf.Types.NotFound, ValidationResult, ImageFileAlreadyExistsResult, FileDoesntExistResult, UnexpectedFailureResult> result
             = await groupPromotionService.UpdateAsync(updateRequest);
@@ -884,6 +1081,7 @@ public static class PromotionGroupsPageComponentEndpoints
             Logo = promotionGroupLogo,
             ShowEmptyForLogged = false,
             ShowEmptyForNonLogged = false,
+            RelatedManufacturerId = createRequest.RelatedManufacturerId,
         };
 
         OneOf<int, ValidationResult, UnexpectedFailureResult> createResult
@@ -955,15 +1153,17 @@ public static class PromotionGroupsPageComponentEndpoints
             Logo = promotionGroupLogo,
             ShowEmptyForLogged = false,
             ShowEmptyForNonLogged = false,
+            RelatedManufacturerId = updateRequest.RelatedManufacturerId,
         };
 
-        OneOf<Success, OneOf.Types.NotFound, ValidationResult> updateResult
+        OneOf<Success, OneOf.Types.NotFound, ValidationResult, UnexpectedFailureResult> updateResult
              = await promotionGroupService.UpdateAsync(updateRequestInner);
 
         return updateResult.Match(
             success => Results.Ok(),
             notFound => Results.NotFound(),
-            validationResult => Results.BadRequest());
+            validationResult => Results.BadRequest(),
+            unexpectedFailureResult => Results.InternalServerError());
     }
 
 

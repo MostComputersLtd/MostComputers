@@ -16,12 +16,12 @@
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using Microsoft.AspNetCore.WebUtilities
 @using OneOf
 @using OneOf.Types
-
-@using static MOSTComputers.Utils.Files.FilePathUtils;
 @using static MOSTComputers.UI.Web.Blazor.Components.Product.ProductData;
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using static MOSTComputers.Utils.Files.FilePathUtils;
 
 @inject IProductService ProductService
 @inject IProductPropertyService ProductPropertyService
@@ -210,8 +210,13 @@
                 string? modifiedPromotionHtmlContent = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
                     groupPromotionContent.HtmlContent,
                     imageFilesForPromotion,
-                    promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-                );
+                    promotionImageFile =>
+                    {
+                        string imageUrl = CombinePathsWithSeparator(
+                        '/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString());
+
+                        return QueryHelpers.AddQueryString(imageUrl, "v", promotionImageFile.Version.ToString());
+                    });
 
                 if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
 

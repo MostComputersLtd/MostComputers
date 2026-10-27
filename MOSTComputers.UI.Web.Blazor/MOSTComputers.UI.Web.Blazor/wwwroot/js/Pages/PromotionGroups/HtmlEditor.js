@@ -1,5 +1,5 @@
 ﻿import * as common from "./Common.js";
-import * as imageAndHtmlEditorCommon from "./CreateHtmlImageRepresentation.js";
+import * as createHtmlImageRepresentation from "./CreateHtmlImageRepresentation.js";
 
 export function addEventsToHtmlContent() {
 
@@ -34,8 +34,8 @@ export function onHtmlContentInputPaste(e) {
 
     e.preventDefault();
 
-    if (!text.startsWith(imageAndHtmlEditorCommon.copyImageRepresentationStart)
-        || !text.endsWith(imageAndHtmlEditorCommon.copyImageRepresentationEnd))
+    if (!text.startsWith(createHtmlImageRepresentation.copyImageRepresentationStart)
+        || !text.endsWith(createHtmlImageRepresentation.copyImageRepresentationEnd))
     {
         const textNode = document.createTextNode(text);
 
@@ -49,37 +49,9 @@ export function onHtmlContentInputPaste(e) {
 
 function addImageRepresentationToHtmlContent(imageRepresentation)
 {
-    let imageDataStartIndex = imageRepresentation.indexOf(imageAndHtmlEditorCommon.copyImageRepresentationStart) + imageAndHtmlEditorCommon.copyImageRepresentationStart.length;
-    let imageDataEndIndex = imageRepresentation.indexOf(imageAndHtmlEditorCommon.copyImageRepresentationEnd);
+    const imageData = createHtmlImageRepresentation.readImageRepresentationData(imageRepresentation);
 
-    let imageData = imageRepresentation.substring(imageDataStartIndex, imageDataEndIndex);
-
-    const imageDataFields = imageData.split(imageAndHtmlEditorCommon.copyImageDataSeparator);
-
-    let imageIndex;
-    let imageId;
-
-    for (const imageDataField of imageDataFields) {
-
-        if (imageDataField.startsWith(imageAndHtmlEditorCommon.copyImageIndexPrefix)) {
-
-            const imageIndexStartIndex = imageAndHtmlEditorCommon.copyImageIndexPrefix.length;
-
-            const imageIndexAsString = imageDataField.substring(imageIndexStartIndex);
-
-            imageIndex = parseInt(imageIndexAsString);
-        }
-        else if (imageDataField.startsWith(imageAndHtmlEditorCommon.copyImageIdPrefix)) {
-
-            const imageIdStartIndex = imageAndHtmlEditorCommon.copyImageIdPrefix.length;
-
-            const imageIdAsString = imageDataField.substring(imageIdStartIndex);
-
-            imageId = parseInt(imageIdAsString);
-        }
-    }
-
-    const imageSpan = imageAndHtmlEditorCommon.createImageVisibleRepresentation(imageIndex, imageId);
+    const imageSpan = createHtmlImageRepresentation.createImageVisibleRepresentation(imageData.imageIndex, imageData.imageId);
 
     insertNodeAtEditorTextCaret(imageSpan);
 }
@@ -155,7 +127,7 @@ function replaceHtmlContentImageUrls(textNode, imageFileFormat, imageIdsToIndexe
 
         const afterImageRepresentation = afterStart.splitText(imageIdEndIndex - imageUrlStartIndex);
 
-        const imageRepresentationInHtmlContent = imageAndHtmlEditorCommon.createImageVisibleRepresentation(imageIndex, imageId);
+        const imageRepresentationInHtmlContent = createHtmlImageRepresentation.createImageVisibleRepresentation(imageIndex, imageId);
 
         afterStart.parentNode.replaceChild(imageRepresentationInHtmlContent, afterStart);
 

@@ -1,18 +1,41 @@
 <div id="promotionGroupEditLogoImageContainer" class="promotion-group-edit-logo-image-container">
 
-	<img src="@ImageUrl" class="promotion-group-edit-logo-image" />
+    <img src="@ImageUrl" class="promotion-group-edit-logo-image" />
 
-	<div class="promotion-group-edit-image-delete-button-container">
+    <div class="promotion-edit-image-resize-button-container">
+        <button id="promotionEditImageResizeButton"
+            name="promotionEditImageResizeButton"
+            type="button"
+            class="btn promotion-group-edit-image-resize-button"
+            aria-label="Resize"
+            data-image-content-type="@ContentType">
 
-		<button id="promotionGroupImageDeleteButton"
-			name="promotionGroupImageDeleteButton"
-			type="button"
-			class="btn-close promotion-group-edit-image-delete-button"
-			aria-label="Delete" />
-			@* onclick="removePromotionGroupImage()" *@
-	</div>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="promotion-group-edit-image-resize-button-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+
+                <path d="M8 4H4v4 M4 4l7 7"/>
+                <path d="M16 20h4v-4 M20 20l-7-7"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="promotion-group-edit-image-delete-button-container">
+
+        <button id="promotionGroupImageDeleteButton"
+            name="promotionGroupImageDeleteButton"
+            type="button"
+            class="btn-close promotion-group-edit-image-delete-button"
+            aria-label="Delete" />
+    </div>
 </div>
 
 @code {
-	[Parameter, EditorRequired] public required string ImageUrl { get; set; }
+    [Parameter, EditorRequired] public required string ImageUrl { get; set; }
+    [Parameter, EditorRequired] public required string ContentType { get; set; }
 }

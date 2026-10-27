@@ -158,7 +158,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
         return data;
     }
 
-    public async Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ProductImageFileNameInfoCreateRequest createRequest)
+    public async Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(ProductImageFileNameInfoCreateRequest createRequest)
     {
         const string insertQuery =
             $"""
@@ -226,7 +226,7 @@ internal sealed class ProductImageFileDataRepository : IProductImageFileDataRepo
         return newFileNameInfoId;
     }
 
-    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateAsync(ProductImageFileNameInfoByIdUpdateRequest updateRequest)
+    public async Task<OneOf<Success, UnexpectedFailureResult>> UpdateAsync(ProductImageFileNameInfoByIdUpdateRequest updateRequest)
     {
         const string updateQuery =
             $"""

@@ -78,11 +78,20 @@ public class ApplicationDataSyncService
 
 			int indexOfDotInBadFormattedContentType = image.ContentType.IndexOf('.');
 
-			string fileExtension = indexOfDotInBadFormattedContentType > 0
-                ? image.ContentType[indexOfDotInBadFormattedContentType..]
-				: string.Empty;
+			string fileExtension = string.Empty;
+            string contentType = string.Empty;
 
-			if (string.IsNullOrEmpty(fileExtension)) continue;
+            if (indexOfDotInBadFormattedContentType > 0)
+            {
+                fileExtension = image.ContentType[indexOfDotInBadFormattedContentType..];
+                contentType = image.ContentType.Remove(indexOfDotInBadFormattedContentType, 1);
+            }
+
+			if (string.IsNullOrEmpty(fileExtension)
+                || string.IsNullOrEmpty(fileExtension))
+            {
+                continue;
+            }
 
 			string fileName = image.Id.ToString() + fileExtension;
 
@@ -91,6 +100,7 @@ public class ApplicationDataSyncService
 				PromotionId = image.PromotionId,
 				ImageId = image.Id,
 				FileName = fileName,
+                ContentType = contentType,
 			};
 
 			OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> result

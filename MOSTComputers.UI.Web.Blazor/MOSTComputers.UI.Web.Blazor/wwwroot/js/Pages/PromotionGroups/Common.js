@@ -50,11 +50,15 @@ export const promotionGroupEditorPopupId = "promotionGroupEditorPopup";
 export const promotionGroupSaveButtonId = "promotionGroupSaveButton";
 export const promotionGroupNameInputId = "promotionGroupName";
 export const promotionGroupDisplayOrderInputId = "promotionGroupDisplayOrder";
+export const promotionGroupRelatedManufacturerSelectId = "promotionGroupRelatedManufacturer";
 export const promotionGroupLogoImageDisplayId = "promotionGroupLogoImageDisplay";
 export const promotionGroupLogoChangeButtonId = "promotionGroupLogoChangeButton";
 export const promotionGroupLogoInputId = "promotionGroupLogoInput";
 export const promotionGroupEditLogoImageContainerId = "promotionGroupEditLogoImageContainer";
+export const promotionGroupImageResizeButtonId = "promotionGroupImageResizeButton";
 export const promotionGroupImageDeleteButtonId = "promotionGroupImageDeleteButton";
+
+export const imageResizePopupContainerId = "imageResizePopupContainer";
 
 export const addRelatedProductsPopupContainerId = "addRelatedProductsPopupContainer";
 
@@ -73,6 +77,7 @@ export const promotionListItemsName = "promotionListItem";
 
 export const promotionImageListItemsName = "promotionEditImageListItem";
 export const promotionImagesName = "promotionEditImage";
+export const promotionImageResizeButtonsName = "promotionEditImageResizeButton";
 export const promotionImageDeleteButtonsName = "promotionEditImageDeleteButton";
 export const htmlContentImageSpanName = "groupPromotionEditorHtmlContentImageSpan";
 
@@ -87,6 +92,10 @@ export const promotionEditorPromotionGroupIdAttribute = "data-current-promotion-
 
 export const promotionEditorImageIdAttribute = "data-current-promotion-image-id";
 export const promotionEditorImageIndexAttribute = "data-current-promotion-image-index";
+export const promotionEditorImageFileNameAttribute = "data-current-promotion-image-file-name";
+export const promotionEditorImageContentTypeAttribute = "data-current-promotion-image-content-type";
+
+export const promotionGroupEditorImageContentTypeAttribute = "data-image-content-type";
 
 export const htmlContentImageSpanImageIndexAttribute = "data-promotion-image-index-in-span";
 export const htmlContentImageSpanImageIdAttribute = "data-promotion-image-id-in-span";

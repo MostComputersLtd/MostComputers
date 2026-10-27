@@ -4,6 +4,28 @@
 
 <li id="promotionEditImageListItem-@Image.Index" name="promotionEditImageListItem" class="promotion-edit-image-list-item">
 
+    <div class="promotion-edit-image-resize-button-container">
+        <button id="promotionEditImageResizeButton-@Image.Index"
+            name="promotionEditImageResizeButton"
+            type="button"
+            class="btn promotion-edit-image-resize-button"
+            aria-label="Resize">
+
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="promotion-edit-image-resize-button-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+
+                <path d="M8 4H4v4 M4 4l7 7"/>
+                <path d="M16 20h4v-4 M20 20l-7-7"/>
+            </svg>
+        </button>
+    </div>
+
 	<div class="promotion-edit-image-delete-button-container">
 
 		<button id="promotionEditImageDeleteButton-@Image.Index"
@@ -21,7 +43,9 @@
 		aria-label="@imageTitle"
 		title="@imageTitle"
 		data-current-promotion-image-index="@Image.Index"
-		data-current-promotion-image-id="@(Image.ImageId != null ? Image.ImageId : string.Empty)" />
+		data-current-promotion-image-id="@(Image.ImageId != null ? Image.ImageId : string.Empty)"
+		data-current-promotion-image-file-name="@Image.FileName"
+		data-current-promotion-image-content-type="@Image.ContentType" />
 </li>
 
 @code {
@@ -31,6 +55,8 @@
 		public int? ImageId { get; set; }
 		public required string ImageUrl { get; set; }
 		public string? Title { get; set; }
+		public string? FileName { get; set; }
+		public string? ContentType { get; set; }
 	}
 
 	[Parameter, EditorRequired] public required GroupPromotionImageEditorData Image { get; set; }

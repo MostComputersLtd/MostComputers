@@ -26,11 +26,14 @@ internal interface IProductImageCrudService
     Task<ProductImage?> GetByProductIdInFirstImagesAsync(int productId);
     Task<bool> DoesProductHaveImageInFirstImagesAsync(int productId);
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertInAllImagesAsync(ServiceProductImageCreateRequest createRequest);
+    Task<OneOf<int, UnexpectedFailureResult>> FullSave_InsertInAllImagesAsync(ServiceProductImageCreateRequest createRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInAllImagesAsync(ServiceProductImageUpdateRequest updateRequest);
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> UpsertInAllImagesAsync(ProductImageUpsertRequest productImageUpsertRequest);
+    Task<OneOf<int, UnexpectedFailureResult>> FullSave_UpsertInAllImagesAsync( ProductImageUpsertRequest productImageUpsertRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> InsertInFirstImagesAsync(ServiceProductFirstImageCreateRequest createRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateInFirstImagesAsync(ServiceProductFirstImageUpdateRequest updateRequest);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertInFirstImagesAsync(ServiceProductFirstImageUpsertRequest upsertRequest);
+    Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpsertInFirstImagesAsync(ServiceProductFirstImageUpsertRequest upsertRequest);
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInAllImagesByIdAsync(int imageId, string htmlData);
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstImagesByProductIdAsync(int productId, string htmlData);
     Task<OneOf<bool, ValidationResult, UnexpectedFailureResult>> UpdateHtmlDataInFirstAndAllImagesByProductIdAsync(int productId, string htmlData);

@@ -325,6 +325,21 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
         return upsertResult;
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_UpsertByProductIdAsync(
+        ServiceProductWorkStatusesUpsertRequest upsertRequest)
+    {
+        OneOf<int, UnexpectedFailureResult> upsertResult
+            = await _productWorkStatusesService.FullSave_UpsertByProductIdAsync(upsertRequest);
+
+        if (upsertResult.IsT0)
+        {
+            await _fusionCache.RemoveAsync(GetByIdKey(upsertResult.AsT0));
+            await _fusionCache.RemoveAsync(GetByProductIdKey(upsertRequest.ProductId));
+        }
+
+        return upsertResult;
+    }
+
     public async Task<bool> DeleteAllAsync()
     {
         List<ProductWorkStatuses> productWorkStatuses = await GetAllAsync();
@@ -379,5 +394,5 @@ internal sealed class CachedProductWorkStatusesService : IProductWorkStatusesSer
         await _fusionCache.RemoveByTagAsync(GetProductIdTag(productId));
 
         return true;
-    }
+    } 
 }

@@ -5,4 +5,6 @@ public sealed class GroupPromotionImageFileData
     public int? PromotionId { get; init; }
     public required int ImageId { get; init; }
     public required string FileName { get; init; }
+    public required string ContentType { get; init; }
+    public required long Version { get; init; }
 }

@@ -80,6 +80,11 @@ public sealed class GroupPromotionImageFileDataService : IGroupPromotionImageFil
         return result.Map<Success, NotFound, ValidationResult>();
     }
 
+    public Task<OneOf<Success, NotFound>> ChangeRowVersionAsync(int id)
+    {
+        return _groupPromotionImageFileDatasRepository.ChangeRowVersionAsync(id);
+    }
+
     public async Task<bool> DeleteAsync(int id)
     {
         return await _groupPromotionImageFileDatasRepository.DeleteAsync(id);

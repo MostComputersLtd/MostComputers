@@ -280,6 +280,8 @@ internal static class TableAndColumnNameUtils
         internal const string ImageIdColumnName = "ImageId";
         internal const string PromotionIdColumnName = "PromotionId";
         internal const string FileNameColumnName = "FileName";
+        internal const string ContentTypeColumnName = "ContentType";
+        internal const string VersionColumnName = "Version";
     }
 
     internal static class PromotionFilesTable

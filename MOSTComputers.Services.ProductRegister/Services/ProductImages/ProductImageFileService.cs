@@ -157,7 +157,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
             LastUpdateDate = createDate,
         };
 
-        OneOf<int, ValidationResult, UnexpectedFailureResult> imageFileNameInfoInsertResult = await _imageFileNameInfoRepository.InsertAsync(createRequestInternal);
+        OneOf<int, UnexpectedFailureResult> imageFileNameInfoInsertResult = await _imageFileNameInfoRepository.InsertAsync(createRequestInternal);
 
         if (!imageFileNameInfoInsertResult.IsT0)
         {
@@ -191,6 +191,48 @@ internal sealed class ProductImageFileService : IProductImageFileService
             statusId => newImageFileId,
             validationResult => validationResult,
             unexpectedFailureResult => unexpectedFailureResult);
+    }
+
+    public async Task<OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_InsertFileInternalAsync(
+        ProductImageFileCreateRequest createRequest)
+    {
+        DateTime createDate = DateTime.Now;
+
+        ProductImageFileNameInfoCreateRequest createRequestInternal = new()
+        {
+            ProductId = createRequest.ProductId,
+            ImageId = createRequest.ImageId,
+            FileName = createRequest.FileData?.FileName,
+            CustomDisplayOrder = createRequest.CustomDisplayOrder,
+            Active = createRequest.Active ?? false,
+            CreateUserName = createRequest.CreateUserName,
+            CreateDate = createDate,
+            LastUpdateUserName = createRequest.CreateUserName,
+            LastUpdateDate = createDate,
+        };
+
+        OneOf<int, UnexpectedFailureResult> imageFileNameInfoInsertResult
+            = await _imageFileNameInfoRepository.InsertAsync(createRequestInternal);
+
+        if (!imageFileNameInfoInsertResult.IsT0)
+        {
+            return imageFileNameInfoInsertResult.Map<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+        }
+
+        int newImageFileId = imageFileNameInfoInsertResult.AsT0;
+
+        FileData? fileData = createRequest.FileData;
+
+        if (fileData == null) return newImageFileId;
+
+        OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult> fileCreateResult
+            = await _productImageFileManagementService.AddImageAsync(fileData.FileName, fileData.Data);
+
+        return fileCreateResult.Match<OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+            success => newImageFileId,
+            fileSaveFailureResult => fileSaveFailureResult,
+            directoryNotFoundResult => new UnexpectedFailureResult(),
+            fileAlreadyExistsResult => fileAlreadyExistsResult);
     }
 
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateFileAsync(
@@ -249,7 +291,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
             LastUpdateDate = updateDate,
         };
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateImageFileNameInfoResult = await _imageFileNameInfoRepository.UpdateAsync(updateRequestInternal);
+        OneOf<Success, UnexpectedFailureResult> updateImageFileNameInfoResult = await _imageFileNameInfoRepository.UpdateAsync(updateRequestInternal);
 
         if (!updateImageFileNameInfoResult.IsT0)
         {
@@ -292,6 +334,72 @@ internal sealed class ProductImageFileService : IProductImageFileService
             statusId => new Success(),
             validationResult => validationResult,
             unexpectedFailureResult => unexpectedFailureResult);
+    }
+
+    public async Task<OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+        FullSave_UpdateFileInternalAsync(
+        ProductImageFileUpdateRequest updateRequest,
+        ProductImageFileData fileNameInfo)
+    {
+        DateTime updateDate = DateTime.Now;
+
+        int? newImageId = fileNameInfo.ImageId;
+
+        if (updateRequest.UpdateImageIdRequest.IsT0)
+        {
+            newImageId = updateRequest.UpdateImageIdRequest.AsT0;
+        }
+
+        string? newFileName = fileNameInfo.FileName;
+
+        if (updateRequest.UpdateFileDataRequest is not null)
+        {
+            newFileName = updateRequest.UpdateFileDataRequest?.FileData?.FileName;
+        }
+
+        ProductImageFileNameInfoByIdUpdateRequest updateRequestInternal = new()
+        {
+            Id = updateRequest.Id,
+            ImageId = newImageId,
+            ShouldUpdateDisplayOrder = updateRequest.NewDisplayOrder is not null,
+            NewDisplayOrder = updateRequest.NewDisplayOrder,
+            FileName = newFileName,
+            Active = updateRequest.Active ?? false,
+            LastUpdateUserName = updateRequest.UpdateUserName,
+            LastUpdateDate = updateDate,
+        };
+
+        OneOf<Success, UnexpectedFailureResult> updateImageFileNameInfoResult = await _imageFileNameInfoRepository.UpdateAsync(updateRequestInternal);
+
+        if (!updateImageFileNameInfoResult.IsT0)
+        {
+            return updateImageFileNameInfoResult.Map<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+        }
+
+        if (updateRequest.UpdateFileDataRequest is null) return new Success();
+
+        if (fileNameInfo.FileName is not null)
+        {
+            OneOf<Success, FileDoesntExistResult> deleteOldFileResult = _productImageFileManagementService.DeleteFile(fileNameInfo.FileName);
+
+            if (!deleteOldFileResult.IsT0)
+            {
+                return deleteOldFileResult.Map<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+            }
+        }
+
+        FileData? fileData = updateRequest.UpdateFileDataRequest.FileData;
+
+        if (fileData is null) return new Success();
+
+        OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult> addNewImageFileResult
+           = await _productImageFileManagementService.AddImageAsync(fileData.FileName, fileData.Data);
+
+        return addNewImageFileResult.Match<OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
+            success => success,
+            fileSaveFailureResult => fileSaveFailureResult,
+            directoryNotFoundResult => new UnexpectedFailureResult(),
+            fileAlreadyExistsResult => fileAlreadyExistsResult);
     }
 
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> ChangeFileAsync(
@@ -467,10 +575,10 @@ internal sealed class ProductImageFileService : IProductImageFileService
             LastUpdateDate = updateDate,
         };
 
-        OneOf<Success, ValidationResult, UnexpectedFailureResult> updateFileNameInfoResult
+        OneOf<Success, UnexpectedFailureResult> updateFileNameInfoResult
             = await _imageFileNameInfoRepository.UpdateAsync(updateRequestInternal);
 
-        return updateFileNameInfoResult;
+        return updateFileNameInfoResult.Map<Success, ValidationResult, UnexpectedFailureResult>();
     }
 
     public async Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteAllFilesForProductAsync(
@@ -608,6 +716,21 @@ internal sealed class ProductImageFileService : IProductImageFileService
             statusId => new Success(),
             validationResult => validationResult,
             unexpectedFailureResult => unexpectedFailureResult);
+    }
+
+    public async Task<OneOf<Success, NotFound, FileDoesntExistResult>> FullSave_DeleteFileInternalAsync(
+        ProductImageFileData fileNameInfo)
+    {
+        bool isProductImageFileNameDeleted = await _imageFileNameInfoRepository.DeleteAsync(fileNameInfo.Id);
+
+        if (!isProductImageFileNameDeleted) return new NotFound();
+
+        if (fileNameInfo.FileName is null) return new Success();
+
+        OneOf<Success, FileDoesntExistResult> deleteFileResult
+            = _productImageFileManagementService.DeleteFile(fileNameInfo.FileName);
+
+        return deleteFileResult.Map<Success, NotFound, FileDoesntExistResult>();
     }
 
     private async Task<ValidationResult> ValidateImageIdForFileAsync(

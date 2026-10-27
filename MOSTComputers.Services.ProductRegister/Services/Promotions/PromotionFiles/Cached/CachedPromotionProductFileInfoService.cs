@@ -272,6 +272,22 @@ internal sealed class CachedPromotionProductFileInfoService : IPromotionProductF
         return insertResult;
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_InsertAsync(ServicePromotionProductFileInfoCreateRequest createRequest)
+    {
+        OneOf<int, UnexpectedFailureResult> insertResult = await _promotionProductFileInfoService.FullSave_InsertAsync(createRequest);
+
+        if (insertResult.IsT0)
+        {
+            await _fusionCache.RemoveAsync(GetAllByProductIdKey(createRequest.ProductId));
+
+            await _fusionCache.RemoveAsync(GetCountOfAllByProductIdKey(createRequest.ProductId));
+
+            await _fusionCache.RemoveAsync(GetByIdKey(insertResult.AsT0));
+        }
+
+        return insertResult;
+    }
+
     public async Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServicePromotionProductFileInfoUpdateRequest updateRequest)
     {
         PromotionProductFileInfo? oldPromotionProductFile = await GetByIdAsync(updateRequest.Id);
@@ -293,6 +309,26 @@ internal sealed class CachedPromotionProductFileInfoService : IPromotionProductF
             await _fusionCache.RemoveAsync(GetAllByProductIdKey(oldPromotionProductFile!.ProductId));
 
             await _fusionCache.RemoveAsync(GetCountOfAllByProductIdKey(oldPromotionProductFile!.ProductId));
+        }
+
+        return updateResult;
+    }
+
+    public async Task<OneOf<Success, NotFound>> FullSave_UpdateAsync(ServicePromotionProductFileInfoUpdateRequest updateRequest)
+    {
+        PromotionProductFileInfo? oldPromotionProductFile = await GetByIdAsync(updateRequest.Id);
+
+        if (oldPromotionProductFile is null) return new NotFound();
+
+        OneOf<Success, NotFound> updateResult = await _promotionProductFileInfoService.FullSave_UpdateAsync(updateRequest);
+
+        if (updateResult.IsT0)
+        {
+            await _fusionCache.RemoveAsync(GetByIdKey(updateRequest.Id));
+
+            await _fusionCache.RemoveAsync(GetAllByProductIdKey(oldPromotionProductFile.ProductId));
+
+            await _fusionCache.RemoveAsync(GetCountOfAllByProductIdKey(oldPromotionProductFile.ProductId));
         }
 
         return updateResult;
@@ -321,5 +357,5 @@ internal sealed class CachedPromotionProductFileInfoService : IPromotionProductF
         await _fusionCache.RemoveAsync(GetByIdKey(id));
 
         return isDeleted;
-    }
+    } 
 }

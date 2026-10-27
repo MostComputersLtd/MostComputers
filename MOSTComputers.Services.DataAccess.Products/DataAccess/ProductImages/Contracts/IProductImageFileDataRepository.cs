@@ -14,8 +14,8 @@ public interface IProductImageFileDataRepository
     Task<ProductImageFileData?> GetByIdAsync(int id);
     Task<ProductImageFileData?> GetByProductIdAndImageIdAsync(int productId, int imageId);
     Task<ProductImageFileData?> GetByFileNameAsync(string fileName);
-    Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ProductImageFileNameInfoCreateRequest createRequest);
-    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpdateAsync(ProductImageFileNameInfoByIdUpdateRequest updateRequest);
+    Task<OneOf<int, UnexpectedFailureResult>> InsertAsync(ProductImageFileNameInfoCreateRequest createRequest);
+    Task<OneOf<Success, UnexpectedFailureResult>> UpdateAsync(ProductImageFileNameInfoByIdUpdateRequest updateRequest);
     Task<bool> DeleteAllForProductIdAsync(int productId);
     Task<bool> DeleteAsync(int id);
 }

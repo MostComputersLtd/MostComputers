@@ -17,6 +17,7 @@ internal static class CommonValueConstraints
     internal static class ProductImageFileDataConstraints
     {
         internal const int FileNameMaxLength = 50;
+        internal const int FileExtensionWhenSaveWithImageMaxLength = 40;
     }
 
     internal static class PromotionGroupConstraints
@@ -36,6 +37,7 @@ internal static class CommonValueConstraints
     internal static class GroupPromotionImageFileDataConstraints
     {
         internal const int FileNameMaxLength = 50;
+        internal const int ContentTypeMaxLength = 50;
     }
 
     internal static class GroupPromotionImageConstraints

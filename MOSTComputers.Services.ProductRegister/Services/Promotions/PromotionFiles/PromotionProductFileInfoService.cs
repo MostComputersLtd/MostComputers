@@ -126,6 +126,28 @@ internal sealed class PromotionProductFileInfoService : IPromotionProductFileInf
         return createPromotionProductFileResult.Map<int, ValidationResult, UnexpectedFailureResult>();
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_InsertAsync(
+        ServicePromotionProductFileInfoCreateRequest createRequest)
+    {
+        DateTime createDate = DateTime.Now;
+
+        PromotionProductFileInfoCreateRequest promotionProductFileInfoCreateRequest = new()
+        {
+            ProductId = createRequest.ProductId,
+            PromotionFileInfoId = createRequest.PromotionFileInfoId,
+            Active = createRequest.Active,
+            ValidFrom = createRequest.ValidFrom,
+            ValidTo = createRequest.ValidTo,
+            ProductImageId = createRequest.ProductImageId,
+            CreateUserName = createRequest.CreateUserName,
+            CreateDate = createDate,
+            LastUpdateUserName = createRequest.CreateUserName,
+            LastUpdateDate = createDate,
+        };
+
+        return await _promotionProductFileInfoRepository.InsertAsync(promotionProductFileInfoCreateRequest);
+    }
+
     public async Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServicePromotionProductFileInfoUpdateRequest updateRequest)
     {
         if (_updateRequestValidator is not null)
@@ -173,6 +195,26 @@ internal sealed class PromotionProductFileInfoService : IPromotionProductFileInf
         OneOf<Success, NotFound> updatePromotionProductFileResult = await _promotionProductFileInfoRepository.UpdateAsync(promotionProductFileInfoUpdateRequest);
 
         return updatePromotionProductFileResult.Map<Success, NotFound, ValidationResult>();
+    }
+
+    public async Task<OneOf<Success, NotFound>> FullSave_UpdateAsync(
+        ServicePromotionProductFileInfoUpdateRequest updateRequest)
+    {
+        DateTime updateDate = DateTime.Now;
+
+        PromotionProductFileInfoUpdateRequest promotionProductFileInfoUpdateRequest = new()
+        {
+            Id = updateRequest.Id,
+            NewPromotionFileInfoId = updateRequest.NewPromotionFileInfoId,
+            ValidFrom = updateRequest.ValidFrom,
+            ValidTo = updateRequest.ValidTo,
+            Active = updateRequest.Active,
+            ProductImageId = updateRequest.ProductImageId,
+            LastUpdateUserName = updateRequest.UpdateUserName,
+            LastUpdateDate = updateDate,
+        };
+
+        return await _promotionProductFileInfoRepository.UpdateAsync(promotionProductFileInfoUpdateRequest);
     }
 
     public async Task<bool> DeleteAsync(int id)

@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MOSTComputers.Services.ProductRegister.Models.Responses;
+using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
+using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
-using static MOSTComputers.Utils.Files.ContentTypeUtils;
 
 namespace MOSTComputers.UI.Web.Client.Endpoints.Images;
 
@@ -19,23 +20,42 @@ internal static class GroupPromotionImageFileEndpoints
     }
 
     private static async Task<IResult> GetGroupPromotionImageFileAsync(
+        HttpContext httpContext,
         [FromRoute] int imageId,
-        [FromServices] IGroupPromotionImageFileService groupPromotionFileManagementService)
+        [FromServices] IGroupPromotionImageFileService groupPromotionImageFileService)
     {
-        GroupPromotionImageFile? promotionFile = await groupPromotionFileManagementService.GetByIdWithFileAsync(imageId);
+        GroupPromotionImageFileData? promotionFile = await groupPromotionImageFileService.GetByIdAsync(imageId); 
 
-        if (promotionFile is null || promotionFile.FileDataStream is null)
+        if (promotionFile is null)
         {
             return Results.NotFound(imageId);
         }
 
-        string? contentType = GetContentTypeFromExtension(promotionFile.FileName);
+        EntityTagHeaderValue eTag = new($"\"promotion-group-image-file-version-{promotionFile.Version}\"", false);
 
-        if (string.IsNullOrWhiteSpace(contentType))
+        httpContext.Response.Headers.ETag = eTag.ToString();
+        httpContext.Response.Headers.CacheControl = "no-cache";
+
+        if (httpContext.Request.Headers.IfNoneMatch.Count > 0)
         {
-            contentType = "application/octet-stream";
+            foreach (StringValues headerValue in httpContext.Request.Headers.IfNoneMatch)
+            {
+                IList<EntityTagHeaderValue> requestEtags = EntityTagHeaderValue.ParseList(headerValue);
+
+                foreach (EntityTagHeaderValue requestEtag in requestEtags)
+                {
+                    if (requestEtag.Compare(eTag, useStrongComparison: false))
+                    {
+                        return Results.StatusCode(StatusCodes.Status304NotModified);
+                    }
+                }
+            }
         }
 
-        return Results.File(promotionFile.FileDataStream, contentType!);
+        Stream? fileStream = groupPromotionImageFileService.GetFileStream(promotionFile);
+
+        if (fileStream == null) return Results.Problem(statusCode: StatusCodes.Status500InternalServerError);
+
+        return Results.File(fileStream, promotionFile.ContentType);
     }
 }

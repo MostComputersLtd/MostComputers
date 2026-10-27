@@ -56,6 +56,30 @@ export function addProductImageAndSave(editorId, productImageData, file) {
     return true;
 }
 
+export function moveProductImageAndSave(editorId, index) {
+
+    const data = loadData();
+
+    const productImageIndex = data.productImages.findIndex(x => x.editorId === editorId);
+
+    if (productImageIndex === -1) {
+
+        return false;
+    }
+
+    const [productImage] = data.productImages.splice(productImageIndex, 1);
+
+    if (productImageIndex < index) {
+        index--;
+    }
+
+    data.productImages.splice(index, 0, productImage);
+
+    saveData(data);
+
+    return true;
+}
+
 export function updateProductImageAndSave(editorId, mutator) {
 
     const data = loadData();

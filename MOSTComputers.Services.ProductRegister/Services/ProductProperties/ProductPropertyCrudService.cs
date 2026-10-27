@@ -300,6 +300,65 @@ public sealed class ProductPropertyCrudService : IProductPropertyCrudService
         return new Success();
     }
 
+    public async Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpsertAllProductPropertiesInternalAsync(
+        int productId,
+        List<ProductPropertyForProductUpsertRequest> newProperties,
+        List<ProductProperty> oldProperties,
+        List<ProductCharacteristic> allCharacteristics)
+    {
+        IEnumerable<int> neededCharacteristicIds = newProperties.Select(x => x.ProductCharacteristicId);
+
+        IEnumerable<ProductCharacteristic> neededCharacteristics = allCharacteristics
+            .Where(x => neededCharacteristicIds.Contains(x.Id));
+
+        foreach (ProductProperty oldProperty in oldProperties)
+        {
+            if (oldProperty.ProductCharacteristicId is null) return new UnexpectedFailureResult();
+
+            ProductPropertyForProductUpsertRequest? newProductPropForSameCharacteristic = newProperties
+                .Find(newProperty => newProperty.ProductCharacteristicId == oldProperty.ProductCharacteristicId);
+
+            if (newProductPropForSameCharacteristic is not null) continue;
+
+            bool oldPropertyDeleteSuccess = await DeleteAsync(productId, oldProperty.ProductCharacteristicId.Value);
+
+            if (!oldPropertyDeleteSuccess) return new UnexpectedFailureResult();
+        }
+
+        Dictionary<ProductPropertyUpdateRequest, ProductCharacteristic> upsertData = new();
+
+        foreach (ProductPropertyForProductUpsertRequest productPropUpsertRequest in newProperties)
+        {
+            ProductProperty? existingProductProperty = oldProperties
+                .FirstOrDefault(x => x.ProductCharacteristicId == productPropUpsertRequest.ProductCharacteristicId);
+
+            ProductCharacteristic productCharacteristic
+                = neededCharacteristics.FirstOrDefault(x => x.Id == productPropUpsertRequest.ProductCharacteristicId)!;
+
+            if (existingProductProperty is not null
+                && existingProductProperty.DisplayOrder == (productPropUpsertRequest.CustomDisplayOrder ?? productCharacteristic.DisplayOrder)
+                && existingProductProperty.Value == productPropUpsertRequest.Value)
+            {
+                continue;
+            }
+
+            ProductPropertyUpdateRequest propUpsertRequest = new()
+            {
+                ProductId = productId,
+                ProductCharacteristicId = productPropUpsertRequest.ProductCharacteristicId,
+                CustomDisplayOrder = productPropUpsertRequest.CustomDisplayOrder,
+                Value = productPropUpsertRequest.Value,
+            };
+
+            OneOf<Success, UnexpectedFailureResult> propertyUpsertResult =
+                await UpsertInternalAsync(propUpsertRequest, productCharacteristic);
+
+            if (!propertyUpsertResult.IsT0) return propertyUpsertResult;
+        }
+
+        return new Success();
+    }
+
     public async Task<bool> DeleteAsync(int productId, int characteristicId)
     {
         if (productId <= 0 || characteristicId <= 0) return false;

@@ -389,6 +389,8 @@ public sealed class GroupPromotionService : IGroupPromotionService
 
                 string contentTypeWithDotForExtension = contentType.Insert(contentTypeSlashIndex + 1, ".");
 
+            Console.WriteLine($"IN THE UPDATE DB IMAGE SECTION {existingImageId}, {contentTypeWithDotForExtension}, {imageUpsertRequest.Image.Length}");
+
                 GroupPromotionImageUpdateRequest imageUpdateRequest = new()
                 {
                     Id = existingImageId,
@@ -439,6 +441,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
                         PromotionId = promotionId,
                         FileName = fileName,
                         ImageId = existingImageId,
+                        ContentType = contentType,
                     };
 
                     OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageFileCreateResult
@@ -461,6 +464,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
                     Id = existingImageFile.Id,
                     FileName = fileName,
                     Image = imageUpsertRequest.Image,
+                    ContentType = contentType,
                 };
 
                 OneOf<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult> changeFileResult
@@ -579,6 +583,7 @@ public sealed class GroupPromotionService : IGroupPromotionService
             PromotionId = promotionId,
             FileName = fileName,
             ImageId = imageId,
+            ContentType = contentType,
         };
 
         OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult> imageFileCreateResult

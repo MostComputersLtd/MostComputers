@@ -582,6 +582,9 @@ public sealed class ProductToXmlService : IProductToXmlService
                 ValidTo = promotion.ExpirationDate,
                 PromotionUSD = promotion.DiscountUSD,
                 PromotionEUR = promotion.DiscountEUR,
+                MinimumQuantity = promotion.MinimumQuantity,
+                MaximumQuantity = promotion.MaximumQuantity,
+                ExpireQuantity = promotion.ExpQuantity,
             };
 
             output.Add(xmlPromotion);

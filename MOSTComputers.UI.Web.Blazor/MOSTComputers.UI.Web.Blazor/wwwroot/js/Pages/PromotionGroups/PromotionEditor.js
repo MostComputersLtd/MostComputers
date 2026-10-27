@@ -223,7 +223,7 @@ function getPromotionCreateRequestFromCurrentData()
     {
         const imageObject = promotionEditorImagesToUpload[i];
 
-        const blob = imageObject.File;
+        const blob = imageObject.file;
 
         formData.append(`PromotionImageCreateRequests[${i}]`, blob);
     }
@@ -337,6 +337,13 @@ function getPromotionUpdateRequestFromCurrentData(promotionId)
         formData.append("DefaultGroupPriority", defaultGroupDisplayOrder);
     }
 
+    const promotionEditorImagesToUpload = imageEditor.getImagesToUpload();
+    const promotionEditorImagesToResize = imageEditor.getImagesToResize();
+
+    let imagesToUploadCurrentIndex = 0;
+    let imagesToResizeCurrentIndex = 0;
+    let imagesToKeepCurrentIndex = 0;
+
     for (let i = 0; i < imageElements.length; i++) {
 
         const imageElement = imageElements[i];
@@ -344,27 +351,31 @@ function getPromotionUpdateRequestFromCurrentData(promotionId)
         const existingImageId = imageElement.getAttribute(common.promotionEditorImageIdAttribute);
         const imageIndex = imageElement.getAttribute(common.promotionEditorImageIndexAttribute);
 
+        const imageToResizeEntry = promotionEditorImagesToResize.find(x => x.imageIndex == imageIndex);
+
         if (existingImageId == null || existingImageId == '') {
 
-            const promotionEditorImagesToUpload = imageEditor.getImagesToUpload();
+            const imageToUploadEntry = promotionEditorImagesToUpload.find(x => x.imageIndex == imageIndex);
 
-            for (let i = 0; i < promotionEditorImagesToUpload.length; i++) {
+            const blob = imageToUploadEntry.file;
 
-                const imageObject = promotionEditorImagesToUpload[i];
+            formData.append(`PromotionImageCreateRequests[${imagesToUploadCurrentIndex}].ImageFile`, blob);
+            formData.append(`PromotionImageCreateRequests[${imagesToUploadCurrentIndex}].ImageIndex`, imageIndex);
 
-                if (imageObject.fileObjectUrl != imageElement.src) continue;
+            imagesToUploadCurrentIndex++;
+        }
+        else if (imageToResizeEntry != null) {
+            formData.append(`PromotionImageChangeFileRequests[${imagesToResizeCurrentIndex}].Id`, existingImageId);
+            formData.append(`PromotionImageChangeFileRequests[${imagesToResizeCurrentIndex}].ImageIndex`, imageIndex);
+            formData.append(`PromotionImageChangeFileRequests[${imagesToResizeCurrentIndex}].NewImageFile`, imageToResizeEntry.file);
 
-                const blob = imageObject.File;
-
-                formData.append(`PromotionImageCreateRequests[${i}].ImageFile`, blob);
-                formData.append(`PromotionImageCreateRequests[${i}].ImageIndex`, imageIndex);
-
-                break;
-            }
+            imagesToResizeCurrentIndex++;
         }
         else {
-            formData.append(`ImageIdsToKeep[${i}].Id`, existingImageId);
-            formData.append(`ImageIdsToKeep[${i}].ImageIndex`, imageIndex);
+            formData.append(`ImageIdsToKeep[${imagesToKeepCurrentIndex}].Id`, existingImageId);
+            formData.append(`ImageIdsToKeep[${imagesToKeepCurrentIndex}].ImageIndex`, imageIndex);
+
+            imagesToKeepCurrentIndex++;
         } 
     }
 

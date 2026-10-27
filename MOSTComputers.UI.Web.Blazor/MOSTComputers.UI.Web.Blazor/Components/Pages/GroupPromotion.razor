@@ -6,6 +6,7 @@
 @using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Contracts
 @using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using Microsoft.AspNetCore.WebUtilities
 @using static MOSTComputers.Utils.Files.FilePathUtils;
 
 @inject IGroupPromotionService GroupPromotionService
@@ -13,59 +14,64 @@
 
 <div class="group-promotion-page">
 
-	@if (Promotion == null)
-	{
-		<p class="missing-promotion-text">Promotion is expired or does not exist.</p>
-	}
+    @if (Promotion == null)
+    {
+        <p class="missing-promotion-text">Promotion is expired or does not exist.</p>
+    }
     else
     {
-		<div id="groupPromotion-@Promotion.GroupPromotionContent.Id" class="single-group-promotion">
+        <div id="groupPromotion-@Promotion.GroupPromotionContent.Id" class="single-group-promotion">
 
-			@if (Promotion.ModifiedPromotionHtml != null)
-			{
-				@((MarkupString)Promotion.ModifiedPromotionHtml)
-			}
-		</div>
-	}
+            @if (Promotion.ModifiedPromotionHtml != null)
+            {
+                @((MarkupString)Promotion.ModifiedPromotionHtml)
+            }
+        </div>
+    }
 </div>
 
 @code {
 
-	[Parameter] public int PromotionId { get; set; }
+    [Parameter] public int PromotionId { get; set; }
 
-	public sealed class GroupPromotionWithHtml
-	{
-		public required GroupPromotionContent GroupPromotionContent { get; set; }
-		public string? ModifiedPromotionHtml { get; set; }
-	}
+    public sealed class GroupPromotionWithHtml
+    {
+        public required GroupPromotionContent GroupPromotionContent { get; set; }
+        public string? ModifiedPromotionHtml { get; set; }
+    }
 
-	private GroupPromotionWithHtml? Promotion = null;
+    private GroupPromotionWithHtml? Promotion = null;
 
-	override protected async Task OnInitializedAsync()
-	{
-		GroupPromotionContent? promotion
-			= await GroupPromotionService.GetByIdAsync(PromotionId);
+    override protected async Task OnInitializedAsync()
+    {
+        GroupPromotionContent? promotion
+            = await GroupPromotionService.GetByIdAsync(PromotionId);
 
-		if(promotion == null
-			|| (promotion.StartDate is not null && promotion.StartDate > DateTime.Now
-			&& promotion.ExpirationDate is null && promotion.ExpirationDate < DateTime.Now))
-		{
-			return;
-		}
+        if(promotion == null
+            || (promotion.StartDate is not null && promotion.StartDate > DateTime.Now
+            && promotion.ExpirationDate is null && promotion.ExpirationDate < DateTime.Now))
+        {
+            return;
+        }
 
-		List<GroupPromotionImageFileData> imageFilesForPromotion
-			= await GroupPromotionImageFileDataService.GetAllInPromotionAsync(PromotionId);
+        List<GroupPromotionImageFileData> imageFilesForPromotion
+            = await GroupPromotionImageFileDataService.GetAllInPromotionAsync(PromotionId);
 
-		string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
-			promotion.HtmlContent,
-			imageFilesForPromotion,
-			promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-		);
+        string? modifiedPromotionHtml = GroupPromotionService.ChangeLegacyUrlsToNewOnes(
+            promotion.HtmlContent,
+            imageFilesForPromotion,
+            promotionImageFile =>
+            {
+                string imageUrl = CombinePathsWithSeparator(
+                '/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString());
 
-		Promotion = new()
-		{
-			GroupPromotionContent = promotion,
-			ModifiedPromotionHtml = modifiedPromotionHtml,
-		};
-	}
+                return QueryHelpers.AddQueryString(imageUrl, "v", promotionImageFile.Version.ToString());
+            });
+
+        Promotion = new()
+        {
+            GroupPromotionContent = promotion,
+            ModifiedPromotionHtml = modifiedPromotionHtml,
+        };
+    }
 }

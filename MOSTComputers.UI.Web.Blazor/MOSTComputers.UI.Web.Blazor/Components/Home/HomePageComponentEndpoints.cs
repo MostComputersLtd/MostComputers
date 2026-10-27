@@ -19,6 +19,7 @@ using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 using OneOf;
 using static MOSTComputers.Utils.Files.FilePathUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
@@ -242,29 +243,12 @@ public static class HomePageComponentEndpoints
         if (product == null)
         {
             return Results.NotFound();
-        }
+        } 
 
-        List<int> relatedCategoryIds = [-1];
+        List<Product.ProductData.ProductPropertyDisplayData> propertiesInData
+            = await GetProductPropertiesFromProductDataAsync(productId, product.CategoryId, productCharacteristicService, productPropertyService);
 
-        if (product.CategoryId is not null)
-        {
-            relatedCategoryIds.Add(product.CategoryId.Value);
-        }
-
-        IEnumerable<ProductCharacteristicType> productCharacteristicTypes = [
-            ProductCharacteristicType.ProductCharacteristic,
-            ProductCharacteristicType.Link
-        ];
-
-        List<ProductCharacteristic> productCharacteristics = await productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
-            relatedCategoryIds, productCharacteristicTypes, true);
-
-        List<ProductProperty> productProperties = await productPropertyService.GetAllInProductAsync(product.Id);
-
-        List<Components.Product.ProductData.ProductPropertyDisplayData> propertiesInData
-            = GetProductPropertiesFromProductData(productProperties, productCharacteristics);
-
-        List<Components.Product.ProductData.ProductImageDisplayData> productImagesInData = new();
+        List<Product.ProductData.ProductImageDisplayData> productImagesInData = new();
 
         List<ProductImageFileData> productImageFileNameInfos = await productImageFileService.GetAllInProductAsync(product.Id);
 
@@ -272,7 +256,7 @@ public static class HomePageComponentEndpoints
         {
             if (imageFileNameInfo.FileName is null) continue;
 
-            Components.Product.ProductData.ProductImageDisplayData productImageDisplayData = new()
+            Product.ProductData.ProductImageDisplayData productImageDisplayData = new()
             {
                 ImageSrc = $"/api/images/imageFileData/{imageFileNameInfo.FileName}",
             };
@@ -282,7 +266,7 @@ public static class HomePageComponentEndpoints
 
         List<int> groupPromotionIds = await groupPromotionProductBindingsService.GetAllPromotionIdsBoundToProductAsync(productId);
 
-        List<Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
+        List<Product.ProductData.ProductRelatedGroupPromotionDisplayData> productRelatedGroupPromotions = new();
 
         if (groupPromotionIds.Count > 0)
         {
@@ -304,12 +288,17 @@ public static class HomePageComponentEndpoints
                 string? modifiedPromotionHtmlContent = groupPromotionService.ChangeLegacyUrlsToNewOnes(
                     groupPromotionContent.HtmlContent,
                     imageFilesForPromotion,
-                    promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-                );
+                    promotionImageFile =>
+                    {
+                        string imageUrl = CombinePathsWithSeparator(
+                        '/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString());
+
+                        return QueryHelpers.AddQueryString(imageUrl, "v", promotionImageFile.Version.ToString());
+                    });
 
                 if (string.IsNullOrEmpty(modifiedPromotionHtmlContent)) continue;
 
-                Components.Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
+                Product.ProductData.ProductRelatedGroupPromotionDisplayData productPromotionDisplayData = new()
                 {
                     HtmlContent = modifiedPromotionHtmlContent,
                 };
@@ -333,7 +322,7 @@ public static class HomePageComponentEndpoints
         List<SearchStringPartOriginData>? productSearchStringParts = await searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
             product.SearchString, product.CategoryId);
 
-        Components.Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(
+        Product.ProductData.ProductPriceData? productPriceData = await GetProductPriceDataAsync(
             currencyConversionService, currencyVATService, product);
 
         HttpRequest httpRequest = httpContext.Request;
@@ -357,22 +346,43 @@ public static class HomePageComponentEndpoints
         });
     }
 
-    private static List<Components.Product.ProductData.ProductPropertyDisplayData> GetProductPropertiesFromProductData(
-        List<ProductProperty> productProperties,
-        List<ProductCharacteristic> productCharacteristics)
+    private static async Task<List<Product.ProductData.ProductPropertyDisplayData>> GetProductPropertiesFromProductDataAsync(
+        int productId,
+        int? productCategoryId,
+        IProductCharacteristicService productCharacteristicService,
+        IProductPropertyService productPropertyService)
     {
-        List<Components.Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
+        List<int> relatedCategoryIds = [-1];
+
+        if (productCategoryId is not null)
+        {
+            relatedCategoryIds.Add(productCategoryId.Value);
+        }
+
+        IEnumerable<ProductCharacteristicType> productCharacteristicTypes = [
+            ProductCharacteristicType.ProductCharacteristic,
+            ProductCharacteristicType.Link
+        ];
+
+        List<ProductCharacteristic> productCharacteristics = await productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+            relatedCategoryIds, productCharacteristicTypes, true);
+
+        List<ProductProperty> productProperties = await productPropertyService.GetAllInProductAsync(productId);
+
+        List<Product.ProductData.ProductPropertyDisplayData> propertiesInData = new();
 
         foreach (ProductProperty property in productProperties)
         {
-            ProductCharacteristic productCharacteristic = productCharacteristics
-                .First(characteristic => characteristic.Id == property.ProductCharacteristicId);
+            ProductCharacteristic? productCharacteristic = productCharacteristics
+                .FirstOrDefault(characteristic => characteristic.Id == property.ProductCharacteristicId);
 
-            Components.Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
+            if (productCharacteristic == null) continue;
+
+            Product.ProductData.ProductPropertyDisplayData mappedProperty = new()
             {
                 ProductCharacteristic = new()
                 {
-                    Id = productCharacteristic!.Id,
+                    Id = productCharacteristic.Id,
                     CategoryId = productCharacteristic.CategoryId,
                     Active = productCharacteristic.Active,
                     KWPrCh = productCharacteristic.KWPrCh
@@ -388,13 +398,13 @@ public static class HomePageComponentEndpoints
         return propertiesInData;
     }
 
-    private static async Task<Components.Product.ProductData.ProductPriceData?> GetProductPriceDataAsync(
+    private static async Task<Product.ProductData.ProductPriceData?> GetProductPriceDataAsync(
         ICurrencyConversionService currencyConversionService,
         ICurrencyVATService currencyVATService,
         MOSTComputers.Models.Product.Models.Product product)
     {
-        Components.Product.ProductData.DisplayPrice? displayPrice = null;
-        Components.Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
+        Product.ProductData.DisplayPrice? displayPrice = null;
+        Product.ProductData.DisplayPrice? secondaryDisplayPrice = null;
 
        if (product.Price is not null && product.Currency is not null)
         {

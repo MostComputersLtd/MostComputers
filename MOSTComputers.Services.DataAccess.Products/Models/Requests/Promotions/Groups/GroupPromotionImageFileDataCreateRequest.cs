@@ -4,4 +4,5 @@ public sealed class GroupPromotionImageFileDataCreateRequest
     public int? PromotionId { get; set; }
     public required int ImageId { get; set; }
     public required string FileName { get; set; }
+    public required string ContentType { get; set; }
 }

@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
+using FluentValidation.Results;
 using FluentValidation.Validators;
 using MOSTComputers.Models.Product.Models.ProductIdentifiers;
 using MOSTComputers.Utils.Files;
+using SixLabors.ImageSharp;
 using System.Numerics;
 
 namespace MOSTComputers.Services.ProductRegister.Validation;
@@ -271,5 +273,34 @@ internal static class CommonElements
         }
 
         return repeatedValues;
+    }
+
+    internal const string ImageDataUnknownFormatErrorCode = "ImageDataUnknownFormat";
+    internal const string ImageDataInvalidContentErrorCode = "ImageDataInvalidContent";
+
+    public static IRuleBuilderOptionsConditions<T, byte[]> IsIdentifiableImageData<T>(
+        this IRuleBuilder<T, byte[]> ruleBuilder)
+    {
+        return ruleBuilder.Custom((imageData, context) =>
+        {
+            try
+            {
+                Image.Identify(imageData);
+            }
+            catch (UnknownImageFormatException)
+            {
+                context.AddFailure(new ValidationFailure(context.PropertyPath, "Image data has an unknown or unsupported format.")
+                {
+                    ErrorCode = ImageDataUnknownFormatErrorCode,
+                });
+            }
+            catch (InvalidImageContentException)
+            {
+                context.AddFailure(new ValidationFailure(context.PropertyPath, "Image data contains invalid image content.")
+                {
+                    ErrorCode = ImageDataInvalidContentErrorCode,
+                });
+            }
+        });
     }
 }

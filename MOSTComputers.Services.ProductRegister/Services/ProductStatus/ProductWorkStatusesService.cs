@@ -224,6 +224,24 @@ internal class ProductWorkStatusesService : IProductWorkStatusesService
         return upsertResult.Map<int, ValidationResult, UnexpectedFailureResult>();
     }
 
+    public async Task<OneOf<int, UnexpectedFailureResult>> FullSave_UpsertByProductIdAsync(
+        ServiceProductWorkStatusesUpsertRequest upsertRequest)
+    {
+        DateTime upsertDate = DateTime.Now;
+
+        ProductWorkStatusesUpsertRequest updateRequestInner = new()
+        {
+            ProductId = upsertRequest.ProductId,
+            ProductNewStatus = upsertRequest.ProductNewStatus,
+            ProductXmlStatus = upsertRequest.ProductXmlStatus,
+            ReadyForImageInsert = upsertRequest.ReadyForImageInsert,
+            UpsertUserName = upsertRequest.UpsertUserName,
+            UpsertDate = upsertDate,
+        };
+
+        return await _productWorkStatusesRepository.UpsertByProductIdAsync(updateRequestInner);
+    }
+
     public async Task<bool> DeleteAllAsync()
     {
         return await _productWorkStatusesRepository.DeleteAllAsync();

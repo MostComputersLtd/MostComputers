@@ -14,6 +14,7 @@ public interface IGroupPromotionImageFileDataService
     Task<GroupPromotionImageFileData?> GetByIdAsync(int id);
     Task<GroupPromotionImageFileData?> GetByImageIdAsync(int imageId);
     Task<OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>> InsertAsync(GroupPromotionImageFileDataCreateRequest createRequest);
+    Task<OneOf<Success, NotFound>> ChangeRowVersionAsync(int id);
     Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(GroupPromotionImageFileDataUpdateRequest updateRequest);
     Task<bool> DeleteAsync(int id);
     Task<bool> DeleteByImageIdAsync(int imageId);

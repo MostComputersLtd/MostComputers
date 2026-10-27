@@ -61,12 +61,13 @@
         public required Product Product { get; init; }
         public List<ProductProperty>? ProductProperties { get; init; }
         public List<XmlProductImage>? XmlProductImages { get; init; }
-        public List<Promotion>? ProductPromotions { get; init; }
+        public List<XmlPromotion>? ProductPromotions { get; init; }
+        public XmlPromotionGroup? XmlGroupPromotion { get; init; }
         public SubCategory? ProductSubCategory { get; init; }
         public List<XmlSearchStringPartInfo>? SearchStringPartInfos { get; init; }
     }
 
-    [Parameter] public bool IsRenderedInteractively { get; set; } = true;
+    private bool IsRenderedInteractively => AssignedRenderMode != null;
 
     [Parameter] public required OneOf<List<ProductXmlRelatedData>, GetDataFromServer> DataOptions { get; set; }
 
@@ -98,8 +99,9 @@
                     product: productXmlRelatedData.Product,
                     productProperties: productXmlRelatedData.ProductProperties,
                     xmlProductImages: productXmlRelatedData.XmlProductImages,
+                    xmlProductPromotions: productXmlRelatedData.ProductPromotions,
+                    xmlGroupPromotion: productXmlRelatedData.XmlGroupPromotion,
                     productSubCategory: productXmlRelatedData.ProductSubCategory,
-                    productPromotions: productXmlRelatedData.ProductPromotions,
                     searchStringPartInfos: productXmlRelatedData.SearchStringPartInfos);
 
                 xmlProducts.Add(xmlProduct);

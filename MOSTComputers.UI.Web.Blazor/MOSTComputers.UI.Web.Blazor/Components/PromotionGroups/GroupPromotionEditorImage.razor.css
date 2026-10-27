@@ -11,20 +11,28 @@
     background-color: #e5e4e4;
 }
 
-.promotion-edit-image-copy-confirmation-container {
+.promotion-edit-image-resize-button-container {
     position: absolute;
     left: 0.1rem;
     top: 0.1rem;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     pointer-events: none;
     user-select: none;
 }
 
-.promotion-edit-image-delete-button {
-    width: 0.3em;
-    height: 0.3em;
-    pointer-events: none;
+.promotion-edit-image-resize-button {
+    width: 1rem;
+    height: 1rem;
+    padding: 0px;
+    display: flex;
+    flex-direction: row;
+    pointer-events: all;
+}
+
+.promotion-edit-image-resize-button-icon {
+    width: 100%;
+    height: auto;
 }
 
 .promotion-edit-image-delete-button-container {
@@ -38,8 +46,9 @@
 }
 
 .promotion-edit-image-delete-button {
-    width: 0.3em;
-    height: 0.3em;
+    width: 0.8em;
+    height: 0.8em;
+    padding: 0px;
     pointer-events: all;
 }
 

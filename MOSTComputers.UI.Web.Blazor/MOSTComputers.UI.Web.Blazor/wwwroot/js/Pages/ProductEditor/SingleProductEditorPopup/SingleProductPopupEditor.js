@@ -110,9 +110,9 @@ async function onProductStatusSelectChangedAsync(e) {
 
 function onAddImageFileButtonClick() {
 
-    const singleEditorAddImageFileInput = document.getElementById(addImageFileInputId);
+    const addImageFileInput = document.getElementById(addImageFileInputId);
 
-    singleEditorAddImageFileInput.click();
+    addImageFileInput.click();
 }
 
 async function onAddImageFileInputChangeAsync(e) {
@@ -134,9 +134,9 @@ async function onAddImageFileInputChangeAsync(e) {
 
 function onAddDocumentFileButtonClick() {
 
-    const singleEditorAddDocumentFileInput = document.getElementById(addDocumentFileInputId);
+    const addDocumentFileInput = document.getElementById(addDocumentFileInputId);
 
-    singleEditorAddDocumentFileInput.click();
+    addDocumentFileInput.click();
 }
 
 async function onAddDocumentFileInputChangeAsync(e) {
@@ -187,9 +187,9 @@ async function onAddImageFromClipboardButtonClickAsync() {
 
 async function showProductDataPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
-    const productId = singleEditorProductIdHiddenInput.value;
+    const productId = productIdHiddenInput.value;
 
     const url = `api/components/productEditor/single/productDataPopup/${productId}`;
 
@@ -216,20 +216,20 @@ async function showProductDataPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorProductDataPopupContainer = document.getElementById(productDataPopupContainerId);
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
 
-    singleEditorProductDataPopupContainer.innerHTML = data;
+    productDataPopupContainer.innerHTML = data;
 
-    const dialog = singleEditorProductDataPopupContainer.querySelector("dialog");
+    const dialog = productDataPopupContainer.querySelector("dialog");
 
     dialog.showModal();
 }
 
 async function showProductLegacyDisplayPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
-    const productId = singleEditorProductIdHiddenInput.value;
+    const productId = productIdHiddenInput.value;
 
     const url = `api/components/productEditor/single/productLegacyDisplayPopup/${productId}`;
 
@@ -256,20 +256,20 @@ async function showProductLegacyDisplayPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorProductLegacyDisplayPopupContainer = document.getElementById(productLegacyDisplayPopupContainerId);
+    const productLegacyDisplayPopupContainer = document.getElementById(productLegacyDisplayPopupContainerId);
 
-    singleEditorProductLegacyDisplayPopupContainer.innerHTML = data;
+    productLegacyDisplayPopupContainer.innerHTML = data;
 
-    const dialog = singleEditorProductLegacyDisplayPopupContainer.querySelector("dialog");
+    const dialog = productLegacyDisplayPopupContainer.querySelector("dialog");
 
     dialog.showModal();
 }
 
 async function showPromotionProductFileEditorPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
-    const productId = singleEditorProductIdHiddenInput.value;
+    const productId = productIdHiddenInput.value;
 
     const url = `api/components/productEditor/single/promotionFile/showPopup/${productId}`;
 
@@ -295,11 +295,11 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorPromotionProductFileEditorPopupContainer = document.getElementById(promotionProductFileEditorPopupContainerId);
+    const promotionProductFileEditorPopupContainer = document.getElementById(promotionProductFileEditorPopupContainerId);
 
-    singleEditorPromotionProductFileEditorPopupContainer.innerHTML = data;
+    promotionProductFileEditorPopupContainer.innerHTML = data;
 
-    const dialog = singleEditorPromotionProductFileEditorPopupContainer.querySelector("dialog");
+    const dialog = promotionProductFileEditorPopupContainer.querySelector("dialog");
 
     promotionFilePopup.initEvents(
         dialog,
@@ -366,9 +366,9 @@ async function onPromotionProductFileEditorItemDeletedAsync(editorId) {
 
 async function showProductSearchStringPopupAsync() {
 
-    const singleEditorProductIdHiddenInput = document.getElementById(productIdHiddenInputId);
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
 
-    const productId = singleEditorProductIdHiddenInput.value;
+    const productId = productIdHiddenInput.value;
 
     const url = `api/components/productEditor/productSearchStringPopup/${productId}`;
 
@@ -380,11 +380,11 @@ async function showProductSearchStringPopupAsync() {
 
     const data = await response.text();
 
-    const singleEditorSearchStringPopupContainer = document.getElementById(searchStringPopupContainerId);
+    const searchStringPopupContainer = document.getElementById(searchStringPopupContainerId);
 
-    singleEditorSearchStringPopupContainer.innerHTML = data;
+    searchStringPopupContainer.innerHTML = data;
 
-    const dialog = singleEditorSearchStringPopupContainer.querySelector("dialog");
+    const dialog = searchStringPopupContainer.querySelector("dialog");
 
     dialog.showModal();
 }

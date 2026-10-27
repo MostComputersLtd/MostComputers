@@ -16,6 +16,8 @@ internal interface IPromotionProductFileInfoService
     Task<bool> DoesExistForPromotionFileAsync(int promotionFileId);
     Task<PromotionProductFileInfo?> GetByIdAsync(int id);
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> InsertAsync(ServicePromotionProductFileInfoCreateRequest createRequest);
+    Task<OneOf<int, UnexpectedFailureResult>> FullSave_InsertAsync(ServicePromotionProductFileInfoCreateRequest createRequest);
     Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServicePromotionProductFileInfoUpdateRequest updateRequest);
+    Task<OneOf<Success, NotFound>> FullSave_UpdateAsync(ServicePromotionProductFileInfoUpdateRequest updateRequest);
     Task<bool> DeleteAsync(int id);
 }

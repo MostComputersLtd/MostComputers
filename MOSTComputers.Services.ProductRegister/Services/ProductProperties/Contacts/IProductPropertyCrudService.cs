@@ -21,6 +21,11 @@ public interface IProductPropertyCrudService
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertAsync(ProductPropertyUpdateRequest upsertRequest);
     Task<OneOf<Success, NotFound, ValidationResult, UnexpectedFailureResult>> ChangePropertyCharacteristicIdAsync(int productId, int oldCharacteristicId, int newCharacteristicId);
     Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertAllProductPropertiesAsync(ProductPropertyUpsertAllForProductRequest productPropertyChangeAllForProductRequest);
+    Task<OneOf<Success, UnexpectedFailureResult>> FullSave_UpsertAllProductPropertiesInternalAsync(
+        int productId,
+        List<ProductPropertyForProductUpsertRequest> newProperties,
+        List<ProductProperty> oldProperties,
+        List<ProductCharacteristic> allCharacteristics);
     Task<bool> DeleteAsync(int productId, int characteristicId);
     Task<bool> DeleteAllForCharacteristicAsync(int characteristicId);
     Task<bool> DeleteAllForProductAsync(int productId);

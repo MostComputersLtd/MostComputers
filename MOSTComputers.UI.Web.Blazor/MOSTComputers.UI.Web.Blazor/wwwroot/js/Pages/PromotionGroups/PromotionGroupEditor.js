@@ -1,5 +1,6 @@
 ﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
 import * as common from "./Common.js";
+import * as imageResize from "./ImageResize.js";
 
 let promotionGroupImageToUpload = null;
 
@@ -22,6 +23,13 @@ export async function openPromotionGroupEditorPopup(id = null) {
     const promotionGroupLogoChangeButton = document.getElementById(common.promotionGroupLogoChangeButtonId);
 
     promotionGroupLogoChangeButton.addEventListener("click", changePromotionGroupLogo);
+
+    const promotionGroupImageResizeButton = document.getElementById(common.promotionGroupImageResizeButtonId);
+
+    if (promotionGroupImageResizeButton) {
+
+        promotionGroupImageResizeButton.addEventListener("click", openResizePopupForPromotionGroupImage);
+    }
 
     const promotionGroupImageDeleteButton = document.getElementById(common.promotionGroupImageDeleteButtonId);
 
@@ -96,13 +104,17 @@ async function onLogoImageInputChanged(e) {
     promotionGroupLogoImageDisplay.innerHTML = newImageElementHtml;
 
     promotionGroupImageToUpload = {
-        File: file,
+        file: file,
         fileObjectUrl: fileObjectUrl
     };
 
      const promotionGroupLogoChangeButton = document.getElementById(common.promotionGroupLogoChangeButtonId);
 
     promotionGroupLogoChangeButton.innerText = "Change Image";
+
+    const promotionGroupImageResizeButton = document.getElementById(common.promotionGroupImageResizeButtonId);
+
+    promotionGroupImageResizeButton.addEventListener("click", openResizePopupForPromotionGroupImage);
 
     const promotionGroupImageDeleteButton = document.getElementById(common.promotionGroupImageDeleteButtonId);
 
@@ -179,6 +191,32 @@ async function createPromotionGroup() {
     openPromotionGroupEditorPopup(newPromotionId);
 }
 
+function getPromotionGroupCreateRequestFromCurrentData() {
+
+    const promotionGroupNameInput = document.getElementById(common.promotionGroupNameInputId);
+    const promotionGroupDisplayOrderInput = document.getElementById(common.promotionGroupDisplayOrderInputId);
+    const promotionGroupRelatedManufacturerSelect = document.getElementById(common.promotionGroupRelatedManufacturerSelectId);
+
+    const formData = new FormData();
+
+    const promotionGroupName = promotionGroupNameInput.value;
+    const promotionGroupDisplayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
+    const promotionGroupRelatedManufacturerId = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
+
+    formData.append("Name", promotionGroupName);
+    formData.append("DisplayOrder", promotionGroupDisplayOrder);
+    formData.append("RelatedManufacturerId", promotionGroupRelatedManufacturerId);
+
+    if (promotionGroupImageToUpload != null) {
+
+        let blob = promotionGroupImageToUpload.file;
+
+        formData.append("LogoImage", blob);
+    }
+
+    return formData;
+}
+
 async function updatePromotionGroup(id) {
 
     const updateRequest = getPromotionGroupUpdateRequestFromCurrentData(id);
@@ -198,46 +236,26 @@ async function updatePromotionGroup(id) {
     await openPromotionGroupEditorPopup(id);
 }
 
-function getPromotionGroupCreateRequestFromCurrentData() {
-
-    const promotionGroupNameInput = document.getElementById(common.promotionGroupNameInputId);
-    const promotionGroupDisplayOrderInput = document.getElementById(common.promotionGroupDisplayOrderInputId);
-
-    const formData = new FormData();
-
-    const promotionGroupName = promotionGroupNameInput.value;
-    const promotionGroupDisplayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
-
-    formData.append("Name", promotionGroupName);
-    formData.append("DisplayOrder", promotionGroupDisplayOrder);
-
-    if (promotionGroupImageToUpload != null) {
-
-        let blob = promotionGroupImageToUpload.File;
-
-        formData.append("LogoImage", blob);
-    }
-
-    return formData;
-}
-
 function getPromotionGroupUpdateRequestFromCurrentData(id) {
 
     const promotionGroupNameInput = document.getElementById(common.promotionGroupNameInputId);
     const promotionGroupDisplayOrderInput = document.getElementById(common.promotionGroupDisplayOrderInputId);
+    const promotionGroupRelatedManufacturerSelect = document.getElementById(common.promotionGroupRelatedManufacturerSelectId);
 
     const formData = new FormData();
 
     const promotionGroupName = promotionGroupNameInput.value;
     const promotionGroupDisplayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
+    const promotionGroupRelatedManufacturer = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
 
     formData.append("Id", id);
     formData.append("Name", promotionGroupName);
     formData.append("DisplayOrder", promotionGroupDisplayOrder);
+    formData.append("RelatedManufacturerId", promotionGroupRelatedManufacturer);
 
     if (promotionGroupImageToUpload != null) {
 
-        let blob = promotionGroupImageToUpload.File;
+        let blob = promotionGroupImageToUpload.file;
 
         formData.append("NewLogoImage", blob);
         formData.append("PreserveOldImage", false);
@@ -254,6 +272,59 @@ function getPromotionGroupUpdateRequestFromCurrentData(id) {
     }
 
     return formData;
+}
+
+export async function openResizePopupForPromotionGroupImage(e) {
+
+    let headerImageDataText = `Logo (Group ID: `;
+
+    const imageContentType = e.currentTarget.getAttribute(common.promotionGroupEditorImageContentTypeAttribute);
+
+    const imageResizePopupResponse = await imageResize.getImageResizePopupAsync(
+        imageElement,
+        headerImageDataText,
+        150,
+        50,
+        null,
+        imageContentType,
+        {
+            left: "65vw",
+            right: "20vw",
+            top: "15vh",
+            bottom: "15vh"
+        });
+
+    if (imageResizePopupResponse == null) return null;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(imageResizePopupResponse);
+
+    if (!didNotRedirect || !imageResizePopupResponse.ok) return null;
+
+    const imageResizePopupHtml = await imageResizePopupResponse.text();
+
+    const imageResizePopupContainer = document.getElementById(common.imageResizePopupContainerId);
+
+    imageResizePopupContainer.innerHTML = imageResizePopupHtml;
+
+    imageResize.initEventsAndInitialDataAsync(onImageResizeConfirmButtonClicked);
+
+    const dialog = imageResizePopupContainer.querySelector("dialog");
+
+    dialog.showModal();
+}
+
+async function onImageResizeConfirmButtonClicked() {
+
+    const resizedImageData = await imageResize.getResizedImageAsync();
+
+    const originalFileType = resizedImageData.originalFileType;
+    const resizedImageBlob = resizedImageData.blob;
+
+    const fileForResizedImage = new File([resizedImageBlob], "unusedFileName", {
+        type: originalFileType
+    });
+
+    const fileBlobUrl = URL.createObjectURL(resizedImageBlob);
 }
 
 export function removePromotionGroupImage() {

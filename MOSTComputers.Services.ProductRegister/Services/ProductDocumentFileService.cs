@@ -132,6 +132,44 @@ internal sealed class ProductDocumentFileService : IProductDocumentFileService
         return productDocument;
     }
 
+    public async Task<OneOf<ProductDocument, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_InsertAsync(
+        ServiceProductDocumentCreateRequest createRequest)
+    {
+        createRequest.FileExtension = createRequest.FileExtension.Trim().ToLowerInvariant();
+
+        if (createRequest.FileExtension.StartsWith('.'))
+        {
+            createRequest.FileExtension = createRequest.FileExtension[1..];
+        }
+
+        ProductDocumentCreateRequest productDocumentCreateRequest = new()
+        {
+            ProductId = createRequest.ProductId,
+            FileExtension = createRequest.FileExtension,
+            Description = createRequest.Description,
+        };
+
+        OneOf<ProductDocument, UnexpectedFailureResult> recordCreateResult
+            = await _productDocumentRepository.InsertAsync(productDocumentCreateRequest);
+
+        if (!recordCreateResult.IsT0)
+        {
+            return recordCreateResult.Map<ProductDocument, FileAlreadyExistsResult, UnexpectedFailureResult>();
+        }
+
+        ProductDocument productDocument = recordCreateResult.AsT0;
+
+        OneOf<Success, FileAlreadyExistsResult> fileCreateResult
+            = await _localFileManagementService.AddFileAsync(productDocument.FileName, createRequest.FileData);
+
+        if (!fileCreateResult.IsT0)
+        {
+            return fileCreateResult.AsT1;
+        }
+
+        return productDocument;
+    }
+
     public async Task<OneOf<Success, NotFound, ValidationResult>> UpdateAsync(ServiceProductDocumentUpdateRequest updateRequest)
     {
         if (_updateRequestValidator != null)
@@ -153,6 +191,17 @@ internal sealed class ProductDocumentFileService : IProductDocumentFileService
         OneOf<Success, NotFound> result = await _productDocumentRepository.UpdateAsync(innerUpdateRequest);
 
         return result.Map<Success, NotFound, ValidationResult>();
+    }
+
+    public async Task<OneOf<Success, NotFound>> FullSave_UpdateAsync(ServiceProductDocumentUpdateRequest updateRequest)
+    {
+        ProductDocumentUpdateRequest innerUpdateRequest = new()
+        {
+            IdOrFileName = updateRequest.IdOrFileName,
+            Description = updateRequest.Description,
+        };
+
+        return await _productDocumentRepository.UpdateAsync(innerUpdateRequest);
     }
 
     public async Task<OneOf<Success, NotFound>> DeleteAsync(OneOf<int, string> idOrFileName)

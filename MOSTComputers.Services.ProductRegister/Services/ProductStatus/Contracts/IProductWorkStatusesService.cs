@@ -17,6 +17,7 @@ public interface IProductWorkStatusesService
     Task<OneOf<bool, ValidationResult>> UpdateByIdAsync(ServiceProductWorkStatusesUpdateByIdRequest updateRequest);
     Task<OneOf<bool, ValidationResult>> UpdateByProductIdAsync(ServiceProductWorkStatusesUpdateByProductIdRequest updateRequest);
     Task<OneOf<int, ValidationResult, UnexpectedFailureResult>> UpsertByProductIdAsync(ServiceProductWorkStatusesUpsertRequest upsertRequest);
+    Task<OneOf<int, UnexpectedFailureResult>> FullSave_UpsertByProductIdAsync(ServiceProductWorkStatusesUpsertRequest upsertRequest);
     Task<bool> DeleteAllAsync();
     Task<bool> DeleteByIdAsync(int productWorkStatusesId);
     Task<bool> DeleteByProductIdAsync(int productId);

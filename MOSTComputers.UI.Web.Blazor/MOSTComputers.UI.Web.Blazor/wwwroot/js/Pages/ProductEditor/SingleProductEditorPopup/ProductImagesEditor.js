@@ -1,5 +1,6 @@
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
+import * as imageUtils from "../../../Common/ImageUtils.js"
 import * as urlUtils from "../../../Common/UrlUtils.js"
 
 const productImageListId = "singleEditorProductImageList";
@@ -67,7 +68,7 @@ export async function addFileToImagesAsync(blob) {
 
     const dataStoreData = dataStore.loadData();
 
-    const imageDimensions = await getImageFileDimensions(blob);
+    const imageDimensions = await imageUtils.getImageFileDimensions(blob);
 
     const formData = new FormData();
 
@@ -75,7 +76,7 @@ export async function addFileToImagesAsync(blob) {
     formData.append(filePreviewUrlFormFieldName, previewUrl);
     formData.append(fileIndexFormFieldName, dataStoreData.productImages.length);
     formData.append(productImageFileWidthFormFieldName, imageDimensions.width);
-    formData.append(productImageFileHeightFormFieldName, image.height);
+    formData.append(productImageFileHeightFormFieldName, imageDimensions.height);
 
     const url = "api/components/productEditor/single/image/add";
 
@@ -168,33 +169,6 @@ function addNewImageFromElementHtml(productImageHtml) {
     return success;
 }
 
-export function getImageFileDimensions(blob) {
-
-    return new Promise((resolve, reject) => {
-
-        const image = new Image();
-
-        image.onload = () => {
-
-            URL.revokeObjectURL(image.src);
-
-            resolve({
-                width: image.naturalWidth,
-                height: image.naturalHeight
-            });
-        };
-
-        image.onerror = () => {
-
-            URL.revokeObjectURL(image.src);
-
-            reject(new Error("Invalid image file."));
-        };
-
-        image.src = URL.createObjectURL(blob);
-    });
-}
-
 let draggedImageItem = null;
 let draggedItemStartIndex = null;
 let lastDragPositionChangeTime = null;
@@ -258,6 +232,8 @@ function onProductImageItemDrop() {
     if (draggedItemStartIndex < draggedItemIndex) {
         movedItemsIndexChange = -1;
     }
+
+    dataStore.moveProductImageAndSave(draggedImageItem.id, draggedItemIndex);
 
     for (let i = smallerDragIndex; i <= largerDragIndex; i++) {
 

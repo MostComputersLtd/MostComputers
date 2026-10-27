@@ -4,4 +4,5 @@ public sealed class GroupPromotionImageFileDataUpdateRequest
 {
     public required int Id { get; set; }
     public required string NewFileName { get; set; }
+    public required string NewContentType { get; set; }
 }

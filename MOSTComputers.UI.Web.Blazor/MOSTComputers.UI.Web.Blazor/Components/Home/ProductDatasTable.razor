@@ -177,11 +177,36 @@
 
                                     @if (promotion.DiscountEUR is not null && promotion.DiscountEUR > 0.00M)
                                     {
-                                        <p class="product-promotion-discount">Discount: @promotion.DiscountEUR @GetPriceSuffixStringFromCurrency(Currency.EUR)</p>
+                                        <p class="product-promotion-discount">
+                                            Discount: @promotion.DiscountEUR @GetPriceSuffixStringFromCurrency(Currency.EUR)
+                                        </p>
                                     }
                                     else if (promotion.DiscountUSD is not null && promotion.DiscountUSD > 0.00M)
                                     {
-                                        <p class="product-promotion-discount">Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)</p>
+                                        <p class="product-promotion-discount">
+                                            Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)
+                                        </p>
+                                    }
+
+                                    @if (promotion.MinimumQuantity is not null && promotion.MinimumQuantity > 0)
+                                    {
+                                        <p class="product-promotion-discount">
+                                            Min Qty: @promotion.MinimumQuantity
+                                        </p>
+                                    }
+
+                                    @if (promotion.MaximumQuantity is not null && promotion.MaximumQuantity > 0)
+                                    {
+                                        <p class="product-promotion-discount">
+                                            Max Qty: @promotion.MaximumQuantity
+                                        </p>
+                                    }
+
+                                    @if (promotion.ExpQuantity is not null && promotion.ExpQuantity > 0)
+                                    {
+                                        <p class="product-promotion-discount">
+                                            Expire Qty: @promotion.ExpQuantity
+                                        </p>
                                     }
 
                                 </div>

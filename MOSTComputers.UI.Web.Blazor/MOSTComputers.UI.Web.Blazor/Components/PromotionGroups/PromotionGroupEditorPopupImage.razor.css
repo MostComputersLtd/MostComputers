@@ -19,15 +19,40 @@
 .promotion-group-edit-image-delete-button-container {
     position: absolute;
     display: flex;
-    justify-content: flex-end;
-    right: 0.1rem;
+    justify-content: flex-start;
+    left: 0.1rem;
     top: 0.1rem;
     pointer-events: none;
     user-select: none;
 }
 
+.promotion-group-edit-image-resize-button {
+    width: 1rem;
+    height: 1rem;
+    padding: 0px;
+    display: flex;
+    flex-direction: row;
+    pointer-events: all;
+}
+
+.promotion-group-edit-image-resize-button-icon {
+    width: 100%;
+    height: auto;
+}
+
+.promotion-group-edit-image-delete-button-container {
+    position: absolute;
+    right: 0.1rem;
+    top: 0.1rem;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+    user-select: none;
+}
+
 .promotion-group-edit-image-delete-button {
-    width: 0.3em;
-    height: 0.3em;
+    width: 0.8em;
+    height: 0.8em;
+    padding: 0px;
     pointer-events: all;
 }

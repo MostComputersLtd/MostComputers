@@ -252,6 +252,27 @@ internal sealed class CachedProductImageFileService : IProductImageFileService
         return insertResult;
     }
 
+    public async Task<OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>> FullSave_InsertFileInternalAsync(
+        ProductImageFileCreateRequest createRequest)
+    {
+        OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult> insertResult
+            = await _productImageFileService.FullSave_InsertFileInternalAsync(createRequest);
+
+        if (insertResult.IsT0)
+        {
+            await _fusionCache.RemoveAsync(GetAllByProductIdKey(createRequest.ProductId));
+            await _fusionCache.RemoveAsync(GetByIdKey(insertResult.AsT0));
+
+            if (createRequest.ImageId is not null)
+            {
+                await _fusionCache.RemoveAsync(
+                    GetByProductIdAndImageIdKey(createRequest.ProductId, createRequest.ImageId.Value));
+            }
+        }
+
+        return insertResult;
+    }
+
     public async Task<OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>> UpdateFileAsync(
         ProductImageFileUpdateRequest updateRequest)
     {
@@ -295,6 +316,34 @@ internal sealed class CachedProductImageFileService : IProductImageFileService
             if (updateRequest.UpdateImageIdRequest.IsT0)
             {
                 await _fusionCache.RemoveAsync(GetByProductIdAndImageIdKey(oldProductImageFile.ProductId, updateRequest.UpdateImageIdRequest.AsT0!.Value));
+            }
+        }
+
+        return updateResult;
+    }
+
+    public async Task<OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>
+        FullSave_UpdateFileInternalAsync(
+        ProductImageFileUpdateRequest updateRequest,
+        ProductImageFileData fileNameInfo)
+    {
+        OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateResult
+            = await _productImageFileService.FullSave_UpdateFileInternalAsync(updateRequest, fileNameInfo);
+        
+        if (updateResult.IsT0)
+        {
+            await _fusionCache.RemoveAsync(GetByIdKey(updateRequest.Id));
+
+            await _fusionCache.RemoveAsync(GetAllByProductIdKey(fileNameInfo.ProductId));
+
+            if (fileNameInfo.ImageId is not null)
+            {
+                await _fusionCache.RemoveAsync(GetByProductIdAndImageIdKey(fileNameInfo.ProductId, fileNameInfo.ImageId.Value));
+            }
+
+            if (updateRequest.UpdateImageIdRequest.IsT0)
+            {
+                await _fusionCache.RemoveAsync(GetByProductIdAndImageIdKey(fileNameInfo.ProductId, updateRequest.UpdateImageIdRequest.AsT0!.Value));
             }
         }
 
@@ -453,6 +502,36 @@ internal sealed class CachedProductImageFileService : IProductImageFileService
         return deleteResult;
     }
 
+    public async Task<OneOf<Success, NotFound, FileDoesntExistResult>> FullSave_DeleteFileInternalAsync(ProductImageFileData fileNameInfo)
+    {
+        OneOf<Success, NotFound, FileDoesntExistResult> deleteResult
+            = await _productImageFileService.FullSave_DeleteFileInternalAsync(fileNameInfo);
+
+        if (deleteResult.IsT0)
+        {
+            //_cache.Evict(GetAllByProductIdKey(realProductImageFile.ProductId));
+
+            //_cache.Evict(GetByIdKey(realProductImageFile.Id));
+
+            //if (realProductImageFile.ImageId is not null)
+            //{
+            //    _cache.Evict(GetByProductIdAndImageIdKey(realProductImageFile.ProductId, realProductImageFile.ImageId.Value));
+            //}
+
+            await _fusionCache.RemoveAsync(GetAllByProductIdKey(fileNameInfo.ProductId));
+
+            await _fusionCache.RemoveAsync(GetByIdKey(fileNameInfo.Id));
+
+            if (fileNameInfo.ImageId is not null)
+            {
+                await _fusionCache.RemoveAsync(
+                    GetByProductIdAndImageIdKey(fileNameInfo.ProductId, fileNameInfo.ImageId.Value));
+            }
+        }
+
+        return deleteResult;
+    }
+
     public async Task<OneOf<Success, NotFound, FileDoesntExistResult, ValidationResult, UnexpectedFailureResult>> DeleteFileByProductIdAndImageIdAsync(
         int productId, int imageId, string deleteUserName)
     {
@@ -536,5 +615,5 @@ internal sealed class CachedProductImageFileService : IProductImageFileService
 
             await _fusionCache.SetAsync(getByProductAndImageIdKey, productImageFile);
         }
-    }
+    } 
 }

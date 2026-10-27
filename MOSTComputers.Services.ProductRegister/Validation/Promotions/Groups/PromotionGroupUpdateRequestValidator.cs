@@ -2,6 +2,7 @@ using FluentValidation;
 
 using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.PromotionGroupConstraints;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonElements;
+using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
 
 namespace MOSTComputers.Services.ProductRegister.Validation.Promotions.Groups;
 
@@ -20,5 +21,7 @@ internal sealed class PromotionGroupUpdateRequestValidator : AbstractValidator<S
             .When(x => x.Logo is not null);
 
         RuleFor(x => x.DisplayOrder).NotNull();
+
+        RuleFor(x => x.RelatedManufacturerId).NullOrGreaterThan(0);
     }
 }

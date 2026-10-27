@@ -9,16 +9,17 @@
     string? expirationDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.ExpirationDate ?? _defaultExpirationDate);
     string? minDateTimeStartingValue = GetDateTimeAsStringForDateInput(PromotionData.MinDateValue);
 
-    string? promotionGroupName = null;
+    string? promotionGroupEditButtonText = null;
 
     foreach (PromotionGroup promotionGroup in AvailablePromotionGroups)
     {
         if (promotionGroup.Id == PromotionData.GroupId)
         {
-            promotionGroupName = promotionGroup.Name;
-            string? promotionGroupDisplayOrder = promotionGroup.DisplayOrder != null ? $" ({promotionGroup.DisplayOrder})" : " (-)";
+            promotionGroupEditButtonText = promotionGroup.Name;
 
-            promotionGroupName += promotionGroupDisplayOrder;
+            string? promotionGroupDisplayOrderText = promotionGroup.DisplayOrder != null ? $" ({promotionGroup.DisplayOrder})" : " (-)";
+
+            promotionGroupEditButtonText += promotionGroupDisplayOrderText;
 
             break;
         }
@@ -37,12 +38,10 @@
             <button id="editPromotionGroupButton" type="button"
                 class="promotion-group-edit-button"
                 data-current-promotion-group-id="@PromotionData.GroupId">
-                @* onclick="openPromotionGroupEditorPopup(@PromotionData.GroupId)"> *@
-                @promotionGroupName - Edit Group
+                @promotionGroupEditButtonText - Edit Group
             </button>
         }
 
-        @* <button id="savePromotionButton" class="promotion-save-button" onclick="savePromotion()"> *@
         <button id="savePromotionButton" class="promotion-save-button">
 
             <p class="promotion-save-button-text">Save</p>
@@ -57,7 +56,6 @@
 
         <button id="resetPromotionGroupEditorButton" type="button"
             class="promotion-group-editor-reset-button">
-            @* onclick="openPromotionEditorForPromotion(@(PromotionData.Id != null ? PromotionData.Id.Value.ToString() : string.Empty))"> *@
             Discard
         </button>
     </div>
@@ -171,7 +169,6 @@
                 type="button"
                 class="promotion-edit-file-select-button"
                 aria-label="Add File">
-                @* onclick="addNewImageToEditor()" *@
                 Add File
             </button>
 
@@ -193,13 +190,12 @@
             <div id="promotionHtml"
                 contenteditable="true"
                 class="promotion-edit-input promotion-edit-html-content">
-                @* oninput='expandTextAreaToNeededHeight("promotionHtml")' *@
                 @PromotionData.HtmlContent
             </div>
 
         </div>
 
-        <p>&lt;br&gt;&lt;br&gt;&lt;a href="http://www.mostbg.com"&gt;&lt;img src=""/&gt;&lt;/a&gt;&lt;br&gt;&lt;br&gt;</p>
+        <p>&lt;br&gt;&lt;br&gt;&lt;img src=""/&gt;&lt;br&gt;&lt;br&gt;</p>
 
         <div class="promotion-edit-related-products-container">
 
@@ -210,7 +206,6 @@
                 <button id="relatedProductsPopupOpenButton"
                     type="button"
                     class="promotion-edit-open-related-products-popup-button">
-                    @* onclick="openAddRelatedProductsToPromotionPopup(@PromotionData.GroupId)" *@
                     Add Products
                 </button>
             </div>

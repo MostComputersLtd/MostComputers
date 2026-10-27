@@ -39,6 +39,45 @@ function createImageRepresentationForCopy(imageIndex, imageId) {
     return output;
 }
 
+export function readImageRepresentationData(imageRepresentation) {
+
+    let imageDataStartIndex = imageRepresentation.indexOf(copyImageRepresentationStart) + copyImageRepresentationStart.length;
+
+    let imageDataEndIndex = imageRepresentation.indexOf(copyImageRepresentationEnd);
+
+    let imageData = imageRepresentation.substring(imageDataStartIndex, imageDataEndIndex);
+
+    const imageDataFields = imageData.split(copyImageDataSeparator);
+
+    let imageIndex;
+    let imageId;
+
+    for (const imageDataField of imageDataFields) {
+
+        if (imageDataField.startsWith(copyImageIndexPrefix)) {
+
+            const imageIndexStartIndex = copyImageIndexPrefix.length;
+
+            const imageIndexAsString = imageDataField.substring(imageIndexStartIndex);
+
+            imageIndex = parseInt(imageIndexAsString);
+        }
+        else if (imageDataField.startsWith(copyImageIdPrefix)) {
+
+            const imageIdStartIndex = copyImageIdPrefix.length;
+
+            const imageIdAsString = imageDataField.substring(imageIdStartIndex);
+
+            imageId = parseInt(imageIdAsString);
+        }
+    }
+
+    return {
+        imageIndex: imageIndex,
+        imageId: imageId
+    }
+}
+
 export function createImageVisibleRepresentation(imageIndex, imageId) {
 
     let imageText;

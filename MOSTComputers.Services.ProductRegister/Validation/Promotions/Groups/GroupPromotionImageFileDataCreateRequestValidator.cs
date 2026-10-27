@@ -10,5 +10,6 @@ internal sealed class GroupPromotionImageFileDataCreateRequestValidator : Abstra
         RuleFor(x => x.ImageId).GreaterThan(0);
         RuleFor(x => x.PromotionId).NullOrGreaterThan(0);
         RuleFor(x => x.FileName).NotNullOrWhiteSpace().MaximumLength(FileNameMaxLength);
+        RuleFor(x => x.ContentType).NotNullOrWhiteSpace().MaximumLength(ContentTypeMaxLength);
     }
 }
