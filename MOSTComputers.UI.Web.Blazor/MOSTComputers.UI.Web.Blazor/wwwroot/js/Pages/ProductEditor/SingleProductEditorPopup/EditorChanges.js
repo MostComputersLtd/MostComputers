@@ -3,30 +3,50 @@ const changedImages = new Map();
 const changedPromotionFiles = new Map();
 const changedDocuments = new Map();
 
+let onEditorChangeOrMarkCallback = null;
+
 export const ItemChangeState = {
     Added: 0,
     Updated: 1,
     Deleted: 2
 };
 
+export function setCallback(callback) {
+
+    onEditorChangeOrMarkCallback = callback;
+}
+
+export function removeCallback() {
+
+    onEditorChangeOrMarkCallback = null;
+}
+
 export function setPropertyChanged(propertyData, itemChangeState)
 {
     setDataChanged(changedProperties, propertyData, itemChangeState);
+
+    runCallback();
 }
 
 export function setImageChanged(imageData, itemChangeState)
 {
     setDataChanged(changedImages, imageData, itemChangeState);
+
+    runCallback();
 }
 
 export function setPromotionProductFileChanged(promotionProductFileData, itemChangeState)
 {
     setDataChanged(changedPromotionFiles, promotionProductFileData, itemChangeState);
+
+    runCallback();
 }
 
 export function setDocumentChanged(productDocumentData, itemChangeState)
 {
     setDataChanged(changedDocuments, productDocumentData, itemChangeState);
+
+    runCallback();
 }
 
 function setDataChanged(changedItems, changedItem, itemChangeState)
@@ -61,21 +81,37 @@ function setDataChanged(changedItems, changedItem, itemChangeState)
 export function markDataSaved(propertyData)
 {
     changedProperties.delete(propertyData);
+
+    runCallback();
 }
 
 export function markDataSaved(imageData)
 {
     changedImages.delete(imageData);
+
+    runCallback();
 }
 
 export function markDataSaved(promotionProductFileData)
 {
     changedPromotionFiles.delete(promotionProductFileData);
+
+    runCallback();
 }
 
 export function markDataSaved(productDocumentData)
 {
     changedDocuments.delete(productDocumentData);
+
+    runCallback();
+}
+
+export function anyChanges() {
+
+    return changedProperties.size > 0
+        || changedImages.size > 0
+        || changedPromotionFiles.size > 0
+        || changedDocuments.size > 0;
 }
 
 export function clearChanges() {
@@ -84,4 +120,11 @@ export function clearChanges() {
     changedImages.clear();
     changedPromotionFiles.clear();
     changedDocuments.clear();
+}
+
+function runCallback() {
+
+    if (onEditorChangeOrMarkCallback == null) return;
+
+    onEditorChangeOrMarkCallback();
 }

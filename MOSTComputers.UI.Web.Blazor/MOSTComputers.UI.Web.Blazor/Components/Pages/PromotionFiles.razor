@@ -108,7 +108,7 @@
                                 </p>
                             </td>
                             <td style="max-width: 8em; max-height: 4em;">
-                                <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfo.FileName)"
+                                <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfo.FileName, promotionFileInfo.ContentType)"
                                     class="full-parent-width full-parent-height">
                                 </PromotionFile>
                             </td>
@@ -179,6 +179,7 @@
             ValidFrom = existingPromotionFileToEdit.ValidFrom,
             ValidTo = existingPromotionFileToEdit.ValidTo,
             FileName = existingPromotionFileToEdit.FileName,
+            ContentType = existingPromotionFileToEdit.ContentType,
             Description = existingPromotionFileToEdit.Description,
             RelatedProductsString = existingPromotionFileToEdit.RelatedProductsString,
             CreateUserName = existingPromotionFileToEdit.CreateUserName,
@@ -238,6 +239,7 @@
                 ValidFrom = createPromotionFileEditData.ValidFrom,
                 ValidTo = createPromotionFileEditData.ValidTo,
                 FileName = newFileName,
+                ContentType = selectedFileData.ContentType,
                 Description = createPromotionFileEditData.Description,
                 RelatedProductsString = createPromotionFileEditData.RelatedProductsString,
                 CreateUserName = currentUserName,
@@ -270,7 +272,7 @@
 
         PromotionFileSingleEditorPopup.UpdatePromotionFileEditData updatePromotionFileEditData = promotionFileEditData.AsT1;
 
-        FileData? newFileData = null;
+        PromotionFileData? newFileData = null;
 
         if (selectedFileData is not null)
         {
@@ -286,12 +288,15 @@
             newFileData = new()
             {
                 FileName = newFileName[1..],
+                ContentType = selectedFileData.ContentType,
                 Data = fileData,
             };
         }
         else if (!string.IsNullOrWhiteSpace(preferredNameWithoutExtension))
         {
             Stream? promotionFileDataStream = await PromotionFileService.GetFileDataByIdAsync(updatePromotionFileEditData.Id);
+
+            PromotionFileInfo? promotionFileData = await PromotionFileService.GetByIdAsync(updatePromotionFileEditData.Id);
 
             if (promotionFileDataStream is null) return;
 
@@ -304,6 +309,7 @@
             newFileData = new()
             {
                 FileName = preferredNameWithoutExtension + Path.GetExtension(updatePromotionFileEditData.FileName),
+                ContentType = promotionFileData!.ContentType,
                 Data = fileData,
             };
         }

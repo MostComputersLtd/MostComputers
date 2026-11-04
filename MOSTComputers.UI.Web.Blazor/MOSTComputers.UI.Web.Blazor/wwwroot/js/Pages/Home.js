@@ -36,9 +36,10 @@ document.addEventListener("visibilitychange", handleVisibilityChange);
 window.addEventListener("resize", handleResize);
 
 function handleVisibilityChange() {
+
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
 
-    if (productDataDialogCarousel == null) return;
+    if (!productDataDialogCarousel) return;
 
     if (document.hidden) {
         stopAutoSlide(productDataDialogCarouselId);
@@ -358,20 +359,23 @@ async function showProductDisplayPopupAsync(productId) {
     const productDataDialog = productDisplayPopupContainer.querySelector("dialog");
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
 
-    requestAnimationFrame(function ()
-    {
-        resizeHtmlContentInCarousel(productDataDialogCarousel);
+    if (productDataDialogCarousel) {
 
-        startAutoSlide(true, productDataDialogCarouselId);
+        requestAnimationFrame(function ()
+        { 
+            resizeHtmlContentInCarousel(productDataDialogCarousel);
 
-        productDataDialog.addEventListener("close", function () {
-            stopAutoSlide(productDataDialogCarouselId);
+            startAutoSlide(true, productDataDialogCarouselId);
+
+            productDataDialog.addEventListener("close", function () {
+                stopAutoSlide(productDataDialogCarouselId);
+            });
+
+            productDataDialog.addEventListener("cancel", function () {
+                stopAutoSlide(productDataDialogCarouselId);
+            });
         });
-
-        productDataDialog.addEventListener("cancel", function () {
-            stopAutoSlide(productDataDialogCarouselId);
-        });
-    });
+    } 
 
     productDataDialog.showModal();
 }

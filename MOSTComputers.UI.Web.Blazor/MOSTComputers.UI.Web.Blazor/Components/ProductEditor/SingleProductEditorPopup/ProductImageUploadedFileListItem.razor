@@ -1,0 +1,98 @@
+@using System.Text.Json.Serialization
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
+
+@{
+    UploadedFileData uploadedFile = ItemData.UploadedFile;
+    UploadedProductImageFileRelatedFileDisplayData relatedImageFile = ItemData.ImageData;
+
+    string byteSizeString = GetByteSizeString(
+        (ulong)uploadedFile.FileSize,
+        ByteSizeStringAccuracy.WithGivenScalesDown(1));
+}
+
+<li id="@ItemData.EditorId"
+    name="productImageItem"
+    class="image-list-item"
+    draggable="true"
+    data-image-type="@ItemType">
+
+    <button name="productImageButton" aria-label="Image #@(ItemData.Index)" class="btn image-button"
+        data-image-url="@uploadedFile.PreviewUrl"
+        style="background-image: url('@uploadedFile.PreviewUrl');">
+    </button>
+
+    <p class="align-text-center">
+        @byteSizeString ({@uploadedFile.WidthPixels} X {@uploadedFile.HeightPixels} px)"
+    </p>
+
+    <div class="image-active-checkbox-container">
+        <input id="imageActiveCheckbox-@ItemData.Index" name="imageFileActiveCheckbox"
+            checked="@relatedImageFile.Active" type="checkbox"
+            class="image-active-checkbox"
+            aria-label="Toggle image active" />
+    </div>
+
+    <div class="image-delete-button-container">
+        <button name="productImageDeleteButton" type="button" class="btn-close image-delete-button"
+            aria-label="Delete"/>
+    </div>
+
+    <p class="file-empty-placeholder"></p>
+    <p class="file-empty-placeholder"></p>
+
+    <ValidationMessages Messages="ItemData.ValidationMessages" />
+
+    @if (JsonData != null)
+    {
+        <script name="productImageItemData" type="application/json">
+            @JsonData
+        </script>
+    }
+</li>
+
+@code{
+    public sealed class UploadedProductImageFileDisplayData : ProductImageListItemBase
+    {
+        public required int Index { get; set; }
+
+        public required UploadedFileData UploadedFile { get; set; }
+        public required UploadedProductImageFileRelatedFileDisplayData ImageData { get; set; }
+
+        public List<string> ValidationMessages { get; set; } = new();
+    }
+
+    public sealed class UploadedFileData
+    {
+        public required string FileName { get; set; }
+        public required string ContentType { get; set; }
+        public required string PreviewUrl { get; set; }
+        public required long FileSize { get; set; }
+        public required int WidthPixels { get; init; }
+        public required int HeightPixels { get; init; }
+    }
+
+    public sealed class UploadedProductImageFileRelatedFileDisplayData
+    {
+        public bool Active { get; set; }
+    }
+
+    public sealed class UploadedProductImageFileRecoveryJsonData : ProductImageRecoveryJsonDataBase
+    {
+        public sealed override string ItemType => ProductImageUploadedFileListItem.ItemType;
+
+        [JsonPropertyName("uploadedFileUrl")] public required string UploadedFileUrl { get; set; }
+        [JsonPropertyName("imageFileData")] public required UploadedProductImageFileRelatedFileRecoveryJsonData ImageFileData { get; set; }
+    }
+
+    public sealed class UploadedProductImageFileRelatedFileRecoveryJsonData
+    {
+        [JsonPropertyName("active")] public bool Active { get; set; }
+    }
+
+    internal const string ItemType = "uploadedImage";
+
+    [Parameter, EditorRequired] public required UploadedProductImageFileDisplayData ItemData { get; set; }
+    [Parameter] public string? JsonData { get; set; } = null;
+}

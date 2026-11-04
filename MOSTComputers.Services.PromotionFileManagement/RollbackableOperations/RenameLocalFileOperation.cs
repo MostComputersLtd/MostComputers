@@ -6,60 +6,59 @@ using OneOf.Types;
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
 internal sealed class RenameLocalFileOperation : IRollbackableOperation<OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult>>
 {
-    internal RenameLocalFileOperation(string directoryPath, string currentFullFileName, string newFileNameWithoutExtension)
+    internal RenameLocalFileOperation(
+        string currentFilePath, string currentFullFileName, string newDirectoryPath, string newFileNameWithoutExtension)
     {
-        _directoryPath = directoryPath;
+        _currentFilePath = currentFilePath;
+        _newDirectoryPath = newDirectoryPath;
         _currentFullFileName = currentFullFileName;
         _newFileNameWithoutExtension = newFileNameWithoutExtension;
     }
 
-    private readonly string _directoryPath;
+    private readonly string _currentFilePath;
     private readonly string _currentFullFileName;
+    private readonly string _newDirectoryPath;
     private readonly string _newFileNameWithoutExtension;
 
-    private bool _succeeeded = false;
+    private bool _destinationMayHaveChanged = false;
 
     public OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> Execute()
     {
-        string oldFilePath = Path.Combine(_directoryPath, _currentFullFileName);
-
-        string? fileExtension = Path.GetExtension(oldFilePath);
+        string? fileExtension = Path.GetExtension(_currentFilePath);
 
         if (string.IsNullOrWhiteSpace(fileExtension)
             || !fileExtension.StartsWith('.')
-            || !File.Exists(oldFilePath))
+            || !File.Exists(_currentFilePath))
         {
             return new FileDoesntExistResult() { FileName = _currentFullFileName };
         }
 
         string newFileName = _newFileNameWithoutExtension + fileExtension;
 
-        string newFilePath = Path.Combine(_directoryPath, newFileName);
+        string newFilePath = Path.Combine(_newDirectoryPath, newFileName);
 
         if (File.Exists(newFilePath))
         {
             return new FileAlreadyExistsResult() { FileName = _currentFullFileName };
         }
 
-        File.Move(oldFilePath, newFilePath);
+        File.Move(_currentFilePath, newFilePath);
 
-        _succeeeded = true;
+        _destinationMayHaveChanged = true;
 
         return new Success();
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
+        if (!_destinationMayHaveChanged) return;
 
-        string oldFilePath = Path.Combine(_directoryPath, _currentFullFileName);
-
-        if (File.Exists(oldFilePath))
+        if (File.Exists(_currentFilePath))
         {
             throw new InvalidOperationException("Inconsistent state: Rollback discovered, that a file that was moved still exists at its old location");
         }
 
-        string? fileExtension = Path.GetExtension(oldFilePath);
+        string? fileExtension = Path.GetExtension(_currentFilePath);
 
         if (string.IsNullOrWhiteSpace(fileExtension)
             || !fileExtension.StartsWith('.'))
@@ -69,13 +68,13 @@ internal sealed class RenameLocalFileOperation : IRollbackableOperation<OneOf<Su
 
         string newFileName = _newFileNameWithoutExtension + fileExtension;
 
-        string newFilePath = Path.Combine(_directoryPath, newFileName);
+        string newFilePath = Path.Combine(_newDirectoryPath, newFileName);
 
         if (!File.Exists(newFilePath))
         {
             throw new InvalidOperationException("Inconsistent state: Rollback discovered, that a file to be moved does not exist");
         }
 
-        File.Move(newFilePath, oldFilePath);
+        File.Move(newFilePath, _currentFilePath);
     }
 }

@@ -143,7 +143,7 @@
 
                                     @if (promotionProductFileInfo.PromotionFileInfoData is not null)
                                     {
-                                        <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionProductFileInfo.PromotionFileInfoData.FileName)"
+                                        <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionProductFileInfo.PromotionFileInfoData.FileName, promotionProductFileInfo.PromotionFileInfoData.ContentType)"
                                             class="full-parent-width full-parent-height" />
                                     }
                                     else
@@ -215,6 +215,7 @@
     {
         public required int Id { get; set; }
         public required string FileName { get; set; }
+        public required string ContentType { get; set; }
         public required bool Active { get; set; }
         public string? Name { get; set; }
         public DateTime? ValidFrom { get; set; }
@@ -472,6 +473,7 @@
             Name = promotionFileInfo.Name,
             Active = promotionFileInfo.Active,
             FileName = promotionFileInfo.FileName,
+            ContentType = promotionFileInfo.ContentType,
             ValidFrom = promotionFileInfo.ValidFrom,
             ValidTo = promotionFileInfo.ValidTo,
             Description = promotionFileInfo.Description,
@@ -491,6 +493,7 @@
             Name = promotionFileInfo.Name,
             Active = promotionFileInfo.Active,
             FileName = promotionFileInfo.FileName,
+            ContentType = promotionFileInfo.ContentType,
             ValidFrom = promotionFileInfo.ValidFrom,
             ValidTo = promotionFileInfo.ValidTo,
             Description = promotionFileInfo.Description,
@@ -525,6 +528,7 @@
             Name = promotionFile.Name,
             Active = promotionFile.Active,
             FileName = promotionFile.FileName,
+            ContentType = promotionFile.ContentType,
             ValidFrom = promotionFile.ValidFrom,
             ValidTo = promotionFile.ValidTo,
             Description = promotionFile.Description,

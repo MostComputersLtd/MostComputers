@@ -13,7 +13,11 @@
 }
 
 .promotion-row:hover {
-    background-color: #e5e4e4;
+    background-color: #E7E7E7;
+}
+
+.promotion-row.item-selected {
+    background-color: #D5D5D5;
 }
 
 .promotion-item-group-column {

@@ -1,11 +1,14 @@
-@using MOSTComputers.Models.Product.Models
+@inject IHttpContextAccessor HttpContextAccessor
+
+@using System.Text.Json.Serialization
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
 @{
-    ProductDocument? document = ItemData.ExistingDocument;
+    ExistingProductDocumentDisplayData? document = ItemData.ExistingDocument;
 
     int index = ItemData.Index;
 }
 
-<li id="@ItemData.EditorId" name="productDocumentItem class="product-document-list-item">
+<li id="@ItemData.EditorId" name="productDocumentItem" class="product-document-list-item">
 
     @if (document is not null)
     {
@@ -17,7 +20,8 @@
         type="text"
         class="product-document-description-input"
         aria-label="Description"
-        placeholder="Description (optional)" />
+        placeholder="Description (optional)"
+        value="@ItemData.CurrentDescription"/>
 
     <button type="button" name="productDocumentShowPopupButton"
         class="btn btn-secondary product-document-view-button"
@@ -28,9 +32,19 @@
 
     @if (document != null)
     {
+        string origin = $"{HttpContextAccessor.HttpContext!.Request.Scheme}://{HttpContextAccessor.HttpContext.Request.Host}";
+
+        string documentUri = string.Join(
+        '/',
+        ProductDocumentEndpoints.EndpointGroupRoute.Trim('/'),
+        document.Id.ToString());
+
+        string documentUrl = $"{origin}/{documentUri}";
+
         <button type="button" name="productDocumentSaveUrlButton"
             class="btn btn-secondary product-document-copy-url-button"
-            data-document-id="@document.Id">
+            data-document-id="@document.Id"
+            data-document-url="@documentUrl">
             Copy Url
         </button>
     }
@@ -48,7 +62,32 @@
 </li>
 
 @code{
-    [Parameter, EditorRequired] public required SingleProductEditorPopup.ProductDocumentDisplayData ItemData { get; set; }
+    public sealed class ProductDocumentDisplayData
+    {
+        public required string EditorId { get; set; }
+        public required int Index { get; set; }
+        public required string BrowserFilePath { get; set; }
+        public ExistingProductDocumentDisplayData? ExistingDocument { get; set; } = null;
+        public string CurrentDescription { get; set; } = string.Empty;
+
+        public List<string> ValidationMessages { get; set; } = new();
+    }
+
+    public sealed class ExistingProductDocumentDisplayData
+    {
+        public required int Id { get; init; }
+        public required string FileName { get; init; }
+    }
+
+    public sealed class ProductDocumentRecoveryJsonData
+    {
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonPropertyName("id")] public int? Id { get; set; }
+        [JsonPropertyName("uploadedFileUrl")] public string? UploadedFileUrl { get; set; }
+        [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
+    } 
+
+    [Parameter, EditorRequired] public required ProductDocumentDisplayData ItemData { get; set; }
     [Parameter, EditorRequired] public int ProductId { get; set; }
     [Parameter] public string? JsonData { get; set; } = null;
 }

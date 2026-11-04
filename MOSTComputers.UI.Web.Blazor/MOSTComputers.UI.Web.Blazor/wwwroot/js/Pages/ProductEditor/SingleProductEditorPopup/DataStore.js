@@ -2,11 +2,6 @@ const jsonDataLocalStorageKey = "single-product-editor-data";
 
 let localData = null;
 
-let localFileData = {
-    productImages: new Map(),
-    productDocuments: new Map(),
-};
-
 export function loadData() {
 
     if (localData == null) {
@@ -31,6 +26,12 @@ export function saveData(jsonDataObject) {
     window.localStorage.setItem(jsonDataLocalStorageKey, jsonDataParsed);
 }
 
+export function clearData() {
+
+    localData = null;
+    window.localStorage.removeItem(jsonDataLocalStorageKey);
+}
+
 export function loadImageData(editorId) {
 
     const data = loadData();
@@ -40,7 +41,7 @@ export function loadImageData(editorId) {
     return productImage ? productImage : null;
 }
 
-export function addProductImageAndSave(editorId, productImageData, file) {
+export function addProductImageAndSave(editorId, productImageData) {
 
     const data = loadData();
 
@@ -49,7 +50,6 @@ export function addProductImageAndSave(editorId, productImageData, file) {
     if (productImage) return false;
 
     data.productImages.push(productImageData);
-    localFileData.productImages.set(editorId, file);
 
     saveData(data);
 
@@ -176,7 +176,7 @@ export function updatePropertyAndSave(editorId, isLink, mutator) {
     saveData(data);
 }
 
-export function addProductDocumentAndSave(editorId, productDocumentData, file) {
+export function addProductDocumentAndSave(editorId, productDocumentData) {
 
     const data = loadData();
 
@@ -185,7 +185,6 @@ export function addProductDocumentAndSave(editorId, productDocumentData, file) {
     if (productDocument) return false;
 
     data.productDocuments.push(productDocumentData);
-    localFileData.productDocuments.set(editorId, file);
 
     saveData(data);
 

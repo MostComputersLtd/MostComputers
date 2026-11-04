@@ -81,7 +81,7 @@ export function changePromotionGroupLogo() {
 
     logoImageInput.addEventListener("change", onLogoImageInputChanged, { once: true });
 
-    logoImageInput.click(); 
+    logoImageInput.click();
 }
 
 async function onLogoImageInputChanged(e) {
@@ -92,7 +92,7 @@ async function onLogoImageInputChanged(e) {
 
     const fileObjectUrl = URL.createObjectURL(file);
 
-    const newImageElementHtml = await getPromotionGroupLogoImage(fileObjectUrl);
+    const newImageElementHtml = await getPromotionGroupLogoImage(fileObjectUrl, file.type);
 
     if (promotionGroupImageToUpload != null) {
 
@@ -108,22 +108,20 @@ async function onLogoImageInputChanged(e) {
         fileObjectUrl: fileObjectUrl
     };
 
-     const promotionGroupLogoChangeButton = document.getElementById(common.promotionGroupLogoChangeButtonId);
+    const promotionGroupLogoChangeButton = document.getElementById(common.promotionGroupLogoChangeButtonId);
 
     promotionGroupLogoChangeButton.innerText = "Change Image";
 
     const promotionGroupImageResizeButton = document.getElementById(common.promotionGroupImageResizeButtonId);
-
-    promotionGroupImageResizeButton.addEventListener("click", openResizePopupForPromotionGroupImage);
-
     const promotionGroupImageDeleteButton = document.getElementById(common.promotionGroupImageDeleteButtonId);
 
+    promotionGroupImageResizeButton.addEventListener("click", openResizePopupForPromotionGroupImage);
     promotionGroupImageDeleteButton.addEventListener("click", removePromotionGroupImage);
 }
 
-async function getPromotionGroupLogoImage(imageUrl) {
+async function getPromotionGroupLogoImage(imageUrl, contentType) {
 
-    const promotionLogoGroupImageOptions = getPromotionGroupLogoImageOptions(imageUrl);
+    const promotionLogoGroupImageOptions = getPromotionGroupLogoImageOptions(imageUrl, contentType);
 
     const response = await fetch("api/components/promotionGroups/groupImages", {
         method: "POST",
@@ -139,10 +137,11 @@ async function getPromotionGroupLogoImage(imageUrl) {
     return await response.text();
 }
 
-function getPromotionGroupLogoImageOptions(imageUrl) {
+function getPromotionGroupLogoImageOptions(imageUrl, contentType) {
 
     return {
-        ImageUrl: imageUrl
+        ImageUrl: imageUrl,
+        ContentType: contentType,
     }
 }
 
@@ -199,13 +198,21 @@ function getPromotionGroupCreateRequestFromCurrentData() {
 
     const formData = new FormData();
 
-    const promotionGroupName = promotionGroupNameInput.value;
-    const promotionGroupDisplayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
-    const promotionGroupRelatedManufacturerId = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
+    const name = promotionGroupNameInput.value;
+    const displayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
+    const relatedManufacturerId = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
 
-    formData.append("Name", promotionGroupName);
-    formData.append("DisplayOrder", promotionGroupDisplayOrder);
-    formData.append("RelatedManufacturerId", promotionGroupRelatedManufacturerId);
+    formData.append("Name", name);
+
+    if (displayOrder != null) {
+
+        formData.append("DisplayOrder", displayOrder);
+    }
+
+    if (relatedManufacturerId != null) {
+
+        formData.append("RelatedManufacturerId", relatedManufacturerId);
+    }
 
     if (promotionGroupImageToUpload != null) {
 
@@ -244,14 +251,22 @@ function getPromotionGroupUpdateRequestFromCurrentData(id) {
 
     const formData = new FormData();
 
-    const promotionGroupName = promotionGroupNameInput.value;
-    const promotionGroupDisplayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
-    const promotionGroupRelatedManufacturer = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
+    const name = promotionGroupNameInput.value;
+    const displayOrder = common.getIntegerOrNullFromString(promotionGroupDisplayOrderInput.value);
+    const relatedManufacturerId = common.getIntegerOrNullFromString(promotionGroupRelatedManufacturerSelect.value);
 
     formData.append("Id", id);
-    formData.append("Name", promotionGroupName);
-    formData.append("DisplayOrder", promotionGroupDisplayOrder);
-    formData.append("RelatedManufacturerId", promotionGroupRelatedManufacturer);
+    formData.append("Name", name);
+
+    if (displayOrder != null) {
+
+        formData.append("DisplayOrder", displayOrder);
+    }
+
+    if (relatedManufacturerId != null) {
+
+        formData.append("RelatedManufacturerId", relatedManufacturerId);
+    }
 
     if (promotionGroupImageToUpload != null) {
 
@@ -276,20 +291,26 @@ function getPromotionGroupUpdateRequestFromCurrentData(id) {
 
 export async function openResizePopupForPromotionGroupImage(e) {
 
-    let headerImageDataText = `Logo (Group ID: `;
+    const promotionGroupIdHiddenInput = document.getElementById(common.promotionGroupIdHiddenInputId);
+
+    const promotionGroupId = common.getIntegerOrNullFromString(promotionGroupIdHiddenInput?.value);
+
+    let headerImageDataText = "Logo";
+
+    const promotionGroupImage = document.getElementById(common.promotionGroupImageId);
 
     const imageContentType = e.currentTarget.getAttribute(common.promotionGroupEditorImageContentTypeAttribute);
 
     const imageResizePopupResponse = await imageResize.getImageResizePopupAsync(
-        imageElement,
+        promotionGroupImage,
         headerImageDataText,
         150,
-        50,
+        null,
         null,
         imageContentType,
         {
-            left: "65vw",
-            right: "20vw",
+            left: "60vw",
+            right: "15vw",
             top: "15vh",
             bottom: "15vh"
         });
@@ -325,6 +346,23 @@ async function onImageResizeConfirmButtonClicked() {
     });
 
     const fileBlobUrl = URL.createObjectURL(resizedImageBlob);
+
+    const promotionGroupImage = document.getElementById(common.promotionGroupImageId);
+    const promotionGroupImageResizeButton = document.getElementById(common.promotionGroupImageResizeButtonId);
+
+    promotionGroupImage.src = fileBlobUrl,
+
+    promotionGroupImageResizeButton.setAttribute(common.promotionGroupEditorImageContentTypeAttribute, originalFileType);
+
+    if (promotionGroupImageToUpload != null) {
+
+        URL.revokeObjectURL(promotionGroupImageToUpload.fileObjectUrl);
+    }
+     
+    promotionGroupImageToUpload = {
+        file: fileForResizedImage,
+        fileObjectUrl: fileBlobUrl
+    };
 }
 
 export function removePromotionGroupImage() {

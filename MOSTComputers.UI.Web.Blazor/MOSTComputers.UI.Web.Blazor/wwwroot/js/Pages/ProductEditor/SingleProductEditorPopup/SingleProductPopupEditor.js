@@ -7,6 +7,8 @@ import * as productDocumentsEditor from "./ProductDocumentsEditor.js"
 import * as productImagesEditor from "./ProductImagesEditor.js"
 import * as promotionFilePopup from "./PromotionFilePopup.js"
 
+const popupId = "singleEditorProductPopup";
+
 const productIdHiddenInputId = "singleEditorProductIdHiddenInput";
 
 const showProductDataPopupButtonId = "singleEditorShowProductDataPopupButton";
@@ -17,6 +19,7 @@ const productDataPopupContainerId = "singleEditorProductDataPopupContainer";
 const productLegacyDisplayPopupContainerId = "singleEditorProductLegacyDisplayPopupContainer";
 const promotionProductFileEditorPopupContainerId = "singleEditorPromotionProductFileEditorPopupContainer";
 const searchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
+const unsavedChangesPopupContainerId = "singleEditorUnsavedChangesPopupContainer";
 
 const productNewStatusSelectId = "singleEditorProductNewStatusSelect";
 const addImageFileButtonId = "singleEditorAddImageFileButton";
@@ -25,7 +28,13 @@ const addDocumentFileButtonId = "singleEditorAddDocumentFileButton";
 const addDocumentFileInputId = "singleEditorAddDocumentFileInput";
 const addImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
 
+const saveButtonContainerId = "singleProductEditorSaveButtonContainer";
 const saveButtonId = "singleProductEditorSaveButton";
+
+const unsavedChangesPopupSaveButtonName = "unsavedChangesPopupSaveButton";
+const unsavedChangesPopupExitButtonName = "unsavedChangesPopupExitButton";
+
+const loadingClass = "loading";
 
 export function initEvents(dialogElement) {
 
@@ -61,20 +70,68 @@ export function initEvents(dialogElement) {
 
     saveButton.addEventListener("click", onSaveButtonClicked);
 
+    window.addEventListener("keydown", saveOnShortcut);
+
+    const closeButton = dialogElement.querySelector(".btn-close");
+
+    closeButton.onclick = null;
+
+    closeButton.addEventListener("click", onCloseButtonClickedAsync);
+
     propertiesEditor.initEvents(dialogElement);
     productDocumentsEditor.initEvents(dialogElement);
     productImagesEditor.initEvents(dialogElement);
+
+    editorChanges.setCallback(changeSaveButtonText);
 }
 
-export function clearCurrentChanges() {
+function changeSaveButtonText() {
 
-    productImagesEditor.clearObjectUrls();
-    editorChanges.clearChanges();
+    const anyChanges = editorChanges.anyChanges();
+
+    const saveButton = document.getElementById(saveButtonId);
+
+    if (anyChanges) {
+
+        saveButton.textContent = "Save *";
+
+        return;
+    }
+
+    saveButton.textContent = "Save";
 }
 
 export function registerData(jsonDataObject) {
 
+    promotionFilePopup.initData(jsonDataObject.promotionProductFilesForEditor);
+
+    delete jsonDataObject.promotionProductFilesForEditor;
+
     dataStore.saveData(jsonDataObject);
+}
+
+export function clearAll() {
+    clearWindowEvents();
+    clearCallbacks();
+    clearData();
+}
+
+export function clearData() {
+
+    productImagesEditor.clearObjectUrls();
+    productDocumentsEditor.clearObjectUrls();
+    promotionFilePopup.clearInitializedData();
+
+    editorChanges.clearChanges();
+    dataStore.clearData();
+}
+
+export function clearWindowEvents() {
+    window.removeEventListener("keydown", saveOnShortcut);
+}
+
+export function clearCallbacks() {
+    editorChanges.removeCallback();
 }
 
 async function onProductStatusSelectChangedAsync(e) {
@@ -191,15 +248,37 @@ async function showProductDataPopupAsync() {
 
     const productId = productIdHiddenInput.value;
 
-    const url = `api/components/productEditor/single/productDataPopup/${productId}`;
+    const allPropertyData = propertiesEditor.getProductPropertyRequestData();
 
-    const dataStoreData = dataStore.loadData();
+    const propertyRequests = [];
+
+    for (const property of allPropertyData) {
+
+        if (!property.active) continue;
+
+        const propertyRequest = {
+            productCharacteristicId: property.productCharacteristicId,
+            value: property.value,
+        };
+
+        propertyRequests.push(propertyRequest);
+    }
+
+    const productImageUrls = [];
+
+    for (const productImageItem of productImagesEditor.getProductImageItems()) {
+
+        const imageUrl = productImagesEditor.getProductImageItemImageUrl(productImageItem);
+
+        productImageUrls.push(imageUrl);
+    }
 
     const body = {
-        productProperties: dataStoreData.productProperties,
-        productLinks: dataStoreData.productLinks,
-        productImages: dataStoreData.productImages
+        productProperties: propertyRequests,
+        ProductImageUrls: productImageUrls,
     };
+
+    const url = `api/components/productEditor/single/productDataPopup/${productId}`;
 
     const response = await fetch(url, {
         method: "POST",
@@ -231,14 +310,85 @@ async function showProductLegacyDisplayPopupAsync() {
 
     const productId = productIdHiddenInput.value;
 
+    const allPropertyData = propertiesEditor.getProductPropertyRequestData();
+
+    const propertyRequests = [];
+
+    for (const property of allPropertyData) {
+
+        if (!property.active) continue;
+
+        const propertyRequest = {
+            productCharacteristicId: property.productCharacteristicId,
+            value: property.value,
+        };
+
+        propertyRequests.push(propertyRequest);
+    }
+
+    const productImageRequests = [];
+
+    const productImageItems = productImagesEditor.getProductImageItems();
+
+    for (let i = 0; i < productImageItems.length; i++) {
+
+        const productImageItem = productImageItems[i];
+
+        const productImageData = productImagesEditor.getProductImageItemRequestData(productImageItem);
+        const imageUrl = productImagesEditor.getProductImageItemImageUrl(productImageItem);
+
+        let imageRequest;
+
+        switch (productImageData["$type"]) {
+
+            case "promotionProductFile":
+                imageRequest = {
+                    imageUrl: imageUrl,
+                    active: productImageData.active,
+                    displayOrder: i,
+                };
+
+                break;
+
+            case "image":
+                imageRequest = {
+                    imageUrl: imageUrl,
+                    active: productImageData.saveFileRequest?.active,
+                    displayOrder: i,
+                };
+
+                break;
+
+            case "imageFile":
+                imageRequest = {
+                    imageUrl: imageUrl,
+                    active: productImageData.active,
+                    displayOrder: i,
+                };
+
+                break;
+
+            case "uploadedFile":
+                imageRequest = {
+                    imageUrl: imageUrl,
+                    active: productImageData.active,
+                    displayOrder: i,
+                };
+
+                break;
+
+            default:
+                break;
+        }
+
+        productImageRequests.push(imageRequest);
+    }
+
     const url = `api/components/productEditor/single/productLegacyDisplayPopup/${productId}`;
 
-    const dataStoreData = dataStore.loadData();
-
     const body = {
-        productProperties: dataStoreData.productProperties,
-        productLinks: dataStoreData.productLinks,
-        productImages: dataStoreData.productImages
+        productProperties: propertyRequests,
+        productImages: productImageRequests
     };
 
     const response = await fetch(url, {
@@ -273,11 +423,11 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const url = `api/components/productEditor/single/promotionFile/showPopup/${productId}`;
 
-    const dataStoreData = dataStore.loadData();
+    const promotionProductFileData = promotionFilePopup.getPromotionProductFileRequests();
 
     const body = {
         productId: productId,
-        promotionProductFiles: dataStoreData.promotionProductFiles,
+        promotionProductFiles: promotionProductFileData,
     };
 
     const response = await fetch(url, {
@@ -314,7 +464,7 @@ async function onPromotionProductFileEditorItemAddedAsync(promotionProductFileDa
 
     if (!promotionProductFileData.shouldAddToImages) return;
 
-    const imageCreateResult = await productImagesEditor.addNewPromotionProductFileToImagesAsync(
+    await productImagesEditor.addNewPromotionProductFileToImagesAsync(
         promotionProductFileData.editorId,
         promotionProductFileData.selectedFileId);
 }
@@ -323,13 +473,18 @@ async function onPromotionProductFileEditorItemUpdatedAsync(promotionProductFile
 
     const editorId = promotionProductFileData.editorId;
 
-    const dataStoreData = dataStore.loadData();
+    const productImages = productImagesEditor.getProductImagesRequestData();
 
-    const relatedImageData = dataStoreData.productImages.find(x => x.relatedPromotionFileEditorId == editorId);
+    const relatedImage = productImages.find(x =>
+    {
+        const itemType = x["$type"];
+
+        return itemType == "promotionProductFile" && x.promotionFileEditorId == editorId;
+    });
 
     if (!promotionProductFileData.shouldAddToImages) {
 
-        if (relatedImageData != null) {
+        if (relatedImage != null) {
 
             const relatedImageItem = document.getElementById(editorId);
 
@@ -339,25 +494,23 @@ async function onPromotionProductFileEditorItemUpdatedAsync(promotionProductFile
         return;
     }
 
-    if (relatedImageData == null) {
-
-        const imageCreateResult = await productImagesEditor.addNewPromotionProductFileToImagesAsync(
-            editorId,
-            promotionProductFileData.selectedFileId);
-    }
-    else if (relatedImageData.relatedImageFile != null) {
-
-        productImagesEditor.changeProductImageFileActive(editorId, promotionProductFileData.active);
-    }
+    productImagesEditor.changePromotionProductFileImageItemAsync(
+        promotionProductFileData.editorId,
+        promotionProductFileData.selectedFileId)
 }
 
 async function onPromotionProductFileEditorItemDeletedAsync(editorId) {
 
-    const dataStoreData = dataStore.loadData();
+    const productImages = productImagesEditor.getProductImagesRequestData();
 
-    const relatedImageData = dataStoreData.productImages.find(x => x.relatedPromotionFileEditorId == editorId);
+    const relatedImage = productImages.find(x =>
+    {
+        const itemType = x["$type"];
 
-    if (relatedImageData == null) return;
+        return itemType == "promotionProductFile" && x.promotionFileEditorId == editorId;
+    });
+
+    if (relatedImage == null) return;
 
     const relatedImageItem = document.getElementById(editorId);
 
@@ -389,49 +542,74 @@ async function showProductSearchStringPopupAsync() {
     dialog.showModal();
 }
 
-async function onSaveButtonClicked() {
+async function onCloseButtonClickedAsync() {
 
-    const dataStoreData = dataStore.loadData();
+    const anyChanges = editorChanges.anyChanges();
 
-    const allProperties = dataStoreData.productProperties.concat(dataStoreData.productLinks);
+    if (anyChanges) {
 
-    const activeProperties = [];
-
-    for (const property of allProperties) {
-
-        if (!property.active) continue;
-
-        activeProperties.push(property);
+        await showUnsavedChangesPopup();
     }
+    else {
+        clearAll();
 
-    const formData = new FormData();
+        const dialogElement = document.getElementById(popupId);
 
-    const request = {
-        productProperties: activeProperties,
-        productImages: dataStoreData.productImages,
-        promotionProductFiles: dataStoreData.promotionProductFiles,
-        productDocuments: dataStoreData.productDocuments,
-    };
-
-    formData.append("metadata", JSON.stringify(request));
-
-    for (const [editorId, file] of dataStoreData.localFileData.productImages) {
-        formData.append(editorId, file);
+        dialogElement.close();
     }
+}
 
-    for (const [editorId, file] of dataStoreData.localFileData.productDocuments) {
-        formData.append(editorId, file);
-    }
+async function showUnsavedChangesPopup() {
 
-    const url = `api/components/productEditor/single/save`;
+    const url = "api/components/productEditor/single/unsavedChangesPopup/";
 
     const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-            [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
-        },
-        body: formData
+        method: "GET",
     });
+
+    if (!response.ok) return;
+
+    const data = await response.text();
+
+    const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
+
+    unsavedChangesPopupContainer.innerHTML = data;
+
+    const dialog = unsavedChangesPopupContainer.querySelector("dialog");
+
+    dialog.addEventListener("cancel", onUnsavedChangesPopupClose);
+
+    const unsavedChangesPopupSaveButton = dialog.querySelector(`[name='${unsavedChangesPopupSaveButtonName}']`)
+    const unsavedChangesPopupExitButton = dialog.querySelector(`[name='${unsavedChangesPopupExitButtonName}']`)
+
+    unsavedChangesPopupSaveButton.addEventListener("click", onUnsavedChangesPopupSaveButtonClicked);
+    unsavedChangesPopupExitButton.addEventListener("click", onUnsavedChangesPopupExitButtonClicked);
+
+    dialog.showModal(); 
+}
+
+function onUnsavedChangesPopupClose(e) {
+
+    e.preventDefault();
+}
+
+async function onUnsavedChangesPopupSaveButtonClicked() {
+
+    let response = null;
+
+    const saveButtonContainer = document.getElementById(saveButtonContainerId);
+    const saveButton = document.getElementById(saveButtonId);
+
+    saveButtonContainer.classList.add(loadingClass);
+    saveButton.setAttribute("disabled");
+
+    try {
+        response = await saveFromCurrentDataAsync();
+    }
+    finally {
+        saveButtonContainer.classList.remove(loadingClass);
+        saveButton.removeAttribute("disabled");
+    }
 
     if (response == null) return;
 
@@ -445,4 +623,202 @@ async function onSaveButtonClicked() {
     }
 
     const data = await response.json();
+
+    clearAll();
+
+    const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
+
+    const unsavedChangesDialog = unsavedChangesPopupContainer.querySelector("dialog");
+
+    unsavedChangesDialog.close();
+
+    const singleProductEditorDialog = document.getElementById(popupId);
+
+    const dialogContainer = singleProductEditorDialog.parentElement;
+
+    dialogContainer.innerHTML = data;
+
+    const newSingleProductEditorDialog = document.getElementById(popupId);
+
+    const jsonDataScriptElement = document.getElementById(singleProductEditorPopupJsonDataScriptId);
+
+    const jsonData = JSON.parse(jsonDataScriptElement.textContent);
+
+    registerData(jsonData);
+
+    jsonDataScriptElement.remove();
+
+    newSingleProductEditorDialog.showModal();
+}
+
+async function onUnsavedChangesPopupExitButtonClicked() {
+
+    clearAll();
+
+    const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
+
+    const unsavedChangesDialog = unsavedChangesPopupContainer.querySelector("dialog");
+
+    unsavedChangesDialog.close();
+
+    const dialogElement = document.getElementById(popupId);
+
+    dialogElement.close();
+}
+
+async function saveOnShortcut(e) {
+
+    if (!e.isTrusted || !e.ctrlKey || e.key !== "s") return;
+
+    console.log("EVENT Single Editor");
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    await onSaveButtonClicked();
+}
+
+async function onSaveButtonClicked() {
+
+    let response = null;
+
+    const saveButtonContainer = document.getElementById(saveButtonContainerId);
+    const saveButton = document.getElementById(saveButtonId);
+
+    saveButtonContainer.classList.add(loadingClass);
+    saveButton.setAttribute("disabled");
+
+    try {
+        response = await saveFromCurrentDataAsync();
+    }
+    finally {
+        saveButtonContainer.classList.remove(loadingClass);
+        saveButton.removeAttribute("disabled");
+    }
+
+    if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
+    if (!response.ok) {
+
+        return;
+    }
+
+    const data = await response.json();
+
+    clearAll();
+
+    const dialog = document.getElementById(popupId);
+
+    const dialogContainer = dialog.parentElement;
+
+    dialogContainer.innerHTML = data;
+
+    const newDialog = document.getElementById(popupId);
+
+    const jsonDataScriptElement = document.getElementById(singleProductEditorPopupJsonDataScriptId);
+
+    const jsonData = JSON.parse(jsonDataScriptElement.textContent);
+
+    registerData(jsonData);
+
+    jsonDataScriptElement.remove();
+
+    newDialog.showModal();
+}
+
+async function saveFromCurrentDataAsync() {
+
+    const formData = new FormData();
+
+    const allPropertyData = propertiesEditor.getProductPropertyRequestData();
+
+    const propertyRequests = [];
+
+    for (const property of allPropertyData) {
+
+        if (!property.active) continue;
+
+        const propertyRequest = {
+            productCharacteristicId: property.productCharacteristicId,
+            value: property.value,
+        };
+
+        propertyRequests.push(propertyRequest);
+    }
+
+    const imageRequests = productImagesEditor.getProductImagesRequestData();
+
+    for (const imageRequest of imageRequests) {
+
+        const imageType = imageRequest["$type"];
+
+        if (imageType !== "uploadedFile") continue;
+
+        formData.append(editorId, imageRequest.uploadedFile);
+
+        delete imageRequest.uploadedFile;
+    }
+
+    const promotionProductFileEditorDatas = promotionFilePopup.getPromotionProductFileRequests();
+
+    const promotionProductFileRequests = [];
+
+    for (const promotionProductFileEditData of promotionProductFileEditorDatas) {
+
+        const promotionProductFileRequest = {
+            editorId: promotionProductFileEditData.editorId,
+            id: promotionProductFileEditData.id,
+            promotionFileId: promotionProductFileEditData.promotionFileId,
+            active: promotionProductFileEditData.active,
+            validFrom: promotionProductFileEditData.validFrom,
+            validTo: promotionProductFileEditData.validTo,
+        };
+
+        promotionProductFileRequests.push(promotionProductFileRequest);
+    }
+
+    const documentRequests = productDocumentsEditor.getProductDocumentRequests();
+
+    const productDocuments = [];
+    const uploadedProductDocuments = [];
+
+    for (const documentRequest of documentRequests) {
+
+        if (documentRequest.id) {
+
+            productDocuments.push(documentRequest);
+
+            continue;
+        }
+
+        formData.append(documentRequest.editorId, documentRequest.file);
+
+        delete documentRequest.file;
+
+        uploadedProductDocuments.push(documentRequest);
+    }
+
+    const request = {
+        productProperties: propertyRequests,
+        productImages: imageRequests,
+        promotionProductFiles: promotionProductFileRequests,
+        productDocuments: productDocuments,
+        uploadedProductDocuments: uploadedProductDocuments,
+    };
+
+    formData.append("data", JSON.stringify(request));
+
+    const url = `api/components/productEditor/single/save`;
+
+    return await fetch(url, {
+        method: "PUT",
+        headers: {
+            [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
+        },
+        body: formData
+    }); 
 }

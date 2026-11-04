@@ -67,22 +67,42 @@ public sealed class PromotionGroupService : IPromotionGroupService
 
         OneOf<int, UnexpectedFailureResult> createPromotionGroupResult = await _promotionGroupsRepository.InsertAsync(innerCreateRequest);
 
-        if (!createPromotionGroupResult.IsT0
-            || createRequest.RelatedManufacturerId == null)
+        if (!createPromotionGroupResult.IsT0)
         {
             return createPromotionGroupResult.Map<int, ValidationResult, UnexpectedFailureResult>();
         }
 
         int promotionGroupId = createPromotionGroupResult.AsT0;
 
+        if (createRequest.RelatedManufacturerId == null)
+        {
+            transactionScope.Complete();
+
+            return promotionGroupId;
+        }
+
+        int relatedManufacturerId = createRequest.RelatedManufacturerId.Value;
+
+        ManufacturerToPromotionGroupRelation? existingRelation
+            = await _manufacturerToPromotionGroupRelationService.GetByManufacturerIdAsync(relatedManufacturerId);
+
+        if (existingRelation != null)
+        {
+            ValidationFailure repeatedIdError = new(
+                nameof(createRequest.RelatedManufacturerId),
+                "Manufacturer is already related to a different promotion group.");
+
+            return new ValidationResult([repeatedIdError]);
+        }
+
         ManufacturerToPromotionGroupRelationUpsertRequest createRelationRequest = new()
         {
-            ManufacturerId = createRequest.RelatedManufacturerId.Value,
+            ManufacturerId = relatedManufacturerId,
             PromotionGroupId = promotionGroupId,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> createRelationResult
-            = await _manufacturerToPromotionGroupRelationService.UpsertByManufacturerIdAsync(createRelationRequest);
+            = await _manufacturerToPromotionGroupRelationService.UpsertByPromotionGroupIdAsync(createRelationRequest);
 
         if (!createRelationResult.IsT0)
         {
@@ -121,6 +141,8 @@ public sealed class PromotionGroupService : IPromotionGroupService
             ShowEmptyForNonLogged = updateRequest.ShowEmptyForNonLogged,
         };
 
+        Console.WriteLine($"UPDATE: {updateRequest.Logo?.Image.Length}, {updateRequest.Logo?.ContentType}");
+
         OneOf<Success, NotFound> updatePromotionGroupResult = await _promotionGroupsRepository.UpdateAsync(innerUpdateRequest);
 
         if (!updatePromotionGroupResult.IsT0)
@@ -130,10 +152,10 @@ public sealed class PromotionGroupService : IPromotionGroupService
 
         if (updateRequest.RelatedManufacturerId == null)
         {
-            ManufacturerToPromotionGroupRelation? existingRelation
+            ManufacturerToPromotionGroupRelation? existingPromotionGroupRelation
                 = await _manufacturerToPromotionGroupRelationService.GetByPromotionGroupIdAsync(updateRequest.Id);
 
-            if (existingRelation != null)
+            if (existingPromotionGroupRelation != null)
             {
                 bool deleteExistingRelationResult
                     = await _manufacturerToPromotionGroupRelationService.DeleteByPromotionGroupIdAsync(updateRequest.Id);
@@ -141,17 +163,33 @@ public sealed class PromotionGroupService : IPromotionGroupService
                 if (!deleteExistingRelationResult) return new UnexpectedFailureResult();
             }
 
+            transactionScope.Complete();
+
             return updatePromotionGroupResult.AsT0;
+        }
+
+        int relatedManufacturerId = updateRequest.RelatedManufacturerId.Value;
+
+        ManufacturerToPromotionGroupRelation? existingManufacturerRelation
+            = await _manufacturerToPromotionGroupRelationService.GetByManufacturerIdAsync(relatedManufacturerId);
+
+        if (existingManufacturerRelation != null)
+        {
+            ValidationFailure repeatedIdError = new(
+                nameof(updateRequest.RelatedManufacturerId),
+                "Manufacturer is already related to a different promotion group.");
+
+            return new ValidationResult([repeatedIdError]);
         }
 
         ManufacturerToPromotionGroupRelationUpsertRequest upsertRelationRequest = new()
         {
-            ManufacturerId = updateRequest.RelatedManufacturerId.Value,
+            ManufacturerId = relatedManufacturerId,
             PromotionGroupId = updateRequest.Id,
         };
 
         OneOf<Success, ValidationResult, UnexpectedFailureResult> upsertRelationResult
-            = await _manufacturerToPromotionGroupRelationService.UpsertByManufacturerIdAsync(upsertRelationRequest);
+            = await _manufacturerToPromotionGroupRelationService.UpsertByPromotionGroupIdAsync(upsertRelationRequest);
 
         if (!upsertRelationResult.IsT0)
         {

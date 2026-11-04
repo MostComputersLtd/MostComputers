@@ -21,6 +21,55 @@ public class LocalFileManagementService : ILocalFileManagementService
 
     private readonly ITransactionalFileManager _transactionalFileManager;
 
+    public string[] GetAllFileNames()
+    {
+        return Directory.GetFiles(_directoryFullPath);
+    }
+
+    public List<byte[]> GetAllStartingWith(string startingChars)
+    {
+        if (string.IsNullOrEmpty(startingChars)) return new();
+
+        IEnumerable<string> fileNames = Directory.EnumerateFiles(_directoryFullPath, $"{startingChars}*");
+
+        if (!fileNames.Any()) return new();
+
+        List<byte[]> output = new();
+
+        foreach (string fileName in fileNames)
+        {
+            string filePath = Path.Combine(_directoryFullPath, fileName);
+
+            byte[] fileData = File.ReadAllBytes(filePath);
+
+            output.Add(fileData);
+        }
+
+        return output;
+    }
+
+    public List<Stream> GetAllStartingWithAsStreams(string startingChars)
+    {
+        if (string.IsNullOrEmpty(startingChars)) return new();
+
+        IEnumerable<string> fileNames = Directory.EnumerateFiles(_directoryFullPath, $"{startingChars}*");
+
+        if (!fileNames.Any()) return new();
+
+        List<Stream> output = new();
+
+        foreach (string fileName in fileNames)
+        {
+            string filePath = Path.Combine(_directoryFullPath, fileName);
+
+            FileStream fileData = File.OpenRead(filePath);
+
+            output.Add(fileData);
+        }
+
+        return output;
+    }
+
     public byte[]? GetFile(string fullFileName)
     {
         if (string.IsNullOrWhiteSpace(fullFileName)) return null;
@@ -60,62 +109,78 @@ public class LocalFileManagementService : ILocalFileManagementService
 
     public OneOf<Success, FileAlreadyExistsResult> AddFile(string fullFileName, byte[] fileData)
     {
-        CreateLocalFileOperation createLocalFileOperation = new(_directoryFullPath, fullFileName, fileData);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
+        CreateLocalFileOperation createLocalFileOperation = new(filePath, fullFileName, fileData);
 
         return _transactionalFileManager.EnlistOrExecuteOperation(createLocalFileOperation);
     }
 
     public async Task<OneOf<Success, FileAlreadyExistsResult>> AddFileAsync(
-        string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
+        string fullFileName, byte[] fileData, CancellationToken cancellationToken = default)
     {
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
         CreateLocalFileAsyncOperation createLocalFileAsyncOperation
-            = new(_directoryFullPath, fullFileName, fileData, cancellationToken);
+            = new(filePath, fullFileName, fileData, cancellationToken);
 
         return await _transactionalFileManager.EnlistOrExecuteOperationAsync(createLocalFileAsyncOperation);
     }
 
-    public CreateOrUpdateOperationTypeEnum AddOrUpdateFile(string fullFileName, byte[] fileData)
+    public void AddOrUpdateFile(string fullFileName, byte[] fileData)
     {
-        CreateOrUpdateLocalFileOperation createOrUpdateLocalFileOperation = new(_directoryFullPath, fullFileName, fileData);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
 
-        return _transactionalFileManager.EnlistOrExecuteOperation(createOrUpdateLocalFileOperation);
+        CreateOrUpdateLocalFileOperation createOrUpdateLocalFileOperation = new(filePath, fileData);
+
+        _transactionalFileManager.EnlistOrExecuteOperation(createOrUpdateLocalFileOperation);
     }
 
-    public async Task<CreateOrUpdateOperationTypeEnum> AddOrUpdateFileAsync(
-        string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
+    public async Task AddOrUpdateFileAsync(
+        string fullFileName, byte[] fileData, CancellationToken cancellationToken = default)
     {
-        CreateOrUpdateLocalFileAsyncOperation createOrUpdateLocalFileAsyncOperation
-            = new(_directoryFullPath, fullFileName, fileData, cancellationToken);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
 
-        return await _transactionalFileManager.EnlistOrExecuteOperationAsync(createOrUpdateLocalFileAsyncOperation);
+        CreateOrUpdateLocalFileAsyncOperation createOrUpdateLocalFileAsyncOperation
+            = new(filePath, fileData, cancellationToken);
+
+        await _transactionalFileManager.EnlistOrExecuteOperationAsync(createOrUpdateLocalFileAsyncOperation);
     }
 
     public OneOf<Success, FileDoesntExistResult> UpdateFile(string fullFileName, byte[] fileData)
     {
-        UpdateLocalFileOperation updateLocalFileOperation = new(_directoryFullPath, fullFileName, fileData);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
+        UpdateLocalFileOperation updateLocalFileOperation = new(filePath, fullFileName, fileData);
 
         return _transactionalFileManager.EnlistOrExecuteOperation(updateLocalFileOperation);
     }
 
     public async Task<OneOf<Success, FileDoesntExistResult>> UpdateFileAsync(
-        string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
+        string fullFileName, byte[] fileData, CancellationToken cancellationToken = default)
     {
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
         UpdateLocalFileAsyncOperation updateLocalFileAsyncOperation
-            = new(_directoryFullPath, fullFileName, fileData, cancellationToken);
+            = new(filePath, fullFileName, fileData, cancellationToken);
 
         return await _transactionalFileManager.EnlistOrExecuteOperationAsync(updateLocalFileAsyncOperation);
     }
 
     public OneOf<Success, FileDoesntExistResult, FileAlreadyExistsResult> RenameFile(string fullFileName, string newFileNameWithoutExtension)
     {
-        RenameLocalFileOperation renameLocalFileOperation = new(_directoryFullPath, fullFileName, newFileNameWithoutExtension);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
+        RenameLocalFileOperation renameLocalFileOperation = new(filePath, fullFileName, _directoryFullPath, newFileNameWithoutExtension);
 
         return _transactionalFileManager.EnlistOrExecuteOperation(renameLocalFileOperation);
     }
 
     public OneOf<Success, FileDoesntExistResult> DeleteFile(string fullFileName)
     {
-        DeleteLocalFileOperation deleteLocalFileOperation = new(_directoryFullPath, fullFileName);
+        string filePath = Path.Combine(_directoryFullPath, fullFileName);
+
+        DeleteLocalFileOperation deleteLocalFileOperation = new(filePath, fullFileName);
 
         return _transactionalFileManager.EnlistOrExecuteOperation(deleteLocalFileOperation);
     }

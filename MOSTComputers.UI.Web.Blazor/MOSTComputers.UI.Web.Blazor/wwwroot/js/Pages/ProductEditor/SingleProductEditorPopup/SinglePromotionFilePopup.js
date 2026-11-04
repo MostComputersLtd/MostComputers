@@ -19,21 +19,6 @@ const promotionFileListContainerId = "singlePromotionProductFileEditorPromotionF
 
 const shouldAddToImagesInputIsInImageAttribute = "data-is-in-image";
 
-const imageExtensions = new Set([
-    ".jpg", ".jpeg", ".png", ".gif", ".webp",
-    ".bmp", ".svg", ".ico", ".avif", ".tif", ".tiff"
-]);
-
-function isImageFile(fileName) {
-    const dotIndex = fileName.lastIndexOf(".");
-
-    if (dotIndex <= 0 || dotIndex === fileName.length - 1) {
-        return false;
-    }
-
-    return imageExtensions.has(fileName.slice(dotIndex).toLowerCase());
-}
-
 export function initEvents(saveButtonClickedCallback) {
 
     const saveButton = document.getElementById(saveButtonId);
@@ -74,7 +59,7 @@ export async function initializePromotionFile() {
 
         if (elementData.id == promotionFileId) {
 
-            selectElement(elementData.element);
+            promotionFileSelectList.selectElement(elementData.element);
 
             break;
         }
@@ -104,6 +89,7 @@ export function getPopupData() {
         selectedFileId: selectedPromotionFileData.id,
         selectedFileName: selectedPromotionFileData.name,
         selectedFileFilename: selectedPromotionFileData.filename,
+        selectedFileContentType: selectedPromotionFileData.contentType,
     };
 }
 
@@ -171,7 +157,7 @@ function onPromotionFileListChanged(promotionFileData) {
     const shouldAddToImagesInput = document.getElementById(shouldAddToImagesInputId);
 
     if (promotionFileData == null
-        || !isImageFile(promotionFileData.filename)) {
+        || promotionFileData.contentType.startsWith("image/")) {
 
         shouldAddToImagesInput.checked = false;
         shouldAddToImagesInput.setAttribute("disabled", "disabled");

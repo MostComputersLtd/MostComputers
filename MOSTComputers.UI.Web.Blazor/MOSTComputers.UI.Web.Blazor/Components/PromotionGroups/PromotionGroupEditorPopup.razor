@@ -12,7 +12,7 @@
 
     string imageButtonText = currentImageUrl != null ? "Change Image" : "Add Image";
 
-    bool existsRelated = PopupData.ManufacturersThatCanBeRelated.Exists(x => x.Id == PopupData?.Id);
+    bool existsRelated = PopupData.ManufacturersThatCanBeRelated.Exists(x => x.Id == PopupData?.RelatedManufacturerId);
 
     bool defaultOptionIsSelected = !existsRelated;
 }
@@ -31,10 +31,11 @@
             @if (PopupData.Id is not null)
             {
                 <h4 class="popup-header-text me-3 mb-0">(ID: @PopupData.Id)</h4>
+
+                <input id="promotionGroupIdHiddenInput" type="hidden" value="@PopupData.Id" />
             }
 
             <button id="promotionGroupSaveButton" class="promotion-group-save-button">
-                @* onclick="savePromotionGroup(@(PopupData.Id != null ? PopupData.Id.ToString() : string.Empty))"> *@
 
                 <p class="promotion-group-save-button-text">Save</p>
 
@@ -61,11 +62,11 @@
                 <label for="promotionGroupRelatedManufacturer" class="promotion-group-edit-input-label">Related Manufacturer</label>
                 <select id="promotionGroupRelatedManufacturer" class="promotion-group-edit-select">
 
-                    <option value="" selected="@defaultOptionIsSelected" disabled>Select</option>
+                    <option value="" selected="@defaultOptionIsSelected">None</option>
 
                     @foreach (Manufacturer manufacturer in PopupData.ManufacturersThatCanBeRelated)
                     {
-                        bool isOptionSelected = manufacturer.Id == PopupData?.Id;
+                        bool isOptionSelected = manufacturer.Id == PopupData?.RelatedManufacturerId;
 
                         <option value="@manufacturer.Id" selected="@isOptionSelected">@manufacturer.RealCompanyName</option>
                     }
@@ -78,7 +79,6 @@
                     type="button"
                     class="promotion-group-edit-logo-change-button"
                     aria-label="Add File">
-                    @* onclick="changePromotionGroupLogo()" *@
                     @imageButtonText
                 </button>
 
@@ -110,6 +110,7 @@
         public bool IsDefault { get; set; }
         public bool ShowEmptyForLogged { get; set; }
         public bool ShowEmptyForNonLogged { get; set; }
+        public int? RelatedManufacturerId { get; set; }
         public required List<Manufacturer> ManufacturersThatCanBeRelated { get; set; }
     }
 

@@ -41,6 +41,7 @@ internal static class SingleProductEditorImageComponentEndpoints
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupUniqueRoute);
 
         endpointGroup.MapPost("/add", (Delegate)GetProductImageFromExternalFileAsync); 
+        endpointGroup.MapPost("/add/promotionFile", GetProductImageFromNewPromotionFileAsync);
 
         return endpointGroup;
     }
@@ -53,7 +54,7 @@ internal static class SingleProductEditorImageComponentEndpoints
 
         if (previewUrlValue.Count == 0)
         {
-            return Results.BadRequest("A preview url is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "A preview url is required");
         }
 
         string previewUrl = previewUrlValue[0]!;
@@ -63,7 +64,7 @@ internal static class SingleProductEditorImageComponentEndpoints
         if (indexValue.Count == 0
             || !int.TryParse(indexValue[0], out int index))
         {
-            return Results.BadRequest("An index is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "An index is required");
         }
 
         StringValues imageWidthValue = form[_productImageFileWidthFormFieldName];
@@ -71,7 +72,7 @@ internal static class SingleProductEditorImageComponentEndpoints
         if (imageWidthValue.Count == 0
             || !int.TryParse(imageWidthValue[0], out int imageWidth))
         {
-            return Results.BadRequest("An image width is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "An image width is required");
         }
 
         StringValues imageHeightValue = form[_productImageFileHeightFormFieldName];
@@ -79,76 +80,68 @@ internal static class SingleProductEditorImageComponentEndpoints
         if (imageHeightValue.Count == 0
             || !int.TryParse(imageHeightValue[0], out int imageHeight))
         {
-            return Results.BadRequest("An image height is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "An image height is required");
         }
 
         IFormFileCollection? selectedFiles = form.Files;
 
         if (selectedFiles == null || selectedFiles.Count == 0)
         {
-            return Results.BadRequest("A file is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "A file is required");
         }
 
         IFormFile? file = selectedFiles[0];
 
         if (file is null || file.Length == 0)
         {
-            return Results.BadRequest("A file is required");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "A file is required");
         }
 
         if (!IsImageContentType(file.ContentType))
         {
-            return Results.BadRequest("File is not an image file");
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "File is not an image file");
         }
 
-        ProductImageFileDisplayData productImageFileDisplayData = new()
-        {
-            ExistingFileInfoId = null,
-            ExistingImageId = null,
-            FileName = null,
-            DisplayOrder = index,
-            Active = true
-        };
+        string editorId = $"from-browser-file-{Guid.NewGuid()}";
 
-        ProductImageDisplayData productImageDisplayData = new()
+        ProductImageUploadedFileListItem.UploadedProductImageFileDisplayData uploadedFileData = new()
         {
-            ExistingImageId = null,
-            ContentType = file.ContentType,
-            DateModified = null,
-        };
-
-        ProductImageListItemDisplayData productImageListItemDisplayData = new()
-        {
-            EditorId = $"from-browser-file-{Guid.NewGuid()}",
+            EditorId = editorId,
             Index = index,
-            ImageFileUrl = previewUrl,
-            UploadedImageFileData = new()
+            UploadedFile = new()
             {
                 FileName = file.Name,
                 ContentType = file.ContentType,
-                FileSize = file.Length,
-                ImageSize = new()
-                {
-                    WidthPixels = imageWidth,
-                    HeightPixels = imageHeight,
-                },
                 PreviewUrl = previewUrl,
+                FileSize = file.Length,
+                WidthPixels = imageWidth,
+                HeightPixels = imageHeight,
             },
-
-            RelatedImage = productImageDisplayData,
-            RelatedImageFile = productImageFileDisplayData,
-            RelatedPromotionFileEditorId = null,
+            ImageData = new()
+            {
+                Active = true
+            },
         };
 
-        string parametersJsonData = JsonSerializer.Serialize(productImageListItemDisplayData, _jsonDataOptions);
+        ProductImageUploadedFileListItem.UploadedProductImageFileRecoveryJsonData uploadedFileJsonRecoveryData = new()
+        {
+            EditorId = editorId,
+            UploadedFileUrl = previewUrl,
+            ImageFileData = new()
+            {
+                Active = true,
+            }
+        };
+
+        string parametersJsonData = JsonSerializer.Serialize(uploadedFileJsonRecoveryData, _jsonDataOptions);
 
         var output = new
         {
-            ItemData = productImageListItemDisplayData,
+            ItemData = uploadedFileData,
             JsonData = parametersJsonData,
         };
 
-        return new RazorComponentResult<ProductImageListItem>(output);
+        return new RazorComponentResult<ProductImageUploadedFileListItem>(output);
     }
 
     private static async Task<IResult> GetProductImageFromNewPromotionFileAsync(
@@ -169,40 +162,42 @@ internal static class SingleProductEditorImageComponentEndpoints
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
         }
 
-        ProductImageDisplayData? productImageDisplayData = new()
-        {
-            ExistingImageId = null,
-            ContentType = contentType,
-            DateModified = DateTime.Now,
-        };
+        string editorId = EditorIdsGenerateUtils.GenerateImageId(null, null, null);
 
-        ProductImageFileDisplayData? productImageFileDisplayData = new()
+        ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
         {
-            ExistingFileInfoId = null,
-            ExistingImageId = null,
-            FileName = null,
-            DisplayOrder = request.Index + 1,
-            Active = true
-        };
-
-        ProductImageListItemDisplayData productImageListItemDisplayData = new()
-        {
-            EditorId = EditorIdsGenerateUtils.GenerateImageId(null, null, null),
+            EditorId = editorId,
             Index = request.Index,
-            ImageFileUrl = $"{PromotionFileDataEndpoints.EndpointGroupRoute}/{promotionFile.FileName}",
-            RelatedImage = productImageDisplayData,
-            RelatedImageFile = productImageFileDisplayData,
+            PromotionFileData = new()
+            {
+                Name = promotionFile.Name,
+                FileName = promotionFile.FileName,
+            },
+            ImageData = new()
+            {
+                Active = true,
+            },
             RelatedPromotionFileEditorId = request.EditorId,
         };
 
-        string parametersJsonData = JsonSerializer.Serialize(productImageListItemDisplayData, _jsonDataOptions);
+        ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
+        {
+            EditorId = editorId,
+            ImageFileData = new()
+            {
+                Active = true,
+            },
+            RelatedPromotionFileEditorId = request.EditorId,
+        };
+
+        string parametersJsonData = JsonSerializer.Serialize(promotionFileImageRecoveryJsonData, _jsonDataOptions);
 
         var output = new
         {
-            ItemData = productImageListItemDisplayData,
+            ItemData = promotionFileImageData,
             JsonData = parametersJsonData,
         };
 
-        return new RazorComponentResult<ProductImageListItem>(output);
+        return new RazorComponentResult<ProductImagePromotionFileListItem>(output);
     }
 }

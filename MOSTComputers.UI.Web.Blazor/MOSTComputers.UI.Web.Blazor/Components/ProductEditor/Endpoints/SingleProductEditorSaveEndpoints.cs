@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
 using MOSTComputers.Models.Product.Models.Validation;
@@ -26,19 +27,14 @@ namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
 internal static class SingleProductEditorSaveEndpoints
 {
-    
-
-    
-
-
-
     private sealed class SaveAllRequest
     {
         public int ProductId { get; set; }
         public List<ProductPropertySaveRequest> ProductProperties { get; set; } = [];
-        public List<ProductImageSaveRequest> ProductImages { get; set; } = [];
+        public List<SaveImageRequestBase> ProductImages { get; set; } = [];
         public List<PromotionProductFileSaveRequest> PromotionProductFiles { get; set; } = [];
         public List<ProductDocumentSaveRequest> ProductDocuments { get; set; } = [];
+        public List<ProductDocumentUploadRequest> UploadedProductDocuments { get; set; } = [];
     }
 
     private sealed class ProductPropertySaveRequest
@@ -47,26 +43,55 @@ internal static class SingleProductEditorSaveEndpoints
         public string? Value { get; set; }
     }
 
-    private sealed class ProductImageSaveRequest
+    [JsonPolymorphic]
+    [JsonDerivedType(typeof(SavePromotionProductFileImageRequest), "promotionProductFile")]
+    [JsonDerivedType(typeof(SaveImageWithFileRequest), "image")]
+    [JsonDerivedType(typeof(SaveImageFileRequest), "imageFile")]
+    [JsonDerivedType(typeof(SaveUploadedImageInitialDataRequest), "uploadedFile")]
+    private class SaveImageRequestBase
     {
-        public required string EditorId { get; set; }
-        public IFormFile? UploadedImageFile { get; set; }
-        public int? ExistingImageId { get; set; }
-        public ProductImageFileSaveRequest? RelatedImageFile { get; set; }
-        public string? RelatedPromotionFileEditorId { get; set; }
     }
 
-    private sealed class ProductImageFileSaveRequest
+    private sealed class SavePromotionProductFileImageRequest : SaveImageRequestBase
     {
-        public int? ExistingFileInfoId { get; set; }
-        public bool Active { get; set; }
+        public required string PromotionFileEditorId { get; set; }
+        public required bool Active { get; set; }
+    }
+
+    private sealed class SaveImageWithFileRequest : SaveImageRequestBase
+    {
+        public required int Id { get; set; }
+        public SaveImageWithFileFileDataRequest? SaveFileRequest { get; set; }
+    }
+
+    private sealed class SaveImageWithFileFileDataRequest
+    {
+        public required bool Active { get; set; }
+    }
+
+    private sealed class SaveImageFileRequest : SaveImageRequestBase
+    {
+        public required int Id { get; set; }
+        public required bool Active { get; set; }
+    } 
+
+    private sealed class SaveUploadedImageInitialDataRequest : SaveImageRequestBase
+    {
+        public required string EditorId { get; set; }
+        public required bool Active { get; set; }
+    }
+
+    private sealed class SaveUploadedImageRequest : SaveImageRequestBase
+    {
+        public required IFormFile UploadedFile { get; set; }
+        public required bool Active { get; set; }
     }
 
     private sealed class PromotionProductFileSaveRequest
     {
         public required string EditorId { get; set; }
         public int? Id { get; set; }
-        public int? FileInfoId { get; set; }
+        public required int PromotionFileId { get; set; }
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
         public bool Active { get; set; }
@@ -74,45 +99,19 @@ internal static class SingleProductEditorSaveEndpoints
 
     private sealed class ProductDocumentSaveRequest
     {
+        public required int Id { get; set; }
+        public string? Description { get; set; }
+    }
+
+    private sealed class ProductDocumentUploadRequest
+    {
         public required string EditorId { get; set; }
-        public int? ExistingDocumentId { get; set; }
-        public string? CurrentDescription { get; set; }
-        public string? FileExtension { get; set; }
-        public IFormFile? File { get; set; }
+        public IFormFile File { get; set; } = default!;
+        public string? Description { get; set; }
     }
 
-
-
-
-
-
-    private sealed class SaveAllPreRequestData
-    {
-        public required List<ProductPropertySaveRequest> ProductProperties { get; set; }
-        public required List<ProductImagePreRequestData> ProductImages { get; set; }
-        public required List<PromotionProductFilePreRequestData> PromotionProductFiles { get; set; }
-        public required List<ProductDocumentPreRequestData> ProductDocuments { get; set; }
-    }
-
-    private sealed class ProductImagePreRequestData
-    {
-        internal required ProductImageSaveRequest ImageListItem { get; init; }
-        internal ProductImageData? RelatedImage { get; init; }
-        internal ProductImageFileData? RelatedImageFile { get; init; }
-        internal PromotionProductFileSaveRequest? RelatedPromotionFile { get; init; }
-        internal byte[]? ImageFileData { get; init; }
-    }
-
-    private sealed class ProductDocumentPreRequestData
-    {
-        internal required ProductDocumentSaveRequest DocumentData { get; init; }
-        internal byte[]? DocumentFileData { get; init; }
-    }
-
-    private sealed class PromotionProductFilePreRequestData
-    {
-        internal required PromotionProductFileSaveRequest RelatedPromotionFile { get; init; }
-    }
+    internal const string InvalidIdErrorCode = "InvalidId";
+    private const string _invalidRequestError = "Request data invalid";
 
     public static IEndpointRouteBuilder MapSingleProductEditorSaveEndpoint(this IEndpointRouteBuilder endpoints)
     {
@@ -124,36 +123,88 @@ internal static class SingleProductEditorSaveEndpoints
 
     private static async Task<IResult> SaveAllAsync(
         HttpContext httpContext,
-        [FromForm] SaveAllRequest request,
         [FromServices] IProductImageService productImageService,
         [FromServices] IProductImageFileService productImageFileService,
         [FromServices] IProductImageFileManagementService productImageFileManagementService,
         [FromServices] IProductDataSaveService productDataSaveService)
     {
+        IFormCollection form = httpContext.Request.Form;
+
+        StringValues requestValue = form["data"];
+
+        if (requestValue.Count == 0)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
+        }
+
+        SaveAllRequest? request = JsonSerializer.Deserialize<SaveAllRequest>(requestValue[0]!);
+
+        if (request == null)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
+        }
+
+        for (int i = 0; i < request.ProductImages.Count; i++)
+        {
+            SaveImageRequestBase imageRequest = request.ProductImages[i];
+
+            if (imageRequest is not SaveUploadedImageInitialDataRequest initialUploadRequest) continue;
+
+            IFormFile? file = form.Files.GetFile(initialUploadRequest.EditorId);
+
+            if (file == null)
+            {
+                return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
+            }
+
+            request.ProductImages[i] = new SaveUploadedImageRequest()
+            {
+                UploadedFile = file,
+                Active = initialUploadRequest.Active,
+            };
+        }
+
+        for (int i = 0; i < request.UploadedProductDocuments.Count; i++)
+        {
+            ProductDocumentUploadRequest documentUploadRequest = request.UploadedProductDocuments[i];
+
+            IFormFile? file = form.Files.GetFile(documentUploadRequest.EditorId);
+
+            if (file == null)
+            {
+                return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
+            }
+
+            documentUploadRequest.File = file;
+        }
+
         string currentUserName = httpContext.User.Identity?.Name!;
 
-        SaveAllPreRequestData preRequestData = await GetPreRequestDataAsync(
-            request.ProductId,
-            request.ProductProperties,
-            request.ProductImages,
-            request.PromotionProductFiles,
-            request.ProductDocuments,
-            productImageService,
-            productImageFileService,
-            productImageFileManagementService);
+        int productId = request.ProductId;
 
-        SaveAllPreRequestDataValidator validator = new();
+        List<ProductImageData> existingImages = await productImageService.GetAllInProductWithoutFileDataAsync(productId);
+        List<ProductImageFileData> existingImageFiles = await productImageFileService.GetAllInProductAsync(productId);
 
-        ValidationResult validationResult = validator.Validate(preRequestData);
+        SaveAllRequestValidator validator = new(existingImages, existingImageFiles);
+
+        ValidationResult validationResult = validator.Validate(request);
 
         if (!validationResult.IsValid)
         {
             return ValidationResultProblem(validationResult);
         }
 
-        List<ProductPropertyForProductUpsertRequest> propertyRequests = GetPropertyRequests(preRequestData.ProductProperties);
-        List<ProductImageAndPromotionFileUpsertRequest> imageRequests = GetImageRequestsAsync(preRequestData.ProductImages);
-        List<ProductDocumentUpsertRequest> documentRequests = GetDocumentRequests(preRequestData.ProductDocuments);
+        List<ProductPropertyForProductUpsertRequest> propertyRequests = GetPropertyRequests(request.ProductProperties);
+
+        List<ProductImageAndPromotionFileUpsertRequest> imageRequests = await GetImageAndPromotionFileRequestsAsync(
+            request.ProductImages,
+            existingImages,
+            existingImageFiles,
+            request.PromotionProductFiles,
+            productImageService,
+            productImageFileManagementService);
+
+        List<ProductDocumentUpsertRequest> documentRequests = GetDocumentRequests(request.ProductDocuments, request.UploadedProductDocuments);
 
         ProductRelatedItemsFullSaveRequest saveAllRequest = new()
         {
@@ -174,21 +225,24 @@ internal static class SingleProductEditorSaveEndpoints
         );
     }
 
-    private sealed class SaveAllPreRequestDataValidator : AbstractValidator<SaveAllPreRequestData>
+    private sealed class SaveAllRequestValidator : AbstractValidator<SaveAllRequest>
     {
-        internal SaveAllPreRequestDataValidator()
+        internal SaveAllRequestValidator(
+            List<ProductImageData> productImages,
+            List<ProductImageFileData> productImageFiles)
         {
             RuleForEach(x => x.ProductProperties)
                 .SetValidator(new ProductPropertyDisplayDataValidator());
 
             RuleForEach(x => x.ProductImages)
-                .SetValidator(new ProductImagePreRequestDataValidator());
+                .SetValidator((saveAllRequest) =>
+                    new SaveImageRequestBaseValidator(productImages, productImageFiles, saveAllRequest.PromotionProductFiles));
 
             RuleForEach(x => x.PromotionProductFiles)
-                .SetValidator(new PromotionProductFilePreRequestDataValidator());
+                .SetValidator(new PromotionProductFileSaveRequestValidator());
 
-            RuleForEach(x => x.ProductDocuments)
-                .SetValidator(new ProductDocumentPreRequestDataValidator());
+            RuleForEach(x => x.UploadedProductDocuments)
+                .SetValidator(new ProductDocumentUploadRequestValidator());
         }
     }
 
@@ -198,193 +252,110 @@ internal static class SingleProductEditorSaveEndpoints
         {
             RuleFor(x => x.ProductCharacteristicId).NotNull();
         }
-    }
+    } 
 
-    private sealed class ProductImagePreRequestDataValidator : AbstractValidator<ProductImagePreRequestData>
+    private sealed class SaveImageRequestBaseValidator : AbstractValidator<SaveImageRequestBase>
     {
-        public ProductImagePreRequestDataValidator()
+        internal SaveImageRequestBaseValidator(
+            List<ProductImageData> productImages,
+            List<ProductImageFileData> productImageFiles,
+            List<PromotionProductFileSaveRequest> promotionProductFiles)
         {
-            RuleFor(x => x).Custom((x, context) =>
+            RuleFor(x => x).Custom((request, context) =>
             {
-                ProductImageSaveRequest imageListItem = x.ImageListItem;
-                ProductImageFileData? relatedImageFile = x.RelatedImageFile;
-                PromotionProductFileSaveRequest? relatedPromotionFile = x.RelatedPromotionFile;
-
-                if (imageListItem.UploadedImageFile != null)
+                ValidationResult validationResult = request switch
                 {
-                    IFormFile uploadedFile = imageListItem.UploadedImageFile;
+                    SavePromotionProductFileImageRequest promotionRequest =>
+                        new SavePromotionProductFileImageRequestValidator(promotionProductFiles)
+                            .Validate(promotionRequest),
 
-                    if (uploadedFile == null || uploadedFile.Length == 0)
+                    SaveImageWithFileRequest imageWithFileRequest =>
+                        new SaveImageWithFileRequestValidator(productImages)
+                            .Validate(imageWithFileRequest),
+
+                    SaveImageFileRequest imageFileRequest =>
+                        new SaveImageFileRequestValidator(productImageFiles)
+                            .Validate(imageFileRequest),
+
+                    SaveUploadedImageRequest uploadedImageRequest =>
+                        new SaveUploadedImageRequestValidator()
+                            .Validate(uploadedImageRequest),
+
+                    _ => throw new NotSupportedException()
+                };
+
+                foreach (ValidationFailure error in validationResult.Errors)
+                {
+                    string propertyPath = context.PropertyPath;
+
+                    if (!string.IsNullOrEmpty(error.PropertyName))
                     {
-                        context.AddFailure("File is empty");
-                        return;
+                        propertyPath += '.';
+                        propertyPath += error.PropertyName;
                     }
 
-                    if (!IsImageContentType(uploadedFile.ContentType))
-                    {
-                        context.AddFailure("File is not in a supported image format");
-                        return;
-                    }
+                    error.PropertyName = propertyPath;
 
-                    string? imageFileExtension = Path.GetExtension(uploadedFile.FileName);
-
-                    if (imageFileExtension is null)
-                    {
-                        context.AddFailure("Invalid file extension");
-                        return;
-                    }
-                }
-                else if (relatedPromotionFile is not null)
-                {
-                    if (relatedPromotionFile?.FileInfoId is null)
-                    {
-                        context.AddFailure("Promotion file not selected");
-                        return;
-                    }
-                }
-                else if (imageListItem.ExistingImageId is not null)
-                {
-                }
-                else if (relatedImageFile?.FileName is not null)
-                {
-                    string? contentType = GetContentTypeFromExtension(relatedImageFile.FileName);
-
-                    if (!IsImageContentType(contentType))
-                    {
-                        context.AddFailure("File is not in a supported image format");
-                        return;
-                    }
-                }
-                else
-                {
-                    context.AddFailure("Invalid request composition");
+                    context.AddFailure(error);
                 }
             });
         }
     }
 
-    private sealed class PromotionProductFilePreRequestDataValidator : AbstractValidator<PromotionProductFilePreRequestData>
+    private sealed class SavePromotionProductFileImageRequestValidator : AbstractValidator<SavePromotionProductFileImageRequest>
     {
-        internal PromotionProductFilePreRequestDataValidator()
+        internal SavePromotionProductFileImageRequestValidator(List<PromotionProductFileSaveRequest> promotionFileRequests)
         {
-            RuleFor(x => x.RelatedPromotionFile.FileInfoId).NotNull();
+            RuleFor(x => x.PromotionFileEditorId)
+                .Must(x => promotionFileRequests.Exists(promotionFile => promotionFile.EditorId == x))
+                .WithErrorCode(InvalidIdErrorCode);
         }
     }
 
-    private sealed class ProductDocumentPreRequestDataValidator : AbstractValidator<ProductDocumentPreRequestData>
+    private sealed class SaveImageWithFileRequestValidator : AbstractValidator<SaveImageWithFileRequest>
     {
-        internal ProductDocumentPreRequestDataValidator()
+        internal SaveImageWithFileRequestValidator(List<ProductImageData> productImages)
         {
-            RuleFor(x => x.DocumentFileData).NotNull().NotEmpty()
-                .When(x => x.DocumentData.ExistingDocumentId == null);
+            RuleFor(x => x.Id)
+                .Must(x => productImages.Exists(image => image.Id == x))
+                .WithErrorCode(InvalidIdErrorCode);
         }
     }
 
-    private static async Task<SaveAllPreRequestData> GetPreRequestDataAsync(
-        int productId,
-        List<ProductPropertySaveRequest> productProperties,
-        List<ProductImageSaveRequest> productImages,
-        List<PromotionProductFileSaveRequest> promotionProductFiles,
-        List<ProductDocumentSaveRequest> productDocuments,
-        IProductImageService productImageService,
-        IProductImageFileService productImageFileService,
-        IProductImageFileManagementService productImageFileManagementService)
+    private sealed class SaveImageFileRequestValidator : AbstractValidator<SaveImageFileRequest>
     {
-        List<PromotionProductFileSaveRequest> promotionProductFilesCopy = new(promotionProductFiles);
-
-        List<ProductImagePreRequestData> imageRequests = new();
-
-        List<ProductImageData> existingImages = await productImageService.GetAllInProductWithoutFileDataAsync(productId);
-        List<ProductImageFileData> existingImageFiles = await productImageFileService.GetAllInProductAsync(productId);
-
-        for (int i = 0; i < productImages.Count; i++)
+        internal SaveImageFileRequestValidator(List<ProductImageFileData> productImageFiles)
         {
-            ProductImageSaveRequest imageListItem = productImages[i];
-
-            PromotionProductFileSaveRequest? relatedPromotionFile = null;
-
-            if (imageListItem.RelatedPromotionFileEditorId != null)
-            {
-                int relatedPromotionFileIndex = promotionProductFilesCopy.FindIndex(
-                    x => x.EditorId == imageListItem.RelatedPromotionFileEditorId);
-
-                relatedPromotionFile = promotionProductFilesCopy[relatedPromotionFileIndex];
-
-                promotionProductFilesCopy.RemoveAt(relatedPromotionFileIndex);
-            }
-
-            byte[]? imageFileData = await GetImageDataFromListItemAsync(
-                imageListItem, imageListItem.UploadedImageFile, productImageService, productImageFileManagementService);
-
-            ProductImageData? productImage = null;
-
-            if (imageListItem.ExistingImageId != null)
-            {
-                productImage = existingImages.Find(x => x.Id == imageListItem.ExistingImageId);
-            }
-
-            ProductImageFileData? productImageFile = null;
-
-            if (imageListItem.RelatedImageFile != null)
-            {
-                productImageFile = existingImageFiles.Find(x => x.Id == imageListItem.ExistingImageId);
-            }
-
-            ProductImagePreRequestData preRequestData = new()
-            {
-                ImageListItem = imageListItem,
-                RelatedPromotionFile = relatedPromotionFile,
-                RelatedImage = productImage,
-                RelatedImageFile = productImageFile,
-                ImageFileData = imageFileData,
-            };
-
-            imageRequests.Add(preRequestData);
+            RuleFor(x => x.Id)
+                .Must(x => productImageFiles.Exists(imageFile => imageFile.Id == x))
+                .WithErrorCode(InvalidIdErrorCode);
         }
+    }
 
-        List<PromotionProductFilePreRequestData> promotionProductFileRequests = new();
-
-        for (int i = 0; i < promotionProductFilesCopy.Count; i++)
+    private sealed class SaveUploadedImageRequestValidator : AbstractValidator<SaveUploadedImageRequest>
+    {
+        internal SaveUploadedImageRequestValidator()
         {
-            PromotionProductFilePreRequestData promotionFilePreRequestData = new()
-            {
-                RelatedPromotionFile = promotionProductFilesCopy[i],
-            };
-
-            promotionProductFileRequests.Add(promotionFilePreRequestData);
+            RuleFor(x => x.UploadedFile).NotNull();
+            RuleFor(x => x.UploadedFile.Length).GreaterThan(0);
         }
+    }
 
-        List<ProductDocumentPreRequestData> documentRequests = [];
-
-        foreach (ProductDocumentSaveRequest productDocumentData in productDocuments)
+    private sealed class PromotionProductFileSaveRequestValidator : AbstractValidator<PromotionProductFileSaveRequest>
+    {
+        internal PromotionProductFileSaveRequestValidator()
         {
-            byte[]? uploadedFileData = null;
-
-            if (productDocumentData.File != null)
-            {
-                using MemoryStream memoryStream = new();
-
-                await productDocumentData.File.CopyToAsync(memoryStream);
-
-                uploadedFileData = memoryStream.ToArray();
-            }
-
-            ProductDocumentPreRequestData documentPreRequest = new()
-            {
-                DocumentData = productDocumentData,
-                DocumentFileData = uploadedFileData
-            };
-
-            documentRequests.Add(documentPreRequest);
+            RuleFor(x => x.PromotionFileId).NotNull();
         }
+    }
 
-        return new()
+    private sealed class ProductDocumentUploadRequestValidator : AbstractValidator<ProductDocumentUploadRequest>
+    {
+        internal ProductDocumentUploadRequestValidator()
         {
-            ProductProperties = productProperties,
-            ProductImages = imageRequests,
-            PromotionProductFiles = promotionProductFileRequests,
-            ProductDocuments = documentRequests,
-        };
+            RuleFor(x => x.File).NotNull();
+            RuleFor(x => x.File.Length).GreaterThan(0);
+        }
     }
 
     private static List<ProductPropertyForProductUpsertRequest> GetPropertyRequests(
@@ -407,246 +378,172 @@ internal static class SingleProductEditorSaveEndpoints
         return propertyUpsertRequests;
     } 
 
-    private static List<ProductDocumentUpsertRequest> GetDocumentRequests(List<ProductDocumentPreRequestData> documentPreRequests)
+    private static List<ProductDocumentUpsertRequest> GetDocumentRequests(
+        List<ProductDocumentSaveRequest> saveRequests,
+        List<ProductDocumentUploadRequest> uploadRequests)
     {
         List<ProductDocumentUpsertRequest> documentRequests = new();
 
-        if (documentPreRequests.Count == 0) return documentRequests;
-
-        foreach (ProductDocumentPreRequestData productDocumentData in documentPreRequests)
+        foreach (ProductDocumentSaveRequest saveRequest in saveRequests)
         {
-            ProductDocumentUpsertRequest upsertRequest;
-
-            ProductDocumentSaveRequest documentData = productDocumentData.DocumentData;
-
-            string? newDescription = documentData.CurrentDescription?.Trim();
-
-            if (newDescription == string.Empty)
+            ProductDocumentUpdateForProductRequest documentUpdateRequest = new()
             {
-                newDescription = null;
-            }
+                ExistingId = saveRequest.Id,
+                Description = saveRequest.Description,
+            };
 
-            if (documentData.ExistingDocumentId != null)
-            {
-                ProductDocumentUpdateForProductRequest documentUpdateRequest = new()
-                {
-                    ExistingId = documentData.ExistingDocumentId.Value,
-                    Description = newDescription,
-                };
+            documentRequests.Add(new() { Request = documentUpdateRequest });
+        }
 
-                upsertRequest = new()
-                {
-                    Request = documentUpdateRequest,
-                };
+        foreach (ProductDocumentUploadRequest uploadRequest in uploadRequests)
+        {
+            string fileExtension = Path.GetExtension(uploadRequest.File.Name);
 
-                documentRequests.Add(upsertRequest);
+            using MemoryStream memoryStream = new();
 
-                continue;
-            }
+            uploadRequest.File.CopyTo(memoryStream);
+
+            byte[] uploadedFileData = memoryStream.ToArray();
 
             ProductDocumentCreateForProductRequest documentCreateRequest = new()
             {
-                FileData = productDocumentData.DocumentFileData!,
-                FileExtension = documentData.FileExtension,
-                Description = newDescription,
+                FileExtension = fileExtension,
+                FileData = uploadedFileData,
+                Description = uploadRequest.Description,
             };
 
-            upsertRequest = new()
-            {
-                Request = documentCreateRequest,
-            };
-
-            documentRequests.Add(upsertRequest);
+            documentRequests.Add(new() { Request = documentCreateRequest });
         }
 
         return documentRequests;
     }
 
-    private static List<ProductImageAndPromotionFileUpsertRequest> GetImageRequestsAsync(
-        List<ProductImagePreRequestData> preRequests)
-    {
-        List<ProductImageAndPromotionFileUpsertRequest> requests = [];
-
-        for (int i = 0; i < preRequests.Count; i++)
-        {
-            ProductImagePreRequestData? preRequestData = preRequests[i];
-
-            ProductImageAndPromotionFileUpsertRequest request = GetImageAndPromotionFileRequestAsync(
-                preRequestData.ImageListItem,
-                preRequestData.RelatedPromotionFile,
-                preRequestData.RelatedImage,
-                preRequestData.RelatedImageFile,
-                preRequestData.ImageFileData,
-                i);
-
-            requests.Add(request);
-        }
-
-        return requests;
-    }
-
-    private static ProductImageAndPromotionFileUpsertRequest GetImageAndPromotionFileRequestAsync(
-        ProductImageSaveRequest imageListItem,
-        PromotionProductFileSaveRequest? relatedPromotionFile,
-        ProductImageData? relatedImage,
-        ProductImageFileData? relatedImageFile,
-        byte[]? imageFileData,
-        int index)
-    {
-        if (imageListItem.UploadedImageFile is not null)
-        {
-            string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFile.FileName);
-
-            ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
-            {
-                ExistingImageId = imageListItem.ExistingImageId,
-                FileExtension = imageFileExtension,
-                ImageData = imageFileData!,
-                FileUpsertRequest = new FileForImageForProductUpsertRequest()
-                {
-                    Active = imageListItem.RelatedImageFile?.Active ?? true,
-                    CustomDisplayOrder = index + 1,
-                },
-            };
-
-            return new(imageUpsertRequest);
-        }
-        else if (relatedPromotionFile is not null)
-        {
-            ServicePromotionProductImageUpsertRequest? servicePromotionProductImageUpsertRequest = null;
-
-            if (imageListItem.ExistingImageId is not null)
-            {
-                servicePromotionProductImageUpsertRequest = new()
-                {
-                    ImageFileUpsertRequest = new()
-                    {
-                        Active = imageListItem.RelatedImageFile?.Active ?? false,
-                        CustomDisplayOrder = index + 1,
-                    },
-                };
-            }
-
-            PromotionProductFileForProductUpsertRequest servicePromotionProductFileUpdateRequest = new()
-            {
-                Id = relatedPromotionFile.Id,
-                PromotionFileInfoId = relatedPromotionFile.FileInfoId!.Value,
-                Active = relatedPromotionFile.Active,
-                ValidFrom = relatedPromotionFile.ValidFrom,
-                ValidTo = relatedPromotionFile.ValidTo,
-                UpsertInProductImagesRequest = servicePromotionProductImageUpsertRequest,
-            };
-
-            return new(servicePromotionProductFileUpdateRequest);
-        }
-        else if (imageListItem.ExistingImageId is not null)
-        {
-            string? imageFileExtension;
-
-            if (relatedImageFile?.FileName is not null)
-            {
-                imageFileExtension = Path.GetExtension(relatedImageFile.FileName);
-            }
-            else
-            {
-                List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(relatedImage.ImageContentType!);
-
-                imageFileExtension = possibleFileExtensions.First();
-            }
-
-            FileForImageForProductUpsertRequest? imageFileUpsertRequest = null;
-
-            if (imageListItem.RelatedImageFile is not null)
-            {
-                imageFileUpsertRequest = new FileForImageForProductUpsertRequest()
-                {
-                    Active = imageListItem.RelatedImageFile?.Active ?? true,
-                    CustomDisplayOrder = index + 1,
-                };
-            }
-
-            ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
-            {
-                ExistingImageId = imageListItem.ExistingImageId,
-                FileExtension = imageFileExtension,
-                ImageData = imageFileData!,
-                FileUpsertRequest = imageFileUpsertRequest,
-            };
-
-            return new(imageUpsertRequest);
-        }
-        else if (relatedImageFile is not null)
-        {
-            if (imageListItem.RelatedImageFile?.ExistingFileInfoId is null)
-            {
-                ProductImageFileForProductCreateRequest imageFileCreateRequest = new()
-                {
-                    Active = imageListItem.RelatedImageFile?.Active,
-                    CustomDisplayOrder = index + 1,
-                    FileData = new()
-                    {
-                        FileName = relatedImageFile.FileName,
-                        Data = imageFileData!,
-                    },
-                };
-
-                return new(imageFileCreateRequest);
-            }
-
-            ProductImageFileForProductUpdateRequest imageFileUpdateRequest = new()
-            {
-                Id = imageListItem.RelatedImageFile.ExistingFileInfoId.Value,
-                Active = imageListItem.RelatedImageFile.Active,
-                UpdateDisplayOrderRequest = index + 1,
-                UpdateFileDataRequest = new FileData()
-                {
-                    FileName = relatedImageFile.FileName,
-                    Data = imageFileData!,
-                },
-            };
-
-            return new(imageFileUpdateRequest);
-        }
-
-        return default!;
-    }
-
-    private static async Task<byte[]?> GetImageDataFromListItemAsync(
-        ProductImageSaveRequest imageListItem,
-        IFormFile? uploadedFile,
+    private static async Task<List<ProductImageAndPromotionFileUpsertRequest>> GetImageAndPromotionFileRequestsAsync(
+        List<SaveImageRequestBase> imageRequests,
+        List<ProductImageData> productImages,
+        List<ProductImageFileData> productImageFiles,
+        List<PromotionProductFileSaveRequest> promotionProductFileRequests,
         IProductImageService productImageService,
         IProductImageFileManagementService productImageFileManagementService)
     {
-        if (imageListItem.UploadedImageFile is not null)
+        List<ProductImageAndPromotionFileUpsertRequest> output = new();
+
+        for (int i = 0; i < imageRequests.Count; i++)
         {
-            if (uploadedFile == null) return null;
+            SaveImageRequestBase imageSaveRequest = imageRequests[i];
 
-            using MemoryStream memoryStream = new();
+            if (imageSaveRequest is SavePromotionProductFileImageRequest promotionProductFileImageRequest)
+            {
+                PromotionProductFileSaveRequest promotionFileRequest
+                    = promotionProductFileRequests.First(x => x.EditorId == promotionProductFileImageRequest.PromotionFileEditorId);
 
-            await uploadedFile.CopyToAsync(memoryStream);
+                PromotionProductFileForProductUpsertRequest promotionProductFileUpdateRequest = new()
+                {
+                    Id = promotionFileRequest.Id,
+                    PromotionFileInfoId = promotionFileRequest.PromotionFileId,
+                    Active = promotionFileRequest.Active,
+                    ValidFrom = promotionFileRequest.ValidFrom,
+                    ValidTo = promotionFileRequest.ValidTo,
+                    UpsertInProductImagesRequest = new()
+                    {
+                        ImageFileUpsertRequest = new()
+                        {
+                            Active = promotionProductFileImageRequest.Active,
+                            CustomDisplayOrder = i + 1,
+                        },
+                    },
+                };
 
-            return memoryStream.ToArray();
+                output.Add(new(promotionProductFileUpdateRequest));
+            }
+            else if (imageSaveRequest is SaveImageWithFileRequest imageWithFileRequest)
+            {
+                string? imageFileExtension;
+
+                ProductImageData productImage = productImages.First(x => x.Id == imageWithFileRequest.Id);
+                ProductImageFileData? productImageFile = productImageFiles.Find(x => x.ImageId == imageWithFileRequest.Id);
+
+                ProductImage? productImageWithData = await productImageService.GetByIdInAllImagesAsync(imageWithFileRequest.Id);
+
+                if (productImageFile?.FileName != null)
+                {
+                    imageFileExtension = Path.GetExtension(productImageFile.FileName);
+                }
+                else
+                {
+                    List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(productImage.ImageContentType!);
+
+                    imageFileExtension = possibleFileExtensions.First();
+                }
+
+                FileForImageForProductUpsertRequest? imageFileUpsertRequest = null;
+
+                if (imageWithFileRequest.SaveFileRequest != null)
+                {
+                    imageFileUpsertRequest = new FileForImageForProductUpsertRequest()
+                    {
+                        Active = imageWithFileRequest.SaveFileRequest.Active,
+                        CustomDisplayOrder = i + 1,
+                    };
+                }
+
+                ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
+                {
+                    ExistingImageId = imageWithFileRequest.Id,
+                    FileExtension = imageFileExtension,
+                    ImageData = productImageWithData!.ImageData!,
+                    FileUpsertRequest = imageFileUpsertRequest,
+                };
+
+                output.Add(new(imageUpsertRequest));
+            }
+            else if (imageSaveRequest is SaveImageFileRequest imageFileRequest)
+            {
+                ProductImageFileData productImageFile = productImageFiles.First(x => x.Id == imageFileRequest.Id);
+
+                OneOf<byte[], FileDoesntExistResult> getImageFileDataResult
+                    = await productImageFileManagementService.GetImageAsync(productImageFile.FileName!);
+
+                ProductImageFileForProductUpdateRequest imageFileUpdateRequest = new()
+                {
+                    Id = imageFileRequest.Id,
+                    Active = imageFileRequest.Active,
+                    UpdateDisplayOrderRequest = i + 1,
+                    UpdateFileDataRequest = new FileData()
+                    {
+                        FileName = productImageFile.FileName!,
+                        Data = getImageFileDataResult.AsT0,
+                    },
+                };
+
+                output.Add(new(imageFileUpdateRequest));
+            }
+            else if (imageSaveRequest is SaveUploadedImageRequest uploadedImageRequest)
+            {
+                string? imageFileExtension = Path.GetExtension(uploadedImageRequest.UploadedFile.FileName);
+
+                using MemoryStream memoryStream = new();
+
+                await uploadedImageRequest.UploadedFile.CopyToAsync(memoryStream);
+
+                byte[] uploadedImageData = memoryStream.ToArray();
+
+                ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
+                {
+                    ExistingImageId = null,
+                    FileExtension = imageFileExtension,
+                    ImageData = uploadedImageData!,
+                    FileUpsertRequest = new FileForImageForProductUpsertRequest()
+                    {
+                        Active = uploadedImageRequest.Active,
+                        CustomDisplayOrder = i + 1,
+                    },
+                };
+
+                output.Add(new(imageUpsertRequest));
+            }
         }
 
-        int? existingImageId = imageListItem.ExistingImageId;
-        string? existingImageFileName = imageListItem.RelatedImageFile?.FileName;
-
-        if (existingImageId is not null)
-        {
-            ProductImage? productImage = await productImageService.GetByIdInAllImagesAsync(existingImageId.Value);
-
-            return productImage?.ImageData;
-        }
-        else if (existingImageFileName is not null)
-        {
-            OneOf<byte[], FileDoesntExistResult> getImageFileDataResult
-                = await productImageFileManagementService.GetImageAsync(existingImageFileName);
-
-            return getImageFileDataResult.Match<byte[]?>(
-                fileData => fileData,
-                fileDoesntExistResult => null);
-        }
-
-        return null;
+        return output;
     }
 }

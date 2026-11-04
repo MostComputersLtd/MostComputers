@@ -486,7 +486,7 @@ public static class PromotionGroupsPageComponentEndpoints
         [FromServices] IManufacturerService manufacturerService,
         [FromServices] IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService)
     {
-        List<Manufacturer> manufacturers = await GetManufacturersForGroupEditorPopupAsync(
+        (List<Manufacturer> manufacturers, int? relatedManufacturerId) = await GetManufacturersForGroupEditorPopupAsync(
             null, manufacturerService, manufacturerToPromotionGroupRelationService);
 
         return new RazorComponentResult<PromotionGroupEditorPopup>(new
@@ -503,6 +503,7 @@ public static class PromotionGroupsPageComponentEndpoints
                 IsDefault = false,
                 ShowEmptyForLogged = false,
                 ShowEmptyForNonLogged = false,
+                RelatedManufacturerId = relatedManufacturerId,
                 ManufacturersThatCanBeRelated = manufacturers,
             }
         });
@@ -518,7 +519,7 @@ public static class PromotionGroupsPageComponentEndpoints
 
         if (promotionGroup == null) return Results.NotFound();
 
-        List<Manufacturer> manufacturers = await GetManufacturersForGroupEditorPopupAsync(
+        (List<Manufacturer> manufacturers, int? relatedManufacturerId) = await GetManufacturersForGroupEditorPopupAsync(
             promotionGroup, manufacturerService, manufacturerToPromotionGroupRelationService);
 
         return new RazorComponentResult<PromotionGroupEditorPopup>(new
@@ -535,12 +536,13 @@ public static class PromotionGroupsPageComponentEndpoints
                 IsDefault = promotionGroup.IsDefault,
                 ShowEmptyForLogged = promotionGroup.ShowEmptyForLogged,
                 ShowEmptyForNonLogged = promotionGroup.ShowEmptyForNonLogged,
+                RelatedManufacturerId = relatedManufacturerId,
                 ManufacturersThatCanBeRelated = manufacturers,
             }
         });
     }
 
-    private static async Task<List<Manufacturer>> GetManufacturersForGroupEditorPopupAsync(
+    private static async Task<(List<Manufacturer>, int?)> GetManufacturersForGroupEditorPopupAsync(
         PromotionGroup? promotionGroup,
         IManufacturerService manufacturerService,
         IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService)
@@ -550,19 +552,32 @@ public static class PromotionGroupsPageComponentEndpoints
         List<ManufacturerToPromotionGroupRelation> manufacturerToPromotionGroupRelations
             = await manufacturerToPromotionGroupRelationService.GetAllAsync();
 
+        int? relatedManufacturerId = null;
+
         List<Manufacturer> manufacturersWithNoRelations = [];
 
         foreach (Manufacturer manufacturer in manufacturers)
         {
-            bool relationToOtherGroupExists = manufacturerToPromotionGroupRelations.Exists(
-                x => x.ManufacturerId == manufacturer.Id && x.PromotionGroupId != promotionGroup?.Id);
+            ManufacturerToPromotionGroupRelation? relation = manufacturerToPromotionGroupRelations.Find(x => x.ManufacturerId == manufacturer.Id);
 
-            if (relationToOtherGroupExists) continue;
+            if (relation == null)
+            {
+                manufacturersWithNoRelations.Add(manufacturer);
+
+                continue;
+            }
+
+            if (relation.PromotionGroupId != promotionGroup?.Id)
+            {
+                continue;
+            }
+
+            relatedManufacturerId = manufacturer.Id;
 
             manufacturersWithNoRelations.Add(manufacturer);
         }
 
-        return manufacturersWithNoRelations;
+        return (manufacturersWithNoRelations, relatedManufacturerId);
     }
 
     private static RazorComponentResult<GroupPromotionAddRelatedProductsPopup> GetAddRelatedProductsToPromotionPopupComponentAsync(

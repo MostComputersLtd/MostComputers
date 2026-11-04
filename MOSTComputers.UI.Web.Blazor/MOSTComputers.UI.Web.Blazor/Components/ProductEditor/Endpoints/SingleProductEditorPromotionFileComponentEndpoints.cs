@@ -1,13 +1,28 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Models.Product.Models.Promotions.Files;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
 using MOSTComputers.UI.Web.Blazor.Components.Primitives;
 using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionFileEditor;
+using OneOf;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.EditorIdsGenerateUtils;
+
+using ReadonlyEditorDataAlias
+= MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.PromotionFileEditorPopup.PromotionProductFileInfoReadonlyDisplayData;
+
+using EditorDataAlias
+= MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.PromotionFileEditorPopup.PromotionProductFileInfoDisplayData;
+
+using SingleEditorReadonlyDataAlias
+= MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SinglePromotionFilePopup.PromotionProductFileInfoReadonlyData;
+
+using SingleEditorDataAlias
+= MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SinglePromotionFilePopup.PromotionProductFileInfoEditData;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
@@ -17,7 +32,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
     {
         [JsonPropertyName("productId")] public required int ProductId { get; set; }
         [JsonPropertyName("promotionProductFiles")]
-        public List<SingleProductEditorPopup.SingleProductEditorPopup.PromotionProductFileInfoDisplayData>? PromotionProductFiles { get; init; }
+        public List<PromotionFileEditorPopup.PromotionProductFileEditorJsonData>? PromotionProductFiles { get; init; }
     }
 
     private sealed class PromotionProductFileEditorPopupItemRequest
@@ -28,7 +43,6 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
         [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
         [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
         [JsonPropertyName("active")] public bool Active { get; set; } = false;
-        [JsonPropertyName("shouldDisplayDeleteButton")] public bool ShouldDisplayDeleteButton { get; set; } = false;
     } 
 
     private sealed class SinglePromotionProductFileEditorPopupRequest
@@ -68,6 +82,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
         [FromRoute] int productId,
         [FromBody] PromotionProductFilePopupRequest request,
         [FromServices] IProductService productService,
+        [FromServices] IPromotionService promotionService,
         [FromServices] IPromotionProductFileService promotionProductFileService)
     {
         MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
@@ -80,12 +95,12 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
         List<PromotionProductFileInfo> promotionProductFiles
             = await promotionProductFileService.GetAllForProductAsync(request.ProductId);
 
-        List<PromotionFileEditorPopup.PromotionProductFileInfoDisplayData> promotionFileData = new();
+        List<EditorDataAlias> promotionFileData = new();
+        List<PromotionFileEditorPopup.PromotionProductFileEditorJsonData> promotionFileJsonData = new();
 
-        if  (request.PromotionProductFiles != null)
+        if (request.PromotionProductFiles != null)
         {
-            foreach (SingleProductEditorPopup.SingleProductEditorPopup.PromotionProductFileInfoDisplayData promotionFileEditorData
-                in request.PromotionProductFiles)
+            foreach (PromotionFileEditorPopup.PromotionProductFileEditorJsonData promotionFileEditorData in request.PromotionProductFiles)
             {
                 PromotionProductFileInfo? promotionProductFile = null;
 
@@ -94,34 +109,67 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
                     promotionProductFile = promotionProductFiles.Find(x => x.Id == promotionFileEditorData.Id);
                 }
 
-                PromotionFileEditorPopup.PromotionProductFileInfoDisplayData editorData = new()
+                EditorDataAlias editorData = new()
                 {
                     EditorId = promotionFileEditorData.EditorId,
                     Id = promotionFileEditorData.Id,
                     ValidFrom = promotionFileEditorData.ValidFrom,
                     ValidTo = promotionFileEditorData.ValidTo,
                     Active = promotionFileEditorData.Active,
-                    CreateUserName = promotionProductFile?.CreateUserName,
-                    CreateDate = promotionProductFile?.CreateDate,
-                    LastUpdateUserName = promotionProductFile?.LastUpdateUserName,
-                    LastUpdateDate = promotionProductFile?.LastUpdateDate,
                     ProductImageId = promotionProductFile?.ProductImageId,
                     PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
                 };
 
+                PromotionFileEditorPopup.PromotionProductFileEditorJsonData jsonData = new()
+                {
+                    EditorId = promotionFileEditorData.EditorId,
+                    Id = promotionFileEditorData.Id,
+                    ValidFrom = promotionFileEditorData.ValidFrom,
+                    ValidTo = promotionFileEditorData.ValidTo,
+                    Active = promotionFileEditorData.Active,
+                    PromotionFileId = promotionProductFile?.PromotionFileInfo.Id,
+                };
+
                 promotionFileData.Add(editorData);
+                promotionFileJsonData.Add(jsonData);
             }
-        } 
+        }
+
+        List<Promotion> promotions = await promotionService.GetAllForProductAsync(product.Id);
+
+        Promotion? pidPromotion = null;
+        Promotion? ridPromotion = null;
+
+        DateTime now = DateTime.Now;
+
+        foreach (Promotion promotion in promotions)
+        {
+            if (promotion.StartDate > now || promotion.ExpirationDate < now)
+            {
+                continue;
+            }
+
+            if (promotion.Id == product.PromotionPid)
+            {
+                pidPromotion = promotion;
+            }
+            else if (promotion.Id == product.PromotionRid)
+            {
+                ridPromotion = promotion;
+            }
+        }
+
+        OneOf<List<ReadonlyEditorDataAlias>, List<EditorDataAlias>> promotionFileDataWrapped
+            = OneOf<List<ReadonlyEditorDataAlias>, List<EditorDataAlias>>.FromT1(promotionFileData);
 
         return new RazorComponentResult<PromotionFileEditorPopup>(new
         {
             IsVisible = true,
             Product = product,
-            PromotionProductFiles = promotionFileData,
+            PromotionProductFiles = promotionFileDataWrapped,
+            PidPromotion = pidPromotion,
+            RidPromotion = ridPromotion,
             PopupMarginOptions = new Popup.MarginOptions() { Left = "10vw", Top = "10vh", Right = "10vw", Bottom = "10vh" },
-            ShouldDisplaySaveButtonInSingleEditor = true,
-            ShouldDisplayAddButton = true,
-            ShouldDisplayDeleteButton = true,
         });
     }
 
@@ -138,25 +186,23 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
 
         string editorId = request.ExistingEditorId ?? GeneratePromotionFileId(null);
 
-        PromotionFileEditorPopup.PromotionProductFileInfoDisplayData itemData = new()
+        EditorDataAlias itemData = new()
         {
             EditorId = editorId,
             Id = request.Id,
             Active = request.Active,
             ValidFrom = request.ValidFrom,
             ValidTo = request.ValidTo,
-            CreateUserName = promotionProductFile?.CreateUserName,
-            CreateDate = promotionProductFile?.CreateDate,
-            LastUpdateUserName = promotionProductFile?.LastUpdateUserName,
-            LastUpdateDate = promotionProductFile?.LastUpdateDate,
             ProductImageId = promotionProductFile?.ProductImageId,
             PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
         };
 
+        OneOf<ReadonlyEditorDataAlias, EditorDataAlias> itemDataWrapped
+            = OneOf<ReadonlyEditorDataAlias, EditorDataAlias>.FromT1(itemData);
+
         return new RazorComponentResult<PromotionFileEditorPopupItem>(new
         {
-            ItemData = itemData,
-            ShouldDisplayDeleteButton = request.ShouldDisplayDeleteButton,
+            ItemData = itemDataWrapped,
         });
     }
 
@@ -173,7 +219,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
 
         string editorId = request.ExistingEditorId ?? GeneratePromotionFileId(null);
 
-        SinglePromotionFilePopup.PromotionProductFileInfoEditData? popupData = new()
+        SingleEditorDataAlias popupData = new()
         {
             EditorId = editorId,
             Id = request.Id,
@@ -186,15 +232,17 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
             LastUpdateUserName = promotionProductFile?.LastUpdateUserName,
             LastUpdateDate = promotionProductFile?.LastUpdateDate,
             IsInImage = request.IsInImage,
+            SaveButtonText = request.SaveButtonText,
         };
+
+        OneOf<SingleEditorReadonlyDataAlias, SingleEditorDataAlias> popupDataWrapped
+            = OneOf<SingleEditorReadonlyDataAlias, SingleEditorDataAlias>.FromT1(popupData);
 
         return new RazorComponentResult<SinglePromotionFilePopup>(new
         {
             IsVisible = true,
-            PopupData = popupData,
+            PopupData = popupDataWrapped,
             PopupMarginOptions = new Popup.MarginOptions() { Left = "15vw", Right = "15vw", Top = "15vh", Bottom = "15vh" },
-            ShouldDisplaySaveButton = true,
-            SaveButtonText = request.SaveButtonText,
         });
     }
 
@@ -220,7 +268,6 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
 
             promotionFileListItems.Add(listItem);
         }
-
 
         return new RazorComponentResult<PromotionFileSelectList>(new
         {

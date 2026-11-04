@@ -7,6 +7,7 @@ public sealed class CreatePromotionFileRequest
     public DateTime? ValidFrom { get; init; }
     public DateTime? ValidTo { get; init; }
     public required string FileName { get; init; }
+    public required string ContentType { get; init; }
     public required byte[] FileData { get; init; }
     public string? Description { get; init; }
     public string? RelatedProductsString { get; init; }

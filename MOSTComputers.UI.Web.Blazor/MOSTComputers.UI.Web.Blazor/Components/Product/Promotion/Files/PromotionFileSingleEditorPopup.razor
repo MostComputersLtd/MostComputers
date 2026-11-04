@@ -150,7 +150,7 @@
                             </div>
 
                             <div class="flex-grow-1 mb-2 d-flex justify-content-center">
-                                <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName)"
+                                <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName, _promotionFileEditData.ContentType!)"
                                     class="full-parent-width full-parent-height" />
                             </div>
                         }
@@ -183,6 +183,7 @@
         public DateTime? ValidFrom { get; init; }
         public DateTime? ValidTo { get; init; }
         public required string FileName { get; init; }
+        public required string ContentType { get; set; }
         public string? Description { get; init; }
         public string? RelatedProductsString { get; init; }
         public required string CreateUserName { get; init; }
@@ -199,6 +200,7 @@
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
         public string? FileName { get; set; }
+        public string? ContentType { get; set; }
         public string? Description { get; set; }
         public string? RelatedProductsString { get; set; }
         public string? CreateUserName { get; set; }
@@ -263,6 +265,7 @@
                 Description = _promotionFileEditData.Description,
                 RelatedProductsString = _promotionFileEditData.RelatedProductsString,
                 FileName = update.FileName,
+                ContentType = update.ContentType,
                 CreateUserName = update.CreateUserName,
                 CreateDate = update.CreateDate,
                 LastUpdateUserName = update.LastUpdateUserName,
@@ -309,6 +312,7 @@
                     ValidFrom = update.ValidFrom,
                     ValidTo = update.ValidTo,
                     FileName = update.FileName,
+                    ContentType = update.ContentType,
                     Description = update.Description,
                     RelatedProductsString = update.RelatedProductsString,
                     CreateUserName = update.CreateUserName,

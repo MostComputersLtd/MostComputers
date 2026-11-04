@@ -15,6 +15,8 @@ using MOSTComputers.Models.Product.Models.Promotions.Files;
 using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Files.Contracts;
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Files.PromotionFiles;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using MOSTComputers.Services.PromotionFileManagement.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles;
 internal sealed class PromotionFileService : IPromotionFileService
@@ -22,7 +24,7 @@ internal sealed class PromotionFileService : IPromotionFileService
     public PromotionFileService(
         IPromotionFileInfoRepository promotionFileInfoService,
         IPromotionProductFileInfoRepository promotionProductFileInfoRepository,
-        ILocalFileManagementService promotionFileManagementService,
+        [FromKeyedServices(ConfigureServices.PromotionFileManagerKey)] ILocalFileManagementService promotionFileManagementService,
         ITransactionExecuteService transactionExecuteService,
         IValidator<CreatePromotionFileRequest>? createRequestValidator = null,
         IValidator<UpdatePromotionFileRequest>? updateRequestValidator = null)
@@ -87,7 +89,7 @@ internal sealed class PromotionFileService : IPromotionFileService
 
         OneOf<int, FileAlreadyExistsResult, UnexpectedFailureResult> insertResult
             = await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-                x => InsertInternalAsync(x),
+                InsertInternalAsync,
                 result => result.Match(
                     id => true,
                     fileAlreadyExistsResult => false,
@@ -107,6 +109,7 @@ internal sealed class PromotionFileService : IPromotionFileService
             Name = createRequest.Name,
             Active = createRequest.Active,
             FileName = createRequest.FileName,
+            ContentType = createRequest.ContentType,
             ValidFrom = createRequest.ValidFrom,
             ValidTo = createRequest.ValidTo,
             Description = createRequest.Description,
@@ -141,7 +144,7 @@ internal sealed class PromotionFileService : IPromotionFileService
         if (!validationResult.IsValid) return validationResult;
 
         return await _transactionExecuteService.ExecuteActionInTransactionAndCommitWithConditionAsync(
-            x => UpdateInternalAsync(x),
+            UpdateInternalAsync,
             result => result.Match(
                 id => true,
                 validationResult => false,
@@ -169,11 +172,12 @@ internal sealed class PromotionFileService : IPromotionFileService
         }
 
         string newFileName = currentPromotionFileInfo.FileName;
+        string newContentType = currentPromotionFileInfo.ContentType;
 
-        if (updateRequest.NewFileData is not null
-            && currentPromotionFileInfo.FileName != updateRequest.NewFileData.FileName)
+        if (updateRequest.NewFileData != null)
         {
             newFileName = updateRequest.NewFileData.FileName;
+            newContentType = updateRequest.NewFileData.ContentType;
         }
 
         DateTime updateDate = DateTime.Now;
@@ -184,6 +188,7 @@ internal sealed class PromotionFileService : IPromotionFileService
             Name = updateRequest.Name,
             Active = updateRequest.Active,
             FileName = newFileName,
+            ContentType = newContentType,
             ValidFrom = updateRequest.ValidFrom,
             ValidTo = updateRequest.ValidTo,
             Description = updateRequest.Description,
@@ -200,7 +205,10 @@ internal sealed class PromotionFileService : IPromotionFileService
             {
                 if (updateRequest.NewFileData is null) return new Success();
 
-                if (currentPromotionFileInfo.FileName == updateRequest.NewFileData.FileName)
+                PromotionFileData newFileData = updateRequest.NewFileData;
+
+                if (currentPromotionFileInfo.FileName == newFileData.FileName
+                    && currentPromotionFileInfo.ContentType == newFileData.ContentType)
                 {
                     OneOf<Success, FileDoesntExistResult> updateFileResult = await _promotionFileManagementService.UpdateFileAsync(
                         currentPromotionFileInfo.FileName, updateRequest.NewFileData.Data);
@@ -211,12 +219,10 @@ internal sealed class PromotionFileService : IPromotionFileService
                 OneOf<Success, FileDoesntExistResult> deleteFileResult
                     = _promotionFileManagementService.DeleteFile(currentPromotionFileInfo.FileName);
 
-                OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> resultFromFileDelete
-                    = deleteFileResult.Match<OneOf<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
-                        success => success,
-                        fileDoesntExistResult => fileDoesntExistResult);
-
-                if (!resultFromFileDelete.IsT0) return resultFromFileDelete;
+                if (!deleteFileResult.IsT0)
+                {
+                    return deleteFileResult.Map<Success, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>();
+                }
 
                 OneOf<Success, FileAlreadyExistsResult> addNewFileResult
                     = await _promotionFileManagementService.AddFileAsync(newFileName, updateRequest.NewFileData.Data);

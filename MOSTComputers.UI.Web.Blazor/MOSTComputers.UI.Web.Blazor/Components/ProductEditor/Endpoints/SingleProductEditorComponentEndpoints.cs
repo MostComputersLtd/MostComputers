@@ -27,6 +27,7 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.UI.Web.Blazor.Components.Product;
+using MOSTComputers.UI.Web.Blazor.Components.Primitives;
 using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Documents;
@@ -44,26 +45,39 @@ internal static class SingleProductEditorComponentEndpoints
     private sealed class ProductDataPopupRequest
     {
         [JsonPropertyName("productProperties")]
-        public List<ProductPropertyDisplayData>? ProductProperties { get; init; }
-
-        [JsonPropertyName("productLinks")]
-        public List<ProductPropertyDisplayData>? ProductLinks { get; init; }
+        public List<ProductDataPopupPropertyRequest>? ProductProperties { get; init; }
 
         [JsonPropertyName("productImages")]
-        public List<ProductImageListItemDisplayData>? ProductImages { get; init; }
+        public List<string>? ProductImageUrls { get; init; }
+    }
+
+    private sealed class ProductDataPopupPropertyRequest
+    {
+        [JsonPropertyName("productCharacteristicId")] public required int ProductCharacteristicId { get; set; }
+        [JsonPropertyName("value")] public string? Value { get; set; }
     }
 
     private sealed class ProductLegacyDisplayPopupRequest
     {
         [JsonPropertyName("productProperties")]
-        public List<ProductPropertyDisplayData>? ProductProperties { get; init; }
-
-        [JsonPropertyName("productLinks")]
-        public List<ProductPropertyDisplayData>? ProductLinks { get; init; }
+        public List<ProductLegacyPopupPropertyRequest>? ProductProperties { get; init; }
 
         [JsonPropertyName("productImages")]
-        public List<ProductImageListItemDisplayData>? ProductImages { get; init; }
+        public List<ProductLegacyDisplayPopupImageRequest>? ProductImages { get; init; }
     } 
+
+    private sealed class ProductLegacyPopupPropertyRequest
+    {
+        [JsonPropertyName("productCharacteristicId")] public required int ProductCharacteristicId { get; set; }
+        [JsonPropertyName("value")] public string? Value { get; set; }
+    }
+
+    private sealed class ProductLegacyDisplayPopupImageRequest
+    {
+        [JsonPropertyName("imageUrl")] public required string ImageUrl { get; set; }
+        [JsonPropertyName("displayOrder")] public int? DisplayOrder { get; set; }
+        [JsonPropertyName("active")] public bool? Active { get; set; }
+    }
 
     internal const string EndpointGroupUniqueRoute = "single/";
 
@@ -105,232 +119,212 @@ internal static class SingleProductEditorComponentEndpoints
         [FromServices] IProductDocumentFileService productDocumentFileService,
         [FromServices] ISearchStringOriginService searchStringOriginService)
     {
-        // await RevokeAllExistingBrowserFilePreviewUrls();
-
-        // _changedProperties.Clear();
-        // _changedImages.Clear();
-        // _changedPromotionFiles.Clear();
-        // _changedDocuments.Clear();
-
         MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
 
         if (product == null) return Results.NotFound();
 
         List<ProductImageData> productImages = await productImageService.GetAllInProductWithoutFileDataAsync(product.Id);
 
+        List<ProductImageData> productImagesCopy = new(productImages);
+
         List<ProductImageFileData> productImageFiles = await productImageFileService.GetAllInProductAsync(product.Id);
 
-        List<ProductImageFileDisplayData> productImageFileDisplayDatas = [];
-
-        foreach (ProductImageFileData productImageFile in productImageFiles)
-        {
-            ProductImageFileDisplayData productImageFileDisplayData = new()
-            {
-                ExistingFileInfoId = productImageFile.Id,
-                ExistingImageId = productImageFile.ImageId,
-                FileName = productImageFile.FileName,
-                DisplayOrder = productImageFile.DisplayOrder,
-                Active = productImageFile.Active,
-            };
-
-            productImageFileDisplayDatas.Add(productImageFileDisplayData);
-        }
+        List<ProductImageFileData> productImageFilesCopy = new(productImageFiles);
 
         List<PromotionProductFileInfo> promotionProductFileInfos = await promotionProductFileService.GetAllForProductAsync(productId);
 
-        // ProductImages.Clear();
-
-        List<ProductImageListItemDisplayData> productImageDatas = [];
-
-        // List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> promotionProductFileInfoDisplayDatas
-        //     = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFileInfos);
-
-        List<PromotionProductFileInfoDisplayData> promotionProductFileInfoDisplayDatas = [];
+        List<PromotionFileEditorPopup.PromotionProductFileEditorJsonData> promotionProductFileEditorJsonDatas = [];
+        List<PromotionFileEditorPopup.PromotionProductFileRecoveryJsonData> promotionProductFileRecoveryJsonDatas = [];
 
         foreach (PromotionProductFileInfo promotionProductFileInfo in promotionProductFileInfos)
         {
-            PromotionProductFileInfoDisplayData promotionFileDisplayData = new()
+            string editorId = GeneratePromotionFileId(promotionProductFileInfo.Id); 
+
+            PromotionFileEditorPopup.PromotionProductFileEditorJsonData promotionFileEditorJsonData = new()
             {
-                EditorId = GeneratePromotionFileId(promotionProductFileInfo.Id),
+                EditorId = editorId,
                 Id = promotionProductFileInfo.Id,
-                FileInfoId = promotionProductFileInfo.PromotionFileInfoId,
-                FileInfoName = promotionProductFileInfo.PromotionFileInfo.Name,
-                FileInfoFileName = promotionProductFileInfo.PromotionFileInfo.FileName,
+                PromotionFileId = promotionProductFileInfo.PromotionFileInfoId,
                 ValidFrom = promotionProductFileInfo.ValidFrom,
                 ValidTo = promotionProductFileInfo.ValidTo,
                 Active = promotionProductFileInfo.Active,
             };
-            
-            promotionProductFileInfoDisplayDatas.Add(promotionFileDisplayData);
-        }
 
-        for (int i = 0; i < productImages.Count; i++)
-        {
-            ProductImageData productImage = productImages[i];
-
-            ProductImageFileDisplayData? relatedImageFile = productImageFileDisplayDatas
-                .FirstOrDefault(x => x.ExistingImageId == productImage.Id);
-
-            if (relatedImageFile is not null)
+            PromotionFileEditorPopup.PromotionProductFileRecoveryJsonData promotionFileRecoveryJsonData = new()
             {
-                productImageFileDisplayDatas.Remove(relatedImageFile);
-            }
-
-            PromotionProductFileInfo? relatedPromotionFileInfo
-                = promotionProductFileInfos.FirstOrDefault(x => x.ProductImageId == productImage.Id);
-
-            PromotionProductFileInfoDisplayData? relatedPromotionFile = null;
-
-            if (relatedPromotionFileInfo != null)
-            {
-                relatedPromotionFile = promotionProductFileInfoDisplayDatas.First(x => x.Id == relatedPromotionFileInfo.Id);
-            }
-
-            ProductImageDisplayData productImageDisplayData = new()
-            {
-                ExistingImageId = productImage.Id,
-                ContentType = productImage.ImageContentType,
-                DateModified = productImage.DateModified,
+                EditorId = editorId,
+                Id = promotionProductFileInfo.Id,
+                PromotionFileId = promotionProductFileInfo.PromotionFileInfoId,
+                ValidFrom = promotionProductFileInfo.ValidFrom,
+                ValidTo = promotionProductFileInfo.ValidTo,
+                Active = promotionProductFileInfo.Active,
             };
 
-            string editorId = GenerateImageId(
-                productImage.Id,
-                relatedImageFile?.ExistingFileInfoId,
-                relatedPromotionFile?.Id);
+            promotionProductFileEditorJsonDatas.Add(promotionFileEditorJsonData);
+            promotionProductFileRecoveryJsonDatas.Add(promotionFileRecoveryJsonData);
+        }
 
-            string? imageFileUrl = GetImageFileUrlFromListItem(productImageDisplayData, relatedImageFile, relatedPromotionFile);
+        List<ProductImageListItemBase> productImageDatas = [];
+        List<ProductImageRecoveryJsonDataBase> productImageRecoveryJsonDatas = [];
 
-            ProductImageListItemDisplayData productImageListItemDisplayData = new()
+        Dictionary<string, int?> productImageDataDisplayOrders = [];
+        Dictionary<string, int?> productImageDataImageIds = [];
+
+        for (int i = 0; i < promotionProductFileInfos.Count; i++)
+        {
+            PromotionProductFileInfo promotionProductFile = promotionProductFileInfos[i];
+
+            if (promotionProductFile.ProductImageId == null) continue;
+
+            PromotionFileEditorPopup.PromotionProductFileEditorJsonData? promotionProductFileData
+                = promotionProductFileEditorJsonDatas.First(x => x.Id == promotionProductFile.Id);
+
+            ProductImageData relatedImage = productImagesCopy.First(x => x.Id == promotionProductFile.ProductImageId);
+            ProductImageFileData relatedImageFile = productImageFilesCopy.First(x => x.ImageId == promotionProductFile.ProductImageId);
+
+            string editorId = GenerateImageId(relatedImage.Id, relatedImageFile.Id, promotionProductFile.Id);
+
+            ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
             {
                 EditorId = editorId,
                 Index = i,
-                ImageFileUrl = imageFileUrl!,
-                RelatedImage = productImageDisplayData,
-                RelatedImageFile = relatedImageFile,
-                RelatedPromotionFileEditorId = relatedPromotionFile?.EditorId,
+                PromotionFileData = new()
+                {
+                    Name = promotionProductFile.PromotionFileInfo.Name,
+                    FileName = promotionProductFile.PromotionFileInfo.FileName,
+                },
+                ImageData = new()
+                {
+                    Active = relatedImageFile.Active,
+                },
+                RelatedPromotionFileEditorId = promotionProductFileData.EditorId,
             };
 
-            productImageDatas.Add(productImageListItemDisplayData);
+            ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
+            {
+                EditorId = editorId,
+                ImageFileData = new()
+                {
+                    Active = relatedImageFile.Active,
+                },
+                RelatedPromotionFileEditorId = promotionProductFileData.EditorId,
+            };
+
+            productImageDatas.Add(promotionFileImageData);
+            productImageRecoveryJsonDatas.Add(promotionFileImageRecoveryJsonData);
+
+            productImageDataDisplayOrders.Add(editorId, relatedImageFile.DisplayOrder);
+            productImageDataImageIds.Add(editorId, relatedImage.Id);
+
+            productImagesCopy.Remove(relatedImage);
+            productImageFilesCopy.Remove(relatedImageFile);
         }
 
-        foreach (ProductImageFileDisplayData productImageFile in productImageFileDisplayDatas)
+        foreach (ProductImageData productImage in productImagesCopy)
         {
-            string editorId = GenerateImageId(
-                null, productImageFile?.ExistingFileInfoId, null);
+            ProductImageFileData? relatedImageFile = productImageFilesCopy.Find(x => x.ImageId == productImage.Id);
 
-            string? imageFileUrl = GetImageFileUrlFromListItem(
-                null,
-                productImageFile,
-                null);
+            ProductImageListItem.ProductImageItemFileDisplayData? imageFileData = null;
+            ProductImageListItem.ProductImageItemFileRecoveryJsonData? imageFileRecoveryJsonData = null;
 
-            ProductImageListItemDisplayData productImageListItemDisplayData = new()
+            if (relatedImageFile != null)
+            {
+                imageFileData = new()
+                {
+                    Id = relatedImageFile.Id,
+                    FileName = relatedImageFile.FileName!,
+                    DisplayOrder = relatedImageFile.DisplayOrder,
+                    Active = relatedImageFile.Active,
+                };
+
+                imageFileRecoveryJsonData = new()
+                {
+                    Active = relatedImageFile.Active,
+                };
+
+                productImageFilesCopy.Remove(relatedImageFile);
+            }
+
+            string editorId = GenerateImageId(productImage.Id, relatedImageFile?.Id, null);
+
+            ProductImageListItem.ProductImageListItemData imageData = new()
             {
                 EditorId = editorId,
                 Index = productImageDatas.Count,
-                ImageFileUrl = imageFileUrl!,
-                RelatedImage = null,
-                RelatedImageFile = productImageFile,
-                RelatedPromotionFileEditorId = null,
+                Id = productImage.Id,
+                DateModified = productImage.DateModified,
+                RelatedImageFile = imageFileData,
             };
 
-            productImageDatas.Add(productImageListItemDisplayData);
+            ProductImageListItem.ProductImageItemRecoveryJsonData imageRecoveryJsonData = new()
+            {
+                EditorId = editorId,
+                Id = productImage.Id,
+                RelatedImageFile = imageFileRecoveryJsonData,
+            };
+
+            productImageDatas.Add(imageData);
+            productImageRecoveryJsonDatas.Add(imageRecoveryJsonData);
+
+            productImageDataDisplayOrders.Add(editorId, imageFileData?.DisplayOrder);
+            productImageDataImageIds.Add(editorId, productImage.Id);
         }
 
-        productImageDatas = OrderImageRelatedItems(productImageDatas,
-            imageListItem => imageListItem.RelatedImageFile?.DisplayOrder,
-            imageListItem => imageListItem.RelatedImage?.ExistingImageId);
+        foreach (ProductImageFileData productImageFile in productImageFilesCopy)
+        {
+            string editorId = GenerateImageId(null, productImageFile.Id, null);
+
+            ProductImageFileListItem.ProductImageFileItemData imageFileData = new()
+            {
+                EditorId = editorId,
+                Index = productImageDatas.Count,
+                Id = productImageFile.Id,
+                FileName = productImageFile.FileName!,
+                Active = productImageFile.Active,
+                DisplayOrder = productImageFile.DisplayOrder,
+            };
+
+            ProductImageFileListItem.ProductImageFileItemRecoveryJsonData imageFileRecoveryJsonData = new()
+            {
+                EditorId = editorId,
+                Id = productImageFile.Id,
+                Active = productImageFile.Active,
+            };
+
+            productImageDatas.Add(imageFileData);
+            productImageRecoveryJsonDatas.Add(imageFileRecoveryJsonData);
+
+            productImageDataDisplayOrders.Add(editorId, imageFileData.DisplayOrder);
+            productImageDataImageIds.Add(editorId, null);
+        }
+
+        productImageDatas = OrderImageRelatedItems(
+            productImageDatas,
+            imageItem => productImageDataDisplayOrders[imageItem.EditorId],
+            imageItem => productImageDataImageIds[imageItem.EditorId]);
+
+        productImageRecoveryJsonDatas = OrderImageRelatedItems(
+            productImageRecoveryJsonDatas,
+            imageRecoveryData => productImageDataDisplayOrders[imageRecoveryData.EditorId],
+            imageRecoveryData => productImageDataImageIds[imageRecoveryData.EditorId]);
 
         List<ProductCharacteristic> relatedProductCharacteristics = await GetRelatedProductCharacteristicsAsync(
             productCharacteristicService, product.CategoryId);
 
-        List<ProductPropertyDisplayData> propertyEditorDataList = await GetProductPropertyEditorDataForProductAsync(
-            product.Id, relatedProductCharacteristics, productPropertyService);
+        IOrderedEnumerable<ProductCharacteristic> orderedCharacteristics
+            = relatedProductCharacteristics.OrderBy(x => x.DisplayOrder ?? 0);
 
-        List<ProductPropertyDisplayData> productProperties = propertyEditorDataList
-            .Where(x => x.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.ProductCharacteristic)
-            .ToList();
+        List<ProductProperty> activeProperties = await productPropertyService.GetAllInProductAsync(productId);
 
-        List<ProductPropertyDisplayData> productLinks = propertyEditorDataList
-            .Where(x => x.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.Link)
-            .ToList();
+        List<ProductPropertyListItem.ProductPropertyDisplayData> productProperties = [];
+        List<ProductPropertyListItem.ProductPropertyDisplayData> productLinks = [];
 
-        List<Promotion> productPromotions = await promotionService.GetAllForProductAsync(product.Id);
+        List<ProductPropertyListItem.ProductPropertyRecoveryJsonData> jsonProductProperties = [];
+        List<ProductPropertyListItem.ProductPropertyRecoveryJsonData> jsonProductLinks = [];
 
-        List<SearchStringPartOriginData> searchStringParts = await searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
-            product.SearchString, product.CategoryId)
-            ?? new();
-
-        List<ProductDocument> productDocuments = await productDocumentFileService.GetAllForProductAsync(product.Id);
-
-        List<ProductDocumentDisplayData> productDocumentDatas = [];
-
-        for (int i = 0; i < productDocuments.Count; i++)
+        foreach (ProductCharacteristic productCharacteristic in orderedCharacteristics)
         {
-            ProductDocument productDocument = productDocuments[i];
-
-            ProductDocumentDisplayData productDocumentDisplayData = new()
-            {
-                EditorId = GenerateDocumentId(productDocument.Id),
-                Index = i,
-                ExistingDocument = productDocument,
-                BrowserFilePath = $"{ProductDocumentEndpoints.EndpointGroupRoute}/{productDocument.Id}",
-                CurrentDescription = productDocument.Description ?? string.Empty,
-                FileExtension = ".pdf",
-            };
-
-            productDocumentDatas.Add(productDocumentDisplayData);
-        }
-
-        ProductWorkStatuses? productStatuses = await productWorkStatusesService.GetByProductIdAsync(product.Id);
-
-        var parameters = new
-        {
-            product = product,
-            productStatuses = productStatuses,
-            productProperties = productProperties,
-            productLinks = productLinks,
-            productImages = productImages,
-            promotionProductFiles = promotionProductFileInfoDisplayDatas,
-            searchStringParts = searchStringParts,
-            productDocuments = productDocuments,
-            productPromotions = productPromotions,
-        };
-
-        string parametersJsonData = JsonSerializer.Serialize(parameters, _jsonDataOptions);
-
-        var output = new
-        {
-            Product = product,
-            ProductStatuses = productStatuses,
-            ProductProperties = productProperties,
-            ProductLinks = productLinks,
-            ProductImages = productImages,
-            PromotionProductFiles = promotionProductFileInfoDisplayDatas,
-            SearchStringParts = searchStringParts,
-            ProductDocuments = productDocuments,
-            ProductPromotions = productPromotions,
-            JsonData = parametersJsonData,
-        };
-
-        return new RazorComponentResult<SingleProductEditorPopup.SingleProductEditorPopup>(output);
-    }
-
-    private static async Task<List<ProductPropertyDisplayData>> GetProductPropertyEditorDataForProductAsync(
-        int productId,
-        List<ProductCharacteristic> productCharacteristics,
-        [FromServices] IProductPropertyService ProductPropertyService)
-    {
-        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(productId);
-
-        List<ProductPropertyDisplayData> properties = [];
-
-        List<ProductPropertyDisplayData> propertyEditorDataList = [];
-
-        for (int i = 0; i < productCharacteristics.Count; i++)
-        {
-            ProductCharacteristic productCharacteristic = productCharacteristics[i];
-
-            ProductProperty? property = productProperties.Find(
+            ProductProperty? property = activeProperties.Find(
                 x => x.ProductCharacteristicId == productCharacteristic.Id);
 
             bool doesPropertyExist = property != null;
@@ -338,66 +332,128 @@ internal static class SingleProductEditorComponentEndpoints
             string editorId = GeneratePropertyId(
                 productCharacteristic.Id, productCharacteristic.KWPrCh == ProductCharacteristicType.Link);
 
-            ProductPropertyDisplayData propertyData = new()
+            ProductPropertyListItem.ProductPropertyDisplayData propertyData = new()
             {
                 EditorId = editorId,
                 IsActive = doesPropertyExist,
                 ProductCharacteristic = productCharacteristic,
-                DisplayOrder = property?.DisplayOrder,
                 Value = property?.Value,
             };
 
-            properties.Add(propertyData);
+            ProductPropertyListItem.ProductPropertyRecoveryJsonData jsonPropertyData = new()
+            {
+                EditorId = editorId,
+                IsActive = doesPropertyExist,
+                ProductCharacteristicId = productCharacteristic.Id,
+                Value = property?.Value,
+            };
+
+            if (productCharacteristic.KWPrCh == ProductCharacteristicType.ProductCharacteristic)
+            {
+                productProperties.Add(propertyData);
+                jsonProductProperties.Add(jsonPropertyData);
+
+                continue;
+            }
+
+            productLinks.Add(propertyData);
+            jsonProductLinks.Add(jsonPropertyData);
         }
 
-        properties.Sort((property1, property2) =>
+        List<Promotion> promotions = await promotionService.GetAllForProductAsync(product.Id);
+
+        Promotion? pidPromotion = null;
+        Promotion? ridPromotion = null;
+
+        DateTime now = DateTime.Now;
+
+        foreach (Promotion promotion in promotions)
         {
-            return (property1.ProductCharacteristic?.DisplayOrder ?? 0) - (property2.ProductCharacteristic?.DisplayOrder ?? 0);
-        });
+            if (promotion.StartDate > now || promotion.ExpirationDate < now)
+            {
+                continue;
+            }
 
-        return properties;
-    }
-
-    private static async Task<List<ProductCharacteristic>> GetRelatedProductCharacteristicsAsync(
-        IProductCharacteristicService ProductCharacteristicService,
-        int? categoryId)
-    {
-        List<int> relatedCategoryIds = [-1];
-
-        if (categoryId is not null)
-        {
-            relatedCategoryIds.Add(categoryId.Value);
+            if (promotion.Id == product.PromotionPid)
+            {
+                pidPromotion = promotion;
+            }
+            else if (promotion.Id == product.PromotionRid)
+            {
+                ridPromotion = promotion;
+            }
         }
 
-        List<ProductCharacteristicType> productCharacteristicTypes = [ProductCharacteristicType.ProductCharacteristic, ProductCharacteristicType.Link];
+        List<SearchStringPartOriginData> searchStringParts = await searchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
+            product.SearchString, product.CategoryId)
+            ?? new();
 
-        List<ProductCharacteristic> relatedProductCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
-            relatedCategoryIds, productCharacteristicTypes, true);
+        List<ProductDocument> productDocuments = await productDocumentFileService.GetAllForProductAsync(product.Id);
 
-        return relatedProductCharacteristics;
-    }
+        List<ProductDocumentListItem.ProductDocumentDisplayData> productDocumentDatas = [];
+        List<ProductDocumentListItem.ProductDocumentRecoveryJsonData> productDocumentRecoveryJsonDatas = [];
 
-    private static string? GetImageFileUrlFromListItem(
-        ProductImageDisplayData? relatedImage,
-        ProductImageFileDisplayData? relatedImageFile,
-        PromotionProductFileInfoDisplayData? relatedPromotionFile)
-    {
-        string? imageDataRoute = null;
-
-        if (relatedImage?.ExistingImageId is not null)
+        for (int i = 0; i < productDocuments.Count; i++)
         {
-            imageDataRoute = $"{ProductImageDataEndpoints.EndpointGroupRoute}/{relatedImage?.ExistingImageId}";
-        }
-        else if (relatedImageFile?.FileName is not null)
-        {
-            imageDataRoute = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{relatedImageFile.FileName}";
-        }
-        else if (relatedPromotionFile?.FileInfoFileName is not null)
-        {
-            imageDataRoute = $"{PromotionFileDataEndpoints.EndpointGroupRoute}/{relatedPromotionFile.FileInfoFileName}";
+            ProductDocument productDocument = productDocuments[i];
+
+            string editorId = GenerateDocumentId(productDocument.Id);
+
+            ProductDocumentListItem.ProductDocumentDisplayData productDocumentDisplayData = new()
+            {
+                EditorId = editorId,
+                Index = i,
+                ExistingDocument = new()
+                {
+                    Id = productDocument.Id,
+                    FileName = productDocument.FileName,
+                },
+                BrowserFilePath = $"{ProductDocumentEndpoints.EndpointGroupRoute}/{productDocument.Id}",
+                CurrentDescription = productDocument.Description ?? string.Empty,
+            };
+
+            ProductDocumentListItem.ProductDocumentRecoveryJsonData productDocumentRecoveryJsonData = new()
+            {
+                EditorId = editorId,
+                Id = productDocument.Id,
+                Description = productDocument.Description ?? string.Empty,
+            };
+
+            productDocumentDatas.Add(productDocumentDisplayData);
+            productDocumentRecoveryJsonDatas.Add(productDocumentRecoveryJsonData);
         }
 
-        return imageDataRoute;
+        ProductWorkStatuses? productStatuses = await productWorkStatusesService.GetByProductIdAsync(product.Id);
+
+        var parameters = new
+        {
+            productProperties = jsonProductProperties,
+            productLinks = jsonProductLinks,
+            productImages = productImageRecoveryJsonDatas,
+            promotionProductFiles = promotionProductFileRecoveryJsonDatas,
+            promotionProductFilesForEditor = promotionProductFileEditorJsonDatas,
+            productDocuments = productDocumentRecoveryJsonDatas,
+        };
+
+        string parametersJsonData = JsonSerializer.Serialize(parameters, _jsonDataOptions);
+
+        var output = new
+        {
+            IsVisible = true,
+            PopupMarginOptions = new Popup.MarginOptions() { Left = "1vw", Right = "1vw", Top = "1vh", Bottom = "1vh" },
+            Product = product,
+            ProductStatuses = productStatuses,
+            ProductProperties = productProperties,
+            ProductLinks = productLinks,
+            ProductImages = productImageDatas,
+            SearchStringParts = searchStringParts,
+            ProductDocuments = productDocumentDatas,
+            PidPromotion = pidPromotion,
+            RidPromotion = ridPromotion,
+            JsonData = parametersJsonData,
+        };
+
+        return new RazorComponentResult<SingleProductEditorPopup.SingleProductEditorPopup>(output);
     } 
 
     private static async Task<IResult> GetProductDataPopupAsync(
@@ -406,10 +462,14 @@ internal static class SingleProductEditorComponentEndpoints
         [FromBody] ProductDataPopupRequest request,
         [FromServices] IProductService productService,
         [FromServices] IPromotionService promotionService,
+        [FromServices] IProductCharacteristicService productCharacteristicService,
+        [FromServices] IProductPropertyService productPropertyService,
+        [FromServices] IProductImageFileService productImageFileService,
         [FromServices] ISearchStringOriginService searchStringOriginService,
         [FromServices] IGroupPromotionService groupPromotionService,
         [FromServices] IGroupPromotionProductBindingsService groupPromotionProductBindingsService,
         [FromServices] IGroupPromotionImageFileDataService groupPromotionImageFileDataService,
+        [FromServices] IPromotionFileService promotionFileService,
         [FromServices] ICurrencyConversionService currencyConversionService,
         [FromServices] ICurrencyVATService currencyVATService)
     {
@@ -417,54 +477,52 @@ internal static class SingleProductEditorComponentEndpoints
 
         if (product == null) return Results.NotFound();
 
-        List<ProductPropertyDisplayData> propertiesAndLinks = new();
+        List<ProductCharacteristic> characteristics
+            = await GetRelatedProductCharacteristicsAsync(productCharacteristicService, product.CategoryId);
 
-        if (request.ProductProperties != null)
-        {
-            propertiesAndLinks.AddRange(request.ProductProperties.Where(x => x.IsActive));
-        }
-
-        if (request.ProductLinks != null)
-        {
-            propertiesAndLinks.AddRange(request.ProductLinks.Where(x => x.IsActive));
-        }
+        List<ProductProperty> properties = await productPropertyService.GetAllInProductAsync(productId);
 
         List<ProductData.ProductPropertyDisplayData> propertyData = [];
 
-        foreach (ProductPropertyDisplayData productProperty in propertiesAndLinks)
+        if (request.ProductProperties != null)
         {
-            if (productProperty.ProductCharacteristic is null
-                || !productProperty.IsActive)
+            foreach (ProductDataPopupPropertyRequest productProperty in request.ProductProperties)
             {
-                continue;
-            }
+                ProductCharacteristic? characteristic = characteristics.FirstOrDefault(
+                    x => x.Id == productProperty.ProductCharacteristicId);
 
-            ProductData.ProductPropertyDisplayData displayData = new()
-            {
-                ProductCharacteristic = new()
+                if (characteristic == null) return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+
+                ProductProperty? existingProperty = properties.FirstOrDefault(
+                    x => x.ProductCharacteristicId == productProperty.ProductCharacteristicId);
+
+                ProductData.ProductPropertyDisplayData displayData = new()
                 {
-                    Id = productProperty.ProductCharacteristic.Id,
-                    CategoryId = productProperty.ProductCharacteristic.CategoryId,
-                    Active = productProperty.ProductCharacteristic.Active,
-                    KWPrCh = productProperty.ProductCharacteristic.KWPrCh
-                },
-                Name = productProperty.ProductCharacteristic.Name,
-                Value = productProperty.Value,
-                DisplayOrder = productProperty.DisplayOrder
-            };
+                    ProductCharacteristic = new()
+                    {
+                        Id = characteristic.Id,
+                        CategoryId = characteristic.CategoryId,
+                        Active = characteristic.Active,
+                        KWPrCh = characteristic.KWPrCh
+                    },
+                    Name = characteristic.Name,
+                    Value = productProperty.Value,
+                    DisplayOrder = existingProperty?.DisplayOrder ?? characteristic.DisplayOrder
+                };
 
-            propertyData.Add(displayData);
-        }
+                propertyData.Add(displayData);
+            }
+        } 
 
         List<ProductData.ProductImageDisplayData> productImages = [];
 
-        if (request.ProductImages != null)
+        if (request.ProductImageUrls != null)
         {
-            foreach (ProductImageListItemDisplayData imageListItem in request.ProductImages)
+            foreach (string imageUrl in request.ProductImageUrls)
             {
                 ProductData.ProductImageDisplayData imageData = new()
                 {
-                    ImageSrc = imageListItem.ImageFileUrl,
+                    ImageSrc = imageUrl,
                 };
 
                 productImages.Add(imageData);
@@ -514,7 +572,26 @@ internal static class SingleProductEditorComponentEndpoints
                 ProductSearchStringParts = searchStringParts,
             }
         });
-    } 
+    }
+
+    private static async Task<List<ProductCharacteristic>> GetRelatedProductCharacteristicsAsync(
+        IProductCharacteristicService productCharacteristicService,
+        int? categoryId)
+    {
+        List<int> relatedCategoryIds = [-1];
+
+        if (categoryId is not null)
+        {
+            relatedCategoryIds.Add(categoryId.Value);
+        }
+
+        List<ProductCharacteristicType> productCharacteristicTypes = [ProductCharacteristicType.ProductCharacteristic, ProductCharacteristicType.Link];
+
+        List<ProductCharacteristic> relatedProductCharacteristics = await productCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
+            relatedCategoryIds, productCharacteristicTypes, true);
+
+        return relatedProductCharacteristics;
+    }
 
     private static async Task<ProductData.ProductPriceData?> GetProductPriceDataForPopupAsync(
         Currency? currency,
@@ -618,38 +695,73 @@ internal static class SingleProductEditorComponentEndpoints
         [FromRoute(Name = "productId")] int productId,
         [FromBody] ProductLegacyDisplayPopupRequest request,
         [FromServices] IProductService productService,
-        [FromServices] IProductHtmlService productHtmlService)
+        [FromServices] IProductHtmlService productHtmlService,
+        [FromServices] IProductCharacteristicService productCharacteristicService,
+        [FromServices] IProductPropertyService productPropertyService)
     {
         MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
 
         if (product == null) return Results.NotFound();
 
-        List<ProductPropertyDisplayData> propertiesAndLinks = [];
+        List<ProductCharacteristic> characteristics
+            = await GetRelatedProductCharacteristicsAsync(productCharacteristicService, product.CategoryId);
+
+        List<ProductProperty> properties = await productPropertyService.GetAllInProductAsync(productId);
+
+        List<ProductData.ProductPropertyDisplayData> propertyData = [];
+
+        List<HtmlProductProperty> htmlProductProperties = new();
 
         if (request.ProductProperties != null)
         {
-            propertiesAndLinks.AddRange(request.ProductProperties.Where(x => x.IsActive));
+            foreach (ProductLegacyPopupPropertyRequest productProperty in request.ProductProperties)
+            {
+                ProductCharacteristic? characteristic = characteristics.FirstOrDefault(
+                    x => x.Id == productProperty.ProductCharacteristicId);
+
+                if (characteristic == null) return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+
+                ProductProperty? existingProperty = properties.FirstOrDefault(
+                    x => x.ProductCharacteristicId == productProperty.ProductCharacteristicId);
+
+                int? order = existingProperty?.DisplayOrder ?? characteristic.DisplayOrder;
+
+                HtmlProductProperty htmlProductProperty = new()
+                {
+                    Name = characteristic.Name,
+                    Value = productProperty.Value,
+                    Order = order.ToString(),
+                };
+
+                htmlProductProperties.Add(htmlProductProperty);
+            }
         }
 
-        if (request.ProductLinks != null)
+        HtmlProduct htmlProduct = new()
         {
-            propertiesAndLinks.AddRange(request.ProductLinks.Where(x => x.IsActive));
-        }
+            Id = product.Id,
+            Name = product.Name,
+            Properties = htmlProductProperties,
+        };
 
-        OneOf<string, InvalidXmlResult> getProductHtmlResult = GetProductHtmlFromCurrentEditorData(
-            product, propertiesAndLinks, productHtmlService);
+        HtmlProductsData htmlProductsData = new()
+        {
+            Products = [htmlProduct],
+        };
+
+        OneOf<string, InvalidXmlResult> getProductHtmlResult = productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
 
         List<ProductHtmlAndImages.ProductImageDisplayData> productImageDisplayDatas = [];
 
         if (request.ProductImages != null)
         {
-            foreach (ProductImageListItemDisplayData imageListItem in request.ProductImages)
+            foreach (ProductLegacyDisplayPopupImageRequest imageRequest in request.ProductImages)
             {
                 ProductHtmlAndImages.ProductImageDisplayData imageData = new()
                 {
-                    ImageSrc = imageListItem.ImageFileUrl,
-                    DisplayOrder = imageListItem.RelatedImageFile?.DisplayOrder,
-                    Active = imageListItem.RelatedImageFile?.Active,
+                    ImageSrc = imageRequest.ImageUrl,
+                    DisplayOrder = imageRequest.DisplayOrder,
+                    Active = imageRequest.Active,
                 };
 
                 productImageDisplayDatas.Add(imageData);
@@ -672,39 +784,10 @@ internal static class SingleProductEditorComponentEndpoints
         });
     }
 
-    private static OneOf<string, InvalidXmlResult> GetProductHtmlFromCurrentEditorData(
-        MOSTComputers.Models.Product.Models.Product product,
-        List<ProductPropertyDisplayData> includedProperties,
-        IProductHtmlService productHtmlService)
+    private static RazorComponentResult<UnsavedChangesPopup> GetUnsavedChangesPopup()
     {
-        List<HtmlProductProperty> htmlProductProperties = new();
-
-        foreach (ProductPropertyDisplayData productProperty in includedProperties.OrderBy(x => x.DisplayOrder ?? int.MaxValue))
-        {
-            HtmlProductProperty htmlProductProperty = new()
-            {
-                Name = productProperty.ProductCharacteristic?.Name,
-                Value = productProperty.Value,
-                Order = productProperty.DisplayOrder?.ToString(),
-            };
-
-            htmlProductProperties.Add(htmlProductProperty);
-        }
-
-        HtmlProduct htmlProduct = new()
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Properties = htmlProductProperties,
-        };
-
-        HtmlProductsData htmlProductsData = new()
-        {
-            Products = [htmlProduct],
-        };
-
-        return productHtmlService.TryGetHtmlFromProducts(htmlProductsData);
-    } 
+        return new RazorComponentResult<UnsavedChangesPopup>();
+    }
 
     private static async Task<IResult> UpdateProductWorkStatusAsync(
         HttpContext httpContext,

@@ -2,90 +2,66 @@
 using MOSTComputers.Services.TransactionalFileManagement.Contracts;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class CreateOrUpdateLocalFileAsyncOperation : IRollbackableOperationAsync<CreateOrUpdateOperationTypeEnum>
+internal sealed class CreateOrUpdateLocalFileAsyncOperation : IRollbackableOperationAsync
 {
     internal CreateOrUpdateLocalFileAsyncOperation(
-        string directoryPath, string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
+        string filePath, byte[] fileData, CancellationToken cancellationToken = default)
     {
-        _directoryPath = directoryPath;
-        _fullFileName = fullFileName;
+        _filePath = filePath;
         _fileData = fileData;
         _cancellationToken = cancellationToken;
     }
 
-    private readonly string _directoryPath;
-    private readonly string _fullFileName;
+    private readonly string _filePath;
     private readonly byte[] _fileData;
-    private readonly CancellationToken? _cancellationToken;
+    private readonly CancellationToken _cancellationToken;
 
-    private bool _succeeeded = false;
+    private bool _destinationMayHaveChanged = false;
 
     private CreateOrUpdateOperationTypeEnum? _createOrUpdateOperationType = null;
     private byte[]? _oldFileData = null;
 
-    public async Task<CreateOrUpdateOperationTypeEnum> ExecuteAsync()
+    public async Task ExecuteAsync()
     {
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
-
-        if (File.Exists(filePath))
+        if (File.Exists(_filePath))
         {
-            _oldFileData = await File.ReadAllBytesAsync(filePath);
-
-            if (_cancellationToken is null)
-            {
-                await File.WriteAllBytesAsync(filePath, _fileData);
-            }
-            else
-            {
-                await File.WriteAllBytesAsync(filePath, _fileData, _cancellationToken.Value);
-            }
-
+            _oldFileData = await File.ReadAllBytesAsync(_filePath, _cancellationToken);
             _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Update;
-
-            _succeeeded = true;
-
-            return CreateOrUpdateOperationTypeEnum.Update;
-        }
-
-        if (_cancellationToken is null)
-        {
-            await File.WriteAllBytesAsync(filePath, _fileData);
         }
         else
         {
-            await File.WriteAllBytesAsync(filePath, _fileData, _cancellationToken.Value);
+            _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Create;
         }
 
-        _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Create;
+        _destinationMayHaveChanged = true;
 
-        _succeeeded = true;
+        await using FileStream fileStream = new(
+            _filePath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.Read,
+            bufferSize: 4096,
+            options: FileOptions.Asynchronous);
 
-        return CreateOrUpdateOperationTypeEnum.Create;
+        await fileStream.WriteAsync(_fileData, _cancellationToken);
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
-
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
+        if (!_destinationMayHaveChanged) return;
 
         if (_createOrUpdateOperationType == CreateOrUpdateOperationTypeEnum.Create)
         {
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"Cannot rollback, because file is missing: {filePath}");
-            }
-
-            File.Delete(filePath);
+            File.Delete(_filePath);
 
             return;
         }
 
         if (_oldFileData is null)
         {
-            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {filePath}");
+            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {_filePath}");
         }
 
-        File.WriteAllBytes(filePath, _oldFileData);
+        File.WriteAllBytes(_filePath, _oldFileData);
     }
 }

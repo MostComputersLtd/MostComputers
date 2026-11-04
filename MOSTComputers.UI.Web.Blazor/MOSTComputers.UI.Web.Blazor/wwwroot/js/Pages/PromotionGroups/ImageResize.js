@@ -56,8 +56,6 @@ export async function initEventsAndInitialDataAsync(confirmButtonCallback) {
     const heightInput = document.getElementById(heightInputId);
     const confirmButton = document.getElementById(confirmButtonId);
 
-    const originalContentType = previewImage.getAttribute(previewImageOriginalContentTypeAttribute);
-
     if (!previewImage.complete) {
 
         await new Promise((resolve, reject) => {
@@ -102,7 +100,7 @@ export async function initEventsAndInitialDataAsync(confirmButtonCallback) {
         widthInput.value = Math.round(width);
     }
 
-    await resizePreviewImage(width, height, originalContentType, true);
+    await resizePreviewImage(width, height);
 }
 
 export async function getResizedImageAsync() {
@@ -110,7 +108,6 @@ export async function getResizedImageAsync() {
     const previewImage = document.getElementById(previewImageId);
     const widthInput = document.getElementById(widthInputId);
     const heightInput = document.getElementById(heightInputId);
-    const maintainAspectRatioCheckbox = document.getElementById(maintainAspectRatioCheckboxId);
 
     const originalFileName = previewImage.getAttribute(previewImageOriginalFileNameAttribute);
     const originalFileType = previewImage.getAttribute(previewImageOriginalContentTypeAttribute);
@@ -127,14 +124,8 @@ export async function getResizedImageAsync() {
         alert("Invalid image height");
     }
 
-    const originalWidthAttribute = widthInput.getAttribute(widthInputOriginalWidthAttribute);
-    const originalHeightAttribute = heightInput.getAttribute(heightInputOriginalHeightAttribute);
-
-    const originalWidth = parseFloat(originalWidthAttribute);
-    const originalHeight = parseFloat(originalHeightAttribute);
-
     const resizedImageBlob
-        = await resizeImage(originalImageData, originalWidth, originalHeight, width, height, originalFileType, maintainAspectRatioCheckbox.checked);
+        = await resizeImage(originalImageData, width, height, originalFileType);
 
     return {
         originalFileName: originalFileName,
@@ -176,7 +167,7 @@ function resizeWhenWidthChanges(e) {
         }
     }
 
-    schedulePreviewImageResize(newWidth, newHeight, maintainAspectRatioCheckbox.checked);
+    schedulePreviewImageResize(newWidth, newHeight);
 }
 
 function resizeWhenHeightChanges(e) {
@@ -212,7 +203,7 @@ function resizeWhenHeightChanges(e) {
         }
     }
 
-    schedulePreviewImageResize(newWidth, parseFloat(heightInput.value), maintainAspectRatioCheckbox.checked);
+    schedulePreviewImageResize(newWidth, newHeight);
 }
 
 function getOtherInputSizeByAspectRatio(resizeInputValue, resizeInputOriginalSize, otherResizeInputOriginalSize) {
@@ -224,28 +215,20 @@ function getOtherInputSizeByAspectRatio(resizeInputValue, resizeInputOriginalSiz
     return newOtherInputSize;
 }
 
-function schedulePreviewImageResize(width, height, keepAspectRatio) {
+function schedulePreviewImageResize(width, height) {
 
     clearTimeout(resizeTimeout);
 
-    resizeTimeout = setTimeout(async () => resizePreviewImage(width, height, keepAspectRatio), 400);
+    resizeTimeout = setTimeout(async () => resizePreviewImage(width, height), 400);
 }
 
-async function resizePreviewImage(width, height, keepAspectRatio) {
+async function resizePreviewImage(width, height) {
 
     const previewImage = document.getElementById(previewImageId);
-    const widthInput = document.getElementById(widthInputId);
-    const heightInput = document.getElementById(heightInputId);
 
     const originalFileType = previewImage.getAttribute(previewImageOriginalContentTypeAttribute);
 
-    const originalWidthAttribute = widthInput.getAttribute(widthInputOriginalWidthAttribute);
-    const originalHeightAttribute = heightInput.getAttribute(heightInputOriginalHeightAttribute);
-
-    const originalWidth = parseFloat(originalWidthAttribute);
-    const originalHeight = parseFloat(originalHeightAttribute);
-
-    const blob = await resizeImage(originalImageData, originalWidth, originalHeight, width, height, originalFileType, keepAspectRatio);
+    const blob = await resizeImage(originalImageData, width, height, originalFileType, false);
 
     if (previewImageObjectUrl) {
 
@@ -259,27 +242,11 @@ async function resizePreviewImage(width, height, keepAspectRatio) {
 
 async function resizeImage(
     imageData,
-    imageWidth,
-    imageHeight,
     targetWidth,
     targetHeight,
-    originalFileType,
-    keepAspectRatio) {
+    originalFileType) {
 
     const fileTypeToUse = originalFileType ? originalFileType : "image/png";
-
-    if (keepAspectRatio) {
-
-        const aspectRatio = imageWidth / imageHeight;
-        const targetAspectRatio = targetWidth / targetHeight;
-
-        if (targetAspectRatio > aspectRatio) {
-            targetWidth = Math.round(targetHeight * aspectRatio);
-        }
-        else {
-            targetHeight = Math.round(targetWidth / aspectRatio);
-        }
-    }
 
     const canvas = document.createElement("canvas");
 

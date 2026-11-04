@@ -49,6 +49,7 @@ internal static class CommonValueConstraints
     {
         internal const int NameMaxLength = 50;
         internal const int FileNameMaxLength = 200;
+        internal const int ContentTypeMaxLength = 200;
         internal const int DescriptionMaxLength = 1000;
         internal const int RelatedProductsStringMaxLength = 1000;
 

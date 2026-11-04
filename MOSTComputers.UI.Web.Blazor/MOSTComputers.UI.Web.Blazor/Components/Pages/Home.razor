@@ -256,7 +256,7 @@
     {
         public bool IsVisible { get; set; } = false;
         public required Product Product { get; set; }
-        public required int ManufacturerPromotionGroupId { get; set; }
+        public int? PromotionGroupIdToDisplay { get; set; }
     }
 
     public sealed class ProductSearchStringPartsPopupData

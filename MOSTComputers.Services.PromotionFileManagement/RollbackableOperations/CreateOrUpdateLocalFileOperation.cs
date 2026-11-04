@@ -2,73 +2,61 @@
 using MOSTComputers.Services.TransactionalFileManagement.Contracts;
 
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
-internal sealed class CreateOrUpdateLocalFileOperation : IRollbackableOperation<CreateOrUpdateOperationTypeEnum>
+internal sealed class CreateOrUpdateLocalFileOperation : IRollbackableOperation
 {
-    internal CreateOrUpdateLocalFileOperation(string directoryPath, string fullFileName, byte[] fileData)
+    internal CreateOrUpdateLocalFileOperation(string filePath, byte[] fileData)
     {
-        _directoryPath = directoryPath;
-        _fullFileName = fullFileName;
+        _filePath = filePath;
         _fileData = fileData;
     }
 
-    private readonly string _directoryPath;
-    private readonly string _fullFileName;
+    private readonly string _filePath;
     private readonly byte[] _fileData;
 
-    private bool _succeeeded = false;
+    private bool _destinationMayHaveChanged = false;
 
     private CreateOrUpdateOperationTypeEnum? _createOrUpdateOperationType = null;
     private byte[]? _oldFileData = null;
 
-    public CreateOrUpdateOperationTypeEnum Execute()
+    public void Execute()
     {
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
-
-        if (File.Exists(filePath))
+        if (File.Exists(_filePath))
         {
-            _oldFileData = File.ReadAllBytes(filePath);
-
-            File.WriteAllBytes(filePath, _fileData);
-
+            _oldFileData = File.ReadAllBytes(_filePath);
             _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Update;
-
-            _succeeeded = true;
-
-            return CreateOrUpdateOperationTypeEnum.Update;
+        }
+        else
+        {
+            _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Create;
         }
 
-        File.WriteAllBytes(filePath, _fileData);
+        _destinationMayHaveChanged = true;
 
-        _createOrUpdateOperationType = CreateOrUpdateOperationTypeEnum.Create;
+        using FileStream fileStream = new(
+            _filePath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.Read);
 
-        _succeeeded = true;
-
-        return CreateOrUpdateOperationTypeEnum.Create;
+        fileStream.Write(_fileData);
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
-
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
+        if (!_destinationMayHaveChanged) return;
 
         if (_createOrUpdateOperationType == CreateOrUpdateOperationTypeEnum.Create)
         {
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"Cannot rollback, because file is missing: {filePath}");
-            }
-
-            File.Delete(filePath);
+            File.Delete(_filePath);
 
             return;
         }
 
         if (_oldFileData is null)
         {
-            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {filePath}");
+            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {_filePath}");
         }
 
-        File.WriteAllBytes(filePath, _oldFileData);
+        File.WriteAllBytes(_filePath, _oldFileData);
     }
 }

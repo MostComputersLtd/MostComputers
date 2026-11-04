@@ -67,8 +67,7 @@
 <Popup PopupId="singleProductEditorPopup"
     IsVisible="IsVisible"
     IsVisibleChanged="OnVisibleChanged"
-    PopupMarginOptions="PopupMarginOptions"
-    CloseHandler="CloseHandlerAsync">
+    PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
         <div class="single-product-editor-popup-header">
 
@@ -140,10 +139,9 @@
                     class="image-file-hidden-input" tabindex="-1" />
 
                 <div class="save-button-and-loader-container">
-                    <div class="save-button-container @(_isSavingProduct ? "loading" : string.Empty)">
-                        <button id="singleProductEditorSaveButton" class="btn btn-primary save-button single-product-editor-popup-header-item" disabled="@_isSavingProduct"
-                            @onclick="SaveAllFromEditorDataAsync">
-                            Save @(IsDataChanged() ? "*" : string.Empty)
+                    <div id="singleProductEditorSaveButtonContainer" class="save-button-container">
+                        <button id="singleProductEditorSaveButton"
+                            class="btn btn-primary save-button single-product-editor-popup-header-item">
                         </button>
                     </div>
 
@@ -169,12 +167,34 @@
 
                     @for (int i = 0; i < ProductImages.Count; i++)
                     {
-                        ProductImageListItemDisplayData listItemData = ProductImages[i];
+                        ProductImageListItemBase imageItem = ProductImages[i];
 
-                        PromotionProductFileInfoDisplayData? relatedPromotionFile = PromotionProductFiles.FirstOrDefault(
-                            x => x.EditorId == listItemData.RelatedPromotionFileEditorId);
+                        switch (imageItem)
+                        {
+                            case ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileData:
+                            {
+                                <ProductImagePromotionFileListItem ItemData="promotionFileData" />
 
-                        <ProductImageListItem ItemData="listItemData" RelatedPromotionFileData="relatedPromotionFile" />
+                                break;
+                            }
+
+                            case ProductImageListItem.ProductImageListItemData imageData:
+                            {
+                                <ProductImageListItem ItemData="imageData" />
+                                break;
+                            }
+
+                            case ProductImageFileListItem.ProductImageFileItemData imageFileData:
+                            {
+                                <ProductImageFileListItem ItemData="imageFileData" />
+                                break;
+                            }
+
+                            default:
+                            {
+                                throw new NotSupportedException();
+                            }
+                        }
                     }
 
                     <li class="image-add-button-list-item">
@@ -204,25 +224,17 @@
                     </div>
                 }
 
-                @{
-                    MOSTComputers.Models.Product.Models.Promotions.Promotion? pidPromotion = ProductPromotions?.FirstOrDefault(
-                        x => x.Id == Product.PromotionPid);
-
-                    MOSTComputers.Models.Product.Models.Promotions.Promotion? ridPromotion = ProductPromotions?.FirstOrDefault(
-                        x => x.Id == Product.PromotionRid);
-                }
-
-                @if (pidPromotion is not null)
+                @if (PidPromotion is not null)
                 {
                     <div class="promotion-on-one-line-container">
-                        <PromotionOnOneLine Promotion="pidPromotion" />
+                        <PromotionOnOneLine Promotion="PidPromotion" />
                     </div>
                 }
 
-                @if (ridPromotion is not null)
+                @if (RidPromotion is not null)
                 {
                     <div class="promotion-on-one-line-container">
-                        <PromotionOnOneLine Promotion="ridPromotion" />
+                        <PromotionOnOneLine Promotion="RidPromotion" />
                     </div>
                 }
             </div>
@@ -253,11 +265,11 @@
 
             @if (ProductLinks.Count > 0)
             {
-				<div class="properties-list-divider d-flex">
-					<p>Links:</p>
+                <div class="properties-list-divider d-flex">
+                    <p>Links:</p>
 
                     <hr class="properties-list-divider-line" />
-				</div>
+                </div>
             }
 
             <div class="full-parent-width pb-4 d-flex flex-column">
@@ -273,17 +285,15 @@
                 </div>
             </div>
 
-            @if (ProductDocuments is not null && ProductDocuments.Count > 0)
-            {
-                <div class="full-parent-width pb-4">
-                    <ul id="singleEditorProductDocumentList" class="product-documents-list">
-                        @for (int i = 0; i < ProductDocuments.Count; i++)
-                        {
-                            <ProductDocumentListItem ItemData="ProductDocuments[i]" ProductId="Product.Id" />
-                        }
-                    </ul>
-                </div>
-            }
+            <div class="full-parent-width pb-4">
+                <ul id="singleEditorProductDocumentList" class="product-documents-list">
+
+                    @for (int i = 0; i < ProductDocuments.Count; i++)
+                    {
+                        <ProductDocumentListItem ItemData="ProductDocuments[i]" ProductId="Product.Id" />
+                    }
+                </ul>
+            </div>
         </div>
     </ChildContent>
 </Popup>
@@ -304,119 +314,33 @@
     <div id="singleEditorProductDocumentPopupContainer">
     </div>
 
-    <Popup @bind-IsVisible="IsDataChangedPopupVisible"
-        PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
-        DisplayHeader="false"
-        CloseHandler="DataChangedPopupCloseHandler">
-        <ChildContent>
-            <div class="data-changed-popup">
-                <p class="data-changed-popup-unsaved-changes-text">There are unsaved changes:</p>
-
-                <div class="data-changed-popup-option-buttons-container">
-                    <div class="data-changed-popup-option-button-container">
-                        <button type="button" class="btn btn-primary" @onclick="SaveChangesAndCloseIsDataChangedPopupAsync">
-                            Save
-                        </button>
-                    </div>
-
-                    <div class="data-changed-popup-option-button-container last">
-                        <button type="button" class="btn btn-danger" @onclick="CloseIsDataChangedPopupAndExitWithoutSavingAsync">
-                            Exit
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </ChildContent>
-    </Popup>
+    <div id="singleEditorUnsavedChangesPopupContainer">
+    </div>
 </div>
 
 <script id="singleEditorData" type="application/json">
     @JsonData
 </script>
 
-@code {
+@code {  
 
-    public sealed class ProductImageListItemDisplayData
+    public class ProductImageListItemBase
     {
+        public required string EditorId { get; set; }
+    }
+
+    [JsonPolymorphic]
+    [JsonDerivedType(typeof(ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData), ProductImagePromotionFileListItem.ItemType)]
+    [JsonDerivedType(typeof(ProductImageListItem.ProductImageItemRecoveryJsonData), ProductImageListItem.ItemType)]
+    [JsonDerivedType(typeof(ProductImageFileListItem.ProductImageFileItemRecoveryJsonData), ProductImageFileListItem.ItemType)]
+    public abstract class ProductImageRecoveryJsonDataBase
+    {
+        public abstract string ItemType { get; }
+
         [JsonPropertyName("editorId")] public required string EditorId { get; set; }
-        [JsonPropertyName("index")] public required int Index { get; set; }
-        [JsonPropertyName("imageFileUrl")] public required string ImageFileUrl { get; set; }
-        [JsonPropertyName("relatedImage")] public ProductImageDisplayData? RelatedImage { get; set; }
-        [JsonPropertyName("relatedImageFile")] public ProductImageFileDisplayData? RelatedImageFile { get; set; }
-        [JsonPropertyName("relatedPromotionFileEditorId")] public string? RelatedPromotionFileEditorId { get; set; }
-
-        [JsonPropertyName("uploadedImageFileData")] public BrowserFileData? UploadedImageFileData { get; set; } = null;
-
-        [JsonPropertyName("validationMessages")] public List<string> ValidationMessages { get; set; } = new();
-    }
-
-    public sealed class BrowserFileData
-    {
-        [JsonPropertyName("fileName")] public required string FileName { get; set; }
-        [JsonPropertyName("contentType")] public required string ContentType { get; set; }
-        [JsonPropertyName("fileSize")] public required long FileSize { get; set; }
-        [JsonPropertyName("imageSize")] public required CustomImageSize ImageSize { get; set; }
-        [JsonPropertyName("previewUrl")] public string? PreviewUrl { get; set; } = null;
-    }
-
-    public readonly struct CustomImageSize
-    {
-        [JsonPropertyName("widthPixels")] public required int WidthPixels { get; init; }
-        [JsonPropertyName("heightPixels")] public required int HeightPixels { get; init; }
-    }
-
-    public sealed class ProductImageDisplayData
-    {
-        [JsonPropertyName("existingImageId")] public required int? ExistingImageId { get; set; }
-        [JsonPropertyName("contentType")] public string? ContentType { get; set; }
-        [JsonPropertyName("dateModified")] public DateTime? DateModified { get; set; }
-    }
-
-    public sealed class ProductImageFileDisplayData
-    {
-        [JsonPropertyName("existingFileInfoId")] public required int? ExistingFileInfoId { get; set; }
-        [JsonPropertyName("existingImageId")] public required int? ExistingImageId { get; set; }
-        [JsonPropertyName("fileName")] public string? FileName { get; set; }
-        [JsonPropertyName("displayOrder")] public int? DisplayOrder { get; set; }
-        [JsonPropertyName("active")] public bool Active { get; set; }
-    }
-
-    public sealed class PromotionProductFileInfoDisplayData
-    {
-        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
-        [JsonPropertyName("id")] public int? Id { get; set; }
-        [JsonPropertyName("fileInfoId")] public int? FileInfoId { get; set; }
-        [JsonPropertyName("fileInfoName")] public string? FileInfoName { get; set; }
-        [JsonPropertyName("fileInfoFileName")] public string? FileInfoFileName { get; set; }
-        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
-        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
-        [JsonPropertyName("active")] public bool Active { get; set; } = false;
-    }
-
-    public sealed class ProductPropertyDisplayData
-    {
-        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
-        [JsonPropertyName("productCharacteristic")] public ProductCharacteristic? ProductCharacteristic { get; set; }
-        [JsonPropertyName("displayOrder")] public int? DisplayOrder { get; set; }
-        [JsonPropertyName("value")] public string? Value { get; set; }
-
-        [JsonPropertyName("isActive")] public bool IsActive { get; set; } = true;
-        [JsonPropertyName("validationMessages")] public List<string> ValidationMessages { get; set; } = new();
     }
 
     internal readonly struct InvalidProductFileResult {}
-
-    public sealed class ProductDocumentDisplayData
-    {
-        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
-        [JsonPropertyName("index")] public required int Index { get; set; }
-        [JsonPropertyName("existingDocument")] public ProductDocument? ExistingDocument { get; set; } = null;
-        [JsonPropertyName("currentDescription")] public string? CurrentDescription { get; set; } = string.Empty;
-        [JsonPropertyName("browserFilePath")] public string? BrowserFilePath { get; set; }
-        [JsonPropertyName("fileExtension")] public required string FileExtension { get; set; }
-
-        [JsonPropertyName("validationMessages")] public List<string> ValidationMessages { get; set; } = new();
-    }
 
     internal enum ItemChangeState
     {
@@ -424,16 +348,6 @@
         Updated = 2,
         Deleted = 3,
     }
-
-    internal sealed class ProductDataPopupData
-    {
-        public required Product Product { get; set; }
-        public ProductData.ProductPriceData? ProductDataPopupPriceData { get; set; }
-        public List<ProductData.ProductPropertyDisplayData>? ProductProperties { get; set; }
-        public List<ProductData.ProductImageDisplayData>? ProductImages { get; set; }
-        public List<SearchStringPartOriginData>? ProductSearchStringParts { get; set; }
-        public List<MOSTComputers.Models.Product.Models.Promotions.Promotion>? Promotions { get; set; }
-    } 
 
     private const string _componentScriptUrl = "./Components/Product/SingleProductEditorPopup.razor.js";
 
@@ -454,18 +368,6 @@
 
         _currentIsVisible = isVisible;
 
-        if (_jsModule is not null)
-        {
-            if (isVisible)
-            {
-                await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference);
-            }
-            else
-            {
-                await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
-            }
-        }
-
         await IsVisibleChanged.InvokeAsync(isVisible);
     }
 
@@ -480,35 +382,26 @@
             return;
         }
 
-
-        IsVisible = false;
-
-        if (_jsModule is not null)
-        {
-            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
-        }
-
         await IsVisibleChanged.InvokeAsync(IsVisible);
 
         await ClearProductRelatedData();
     }
 
     [Parameter] public required Product Product { get; set; }
-    private Product? _previousProduct;
 
-    private ProductWorkStatuses? ProductStatuses { get; set; }
+    [Parameter] public ProductWorkStatuses? ProductStatuses { get; set; }
 
-    private List<ProductPropertyDisplayData> ProductProperties { get; set; } = new();
-    private List<ProductPropertyDisplayData> ProductLinks { get; set; } = new();
+    [Parameter] public List<ProductPropertyListItem.ProductPropertyDisplayData> ProductProperties { get; set; } = [];
+    [Parameter] public List<ProductPropertyListItem.ProductPropertyDisplayData> ProductLinks { get; set; } = [];
 
-    private List<ProductImageListItemDisplayData> ProductImages { get; set; } = new();
-    private List<PromotionProductFileInfoDisplayData> PromotionProductFiles { get; set; } = new();
+    [Parameter] public List<ProductImageListItemBase> ProductImages { get; set; } = new();
 
-    private List<SearchStringPartOriginData> SearchStringParts { get; set; } = new();
+    [Parameter] public List<SearchStringPartOriginData> SearchStringParts { get; set; } = new();
 
-    private List<ProductDocumentDisplayData>? ProductDocuments { get; set; } = null;
+    [Parameter] public List<ProductDocumentListItem.ProductDocumentDisplayData> ProductDocuments { get; set; } = new();
 
-    private List<MOSTComputers.Models.Product.Models.Promotions.Promotion> ProductPromotions { get; set; } = new();
+    [Parameter] public MOSTComputers.Models.Product.Models.Promotions.Promotion? PidPromotion { get; set; }
+    [Parameter] public MOSTComputers.Models.Product.Models.Promotions.Promotion? RidPromotion { get; set; }
 
     [Parameter, EditorRequired] public required string JsonData { get; set; }
 
@@ -520,34 +413,6 @@
 
     private List<ProductNewStatus> ProductNewStatusesInSelect = new(DefaultProductNewStatusesInSelect);
 
-    private async Task ResizeTextAreasWithDelayAsync()
-    {
-        if (_jsModule is not null)
-        {
-            await Task.Delay(50);
-
-            await _jsModule.InvokeVoidAsync("resizeTextareasToColumnText", _propertiesTextAreaCommonName, _propertiesTextAreaMinRows);
-
-            StateHasChanged();
-        }
-    }
-
-    private bool IsProductDataPopupVisible { get; set; } = false;
-    private ProductDataPopupData? _productDataPopupData = null;
-
-    private bool IsProductHtmlAndImagesPopupVisible { get; set; } = false;
-
-    private bool IsPromotionProductFileEditorPopupVisible { get; set; } = false;
-    private List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> PromotionProductFilesInEditor { get; set; } = new();
-
-    private bool IsProductDocumentPopupVisible { get; set; } = false;
-
-    private bool IsProductSearchStringOriginDataPopupVisible { get; set; } = false;
-
-    private bool IsDataChangedPopupVisible { get; set; } = false;
-
-    private bool _shouldResizePropertyTextAreas;
-
     private void DataChangedPopupCloseHandler()
     {
         // Does not respond to any close attempts, so ignore
@@ -556,31 +421,7 @@
     private ProductImageListItemDisplayData? _draggedImageListItem;
     private int? _draggedItemStartIndex;
 
-    private DateTime? _lastImageListItemDragPositionChangeDateTime;
-    private static readonly TimeSpan _imageListItemDragPositionChangeInterval = TimeSpan.FromMilliseconds(50);
-
-    private Dictionary<ProductPropertyDisplayData, ItemChangeState> _changedProperties = new();
-    private Dictionary<ProductImageListItemDisplayData, ItemChangeState> _changedImages = new();
-    private Dictionary<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData, ItemChangeState> _changedPromotionFiles = new();
-    private Dictionary<ProductDocumentDisplayData, ItemChangeState> _changedDocuments { get; set; } = new();
-
-    private ProductNewStatus? _currentProductNewStatus { get; set; }
-
     [Parameter] public EventCallback OnSaveSuccessful { get; set; }
-
-    private bool _isSavingProduct { get; set; }
-
-    private IJSObjectReference? _jsModule;
-    private DotNetObjectReference<SingleProductEditorPopup>? _dotNetObjectReference;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await ClearProductRelatedData();
-
-        StateHasChanged();
-
-        await SetProductRelatedData();
-    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -595,18 +436,6 @@
             StateHasChanged();
 
             await SetProductRelatedData();
-
-            if (_jsModule is not null)
-            {
-                if (IsVisible)
-                {
-                    await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference);
-                }
-                else
-                {
-                    await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
-                }
-            }
         }
 
         if (ProductStatuses is not null && !ProductNewStatusesInSelect.Contains(ProductStatuses.ProductNewStatus))
@@ -614,10 +443,7 @@
             ProductNewStatusesInSelect.Add(ProductStatuses.ProductNewStatus);
         }
 
-        _shouldResizePropertyTextAreas = IsVisible && IsVisible != _currentIsVisible;
-
         _currentIsVisible = IsVisible;
-        _previousProduct = Product;
     }
 
     protected async override Task OnAfterRenderAsync(bool firstRender)
@@ -627,347 +453,7 @@
             _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_componentScriptUrl]);
 
             _dotNetObjectReference = DotNetObjectReference.Create(this);
-
-            await _jsModule.InvokeVoidAsync("attachEventsOnPopupVisible", _dotNetObjectReference, true);
         }
-
-        if (_jsModule is not null && _shouldResizePropertyTextAreas)
-        {
-            await _jsModule.InvokeVoidAsync("resizeTextareasToColumnText", _propertiesTextAreaCommonName, _propertiesTextAreaMinRows);
-        }
-    }
-
-    private bool IsDataChanged()
-    {
-        return (_changedProperties.Count > 0)
-            || (_changedImages.Count > 0)
-            || (_changedPromotionFiles.Count > 0)
-            || (_changedDocuments.Count > 0)
-            || (_currentProductNewStatus != ProductStatuses?.ProductNewStatus);
-    }
-
-    private void SetDataChanged(ProductPropertyDisplayData productPropertyDisplayData, ItemChangeState itemChangeState)
-    {
-        SetDataChanged(_changedProperties, productPropertyDisplayData, itemChangeState);
-    }
-
-    private void SetDataChanged(ProductImageListItemDisplayData productImageListItemDisplayData, ItemChangeState itemChangeState)
-    {
-        SetDataChanged(_changedImages, productImageListItemDisplayData, itemChangeState);
-    }
-
-    private void SetDataChanged(PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileDisplayData, ItemChangeState itemChangeState)
-    {
-        SetDataChanged(_changedPromotionFiles, promotionProductFileDisplayData, itemChangeState);
-    }
-
-    private void SetDataChanged(ProductDocumentDisplayData productDocumentDisplayData, ItemChangeState itemChangeState)
-    {
-        SetDataChanged(_changedDocuments, productDocumentDisplayData, itemChangeState);
-    }
-
-    private void SetDataChanged<T>(Dictionary<T, ItemChangeState> changedItems, T changedItem, ItemChangeState itemChangeState)
-        where T : notnull
-    {
-        if (changedItems.TryGetValue(changedItem, out ItemChangeState currentItemChangeState))
-        {
-            if (itemChangeState == ItemChangeState.Added && currentItemChangeState == ItemChangeState.Deleted)
-            {
-                changedItems.Remove(changedItem);
-            }
-            else if (itemChangeState == ItemChangeState.Deleted && currentItemChangeState == ItemChangeState.Added)
-            {
-                changedItems.Remove(changedItem);
-            }
-            else if (itemChangeState == ItemChangeState.Updated && currentItemChangeState == ItemChangeState.Added)
-            {
-                return;
-            }
-            else
-            {
-                changedItems[changedItem] = itemChangeState;
-            }
-
-            return;
-        }
-
-        changedItems.Add(changedItem, itemChangeState);
-    }
-
-    private void MarkDataSaved(ProductPropertyDisplayData productPropertyDisplayData)
-    {
-        _changedProperties.Remove(productPropertyDisplayData);
-    }
-
-    private void MarkDataSaved(ProductImageListItemDisplayData productImageListItemDisplayData)
-    {
-        _changedImages.Remove(productImageListItemDisplayData);
-    }
-
-    private void MarkDataSaved(PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileDisplayData)
-    {
-        _changedPromotionFiles.Remove(promotionProductFileDisplayData);
-    }
-
-    private async Task SetProductRelatedData()
-    {
-        await RevokeAllExistingBrowserFilePreviewUrls();
-
-        _changedProperties.Clear();
-        _changedImages.Clear();
-        _changedPromotionFiles.Clear();
-        _changedDocuments.Clear();
-
-        List<ProductImageData> productImages = await ProductImageService.GetAllInProductWithoutFileDataAsync(Product.Id);
-
-        List<ProductImageFileData> productImageFiles = await ProductImageFileService.GetAllInProductAsync(Product.Id);
-
-        List<ProductImageFileDisplayData> productImageFileDisplayDatas = new();
-
-        foreach (ProductImageFileData productImageFile in productImageFiles)
-        {
-            ProductImageFileDisplayData productImageFileDisplayData = new()
-            {
-                ExistingFileInfoId = productImageFile.Id,
-                ExistingImageId = productImageFile.ImageId,
-                FileName = productImageFile.FileName,
-                DisplayOrder = productImageFile.DisplayOrder,
-                Active = productImageFile.Active,
-            };
-
-            productImageFileDisplayDatas.Add(productImageFileDisplayData);
-        }
-
-        List<PromotionProductFileInfo> promotionProductFileInfos = await PromotionProductFileService.GetAllForProductAsync(Product.Id);
-
-        PromotionProductFilesInEditor.Clear();
-        ProductImages.Clear();
-
-        List<PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData> promotionProductFileInfoDisplayDatas
-            = PromotionProductFileEditorPopup.MapRangeToNewEditorItems(promotionProductFileInfos);
-
-        PromotionProductFilesInEditor.AddRange(promotionProductFileInfoDisplayDatas);
-
-        foreach (ProductImageData productImage in productImages)
-        {
-            ProductImageFileDisplayData? relatedImageFile = productImageFileDisplayDatas
-                .FirstOrDefault(x => x.ExistingImageId == productImage.Id);
-
-            if (relatedImageFile is not null)
-            {
-                productImageFileDisplayDatas.Remove(relatedImageFile);
-            }
-
-            PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData? relatedPromotionFile
-                = PromotionProductFilesInEditor.FirstOrDefault(x => x.ProductImageId == productImage.Id);
-
-            ProductImageDisplayData productImageDisplayData = new()
-            {
-                ExistingImageId = productImage.Id,
-                ContentType = productImage.ImageContentType,
-                DateModified = productImage.DateModified,
-            };
-
-            ProductImageListItemDisplayData productImageListItemDisplayData = new()
-            {
-                RelatedImage = productImageDisplayData,
-                RelatedImageFile = relatedImageFile,
-                RelatedPromotionFile = relatedPromotionFile,
-            };
-
-            ProductImages.Add(productImageListItemDisplayData);
-        }
-
-        foreach (ProductImageFileDisplayData productImageFile in productImageFileDisplayDatas)
-        {
-            ProductImageListItemDisplayData productImageListItemDisplayData = new()
-            {
-                RelatedImage = null,
-                RelatedImageFile = productImageFile,
-                RelatedPromotionFile = null
-            };
-
-            ProductImages.Add(productImageListItemDisplayData);
-        }
-
-        ProductImages = OrderImageRelatedItems(ProductImages,
-            imageListItem => imageListItem.RelatedImageFile?.DisplayOrder,
-            imageListItem => imageListItem.RelatedImage?.ExistingImageId);
-
-        List<int> relatedCategoryIds = [-1];
-
-        if (Product.CategoryId is not null)
-        {
-            relatedCategoryIds.Add(Product.CategoryId.Value);
-        }
-
-        List<ProductCharacteristicType> productCharacteristicTypes = [ProductCharacteristicType.ProductCharacteristic, ProductCharacteristicType.Link];
-
-        var RelatedProductCharacteristics = await ProductCharacteristicService.GetAllByCategoryIdsAndTypesAsync(
-            relatedCategoryIds, productCharacteristicTypes, true);
-
-        List<ProductPropertyDisplayData> propertyEditorDataList
-            = await GetProductPropertyEditorDataForProductAsync(Product.Id, RelatedProductCharacteristics);
-
-        ProductProperties = propertyEditorDataList
-            .Where(x => x.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.ProductCharacteristic)
-            .ToList();
-
-        ProductLinks = propertyEditorDataList
-            .Where(x => x.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.Link)
-            .ToList();
-
-        ProductPromotions = await PromotionService.GetAllForProductAsync(Product.Id);
-
-        SearchStringParts = await SearchStringOriginService.GetSearchStringPartsAndDataAboutTheirOriginAsync(
-            Product.SearchString, Product.CategoryId)
-            ?? new();
-
-        List<ProductDocument> productDocuments = await ProductDocumentFileService.GetAllForProductAsync(Product.Id);
-
-        if (ProductDocuments == null)
-        {
-            ProductDocuments = new();
-        }
-        else if (ProductDocuments.Count > 0)
-        {
-            ProductDocuments.Clear();
-        }
-
-        foreach (ProductDocument productDocument in productDocuments)
-        {
-            Stream? fileStream = ProductDocumentFileService.GetFileStreamByFileName(productDocument.FileName);
-
-            byte[]? fileData = null;
-
-            if (fileStream is not null)
-            {
-                fileData = new byte[fileStream.Length];
-
-                await fileStream.ReadAsync(fileData);
-            }
-
-            ProductDocumentDisplayData productDocumentDisplayData = new()
-            {
-                EditorId = /,
-                BrowserFilePath = previewUrl,
-                ExistingDocument = productDocument,
-                CurrentDescription = productDocument.Description ?? string.Empty,
-                FileExtension = ".pdf",
-            };
-
-            ProductDocuments.Add(productDocumentDisplayData);
-        }
-
-        ProductStatuses = await ProductWorkStatusesService.GetByProductIdAsync(Product.Id);
-
-        _currentProductNewStatus = ProductStatuses?.ProductNewStatus;
-    }
-
-    private async Task ClearProductRelatedData()
-    {
-        await RevokeAllExistingBrowserFilePreviewUrls();
-
-        ProductImages.Clear();
-        PromotionProductFilesInEditor.Clear();
-
-        ProductProperties.Clear();
-        ProductLinks.Clear();
-
-        ProductPromotions.Clear();
-        SearchStringParts.Clear();
-
-        ProductDocuments?.Clear();
-
-        ProductStatuses = null;
-        _currentProductNewStatus = null;
-
-        _changedProperties.Clear();
-        _changedImages.Clear();
-        _changedPromotionFiles.Clear();
-        _changedDocuments.Clear();
-    }
-
-    private async Task<byte[]?> GetImageDataFromListItemAsync(ProductImageListItemDisplayData imageListItem)
-    {
-        if (imageListItem.UploadedImageFileData is not null)
-        {
-            return imageListItem.UploadedImageFileData.Data;
-        }
-
-        int? existingImageId = imageListItem.RelatedImage?.ExistingImageId;
-        string? existingImageFileName = imageListItem.RelatedImageFile?.FileName;
-        int? existingPromotionFileId = imageListItem.RelatedPromotionFile?.PromotionFileInfoData?.Id;
-
-        if (existingImageId is not null)
-        {
-            ProductImage? productImage = await ProductImageService.GetByIdInAllImagesAsync(existingImageId.Value);
-
-            return productImage?.ImageData;
-        }
-        else if (existingImageFileName is not null)
-        {
-            OneOf<byte[], FileDoesntExistResult> getImageFileDataResult
-                = await ProductImageFileManagementService.GetImageAsync(existingImageFileName);
-
-            return getImageFileDataResult.Match<byte[]?>(
-                fileData => fileData,
-                fileDoesntExistResult => null);
-        }
-        else if (existingPromotionFileId is not null)
-        {
-            Stream? promotionFileDataStream = await PromotionFileService.GetFileDataByIdAsync(existingPromotionFileId.Value);
-
-            byte[]? fileData = null;
-
-            if (promotionFileDataStream is not null)
-            {
-                using var memoryStream = new MemoryStream();
-
-                await promotionFileDataStream.CopyToAsync(memoryStream);
-
-                fileData = memoryStream.ToArray();
-            }
-
-            return fileData;
-        }
-
-        return null;
-    }
-
-    private void ShowPromotionProductFileEditorPopup()
-    {
-        IsPromotionProductFileEditorPopupVisible = true;
-    }
-
-    private void ShowProductSearchStringOriginDataPopup()
-    {
-        IsProductSearchStringOriginDataPopupVisible = true;
-    }
-
-    private async Task RevokeAllExistingBrowserFilePreviewUrls()
-    {
-        IEnumerable<string> browserFilePreviewUrls = ProductImages
-            .Where(x => x.UploadedImageFileData?.PreviewUrl is not null)
-            .Select(x => x.UploadedImageFileData!.PreviewUrl!);
-
-        await RevokeImagePreviewUrls(browserFilePreviewUrls);        
-    }
-
-    private async Task RevokeImagePreviewUrls(IEnumerable<string> urls)
-    {
-        if (_jsModule is null) return;
-
-        List<string> urlsList = new();
-
-        foreach (string url in urls)
-        {
-            if (string.IsNullOrEmpty(url)) continue;
-
-            urlsList.Add(url);
-        }
-
-        await _jsModule.InvokeVoidAsync("revokePreviewUrls", urlsList);
     }
 
     private async Task SaveChangesAndCloseIsDataChangedPopupAsync()
@@ -1012,58 +498,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SaveAllFromEditorDataAsync()
-    {
-        AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-
-        string? currentUserName = authenticationState.User.Identity?.Name;
-
-        if (currentUserName is null)
-        {
-            NavigationManager.NavigateTo($"account/login?returnUrl={Uri.EscapeDataString(NavigationManager.BaseUri)}", true);
-
-            return;
-        }
-
-        _isSavingProduct = true;
-
-        try
-        {
-            List<ProductPropertyDisplayData> propertiesAndLinks = new(ProductProperties);
-
-            propertiesAndLinks.AddRange(ProductLinks);
-
-            propertiesAndLinks = propertiesAndLinks.Where(x => x.IsActive)
-                .ToList();
-
-            List<ProductImageListItemDisplayData> productImagesAndPromotionFiles = new(ProductImages);
-
-            foreach (PromotionProductFileEditorPopup.PromotionProductFileInfoDisplayData promotionProductFileDisplayData in PromotionProductFilesInEditor)
-            {
-                ProductImageListItemDisplayData? existingImageListItem
-                    = productImagesAndPromotionFiles.FirstOrDefault(x => x.RelatedPromotionFile == promotionProductFileDisplayData);
-
-                if (existingImageListItem is not null) continue;
-
-                ProductImageListItemDisplayData newImageListItem = new()
-                {
-                    RelatedPromotionFile = promotionProductFileDisplayData,
-                };
-
-                productImagesAndPromotionFiles.Add(newImageListItem);
-            }
-            List<ProductDocumentDisplayData> documentDatas = ProductDocuments ?? new();
-
-            bool updateImagesSuccess = await SaveAllAsync(propertiesAndLinks, productImagesAndPromotionFiles, documentDatas, currentUserName);
-
-            if (!updateImagesSuccess) return;
-        }
-        finally
-        {
-            _isSavingProduct = false;
-        }
-    }
-
     private async Task<bool> SaveAllAsync(
         List<ProductPropertyDisplayData> propertyDatas,
         List<ProductImageListItemDisplayData> imageDatas,
@@ -1091,7 +525,7 @@
 
         ProductProperties.ForEach(x => x.ValidationMessages.Clear());
         ProductLinks.ForEach(x => x.ValidationMessages.Clear());
-        ProductImages.ForEach(x => x.ValidationMessages.Clear());
+        ProductImagesOld.ForEach(x => x.ValidationMessages.Clear());
         ProductDocuments?.ForEach(x => x.ValidationMessages.Clear());
 
         return await result.MatchAsync(
@@ -1209,421 +643,5 @@
         }
 
         return propertyUpsertRequests;
-    }
-
-    private async Task<OneOf<List<ProductImageAndPromotionFileUpsertRequest>, No>> GetImageUpsertRequestsFromEditorDataAsync(
-        List<ProductImageListItemDisplayData> listItems)
-    {
-        List<ProductImageAndPromotionFileUpsertRequest> imageRequests = new();
-
-        for (int i = 0; i < listItems.Count; i++)
-        {
-            ProductImageListItemDisplayData imageListItem = listItems[i];
-
-            byte[]? imageFileData = await GetImageDataFromListItemAsync(imageListItem);
-
-            if (imageFileData is null || imageFileData.Length == 0)
-            {
-                imageListItem.ValidationMessages.Clear();
-                imageListItem.ValidationMessages.Add("File is empty");
-
-                return new No();
-            }
-
-            if (imageListItem.UploadedImageFileData is not null)
-            {
-                if (!IsImageContentType(imageListItem.UploadedImageFileData.ContentType))
-                {
-                    imageListItem.ValidationMessages.Clear();
-                    imageListItem.ValidationMessages.Add("File is not in a supported image format");
-
-                    return new No();
-                }
-
-                string? imageFileExtension = Path.GetExtension(imageListItem.UploadedImageFileData.FileName);
-
-                if (imageFileExtension is null)
-                {
-                    imageListItem.ValidationMessages.Clear();
-                    imageListItem.ValidationMessages.Add("Invalid file extension");
-
-                    return new No();
-                }
-
-                ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
-                {
-                    ExistingImageId = imageListItem.RelatedImage?.ExistingImageId,
-                    FileExtension = imageFileExtension,
-                    ImageData = imageFileData,
-                    FileUpsertRequest = new FileForImageForProductUpsertRequest()
-                    {
-                        Active = imageListItem.RelatedImageFile?.Active ?? true,
-                        CustomDisplayOrder = i + 1,
-                    },
-                };
-
-                imageRequests.Add(new(imageUpsertRequest));
-
-                continue;
-            }
-            else if (imageListItem.RelatedPromotionFile is not null)
-            {
-                if (imageListItem.RelatedPromotionFile?.PromotionFileInfoData is null)
-                {
-                    imageListItem.ValidationMessages.Clear();
-                    imageListItem.ValidationMessages.Add("Promotion file not selected");
-
-                    return new No();
-                }
-
-                ServicePromotionProductImageUpsertRequest? servicePromotionProductImageUpsertRequest = null;
-
-                if (imageListItem.RelatedImage is not null
-                    || imageListItem.RelatedPromotionFile.ShouldAddToImagesAllInSingleEditor == true)
-                {
-                    servicePromotionProductImageUpsertRequest = new()
-                    {
-                        ImageFileUpsertRequest = new()
-                        {
-                            Active = imageListItem.RelatedImageFile?.Active ?? false,
-                            CustomDisplayOrder = i + 1,
-                        },
-                    };
-                }
-
-                PromotionProductFileForProductUpsertRequest servicePromotionProductFileUpdateRequest = new()
-                {
-                    Id = imageListItem.RelatedPromotionFile.Id,
-                    PromotionFileInfoId = imageListItem.RelatedPromotionFile.PromotionFileInfoData.Id,
-                    Active = imageListItem.RelatedPromotionFile.Active,
-                    ValidFrom = imageListItem.RelatedPromotionFile.ValidFrom,
-                    ValidTo = imageListItem.RelatedPromotionFile.ValidTo,
-                    UpsertInProductImagesRequest = servicePromotionProductImageUpsertRequest,
-                };
-
-                imageRequests.Add(new(servicePromotionProductFileUpdateRequest));
-
-                continue;
-            }
-            else if (imageListItem.RelatedImage is not null)
-            {
-                if (!IsImageContentType(imageListItem.RelatedImage.ContentType))
-                {
-                    imageListItem.ValidationMessages.Clear();
-                    imageListItem.ValidationMessages.Add("File is not in a supported image format");
-
-                    return new No();
-                }
-
-                string? imageFileExtension = null;
-
-                if (imageListItem.RelatedImageFile?.FileName is not null)
-                {
-                    imageFileExtension = Path.GetExtension(imageListItem.RelatedImageFile.FileName);
-                }
-                else
-                {
-                    List<string> possibleFileExtensions = GetPossibleExtensionsFromContentType(imageListItem.RelatedImage.ContentType);
-
-                    imageFileExtension = possibleFileExtensions.First();
-                }
-
-                FileForImageForProductUpsertRequest? imageFileUpsertRequest = null;
-
-                if (imageListItem.RelatedImageFile is not null)
-                {
-                    imageFileUpsertRequest = new FileForImageForProductUpsertRequest()
-                    {
-                        Active = imageListItem.RelatedImageFile?.Active ?? true,
-                        CustomDisplayOrder = i + 1,
-                    };
-                }
-
-                ProductImageWithFileForProductUpsertRequest imageUpsertRequest = new()
-                {
-                    ExistingImageId = imageListItem.RelatedImage?.ExistingImageId,
-                    FileExtension = imageFileExtension,
-                    ImageData = imageFileData,
-                    FileUpsertRequest = imageFileUpsertRequest,
-                };
-
-                imageRequests.Add(new(imageUpsertRequest));
-
-                continue;
-            }
-            else if (imageListItem.RelatedImageFile?.FileName is not null)
-            {
-                string? contentType = GetContentTypeFromExtension(imageListItem.RelatedImageFile.FileName);
-
-                if (!IsImageContentType(contentType))
-                {
-                    imageListItem.ValidationMessages.Clear();
-                    imageListItem.ValidationMessages.Add("File is not in a supported image format");
-
-                    return new No();
-                }
-
-                if (imageListItem.RelatedImageFile.ExistingFileInfoId is null)
-                {
-                    ProductImageFileForProductCreateRequest imageFileCreateRequest = new()
-                    {
-                        Active = imageListItem.RelatedImageFile.Active,
-                        CustomDisplayOrder = i + 1,
-                        FileData = new()
-                        {
-                            FileName = imageListItem.RelatedImageFile.FileName,
-                            Data = imageFileData,
-                        },
-                    };
-
-                    imageRequests.Add(new(imageFileCreateRequest));
-
-                    continue;
-                }
-
-                ProductImageFileForProductUpdateRequest imageFileUpdateRequest = new()
-                {
-                    Id = imageListItem.RelatedImageFile.ExistingFileInfoId.Value,
-                    Active = imageListItem.RelatedImageFile.Active,
-                    UpdateDisplayOrderRequest = i + 1,
-                    UpdateFileDataRequest = new FileData()
-                    {
-                        FileName = imageListItem.RelatedImageFile.FileName,
-                        Data = imageFileData,
-                    },
-                };
-
-                imageRequests.Add(new(imageFileUpdateRequest));
-
-                continue;
-            }
-
-            return new No();
-        }
-
-        return imageRequests;
-    }
-
-    private async Task<List<ProductPropertyDisplayData>> GetProductPropertyEditorDataForProductAsync(
-        int productId,
-        List<ProductCharacteristic> productCharacteristics)
-    {
-        List<ProductProperty> productProperties = await ProductPropertyService.GetAllInProductAsync(productId);
-
-        List<ProductPropertyDisplayData> propertyEditorDataList = new();
-
-        IEnumerable<int> propertyCharacteristicIds = productProperties
-            .Where(x => x.ProductCharacteristicId is not null)
-            .Select(x => (int)x.ProductCharacteristicId!);
-
-        foreach (ProductProperty property in productProperties)
-        {
-            ProductCharacteristic? productCharacteristic = productCharacteristics.FirstOrDefault(
-                x => x.Id == property.ProductCharacteristicId);
-
-            IEnumerable<ProductCharacteristic> relatedCharacteristics = productCharacteristics;
-
-            if (productCharacteristic is not null)
-            {
-                relatedCharacteristics = productCharacteristics
-                    .Where(x => x.KWPrCh == productCharacteristic.KWPrCh);
-            }
-
-            IEnumerable<int> propertyCharacteristicIdsToExclude = propertyCharacteristicIds
-                .Where(productPropertyId => productPropertyId != property.ProductCharacteristicId);
-
-            List<ProductCharacteristic> remainingCharacteristics
-                = GetDifferentCharacteristics(relatedCharacteristics, propertyCharacteristicIdsToExclude);
-
-            ProductPropertyDisplayData propertyEditorData = new()
-            {
-                ProductCharacteristic = productCharacteristic,
-                Value = property.Value,
-                DisplayOrder = property.DisplayOrder,
-                RemainingCharacteristics = remainingCharacteristics
-            };
-
-            propertyEditorDataList.Add(propertyEditorData);
-        }
-
-        AddOrRemovePropertiesBasedOnWhichAreVisible(AreAllPropertiesDisplayed, propertyEditorDataList, productCharacteristics);
-
-        return propertyEditorDataList;
-    }
-
-    private void AddOrRemovePropertiesBasedOnWhichAreVisible(
-        bool areAllPropertiesVisible,
-        List<ProductPropertyDisplayData> properties,
-        List<ProductCharacteristic> characteristics)
-    {
-        if (areAllPropertiesVisible)
-        {
-            IEnumerable<int> propertyCharacteristicIds = properties
-                .Where(property => property.ProductCharacteristic is not null)
-                .Select(property => property.ProductCharacteristic!.Id);
-
-            for (int i = 0; i < characteristics.Count; i++)
-            {
-                ProductCharacteristic productCharacteristic = characteristics[i];
-
-                ProductPropertyDisplayData? propertyData = properties.Find(
-                    x => x.ProductCharacteristic?.Id == productCharacteristic.Id);
-
-                IEnumerable<int> propertyCharacteristicIdsToExclude = propertyCharacteristicIds
-                    .Where(productPropertyId => productPropertyId != productCharacteristic.Id);
-
-                if (propertyData == null)
-                {
-                    propertyData = new()
-                    {
-                        IsActive = false,
-                        ProductCharacteristic = productCharacteristic,
-                        RemainingCharacteristics = GetDifferentCharacteristics(characteristics, propertyCharacteristicIdsToExclude),
-                        DisplayOrder = null,
-                        Value = null,
-                    };
-
-                    properties.Add(propertyData);
-                }
-            }
-            
-            properties.Sort((property1, property2) =>
-            {
-                return (property1.ProductCharacteristic?.DisplayOrder ?? 0) - (property2.ProductCharacteristic?.DisplayOrder ?? 0);
-            });
-        }
-        else
-        {
-            properties.RemoveAll(x => !x.IsActive);
-
-            properties.Sort((property1, property2) =>
-            {
-                return (property1.DisplayOrder ?? 0) - (property2.DisplayOrder ?? 0);
-            });
-        }
-    }
-
-    private List<ProductDocumentUpsertRequest> GetDocumentCreateRequests(List<ProductDocumentDisplayData> documentDisplayDatas)
-    {
-        List<ProductDocumentUpsertRequest> output = new();
-
-        if (documentDisplayDatas.Count == 0) return output;
-
-        foreach (ProductDocumentDisplayData productDocumentData in documentDisplayDatas)
-        {
-            ProductDocumentUpsertRequest upsertRequest;
-
-            string? newDescription = productDocumentData.CurrentDescription?.Trim();
-
-            if (newDescription == string.Empty)
-            {
-                newDescription = null;
-            }
-
-            if (productDocumentData.ExistingDocument != null)
-            {
-                ProductDocumentUpdateForProductRequest documentUpdateRequest = new()
-                {
-                    ExistingId = productDocumentData.ExistingDocument.Id,
-                    Description = newDescription,
-                };
-
-                upsertRequest = new()
-                {
-                    Request = documentUpdateRequest,
-                };
-
-                output.Add(upsertRequest);
-
-                continue;
-            }
-
-            ProductDocumentCreateForProductRequest documentCreateRequest = new()
-            {
-                FileData = productDocumentData.FileData.IsT0 ? productDocumentData.FileData.AsT0 : Array.Empty<byte>(),
-                FileExtension = productDocumentData.FileExtension,
-                Description = newDescription,
-            };
-
-            upsertRequest = new()
-            {
-                Request = documentCreateRequest,
-            };
-
-            output.Add(upsertRequest);
-        }
-
-        return output;
-    }    
-
-    public List<ProductCharacteristic> GetDifferentCharacteristics(
-        IEnumerable<ProductCharacteristic> characteristics,
-        IEnumerable<int>? characteristicIdsToExclude = null)
-    {
-        List<ProductCharacteristic> differentCharacteristics = new();
-
-        foreach (ProductCharacteristic characteristic in characteristics)
-        {
-            if (characteristic.Name is null) continue;
-
-            ProductCharacteristic? matchingCharacteristic = differentCharacteristics.FirstOrDefault(x => x.Id == characteristic.Id);
-
-            if (matchingCharacteristic is not null) continue;
-
-            bool? shouldExcludeCharacteristic = characteristicIdsToExclude?.Contains(characteristic.Id);
-
-            if (shouldExcludeCharacteristic == true) continue;
-
-            differentCharacteristics.Add(characteristic);
-        }
-
-        return differentCharacteristics;
-    }
-
-    private OneOf<string, InvalidXmlResult> GetProductHtmlFromCurrentEditorData(List<ProductPropertyDisplayData> includedProperties)
-    {
-        List<HtmlProductProperty> htmlProductProperties = new();
-
-        foreach (ProductPropertyDisplayData productProperty in includedProperties.OrderBy(x => x.DisplayOrder ?? int.MaxValue))
-        {
-            HtmlProductProperty htmlProductProperty = new()
-            {
-                Name = productProperty.ProductCharacteristic?.Name,
-                Value = productProperty.Value,
-                Order = productProperty.DisplayOrder?.ToString(),
-            };
-
-            htmlProductProperties.Add(htmlProductProperty);
-        }
-
-        HtmlProduct htmlProduct = new()
-        {
-            Id = Product.Id,
-            Name = Product.Name,
-            Properties = htmlProductProperties,
-        };
-
-        HtmlProductsData htmlProductsData = new()
-        {
-            Products = [htmlProduct],
-        };
-
-        return ProductHtmlService.TryGetHtmlFromProducts(htmlProductsData);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_jsModule is not null)
-        {
-            try
-            {
-                await RevokeAllExistingBrowserFilePreviewUrls();
-
-                await _jsModule.DisposeAsync();
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
     }
 }

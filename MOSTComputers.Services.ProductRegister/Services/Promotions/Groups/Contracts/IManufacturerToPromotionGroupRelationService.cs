@@ -13,5 +13,6 @@ public interface IManufacturerToPromotionGroupRelationService
     Task<List<ManufacturerToPromotionGroupRelation>> GetAllAsync();
     Task<ManufacturerToPromotionGroupRelation?> GetByManufacturerIdAsync(int manufacturerId);
     Task<ManufacturerToPromotionGroupRelation?> GetByPromotionGroupIdAsync(int promotionGroupId);
-    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertByManufacturerIdAsync(ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest);
+    Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertByPromotionGroupIdAsync(
+        ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest);
 }

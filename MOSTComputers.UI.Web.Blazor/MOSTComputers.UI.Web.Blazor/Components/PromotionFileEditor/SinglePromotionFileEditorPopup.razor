@@ -159,7 +159,7 @@
 
                         <div id="singlePromotionFileEditorOriginalFileContainer" class="file-container">
 
-                            <PromotionFile FileOptions="PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName)"
+                            <PromotionFile FileOptions="PromotionFile.FilePathOptions.CreateForExistingFile(_promotionFileEditData.FileName, _promotionFileEditData.ContentType!)"
                                 class="file"/>
                         </div>
                         }
@@ -189,6 +189,7 @@
         public DateTime? ValidFrom { get; init; }
         public DateTime? ValidTo { get; init; }
         public required string FileName { get; init; }
+        public required string ContentType { get; init; }
         public string? Description { get; init; }
         public string? RelatedProductsString { get; init; }
         public required string CreateUserName { get; init; }
@@ -205,6 +206,7 @@
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }
         public string? FileName { get; set; }
+        public string? ContentType { get; set; }
         public string? Description { get; set; }
         public string? RelatedProductsString { get; set; }
         public string? CreateUserName { get; set; }
@@ -254,6 +256,7 @@
                 ValidFrom = update.ValidFrom,
                 ValidTo = update.ValidTo,
                 FileName = update.FileName,
+                ContentType = update.ContentType,
                 Description = update.Description,
                 RelatedProductsString = update.RelatedProductsString,
                 CreateUserName = update.CreateUserName,

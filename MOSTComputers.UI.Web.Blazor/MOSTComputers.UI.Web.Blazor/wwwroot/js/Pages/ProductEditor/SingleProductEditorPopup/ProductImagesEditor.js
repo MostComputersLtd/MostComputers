@@ -1,5 +1,6 @@
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
+import * as promotionFilePopup from "./PromotionFilePopup.js"
 import * as imageUtils from "../../../Common/ImageUtils.js"
 import * as urlUtils from "../../../Common/UrlUtils.js"
 
@@ -9,8 +10,15 @@ const productImageItemName = "productImageItem";
 
 const productImageButtonName = "productImageButton";
 const productImageDeleteButtonName = "productImageDeleteButton";
+const imageFileDisplayOrderTextName = "imageFileDisplayOrderText";
 const imageFileActiveCheckboxName = "imageFileActiveCheckbox";
 const productImageItemDataName = "productImageItemData";
+
+const productImageItemTypeAttribute = "data-image-type";
+
+const productImageItemRelatedPromotionFileEditorIdAttribute = "data-promotion-file-editor-id";
+const productImageItemImageIdAttribute = "data-image-id";
+const productImageItemImageFileIdAttribute = "data-image-file-id";
 
 const productImageButtonImageRouteAttribute = "data-image-url";
 
@@ -19,6 +27,8 @@ const filePreviewUrlFormFieldName = "previewUrl";
 const fileIndexFormFieldName = "index";
 const productImageFileWidthFormFieldName = "width";
 const productImageFileHeightFormFieldName = "height";
+
+const uploadedFiles = new Map();
 
 export function initEvents(dialogElement) {
 
@@ -52,6 +62,102 @@ function initProductImageItemEvents(productImageItem) {
     productImageDeleteButton.addEventListener("click", onProductImageDeleteButtonClicked);
 }
 
+export function getProductImageItems() {
+
+    const productImageList = document.getElementById(productImageListId);
+
+    return [...productImageList.querySelectorAll(`[name='${productImageItemName}']`)];
+}
+
+export function getProductImageItemImageUrl(item) {
+
+    const imageButton = item.querySelector(`[name='${productImageButtonName}']`);
+
+    return imageButton.getAttribute(productImageButtonImageRouteAttribute);
+}
+
+export function getProductImagesRequestData() {
+
+    const productImageList = document.getElementById(productImageListId);
+
+    const items = [...productImageList.querySelectorAll(`[name='${productImageItemName}']`)];
+
+    const itemDatas = [];
+
+    for (const item of items) {
+
+        const data = getProductImageItemRequestData(item);
+
+        itemDatas.push(data);
+    }
+
+    return itemDatas;
+}
+
+export function getProductImageItemRequestData(item) {
+
+    const itemType = item.getAttribute(productImageItemTypeAttribute);
+
+    if (itemType == "promotionProductFile") {
+
+        const promotionFileEditorId = item.getAttribute(productImageItemRelatedPromotionFileEditorIdAttribute);
+
+        const fileActiveCheckbox = item.querySelector(`[name='${imageFileActiveCheckboxName}']`);
+
+        return {
+            $type: itemType,
+            promotionFileEditorId: promotionFileEditorId,
+            active: fileActiveCheckbox.checked
+        };
+    }
+    else if (itemType == "image") {
+
+        const imageId = item.getAttribute(productImageItemImageIdAttribute);
+
+        const fileActiveCheckbox = item.querySelector(`[name='${imageFileActiveCheckboxName}']`);
+
+        const saveFileRequest = null;
+
+        if (fileActiveCheckbox) {
+
+            saveFileRequest = {
+                active: fileActiveCheckbox.checked
+            };
+        }
+
+        return {
+            $type: itemType,
+            id: imageId,
+            saveFileRequest: saveFileRequest
+        };
+    }
+    else if (itemType == "imageFile") {
+
+        const imageFileId = item.getAttribute(productImageItemImageFileIdAttribute);
+
+        const fileActiveCheckbox = item.querySelector(`[name='${imageFileActiveCheckboxName}']`);
+
+        return {
+            $type: itemType,
+            id: imageFileId,
+            active: fileActiveCheckbox.checked,
+        };
+    }
+    else {
+
+        const file = uploadedFiles.get(item.id);
+
+        const fileActiveCheckbox = item.querySelector(`[name='${imageFileActiveCheckboxName}']`);
+
+        return {
+            $type: itemType,
+            editorId: item.id,
+            uploadedFile: file,
+            active: fileActiveCheckbox.checked
+        };
+    }
+}
+
 export async function addFileToImagesAsync(blob) {
 
     if (blob.size === 0) {
@@ -66,7 +172,7 @@ export async function addFileToImagesAsync(blob) {
 
     const previewUrl = URL.createObjectURL(blob);
 
-    const dataStoreData = dataStore.loadData();
+    const productImageItems = getProductImageItems();
 
     const imageDimensions = await imageUtils.getImageFileDimensions(blob);
 
@@ -74,7 +180,7 @@ export async function addFileToImagesAsync(blob) {
 
     formData.append(fileFormFieldName, blob);
     formData.append(filePreviewUrlFormFieldName, previewUrl);
-    formData.append(fileIndexFormFieldName, dataStoreData.productImages.length);
+    formData.append(fileIndexFormFieldName, productImageItems.length);
     formData.append(productImageFileWidthFormFieldName, imageDimensions.width);
     formData.append(productImageFileHeightFormFieldName, imageDimensions.height);
 
@@ -94,7 +200,13 @@ export async function addFileToImagesAsync(blob) {
 
     const data = await response.text();
 
-    const success = addNewImageFromElementHtml(data);
+    const jsonData = addNewImageFromElementHtml(data);
+
+    const success = dataStore.addProductImageAndSave(jsonData.editorId, jsonData);
+
+    uploadedFiles.set(jsonData.editorId, blob);
+
+    editorChanges.setImageChanged(jsonData.editorId, editorChanges.ItemChangeState.Added);
 
     return success;
 }
@@ -103,11 +215,11 @@ export async function addNewPromotionProductFileToImagesAsync(promotionProductFi
 
     const url = "api/components/productEditor/single/image/add/promotionFile";
 
-    const dataStoreData = dataStore.loadData();
+    const productImageItems = getProductImageItems();
 
     const newImageItemRequest = {
         editorId: promotionProductFileEditorId,
-        index: dataStoreData.productImages.length,
+        index: productImageItems.length,
         promotionFileId: promotionFileId,
     };
 
@@ -126,7 +238,11 @@ export async function addNewPromotionProductFileToImagesAsync(promotionProductFi
 
     const data = await response.text();
 
-    const success = addNewImageFromElementHtml(data);
+    const jsonData = addNewImageFromElementHtml(data);
+
+    const success = dataStore.addProductImageAndSave(jsonData.editorId, jsonData);
+
+    editorChanges.setImageChanged(jsonData.editorId, editorChanges.ItemChangeState.Added);
 
     return success;
 }
@@ -162,9 +278,77 @@ function addNewImageFromElementHtml(productImageHtml) {
 
     initProductImageItemEvents(productImageItem);
 
-    const success = dataStore.addProductImageAndSave(jsonData.editorId, jsonData, file);
+    return jsonData;
+}
 
-    editorChanges.setImageChanged(jsonData.editorId, editorChanges.ItemChangeState.Added);
+export async function changePromotionProductFileImageItemAsync(promotionProductFileEditorId, promotionFileId) {
+
+    const url = "api/components/productEditor/single/image/add/promotionFile";
+
+    const productImageItems = getProductImageItems();
+
+    const existingRelatedImageItem = productImageItems.find(x => {
+
+        const imageTypeAttribute = x.getAttribute(productImageItemTypeAttribute);
+
+        if (imageTypeAttribute != "promotionProductFile") {
+
+            return false;
+        }
+
+        const promotionProductFileEditorIdAttribute = x.getAttribute(productImageItemRelatedPromotionFileEditorIdAttribute);
+
+        const promotionProductFileEditorId = parseInt(promotionProductFileEditorIdAttribute);
+
+        return promotionProductFileEditorId == promotionProductFileEditorId;
+    });
+
+    if (existingRelatedImageItem == null) {
+
+        await addNewPromotionProductFileToImagesAsync(promotionProductFileEditorId, promotionFileId);
+
+        return;
+    }
+
+    const newImageItemRequest = {
+        editorId: promotionProductFileEditorId,
+        index: productImageItems.length,
+        promotionFileId: promotionFileId,
+    };
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "text/html"
+        },
+        body: JSON.stringify(newImageItemRequest)
+    });
+
+    if (!response.ok) {
+        return false;
+    }
+
+    const data = await response.text();
+
+    existingRelatedImageItem.outerHTML = data;
+
+    const jsonDataScriptElement = existingRelatedImageItem.querySelector(`[name='${productImageItemDataName}']`);
+
+    const jsonData = JSON.parse(jsonDataScriptElement.textContent);
+
+    jsonDataScriptElement.remove();
+
+    initProductImageItemEvents(existingRelatedImageItem);
+
+    const imageFileActiveCheckbox = existingRelatedImageItem.querySelector(`[name='${imageFileActiveCheckboxName}']`);
+
+    const success = dataStore.updateProductImageAndSave(jsonData.editorId, image =>
+    {
+        image.imageFileData.active = imageFileActiveCheckbox.checked;
+    });
+
+    editorChanges.setImageChanged(jsonData.editorId, editorChanges.ItemChangeState.Updated);
 
     return success;
 }
@@ -239,39 +423,27 @@ function onProductImageItemDrop() {
 
         const productImageItem = container.children[i];
 
-        const editorId = productImageItem.id;
+        editorChanges.setImageChanged(productImageItem.id, editorChanges.ItemChangeState.Updated);
+
+        const imageFileDisplayOrderText = productImageItem.querySelector(`[name='${imageFileDisplayOrderTextName}']`);
+
+        if (!imageFileDisplayOrderText) continue;
 
         if (productImageItem == draggedImageItem) {
 
-            dataStore.updateProductImageAndSave(editorId, image => {
-
-                if (image.relatedImageFile?.displayOrder == null) return;
-
-                image.relatedImageFile.displayOrder = draggedItemIndex;
-            });
+            imageFileDisplayOrderText.textContent = `${draggedItemIndex}: `;
         }
         else {
-            dataStore.updateProductImageAndSave(editorId, image => {
 
-                if (image.relatedImageFile?.displayOrder == null) return;
+            const newDisplayOrder = i + movedItemsIndexChange;
 
-                image.relatedImageFile.displayOrder += movedItemsIndexChange;
-            });
+            imageFileDisplayOrderText.textContent = `${newDisplayOrder}: `;
         }
-
-        editorChanges.setImageChanged(productImageItem.id, editorChanges.ItemChangeState.Updated);
     }
 
     draggedImageItem = null;
     lastDragPositionChangeTime = null;
     draggedItemStartIndex = null;
-}
-
-function getProductImageItems() {
-
-    const productImageList = document.getElementById(productImageListId);
-
-    return [...productImageList.querySelectorAll(`[name='${productImageItemName}']`)];
 }
 
 function onProductImageButtonClicked(e) {
@@ -293,17 +465,30 @@ function onProductImageFileActiveCheckboxChecked(e) {
 
     dataStore.updateProductImageAndSave(editorId, image =>
     {
-        image.relatedImageFile.Active = fileActiveCheckbox.checked;
-    });
+        switch (image["$type"]) {
+            case "promotionProductFile":
+                image.imageFileData.active = fileActiveCheckbox.checked;
 
-    editorChanges.setImageChanged(editorId, editorChanges.ItemChangeState.Updated);
-}
+                break;
 
-export function changeProductImageFileActive(editorId, active) {
+            case "image":
+                image.relatedImageFile.active = fileActiveCheckbox.checked;
 
-    dataStore.updateProductImageAndSave(editorId, image =>
-    {
-        image.relatedImageFile.Active = active;
+                break;
+
+            case "imageFile":
+                image.active = fileActiveCheckbox.checked;
+
+                break;
+
+            case "uploadedImage":
+                image.imageFileData.active = fileActiveCheckbox.checked;
+
+                break;
+
+            default:
+                break;
+        }
     });
 
     editorChanges.setImageChanged(editorId, editorChanges.ItemChangeState.Updated);
@@ -318,14 +503,17 @@ function onProductImageDeleteButtonClicked(e) {
 
 export function clearObjectUrls() {
 
-    const dataStoreData = dataStore.loadData();
+    const productImageItems = getProductImageItems();
 
-    for (const productImage of dataStoreData.productImages) {
+    for (const productImageItem of productImageItems) {
 
-        if (productImage.uploadedImageFileData?.previewUrl) {
+        const itemType = productImageItem.getAttribute(productImageItemTypeAttribute);
 
-            URL.revokeObjectURL(productImage.uploadedImageFileData?.previewUrl);
-        }
+        if (itemType !== "uploadedFile") continue;
+
+        const imageUrl = getProductImageItemImageUrl(productImageItem);
+
+        URL.revokeObjectURL(imageUrl);
     }
 }
 
@@ -335,18 +523,15 @@ export function removeProductImage(productImageItem) {
 
     const productImage = loadImageData(editorId);
 
-    if (productImage.uploadedImageFileData?.previewUrl) {
+    if (productImage["$type"] === "uploadedFile") {
 
-        URL.revokeObjectURL(productImage.uploadedImageFileData?.previewUrl);
+        URL.revokeObjectURL(productImage.uploadedFileUrl);
     }
-
-    if (productImage.relatedPromotionFileEditorId) {
+    else if (productImage["$type"] === "promotionProductFile") {
 
         const promotionFileEditorId = productImage.relatedPromotionFileEditorId;
 
-        dataStore.removePromotionProductFileAndSave(promotionFileEditorId);
-
-        editorChanges.setPromotionProductFileChanged(promotionFileEditorId, editorChanges.ItemChangeState.Deleted);
+        promotionFilePopup.onEditorItemRelatedImageDeleted(promotionFileEditorId);
     }
 
     productImageItem.remove();

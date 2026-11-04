@@ -10,7 +10,7 @@ public interface IManufacturerToPromotionGroupRelationsRepository
     Task<List<ManufacturerToPromotionGroupRelation>> GetAllAsync();
     Task<ManufacturerToPromotionGroupRelation?> GetByManufacturerIdAsync(int manufacturerId);
     Task<ManufacturerToPromotionGroupRelation?> GetByPromotionGroupIdAsync(int promotionGroupId);
-    Task<OneOf<Success, UnexpectedFailureResult>> UpsertByManufacturerIdAsync(ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest);
+Task<OneOf<Success, UnexpectedFailureResult>> UpsertByPromotionGroupIdAsync(ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest);
     Task<bool> DeleteByManufacturerIdAsync(int manufacturerId);
     Task<bool> DeleteByPromotionGroupIdAsync(int promotionGroupId);
 }

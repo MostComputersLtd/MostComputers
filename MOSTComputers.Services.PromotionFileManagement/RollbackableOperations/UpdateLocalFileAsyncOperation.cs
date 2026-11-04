@@ -7,59 +7,57 @@ namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
 internal sealed class UpdateLocalFileAsyncOperation : IRollbackableOperationAsync<OneOf<Success, FileDoesntExistResult>>
 {
     internal UpdateLocalFileAsyncOperation(
-        string directoryPath, string fullFileName, byte[] fileData, CancellationToken? cancellationToken = null)
+        string filePath, string fullFileName, byte[] fileData, CancellationToken cancellationToken = default)
     {
-        _directoryPath = directoryPath;
+        _filePath = filePath;
         _fullFileName = fullFileName;
         _fileData = fileData;
         _cancellationToken = cancellationToken;
     }
 
-    private readonly string _directoryPath;
+    private readonly string _filePath;
     private readonly string _fullFileName;
     private readonly byte[] _fileData;
-    private readonly CancellationToken? _cancellationToken;
+    private readonly CancellationToken _cancellationToken;
 
-    private bool _succeeeded = false;
+    private bool _destinationMayHaveChanged = false;
 
     private byte[]? _oldFileData = null;
 
     public async Task<OneOf<Success, FileDoesntExistResult>> ExecuteAsync()
     {
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
-
-        if (!File.Exists(filePath))
+        if (!File.Exists(_filePath))
         {
             return new FileDoesntExistResult() { FileName = _fullFileName };
         }
 
-        _oldFileData = await File.ReadAllBytesAsync(filePath);
+        _oldFileData = await File.ReadAllBytesAsync(_filePath);
 
-        if (_cancellationToken is null)
-        {
-            await File.WriteAllBytesAsync(filePath, _fileData);
-        }
-        else
-        {
-            await File.WriteAllBytesAsync(filePath, _fileData, _cancellationToken.Value);
-        }
+        await using FileStream stream = new(
+            _filePath,
+            FileMode.Open,
+            FileAccess.Write,
+            FileShare.Read,
+            bufferSize: 4096,
+            options: FileOptions.Asynchronous);
 
-        _succeeeded = true;
+        _destinationMayHaveChanged = true;
+
+        stream.SetLength(0);
+        await stream.WriteAsync(_fileData, _cancellationToken);
 
         return new Success();
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
-
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
+        if (!_destinationMayHaveChanged) return;
 
         if (_oldFileData is null)
         {
-            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {filePath}");
+            throw new InvalidOperationException($"Cannot rollback, because old file data is missing: {_filePath}");
         }
 
-        File.WriteAllBytes(filePath, _oldFileData);
+        File.WriteAllBytes(_filePath, _oldFileData);
     }
 }

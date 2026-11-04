@@ -47,6 +47,7 @@ export const promotionGroupEditorPopupContainerId = "promotionGroupEditorPopupCo
 
 export const promotionGroupEditorPopupId = "promotionGroupEditorPopup";
 
+export const promotionGroupIdHiddenInputId = "promotionGroupIdHiddenInput";
 export const promotionGroupSaveButtonId = "promotionGroupSaveButton";
 export const promotionGroupNameInputId = "promotionGroupName";
 export const promotionGroupDisplayOrderInputId = "promotionGroupDisplayOrder";
@@ -55,6 +56,7 @@ export const promotionGroupLogoImageDisplayId = "promotionGroupLogoImageDisplay"
 export const promotionGroupLogoChangeButtonId = "promotionGroupLogoChangeButton";
 export const promotionGroupLogoInputId = "promotionGroupLogoInput";
 export const promotionGroupEditLogoImageContainerId = "promotionGroupEditLogoImageContainer";
+export const promotionGroupImageId = "promotionGroupImage";
 export const promotionGroupImageResizeButtonId = "promotionGroupImageResizeButton";
 export const promotionGroupImageDeleteButtonId = "promotionGroupImageDeleteButton";
 
@@ -104,6 +106,8 @@ export const promotionRelatedProductIdAttribute = "data-promotion-edit-related-p
 export const promotionRelatedSearchResultProductIdAttribute = "data-related-product-search-result-product-id";
 
 export const loadingClass = "loading";
+
+export const promotionListItemSelectedClass = "item-selected";
 
 export const htmlContentImageSpanClass = "promotion-edit-html-content-image-span";
 

@@ -12,14 +12,20 @@ window.addEventListener("resize", handleResize);
 
 function onStartOfPage() {
 
-    startAutoSlide(true, productDataDialogCarouselId);
-
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (!productDataDialogCarousel) return;
+
+    startAutoSlide(true, productDataDialogCarouselId);
 
     resizeHtmlContentInCarousel(productDataDialogCarousel);
 }
 
 function handleVisibilityChange() {
+
+    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+
+    if (!productDataDialogCarousel) return;
 
     if (document.hidden) {
         stopAutoSlide(productDataDialogCarouselId);

@@ -82,18 +82,19 @@ internal sealed class ManufacturerToPromotionGroupRelationsRepository : IManufac
         return manufacturerToPromotionGroupRelation;
     }
 
-    public async Task<OneOf<Success, UnexpectedFailureResult>> UpsertByManufacturerIdAsync(ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest)
+    public async Task<OneOf<Success, UnexpectedFailureResult>> UpsertByPromotionGroupIdAsync(
+        ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest)
     {
         const string query =
             $"""
             IF EXISTS (
                 SELECT 1 FROM {ManufacturerToPromotionGroupRelationsTableName}
-                WHERE {ManufacturerIdColumnName} = @manufacturerId
+                WHERE {PromotionGroupIdColumnName} = @promotionGroupId
             )
             BEGIN
                 UPDATE {ManufacturerToPromotionGroupRelationsTableName}
-                SET {PromotionGroupIdColumnName} = @promotionGroupId
-                WHERE {ManufacturerIdColumnName} = @manufacturerId;
+                SET {ManufacturerIdColumnName} = @manufacturerId
+                WHERE {PromotionGroupIdColumnName} = @promotionGroupId;
             END
             ELSE
             BEGIN

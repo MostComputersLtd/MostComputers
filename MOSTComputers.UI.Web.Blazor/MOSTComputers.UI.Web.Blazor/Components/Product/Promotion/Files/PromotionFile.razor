@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 
 @using static MOSTComputers.Utils.Files.ContentTypeUtils;
-@using static MOSTComputers.Utils.Files.FileExtensionUtils;
+<!-- @using static MOSTComputers.Utils.Files.FileExtensionUtils; -->
 
 @if (!string.IsNullOrWhiteSpace(_fileUrl))
 {
@@ -106,6 +106,7 @@ else
         public struct FromExistingFile
         {
             public required string ExistingFileName { get; set; }
+            public required string ExistingFileContentType { get; set; }
         }
 
         public struct FromOtherFile
@@ -114,13 +115,14 @@ else
             public required string NewFileContentType { get; set; }
         }
 
-        public static FilePathOptions CreateForExistingFile(string existingFileName)
+        public static FilePathOptions CreateForExistingFile(string existingFileName, string existingFileContentType)
         {
             return new FilePathOptions()
             {
                 FilePathOption = new FromExistingFile()
                 {
                     ExistingFileName = existingFileName,
+                    ExistingFileContentType = existingFileContentType,
                 },
             };
         }
@@ -151,7 +153,8 @@ else
             return FilePathOption.Match(
                 fromExistingFile =>
                 {
-                    return fromExistingFile.ExistingFileName == other.FilePathOption.AsT0.ExistingFileName;
+                    return fromExistingFile.ExistingFileName == other.FilePathOption.AsT0.ExistingFileName
+                        && fromExistingFile.ExistingFileContentType == other.FilePathOption.AsT0.ExistingFileContentType;
                 },
                 fromOtherFile =>
                 {
@@ -163,7 +166,13 @@ else
         public override int GetHashCode()
         {
             return FilePathOption.Match(
-                fromExistingFile => fromExistingFile.ExistingFileName.GetHashCode(StringComparison.OrdinalIgnoreCase),
+                fromExistingFile =>
+                {
+                    return HashCode.Combine(
+                        fromExistingFile.ExistingFileName.GetHashCode(StringComparison.OrdinalIgnoreCase),
+                        fromExistingFile.ExistingFileContentType.GetHashCode(StringComparison.OrdinalIgnoreCase)
+                    );
+                },
                 fromOtherFile => 
                 {
                     return HashCode.Combine(
@@ -246,50 +255,50 @@ else
         "application/x-dbf"
     };
 
-    private const string _pdfFileExtension = "pdf";
-
-    private static readonly string[] _wordDocumentExtensions = new string[]
-    {
-        "doc",
-        "docx",
-        "dot",
-        "dotx",
-        "docm",
-        "dotm",
-    };
-
-    private static readonly string[] _otherDocumentExtensions = new string[]
-    {
-        "txt",
-        "rtf",
-        "odt",
-        "ott",
-    };
-
-    private static readonly string[] _excelFileExtensions = new string[]
-    {
-        "xlsx",
-        "xls",
-        "xlt",
-        "xltx",
-        "xlsm",
-        "xltm",
-        "xlsb",
-    };
-
-    private static readonly string[] _otherSpreadsheetExtensions = new string[]
-    {
-        "ods",
-        "ots",
-        "csv",
-        "tsv",
-        "dbf",
-    };
+    <!-- private const string _pdfFileExtension = "pdf"; -->
+    <!---->
+    <!-- private static readonly string[] _wordDocumentExtensions = new string[] -->
+    <!-- { -->
+    <!--     "doc", -->
+    <!--     "docx", -->
+    <!--     "dot", -->
+    <!--     "dotx", -->
+    <!--     "docm", -->
+    <!--     "dotm", -->
+    <!-- }; -->
+    <!---->
+    <!-- private static readonly string[] _otherDocumentExtensions = new string[] -->
+    <!-- { -->
+    <!--     "txt", -->
+    <!--     "rtf", -->
+    <!--     "odt", -->
+    <!--     "ott", -->
+    <!-- }; -->
+    <!---->
+    <!-- private static readonly string[] _excelFileExtensions = new string[] -->
+    <!-- { -->
+    <!--     "xlsx", -->
+    <!--     "xls", -->
+    <!--     "xlt", -->
+    <!--     "xltx", -->
+    <!--     "xlsm", -->
+    <!--     "xltm", -->
+    <!--     "xlsb", -->
+    <!-- }; -->
+    <!---->
+    <!-- private static readonly string[] _otherSpreadsheetExtensions = new string[] -->
+    <!-- { -->
+    <!--     "ods", -->
+    <!--     "ots", -->
+    <!--     "csv", -->
+    <!--     "tsv", -->
+    <!--     "dbf", -->
+    <!-- }; -->
 
     private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromOptions(FilePathOptions filePathOptions)
     {
         return filePathOptions.FilePathOption.Match(
-            fromExistingFile => GetPromotionFileDisplayTypeFromExtension(fromExistingFile.ExistingFileName),
+            fromExistingFile => GetPromotionFileDisplayTypeFromContentType(fromExistingFile.ExistingFileContentType),
             fromOtherFile => GetPromotionFileDisplayTypeFromContentType(fromOtherFile.NewFileContentType));
     }
 
@@ -331,84 +340,84 @@ else
         return PromotionFileDisplayTypeEnum.Unhandled;
     }
 
-    private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromExtension(string fullFileNameOrExtension)
-    {
-        bool isElementAPdfDocument = DoesFileNameMatchExtension(fullFileNameOrExtension, _pdfFileExtension);
+    <!-- private static PromotionFileDisplayTypeEnum GetPromotionFileDisplayTypeFromExtension(string fullFileNameOrExtension) -->
+    <!-- { -->
+    <!--     bool isElementAPdfDocument = DoesFileNameMatchExtension(fullFileNameOrExtension, _pdfFileExtension); -->
+    <!---->
+    <!--     if (isElementAPdfDocument) return PromotionFileDisplayTypeEnum.PdfDocument; -->
+    <!---->
+    <!--     bool isElementAWordDocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _wordDocumentExtensions); -->
+    <!---->
+    <!--     if (isElementAWordDocument) return PromotionFileDisplayTypeEnum.WordDocument; -->
+    <!---->
+    <!--     bool isElementADocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherDocumentExtensions); -->
+    <!---->
+    <!--     if (isElementADocument) return PromotionFileDisplayTypeEnum.OtherDocument; -->
+    <!---->
+    <!--     bool isElementAnExcelSpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _excelFileExtensions); -->
+    <!---->
+    <!--     if (isElementAnExcelSpreadsheet) return PromotionFileDisplayTypeEnum.ExcelSpreadsheet; -->
+    <!---->
+    <!--     bool isElementASpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherSpreadsheetExtensions); -->
+    <!---->
+    <!--     if (isElementASpreadsheet) return PromotionFileDisplayTypeEnum.OtherSpreadsheet; -->
+    <!---->
+    <!--     string? contentTypeFromFileExtension = GetContentTypeFromExtension(fullFileNameOrExtension); -->
+    <!---->
+    <!--     if (contentTypeFromFileExtension is null) -->
+    <!--     { -->
+    <!--         return PromotionFileDisplayTypeEnum.Unhandled; -->
+    <!--     } -->
+    <!---->
+    <!--     if (IsImageContentType(contentTypeFromFileExtension)) -->
+    <!--     { -->
+    <!--         return PromotionFileDisplayTypeEnum.Image; -->
+    <!--     } -->
+    <!--     else if (IsVideoContentType(contentTypeFromFileExtension)) -->
+    <!--     { -->
+    <!--         return PromotionFileDisplayTypeEnum.Video; -->
+    <!--     } -->
+    <!--     else if (IsAudioContentType(contentTypeFromFileExtension)) -->
+    <!--     { -->
+    <!--         return PromotionFileDisplayTypeEnum.Audio; -->
+    <!--     } -->
+    <!---->
+    <!--     return PromotionFileDisplayTypeEnum.Unhandled; -->
+    <!-- } -->
 
-        if (isElementAPdfDocument) return PromotionFileDisplayTypeEnum.PdfDocument;
+    <!-- private static bool DoesFileNameMatchAnyExtension(string fullFileName, IEnumerable<string> extensions) -->
+    <!-- { -->
+    <!--     string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileName); -->
+    <!---->
+    <!--     if (fileExtensionWithoutDot is null) -->
+    <!--     { -->
+    <!--         return false; -->
+    <!--     } -->
+    <!---->
+    <!--     fileExtensionWithoutDot = fileExtensionWithoutDot[1..]; -->
+    <!---->
+    <!--     foreach (string extension in extensions) -->
+    <!--     { -->
+    <!--         if (extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase)) -->
+    <!--         { -->
+    <!--             return true; -->
+    <!--         } -->
+    <!--     } -->
+    <!---->
+    <!--     return false; -->
+    <!-- } -->
 
-        bool isElementAWordDocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _wordDocumentExtensions);
-
-        if (isElementAWordDocument) return PromotionFileDisplayTypeEnum.WordDocument;
-
-        bool isElementADocument = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherDocumentExtensions);
-
-        if (isElementADocument) return PromotionFileDisplayTypeEnum.OtherDocument;
-
-        bool isElementAnExcelSpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _excelFileExtensions);
-
-        if (isElementAnExcelSpreadsheet) return PromotionFileDisplayTypeEnum.ExcelSpreadsheet;
-
-        bool isElementASpreadsheet = DoesFileNameMatchAnyExtension(fullFileNameOrExtension, _otherSpreadsheetExtensions);
-
-        if (isElementASpreadsheet) return PromotionFileDisplayTypeEnum.OtherSpreadsheet;
-
-        string? contentTypeFromFileExtension = GetContentTypeFromExtension(fullFileNameOrExtension);
-
-        if (contentTypeFromFileExtension is null)
-        {
-            return PromotionFileDisplayTypeEnum.Unhandled;
-        }
-
-        if (IsImageContentType(contentTypeFromFileExtension))
-        {
-            return PromotionFileDisplayTypeEnum.Image;
-        }
-        else if (IsVideoContentType(contentTypeFromFileExtension))
-        {
-            return PromotionFileDisplayTypeEnum.Video;
-        }
-        else if (IsAudioContentType(contentTypeFromFileExtension))
-        {
-            return PromotionFileDisplayTypeEnum.Audio;
-        }
-
-        return PromotionFileDisplayTypeEnum.Unhandled;
-    }
-
-    private static bool DoesFileNameMatchAnyExtension(string fullFileName, IEnumerable<string> extensions)
-    {
-        string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileName);
-
-        if (fileExtensionWithoutDot is null)
-        {
-            return false;
-        }
-
-        fileExtensionWithoutDot = fileExtensionWithoutDot[1..];
-
-        foreach (string extension in extensions)
-        {
-            if (extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool DoesFileNameMatchExtension(string fullFileNameOrExtension, string extension)
-    {
-        string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileNameOrExtension);
-
-        if (fileExtensionWithoutDot is null)
-        {
-            return false;
-        }
-
-        fileExtensionWithoutDot = fileExtensionWithoutDot[1..];
-
-        return extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase);
-    }
+    <!-- private static bool DoesFileNameMatchExtension(string fullFileNameOrExtension, string extension) -->
+    <!-- { -->
+    <!--     string? fileExtensionWithoutDot = GetExtensionWithDotFromExtensionOrFileName(fullFileNameOrExtension); -->
+    <!---->
+    <!--     if (fileExtensionWithoutDot is null) -->
+    <!--     { -->
+    <!--         return false; -->
+    <!--     } -->
+    <!---->
+    <!--     fileExtensionWithoutDot = fileExtensionWithoutDot[1..]; -->
+    <!---->
+    <!--     return extension.Equals(fileExtensionWithoutDot, StringComparison.OrdinalIgnoreCase); -->
+    <!-- } -->
 }

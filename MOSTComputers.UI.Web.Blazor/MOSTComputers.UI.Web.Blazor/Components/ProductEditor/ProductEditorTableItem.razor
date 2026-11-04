@@ -1,0 +1,147 @@
+@using MOSTComputers.Models.Product.Models.Promotions
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.ProductEditor2
+
+@{
+    IEnumerable<Promotion>? orderedPromotions = ItemData.ProductPromotions?
+        .OrderBy(x => (x.Active ?? false) ? 1 : 0);
+
+    Promotion? promotionPID = orderedPromotions?
+        .FirstOrDefault(x => x.Id == ItemData.Product.PromotionPid);
+
+    Promotion? promotionRID = orderedPromotions?
+        .FirstOrDefault(x => x.Id == ItemData.Product.PromotionRid);
+
+    int? promotionPictureId = ItemData.Product.AlertPictureId;
+
+    if (promotionPictureId is null || promotionPictureId <= 0)
+    {
+        promotionPictureId = ItemData.Product.PromotionPictureId;
+    }
+
+    int? plShow = ItemData.Product.PlShow;
+
+    bool isProductHidden = plShow == 2;
+
+    string plShowString = "";
+    string plShowStringClass = "";
+
+    if (isProductHidden)
+    {
+        plShowString = "STOP";
+        plShowStringClass = "price-list-show-stop";
+    }
+
+    bool hasImages = ItemData.OriginalImagesCount > 0;
+
+    bool isPromotionPidTextActive = promotionPID != null;
+    bool isPromotionRidTextActive = promotionRID != null;
+    bool isProductInfoPromotionTextActive = promotionPictureId > 0;
+}
+
+<tr name="productEditorItem"
+    data-product-id="@ItemData.Product.Id"
+    data-category-id="@ItemData.Product.CategoryId"
+    data-display-order="@ItemData.Product.DisplayOrder">
+
+    <td>
+        <p name="productEditorItemPlShowText"
+            class="@plShowStringClass"
+            data-is-product-hidden="@(isProductHidden ? "true" : "false")">
+            @plShowString
+        </p>
+    </td>
+    <td>
+        <p>
+            @(ItemData.ProductStatuses?.ProductNewStatus is not null
+                ? GetStringFromProductNewStatus(ItemData.ProductStatuses.ProductNewStatus)
+                : "-") 
+                @(ItemData.ProductStatuses?.CreateDate.ToString("MMM dd")) / 
+                @(ItemData.ProductStatuses?.LastUpdateDate.ToString("MMM dd"))
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemOriginalImagesCountText"
+            data-has-images="@(hasImages ? "true" : "false")">
+            @(hasImages ? "Y" : "N")
+        </p>
+    </td>
+    <td>
+        <p>
+            @(ItemData.Product.Status is not null
+                ? GetStringFromProductStatus(ItemData.Product.Status.Value)
+                : "-")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductIdText" class="link-info">
+            @ItemData.Product.Id
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductNameText" class="link-info">
+            @ItemData.Product.Name
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductSearchStringPartCountText" class="link-info">
+            @(ItemData.SearchStringPartsCount ?? 0)
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductPidPromotionText"
+            class="@(isPromotionPidTextActive ? "link-info" : string.Empty)"
+            data-promotion-id="@promotionPID"
+            data-has-link="@(isPromotionPidTextActive ? "true" : "false")">
+            @(isPromotionPidTextActive ? "Yes" : "No")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductRidPromotionText"
+            class="@(isPromotionRidTextActive ? "link-info" : string.Empty)"
+            data-promotion-id="@promotionRID"
+            data-has-link="@(isPromotionRidTextActive ? "true" : "false")">
+            @(isPromotionRidTextActive ? "Yes" : "No")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductInfoPromotionText"
+            class="@(isProductInfoPromotionTextActive ? "link-info" : string.Empty)"
+            data-has-link="@(isProductInfoPromotionTextActive ? "true" : "false")">
+            @(isProductInfoPromotionTextActive ? "Yes" : "No")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductPromotionFilesCountText"
+            class="link-info">
+            @(ItemData.PromotionFilesCount > 0 ? "Yes" : "No")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductPropertiesCountText"
+            class="link-info">
+            @(ItemData.ProductPropertiesCount)
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductImageFilesCountText"
+            class="link-info">
+            @(ItemData.ImageFilesCount)
+        </p>
+    </td>
+    <td>
+        <p>
+            @(ItemData.OriginalFirstImageExists ? "Yes" : "No")
+        </p>
+    </td>
+    <td>
+        <p name="productEditorItemProductImagesCountText"
+            class="link-info">
+            @(ItemData.OriginalImagesCount)
+        </p>
+    </td>
+</tr>
+
+@code{
+    [Parameter, EditorRequired] public required ProductEditorProductData ItemData { get; set; }
+}

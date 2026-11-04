@@ -1,0 +1,94 @@
+@using System.Text.Json.Serialization
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
+
+@{
+    string promotionFileUrl = $"{PromotionFileDataEndpoints.EndpointGroupRoute}/{ItemData.PromotionFileData.FileName}";
+}
+
+<li id="@ItemData.EditorId"
+    name="productImageItem"
+    class="image-list-item"
+    draggable="true"
+    data-image-type="@ItemType"
+    data-promotion-file-editor-id="@ItemData.RelatedPromotionFileEditorId">
+
+    <button name="productImageButton" aria-label="Image #@(ItemData.Index)" class="btn image-button"
+        data-image-url="@promotionFileUrl"
+        style="background-image: url('@promotionFileUrl');">
+    </button>
+
+    <div class="image-active-checkbox-container">
+        <input id="imageActiveCheckbox-@ItemData.Index" name="imageFileActiveCheckbox"
+            checked="@ItemData.ImageData.Active" type="checkbox"
+            class="image-active-checkbox"
+            aria-label="Toggle image active" />
+    </div>
+
+    <div class="image-delete-button-container">
+        <button name="productImageDeleteButton" type="button" class="btn-close image-delete-button"
+            aria-label="Delete"/>
+    </div>
+
+    <div class="promotion-product-file-name-container">
+
+        <p class="promotion-product-file-name-text">Promo:</p>
+
+        <a href="@promotionFileUrl" target="_blank" rel="noopener noreferrer" class="promotion-product-file-name">
+            @(ItemData.PromotionFileData.Name ?? ItemData.PromotionFileData.FileName)
+        </a>
+    </div>
+
+    <p class="file-empty-placeholder"></p>
+
+    <ValidationMessages Messages="ItemData.ValidationMessages" />
+
+    @if (JsonData != null)
+    {
+        <script name="productImageItemData" type="application/json">
+            @JsonData
+        </script>
+    }
+</li>
+
+@code{
+    public sealed class PromotionFileImageItemDisplayData : ProductImageListItemBase
+    {
+        public required int Index { get; set; }
+        public required PromotionFileImageItemPromotionFileDisplayData PromotionFileData { get; set; }
+        public required PromotionFileImageItemImageFileDisplayData ImageData { get; set; }
+        public required string RelatedPromotionFileEditorId { get; set; }
+
+        [JsonIgnore] public List<string> ValidationMessages { get; set; } = new();
+    } 
+
+    public sealed class PromotionFileImageItemPromotionFileDisplayData
+    {
+        public string? Name { get; set; }
+        public required string FileName { get; set; }
+    }
+
+    public sealed class PromotionFileImageItemImageFileDisplayData
+    {
+        public bool Active { get; set; }
+    }
+
+    public sealed class PromotionFileImageItemRecoveryJsonData : ProductImageRecoveryJsonDataBase
+    {
+        public sealed override string ItemType => ProductImagePromotionFileListItem.ItemType;
+
+        [JsonPropertyName("imageFileData")] public required PromotionFileImageItemImageFileRecoveryJsonData ImageFileData { get; set; }
+        [JsonPropertyName("relatedPromotionFileEditorId")] public required string RelatedPromotionFileEditorId { get; set; }
+    }
+
+    public sealed class PromotionFileImageItemImageFileRecoveryJsonData
+    {
+        [JsonPropertyName("active")] public required bool Active { get; set; }
+    }
+
+    internal const string ItemType = "promotionProductFile";
+
+    [Parameter, EditorRequired] public required PromotionFileImageItemDisplayData ItemData { get; set; }
+    [Parameter] public string? JsonData { get; set; }
+}

@@ -6,12 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <PropertyGroup>
-      <DefaultItemExcludes>
-          $(DefaultItemExcludes);
-         Services\NewSaveService\**;
-      </DefaultItemExcludes>
-  </PropertyGroup>
+  <!-- <PropertyGroup> -->
+  <!--     <DefaultItemExcludes> -->
+  <!--         $(DefaultItemExcludes); -->
+  <!--        Services\NewSaveService\**; -->
+  <!--     </DefaultItemExcludes> -->
+  <!-- </PropertyGroup> -->
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />

@@ -1,0 +1,32 @@
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
+
+<Popup IsVisible="IsVisible"
+    PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
+    DisplayHeader="false"
+    CloseHandler="DataChangedPopupCloseHandler">
+    <ChildContent>
+        <div class="data-changed-popup">
+            <p class="data-changed-popup-unsaved-changes-text">There are unsaved changes:</p>
+
+            <div class="data-changed-popup-option-buttons-container">
+                <div class="data-changed-popup-option-button-container">
+                    <button name="unsavedChangesPopupSaveButton" type="button"
+                        class="btn btn-primary" @onclick="SaveChangesAndCloseIsDataChangedPopupAsync">
+                        Save
+                    </button>
+                </div>
+
+                <div class="data-changed-popup-option-button-container last">
+                    <button name="unsavedChangesPopupExitButton" type="button"
+                        class="btn btn-danger" @onclick="CloseIsDataChangedPopupAndExitWithoutSavingAsync">
+                        Exit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </ChildContent>
+</Popup>
+
+@code{
+    public bool IsVisible { get; set; } = true;
+}

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
 using static MOSTComputers.Utils.Files.ContentTypeUtils;
+using MOSTComputers.Services.PromotionFileManagement.Configuration;
 
 namespace MOSTComputers.UI.Web.Blazor.Endpoints.Images;
 
@@ -19,7 +20,7 @@ public static class PromotionFileDataEndpoints
 
     private static IResult GetPromotionFile(
         [FromRoute] string fullFileName,
-        [FromServices] ILocalFileManagementService promotionFileManagementService)
+        [FromKeyedServices(ConfigureServices.PromotionFileManagerKey)] ILocalFileManagementService promotionFileManagementService)
     {
         if (string.IsNullOrWhiteSpace(fullFileName))
         {

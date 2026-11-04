@@ -16,7 +16,7 @@
     object-fit: contain;
 }
 
-.promotion-group-edit-image-delete-button-container {
+.promotion-group-edit-image-resize-button-container {
     position: absolute;
     display: flex;
     justify-content: flex-start;

@@ -40,14 +40,15 @@ public sealed class ManufacturerToPromotionGroupRelationService : IManufacturerT
         return await _manufacturerToPromotionGroupRelationsRepository.GetByPromotionGroupIdAsync(promotionGroupId);
     }
 
-    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertByManufacturerIdAsync(ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest)
+    public async Task<OneOf<Success, ValidationResult, UnexpectedFailureResult>> UpsertByPromotionGroupIdAsync(
+        ManufacturerToPromotionGroupRelationUpsertRequest upsertRequest)
     {
         ValidationResult validationResult = ValidateDefault(_upsertRequestValidator, upsertRequest);
 
         if (!validationResult.IsValid) return validationResult;
 
         OneOf<Success, UnexpectedFailureResult> result
-            = await _manufacturerToPromotionGroupRelationsRepository.UpsertByManufacturerIdAsync(upsertRequest);
+            = await _manufacturerToPromotionGroupRelationsRepository.UpsertByPromotionGroupIdAsync(upsertRequest);
 
         return result.Map<Success, ValidationResult, UnexpectedFailureResult>();
     }

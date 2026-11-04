@@ -67,6 +67,10 @@ p {
     margin-right: 0.5em;
 }
 
+.file-container {
+    max-height: 100%;
+}
+
 .file-select-container {
     display: flex;
     flex-direction: column;

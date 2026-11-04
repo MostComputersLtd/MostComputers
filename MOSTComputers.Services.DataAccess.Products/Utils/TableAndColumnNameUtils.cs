@@ -301,6 +301,7 @@ internal static class TableAndColumnNameUtils
         internal const string ValidToDateColumnAlias = "PromotionFileValidTo";
 
         internal const string FileNameColumnName = "FileName";
+        internal const string ContentTypeColumnName = "ContentType";
 
         internal const string DescriptionColumnName = "Description";
         internal const string RelatedProductsColumnName = "RelatedProducts";

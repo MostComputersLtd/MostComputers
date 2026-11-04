@@ -36,6 +36,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
                 {ValidFromDateColumnName} AS {ValidFromDateColumnAlias},
                 {ValidToDateColumnName} AS {ValidToDateColumnAlias},
                 {FileNameColumnName},
+                {ContentTypeColumnName},
                 {DescriptionColumnName},
                 {RelatedProductsColumnName},
                 {CreateUserNameColumnName} AS {CreateUserNameColumnAlias},
@@ -64,6 +65,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
                 {ValidFromDateColumnName} AS {ValidFromDateColumnAlias},
                 {ValidToDateColumnName} AS {ValidToDateColumnAlias},
                 {FileNameColumnName},
+                {ContentTypeColumnName},
                 {DescriptionColumnName},
                 {RelatedProductsColumnName},
                 {CreateUserNameColumnName} AS {CreateUserNameColumnAlias},
@@ -93,6 +95,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
                 {ValidFromDateColumnName} AS {ValidFromDateColumnAlias},
                 {ValidToDateColumnName} AS {ValidToDateColumnAlias},
                 {FileNameColumnName},
+                {ContentTypeColumnName},
                 {DescriptionColumnName},
                 {RelatedProductsColumnName},
                 {CreateUserNameColumnName} AS {CreateUserNameColumnAlias},
@@ -130,6 +133,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
                 {ValidFromDateColumnName} AS {ValidFromDateColumnAlias},
                 {ValidToDateColumnName} AS {ValidToDateColumnAlias},
                 {FileNameColumnName},
+                {ContentTypeColumnName},
                 {DescriptionColumnName},
                 {RelatedProductsColumnName},
                 {CreateUserNameColumnName} AS {CreateUserNameColumnAlias},
@@ -154,10 +158,10 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
             DECLARE @InsertedIdTable TABLE (Id INT);
 
             INSERT INTO {PromotionFilesTableName} ({NameColumnName}, {ActiveColumnName}, {ValidFromDateColumnName},
-                {ValidToDateColumnName}, {FileNameColumnName}, {DescriptionColumnName}, {RelatedProductsColumnName},
+                {ValidToDateColumnName}, {FileNameColumnName}, {ContentTypeColumnName}, {DescriptionColumnName}, {RelatedProductsColumnName},
                 {CreateUserNameColumnName}, {CreateDateColumnName}, {LastUpdateUserNameColumnName}, {LastUpdateDateColumnName})
             OUTPUT INSERTED.{IdColumnName} INTO @InsertedIdTable
-            VALUES (@Name, @Active, @ValidFrom, @ValidTo, @FileName, @Description,
+            VALUES (@Name, @Active, @ValidFrom, @ValidTo, @FileName, @ContentType, @Description,
                 @RelatedProducts, @CreateUserName, @CreateDate, @LastUpdateUserName, @LastUpdateDate)
 
             SELECT TOP 1 Id FROM @InsertedIdTable;
@@ -170,6 +174,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
             createRequest.ValidFrom,
             createRequest.ValidTo,
             createRequest.FileName,
+            createRequest.ContentType,
             createRequest.Description,
             RelatedProducts = createRequest.RelatedProductsString,
             createRequest.CreateUserName,
@@ -196,6 +201,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
                 {ValidFromDateColumnName} = @ValidFrom,
                 {ValidToDateColumnName} = @ValidTo,
                 {FileNameColumnName} = @FileName,
+                {ContentTypeColumnName} = @ContentType,
                 {DescriptionColumnName} = @Description,
                 {RelatedProductsColumnName} = @RelatedProducts,
                 {LastUpdateUserNameColumnName} = @LastUpdateUserId,
@@ -212,6 +218,7 @@ internal sealed class PromotionFileInfoRepository : IPromotionFileInfoRepository
             updateRequest.ValidFrom,
             updateRequest.ValidTo,
             updateRequest.FileName,
+            updateRequest.ContentType,
             updateRequest.Description,
             RelatedProducts = updateRequest.RelatedProductsString,
             LastUpdateUserId = updateRequest.LastUpdateUserName,

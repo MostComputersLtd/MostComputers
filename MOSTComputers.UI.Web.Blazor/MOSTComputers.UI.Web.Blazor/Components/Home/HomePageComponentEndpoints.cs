@@ -448,6 +448,7 @@ public static class HomePageComponentEndpoints
 
     private static async Task<IResult> GetProductGroupPromotionPopupAsync(
         [FromServices] IProductService productService,
+        [FromServices] IGroupPromotionService groupPromotionService,
         [FromRoute] int promotionGroupId,
         [FromQuery] int productId)
     {
@@ -458,13 +459,23 @@ public static class HomePageComponentEndpoints
             return Results.NotFound();
         }
 
+        var promotions = await groupPromotionService.GetAllActiveInGroupAsync(promotionGroupId);
+
+        DateTime now = DateTime.Now;
+
+        bool anyNotExpiredPromotions = promotions.Any(x =>
+        {
+            return (x.StartDate == null || x.StartDate <= now)
+                && (x.ExpirationDate == null || x.ExpirationDate >= DateTime.Now);
+        });
+
         return new RazorComponentResult<PromotionGroupImagesPopup>(new
         {
             PromotionGroupPromotionPopupData = new PromotionGroupImagesPopupData()
             {
                 IsVisible = true,
                 Product = product,
-                ManufacturerPromotionGroupId = promotionGroupId,
+                PromotionGroupIdToDisplay = anyNotExpiredPromotions ? promotionGroupId : null,
             }
         });
     }

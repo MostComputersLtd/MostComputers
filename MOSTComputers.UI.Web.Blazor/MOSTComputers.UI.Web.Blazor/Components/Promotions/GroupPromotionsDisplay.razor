@@ -145,8 +145,8 @@
 
         foreach (PromotionGroup promotionGroup in promotionGroups)
         {
-            IEnumerable<GroupPromotionContent>? promotionGroupContent
-                = promotionContentsGrouped.FirstOrDefault(x => x.Key == promotionGroup.Id)?
+            IEnumerable<GroupPromotionContent>? promotionGroupContent = promotionContentsGrouped
+                .FirstOrDefault(x => x.Key == promotionGroup.Id)?
                 .OrderBy(x => x.DisplayOrder ?? int.MaxValue);
 
             if (promotionGroupContent is null) continue;
@@ -213,5 +213,5 @@
 
             if (imageFilesForPromotion == null) continue;
         }
-    } 
+    }
 }

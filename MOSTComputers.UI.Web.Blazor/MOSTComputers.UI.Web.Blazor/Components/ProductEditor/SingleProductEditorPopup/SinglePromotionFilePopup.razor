@@ -1,6 +1,49 @@
+@using MOSTComputers.Models.Product.Models.Promotions.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
+@using OneOf
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
-@using static MOSTComputers.Utils.Files.ContentTypeUtils;
+
+@{
+    int? id = null;
+    int? promotionFileId = null;
+    DateTime? validFrom = null;
+    DateTime? validTo = null;
+    bool active = false;
+    string? createUserName = null;
+    DateTime? createDate = null;
+    string? lastUpdateUserName = null;
+    DateTime? lastUpdateDate = null;
+    bool isInImage = false;
+
+    PopupData.Switch(
+        data =>
+        {
+            id = data.Id;
+            promotionFileId = data.PromotionFile.Id;
+            validFrom = data.ValidFrom;
+            validTo = data.ValidTo;
+            active = data.Active;
+            createUserName = data.CreateUserName;
+            createDate = data.CreateDate;
+            lastUpdateUserName = data.LastUpdateUserName;
+            lastUpdateDate = data.LastUpdateDate;
+            isInImage = data.IsInImage;
+        },
+        data =>
+        {
+            id = data.Id;
+            promotionFileId = data.PromotionFileId;
+            validFrom = data.ValidFrom;
+            validTo = data.ValidTo;
+            active = data.Active;
+            createUserName = data.CreateUserName;
+            createDate = data.CreateDate;
+            lastUpdateUserName = data.LastUpdateUserName;
+            lastUpdateDate = data.LastUpdateDate;
+            isInImage = data.IsInImage;
+        });
+}
 
 <Popup IsVisible="IsVisible" PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
@@ -9,53 +52,56 @@
 
             <h5 class="popup-header-text header-name-text">Promotion Product File:</h5>
 
-            @if (PopupData.Id is not null)
+            @if (id is not null)
             {
                 <h4 class="popup-header-text header-product-id-text">
-                    PrCID: @PopupData.Id
+                    PrCID: @id
                 </h4>
             }
 
-            <input id="singleProductPromotionFileEditorEditorFileIdHiddenInput"
-                type="hidden"
-                class="display-none"
-                value=@PopupData.EditorId />
+            @if (!_isReadonly)
+            {
+                <input id="singleProductPromotionFileEditorEditorFileIdHiddenInput"
+                    type="hidden"
+                    class="display-none"
+                    value=@PopupData.AsT1.EditorId" />
+            }
 
-            @if (PopupData.PromotionFileId is not null)
+            @if (promotionFileId is not null)
             {
                 <input id="singleProductPromotionFileEditorPromotionFileIdHiddenInput"
                     type="hidden"
                     class="display-none"
-                    value="@PopupData.PromotionFileId" />
+                    value="@promotionFileId" />
             }
 
             <div class="header-modified-container">
 
-                @if (PopupData.CreateUserName is not null)
+                @if (createUserName is not null)
                 {
                     <p>
                         Created:
-                        <span>@PopupData.CreateUserName</span>
+                        <span>@createUserName</span>
                         <span class="header-modified-date-text">
-                            (@PopupData.CreateDate)
+                            (@createDate)
                         </span>
                     </p>
 
                     <p class="ms-lg-2">
                         Last Update:
-                        <span>@PopupData.LastUpdateUserName</span>
+                        <span>@lastUpdateUserName</span>
                         <span class="header-modified-date-text">
-                            (@PopupData.LastUpdateDate)
+                            (@lastUpdateDate)
                         </span>
                     </p>
                 }
             </div>
 
-            @if (ShouldDisplaySaveButton)
+            @if (!_isReadonly)
             {
                 <div class="save-button-container">
                     <button id="singleProductPromotionFileEditorSaveButton" class="btn btn-primary">
-                        @SaveButtonText
+                        @PopupData.AsT1.SaveButtonText
                     </button>
                 </div>
             }
@@ -64,64 +110,104 @@
 
     <ChildContent>
         <div class="container promotion-product-file-single-editor-body">
-            <div class="row body-inputs-container">
+            <div class="row body-inputs-container"> 
                 <div class="col-12 col-md-6">
 
                     <div class="basic-input-container">
                         <label for="singleProductPromotionFileEditorActiveInput" class="basic-input-label">Active:</label>
-                        <input id="singleProductPromotionFileEditorActiveInput" type="checkbox"
-                            checked="@PopupData.Active" />
+                        <input id="singleProductPromotionFileEditorActiveInput"
+                            type="checkbox"
+                            readonly="@_isReadonly"
+                            checked="@active" />
                     </div>
 
                     <div class="basic-input-container">
                         <label for="singleProductPromotionFileEditorValidFromInput" class="basic-input-label">From:</label>
-                        <input id="singleProductPromotionFileEditorValidFromInput" type="date"
-                            value="@GetDateTimeAsStringForDateInput(PopupData.ValidFrom)" />
+                        <input id="singleProductPromotionFileEditorValidFromInput"
+                            type="date"
+                            readonly="@_isReadonly"
+                            value="@GetDateTimeAsStringForDateInput(validFrom)" />
                     </div>
 
                     <div class="basic-input-container">
                         <label for="singleProductPromotionFileEditorValidToInput" class="basic-input-label">To:</label>
-                        <input id="singleProductPromotionFileEditorValidToInput" type="date"
-                            value="@GetDateTimeAsStringForDateInput(PopupData.ValidTo)" />
+                        <input id="singleProductPromotionFileEditorValidToInput"
+                            type="date"
+                            readonly="@_isReadonly"
+                            value="@GetDateTimeAsStringForDateInput(validTo)" />
                     </div>
 
                     <div class="basic-input-container">
                         <label for="singleProductPromotionFileEditorShouldAddToImagesInput" class="basic-input-label">Add to images:</label>
 
-                        <input id="singleProductPromotionFileEditorShouldAddToImagesInput" type="checkbox"
-                            checked="@PopupData.IsInImage"
-                            data-is-in-image="@(PopupData.IsInImage ? "true" : "false")" />
+                        @if (_isReadonly)
+                        {
+                            <input id="singleProductPromotionFileEditorShouldAddToImagesInput" type="checkbox"
+                                checked="@isInImage" />
+                        }
+                        else
+                        {
+                            <input id="singleProductPromotionFileEditorShouldAddToImagesInput" type="checkbox"
+                                checked="@isInImage"
+                                data-is-in-image="@(isInImage ? "true" : "false")" />
+                        }
                     </div>
                 </div>
 
-                <div class="col-12 col-md-6 file-select-container">
-                    <div class="file-search-container">
-                        <label for="singlePromotionProductFileEditorPromotionFileValidOnInput" class="file-search-active-on-label">
-                            Active on:
-                        </label>
-                        <input id="singlePromotionProductFileEditorPromotionFileValidOnInput"
-                            type="date" class="file-search-active-on-input" placeholder="Date" />
+                @if (_isReadonly)
+                {
+                    PromotionFileInfo promotionFile = PopupData.AsT0.PromotionFile;
 
-                        <input id="singlePromotionProductFileEditorPromotionFileSearchInput" type="text" class="file-search-text-input"
-                            placeholder="Search..." aria-label="Search"/>
+                    <div class="col-12 col-md-6 file-container">
+                        <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(
+                            promotionFile.FileName, promotionFile.ContentType)" />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 col-md-6 file-select-container">
+                        <div class="file-search-container">
+                            <label for="singlePromotionProductFileEditorPromotionFileValidOnInput" class="file-search-active-on-label">
+                                Active on:
+                            </label>
+                            <input id="singlePromotionProductFileEditorPromotionFileValidOnInput"
+                                type="date" class="file-search-active-on-input" placeholder="Date" />
 
-                        <div class="file-search-button-container">
+                            <input id="singlePromotionProductFileEditorPromotionFileSearchInput" type="text" class="file-search-text-input"
+                                placeholder="Search..." aria-label="Search"/>
 
-                            <button id="singlePromotionProductFileEditorSearchButton" type="button" class="btn btn-info">
-                                Search
-                            </button>
+                            <div class="file-search-button-container">
+
+                                <button id="singlePromotionProductFileEditorSearchButton" type="button" class="btn btn-info">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="singlePromotionProductFileEditorPromotionFileListContainer" class="file-search-list-container">
                         </div>
                     </div>
-
-                    <div id="singlePromotionProductFileEditorPromotionFileListContainer" class="file-search-list-container">
-                    </div>
-                </div>
+                } 
             </div>
         </div>
     </ChildContent>
 </Popup>
 
 @code {
+    public sealed class PromotionProductFileInfoReadonlyData
+    {
+        public required int Id { get; set; }
+        public required PromotionFileInfo PromotionFile { get; set; }
+        public DateTime? ValidFrom { get; set; }
+        public DateTime? ValidTo { get; set; }
+        public bool Active { get; set; } = false;
+        public required string CreateUserName { get; set; }
+        public required DateTime CreateDate { get; set; }
+        public required string? LastUpdateUserName { get; set; }
+        public required DateTime LastUpdateDate { get; set; }
+        public required bool IsInImage { get; set; }
+    }
+
     public sealed class PromotionProductFileInfoEditData
     {
         public required string EditorId { get; set; }
@@ -135,14 +221,14 @@
         public string? LastUpdateUserName { get; set; }
         public DateTime? LastUpdateDate { get; set; }
         public bool IsInImage { get; set; } = true;
+        public string SaveButtonText { get; set; } = "Save";
     }
 
     [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
 
     [Parameter] public bool IsVisible { get; set; }
 
-    [Parameter] public required PromotionProductFileInfoEditData PopupData { get; set; }
+    [Parameter] public required OneOf<PromotionProductFileInfoReadonlyData, PromotionProductFileInfoEditData> PopupData { get; set; }
 
-    [Parameter] public bool ShouldDisplaySaveButton { get; set; } = true;
-    [Parameter] public string SaveButtonText { get; set; } = "Save";
+    private bool _isReadonly => PopupData.IsT0;
 }

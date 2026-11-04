@@ -23,7 +23,7 @@ internal sealed class AddOrUpdateImageFileAsyncOperation : IRollbackableOperatio
     private readonly string _fullFileName;
     private readonly byte[] _imageData;
 
-    private bool _succeeded = false;
+    private bool _destinationMayHaveChanged = false;
     private bool _operationWasUpdate;
     private byte[]? _oldImageData;
 
@@ -50,34 +50,16 @@ internal sealed class AddOrUpdateImageFileAsyncOperation : IRollbackableOperatio
             });
         }
 
-        using MemoryStream memoryStream = new(_imageData);
+        _destinationMayHaveChanged = true;
 
-        try
-        {
-            using Image image = await Image.LoadAsync(memoryStream);
+        await File.WriteAllBytesAsync(filePath, _imageData);
 
-            await image.SaveAsync(filePath);
-
-            _succeeded = true;
-
-            return new Success();
-        }
-        catch (UnknownImageFormatException)
-        {
-            return FileSaveFailureResult.FromUnsupportedContentType(new()
-            {
-                ContentType = contentType,
-            });
-        }
-        catch (InvalidImageContentException)
-        {
-            return FileSaveFailureResult.FromInvalidContent(new());
-        }
+        return new Success();
     }
 
     public void Rollback()
     {
-        if (!_succeeded) return;
+        if (!_destinationMayHaveChanged) return;
 
         string filePath = Path.Combine(_imageDirectoryPath, _fullFileName);
 

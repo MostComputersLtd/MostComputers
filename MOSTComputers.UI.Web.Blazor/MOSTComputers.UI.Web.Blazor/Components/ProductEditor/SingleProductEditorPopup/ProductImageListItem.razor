@@ -1,51 +1,29 @@
+@using System.Text.Json.Serialization
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
-@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion;
 
 @{
-    ProductImageListItemDisplayData listItemData = ItemData;
-
-    BrowserFileData? browserFile = listItemData.UploadedImageFileData;
-    ProductImageDisplayData? relatedImage = listItemData.RelatedImage;
-    ProductImageFileDisplayData? relatedImageFile = listItemData.RelatedImageFile;
-    PromotionProductFileInfoDisplayData? relatedPromotionFile = RelatedPromotionFileData;
-
-    string? imageDataRoute = listItemData.ImageFileUrl; 
-
-    int index = listItemData.Index;
-    string elementIndex = index.ToString();
+    string imageDataUrl = $"{ProductImageDataEndpoints.EndpointGroupRoute}/{ItemData.Id}";
 }
 
-<li id="@listItemData.EditorId"
+<li id="@ItemData.EditorId"
     name="productImageItem"
     class="image-list-item"
-    draggable="true">
+    draggable="true"
+    data-image-type="@ItemType"
+    data-image-id="@ItemData.Id">
 
-    @if (listItemData.ImageFileUrl is not null)
-    {
-        <button name="productImageButton" aria-label="Image #@(index)" class="btn image-button"
-            data-image-url="@listItemData.ImageFileUrl"
-            style="background-image: url('@listItemData.ImageFileUrl');">
-        </button>
-    }
-    else
-    {
-        <button name="productImageButton" aria-label="Image #@(index)" class="btn image-button without-image">
-        </button>
-    }
+    <button name="productImageButton" aria-label="Image #@(ItemData.Index)" class="btn image-button"
+        data-image-url="@imageDataUrl"
+        style="background-image: url('@imageDataUrl');">
+    </button>
 
-    @if (browserFile is not null)
-    {
-        <p class="align-text-center">
-            @($"{GetByteSizeString((ulong)browserFile.FileSize, ByteSizeStringAccuracy.WithGivenScalesDown(1))} ({browserFile.ImageSize.WidthPixels} X {browserFile.ImageSize.HeightPixels} px)")
-        </p>
-    }
-
-    @if (relatedImageFile is not null)
+    @if (ItemData.RelatedImageFile != null)
     {
         <div class="image-active-checkbox-container">
-            <input id="imageActiveCheckbox-@index" name="imageFileActiveCheckbox"
-                checked="@relatedImageFile.Active" type="checkbox"
+            <input id="imageActiveCheckbox-@ItemData.Index" name="imageFileActiveCheckbox"
+                checked="@ItemData.RelatedImageFile.Active" type="checkbox"
                 class="image-active-checkbox"
                 aria-label="Toggle image active" />
         </div>
@@ -57,13 +35,13 @@
     </div>
 
     <div>
-        @if (relatedImage?.DateModified is not null)
+        @if (ItemData.DateModified != null)
         {
             <p class="image-date-text">
-                @relatedImage.DateModified.Value.ToString("MM.dd.yyyy")
+                @ItemData.DateModified.Value.ToString("MM.dd.yyyy")
             </p>
         }
-        else if (browserFile is null)
+        else
         {
             <p class="image-date-text">
                 No date provided
@@ -71,37 +49,23 @@
         }
     </div>
 
-    @if (relatedPromotionFile?.FileInfoFileName is not null)
+    <p class="file-empty-placeholder"></p>
+
+    @if (ItemData.RelatedImageFile?.FileName != null)
     {
-        string promotionFileDataRoute = $"/api/images/promotionFileData/{relatedPromotionFile.FileInfoFileName}";
+        string imageFileUrl = $"/api/images/imageFileData/{ItemData.RelatedImageFile.FileName}";
 
-        <div class="promotion-product-file-name-container">
+        string? imageDisplayOrderString = null;
 
-            <p class="promotion-product-file-name-text">Promo:</p>
-
-            <a href="@promotionFileDataRoute" target="_blank" rel="noopener noreferrer" class="promotion-product-file-name">
-                @(relatedPromotionFile.FileInfoName ?? relatedPromotionFile.FileInfoFileName)
-            </a>
-        </div>
-    }
-    else
-    {
-        <p class="file-empty-placeholder"></p>
-    }
-
-    @if (relatedImageFile?.FileName is not null)
-    {
-        string imageFileDataRoute = $"/api/images/imageFileData/{relatedImageFile.FileName}";
-
-        string? imageDisplayOrderString = (relatedImageFile.DisplayOrder is not null)
-            ? $"{relatedImageFile.DisplayOrder}: "
-            : null;
-
-        string imageFileDisplayData = imageDisplayOrderString + relatedImageFile.FileName;
+        if (ItemData.RelatedImageFile.DisplayOrder != null)
+        {
+            imageDisplayOrderString = $"{ItemData.RelatedImageFile.DisplayOrder}: ";
+        }
 
         <div class="image-file-name-container">
-            <a href="@imageFileDataRoute" target="_blank" rel="noopener noreferrer" class="image-file-name">
-                @imageFileDisplayData
+            <a href="@imageFileUrl" target="_blank" rel="noopener noreferrer" class="image-file-name">
+                <span name="imageFileDisplayOrderText">@imageDisplayOrderString</span>
+                @ItemData.RelatedImageFile.FileName
             </a>
         </div>
     }
@@ -110,21 +74,41 @@
         <p class="file-empty-placeholder"></p>
     }
 
-    @if (listItemData.ValidationMessages.Count > 0)
-    {
-        <ValidationMessages Messages="listItemData.ValidationMessages" />
-    }
-
-    @if (JsonData != null)
-    {
-        <script name="productImageItemData" type="application/json">
-            @JsonData
-        </script>
-    }
+    <ValidationMessages Messages="ItemData.ValidationMessages" />
 </li>
 
 @code{
-    [Parameter, EditorRequired] public required ProductImageListItemDisplayData ItemData { get; set; }
-    [Parameter] public PromotionProductFileInfoDisplayData? RelatedPromotionFileData { get; set; }
-    [Parameter] public string? JsonData { get; set; } = null;
+    public sealed class ProductImageListItemData : ProductImageListItemBase
+    {
+        public required int Index { get; set; }
+        public required int Id { get; set; }
+        public DateTime? DateModified { get; set; }
+        public ProductImageItemFileDisplayData? RelatedImageFile { get; set; }
+        public List<string> ValidationMessages { get; set; } = new();
+    }
+
+    public sealed class ProductImageItemFileDisplayData
+    {
+        public required int Id { get; set; }
+        public required string FileName { get; set; }
+        public int? DisplayOrder { get; set; }
+        public bool Active { get; set; }
+    }
+
+    public sealed class ProductImageItemRecoveryJsonData : ProductImageRecoveryJsonDataBase
+    {
+        public sealed override string ItemType => ProductImageListItem.ItemType;
+
+        [JsonPropertyName("id")] public required int Id { get; set; }
+        [JsonPropertyName("relatedImageFile")] public ProductImageItemFileRecoveryJsonData? RelatedImageFile { get; set; }
+    }
+
+    public sealed class ProductImageItemFileRecoveryJsonData
+    {
+        [JsonPropertyName("active")] public required bool Active { get; set; }
+    }
+
+    internal const string ItemType = "image";
+
+    [Parameter, EditorRequired] public required ProductImageListItemData ItemData { get; set; }
 }

@@ -1,0 +1,13 @@
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.ProductEditor2
+
+@for (int i = 0; i < ProductDatas.Count; i++)
+{
+    ProductEditorProductData productData = ProductDatas[i];
+
+    <ProductEditorTableItem ItemData="productData"/>
+}
+
+@code{
+
+    [Parameter, EditorRequired] public required List<ProductEditorProductData> ProductDatas { get; set; } = [];
+}

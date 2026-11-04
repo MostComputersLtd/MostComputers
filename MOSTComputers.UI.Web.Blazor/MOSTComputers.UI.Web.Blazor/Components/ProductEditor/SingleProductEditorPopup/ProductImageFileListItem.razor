@@ -1,0 +1,72 @@
+@using System.Text.Json.Serialization
+@using MOSTComputers.UI.Web.Blazor.Endpoints.Images
+@using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
+
+@{
+    string fileUrl = $"{ProductImageFileDataEndpoints.EndpointGroupRoute}/{ItemData.FileName}";
+
+    string? imageDisplayOrderString = null;
+
+    if (ItemData.DisplayOrder != null)
+    {
+        imageDisplayOrderString = $"{ItemData.DisplayOrder}: ";
+    }
+}
+
+<li id="@ItemData.EditorId"
+    name="productImageItem"
+    class="image-list-item"
+    draggable="true"
+    data-image-type="@ItemType"
+    data-image-file-id="@ItemData.Id">
+
+    <button name="productImageButton" aria-label="Image #@(ItemData.Index)" class="btn image-button"
+        data-image-url="@fileUrl"
+        style="background-image: url('@fileUrl');">
+    </button>
+
+    <div class="image-active-checkbox-container">
+        <input id="imageActiveCheckbox-@ItemData.Index" name="imageFileActiveCheckbox"
+            checked="@ItemData.Active" type="checkbox"
+            class="image-active-checkbox"
+            aria-label="Toggle image active" />
+    </div>
+
+    <div class="image-delete-button-container">
+        <button name="productImageDeleteButton" type="button" class="btn-close image-delete-button"
+            aria-label="Delete"/>
+    </div>
+
+    <p class="file-empty-placeholder"></p>
+    <p class="file-empty-placeholder"></p>
+
+    <div class="image-file-name-container">
+        <a href="@fileUrl" target="_blank" rel="noopener noreferrer" class="image-file-name">
+            <span name="imageFileDisplayOrderText">@imageDisplayOrderString</span>
+            @ItemData.FileName
+        </a>
+    </div>
+</li>
+
+@code{
+    public sealed class ProductImageFileItemData : ProductImageListItemBase
+    {
+        public required int Index { get; set; }
+        public required int Id { get; set; }
+        public required string FileName { get; set; }
+        public int? DisplayOrder { get; set; }
+        public bool Active { get; set; }
+    }
+
+    public sealed class ProductImageFileItemRecoveryJsonData : ProductImageRecoveryJsonDataBase
+    {
+        public sealed override string ItemType => ProductImageFileListItem.ItemType;
+
+        [JsonPropertyName("id")] public required int Id { get; set; }
+        [JsonPropertyName("active")] public required bool Active { get; set; }
+    }
+
+    internal const string ItemType = "imageFile";
+
+    [Parameter, EditorRequired] public required ProductImageFileItemData ItemData { get; set; }
+}

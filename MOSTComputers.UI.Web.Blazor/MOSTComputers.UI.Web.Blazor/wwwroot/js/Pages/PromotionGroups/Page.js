@@ -74,6 +74,8 @@ function getGroupPromotionSearchOptionsFromCurrentData() {
 
 function openGroupPromotionEditorPopup() {
     promotionEditor.openPromotionEditorForPromotion(null);
+
+    deselectAllListItems();
 }
 
 function openPromotionGroupEditorPopup() {
@@ -86,5 +88,22 @@ function openPromotionGroupEditorPopupFromListItem(promotionListItem) {
 
     const promotionId = common.getIntegerOrNullFromString(promotionIdAttribute);
 
-    promotionEditor.openPromotionEditorForPromotion(promotionId);
+    promotionEditor.openPromotionEditorForPromotion(promotionId); 
+
+    deselectAllListItems();
+
+    promotionListItem.classList.add(common.promotionListItemSelectedClass);
+}
+
+function deselectAllListItems() {
+
+    const promotionListContainer = document.getElementById(common.promotionListContainerId);
+
+    const selectedPromotionListItems = [...promotionListContainer.querySelectorAll(
+        `.${common.promotionListItemSelectedClass}[name='${common.promotionListItemsName}']`)];
+
+    for (const selectedPromotionListItem of selectedPromotionListItems) {
+
+        selectedPromotionListItem.classList.remove(common.promotionListItemSelectedClass);
+    }
 }

@@ -90,17 +90,25 @@ internal static class SingleProductEditorDocumentComponentEndpoints
             return Results.BadRequest("Missing or invalid file");
         }
 
-        ProductDocumentDisplayData productDocumentDisplayData = new()
+        string editorId = GenerateDocumentIdForNewDocument();
+
+        ProductDocumentListItem.ProductDocumentDisplayData productDocumentDisplayData = new()
         {
-            EditorId = GenerateDocumentIdForNewDocument(),
+            EditorId = editorId,
             Index = index,
             BrowserFilePath = previewUrl,
             ExistingDocument = null,
             CurrentDescription = string.Empty,
-            FileExtension = ".pdf",
         };
 
-        string parametersJsonData = JsonSerializer.Serialize(productDocumentDisplayData, _jsonDataOptions);
+        ProductDocumentListItem.ProductDocumentRecoveryJsonData productDocumentRecoveryJsonData = new()
+        {
+            EditorId = editorId,
+            UploadedFileUrl = previewUrl,
+            Description = string.Empty,
+        };
+
+        string parametersJsonData = JsonSerializer.Serialize(productDocumentRecoveryJsonData, _jsonDataOptions);
 
         return new RazorComponentResult<ProductDocumentListItem>(new
         {

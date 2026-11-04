@@ -15,11 +15,12 @@ internal sealed class UpdatePromotionFileRequestValidator : AbstractValidator<Up
             .GreaterThan(x => x.ValidFrom)
             .When(x => x.ValidFrom != null && x.ValidTo != null);
 
-        RuleFor(x => x.NewFileData!.FileName).NotNullOrWhiteSpace().MaximumLength(FileNameMaxLength)
-            .When(x => x.NewFileData is not null);
-
-        RuleFor(x => x.NewFileData!.Data).NotNull().NotEmpty()
-            .When(x => x.NewFileData is not null);
+        When(x => x.NewFileData != null, () =>
+        {
+            RuleFor(x => x.NewFileData!.FileName).NotNullOrWhiteSpace().MaximumLength(FileNameMaxLength);
+            RuleFor(x => x.NewFileData!.ContentType).NotNullOrWhiteSpace().MaximumLength(ContentTypeMaxLength);
+            RuleFor(x => x.NewFileData!.Data).NotNull().NotEmpty();
+        });
 
         RuleFor(x => x.Description).NotEmptyOrWhiteSpace().MaximumLength(DescriptionMaxLength);
         RuleFor(x => x.RelatedProductsString).NotEmptyOrWhiteSpace().MaximumLength(RelatedProductsStringMaxLength);

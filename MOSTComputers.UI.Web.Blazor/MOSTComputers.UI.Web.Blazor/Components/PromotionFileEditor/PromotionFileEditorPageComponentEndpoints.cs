@@ -208,6 +208,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
             ValidFrom = promotionFileInfo.ValidFrom,
             ValidTo = promotionFileInfo.ValidTo,
             FileName = promotionFileInfo.FileName,
+            ContentType = promotionFileInfo.ContentType,
             Description = promotionFileInfo.Description,
             RelatedProductsString = promotionFileInfo.RelatedProductsString,
             CreateUserName = promotionFileInfo.CreateUserName,
@@ -295,9 +296,11 @@ internal static class PromotionFileEditorPageComponentEndpoints
 
         string? newFileName = fileName;
 
+        string fileExtension = Path.GetExtension(fileName);
+
         if (!string.IsNullOrWhiteSpace(preferredNameWithoutExtension))
         {
-            newFileName = preferredNameWithoutExtension + Path.GetExtension(fileName);
+            newFileName = preferredNameWithoutExtension + fileExtension;
         }
 
         byte[] fileData = await GetFileDataFromBrowserFileAsync(selectedFileData);
@@ -314,6 +317,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
             ValidFrom = validFrom,
             ValidTo = validTo,
             FileName = newFileName,
+            ContentType = selectedFileData.ContentType,
             Description = description,
             RelatedProductsString = relatedProductsString,
             CreateUserName = currentUserName,
@@ -407,7 +411,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
 
         string currentUserName = httpContext.User.Identity?.Name!;
 
-        FileData? newFileData = null;
+        PromotionFileData? newFileData = null;
 
         if (selectedFileData is not null)
         {
@@ -423,6 +427,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
             newFileData = new()
             {
                 FileName = newFileName[1..],
+                ContentType = selectedFileData.ContentType,
                 Data = fileData,
             };
         }
@@ -430,7 +435,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
         {
             using Stream? promotionFileDataStream = await promotionFileService.GetFileDataByIdAsync(existingPromotionFileId);
 
-            if (promotionFileDataStream is null)
+            if (promotionFileDataStream == null)
             {
                 return Results.Problem(
                     statusCode: StatusCodes.Status500InternalServerError,
@@ -446,6 +451,7 @@ internal static class PromotionFileEditorPageComponentEndpoints
             newFileData = new()
             {
                 FileName = preferredNameWithoutExtension + Path.GetExtension(promotionFile.FileName),
+                ContentType = promotionFile.ContentType,
                 Data = fileData,
             };
         }

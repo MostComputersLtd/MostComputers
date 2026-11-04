@@ -1,5 +1,4 @@
 ﻿@using MOSTComputers.Models.Product.Models;
-@using MOSTComputers.Models.Product.Models.Promotions.Groups
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home
 
@@ -20,9 +19,10 @@
     </HeaderContent>
 
     <ChildContent>
-		<div class="group-promotion-display-container">
-			<MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
-			</MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
+        <div class="group-promotion-display-container">
+            <MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay
+                DisplayedGroupId="@PromotionGroupPromotionPopupData.PromotionGroupIdToDisplay">
+            </MOSTComputers.UI.Web.Blazor.Components.Promotions.GroupPromotionsDisplay>
         </div>
 
     </ChildContent>

@@ -1,4 +1,5 @@
 ﻿using FluentValidation.Results;
+using Microsoft.Extensions.DependencyInjection;
 using MOSTComputers.Models.FileManagement.Models;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Models.Product.Models.Validation;
@@ -6,9 +7,9 @@ using MOSTComputers.Services.DataAccess.Products.DataAccess.Promotions.Groups.Co
 using MOSTComputers.Services.DataAccess.Products.Models.Requests.Promotions.Groups;
 using MOSTComputers.Services.DataAccess.Products.Models.Responses.Promotions.GroupPromotionImages;
 using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionGroups;
-using MOSTComputers.Services.ProductRegister.Models.Responses;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
+using MOSTComputers.Services.PromotionFileManagement.Configuration;
 using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
 using MOSTComputers.Utils.OneOf;
 using OneOf;
@@ -19,18 +20,18 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 {
     public GroupPromotionImageFileService(
         IGroupPromotionImageFileDataService groupPromotionImageFileDataService,
-        IGroupPromotionFileManagementService groupPromotionFileManagementService,
+        [FromKeyedServices(ConfigureServices.GroupPromotionFileManagerKey)] ILocalFileManagementService fileManagementService,
         IGroupPromotionImagesRepository groupPromotionImagesRepository,
         ITransactionExecuteService transactionExecuteService)
     {
         _groupPromotionImageFileDataService = groupPromotionImageFileDataService;
-        _groupPromotionFileManagementService = groupPromotionFileManagementService;
+        _fileManagementService = fileManagementService;
         _groupPromotionImagesRepository = groupPromotionImagesRepository;
         _transactionExecuteService = transactionExecuteService;
     }
 
     private readonly IGroupPromotionImageFileDataService _groupPromotionImageFileDataService;
-    private readonly IGroupPromotionFileManagementService _groupPromotionFileManagementService;
+    private readonly ILocalFileManagementService _fileManagementService;
     private readonly IGroupPromotionImagesRepository _groupPromotionImagesRepository;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
@@ -51,7 +52,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 
     public Stream? GetFileStream(GroupPromotionImageFileData imageFile)
     {
-        return _groupPromotionFileManagementService.GetFileStream(imageFile.FileName);
+        return _fileManagementService.GetFileStream(imageFile.FileName);
     }
 
     public async Task<GroupPromotionImageFileData?> GetByImageIdAsync(int imageId)
@@ -79,7 +80,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 
         if (image?.Image is null) return new UnexpectedFailureResult();
 
-        OneOf<Success, FileAlreadyExistsResult> imageFileCreateResult = await _groupPromotionFileManagementService.AddFileAsync(createRequest.FileName, image.Image);
+        OneOf<Success, FileAlreadyExistsResult> imageFileCreateResult = await _fileManagementService.AddFileAsync(createRequest.FileName, image.Image);
 
         return imageFileCreateResult.Match<OneOf<int, ValidationResult, ImageFileAlreadyExistsResult, UnexpectedFailureResult>>(
             success => result.AsT0,
@@ -107,7 +108,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
             Console.WriteLine($"IN THE UPDATE FILE SECTION {updateRequest.FileName}, {updateRequest.ContentType}, {updateRequest.Image.Length}");
 
             OneOf<Success, FileDoesntExistResult> updateFileResult
-                = await _groupPromotionFileManagementService.UpdateFileAsync(updateRequest.FileName, updateRequest.Image);
+                = await _fileManagementService.UpdateFileAsync(updateRequest.FileName, updateRequest.Image);
 
             if (!updateFileResult.IsT0)
             {
@@ -135,7 +136,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
         }
 
         OneOf<Success, FileDoesntExistResult> deleteFileResult
-            = _groupPromotionFileManagementService.DeleteFile(existingImageFileData.FileName);
+            = _fileManagementService.DeleteFile(existingImageFileData.FileName);
 
         if (!deleteFileResult.IsT0)
         {
@@ -143,7 +144,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
         }
 
         OneOf<Success, FileAlreadyExistsResult> createFileResult
-            = await _groupPromotionFileManagementService.AddFileAsync(updateRequest.FileName, updateRequest.Image);
+            = await _fileManagementService.AddFileAsync(updateRequest.FileName, updateRequest.Image);
 
         return createFileResult.Map<Success, NotFound, ValidationResult, FileDoesntExistResult, FileAlreadyExistsResult>();
     }
@@ -166,7 +167,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 
         if (!deleteResult) return new NotFound();
 
-        OneOf<Success, FileDoesntExistResult> deleteFile = _groupPromotionFileManagementService.DeleteFile(existingImageFileData.FileName);
+        OneOf<Success, FileDoesntExistResult> deleteFile = _fileManagementService.DeleteFile(existingImageFileData.FileName);
 
         return deleteFile.Map<Success, NotFound, FileDoesntExistResult>();
     }
@@ -188,7 +189,7 @@ public sealed class GroupPromotionImageFileService : IGroupPromotionImageFileSer
 
         if (!deleteResult) return new NotFound();
 
-        OneOf<Success, FileDoesntExistResult> deleteFile = _groupPromotionFileManagementService.DeleteFile(existingImageFileData.FileName);
+        OneOf<Success, FileDoesntExistResult> deleteFile = _fileManagementService.DeleteFile(existingImageFileData.FileName);
 
         return deleteFile.Map<Success, NotFound, FileDoesntExistResult>();
     }

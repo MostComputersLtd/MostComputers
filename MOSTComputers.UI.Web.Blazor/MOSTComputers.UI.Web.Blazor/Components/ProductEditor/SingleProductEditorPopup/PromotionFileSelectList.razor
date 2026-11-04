@@ -17,7 +17,8 @@
         <li class="promotion-file-list-item @selectedListItemClassName"
             data-promotion-file-id="@promotionFileInfoListItem.PromotionFile.Id"
             data-promotion-file-name="@promotionFileInfoListItem.PromotionFile.Name"
-            data-promotion-file-file-name="@promotionFileInfoListItem.PromotionFile.FileName">
+            data-promotion-file-file-name="@promotionFileInfoListItem.PromotionFile.FileName"
+            data-promotion-file-content-type="@promotionFileInfoListItem.PromotionFile.ContentType">
 
             <div class="col-2 pe-2">
                 <p>@promotionFileInfoListItem.PromotionFile.Id</p>
@@ -27,7 +28,7 @@
             </div>
             <div class="col-6 pe-2 promotion-file-data-entry">
                 <div class="promotion-file-data-container">
-                    <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfoListItem.PromotionFile.FileName)"
+                    <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(promotionFileInfoListItem.PromotionFile.FileName, promotionFileInfoListItem.PromotionFile.ContentType)"
                         class="promotion-file" />
                 </div>
             </div>
@@ -39,7 +40,6 @@
     public sealed class PromotionFileInfoListItem
     {
         public required PromotionFileInfo PromotionFile { get; set; }
-
         public bool IsSelected { get; set; } = false;
     }
 

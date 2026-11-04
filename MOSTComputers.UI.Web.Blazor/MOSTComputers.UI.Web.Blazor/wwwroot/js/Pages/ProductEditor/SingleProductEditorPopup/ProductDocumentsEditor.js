@@ -15,11 +15,14 @@ const productDocumentDataName = "productDocumentItemData";
 const productDocumentShowPopupButtonProductIdAttribute = "data-product-id";
 const productDocumentShowPopupButtonBrowserFileUrlAttribute = "data-browser-file-url";
 const productDocumentSaveUrlButtonDocumentIdAttribute = "data-document-id";
+const productDocumentSaveUrlButtonDocumentUrlAttribute = "data-document-url";
 
 const fileFormFieldName = "previewUrl";
 const filePreviewUrlFormFieldName = "previewUrl";
 const fileIndexFormFieldName = "index";
 const fileProductIdFormFieldName = "productId";
+
+const uploadedFiles = new Map();
 
 export function initEvents(dialogElement) {
 
@@ -53,6 +56,69 @@ function initProductDocumentItemEvents(productDocumentItem) {
     productDocumentRemoveButton.addEventListener("click", onRemoveButtonClicked);
 }
 
+function getProductDocumentItems() {
+
+    return [...dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`)];
+}
+
+export function getProductDocumentRequests() {
+
+    const productDocumentItems = dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`);
+
+    const itemDatas = [];
+
+    for (const productDocumentItem of productDocumentItems) {
+
+        const data = getProductDocumentItemRequest(productDocumentItem);
+
+        itemDatas.push(data);
+    }
+
+    return itemDatas;
+}
+
+function getProductDocumentItemRequest(item) {
+
+    const productDocumentDescription = item.querySelector(`[name='${productDocumentDescriptionName}']`);
+
+    const productDocumentSaveUrlButton = item.querySelector(`[name='${productDocumentSaveUrlButtonName}']`);
+
+    const response = {
+        description: productDocumentDescription.value,
+    }
+
+    if (productDocumentSaveUrlButton) {
+
+        const id = productDocumentSaveUrlButton.getAttribute(productDocumentSaveUrlButtonDocumentIdAttribute);
+
+        response.id = id;
+
+        return response;
+    }
+
+    response.editorId = item.id,
+    response.file = uploadedFiles.get(item.id);
+
+    return response;
+}
+
+export function clearObjectUrls() {
+
+    const productDocumentItems = dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`);
+
+    for (const productDocumentItem of productDocumentItems) {
+
+        if (uploadedFiles.productDocuments.has(productDocumentItem.id)) {
+
+            const productDocumentShowPopupButton = productDocumentItem.querySelector(`[name='${productDocumentShowPopupButtonName}']`);
+
+            const browserFileUrl = productDocumentShowPopupButton.getAttribute(productDocumentShowPopupButtonBrowserFileUrlAttribute);
+
+            URL.revokeObjectURL(browserFileUrl);
+        }
+    }
+}
+
 export async function addFileToProductDocumentsAsync(blob) {
 
     if (blob.size === 0) {
@@ -67,13 +133,13 @@ export async function addFileToProductDocumentsAsync(blob) {
 
     const previewUrl = URL.createObjectURL(blob);
 
-    const dataStoreData = dataStore.loadData();
+    const productDocumentItems = getProductDocumentItems();
 
     const formData = new FormData();
 
     formData.append(fileFormFieldName, blob);
     formData.append(filePreviewUrlFormFieldName, previewUrl);
-    formData.append(fileIndexFormFieldName, dataStoreData.productDocuments.length);
+    formData.append(fileIndexFormFieldName, productDocumentItems.length);
     formData.append(fileProductIdFormFieldName, productId);
 
     const url = "api/components/productEditor/single/productDocument/add";
@@ -128,7 +194,9 @@ function addNewProductDocumentFromElementHtml(productDocumentHtml) {
 
     initProductDocumentItemEvents(productDocumentItem);
 
-    const success = dataStore.addProductDocumentAndSave(jsonData.editorId, jsonData, file);
+    const success = dataStore.addProductDocumentAndSave(jsonData.editorId, jsonData);
+
+    uploadedFiles.set(jsonData.editorId, file);
 
     editorChanges.setDocumentChanged(jsonData.editorId, editorChanges.ItemChangeState.Added);
 
@@ -188,9 +256,7 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
 
 async function onSaveUrlButtonClickAsync(e) {
 
-    const documentId = e.currentTarget.getAttribute(productDocumentSaveUrlButtonDocumentIdAttribute);
-
-    const documentUrl = `${location.origin}/api/documents/product/${documentId}`;
+    const documentUrl = e.currentTarget.getAttribute(productDocumentSaveUrlButtonDocumentUrlAttribute);
 
     await navigator.clipboard.writeText(documentUrl);
 }

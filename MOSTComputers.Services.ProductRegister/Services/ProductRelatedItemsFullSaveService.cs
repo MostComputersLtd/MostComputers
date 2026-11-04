@@ -52,7 +52,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         IProductImageCrudService productImageCrudService,
         IProductImageAndFileService productImageAndFileService,
         IProductImageFileService productImageFileService,
-        IProductImageFileManagementService productImageFileManagementService,
         IPromotionFileService promotionFileService,
         IPromotionProductFileService promotionProductFileService,
         IPromotionProductFileInfoService promotionProductFileInfoService,
@@ -75,7 +74,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
         _productImageCrudService = productImageCrudService;
         _productImageAndFileService = productImageAndFileService;
         _productImageFileService = productImageFileService;
-        _productImageFileManagementService = productImageFileManagementService;
         _promotionFileService = promotionFileService;
         _promotionProductFileService = promotionProductFileService;
         _promotionProductFileInfoService = promotionProductFileInfoService;
@@ -114,7 +112,6 @@ internal class ProductRelatedItemsFullSaveService : IProductRelatedItemsFullSave
     private readonly IProductImageCrudService _productImageCrudService;
     private readonly IProductImageAndFileService _productImageAndFileService;
     private readonly IProductImageFileService _productImageFileService;
-    private readonly IProductImageFileManagementService _productImageFileManagementService;
     private readonly IPromotionFileService _promotionFileService;
     private readonly IPromotionProductFileService _promotionProductFileService;
     private readonly IPromotionProductFileInfoService _promotionProductFileInfoService;

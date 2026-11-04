@@ -628,20 +628,23 @@ async function openProductDataDialogWithData(productId) {
 
     const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
 
-    requestAnimationFrame(function ()
-    {
-        resizeHtmlContentInCarousel(productDataDialogCarousel)
+    if (productDataDialogCarousel) {
 
-        startAutoSlide(true, productDataDialogCarouselId);
+        requestAnimationFrame(function ()
+        {
+            resizeHtmlContentInCarousel(productDataDialogCarousel)
 
-        productDataDialog.addEventListener("close", function () {
-            stopAutoSlide(productDataDialogCarouselId);
+            startAutoSlide(true, productDataDialogCarouselId);
+
+            productDataDialog.addEventListener("close", function () {
+                stopAutoSlide(productDataDialogCarouselId);
+            });
+
+            productDataDialog.addEventListener("cancel", function () {
+                stopAutoSlide(productDataDialogCarouselId);
+            });
         });
-
-        productDataDialog.addEventListener("cancel", function () {
-            stopAutoSlide(productDataDialogCarouselId);
-        });
-    });
+    }
 
     productDataDialog.showModal();
 }

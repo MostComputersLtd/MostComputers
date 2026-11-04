@@ -28,6 +28,7 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Property
 @using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Xml
+@using MOSTComputers.UI.Web.Blazor.Components.ProductEditor
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using MOSTComputers.UI.Web.Blazor.Services.ExternalXmlImport.Contracts
 @using MOSTComputers.UI.Web.Blazor.Services.ProductEditor
@@ -77,11 +78,11 @@
         <ul class="header-list">
 
             <li class="header-list-item">
-                <select id="productNewStatusSelect" @bind="SelectedProductNewStatus">
+                <select id="productNewStatusSelect">
 
                     <option value="">All</option>
 
-                    @foreach (ProductEditorProductNewStatusSearchOptions productNewStatus in ProductNewStatusesInSelect)
+                    @foreach (ProductEditorProductNewStatusSearchOptions productNewStatus in _productNewStatusesInSelect)
                     {
                         <option value="@((int)productNewStatus)">
                             @GetStringFromProductEditorNewStatusSearchOptions(productNewStatus)
@@ -91,25 +92,24 @@
             </li>
 
             <li class="header-list-item header-user-input-list-item">
-                <input id="userInput" type="text" class="user-input" placeholder="Search..." @bind="UserInputString" />
+                <input id="userInput" type="text" class="user-input" placeholder="Search..." />
             </li>
 
             <li class="header-list-item header-search-button-list-item">
                 <button id="productEditorSearchButton" type="button"
-                    class="btn btn-outline-primary search-button"
-                    @onclick="@SearchProductsAsync">
-                    Search
+                    class="btn btn-outline-primary search-button button-with-loader">
+                    <p>Search</p>
+                    <div class="round-loader-default"></div>
                 </button>
 
-                <div id="productEditorSearchLoader" class="round-loader-default" style="display: none;"></div>
             </li>
 
             <li class="header-list-item">
-                <select id="categorySelect" value="@SelectedCategoryId" @onchange="OnChangeCategorySelectAsync">
+                <select id="categorySelect"> 
 
                     <option value="">All</option>
 
-                    @foreach (Category category in CategoriesInSelect)
+                    @foreach (Category category in _categoriesInSelect)
                     {
                         <option value="@category.Id">@category.Description</option>
                     }
@@ -117,11 +117,11 @@
             </li>
 
             <li class="header-list-item">
-                <select id="manufacturerSelect" class="manufacturer-select" @bind="SelectedManufacturerId" @key="_manufacturerSelectKey">
+                <select id="manufacturerSelect" class="manufacturer-select">
 
-                    <option value="-1">All</option>
+                    <option value="-1" data-default-option>All</option>
 
-                    @foreach (Manufacturer manufacturer in ManufacturersInSelect)
+                    @foreach (Manufacturer manufacturer in _manufacturersInSelect)
                     {
                         <option value="@manufacturer.Id">@manufacturer.RealCompanyName</option>
                     }
@@ -129,23 +129,25 @@
             </li>
 
             <li class="header-list-item">
-                <select id="productStatusSelect" @bind="SelectedProductStatus">
+                <select id="productStatusSelect" value="@_selectedProductStatus">
 
                     <option value="">All</option>
 
-                    @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
+                    @foreach (ProductStatusSearchOptions productStatus in _productStatusesInSelect)
                     {
-                        <option value="@((int)productStatus)">@GetStringFromProductStatusSearchOptions(productStatus)</option>
+                        <option value="@((int)productStatus)">
+                            @GetStringFromProductStatusSearchOptions(productStatus)
+                        </option>
                     }
                 </select>
             </li>
 
             <li class="header-list-item">
-                <select id="promotionStatusSelect" @bind="SelectedPromotionSearchOptions">
+                <select id="promotionStatusSelect" value="@_defaultPromotionSearchOptions">
 
                     <option value="">All</option>
 
-                    @foreach (PromotionSearchOptions promotionSearchOptions in PromotionSearchOptionsInSelect)
+                    @foreach (PromotionSearchOptions promotionSearchOptions in _promotionSearchOptionsInSelect)
                     {
                         <option value="@((int)promotionSearchOptions)">
                             @GetStringFromPromotionSearchOptions(promotionSearchOptions)
@@ -155,16 +157,16 @@
             </li>
 
             <li class="header-list-item">
-                <select id="resultsCountSelect" @bind="SelectedResultCount">
+                <select id="resultsCountSelect" value="@_defaultResultCount">
 
-                    @foreach (int resultCount in ResultCountsInSelect)
+                    @foreach (int resultCount in _resultCountsInSelect)
                     {
                         <option value="@resultCount">
                             @resultCount
                         </option>
                     }
 
-                    <option value="@_allResultCount">
+                    <option value="@_maxProductSearchResultCount">
                         All
                     </option>
                 </select>
@@ -172,20 +174,29 @@
         </ul>
     </header>
 
-    <div class="product-data-table-scrollable-container">
+    <div id="productEditorItemsTable" class="product-data-table-scrollable-container">
         <table class="product-data-table table-with-small-horizontal-padding-on-cells">
             <thead class="product-data-table-head">
                 <tr>
-                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByPlShow">
-                        PLSH @GetDisplayedValueOnPlShowColumn(_productOrderByPlShow)
+                    <th
+                        class="product-data-table-column-with-sort-options" @onclick="OrderByPlShow">
+                        PLSH <span id="productEditorItemsTablePlShowColumnHeaderOrderText">
+                            @GetDisplayedValueOnPlShowColumn(_productOrderByPlShow)
+                        </span>
                     </th>
 
-                    <th class="product-data-table-column-with-sort-options" @onclick="OrderProductDatasByStatusDate">
-                        Work Stat @GetDisplayedValueOnWorkStatusColumn(_productOrderByStatusDate)
+                    <th
+                        class="product-data-table-column-with-sort-options" @onclick="OrderProductDatasByStatusDate">
+                        Work Stat <span id="productEditorItemsTableProductWorkStatusColumnHeaderOrderText">
+                            @GetDisplayedValueOnWorkStatusColumn(_productOrderByStatusDate)
+                        </span>
                     </th>
 
-                    <th class="product-data-table-column-with-sort-options" @onclick="OrderByImagesCount">
-                        P @GetDisplayedValueOnImagesCountColumn(_productOrderByImages)
+                    <th
+                        class="product-data-table-column-with-sort-options" @onclick="OrderByImagesCount">
+                        <span id="productEditorItemsTableHasImagesColumnHeaderOrderText">
+                            P @GetDisplayedValueOnImagesCountColumn(_productOrderByImages)
+                        </span>
                     </th>
 
                     <th>Stat</th>
@@ -217,158 +228,12 @@
             </thead>
 
             <tbody>
-
-                @for (int i = 0; i < ProductDatas.Count; i++)
-                {
-                    ProductEditorProductData productData = ProductDatas[i];
-
-                    IEnumerable<Promotion>? orderedPromotions = productData.ProductPromotions?
-                        .OrderBy(x => (x.Active ?? false) ? 1 : 0);
-
-                    Promotion? promotionPID = orderedPromotions?
-                        .FirstOrDefault(x => x.Id == productData.Product.PromotionPid);
-
-                    Promotion? promotionRID = orderedPromotions?
-                        .FirstOrDefault(x => x.Id == productData.Product.PromotionRid);
-
-                    int currentIndex = i;
-
-                    int? promotionPictureId = productData.Product.AlertPictureId;
-
-                    if (promotionPictureId is null || promotionPictureId <= 0)
-                    {
-                        promotionPictureId = productData.Product.PromotionPictureId;
-                    }
-
-                    string plShowString = "";
-                    string plShowStringClass = "";
-
-                    int? plShow = productData.Product.PlShow;
-
-                    if (plShow == 2)
-                    {
-                        plShowString = "STOP";
-                        plShowStringClass = "price-list-show-stop";
-                    }
-
-                    <tr class="product-data-table-entry">
-
-                        <td>
-                            <p class="@plShowStringClass">
-                                @plShowString
-                            </p>
-                        </td>
-                        <td>
-                            <p>
-                                @(productData.ProductStatuses?.ProductNewStatus is not null
-                                    ? GetStringFromProductNewStatus(productData.ProductStatuses.ProductNewStatus)
-                                    : "-") 
-                                    @(productData.ProductStatuses?.CreateDate.ToString("MMM dd")) / 
-                                    @(productData.ProductStatuses?.LastUpdateDate.ToString("MMM dd"))
-                            </p>
-                        </td>
-                        <td>
-                            <p>
-                                @(productData.OriginalImagesCount > 0 ? "Y" : "N")
-                            </p>
-                        </td>
-                        <td>
-                            <p>
-                                @(productData.Product.Status is not null
-                                    ? GetStringFromProductStatus(productData.Product.Status.Value)
-                                    : "-")
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick='() => ShowProductXmlPopup(productData)'>
-                                @productData.Product.Id
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick="() => ShowSingleProductEditorPopup(productData)">
-                                @productData.Product.Name
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick="() => ShowProductSearchStringOriginDataPopup(productData)">
-                                @(productData.SearchStringParts?.Count ?? 0)
-                            </p>
-                        </td>
-                        <td>
-                            @if (promotionPID is not null)
-                            {
-                                <p class="link-info" @onclick='() => ShowProductPromotionPopup(productData, promotionPID)'>
-                                    @(promotionPID is not null ? "Yes" : "No")
-                                </p>
-                            }
-                            else
-                            {
-                                <p>@(promotionPID is not null ? "Yes" : "No")</p>
-                            }
-                        </td>
-                        <td>
-                            @if (promotionRID is not null)
-                            {
-                                <p class="link-info" @onclick='() => ShowProductPromotionPopup(productData, promotionRID)'>
-                                    Yes
-                                </p>
-                            }
-                            else
-                            {
-                                <p>No</p>
-                            }
-                        </td>
-                        <td>
-                            @if (promotionPictureId > 0)
-                            {
-                                <p class="link-info" @onclick="() => ShowProductInfoPromotionPopup(productData)">
-                                    Yes
-                                </p>
-                            }
-                            else
-                            {
-                                <p>No</p>
-                            }
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick="() => ShowPromotionProductFilePopupAsync(productData)">
-                                @(productData.PromotionFilesCount > 0 ? "Yes" : "No")
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick="() => ShowProductPropertiesPopupAsync(productData)">
-                                @(productData.ProductPropertiesCount)
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick='() => ShowProductImageFilesPopup(productData)'>
-                                @(productData.DirectoryImagesCount)
-                            </p>
-                        </td>
-                        <td>
-                            <p>
-                                @(productData.OriginalFirstImageExists ? "Yes" : "No")
-                            </p>
-                        </td>
-                        <td>
-                            <p class="link-info" @onclick="() => ShowProductImagesPopupAsync(productData)">
-                                @(productData.OriginalImagesCount)
-                            </p>
-                        </td>
-                    </tr>
-                }
+                <ProductEditorTableItems ProductDatas="ProductDatas" />
             </tbody>
         </table>
     </div>
 </div>
 
-@if (_productSingleEditorPopupData is not null)
-{
-    <SingleProductEditorPopup Product="_productSingleEditorPopupData.ProductData.Product"
-        @bind-IsVisible="IsSingleProductEditorPopupVisible"
-        OnSaveSuccessful="OnSingleProductEditorSaveAsync"
-        PopupMarginOptions='new() { Left = "1vw", Right = "1vw", Top = "1vh", Bottom = "1vh" }' />
-}
 
 <div id="singleProductEditorPopupContainer">
 </div>
@@ -394,33 +259,22 @@
 <div id="productInfoPromotionPopupContainer">
 </div>
 
-@if (_promotionProductFilesPopupData is not null)
-{
-    <PromotionProductFileEditorPopup
-        @bind-IsVisible="IsPromotionProductFilePopupVisible"
-        PopupMarginOptions='new() { Left = "5vw", Right = "5vw", Top = "5vh", Bottom = "5vh" }'
-        Product="_promotionProductFilesPopupData.ProductData.Product"
-        PromotionProductFiles="_promotionProductFilesPopupData.PromotionProductFiles"
-        ShouldDisplaySaveButtonInSingleEditor="false"
-        ShouldDisplayAddButton="false"
-        ShouldDisplayDeleteButton="false"/>
-}
+<div id="promotionProductFilePopupContainer">
+</div>
 
 @code {
     public sealed class ProductEditorProductData
     {
         public required Product Product { get; set; }
 
-
         public ProductWorkStatuses? ProductStatuses { get; set; }
 
         public required int ProductPropertiesCount { get; set; }
-        public required int DirectoryImagesCount { get; set; }
-        public required List<ProductImageFileData>? FileNameData { get; set; }
+        public required int ImageFilesCount { get; set; }
         public required int OriginalImagesCount { get; set; }
         public required bool OriginalFirstImageExists { get; set; }
         public List<Promotion>? ProductPromotions { get; set; }
-        public List<SearchStringPartOriginData>? SearchStringParts { get; set; }
+        public int? SearchStringPartsCount { get; set; }
         public int? PromotionFilesCount { get; set; }
 
     }
@@ -525,75 +379,25 @@
     private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
     private const string _productDataScriptUrl = "js/Product/ProductData.js";
 
-    private const int _allResultCount = 2000;
+    private const int _maxProductSearchResultCount = 2000;
 
-    public const int LastAddedProductsSearchCount = 200;
+    private const int _lastAddedProductsSearchCount = 200;
 
-    public string? UserInputString { get; set; }
+    private List<Category> _categoriesInSelect { get; set; } = new();
 
-    public List<Category> CategoriesInSelect { get; set; } = new();
+    private List<Manufacturer> _manufacturersInSelect { get; set; } = new();
 
-    public string? SelectedCategoryId { get; set; } = string.Empty;
+    private int _selectedProductStatus { get; set; } = (int)ProductStatusSearchOptions.AvailableAndCall;
 
-    private async Task OnChangeCategorySelectAsync(ChangeEventArgs e)
-    {
-        SelectedCategoryId = e.Value?.ToString();
-
-        bool isCategoryIdNumber = int.TryParse(SelectedCategoryId, out int categoryId);
-
-        List<Product> productsInCategory;
-
-        if (!isCategoryIdNumber)
-        {
-            SelectedCategoryId = null;
-
-            productsInCategory = await ProductService.GetAllAsync();
-        }
-        else
-        {
-            productsInCategory = await ProductService.GetAllInCategoryAsync(categoryId);
-        }
-
-
-        Dictionary<int, Manufacturer> manufacturersDict = new();
-
-        foreach (Product product in productsInCategory)
-        {
-            Manufacturer? manufacturer = product.Manufacturer;
-
-            if (manufacturer == null) continue;
-
-            manufacturersDict.TryAdd(manufacturer.Id, manufacturer);
-        }
-
-        int? currentManufacturerIdParsed = int.TryParse(SelectedManufacturerId, out int manufacturerId) ? manufacturerId : null;
-
-        ManufacturersInSelect.Clear();
-        ManufacturersInSelect.AddRange(manufacturersDict.Values);
-
-        if (!ManufacturersInSelect.Any(x => x.Id == currentManufacturerIdParsed))
-        {
-             SelectedManufacturerId = "-1";
-        }
-
-        _manufacturerSelectKey = _manufacturerSelectKey == 0 ? 1 : 0;
-    }
-
-    public List<Manufacturer> AllManufacturers { get; set; } = new();
-    public List<Manufacturer> ManufacturersInSelect { get; set; } = new();
-
-    private int _manufacturerSelectKey { get; set; } = 0;
-    public string? SelectedManufacturerId { get; set; } = "-1";
-
-    public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
+    private List<ProductStatusSearchOptions> _productStatusesInSelect { get; set; } = [
         ProductStatusSearchOptions.AvailableAndCall,
         ProductStatusSearchOptions.Available,
         ProductStatusSearchOptions.Call,
     ];
+ 
+    private string _defaultProductNewStatus { get; set; } = string.Empty; 
 
-    public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
-
-    public List<ProductEditorProductNewStatusSearchOptions> ProductNewStatusesInSelect { get; set; } = [
+    private List<ProductEditorProductNewStatusSearchOptions> _productNewStatusesInSelect { get; set; } = [
         ProductEditorProductNewStatusSearchOptions.New,
         ProductEditorProductNewStatusSearchOptions.WorkInProgress,
         ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress,
@@ -605,9 +409,10 @@
         ProductEditorProductNewStatusSearchOptions.None,
     ];
 
-    public string SelectedProductNewStatus { get; set; } = string.Empty;
 
-    public List<PromotionSearchOptions> PromotionSearchOptionsInSelect { get; set; } = [
+    private string _defaultPromotionSearchOptions { get; set; } = string.Empty;
+
+    private List<PromotionSearchOptions> _promotionSearchOptionsInSelect { get; set; } = [
         PromotionSearchOptions.None,
         PromotionSearchOptions.P,
         PromotionSearchOptions.R,
@@ -615,11 +420,9 @@
         PromotionSearchOptions.Discount
     ];
 
-    public string SelectedPromotionSearchOptions { get; set; } = string.Empty;
+    private int _defaultResultCount { get; set; } = 50;
 
-    public string SelectedResultCount { get; set; } = (50).ToString();
-
-    public List<int> ResultCountsInSelect { get; set; } = [
+    private List<int> _resultCountsInSelect { get; set; } = [
         50,
         100,
         200,
@@ -674,15 +477,13 @@
 
         List<Category> allCategories = await CategoryService.GetAllAsync();
 
-        CategoriesInSelect = allCategories
+        _categoriesInSelect = allCategories
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
 
         List<Manufacturer> manufacturers = await ManufacturerService.GetAllAsync();
 
-        AllManufacturers = manufacturers;
-
-        ManufacturersInSelect = manufacturers
+        _manufacturersInSelect = manufacturers
             .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
             .ToList();
 
@@ -980,28 +781,26 @@
             }
 
             ProductStatusSearchOptions? selectedProductStatus = ProductStatusSearchOptions.TryParse(
-                SelectedProductStatus, out ProductStatusSearchOptions productStatus)
+                _selectedProductStatus, out ProductStatusSearchOptions productStatus)
                     ? productStatus
                     : null;
 
-            bool parsedSelectedProductNewStatus = Enum.TryParse<ProductEditorProductNewStatusSearchOptions>(
-                SelectedProductNewStatus, out ProductEditorProductNewStatusSearchOptions productEditorNewStatus);
-
-            ProductEditorProductNewStatusSearchOptions? selectedProductEditorNewStatus = parsedSelectedProductNewStatus
+            ProductEditorProductNewStatusSearchOptions? selectedProductEditorNewStatus = ProductEditorProductNewStatusSearchOptions.TryParse(
+                _defaultProductNewStatus, out ProductEditorProductNewStatusSearchOptions productEditorNewStatus)
                 ? productEditorNewStatus
                 : null;
 
             PromotionSearchOptions? selectedPromotionSearchOptions = PromotionSearchOptions.TryParse(
-                SelectedPromotionSearchOptions, out PromotionSearchOptions promotionSearchOptions)
+                _defaultPromotionSearchOptions, out PromotionSearchOptions promotionSearchOptions)
                     ? promotionSearchOptions
                     : null;
 
             int selectedResultCount = int.TryParse(
-                SelectedResultCount, out int resultCount)
+                _defaultResultCount, out int resultCount)
                     ? resultCount
-                    : ResultCountsInSelect.Min();
+                    : _resultCountsInSelect.Min();
 
-            selectedResultCount = Math.Min(selectedResultCount, _allResultCount);
+            selectedResultCount = Math.Min(selectedResultCount, _maxProductSearchResultCount);
 
             bool orderProductsByLastAddedDate = selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAdded
                 || selectedProductEditorNewStatus == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
@@ -1053,15 +852,15 @@
         bool orderProductsByLastAddedDate = false,
         bool orderProductsFromSecondCategoryUp = false)
     {
-        List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
-            = GetSearchOptionsFromEditorSearchOptions(productEditorNewStatusSearchOptions);
-
         int? searchMaxResultCount = maxResultCount;
 
         if (orderProductsByLastAddedDate || orderProductsFromSecondCategoryUp)
         {
             searchMaxResultCount = null;
         }
+
+        List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
+            = GetSearchOptionsFromEditorSearchOptions(productEditorNewStatusSearchOptions);
 
         ProductSearchRequest productSearchRequest = new()
         {
@@ -1084,14 +883,7 @@
 
         if (orderProductsByLastAddedDate)
         {
-            int? finalResultCount = LastAddedProductsSearchCount;
-
             products = OrderProductsByLastUpdatedStatusDate(products);
-
-            if (searchMaxResultCount is not null)
-            {
-                finalResultCount = Math.Min(searchMaxResultCount.Value, LastAddedProductsSearchCount);
-            }
 
             if (maxResultCount is null) return products;
 
@@ -1223,12 +1015,11 @@
             Product = data.Product,
             ProductStatuses = data.ProductStatuses,
             ProductPropertiesCount = data.ProductPropertiesCount,
-            DirectoryImagesCount = data.DirectoryImagesCount,
-            FileNameData = data.FileNameData,
+            ImageFilesCount = data.DirectoryImagesCount,
             OriginalImagesCount = data.OriginalImagesCount,
             OriginalFirstImageExists = data.OriginalFirstImageExists,
             ProductPromotions = data.ProductPromotions,
-            SearchStringParts = data.SearchStringParts,
+            SearchStringPartsCount = data.SearchStringParts?.Count ?? 0,
             PromotionFilesCount = data.PromotionFilesCount,
         };
     }

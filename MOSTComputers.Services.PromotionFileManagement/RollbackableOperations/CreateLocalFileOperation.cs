@@ -6,43 +6,46 @@ using OneOf.Types;
 namespace MOSTComputers.Services.PromotionFileManagement.RollbackableOperations;
 internal sealed class CreateLocalFileOperation : IRollbackableOperation<OneOf<Success, FileAlreadyExistsResult>>
 {
-    internal CreateLocalFileOperation(string directoryPath, string fullFileName, byte[] fileData)
+    internal CreateLocalFileOperation(string filePath, string fullFileName, byte[] fileData)
     {
-        _directoryPath = directoryPath;
+        _filePath = filePath;
         _fullFileName = fullFileName;
         _imageData = fileData;
     }
 
-    private readonly string _directoryPath;
+    private readonly string _filePath;
     private readonly string _fullFileName;
     private readonly byte[] _imageData;
 
-    private bool _succeeeded = false;
+    private bool _destinationMayHaveChanged = false;
 
     public OneOf<Success, FileAlreadyExistsResult> Execute()
     {
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
+        if (File.Exists(_filePath)) return new FileAlreadyExistsResult() { FileName = _fullFileName };
 
-        if (File.Exists(filePath)) return new FileAlreadyExistsResult() { FileName = _fullFileName };
+        using FileStream stream = new(
+            _filePath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.Read,
+            bufferSize: 4096);
 
-        File.WriteAllBytes(filePath, _imageData);
+        _destinationMayHaveChanged = true;
 
-        _succeeeded = true;
+        stream.Write(_imageData);
 
         return new Success();
     }
 
     public void Rollback()
     {
-        if (!_succeeeded) return;
+        if (!_destinationMayHaveChanged) return;
 
-        string filePath = Path.Combine(_directoryPath, _fullFileName);
-
-        if (!File.Exists(filePath))
+        if (!File.Exists(_filePath))
         {
-            throw new FileNotFoundException($"Cannot rollback, because file is missing: {filePath}");
+            throw new FileNotFoundException($"Cannot rollback, because file is missing: {_filePath}");
         }
 
-        File.Delete(filePath);
+        File.Delete(_filePath);
     }
 }

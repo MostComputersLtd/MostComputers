@@ -1,7 +1,11 @@
+@using System.Text.Json.Serialization
 @using MOSTComputers.Models.Product.Models
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 
-<li id="@ItemData.EditorId" name="propertyItem" class="properties-list-item" data-is-link="@IsLink">
+<li id="@ItemData.EditorId" name="propertyItem"
+    class="properties-list-item"
+    data-is-link="@IsLink"
+    data-product-characteristic-id="@ItemData.ProductCharacteristic.Id">
     <table class="property-table">
         <tbody>
             <tr class="property-data-row">
@@ -12,7 +16,7 @@
                 </td>
 
                 <td class="property-td-alignedOnTop property-characteristic-td">
-                    <p>@ItemData.ProductCharacteristic?.Name</p>
+                    <p>@ItemData.ProductCharacteristic.Name</p>
                 </td>
 
                 <td class="property-value-td property-td-alignedOnTop">
@@ -44,7 +48,27 @@
 </li>
 
 @code{
-    [Parameter, EditorRequired] public required SingleProductEditorPopup.ProductPropertyDisplayData ItemData { get; set; }
+
+    public sealed class ProductPropertyDisplayData
+    {
+        public required string EditorId { get; set; }
+        public required ProductCharacteristic ProductCharacteristic { get; set; }
+        public string? Value { get; set; }
+
+        public bool IsActive { get; set; } = true;
+        public List<string> ValidationMessages { get; set; } = new();
+    }
+
+    public sealed class ProductPropertyRecoveryJsonData
+    {
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonPropertyName("productCharacteristicId")] public required int ProductCharacteristicId { get; set; }
+        [JsonPropertyName("value")] public string? Value { get; set; }
+
+        [JsonPropertyName("isActive")] public bool IsActive { get; set; } = true;
+    }
+
+    [Parameter, EditorRequired] public required ProductPropertyDisplayData ItemData { get; set; }
 
     private bool IsLink => ItemData.ProductCharacteristic?.KWPrCh == ProductCharacteristicType.Link;
 }
