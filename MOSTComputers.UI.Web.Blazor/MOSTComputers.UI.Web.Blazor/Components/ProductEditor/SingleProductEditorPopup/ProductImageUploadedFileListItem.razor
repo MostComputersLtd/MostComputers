@@ -24,7 +24,7 @@
     </button>
 
     <p class="align-text-center">
-        @byteSizeString ({@uploadedFile.WidthPixels} X {@uploadedFile.HeightPixels} px)"
+        @byteSizeString (@uploadedFile.WidthPixels X @uploadedFile.HeightPixels px)
     </p>
 
     <div class="image-active-checkbox-container">
@@ -42,12 +42,12 @@
     <p class="file-empty-placeholder"></p>
     <p class="file-empty-placeholder"></p>
 
-    <ValidationMessages Messages="ItemData.ValidationMessages" />
+    <ValidationMessages name="productImageValidationMessagesList" RenderEvenIfNull="true" />
 
     @if (JsonData != null)
     {
         <script name="productImageItemData" type="application/json">
-            @JsonData
+            @((MarkupString)JsonData)
         </script>
     }
 </li>
@@ -59,8 +59,6 @@
 
         public required UploadedFileData UploadedFile { get; set; }
         public required UploadedProductImageFileRelatedFileDisplayData ImageData { get; set; }
-
-        public List<string> ValidationMessages { get; set; } = new();
     }
 
     public sealed class UploadedFileData

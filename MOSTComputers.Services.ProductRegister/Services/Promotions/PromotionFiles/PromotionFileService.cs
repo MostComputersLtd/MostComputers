@@ -77,6 +77,8 @@ internal sealed class PromotionFileService : IPromotionFileService
 
     public async Task<List<PromotionFileInfo>> GetByIdsAsync(IEnumerable<int> ids)
     {
+        if (!ids.Any()) return [];
+
         return await _promotionFileInfoRepository.GetByIdsAsync(ids);
     }
 

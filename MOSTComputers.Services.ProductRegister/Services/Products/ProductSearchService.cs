@@ -110,9 +110,7 @@ public sealed class ProductSearchService : IProductSearchService
                 .ToList();
         }
 
-        return searchedProducts
-            .OrderBy(x => x.DisplayOrder ?? int.MaxValue)
-            .ThenBy(x => x.Id)
+        return OrderProductsByDisplayOrderThenById(searchedProducts)
             .ToList();
     }
 
@@ -154,6 +152,42 @@ public sealed class ProductSearchService : IProductSearchService
     {
         List<string> separateSearches = SplitSearchDataIntoSingleSearches(searchData);
 
+        if (separateSearches.Count > 1)
+        {
+            bool isSearchListOfIds = true;
+
+            List<int> searchedProductIds = [];
+
+            foreach (string separateSearch in separateSearches)
+            {
+                if (!int.TryParse(separateSearch, out int productId))
+                {
+                    isSearchListOfIds = false;
+                    break;
+                }
+
+                searchedProductIds.Add(productId);
+            }
+
+            if (isSearchListOfIds)
+            {
+                List<Product> productsWithIds = new();
+
+                foreach (Product product in productsToSearchIn)
+                {
+                    int productIdIndex = searchedProductIds.IndexOf(product.Id);
+
+                    if (productIdIndex < 0) continue;
+
+                    productsWithIds.Add(product);
+
+                    searchedProductIds.RemoveAt(productIdIndex);
+                }
+
+                return productsWithIds;
+            }
+        }
+
         List<Product> output = new();
 
         foreach (string separateSearch in separateSearches)
@@ -163,12 +197,7 @@ public sealed class ProductSearchService : IProductSearchService
             List<Product> productsFromSearch = GetProductsFromSearch(productsToSearchIn, searchParts);
 
             IEnumerable<Product> newProductsFromSearch = productsFromSearch
-                .Where(newProduct =>
-                {
-                    Product? alreadyAddedProduct = output.FirstOrDefault(addedProduct => addedProduct.Id == newProduct.Id);
-
-                    return alreadyAddedProduct is null;
-                });
+                .Where(newProduct => !output.Exists(addedProduct => addedProduct.Id == newProduct.Id));
 
             output.AddRange(newProductsFromSearch);
         }

@@ -1,4 +1,5 @@
 @using System.Text.Json.Serialization
+@using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @using MOSTComputers.UI.Web.Blazor.Endpoints.Images
 @using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup
 
@@ -46,6 +47,8 @@
             @ItemData.FileName
         </a>
     </div>
+
+    <ValidationMessages name="productImageValidationMessagesList" RenderEvenIfNull="true" />
 </li>
 
 @code{

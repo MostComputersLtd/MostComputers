@@ -120,7 +120,7 @@ internal static class OrdersPageComponentEndpoints
 
         List<OrderSearchResults.OrderDisplayData> orderDatas = new();
 
-        decimal vatPercentageFraction = currencyVATPercentageProvider.GetDefaultVATPercentage();
+        // decimal vatPercentageFraction = currencyVATPercentageProvider.GetDefaultVATPercentage();
 
         IOrderedEnumerable<Order> ordersOrdered = orders.OrderByDescending(x => x.Id);
 

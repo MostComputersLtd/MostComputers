@@ -6,7 +6,7 @@ import * as productImagesEditor from "./ProductImagesEditor.js";
 
 const addButtonId = "promotionProductFileEditorAddButton";
 
-const itemTableId = "promotionProductFileEditorItemTable";
+const itemTableId = "promotionProductFileEditorTable";
 
 const singleEditorPopupContainerId = "singlePromotionProductEditorPopupContainer";
 
@@ -16,6 +16,9 @@ const editorItemEditButtonName = "promotionProductFileEditorEditButton"
 const editorItemDeleteButtonName = "promotionProductFileEditorDeleteButton";
 
 const readonlyEditorItemEditButtonPromotionProductFileIdAttribute = "data-promotion-product-file-id";
+
+const singleEditorPopupSaveButtonAddText = "Add";
+const singleEditorPopupSaveButtonUpdateText = "Save";
 
 const promotionProductFiles = [];
 
@@ -41,13 +44,7 @@ export function initEvents(dialogElement, onAddCallback, onUpdateCallback, onDel
 
     for (const editorItem of editorItems) {
 
-        const editorButton = editorItem.querySelector(`[name='${editorItemEditButtonName}']`);
-
-        editorButton.addEventListener("click", onEditorItemEditButtonClicked);
-
-        const deleteButton = editorItem.querySelector(`[name='${editorItemDeleteButtonName}']`);
-
-        deleteButton.addEventListener("click", onEditorItemDeleteButtonClicked);
+        initPromotionProductFileItemEvents(editorItem);
     }
 
     dialogElement.__onAddCallback = onAddCallback;
@@ -55,10 +52,20 @@ export function initEvents(dialogElement, onAddCallback, onUpdateCallback, onDel
     dialogElement.__onDeleteCallback = onDeleteCallback;
 }
 
+function initPromotionProductFileItemEvents(editorItem) {
+
+    const editorButton = editorItem.querySelector(`[name='${editorItemEditButtonName}']`);
+    const deleteButton = editorItem.querySelector(`[name='${editorItemDeleteButtonName}']`);
+
+    editorButton.addEventListener("click", onEditorItemEditButtonClicked);
+    deleteButton.addEventListener("click", onEditorItemDeleteButtonClicked);
+}
+
 export function initData(data) {
 
-    for (const jsonItem in data) {
+    for (const jsonItem of data) {
 
+    console.log(jsonItem);
         promotionProductFiles.push(jsonItem);
     }
 }
@@ -89,16 +96,14 @@ async function getEditorItem(request) {
 
 async function onAddPromotionProductFileButtonClicked() {
 
-    const saveButtonText = "Add";
-
     const request = {
         existingEditorId: null,
         id: null,
         promotionFileId: null,
         validFrom: null,
         validTo: null,
-        active: null,
-        saveButtonText: saveButtonText,
+        active: true,
+        saveButtonText: singleEditorPopupSaveButtonAddText,
         isInImage: false,
     };
 
@@ -114,22 +119,13 @@ async function onReadonlyEditorItemEditButtonClicked(e) {
 
 async function onEditorItemEditButtonClicked(e) {
 
-    const saveButtonText = "Save";
-
     const editorItem = e.currentTarget.closest(`[name='${editorItemName}']`);
 
     const editorId = editorItem.id;
 
     const promotionData = promotionProductFiles.find(x => x.editorId == editorId);
 
-    const productImages = productImagesEditor.getProductImagesRequestData();
-
-    const relatedImage = productImages.find(x =>
-    {
-        const itemType = x["$type"];
-
-        return itemType == "promotionProductFile" && x.promotionFileEditorId == editorId;
-    });
+    const relatedImageItem = productImagesEditor.getProductImageItemRelatedToPromotionFile(editorId);
 
     const request = {
         existingEditorId: editorId,
@@ -138,8 +134,8 @@ async function onEditorItemEditButtonClicked(e) {
         validFrom: promotionData.validFrom,
         validTo: promotionData.validTo,
         active: promotionData.active,
-        saveButtonText: saveButtonText,
-        isInImage: relatedImage != null,
+        saveButtonText: singleEditorPopupSaveButtonUpdateText,
+        isInImage: relatedImageItem != null,
     };
 
     await showSinglePromotionProductFileEditorPopup(request);
@@ -169,7 +165,7 @@ async function showReadonlySinglePromotionProductFileEditorPopup(promotionProduc
         return;
     }
 
-    const data = response.text();
+    const data = await response.text();
 
     const singleEditorPopupContainer = document.getElementById(singleEditorPopupContainerId);
 
@@ -204,7 +200,7 @@ async function showSinglePromotionProductFileEditorPopup(request) {
         return;
     }
 
-    const data = response.text();
+    const data = await response.text();
 
     const singleEditorPopupContainer = document.getElementById(singleEditorPopupContainerId);
 
@@ -222,16 +218,18 @@ async function onSingleEditorPopupSaveButtonClicked() {
 
     const popupData = singlePromotionFilePopup.getPopupData();
 
+    if (popupData.selectedFileId == null) return;
+
     const editorId = popupData.editorId;
 
-    const existingPromotionProductFile = promotionProductFiles.find(x => x.editorId == editorId); 
+    const existingPromotionProductFile = promotionProductFiles.find(x => x.editorId == editorId);
 
     const newItemCallbackData = {
         editorId: editorId,
         shouldAddToImages: popupData.shouldAddToImages,
         selectedFileId: popupData.selectedFileId,
         validFrom: popupData.validFrom,
-        validTo: popupData.validTo, 
+        validTo: popupData.validTo,
         active: popupData.active,
     };
 
@@ -269,7 +267,9 @@ async function onSingleEditorPopupSaveButtonClicked() {
 
         const newItemElementData = await newItemResponse.text();
 
-        itemTableBody.appendChild(newItemElementData);
+        itemTableBody.insertAdjacentHTML("beforeend", newItemElementData);
+
+        initPromotionProductFileItemEvents(itemTableBody.lastElementChild);
 
         promotionProductFiles.push(newEditorData);
 
@@ -278,13 +278,15 @@ async function onSingleEditorPopupSaveButtonClicked() {
             id: null,
             promotionFileId: popupData.selectedFileId,
             validFrom: popupData.validFrom,
-            validTo: popupData.validTo, 
+            validTo: popupData.validTo,
             active: popupData.active,
         };
 
         dataStore.addPromotionProductFileAndSave(editorId, newRecoveryData);
 
         editorChanges.setPromotionProductFileChanged(editorId, editorChanges.ItemChangeState.Added);
+
+        singlePromotionFilePopup.changeSaveButtonText(singleEditorPopupSaveButtonUpdateText);
 
         editorPopup.__onAddCallback(newItemCallbackData);
 
@@ -310,15 +312,18 @@ async function onSingleEditorPopupSaveButtonClicked() {
 
     const existingEditorItem = document.getElementById(editorId);
 
-    itemTableBody.replaceChild(existingItemElementData, existingEditorItem);
+    existingEditorItem.outerHTML = existingItemElementData;
+
+    const newEditorItem = document.getElementById(editorId);
+
+    initPromotionProductFileItemEvents(newEditorItem);
 
     existingPromotionProductFile.promotionFileId = popupData.selectedFileId;
     existingPromotionProductFile.active = popupData.active;
     existingPromotionProductFile.validFrom = popupData.validFrom;
     existingPromotionProductFile.validTo = popupData.validTo;
 
-    dataStore.updatePromotionProductFileAndSave(editorId, promotionProductFile =>
-    {
+    dataStore.updatePromotionProductFileAndSave(editorId, promotionProductFile => {
         promotionProductFile.promotionFileId = popupData.selectedFileId;
         promotionProductFile.active = popupData.active;
         promotionProductFile.validFrom = popupData.validFrom;
@@ -336,7 +341,7 @@ function onEditorItemDeleteButtonClicked(e) {
 
     const editorId = editorItem.id;
 
-    const promotionProductFileIndex = promotionProductFiles.findIndex(x => x.editorId == editorId); 
+    const promotionProductFileIndex = promotionProductFiles.findIndex(x => x.editorId == editorId);
 
     promotionProductFiles.splice(promotionProductFileIndex, 1);
 
@@ -355,7 +360,7 @@ export function onEditorItemRelatedImageDeleted(editorId) {
 
     const editorItem = document.getElementById(editorId);
 
-    const promotionProductFileIndex = promotionProductFiles.findIndex(x => x.editorId == editorId); 
+    const promotionProductFileIndex = promotionProductFiles.findIndex(x => x.editorId == editorId);
 
     promotionProductFiles.splice(promotionProductFileIndex, 1);
 

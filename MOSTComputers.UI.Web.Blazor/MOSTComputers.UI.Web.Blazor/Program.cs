@@ -34,6 +34,7 @@ using MOSTComputers.UI.Web.Blazor.Components._Tests;
 using MOSTComputers.UI.Web.Blazor.Components.Account;
 using MOSTComputers.UI.Web.Blazor.Components.Home;
 using MOSTComputers.UI.Web.Blazor.Components.Orders;
+using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionFileEditor;
 using MOSTComputers.UI.Web.Blazor.Components.PromotionGroups;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
@@ -128,6 +129,8 @@ builder.Services.AddDataAccess(productDBConnectionString, most4WebDBConnectionSt
 
 builder.Services.AddCachedProductServices();
 
+builder.Services.AddProductSaveService();
+
 string? productDocumentFileFolderFilePath = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("ProductDocumentDirectory");
 
 if (!Path.IsPathFullyQualified(productDocumentFileFolderFilePath!))
@@ -184,6 +187,8 @@ if (!Path.IsPathFullyQualified(productImageFolderFilePath!))
 
 builder.Services.AddProductImageFileManager(productImageFolderFilePath!);
 
+builder.Services.AddLocalProductImageFileManager(productImageFolderFilePath!);
+
 string? promotionFileFolderFilePath = builder.Configuration.GetRequiredSection("Directories").GetValue<string>("PromotionFileDirectory");
 
 if (!Path.IsPathFullyQualified(promotionFileFolderFilePath!))
@@ -230,8 +235,16 @@ if (!Path.IsPathFullyQualified(htmlWarrantyCardWithoutPricesTemplateFilePath!))
     htmlWarrantyCardWithoutPricesTemplateFilePath = Path.Combine(currentDirectory, htmlWarrantyCardWithoutPricesTemplateFilePath!);
 }
 
+string? htmlHomeOfferTemplateFilePath = builder.Configuration.GetRequiredSection("Files").GetValue<string>("HtmlHomeOfferTemplate");
+
+if (!Path.IsPathFullyQualified(htmlHomeOfferTemplateFilePath!))
+{
+    htmlHomeOfferTemplateFilePath = Path.Combine(currentDirectory, htmlHomeOfferTemplateFilePath!);
+}
+
 builder.Services.AddPdfInvoiceGeneratorFromDataServices(htmlInvoiceTemplateFilePath!, chromeHeadlessInstanceOptions);
 builder.Services.AddPdfWarrantyCardWithoutPricesGeneratorFromDataServices(htmlWarrantyCardWithoutPricesTemplateFilePath!, chromeHeadlessInstanceOptions);
+builder.Services.AddPdfHomeOfferServices(htmlHomeOfferTemplateFilePath!, chromeHeadlessInstanceOptions);
 
 builder.Services.AddScoped<IProductSearchService, ProductSearchService>();
 
@@ -585,7 +598,7 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddLocalization();
 
 // TEMPORARY
-builder.Services.AddSingleton<_Temp_TransferDataTests.SaveService>();
+//builder.Services.AddSingleton<_Temp_TransferDataTests.SaveService>();
 builder.Services.AddScoped<ApplicationDataSyncService>();
 
 builder.Services.AddScoped<ValidationMessagesLocalizer>();
@@ -677,7 +690,7 @@ app.UseRequestLocalization(options =>
     options.AddSupportedUICultures(supportedCultures);
 });
 
-app.MapRazorComponents<App>()
+RazorComponentsEndpointConventionBuilder razorEndpointBuilder = app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     //.AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MOSTComputers.UI.Web.Blazor.Client._Imports).Assembly);
@@ -704,9 +717,10 @@ app.MapProductImageFileDataEndpoints();
 app.MapGroupPromotionImageFileDataEndpoints();
 app.MapPromotionFileDataEndpoints();
 
-app.MapProductDataComponentEndpoints();
+app.MapProductDataComponentEndpoints(razorEndpointBuilder);
 app.MapPromotionGroupPageComponentEndpoints();
 app.MapPromotionFileEditorPageComponentEndpoints();
 app.MapOrdersPageComponentEndpoints();
+app.MapProductEditorPageComponentEndpoints();
 
 app.Run();

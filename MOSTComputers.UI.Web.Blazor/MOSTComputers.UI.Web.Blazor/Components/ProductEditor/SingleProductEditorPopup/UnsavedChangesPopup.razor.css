@@ -1,0 +1,27 @@
+.data-changed-popup-body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.unsaved-changes-text {
+    margin-bottom: 1em;
+}
+
+.option-buttons-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.option-button-container {
+    display: flex;
+    flex-direction: row;
+    margin-right: 1.5em;
+}
+
+.option-button-container.last {
+    margin-right: 0em;
+}

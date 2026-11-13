@@ -42,12 +42,12 @@
 
     <p class="file-empty-placeholder"></p>
 
-    <ValidationMessages Messages="ItemData.ValidationMessages" />
+    <ValidationMessages name="productImageValidationMessagesList" RenderEvenIfNull="true" />
 
     @if (JsonData != null)
     {
         <script name="productImageItemData" type="application/json">
-            @JsonData
+            @((MarkupString)JsonData)
         </script>
     }
 </li>
@@ -59,8 +59,6 @@
         public required PromotionFileImageItemPromotionFileDisplayData PromotionFileData { get; set; }
         public required PromotionFileImageItemImageFileDisplayData ImageData { get; set; }
         public required string RelatedPromotionFileEditorId { get; set; }
-
-        [JsonIgnore] public List<string> ValidationMessages { get; set; } = new();
     } 
 
     public sealed class PromotionFileImageItemPromotionFileDisplayData
@@ -76,7 +74,7 @@
 
     public sealed class PromotionFileImageItemRecoveryJsonData : ProductImageRecoveryJsonDataBase
     {
-        public sealed override string ItemType => ProductImagePromotionFileListItem.ItemType;
+        public sealed override string ItemType => PromotionFileImageListItem.ItemType;
 
         [JsonPropertyName("imageFileData")] public required PromotionFileImageItemImageFileRecoveryJsonData ImageFileData { get; set; }
         [JsonPropertyName("relatedPromotionFileEditorId")] public required string RelatedPromotionFileEditorId { get; set; }

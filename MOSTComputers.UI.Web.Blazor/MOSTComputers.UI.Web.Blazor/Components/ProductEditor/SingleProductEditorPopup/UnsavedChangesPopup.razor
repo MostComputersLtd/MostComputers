@@ -2,23 +2,22 @@
 
 <Popup IsVisible="IsVisible"
     PopupMarginOptions='new() { Left = "30vw", Top = "35vh", Right = "30vw", Bottom = "35vh" }'
-    DisplayHeader="false"
-    CloseHandler="DataChangedPopupCloseHandler">
+    DisplayHeader="false">
     <ChildContent>
-        <div class="data-changed-popup">
-            <p class="data-changed-popup-unsaved-changes-text">There are unsaved changes:</p>
+        <div class="data-changed-popup-body">
+            <p class="unsaved-changes-text">There are unsaved changes:</p>
 
-            <div class="data-changed-popup-option-buttons-container">
-                <div class="data-changed-popup-option-button-container">
+            <div class="option-buttons-container">
+                <div class="option-button-container">
                     <button name="unsavedChangesPopupSaveButton" type="button"
-                        class="btn btn-primary" @onclick="SaveChangesAndCloseIsDataChangedPopupAsync">
+                        class="btn btn-primary">
                         Save
                     </button>
                 </div>
 
-                <div class="data-changed-popup-option-button-container last">
+                <div class="option-button-container last">
                     <button name="unsavedChangesPopupExitButton" type="button"
-                        class="btn btn-danger" @onclick="CloseIsDataChangedPopupAndExitWithoutSavingAsync">
+                        class="btn btn-danger">
                         Exit
                     </button>
                 </div>
@@ -28,5 +27,5 @@
 </Popup>
 
 @code{
-    public bool IsVisible { get; set; } = true;
+    [Parameter] public bool IsVisible { get; set; } = true;
 }

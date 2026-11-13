@@ -26,7 +26,6 @@ internal static class SingleProductEditorDocumentComponentEndpoints
     };
 
     private const string _filePreviewUrlFormFieldName = "previewUrl";
-    private const string _fileIndexFormFieldName = "index";
     private const string _fileProductIdFormFieldName = "productId";
 
     private const int _productDocumentFileUploadSize = 20 * 1024 * 1024;
@@ -38,8 +37,7 @@ internal static class SingleProductEditorDocumentComponentEndpoints
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupUniqueRoute);
 
         endpointGroup.MapPost("/add", (Delegate)GetProductDocumentListItemAsync);
-        endpointGroup.MapPost("/showPopup/{productId:int}",
-            GetProductDocumentPopupDataAsync);
+        endpointGroup.MapPost("/showPopup/{productId:int}", GetProductDocumentPopupDataAsync);
 
         return endpointGroup;
     }
@@ -56,14 +54,6 @@ internal static class SingleProductEditorDocumentComponentEndpoints
         }
 
         string previewUrl = previewUrlValue[0]!;
-
-        StringValues indexValue = form[_fileIndexFormFieldName];
-
-        if (indexValue.Count == 0
-            || !int.TryParse(indexValue[0], out int index))
-        {
-            return Results.BadRequest("An index is required");
-        }
 
         StringValues productIdValue = form[_fileProductIdFormFieldName];
 
@@ -95,7 +85,6 @@ internal static class SingleProductEditorDocumentComponentEndpoints
         ProductDocumentListItem.ProductDocumentDisplayData productDocumentDisplayData = new()
         {
             EditorId = editorId,
-            Index = index,
             BrowserFilePath = previewUrl,
             ExistingDocument = null,
             CurrentDescription = string.Empty,

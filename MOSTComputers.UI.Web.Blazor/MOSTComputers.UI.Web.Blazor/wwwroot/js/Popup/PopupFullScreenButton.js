@@ -89,6 +89,7 @@ function goFullScreen(dialog, additionalRightMarginPixels) {
     else {
         dialog.style.marginRight = "0vw";
     }
+
     dialog.style.marginTop = "0vh";
     dialog.style.marginBottom = "0vh";
 

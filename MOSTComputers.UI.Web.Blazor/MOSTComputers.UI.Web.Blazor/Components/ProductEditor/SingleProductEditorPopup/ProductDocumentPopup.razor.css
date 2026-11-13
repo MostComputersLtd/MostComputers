@@ -1,0 +1,21 @@
+.product-document-popup-header {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.product-document-popup-header-text {
+    margin-right: 0.5em;
+    margin-bottom: 0em;
+}
+
+.product-document-pdf-display-container {
+    height: 100%;
+    display: flex;
+}
+
+.product-document-pdf-display {
+    flex-grow: 1;
+}

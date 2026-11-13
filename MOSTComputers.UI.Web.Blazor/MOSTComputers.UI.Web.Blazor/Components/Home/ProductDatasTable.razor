@@ -147,32 +147,10 @@
                                             <p class="mb-0 me-1">Promo:</p>
                                         }
 
-                                        @if (promotion.StartDate is not null)
+                                        @if (!string.IsNullOrWhiteSpace(promotion.Name))
                                         {
-                                            string startDateString;
-
-                                            if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
-                                            {
-                                                startDateString = promotion.StartDate.Value.ToString("d");
-                                            }
-                                            else
-                                            {
-                                                startDateString = promotion.StartDate.Value.ToString();
-                                            }
-
-                                            if (promotion.ExpirationDate is not null)
-                                            {
-                                                <p>@startDateString - @expirationDateString</p>
-                                            }
-                                            else
-                                            {
-                                                <p>Starts on: @startDateString</p>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <p>Expires on: @expirationDateString</p>
-                                        }
+                                            <p class="mb-0 me-1">@promotion.Name</p>
+                                        } 
                                     </div>
 
                                     @if (promotion.DiscountEUR is not null && promotion.DiscountEUR > 0.00M)
@@ -186,6 +164,33 @@
                                         <p class="product-promotion-discount">
                                             Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)
                                         </p>
+                                    }
+
+                                    @if (promotion.StartDate is not null)
+                                    {
+                                        string startDateString;
+
+                                        if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
+                                        {
+                                            startDateString = promotion.StartDate.Value.ToString("d");
+                                        }
+                                        else
+                                        {
+                                            startDateString = promotion.StartDate.Value.ToString();
+                                        }
+
+                                        if (promotion.ExpirationDate is not null)
+                                        {
+                                            <p>@startDateString - @expirationDateString</p>
+                                        }
+                                        else
+                                        {
+                                            <p>Starts on: @startDateString</p>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p>Expires on: @expirationDateString</p>
                                     }
 
                                     @if (promotion.MinimumQuantity is not null && promotion.MinimumQuantity > 0)
@@ -202,12 +207,19 @@
                                         </p>
                                     }
 
+                                    @if (promotion.QuantityIncrement is not null && promotion.QuantityIncrement > 0)
+                                    {
+                                        <p class="product-promotion-discount">
+                                            Qty Increment: @promotion.QuantityIncrement
+                                        </p>
+                                    }
+
                                     @if (promotion.ExpQuantity is not null && promotion.ExpQuantity > 0)
                                     {
                                         <p class="product-promotion-discount">
                                             Expire Qty: @promotion.ExpQuantity
                                         </p>
-                                    }
+                                    } 
 
                                 </div>
                             }

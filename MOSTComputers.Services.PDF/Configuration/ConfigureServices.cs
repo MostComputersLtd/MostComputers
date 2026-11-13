@@ -127,6 +127,24 @@ public static class ConfigureServices
         return services;
     }
 
+    public static IServiceCollection AddPdfHomeOfferServices(
+        this IServiceCollection services,
+        string htmlHomeOfferTemplateFilePath,
+        ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)
+    {
+        services.TryAddPdfBrowserProviderService(chromeHeadlessInstanceOptions);
+
+        services.AddScoped<IPdfHomeOfferFileGeneratorService, PdfHomeOfferFileGeneratorServiceWithHtmlTemplate>(serviceProvider =>
+        {
+            PdfHomeOfferFileGeneratorServiceWithHtmlTemplate pdfInvoiceService = new(htmlHomeOfferTemplateFilePath,
+                serviceProvider.GetRequiredService<IBrowserProviderService>());
+
+            return pdfInvoiceService;
+        });
+
+        return services;
+    }
+
     private static IServiceCollection TryAddPdfBrowserProviderService(
         this IServiceCollection services,
         ChromeHeadlessInstanceOptions chromeHeadlessInstanceOptions)

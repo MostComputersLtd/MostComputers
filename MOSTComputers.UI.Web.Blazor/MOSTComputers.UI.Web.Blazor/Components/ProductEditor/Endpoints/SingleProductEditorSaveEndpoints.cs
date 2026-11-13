@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using MOSTComputers.Models.FileManagement.Models;
@@ -16,7 +17,13 @@ using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFil
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.NewSaveService;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts;
+using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts;
+using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
+using MOSTComputers.Utils.OneOf;
 using OneOf;
 using OneOf.Types;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup;
@@ -29,56 +36,56 @@ internal static class SingleProductEditorSaveEndpoints
 {
     private sealed class SaveAllRequest
     {
-        public int ProductId { get; set; }
-        public List<ProductPropertySaveRequest> ProductProperties { get; set; } = [];
-        public List<SaveImageRequestBase> ProductImages { get; set; } = [];
-        public List<PromotionProductFileSaveRequest> PromotionProductFiles { get; set; } = [];
-        public List<ProductDocumentSaveRequest> ProductDocuments { get; set; } = [];
-        public List<ProductDocumentUploadRequest> UploadedProductDocuments { get; set; } = [];
+        [JsonPropertyName("productId")] public int ProductId { get; set; }
+        [JsonPropertyName("productProperties")] public List<ProductPropertySaveRequest> ProductProperties { get; set; } = [];
+        [JsonPropertyName("productImages")] public List<SaveImageRequestBase> ProductImages { get; set; } = [];
+        [JsonPropertyName("promotionProductFiles")] public List<PromotionProductFileSaveRequest> PromotionProductFiles { get; set; } = [];
+        [JsonPropertyName("productDocuments")] public List<ProductDocumentSaveRequest> ProductDocuments { get; set; } = [];
+        [JsonPropertyName("uploadedProductDocuments")] public List<ProductDocumentUploadRequest> UploadedProductDocuments { get; set; } = [];
     }
 
     private sealed class ProductPropertySaveRequest
     {
-        public int? ProductCharacteristicId { get; set; }
-        public string? Value { get; set; }
+        [JsonPropertyName("productCharacteristicId")] public int? ProductCharacteristicId { get; set; }
+        [JsonPropertyName("value")] public string? Value { get; set; }
     }
 
     [JsonPolymorphic]
     [JsonDerivedType(typeof(SavePromotionProductFileImageRequest), "promotionProductFile")]
     [JsonDerivedType(typeof(SaveImageWithFileRequest), "image")]
     [JsonDerivedType(typeof(SaveImageFileRequest), "imageFile")]
-    [JsonDerivedType(typeof(SaveUploadedImageInitialDataRequest), "uploadedFile")]
+    [JsonDerivedType(typeof(SaveUploadedImageInitialDataRequest), "uploadedImage")]
     private class SaveImageRequestBase
     {
     }
 
     private sealed class SavePromotionProductFileImageRequest : SaveImageRequestBase
     {
-        public required string PromotionFileEditorId { get; set; }
-        public required bool Active { get; set; }
+        [JsonPropertyName("promotionFileEditorId")] public required string PromotionFileEditorId { get; set; }
+        [JsonPropertyName("active")] public required bool Active { get; set; }
     }
 
     private sealed class SaveImageWithFileRequest : SaveImageRequestBase
     {
-        public required int Id { get; set; }
-        public SaveImageWithFileFileDataRequest? SaveFileRequest { get; set; }
+        [JsonPropertyName("id")] public required int Id { get; set; }
+        [JsonPropertyName("saveFileRequest")] public SaveImageWithFileFileDataRequest? SaveFileRequest { get; set; }
     }
 
     private sealed class SaveImageWithFileFileDataRequest
     {
-        public required bool Active { get; set; }
+        [JsonPropertyName("active")] public required bool Active { get; set; }
     }
 
     private sealed class SaveImageFileRequest : SaveImageRequestBase
     {
-        public required int Id { get; set; }
-        public required bool Active { get; set; }
+        [JsonPropertyName("id")] public required int Id { get; set; }
+        [JsonPropertyName("active")] public required bool Active { get; set; }
     } 
 
     private sealed class SaveUploadedImageInitialDataRequest : SaveImageRequestBase
     {
-        public required string EditorId { get; set; }
-        public required bool Active { get; set; }
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonPropertyName("active")] public required bool Active { get; set; }
     }
 
     private sealed class SaveUploadedImageRequest : SaveImageRequestBase
@@ -89,25 +96,25 @@ internal static class SingleProductEditorSaveEndpoints
 
     private sealed class PromotionProductFileSaveRequest
     {
-        public required string EditorId { get; set; }
-        public int? Id { get; set; }
-        public required int PromotionFileId { get; set; }
-        public DateTime? ValidFrom { get; set; }
-        public DateTime? ValidTo { get; set; }
-        public bool Active { get; set; }
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonPropertyName("id")] public int? Id { get; set; }
+        [JsonPropertyName("promotionFileId")] public required int PromotionFileId { get; set; }
+        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
+        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; }
     }
 
     private sealed class ProductDocumentSaveRequest
     {
-        public required int Id { get; set; }
-        public string? Description { get; set; }
+        [JsonPropertyName("id")] public required int Id { get; set; }
+        [JsonPropertyName("description")] public string? Description { get; set; }
     }
 
     private sealed class ProductDocumentUploadRequest
     {
-        public required string EditorId { get; set; }
-        public IFormFile File { get; set; } = default!;
-        public string? Description { get; set; }
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonIgnore] public IFormFile File { get; set; } = default!;
+        [JsonPropertyName("description")] public string? Description { get; set; }
     }
 
     internal const string InvalidIdErrorCode = "InvalidId";
@@ -115,7 +122,7 @@ internal static class SingleProductEditorSaveEndpoints
 
     public static IEndpointRouteBuilder MapSingleProductEditorSaveEndpoint(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/save", SaveAllAsync)
+        endpoints.MapPut("/save", SaveAllAsync)
             .AddEndpointFilter<AntiforgeryEndpointFilter>();
 
         return endpoints;
@@ -123,10 +130,18 @@ internal static class SingleProductEditorSaveEndpoints
 
     private static async Task<IResult> SaveAllAsync(
         HttpContext httpContext,
+        [FromServices] IProductService productService,
+        [FromServices] IProductPropertyService productPropertyService,
+        [FromServices] IProductCharacteristicService productCharacteristicService,
         [FromServices] IProductImageService productImageService,
         [FromServices] IProductImageFileService productImageFileService,
         [FromServices] IProductImageFileManagementService productImageFileManagementService,
-        [FromServices] IProductDataSaveService productDataSaveService)
+        [FromServices] IProductDataSaveService productDataSaveService,
+        [FromServices] IProductWorkStatusesService productWorkStatusesService,
+        [FromServices] IPromotionService promotionService,
+        [FromServices] IPromotionProductFileService promotionProductFileService,
+        [FromServices] IProductDocumentFileService productDocumentFileService,
+        [FromServices] ISearchStringOriginService searchStringOriginService)
     {
         IFormCollection form = httpContext.Request.Form;
 
@@ -144,6 +159,11 @@ internal static class SingleProductEditorSaveEndpoints
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
         }
 
+        Console.WriteLine(JsonSerializer.Serialize(request, new JsonSerializerOptions
+{
+    WriteIndented = true
+}));
+
         for (int i = 0; i < request.ProductImages.Count; i++)
         {
             SaveImageRequestBase imageRequest = request.ProductImages[i];
@@ -156,6 +176,8 @@ internal static class SingleProductEditorSaveEndpoints
             {
                 return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
             }
+
+            Console.WriteLine($"Image file: {initialUploadRequest.EditorId}, {file.ContentType}, {file.Length}");
 
             request.ProductImages[i] = new SaveUploadedImageRequest()
             {
@@ -174,6 +196,8 @@ internal static class SingleProductEditorSaveEndpoints
             {
                 return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: _invalidRequestError);
             }
+
+            Console.WriteLine($"Document file: {documentUploadRequest.EditorId}, {file.ContentType}, {file.Length}");
 
             documentUploadRequest.File = file;
         }
@@ -215,14 +239,41 @@ internal static class SingleProductEditorSaveEndpoints
             UpsertUserName = currentUserName,
         };
 
+try{
+
         OneOf<Success, ValidationResult, UnexpectedFailureResult> result
             = await productDataSaveService.SaveAsync(saveAllRequest);
 
-        return result.Match(
-            success => ,
+        return await result.MatchAsync(
+            async success =>
+            {
+                MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(request.ProductId);
+
+                if (product == null)
+                {
+                    return Results.Problem(statusCode: StatusCodes.Status500InternalServerError);
+                }
+
+                return await SingleProductEditorComponentEndpoints.GetSingleProductEditorPopupForProductAsync(
+                    product,
+                    productPropertyService,
+                    productCharacteristicService,
+                    productImageService,
+                    productImageFileService,
+                    productWorkStatusesService,
+                    promotionService,
+                    promotionProductFileService,
+                    productDocumentFileService,
+                    searchStringOriginService);
+            },
             validationResult => ValidationResultProblem(validationResult),
             unexpectedFailureResult => Results.Problem(statusCode: StatusCodes.Status500InternalServerError, detail: GenericErrorDetail)
         );
+}
+catch(Exception e)
+{
+    return Results.InternalServerError(e);
+}
     }
 
     private sealed class SaveAllRequestValidator : AbstractValidator<SaveAllRequest>
@@ -252,7 +303,7 @@ internal static class SingleProductEditorSaveEndpoints
         {
             RuleFor(x => x.ProductCharacteristicId).NotNull();
         }
-    } 
+    }
 
     private sealed class SaveImageRequestBaseValidator : AbstractValidator<SaveImageRequestBase>
     {

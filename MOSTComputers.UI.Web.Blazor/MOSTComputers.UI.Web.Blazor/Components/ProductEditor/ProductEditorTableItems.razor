@@ -7,7 +7,12 @@
     <ProductEditorTableItem ItemData="productData"/>
 }
 
+<script id="productEditorItemsData" type="application/json">
+    @((MarkupString)JsonData)
+</script>
+
 @code{
 
-    [Parameter, EditorRequired] public required List<ProductEditorProductData> ProductDatas { get; set; } = [];
+    [Parameter, EditorRequired] public required List<ProductEditorProductData> ProductDatas { get; set; }
+    [Parameter, EditorRequired] public required string JsonData { get; set; }
 }

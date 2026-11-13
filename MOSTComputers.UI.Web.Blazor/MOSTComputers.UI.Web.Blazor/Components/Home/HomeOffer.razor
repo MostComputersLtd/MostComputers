@@ -1,0 +1,269 @@
+@page "/home/offer"
+
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [IgnoreAntiforgeryToken]
+
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using MOSTComputers.Models.Common
+@using MOSTComputers.Services.Currencies.Contracts
+@using MOSTComputers.Services.ProductRegister.Services.Contracts
+@using Microsoft.AspNetCore.Mvc
+@using OneOf
+
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IProductService ProductService
+@inject ICurrencyConversionService CurrencyConversionService
+@inject ICurrencyVATService CurrencyVATService
+
+<HeadContent>
+	<meta name="description"
+        content="Създаване на оферти за нашите клиенти" />
+
+    <meta name="robots" content="NOINDEX,NOFOLLOW">
+
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
+</HeadContent>
+
+@if (PageData is not null)
+{
+    string currentTimeString = PageData.CurrentTime.ToString();
+
+    <div class="home-offer-page">
+
+        <header class="offer-header">
+            <label class="offer-number-label">ОФЕРТА №:</label>
+            <input id="offerNumberInput" class="offer-number-input" placeholder="number"/>
+            <p>от дата @currentTimeString</p>
+        </header>
+
+        <div class="offer-body">
+            <div class="offer-products-grid">
+                <div class="offer-products-grid-head">
+                    <p>ID</p>
+                    <p>Продукт</p>
+                    <p>Количество</p>
+                    <p>Ед. цена (EUR)</p>
+                    <p>Сума (EUR)</p>
+                    <p class="offer-products-grid-info-heading">Информация</p>
+                </div>
+
+                @foreach (ProductOfferItemDisplayData productQuantityData in PageData.Items)
+                {
+                    <div name="productOfferItem" class="offer-products-grid-item" data-product-id="@productQuantityData.Id">
+
+                        <p class="product-id-text">@productQuantityData.Id</p>
+
+                        <p>@(productQuantityData.Name ?? "-")</p>
+
+                        <input id="productQuantityInput-@productQuantityData.Id"
+                            name="productQuantityInput"
+                            type="number"
+                            class="product-quantity-input"
+                            value="@productQuantityData.Quantity"/>
+
+                        <input id="productSinglePriceInput-@productQuantityData.Id"
+                            name="productSinglePriceInput"
+                            type="number"
+                            class="product-single-price-input"
+                            value="@productQuantityData.SinglePriceEUR.ToString("F2")"/>
+
+                        <p name="productTotalPriceText" class="product-total-price-text">
+                            @productQuantityData.TotalPriceEUR.ToString("F2")
+                        </p>
+
+                        <div class="product-info-item">
+                            <button name="productShowInformationPopupButton" type="button" class="btn btn-secondary">
+                                Информация
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <div class="offer-products-grid-price-figure-line">
+                    <p class="total-price-figure-point-text">Стойност:</p>
+                    <p id="totalNetPriceText" class="total-price-figure-text">
+                        @PageData.NetPrice.ToString("F2")
+                    </p>
+                </div>
+
+                <div class="offer-products-grid-price-figure-line">
+                    <p class="total-price-figure-point-text">ДДС:</p>
+                    <p id="totalVatPriceText" class="total-price-figure-text">
+                        @PageData.VatPrice.ToString("F2")
+                    </p>
+                </div>
+
+                <div class="offer-products-grid-price-figure-line">
+                    <p class="total-price-figure-point-text">Общо:</p>
+                    <p id="totalPriceText" class="total-price-figure-text">
+                        @PageData.TotalPrice.ToString("F2")
+                    </p>
+                </div>
+            </div>
+
+            <div class="user-info">
+                <input id="additionalInfoInput" type="text" class="user-info-input"/>
+            </div>
+
+            <div class="disclaimers"> 
+                <p>Ако проявите интерес, можете да се свържете с нас на <a href="mailto:sales@mostbg.com">sales@mostbg.com</a> и на телефон <a href="tel:+359291823">(+359 2) 91 823</a></p>
+            </div>
+
+            <div class="operations">
+                <button id="saveButton" type="button" class="btn btn-secondary button-with-loader">
+                    <p>Save</p>
+                    <div class="round-loader-default"></div>
+                </button>
+
+                <button id="printButton" type="button" class="btn btn-secondary button-with-loader">
+                    <p>Print</p>
+                    <div class="round-loader-default"></div>
+                </button>
+
+                <button id="copyButton" type="button" class="btn btn-secondary button-with-loader">
+                    <p>Copy</p>
+                    <div class="round-loader-default"></div>
+                </button>
+
+                <button id="generateButton" type="button" class="btn btn-secondary button-with-loader">
+                    <p>Generate</p>
+                    <div class="round-loader-default"></div>
+                </button> 
+            </div>
+
+            <div id="shareButtonOperation" class="share-operation no-item">
+                <button id="shareButton" type="button" class="btn btn-secondary button-with-loader">
+                    <p>Share</p>
+                    <div class="round-loader-default"></div>
+                </button> 
+            </div>
+        </div>
+    </div>
+}
+
+@code{
+    private sealed class ProductQuantity
+    {
+        [JsonPropertyName("id")] public required int Id { get; init; }
+        [JsonPropertyName("quantity")] public required int Quantity { get; init; }
+    } 
+
+    private sealed class HomeOfferPageData
+    {
+        public List<ProductOfferItemDisplayData> Items { get; init; } = [];
+        public required decimal NetPrice { get; init; }
+        public required decimal VatPrice { get; init; }
+        public required decimal TotalPrice { get; init; }
+        public required DateTime CurrentTime { get; init; }
+    }
+
+    private sealed class ProductOfferItemDisplayData
+    {
+        public required int Id { get; init; }
+        public string? Name { get; init; }
+        public string? SearchString { get; init; }
+        public required int Quantity { get; init; }
+        public required decimal SinglePriceEUR { get; init; }
+        public required decimal TotalPriceEUR { get; init; }
+    }
+
+    internal const string OfferItemsKey = "OfferItems";
+
+    private const string _pageScriptUrl = "js/Pages/HomeOffer.js";
+
+    private HomeOfferPageData? PageData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HttpContext httpContext = HttpContextAccessor.HttpContext
+            ?? throw new InvalidOperationException("No active HTTP context.");
+
+        bool hasOfferItems = httpContext.Items.TryGetValue(OfferItemsKey, out object? offerItemsJsonStringAsObject);
+
+        if (!hasOfferItems || offerItemsJsonStringAsObject == null)
+        {
+            PageData = GetPageDataWithNoItems();
+
+            return;
+        }
+
+        string offerItemsJson = (string)offerItemsJsonStringAsObject;
+
+        List<ProductQuantity>? productQuantities = JsonSerializer.Deserialize<List<ProductQuantity>>(offerItemsJson);
+
+        if (productQuantities == null)
+        {
+            PageData = GetPageDataWithNoItems();
+
+            return;
+        }
+
+        List<int> productIds = new();
+
+        foreach (ProductQuantity productQuantity in productQuantities)
+        {
+            productIds.Add(productQuantity.Id);
+        }
+
+        List<MOSTComputers.Models.Product.Models.Product> products = await ProductService.GetByIdsAsync(productIds);
+
+        List<ProductOfferItemDisplayData> items = [];
+
+        decimal netPrice = 0M;
+        decimal vatPrice = 0M;
+
+        foreach (MOSTComputers.Models.Product.Models.Product product in products)
+        {
+            ProductQuantity productQuantity = productQuantities.First(x => x.Id == product.Id);
+
+            OneOf<decimal, OneOf.Types.NotFound> getPriceInEurResult = await CurrencyConversionService.ChangeCurrencyAsync(
+                product.Price!.Value, product.Currency!.Value, Currency.EUR);
+
+            decimal singlePriceEur = getPriceInEurResult.AsT0;
+
+            decimal vatItemPrice = CurrencyVATService.CalculateVATUsingDefaultRate(singlePriceEur, productQuantity.Quantity);
+
+            vatPrice += vatItemPrice;
+
+            decimal totalItemPriceEur = singlePriceEur * productQuantity.Quantity;
+
+            netPrice += totalItemPriceEur;
+
+            ProductOfferItemDisplayData displayData = new()
+            {
+                Id = product.Id,
+                Name = product.Name,
+                SearchString = product.SearchString,
+                Quantity = productQuantity.Quantity,
+                SinglePriceEUR = singlePriceEur,
+                TotalPriceEUR = totalItemPriceEur,
+            };
+
+            items.Add(displayData);
+        }
+
+        decimal totalPrice = netPrice + vatPrice;
+
+        PageData = new()
+        {
+            Items = items,
+            CurrentTime = DateTime.Now,
+            NetPrice = netPrice,
+            VatPrice = vatPrice,
+            TotalPrice = totalPrice,
+        };
+    }
+
+    private static HomeOfferPageData GetPageDataWithNoItems()
+    {
+        return new()
+        {
+            Items = [],
+            CurrentTime = DateTime.Now,
+            NetPrice = 0M,
+            VatPrice = 0M,
+            TotalPrice = 0M,
+        };
+    }
+}

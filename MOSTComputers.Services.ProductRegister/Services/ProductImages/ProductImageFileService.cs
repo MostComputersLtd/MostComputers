@@ -21,6 +21,9 @@ using MOSTComputers.Utils.OneOf;
 using static MOSTComputers.Services.ProductRegister.Utils.SearchByIdsUtils;
 using static MOSTComputers.Services.ProductRegister.Utils.ValidationUtils;
 using static MOSTComputers.Services.ProductRegister.Validation.CommonValueConstraints.ProductImageFileDataConstraints;
+using Microsoft.Extensions.DependencyInjection;
+using MOSTComputers.Services.ProductRegister.Configuration;
+using MOSTComputers.Services.PromotionFileManagement.Services.Contracts;
 
 namespace MOSTComputers.Services.ProductRegister.Services.ProductImages;
 
@@ -31,6 +34,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
         IProductImageFileDataRepository imageFileNameInfoRepository,
         IProductImageRepository imageRepository,
         IProductImageFileManagementService productImageFileManagementService,
+        [FromKeyedServices(ConfigureServices.ProductImageFileManagerKey)] ILocalFileManagementService localFileManagementService,
         IProductWorkStatusesWorkflowService productWorkStatusesWorkflowService,
         ITransactionExecuteService transactionExecuteService,
 
@@ -43,6 +47,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
         _imageFileNameInfoRepository = imageFileNameInfoRepository;
         _imageRepository = imageRepository;
         _productImageFileManagementService = productImageFileManagementService;
+        _localFileManagementService = localFileManagementService;
         _productWorkStatusesWorkflowService = productWorkStatusesWorkflowService;
         _transactionExecuteService = transactionExecuteService;
 
@@ -63,6 +68,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
     private readonly IProductImageFileDataRepository _imageFileNameInfoRepository;
     private readonly IProductImageRepository _imageRepository;
     private readonly IProductImageFileManagementService _productImageFileManagementService;
+    private readonly ILocalFileManagementService _localFileManagementService;
     private readonly IProductWorkStatusesWorkflowService _productWorkStatusesWorkflowService;
     private readonly ITransactionExecuteService _transactionExecuteService;
 
@@ -225,13 +231,11 @@ internal sealed class ProductImageFileService : IProductImageFileService
 
         if (fileData == null) return newImageFileId;
 
-        OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult> fileCreateResult
-            = await _productImageFileManagementService.AddImageAsync(fileData.FileName, fileData.Data);
+        OneOf<Success, FileAlreadyExistsResult> fileCreateResult
+            = await _localFileManagementService.AddFileAsync(fileData.FileName, fileData.Data);
 
         return fileCreateResult.Match<OneOf<int, FileSaveFailureResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
             success => newImageFileId,
-            fileSaveFailureResult => fileSaveFailureResult,
-            directoryNotFoundResult => new UnexpectedFailureResult(),
             fileAlreadyExistsResult => fileAlreadyExistsResult);
     }
 
@@ -380,7 +384,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
 
         if (fileNameInfo.FileName is not null)
         {
-            OneOf<Success, FileDoesntExistResult> deleteOldFileResult = _productImageFileManagementService.DeleteFile(fileNameInfo.FileName);
+            OneOf<Success, FileDoesntExistResult> deleteOldFileResult = _localFileManagementService.DeleteFile(fileNameInfo.FileName);
 
             if (!deleteOldFileResult.IsT0)
             {
@@ -392,13 +396,11 @@ internal sealed class ProductImageFileService : IProductImageFileService
 
         if (fileData is null) return new Success();
 
-        OneOf<Success, FileSaveFailureResult, DirectoryNotFoundResult, FileAlreadyExistsResult> addNewImageFileResult
-           = await _productImageFileManagementService.AddImageAsync(fileData.FileName, fileData.Data);
+        OneOf<Success, FileAlreadyExistsResult> addNewImageFileResult
+           = await _localFileManagementService.AddFileAsync(fileData.FileName, fileData.Data);
 
         return addNewImageFileResult.Match<OneOf<Success, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult>>(
             success => success,
-            fileSaveFailureResult => fileSaveFailureResult,
-            directoryNotFoundResult => new UnexpectedFailureResult(),
             fileAlreadyExistsResult => fileAlreadyExistsResult);
     }
 
@@ -728,7 +730,7 @@ internal sealed class ProductImageFileService : IProductImageFileService
         if (fileNameInfo.FileName is null) return new Success();
 
         OneOf<Success, FileDoesntExistResult> deleteFileResult
-            = _productImageFileManagementService.DeleteFile(fileNameInfo.FileName);
+            = _localFileManagementService.DeleteFile(fileNameInfo.FileName);
 
         return deleteFileResult.Map<Success, NotFound, FileDoesntExistResult>();
     }

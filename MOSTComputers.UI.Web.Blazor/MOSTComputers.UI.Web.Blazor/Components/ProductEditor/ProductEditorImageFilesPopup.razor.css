@@ -1,0 +1,15 @@
+.product-image-file-active-button-container {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    left: 0px;
+    top: 0;
+    bottom: 0px;
+    pointer-events: none;
+    user-select: none;
+}
+
+.product-image-file-active-button {
+    pointer-events: none;
+}

@@ -53,7 +53,11 @@ export async function initializePromotionFile() {
 
     const promotionFileId = parseInt(promotionFileIdHiddenInput.value);
 
-    const allElementsInSelectList = promotionFileSelectList.getAllElementsData();
+    const promotionFileListContainer = document.getElementById(promotionFileListContainerId);
+
+    const promotionFileList = promotionFileListContainer.querySelector("ul");
+
+    const allElementsInSelectList = promotionFileSelectList.getAllElementsData(promotionFileList);
 
     for (const elementData of allElementsInSelectList) {
 
@@ -80,16 +84,32 @@ export function getPopupData() {
 
     const selectedPromotionFileData = promotionFileSelectList.getSelectedElementData(promotionFileList);
 
+    const validFrom = validFromInput.value || null;
+    const validTo = validToInput.value || null;
+
+    let selectedFileId = null;
+    let selectedFileName = null;
+    let selectedFileFileName = null;
+    let selectedFileContentType = null;
+
+    if (selectedPromotionFileData != null) {
+
+        selectedFileId = selectedPromotionFileData.id;
+        selectedFileName = selectedPromotionFileData.name;
+        selectedFileFileName = selectedPromotionFileData.filename;
+        selectedFileContentType = selectedPromotionFileData.contentType;
+    }
+
     return {
         editorId: editorFileIdHiddenInput.value,
         active: activeInput.checked,
-        validFrom: validFromInput.value,
-        validTo: validToInput.value,
+        validFrom: validFrom,
+        validTo: validTo,
         shouldAddToImages: shouldAddToImagesInput.checked,
-        selectedFileId: selectedPromotionFileData.id,
-        selectedFileName: selectedPromotionFileData.name,
-        selectedFileFilename: selectedPromotionFileData.filename,
-        selectedFileContentType: selectedPromotionFileData.contentType,
+        selectedFileId: selectedFileId,
+        selectedFileName: selectedFileName,
+        selectedFileFilename: selectedFileFileName,
+        selectedFileContentType: selectedFileContentType,
     };
 }
 
@@ -112,9 +132,38 @@ async function searchPromotionFilesFromCurrentData() {
         validOnDate = null;
     }
 
+    const promotionFileListContainer = document.getElementById(promotionFileListContainerId);
+
+    const promotionFileList = promotionFileListContainer.querySelector("ul");
+
+    const selectedPromotionFile = promotionFileSelectList.getSelectedElementData(promotionFileList);
+
     await searchPromotionFilesAsync(validOnDate, searchInput.value);
 
-    onPromotionFileListChanged(null);
+    const newPromotionFileList = promotionFileListContainer.querySelector("ul");
+
+    let selectedFileExistsInNewSearchResults = false;
+
+    if (selectedPromotionFile) {
+
+        const allElementsInSelectList = promotionFileSelectList.getAllElementsData(newPromotionFileList);
+
+        for (const elementData of allElementsInSelectList) {
+
+            if (elementData.id == selectedPromotionFile.id) {
+
+                promotionFileSelectList.selectElement(elementData.element);
+
+                selectedFileExistsInNewSearchResults = true;
+
+                break;
+            }
+        }
+    }
+
+    if (!selectedFileExistsInNewSearchResults) {
+        onPromotionFileListChanged(null);
+    }
 }
 
 async function searchPromotionFilesAsync(validOnDate, searchText) {
@@ -124,7 +173,7 @@ async function searchPromotionFilesAsync(validOnDate, searchText) {
         validOnDate: validOnDate,
     };
 
-    const url = "api/components/productEditor/single/promotionFile/search";
+    const url = "api/components/productEditor/single/promotionFile/single/search";
 
     const response = await fetch(url, {
         method: "POST",
@@ -157,7 +206,7 @@ function onPromotionFileListChanged(promotionFileData) {
     const shouldAddToImagesInput = document.getElementById(shouldAddToImagesInputId);
 
     if (promotionFileData == null
-        || promotionFileData.contentType.startsWith("image/")) {
+        || !promotionFileData.contentType.startsWith("image/")) {
 
         shouldAddToImagesInput.checked = false;
         shouldAddToImagesInput.setAttribute("disabled", "disabled");

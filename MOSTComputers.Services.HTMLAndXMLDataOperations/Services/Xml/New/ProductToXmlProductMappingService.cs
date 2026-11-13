@@ -131,12 +131,14 @@ internal sealed class ProductToXmlProductMappingService : IProductToXmlProductMa
             XmlPromotion xmlPromotion = new()
             {
                 Type = GetPromotionTypeAsXmlDisplayString(promotion.Type),
+                Name = promotion.Name,
                 ValidFrom = promotion.StartDate,
                 ValidTo = promotion.ExpirationDate,
                 PromotionUSD = promotion.DiscountUSD,
                 PromotionEUR = promotion.DiscountEUR,
                 MinimumQuantity = promotion.MinimumQuantity,
                 MaximumQuantity = promotion.MaximumQuantity,
+                QuantityIncrement = promotion.QuantityIncrement,
                 ExpireQuantity = promotion.ExpQuantity,
             };
 

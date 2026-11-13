@@ -21,89 +21,60 @@ export function removeCallback() {
     onEditorChangeOrMarkCallback = null;
 }
 
-export function setPropertyChanged(propertyData, itemChangeState)
-{
+export function setPropertyChanged(propertyData, itemChangeState) {
+
     setDataChanged(changedProperties, propertyData, itemChangeState);
 
     runCallback();
 }
 
-export function setImageChanged(imageData, itemChangeState)
-{
+export function setImageChanged(imageData, itemChangeState) {
+
     setDataChanged(changedImages, imageData, itemChangeState);
 
     runCallback();
 }
 
-export function setPromotionProductFileChanged(promotionProductFileData, itemChangeState)
-{
+export function setPromotionProductFileChanged(promotionProductFileData, itemChangeState) {
+
     setDataChanged(changedPromotionFiles, promotionProductFileData, itemChangeState);
 
     runCallback();
 }
 
-export function setDocumentChanged(productDocumentData, itemChangeState)
-{
+export function setDocumentChanged(productDocumentData, itemChangeState) {
+
     setDataChanged(changedDocuments, productDocumentData, itemChangeState);
 
     runCallback();
 }
 
-function setDataChanged(changedItems, changedItem, itemChangeState)
-{
+function setDataChanged(changedItems, changedItem, itemChangeState) {
+
     const currentItemChangeState = changedItems.get(changedItem);
 
-    if (currentItemChangeState !== undefined)
-    {
-        if (itemChangeState == ItemChangeState.Added && currentItemChangeState == ItemChangeState.Deleted)
-        {
+    if (currentItemChangeState !== undefined) {
+
+        if (itemChangeState == ItemChangeState.Added && currentItemChangeState == ItemChangeState.Deleted) {
+
             changedItems.delete(changedItem);
         }
-        else if (itemChangeState == ItemChangeState.Deleted && currentItemChangeState == ItemChangeState.Added)
-        {
+        else if (itemChangeState == ItemChangeState.Deleted && currentItemChangeState == ItemChangeState.Added) {
+
             changedItems.delete(changedItem);
         }
-        else if (itemChangeState == ItemChangeState.Updated && currentItemChangeState == ItemChangeState.Added)
-        {
+        else if (itemChangeState == ItemChangeState.Updated && currentItemChangeState == ItemChangeState.Added) {
+
             return;
         }
-        else
-        {
-            changedItems[changedItem] = itemChangeState;
+        else {
+            changedItems.set(changedItem, itemChangeState);
         }
 
         return;
     }
 
-    changedItems.add(changedItem, itemChangeState);
-}
-
-export function markDataSaved(propertyData)
-{
-    changedProperties.delete(propertyData);
-
-    runCallback();
-}
-
-export function markDataSaved(imageData)
-{
-    changedImages.delete(imageData);
-
-    runCallback();
-}
-
-export function markDataSaved(promotionProductFileData)
-{
-    changedPromotionFiles.delete(promotionProductFileData);
-
-    runCallback();
-}
-
-export function markDataSaved(productDocumentData)
-{
-    changedDocuments.delete(productDocumentData);
-
-    runCallback();
+    changedItems.set(changedItem, itemChangeState);
 }
 
 export function anyChanges() {

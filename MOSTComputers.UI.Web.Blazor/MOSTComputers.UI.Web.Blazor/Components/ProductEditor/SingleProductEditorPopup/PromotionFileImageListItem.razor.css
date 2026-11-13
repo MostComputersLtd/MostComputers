@@ -1,0 +1,14 @@
+.promotion-product-file-name-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.promotion-product-file-name-text {
+    margin-right: 0.25em;
+}
+
+.promotion-product-file-name {
+    text-align: center;
+    text-decoration: none;
+}

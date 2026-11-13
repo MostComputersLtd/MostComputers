@@ -81,19 +81,12 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
     private const string _invoiceTemplateInvoiceCreatorElementId = "invoiceTemplateInvoiceCreator";
     private const string _invoiceTemplateLeagalTextElementId = "invoiceTemplateLeagalText";
 
-    private static readonly MarginOptions _defaultChromePdfMargins = new() { Left = "0.4in", Right = "0.39in", Top = "0.4in", Bottom = "0.39in" };
-
-    internal static readonly string[] _defaultChromeBrowserOptions = new[]
+    private static readonly MarginOptions _defaultChromePdfMargins = new()
     {
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-gpu",
-        "--disable-extensions",
-        "--disable-background-networking",
-        "--disable-sync",
-        "--disable-translate",
-        "--disable-default-apps",
-        "--mute-audio"
+        Left = "0.4in",
+        Right = "0.39in",
+        Top = "0.4in",
+        Bottom = "0.39in"
     };
 
     public async Task CreateInvoicePdfAndSaveAsync(InvoiceData invoiceData, string destinationFilePath)
@@ -270,12 +263,7 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
 
             HtmlNode purchasesListItemCopy = originalPurchasesListItem.CloneNode(true);
 
-            int purchaseNumber = i + 1;
-
-            int quantity = purchaseData.Quantity ?? 0;
-            decimal pricePerUnit = purchaseData.PricePerUnit ?? 0;
-
-            decimal totalPrice = quantity * pricePerUnit;
+            int purchaseNumber = i + 1; 
 
             string newInvoiceTemplateEntryNumberElementId = GetIdForNodeInListFromIndex(_invoiceTemplateEntryNumberElementIdPrefix, i);
             string newInvoiceTemplateEntryNameElementId = GetIdForNodeInListFromIndex(_invoiceTemplateEntryNameElementIdPrefix, i);
@@ -285,7 +273,12 @@ internal class PdfInvoiceFileGeneratorServiceWithHtmlTemplate : IPdfInvoiceFileG
             string newInvoiceTemplateEntryTotalPriceElementId = GetIdForNodeInListFromIndex(_invoiceTemplateEntryTotalPriceElementIdPrefix, i);
             string newInvoiceTemplateEntryCurrencyElementId = GetIdForNodeInListFromIndex(_invoiceTemplateEntryCurrencyElementIdPrefix, i);
 
-            string pricePerUnitString = Math.Round(pricePerUnit, 2).ToString("F2");
+            int quantity = purchaseData.Quantity ?? 0;
+            decimal pricePerUnit = purchaseData.PricePerUnit ?? 0;
+
+            decimal totalPrice = purchaseData.LineNetPrice ?? 0;
+
+            string pricePerUnitString = RoundCurrency(pricePerUnit).ToString("F2");
             string totalPriceString = RoundCurrency(totalPrice).ToString("F2");
 
             string entryCurrencyString = GetCurrencyString(purchaseData.Currency);

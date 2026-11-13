@@ -20,6 +20,9 @@ using OneOf;
 using static MOSTComputers.Utils.Files.FilePathUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Components.Endpoints;
+using MOSTComputers.Services.PDF.Models.HomeOffers;
+using MOSTComputers.Services.PDF.Services.Contracts;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
@@ -46,7 +49,9 @@ public static class HomePageComponentEndpoints
 
     private const int _maxProductsSearchCount = 2000;
 
-    public static IEndpointConventionBuilder MapProductDataComponentEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointConventionBuilder MapProductDataComponentEndpoints(
+        this IEndpointRouteBuilder endpoints,
+        RazorComponentsEndpointConventionBuilder razorEndpointBuilder)
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute);
 
@@ -58,6 +63,10 @@ public static class HomePageComponentEndpoints
         endpointGroup.MapGet("/productSearchStringPopup/{productId:int}", GetProductSearchStringPartsPopupAsync);
 
         endpointGroup.MapPost("/search", GetProductTableForSearchedProductsAsync);
+
+        ConfigureHomeOfferPageEndpoint(razorEndpointBuilder);
+
+        endpointGroup.MapPost("/offer/pdf", GetPdfFromHomeOfferPageDataAsync);
 
         return endpointGroup;
     }
@@ -459,7 +468,7 @@ public static class HomePageComponentEndpoints
             return Results.NotFound();
         }
 
-        var promotions = await groupPromotionService.GetAllActiveInGroupAsync(promotionGroupId);
+        List<GroupPromotionContent> promotions = await groupPromotionService.GetAllActiveInGroupAsync(promotionGroupId);
 
         DateTime now = DateTime.Now;
 
@@ -505,6 +514,130 @@ public static class HomePageComponentEndpoints
                 SearchStringOriginDataList = searchStringParts ?? new()
             }
         });
+    }
+
+    public static RazorComponentsEndpointConventionBuilder ConfigureHomeOfferPageEndpoint(
+        this RazorComponentsEndpointConventionBuilder builder)
+    {
+        builder.Add(endpointBuilder =>
+        {
+            bool isHomeOfferPage = false;
+
+            foreach (object metadata in endpointBuilder.Metadata)
+            {
+                if (metadata is ComponentTypeMetadata componentTypeMetadata
+                    && componentTypeMetadata.Type == typeof(HomeOffer))
+                {
+                    isHomeOfferPage = true;
+                    break;
+                }
+            }
+
+            if (!isHomeOfferPage)
+            {
+                return;
+            }
+
+            RequestDelegate originalRequestDelegate = endpointBuilder.RequestDelegate!;
+
+            endpointBuilder.RequestDelegate = async context =>
+            {
+                if (HttpMethods.IsPost(context.Request.Method))
+                {
+                    IFormCollection form = await context.Request.ReadFormAsync();
+
+                    context.Items[HomeOffer.OfferItemsKey] = form["payload"].ToString();
+
+                    string originalMethod = context.Request.Method;
+
+                    context.Request.Method = HttpMethods.Get;
+
+                    try
+                    {
+                        await originalRequestDelegate(context);
+                    }
+                    finally
+                    {
+                        context.Request.Method = originalMethod;
+                    }
+                }
+                else
+                {
+                    await originalRequestDelegate(context);
+                }
+            };
+        });
+
+        return builder;
+    }
+
+    private sealed class HomeOfferPdfRequest
+    {
+        public int? OfferNumber { get; init; }
+        public string? AdditionalInfo { get; init; }
+        public List<HomeOfferPdfRequestItem> Items { get; init; } = [];
+    }
+
+    private sealed class HomeOfferPdfRequestItem
+    {
+        public required int Id { get; init; }
+        public required int Quantity { get; init; }
+        public required decimal PricePerItemEur { get; init; }
+    }
+
+    private static async Task<IResult> GetPdfFromHomeOfferPageDataAsync(
+        [FromBody] HomeOfferPdfRequest request,
+        [FromServices] IProductService productService,
+        [FromServices] ICurrencyVATPercentageProvider currencyVATPercentageProvider,
+        [FromServices] ICurrencyVATService currencyVATService,
+        [FromServices] IPdfHomeOfferFileGeneratorService pdfHomeOfferFileGeneratorService)
+    {
+        List<int> productIds = [];
+
+        foreach (HomeOfferPdfRequestItem item in request.Items)
+        {
+            productIds.Add(item.Id);
+        }
+
+        List<MOSTComputers.Models.Product.Models.Product> products = await productService.GetByIdsAsync(productIds); 
+
+        List<HomeOfferItemData> homeOfferItems = [];
+
+        decimal varPercentageFraction = currencyVATPercentageProvider.GetDefaultVATPercentage();
+
+        foreach (MOSTComputers.Models.Product.Models.Product product in products)
+        {
+            HomeOfferPdfRequestItem requestItem = request.Items.First(x => x.Id == product.Id);
+
+            decimal netPrice = requestItem.PricePerItemEur * requestItem.Quantity;
+            decimal vatPrice = currencyVATService.CalculateVAT(requestItem.PricePerItemEur, requestItem.Quantity, varPercentageFraction);
+            decimal totalPrice = netPrice + vatPrice;
+
+            HomeOfferItemData homeOfferItemData = new()
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                Quantity = requestItem.Quantity,
+                PricePerUnit = requestItem.PricePerItemEur,
+                LineNetPrice = netPrice,
+                LineVatPrice = vatPrice,
+                LineTotalPrice = totalPrice,
+            };
+
+            homeOfferItems.Add(homeOfferItemData);
+        }
+
+        HomeOfferData homeOfferData = new()
+        {
+            OfferNumber = request.OfferNumber ?? 1,
+            AdditionalInfo = request.AdditionalInfo,
+            Date = DateTime.Now,
+            Items = homeOfferItems,
+        };
+
+        Stream fileStream = await pdfHomeOfferFileGeneratorService.CreateHomeOfferPdfAndGetStreamAsync(homeOfferData);
+
+        return Results.File(fileStream, "application/pdf");
     }
 
     private static void SortProductsFromSecondCategoryUp(List<MOSTComputers.Models.Product.Models.Product> products)

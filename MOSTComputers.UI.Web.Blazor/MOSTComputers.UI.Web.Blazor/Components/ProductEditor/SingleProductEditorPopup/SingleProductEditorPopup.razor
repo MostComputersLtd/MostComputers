@@ -1,72 +1,14 @@
-@implements IAsyncDisposable
-
 @using System.Text.Json.Serialization
-@using FluentValidation.Results
-@using MOSTComputers.Models.Common
-@using MOSTComputers.Models.FileManagement.Models
 @using MOSTComputers.Models.Product.Models
-@using MOSTComputers.Models.Product.Models.ProductImages
 @using MOSTComputers.Models.Product.Models.ProductStatuses
-@using MOSTComputers.Models.Product.Models.Promotions.Files
-@using MOSTComputers.Models.Product.Models.Validation
-@using MOSTComputers.Services.Currencies.Contracts
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Html.New
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Models.Xml
-@using MOSTComputers.Services.HTMLAndXMLDataOperations.Services.Html.New.Contracts
-@using MOSTComputers.Services.ProductImageFileManagement.Services.Contracts
-@using MOSTComputers.Services.ProductRegister.Models.Requests
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImage.FileRelated
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductImageAndPromotionFileSave
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductProperty
-@using MOSTComputers.Services.ProductRegister.Models.Requests.ProductWorkStatuses
-@using MOSTComputers.Services.ProductRegister.Models.Requests.PromotionProductFileInfo
-@using MOSTComputers.Services.ProductRegister.Services.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.ProductProperties.Contacts
-@using MOSTComputers.Services.ProductRegister.Services.ProductStatus.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts
-@using MOSTComputers.Services.ProductRegister.Services.Promotions.PromotionFiles.Contracts
 @using MOSTComputers.Services.SearchStringOrigin.Models
-@using MOSTComputers.Services.SearchStringOrigin.Services.Contracts
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
-@using MOSTComputers.UI.Web.Blazor.Components.Product
 @using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion
-@using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files
 @using MOSTComputers.UI.Web.Blazor.Components.Product.SearchString
-@using MOSTComputers.UI.Web.Blazor.Endpoints.Documents
-@using OneOf
-@using OneOf.Types
-@using SixLabors.ImageSharp
-@using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
-@using static MOSTComputers.Utils.Files.ContentTypeUtils
-@using static MOSTComputers.Utils.Files.FilePathUtils
-@using static MOSTComputers.Utils.OneOf.AsyncMatchingExtensions
-
-@inject IProductPropertyService ProductPropertyService
-@inject IProductCharacteristicService ProductCharacteristicService
-@inject IProductImageService ProductImageService
-@inject IProductImageFileService ProductImageFileService
-@inject IProductImageFileManagementService ProductImageFileManagementService
-@inject IProductRelatedItemsFullSaveService ProductRelatedItemsFullSaveService
-@inject IProductWorkStatusesService ProductWorkStatusesService
-@inject IPromotionService PromotionService
-@inject IPromotionFileService PromotionFileService
-@inject IPromotionProductFileService PromotionProductFileService
-@inject IProductDocumentFileService ProductDocumentFileService
-@inject ICurrencyConversionService CurrencyConversionService
-@inject ICurrencyVATService CurrencyVATService
-
-@inject ISearchStringOriginService SearchStringOriginService
-@inject IProductHtmlService ProductHtmlService
-
-@inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager NavigationManager
 
 <Popup PopupId="singleProductEditorPopup"
     IsVisible="IsVisible"
-    IsVisibleChanged="OnVisibleChanged"
     PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
         <div class="single-product-editor-popup-header">
@@ -76,17 +18,17 @@
             <h5 class="modal-title">Status:</h5>
 
             <select id="singleEditorProductNewStatusSelect"
-                class="single-product-editor-popup-header-item product-new-status-select"
+                class="header-item product-new-status-select"
                 aria-label="Select Product New Status">
 
                 @foreach (ProductNewStatus productNewStatus in ProductNewStatusesInSelect)
                 {
-                    <option value="@(productNewStatus)" selected="@(productNewStatus == ProductStatuses?.ProductNewStatus)">
+                    <option value="@((int)productNewStatus)" selected="@(productNewStatus == ProductStatuses?.ProductNewStatus)">
                         @GetStringFromProductNewStatus(productNewStatus)
                     </option>
                 }
 
-                @if (ProductStatuses is null)
+                @if (ProductStatuses == null)
                 {
                     <option value="" selected disabled>-</option>
                 }
@@ -96,33 +38,34 @@
             <h4 class="popup-header-text">@Product.Name</h4>
 
             <button id="singleEditorShowProductDataPopupButton"
-                class="btn btn-outline-success single-product-editor-popup-header-item">
+                class="btn btn-outline-success header-item">
                 Info 1
             </button>
 
             <button id="singleEditorShowProductLegacyDisplayPopupButton"
-                class="btn btn-outline-success single-product-editor-popup-header-item">
+                class="btn btn-outline-success header-item">
                 Info 2
             </button>
 
-            <a class="btn btn-outline-success single-product-editor-popup-header-item" href="/product/productData/@Product.Id" target="_blank">
+            <a href="/product/productData/@Product.Id" target="_blank" class="btn btn-outline-success header-item">
                 Info 3
             </a>
 
-            <a class="btn btn-outline-success single-product-editor-popup-header-item" href="api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer">
+            <a href="api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success header-item">
                 XML
             </a>
 
-            <button class="btn btn-outline-success single-product-editor-popup-header-item" @onclick="ShowPromotionProductFileEditorPopup">
+            <button id="singleEditorShowPromotionProductFileEditorPopupButton"
+                class="btn btn-outline-success header-item">
                 Promo
             </button>
 
             <button id="singleEditorShowSearchStringPopupButton"
-                class="btn btn-outline-success single-product-editor-popup-header-item">
+                class="btn btn-outline-success header-item">
                 SStr
             </button>
 
-            <div class="single-product-editor-popup-header-buttons-container single-product-editor-popup-header-item">
+            <div class="single-product-editor-popup-header-buttons-container header-item">
 
                 <button id="singleEditorAddImageFileButton" class="btn btn-outline-success">
                     Add Image
@@ -131,21 +74,20 @@
                 <input id="singleEditorAddImageFileInput" type="file" accept="image/*"
                     class="image-file-hidden-input" tabindex="-1" />
 
-                <button id="singleEditorAddDocumentFileButton" class="btn btn-outline-success single-product-editor-popup-header-item">
+                <button id="singleEditorAddDocumentFileButton" class="btn btn-outline-success header-item">
                     Add Document
                 </button>
 
-                <InputFile id="singleEditorAddDocumentFileInput" type="file" accept="application/pdf"
+                <input id="singleEditorAddDocumentFileInput" type="file" accept="application/pdf"
                     class="image-file-hidden-input" tabindex="-1" />
 
-                <div class="save-button-and-loader-container">
-                    <div id="singleProductEditorSaveButtonContainer" class="save-button-container">
-                        <button id="singleProductEditorSaveButton"
-                            class="btn btn-primary save-button single-product-editor-popup-header-item">
-                        </button>
-                    </div>
+                <div>
+                    <button id="singleProductEditorSaveButton"
+                        class="btn btn-primary save-button button-with-loader header-item">
+                        <p>Save</p>
 
-                    <div class="round-loader-default save-button-loader @(_isSavingProduct ? "loading" : string.Empty)"></div>
+                        <div class="round-loader-default save-button-loader"></div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -171,9 +113,9 @@
 
                         switch (imageItem)
                         {
-                            case ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileData:
+                            case PromotionFileImageListItem.PromotionFileImageItemDisplayData promotionFileData:
                             {
-                                <ProductImagePromotionFileListItem ItemData="promotionFileData" />
+                                <PromotionFileImageListItem ItemData="promotionFileData" />
 
                                 break;
                             }
@@ -210,7 +152,7 @@
                 @{
                     int? promotionPictureId = Product.AlertPictureId;
 
-                    if (promotionPictureId is null || promotionPictureId <= 0)
+                    if (promotionPictureId == null || promotionPictureId <= 0)
                     {
                         promotionPictureId = Product.PromotionPictureId;
                     }
@@ -220,18 +162,20 @@
                 {
                     <div class="info-promotion-container">
                         <p>IID: @(promotionPictureId.ToString())</p>
-                        <p class="info-promotion-expire-date">Expire Date: @(Product.PromotionExpireDate?.ToString("dd/MMM/yyyy") ?? "-")</p>
+                        <p class="info-promotion-expire-date">
+                            Expire Date: @(Product.PromotionExpireDate?.ToString("dd/MMM/yyyy") ?? "-")
+                        </p>
                     </div>
                 }
 
-                @if (PidPromotion is not null)
+                @if (PidPromotion != null)
                 {
                     <div class="promotion-on-one-line-container">
                         <PromotionOnOneLine Promotion="PidPromotion" />
                     </div>
                 }
 
-                @if (RidPromotion is not null)
+                @if (RidPromotion != null)
                 {
                     <div class="promotion-on-one-line-container">
                         <PromotionOnOneLine Promotion="RidPromotion" />
@@ -242,19 +186,15 @@
             <div class="search-string-table-container">
                 <p>Search string: @Product.SearchString</p>
 
-                @if (SearchStringParts is not null
+                @if (SearchStringParts != null
                     && SearchStringParts.Count > 0)
                 {
                     <ProductSearchStringOriginTable SearchStringOriginDataList="SearchStringParts" />
                 }
             </div>
 
-            <div style="display: flex;">
-                <p class="me-2">Display all properties:</p>
-            </div>
-
             <div class="properties-list-container">
-                <ul class="properties-list">
+                <ul id="singleEditorProductPropertyList" class="properties-list">
 
                     @for (int i = 0; i < ProductProperties.Count; i++)
                     {
@@ -275,7 +215,7 @@
             <div class="full-parent-width pb-4 d-flex flex-column">
 
                 <div class="properties-list-container">
-                    <ul class="properties-list">
+                    <ul id="singleEditorProductLinkList" class="properties-list">
 
                         @for (int i = 0; i < ProductLinks.Count; i++)
                         {
@@ -319,7 +259,7 @@
 </div>
 
 <script id="singleEditorData" type="application/json">
-    @JsonData
+    @((MarkupString)JsonData)
 </script>
 
 @code {  
@@ -330,7 +270,7 @@
     }
 
     [JsonPolymorphic]
-    [JsonDerivedType(typeof(ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData), ProductImagePromotionFileListItem.ItemType)]
+    [JsonDerivedType(typeof(PromotionFileImageListItem.PromotionFileImageItemRecoveryJsonData), PromotionFileImageListItem.ItemType)]
     [JsonDerivedType(typeof(ProductImageListItem.ProductImageItemRecoveryJsonData), ProductImageListItem.ItemType)]
     [JsonDerivedType(typeof(ProductImageFileListItem.ProductImageFileItemRecoveryJsonData), ProductImageFileListItem.ItemType)]
     public abstract class ProductImageRecoveryJsonDataBase
@@ -340,52 +280,8 @@
         [JsonPropertyName("editorId")] public required string EditorId { get; set; }
     }
 
-    internal readonly struct InvalidProductFileResult {}
-
-    internal enum ItemChangeState
-    {
-        Added = 1,
-        Updated = 2,
-        Deleted = 3,
-    }
-
-    private const string _componentScriptUrl = "./Components/Product/SingleProductEditorPopup.razor.js";
-
-    private const int _propertiesTextAreaMinRows = 1;
-    private const int _propertiesTextAreaMaxLength = 4000;
-    private const string _propertiesTextAreaCommonName = "propertyValueInput";
-
-    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
-
     [Parameter] public bool IsVisible { get; set; }
-    private bool? _currentIsVisible = null;
-
-    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-
-    private async Task OnVisibleChanged(bool isVisible)
-    {
-        IsVisible = isVisible;
-
-        _currentIsVisible = isVisible;
-
-        await IsVisibleChanged.InvokeAsync(isVisible);
-    }
-
-    private async Task CloseHandlerAsync()
-    {
-        bool isDataChanged = IsDataChanged();
-
-        if (isDataChanged)
-        {
-            IsDataChangedPopupVisible = true;
-
-            return;
-        }
-
-        await IsVisibleChanged.InvokeAsync(IsVisible);
-
-        await ClearProductRelatedData();
-    }
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
 
     [Parameter] public required Product Product { get; set; }
 
@@ -413,235 +309,13 @@
 
     private List<ProductNewStatus> ProductNewStatusesInSelect = new(DefaultProductNewStatusesInSelect);
 
-    private void DataChangedPopupCloseHandler()
-    {
-        // Does not respond to any close attempts, so ignore
-    }
-
-    private ProductImageListItemDisplayData? _draggedImageListItem;
-    private int? _draggedItemStartIndex;
-
     [Parameter] public EventCallback OnSaveSuccessful { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnInitializedAsync()
     {
-        ProductNewStatusesInSelect = new(DefaultProductNewStatusesInSelect);
-
-        if (IsVisible
-            && _currentIsVisible is not null
-            && _currentIsVisible != IsVisible)
-        {
-            await ClearProductRelatedData();
-
-            StateHasChanged();
-
-            await SetProductRelatedData();
-        }
-
-        if (ProductStatuses is not null && !ProductNewStatusesInSelect.Contains(ProductStatuses.ProductNewStatus))
+        if (ProductStatuses != null && !ProductNewStatusesInSelect.Contains(ProductStatuses.ProductNewStatus))
         {
             ProductNewStatusesInSelect.Add(ProductStatuses.ProductNewStatus);
         }
-
-        _currentIsVisible = IsVisible;
-    }
-
-    protected async override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _jsModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", Assets[_componentScriptUrl]);
-
-            _dotNetObjectReference = DotNetObjectReference.Create(this);
-        }
-    }
-
-    private async Task SaveChangesAndCloseIsDataChangedPopupAsync()
-    {
-        await SaveAllFromEditorDataAsync();
-
-        IsDataChangedPopupVisible = false;
-
-        IsVisible = false;
-
-        if (_jsModule is not null)
-        {
-            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
-        }
-
-        await IsVisibleChanged.InvokeAsync(IsVisible);
-
-        await ClearProductRelatedData();
-    }
-
-    private async Task CloseIsDataChangedPopupAndExitWithoutSavingAsync()
-    {
-        IsDataChangedPopupVisible = false;
-
-        IsVisible = false;
-
-        if (_jsModule is not null)
-        {
-            await _jsModule.InvokeVoidAsync("removeEventsOnPopupHidden");
-        }
-
-        await IsVisibleChanged.InvokeAsync();
-
-        await ClearProductRelatedData();
-    }
-
-    [JSInvokable("SaveFromShortcut")]
-    public async Task SaveAllFromShortcut()
-    {
-        await SaveAllFromEditorDataAsync();
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task<bool> SaveAllAsync(
-        List<ProductPropertyDisplayData> propertyDatas,
-        List<ProductImageListItemDisplayData> imageDatas,
-        List<ProductDocumentDisplayData> documentDatas,
-        string currentUserName)
-    {
-        ProductRelatedItemsFullSaveRequest upsertAllImagesAndPromotionFilesRequest = new()
-        {
-            ProductId = Product.Id,
-            UpsertUserName = currentUserName,
-        };
-
-        upsertAllImagesAndPromotionFilesRequest.PropertyRequests = GetPropertyUpsertRequestsFromEditorData(propertyDatas);
-
-        OneOf<List<ProductImageAndPromotionFileUpsertRequest>, No> getImageRequestsResult = await GetImageUpsertRequestsFromEditorDataAsync(imageDatas);
-
-        if (!getImageRequestsResult.IsT0) return false;
-
-        upsertAllImagesAndPromotionFilesRequest.ImageRequests = getImageRequestsResult.AsT0;
-
-        upsertAllImagesAndPromotionFilesRequest.DocumentRequests = GetDocumentCreateRequests(documentDatas);
-
-        OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> result
-            = await ProductRelatedItemsFullSaveService.SaveProductRelatedItemsAsync(upsertAllImagesAndPromotionFilesRequest);
-
-        ProductProperties.ForEach(x => x.ValidationMessages.Clear());
-        ProductLinks.ForEach(x => x.ValidationMessages.Clear());
-        ProductImagesOld.ForEach(x => x.ValidationMessages.Clear());
-        ProductDocuments?.ForEach(x => x.ValidationMessages.Clear());
-
-        return await result.MatchAsync(
-            async success =>
-            {
-                _changedProperties.Clear();
-                _changedImages.Clear();
-                _changedPromotionFiles.Clear();
-                _changedDocuments.Clear();
-
-                if (OnSaveSuccessful.HasDelegate)
-                {
-                    await OnSaveSuccessful.InvokeAsync();
-                }
-
-                await SetProductRelatedData();
-
-                return true;
-            },
-            validationResult =>
-            {
-                const char endIndexCharacter = ']';
-                const string propertyRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.PropertyRequests)}[";
-                const string imageRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.ImageRequests)}[";
-                const string documentRequestsStartString = $"{nameof(ProductRelatedItemsFullSaveRequest.DocumentRequests)}[";
-
-                foreach (ValidationFailure validationFailure in validationResult.Errors)
-                {
-                    if (validationFailure.PropertyName.StartsWith(propertyRequestsStartString))
-                    {
-                        int startIndexOfPropertyIndex = propertyRequestsStartString.Length;
-
-                        int indexOfEndOfPropertyIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfPropertyIndex);
-
-                        if (indexOfEndOfPropertyIndex > 0)
-                        {
-                            string propertyIndexAsString = validationFailure.PropertyName.Substring(startIndexOfPropertyIndex, indexOfEndOfPropertyIndex - startIndexOfPropertyIndex);
-
-                            if (int.TryParse(propertyIndexAsString, out int propertyIndex))
-                            {
-                                propertyDatas[propertyIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
-                            }
-                        }
-                    }
-                    else if (validationFailure.PropertyName.StartsWith(imageRequestsStartString))
-                    {
-                        int startIndexOfImageIndex = imageRequestsStartString.Length;
-
-                        int indexOfEndOfImageIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfImageIndex);
-
-                        if (indexOfEndOfImageIndex > 0)
-                        {
-                            string imageIndexAsString = validationFailure.PropertyName.Substring(startIndexOfImageIndex, indexOfEndOfImageIndex - startIndexOfImageIndex);
-
-                            if (int.TryParse(imageIndexAsString, out int imageIndex))
-                            {
-                                imageDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
-                            }
-                        }
-                    }
-                    else if (validationFailure.PropertyName.StartsWith(documentRequestsStartString))
-                    {
-                        int startIndexOfDocumentIndex = imageRequestsStartString.Length;
-
-                        int indexOfEndOfDocumentIndex = validationFailure.PropertyName.IndexOf(endIndexCharacter, startIndexOfDocumentIndex);
-
-                        if (indexOfEndOfDocumentIndex > 0)
-                        {
-                            string documentIndexAsString = validationFailure.PropertyName.Substring(startIndexOfDocumentIndex, indexOfEndOfDocumentIndex - startIndexOfDocumentIndex);
-
-                            if (int.TryParse(documentIndexAsString, out int imageIndex))
-                            {
-                                documentDatas[imageIndex].ValidationMessages.Add(validationFailure.ErrorMessage);
-                            }
-                        }
-                    }
-                }
-
-                return false;
-            },
-            fileSaveFailureResult =>
-            {
-                return false;
-            },
-            fileDoesntExistResult =>
-            {
-                return false;
-            },
-            fileAlreadyExistsResult =>
-            {
-                return false;
-            },
-            unexpectedFailureResult =>
-            {
-                return false;
-            });
-    }
-
-    private List<ProductPropertyForProductUpsertRequest> GetPropertyUpsertRequestsFromEditorData(IEnumerable<ProductPropertyDisplayData> productProperties)
-    {
-        List<ProductPropertyForProductUpsertRequest> propertyUpsertRequests = new();
-
-        foreach (ProductPropertyDisplayData productProperty in productProperties)
-        {
-            if (productProperty.ProductCharacteristic is null) continue;
-
-            ProductPropertyForProductUpsertRequest upsertRequest = new()
-            {
-                ProductCharacteristicId = productProperty.ProductCharacteristic!.Id,
-                Value = productProperty.Value,
-                CustomDisplayOrder = null,
-            };
-
-            propertyUpsertRequests.Add(upsertRequest);
-        }
-
-        return propertyUpsertRequests;
     }
 }

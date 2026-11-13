@@ -23,6 +23,8 @@ export function getSelectedElementData(promotionFileList) {
 
     const selectedElement = promotionFileList.querySelector(`.${itemClass}.${selectedItemClass}`);
 
+    if (selectedElement == null) return null;
+
     return getElementData(selectedElement);
 }
 
@@ -57,6 +59,8 @@ export function selectElement(elementToSelect) {
 
     for (const selectedElement of selectedElements) {
 
+        if (selectedElement == elementToSelect) continue;
+
         selectedElement.classList.remove(selectedItemClass);
     }
 
@@ -86,7 +90,7 @@ function getElementData(promotionFileListItem) {
     const promotionFileContentType = promotionFileListItem.getAttribute(listItemPromotionFileContentTypeAttribute);
 
     return {
-        id: promotionFileId,
+        id: parseInt(promotionFileId),
         name: promotionFileName,
         filename: promotionFileFilename,
         contentType: promotionFileContentType,

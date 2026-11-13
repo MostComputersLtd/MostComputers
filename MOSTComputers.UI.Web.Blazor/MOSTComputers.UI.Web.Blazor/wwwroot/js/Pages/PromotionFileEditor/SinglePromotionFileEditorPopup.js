@@ -152,14 +152,14 @@ export function changeSaveButtonText(text) {
 
 export function clearValidationMessages() {
 
-    validationVisualElements.clearValidationMessages(
+    validationVisualElements.clearValidationMessagesWithMap(
         propertyNamesToValidationMessagesContainerIdsMap);
 }
 
 export function displayValidationMessages(validationProblem) {
 
-    validationVisualElements.displayValidationMessages(
-        validationProblem,
+    validationVisualElements.displayValidationMessagesWithMap(
+        validationProblem.validationErrors,
         propertyNamesToValidationMessagesContainerIdsMap,
         validationMessages.getDefaultValidationMessage)
 }

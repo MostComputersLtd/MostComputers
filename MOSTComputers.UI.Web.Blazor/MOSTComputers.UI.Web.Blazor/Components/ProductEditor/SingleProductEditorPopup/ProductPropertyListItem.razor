@@ -4,7 +4,7 @@
 
 <li id="@ItemData.EditorId" name="propertyItem"
     class="properties-list-item"
-    data-is-link="@IsLink"
+    data-is-link="@(IsLink ? "true" : "false")"
     data-product-characteristic-id="@ItemData.ProductCharacteristic.Id">
     <table class="property-table">
         <tbody>
@@ -12,7 +12,7 @@
 
                 <td class="property-td-alignedOnTop property-is-active-td">
                     <input name="propertyValueActiveCheckbox"
-                        type="checkbox" value="@ItemData.IsActive" tabindex="-1" />
+                        type="checkbox" checked="@ItemData.IsActive" tabindex="-1" />
                 </td>
 
                 <td class="property-td-alignedOnTop property-characteristic-td">
@@ -33,16 +33,13 @@
                 </td>
             </tr>
 
-            @if (ItemData.ValidationMessages.Count > 0)
-            {
-                <tr>
-                    <td colspan="1">
-                    </td>
-                    <td colspan="4">
-                        <ValidationMessages Messages="ItemData.ValidationMessages" />
-                    </td>
-                </tr>
-            }
+            <tr name="propertyValidationMessagesListRow" class="validation-messages-list-row no-items">
+                <td colspan="1">
+                </td>
+                <td colspan="4">
+                    <ValidationMessages name="propertyValidationMessagesList" RenderEvenIfNull="true" />
+                </td>
+            </tr>
         </tbody>
     </table>
 </li>
@@ -56,7 +53,6 @@
         public string? Value { get; set; }
 
         public bool IsActive { get; set; } = true;
-        public List<string> ValidationMessages { get; set; } = new();
     }
 
     public sealed class ProductPropertyRecoveryJsonData

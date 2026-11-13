@@ -55,23 +55,3 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     width: 100%;
     height: min-content;
 }
-
-.promotion-product-file-active-input {
-    pointer-events: none;
-}
-
-.promotion-product-file-file-column {
-    max-width: 6em;
-    max-height: 3em;
-    padding-right: 1em;
-}
-
-.promotion-product-file-edit-button {
-    width: auto;
-    display: flex;
-    padding: 0.2em;
-}
-
-.promotion-product-file-edit-button-image {
-    height: 1em;
-}

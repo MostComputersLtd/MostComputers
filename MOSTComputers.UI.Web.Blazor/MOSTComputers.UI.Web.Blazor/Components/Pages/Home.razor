@@ -7,14 +7,14 @@
 @using MOSTComputers.Models.Product.Models.Promotions
 @using MOSTComputers.Services.ProductRegister.Models.Requests.Product
 @using MOSTComputers.Services.ProductRegister.Services.Contracts
-
 @using MOSTComputers.Services.SearchStringOrigin.Models
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
-
 @using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
 
 @inject ICategoryService CategoryService
 @inject IManufacturerService ManufacturerService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 <PageTitle>MOST Computers</PageTitle>
 
@@ -174,16 +174,24 @@
 
             <li class="header-list-item header-order-summary-list-item">
                 <label id="productTableOrderSummaryLabel" type="button" class="btn btn-secondary">
-                    <span id="productTableOrderSummaryLabelText">Order Summary</span>
+                    <span id="productTableOrderSummaryLabelText">Order</span>
                     <input id="productTableOrderSummaryCheckbox" type="checkbox"
                         onchange="toggleOrderSummary()" hidden />
                 </label>
+
+                <button id="productTableOfferPageButton" type="button" class="btn btn-secondary"
+                    onclick="openOfferPage()">
+                    Print
+                </button>
             </li>
         </ul>
     </header>
 
     <div id="productsDataContainer" class="products-data-container">
     </div>
+
+    <input id="__RequestVerificationToken" name="__RequestVerificationToken" type="hidden" hidden
+        value="@Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!).RequestToken" />
 </div>
 
 <div id="productXmlPopupContainer">

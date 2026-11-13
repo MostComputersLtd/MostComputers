@@ -11,6 +11,9 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
     [XmlElement(ElementName = "info")]
     public string? Info { get; set; }
 
+    [XmlElement(ElementName = "name")]
+    public string? Name { get; set; }
+
     [XmlElement(ElementName = "pictureUrl")]
     public string? PictureUrl { get; set; }
 
@@ -28,6 +31,9 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
 
     [XmlElement(ElementName = "maxQuantity")]
     public int? MaximumQuantity { get; set; }
+
+    [XmlElement(ElementName = "quantityIncrement")]
+    public int? QuantityIncrement { get; set; }
 
     [XmlElement(ElementName = "expireQuantity")]
     public int? ExpireQuantity { get; set; }
@@ -101,6 +107,11 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
         return !string.IsNullOrEmpty(Type);
     }
 
+    public bool ShouldSerializeName()
+    {
+        return !string.IsNullOrWhiteSpace(Name);
+    }
+
     public bool ShouldSerializeInfo()
     {
         return !string.IsNullOrEmpty(Info);
@@ -113,42 +124,47 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
 
     public bool ShouldSerializeValidFromString()
     {
-        return ValidFromString is not null;
+        return ValidFromString != null;
     }
 
     public bool ShouldSerializeValidToString()
     {
-        return ValidToString is not null;
+        return ValidToString != null;
     }
 
     public bool ShouldSerializePromotionBGN()
     {
-        return PromotionBGN is not null && PromotionBGN > 0M;
+        return PromotionBGN != null && PromotionBGN > 0M;
     }
 
     public bool ShouldSerializePromotionEUR()
     {
-        return PromotionEUR is not null && PromotionEUR > 0M;
+        return PromotionEUR != null && PromotionEUR > 0M;
     }
 
     public bool ShouldSerializePromotionUSD()
     {
-        return PromotionUSD is not null && PromotionUSD > 0M;
+        return PromotionUSD != null && PromotionUSD > 0M;
     }
 
     public bool ShouldSerializeMinimumQuantity()
     {
-        return MinimumQuantity is not null && MinimumQuantity > 0;
+        return MinimumQuantity != null && MinimumQuantity > 0;
     }
 
     public bool ShouldSerializeMaximumQuantity()
     {
-        return MaximumQuantity is not null && MaximumQuantity > 0;
+        return MaximumQuantity != null && MaximumQuantity > 0;
+    }
+
+    public bool ShouldSerializeQuantityIncrement()
+    {
+        return QuantityIncrement != null && QuantityIncrement > 0;
     }
 
     public bool ShouldSerializeExpireQuantity()
     {
-        return ExpireQuantity is not null && ExpireQuantity > 0;
+        return ExpireQuantity != null && ExpireQuantity > 0;
     }
 
     public async Task WriteXmlAsync(XmlWriter writer, string rootElementName)
@@ -157,58 +173,22 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
 
         if (ShouldSerializeType())
         {
-            await writer.WriteStartElementAsync(null, "type", null);
-            await writer.WriteStringAsync(Type);
-            await writer.WriteEndElementAsync();
+            await writer.WriteElementStringAsync(null, "type", null, Type!);
+        }
+
+        if (ShouldSerializeName())
+        {
+            await writer.WriteElementStringAsync(null, "name", null, Name!);
         }
 
         if (ShouldSerializeInfo())
         {
-            await writer.WriteStartElementAsync(null, "info", null);
-            await writer.WriteStringAsync(Info);
-            await writer.WriteEndElementAsync();
+            await writer.WriteElementStringAsync(null, "info", null, Info!);
         }
 
         if (ShouldSerializePictureUrl())
         {
-            await writer.WriteStartElementAsync(null, "pictureUrl", null);
-            await writer.WriteStringAsync(PictureUrl);
-            await writer.WriteEndElementAsync();
-        }
-
-        if (ShouldSerializePromotionBGN())
-        {
-            await writer.WriteStartElementAsync(null, "Discount_BGN", null);
-            await writer.WriteStringAsync(PromotionBGN!.Value.ToString("F2"));
-            await writer.WriteEndElementAsync();
-        }
-
-        if (ShouldSerializePromotionEUR())
-        {
-            await writer.WriteStartElementAsync(null, "Discount_EUR", null);
-            await writer.WriteStringAsync(PromotionEUR!.Value.ToString("F2"));
-            await writer.WriteEndElementAsync();
-        }
-
-        if (ShouldSerializePromotionUSD())
-        {
-            await writer.WriteStartElementAsync(null, "Discount_USD", null);
-            await writer.WriteStringAsync(PromotionUSD!.Value.ToString("F2"));
-            await writer.WriteEndElementAsync();
-        }
-
-        if (ShouldSerializeValidFromString())
-        {
-            await writer.WriteStartElementAsync(null, "validFrom", null);
-            await writer.WriteStringAsync(ValidFromString);
-            await writer.WriteEndElementAsync();
-        }
-
-        if (ShouldSerializeValidToString())
-        {
-            await writer.WriteStartElementAsync(null, "validTo", null);
-            await writer.WriteStringAsync(ValidToString);
-            await writer.WriteEndElementAsync();
+            await writer.WriteElementStringAsync(null, "pictureUrl", null, PictureUrl!);
         }
 
         if (ShouldSerializeMinimumQuantity())
@@ -221,9 +201,39 @@ public sealed class XmlPromotion : IXmlAsyncSerializable
             await writer.WriteElementStringAsync(null, "maxQuantity", null, MaximumQuantity!.Value.ToString());
         }
 
+        if (ShouldSerializeQuantityIncrement())
+        {
+            await writer.WriteElementStringAsync(null, "quantityIncrement", null, QuantityIncrement!.Value.ToString());
+        }
+
         if (ShouldSerializeExpireQuantity())
         {
             await writer.WriteElementStringAsync(null, "expireQuantity", null, ExpireQuantity!.Value.ToString());
+        } 
+
+        if (ShouldSerializeValidFromString())
+        {
+            await writer.WriteElementStringAsync(null, "validFrom", null, ValidFromString!);
+        }
+
+        if (ShouldSerializeValidToString())
+        {
+            await writer.WriteElementStringAsync(null, "validTo", null, ValidToString!);
+        } 
+
+        if (ShouldSerializePromotionBGN())
+        {
+            await writer.WriteElementStringAsync(null, "Discount_BGN", null, PromotionBGN!.Value.ToString("F2"));
+        }
+
+        if (ShouldSerializePromotionEUR())
+        {
+            await writer.WriteElementStringAsync(null, "Discount_EUR", null, PromotionEUR!.Value.ToString("F2"));
+        }
+
+        if (ShouldSerializePromotionUSD())
+        {
+            await writer.WriteElementStringAsync(null, "Discount_USD", null, PromotionUSD!.Value.ToString("F2"));
         }
 
         await writer.WriteEndElementAsync();

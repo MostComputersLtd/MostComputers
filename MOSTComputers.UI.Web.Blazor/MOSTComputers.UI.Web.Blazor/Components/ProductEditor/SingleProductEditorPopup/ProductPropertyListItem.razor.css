@@ -1,0 +1,53 @@
+.properties-list-item {
+    width: 100%;
+}
+
+.property-table {
+    width: 100%;
+    margin: 0px 0px 0.3em 0px;
+}
+
+.property-data-row {
+    margin-bottom: 0.25em;
+}
+
+.property-td-alignedOnTop {
+    vertical-align: top;
+}
+
+.property-value-td {
+    width: 100%;
+    padding: 1px 1em 0px 0px;
+}
+
+.property-value-textarea-container {
+    width: 100%;
+    height: 100%;
+}
+
+.property-value-textarea {
+    width: 100%;
+    height: 100%;
+    line-height: 1.5em;
+    padding: 2px 2px;
+    border-width: 0.8px;
+    min-height: calc(1.5em + 4px + 1.6px);
+    resize: none;
+    scrollbar-width: none;
+}
+
+.product-xmlPlacement-checkbox {
+    margin-right: 20px;
+}
+
+.property-is-active-td {
+    margin-left: 1em;
+}
+.property-characteristic-td {
+    width: 20%;
+    padding-right: 20px;
+}
+
+.validation-messages-list-row.no-items {
+    display: none;
+}

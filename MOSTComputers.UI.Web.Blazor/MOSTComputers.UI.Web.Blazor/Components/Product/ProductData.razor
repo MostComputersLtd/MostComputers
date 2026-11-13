@@ -44,7 +44,7 @@ else
 
                         <div class="col-lg-5 align-content-start">
                             <div class="download-buttons-container">
-                                <a class="btn download-button me-2" href="api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer">
+                                <a class="btn download-button me-2" href="/api/product/xml/id=@Product.Id" target="_blank" rel="noopener noreferrer">
                                     XML
                                 </a>
 
@@ -264,43 +264,9 @@ else
                                                 <p class="promotion-type-text">Promo:</p>
                                             }
 
-                                            @if (promotion.ExpirationDate is not null)
+                                            @if (!string.IsNullOrWhiteSpace(promotion.Name))
                                             {
-                                                if (promotion.ExpirationDate.Value.TimeOfDay == TimeSpan.Zero)
-                                                {
-                                                    expirationDateString = promotion.ExpirationDate.Value.ToString("d");
-                                                }
-                                                else
-                                                {
-                                                    expirationDateString = promotion.ExpirationDate.Value.ToString();
-                                                }
-                                            }
-
-                                            @if (promotion.StartDate is not null)
-                                            {
-                                                string startDateString;
-
-                                                if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
-                                                {
-                                                    startDateString = promotion.StartDate.Value.ToString("d");
-                                                }
-                                                else
-                                                {
-                                                    startDateString = promotion.StartDate.Value.ToString();
-                                                }
-
-                                                if (promotion.ExpirationDate is not null)
-                                                {
-                                                    <p>@startDateString - @expirationDateString</p>
-                                                }
-                                                else
-                                                {
-                                                    <p>Starts on: @startDateString</p>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <p>Expires on: @expirationDateString</p>
+                                                <p>@promotion.Name</p>
                                             }
                                         </div>
 
@@ -312,6 +278,65 @@ else
                                         {
                                             <p>Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)</p>
                                         }
+
+                                        @if (promotion.ExpirationDate is not null)
+                                        {
+                                            if (promotion.ExpirationDate.Value.TimeOfDay == TimeSpan.Zero)
+                                            {
+                                                expirationDateString = promotion.ExpirationDate.Value.ToString("d");
+                                            }
+                                            else
+                                            {
+                                                expirationDateString = promotion.ExpirationDate.Value.ToString();
+                                            }
+                                        }
+
+                                        @if (promotion.StartDate is not null)
+                                        {
+                                            string startDateString;
+
+                                            if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
+                                            {
+                                                startDateString = promotion.StartDate.Value.ToString("d");
+                                            }
+                                            else
+                                            {
+                                                startDateString = promotion.StartDate.Value.ToString();
+                                            }
+
+                                            if (promotion.ExpirationDate is not null)
+                                            {
+                                                <p>@startDateString - @expirationDateString</p>
+                                            }
+                                            else
+                                            {
+                                                <p>Starts on: @startDateString</p>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <p>Expires on: @expirationDateString</p>
+                                        }
+
+                                        @if (promotion.MinimumQuantity is not null && promotion.MinimumQuantity > 0)
+                                        {
+                                            <p>Min Qty: @promotion.MinimumQuantity</p>
+                                        }
+
+                                        @if (promotion.MaximumQuantity is not null && promotion.MaximumQuantity > 0)
+                                        {
+                                            <p>Max Qty: @promotion.MaximumQuantity</p>
+                                        }
+
+                                        @if (promotion.QuantityIncrement is not null && promotion.QuantityIncrement > 0)
+                                        {
+                                            <p>Qty Increment: @promotion.QuantityIncrement</p>
+                                        }
+
+                                        @if (promotion.ExpQuantity is not null && promotion.ExpQuantity > 0)
+                                        {
+                                            <p>Expire Qty: @promotion.ExpQuantity</p>
+                                        } 
 
                                     </div>
                                 }

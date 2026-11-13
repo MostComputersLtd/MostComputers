@@ -71,57 +71,48 @@
 
             <div class="promotion-product-files-table-container">
 
-            @{
-                bool showTable = PromotionProductFiles.Match(
-                    x => x.Count > 0,
-                    x => x.Count > 0);
-            }
+                <table id="promotionProductFileEditorTable" class="promotion-product-files-table">
 
-                @if (showTable)
-                {
-                    <table id="promotionProductFileEditorTable" class="promotion-product-files-table">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Active</th>
+                            <th>File Id</th>
+                            <th>Img All Id</th>
+                            <th>Valid From</th>
+                            <th>Valid To</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
 
-                        <thead>
-                            <tr>
-                                <th>Id</th>
-                                <th>Active</th>
-                                <th>File Id</th>
-                                <th>Img All Id</th>
-                                <th>Valid From</th>
-                                <th>Valid To</th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                            </tr>
-                        </thead>
+                    <tbody>
 
-                        <tbody>
+                        @if (PromotionProductFiles.IsT0)
+                        {
+                            List<PromotionProductFileInfoReadonlyDisplayData> readonlyFiles = PromotionProductFiles.AsT0;
 
-                            @if (PromotionProductFiles.IsT0)
+                            for (int i = 0; i < readonlyFiles.Count; i++)
                             {
-                                List<PromotionProductFileInfoReadonlyDisplayData> readonlyFiles = PromotionProductFiles.AsT0;
+                                PromotionProductFileInfoReadonlyDisplayData promotionProductFileInfo = readonlyFiles[i];
 
-                                for (int i = 0; i < readonlyFiles.Count; i++)
-                                {
-                                    PromotionProductFileInfoReadonlyDisplayData promotionProductFileInfo = readonlyFiles[i];
-
-                                    <PromotionFileEditorPopupItem ReadonlyItemData="promotionProductFileInfo"/>
-                                }
+                                <PromotionFileEditorPopupItem ReadonlyItemData="promotionProductFileInfo"/>
                             }
-                            else
+                        }
+                        else
+                        {
+                            List<PromotionProductFileInfoDisplayData> files = PromotionProductFiles.AsT1;
+
+                            for (int i = 0; i < files.Count; i++)
                             {
-                                List<PromotionProductFileInfoDisplayData> files = PromotionProductFiles.AsT1;
+                                PromotionProductFileInfoDisplayData promotionProductFileInfo = files[i];
 
-                                for (int i = 0; i < files.Count; i++)
-                                {
-                                    PromotionProductFileInfoDisplayData promotionProductFileInfo = files[i];
-
-                                    <PromotionFileEditorPopupItem ItemData="promotionProductFileInfo"/>
-                                }
+                                <PromotionFileEditorPopupItem ItemData="promotionProductFileInfo"/>
                             }
-                        </tbody>
-                    </table>
-                }
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </ChildContent>
@@ -154,12 +145,12 @@
 
     public sealed class PromotionProductFileEditorJsonData
     {
-        public required string EditorId { get; set; }
-        public int? Id { get; set; }
-        public int? PromotionFileId { get; set; }
-        public DateTime? ValidFrom { get; set; }
-        public DateTime? ValidTo { get; set; }
-        public bool Active { get; set; } = false;
+        [JsonPropertyName("editorId")] public required string EditorId { get; set; }
+        [JsonPropertyName("id")] public int? Id { get; set; }
+        [JsonPropertyName("promotionFileId")] public int? PromotionFileId { get; set; }
+        [JsonPropertyName("validFrom")] public DateTime? ValidFrom { get; set; }
+        [JsonPropertyName("validTo")] public DateTime? ValidTo { get; set; }
+        [JsonPropertyName("active")] public bool Active { get; set; } = false;
     }
 
     public sealed class PromotionProductFileRecoveryJsonData

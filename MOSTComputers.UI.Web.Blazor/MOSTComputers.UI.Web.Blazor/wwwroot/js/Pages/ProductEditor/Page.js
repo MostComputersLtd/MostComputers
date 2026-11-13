@@ -16,11 +16,16 @@ const resultsCountSelectId = "resultsCountSelect";
 
 const itemsTableId = "productEditorItemsTable";
 
+const itemsTablePlShowColumnHeaderId = "productEditorItemsTablePlShowColumnHeader";
 const itemsTablePlShowColumnHeaderOrderTextId = "productEditorItemsTablePlShowColumnHeaderOrderText";
+const itemsTableProductWorkStatusColumnHeaderId = "productEditorItemsTableProductWorkStatusColumnHeader";
 const itemsTableProductWorkStatusColumnHeaderOrderTextId = "productEditorItemsTableProductWorkStatusColumnHeaderOrderText";
+const itemsTableHasImagesColumnHeaderId = "productEditorItemsTableHasImagesColumnHeader";
 const itemsTableHasImagesColumnHeaderOrderTextId = "productEditorItemsTableHasImagesColumnHeaderOrderText";
 
-const productXmlPopupContainerId = "productXmlPopupContainerId";
+const productEditorItemsDataId = "productEditorItemsData";
+
+const productXmlPopupContainerId = "productXmlPopupContainer";
 const productPromotionPopupContainerId = "productPromotionPopupContainer";
 const productInfoPromotionPopupContainerId = "productInfoPromotionPopupContainer";
 const productImagesPopupContainerId = "productImagesPopupContainer";
@@ -62,6 +67,12 @@ const itemPromotionTextPromotionIdAttribute = "data-promotion-id";
 
 const loadingClass = "loading";
 
+const ProductSearchResultOrderingType = {
+    Default: 0,
+    ByProductId: 1,
+    DefaultWithCategory: 2,
+}
+
 const OrderingType = {
     ByProductId: "byProductId",
     ByPlShow: "byPlShow",
@@ -70,7 +81,6 @@ const OrderingType = {
 
 const ProductIdOrderingOption = {
     Largest: "largest",
-    Smallest: "smallest",
 }
 
 const PlShowOrderingOption = {
@@ -83,18 +93,26 @@ const ImagesCountOrderingOption = {
 }
 
 const orderingDefinitions = new Map([
-    [OrderingType.ByProductId, new Set([ProductIdOrderingOption.Largest, ProductIdOrderingOption.Smallest])],
+    [OrderingType.ByProductId, new Set([ProductIdOrderingOption.Largest])],
     [OrderingType.ByPlShow, new Set([PlShowOrderingOption.Hidden])],
     [OrderingType.ByImagesCount, new Set([ImagesCountOrderingOption.WithImages, ImagesCountOrderingOption.WithoutImages])]
 ]);
 
 let itemsTableOrderingState = null;
+let itemsTableIsOrderedByCategory = false;
 
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initEvents);
+    document.addEventListener("DOMContentLoaded", initEventsAndRunDataSync);
 }
 else {
+    initEventsAndRunDataSync();
+}
+
+async function initEventsAndRunDataSync() {
+
     initEvents();
+
+    await startApplicationSync();
 }
 
 function initEvents() {
@@ -107,12 +125,18 @@ function initEvents() {
     window.addEventListener("beforeunload", removeKeyDownEvent);
 
     const searchButton = document.getElementById(searchButtonId);
-
     const categorySelect = document.getElementById(categorySelectId);
 
-    searchButton.addEventListener("click", searchProducts);
+    const itemsTablePlShowColumnHeader = document.getElementById(itemsTablePlShowColumnHeaderId);
+    const itemsTableProductWorkStatusColumnHeader = document.getElementById(itemsTableProductWorkStatusColumnHeaderId);
+    const itemsTableHasImagesColumnHeader = document.getElementById(itemsTableHasImagesColumnHeaderId);
 
+    searchButton.addEventListener("click", searchProducts);
     categorySelect.addEventListener("change", onCategorySelectChanged);
+
+    itemsTablePlShowColumnHeader.addEventListener("click", orderExistingProductsByPlShow);
+    itemsTableProductWorkStatusColumnHeader.addEventListener("click", orderExistingProductsByProductId);
+    itemsTableHasImagesColumnHeader.addEventListener("click", orderExistingProductsByImagesCount);
 }
 
 function removeKeyDownEvent() {
@@ -120,6 +144,24 @@ function removeKeyDownEvent() {
     window.removeEventListener("keydown", searchProductsOnEnterKeyDown);
 
     console.log("Removed");
+}
+
+async function startApplicationSync() {
+
+    const url = `api/components/productEditor/_sync`;
+
+    const response = await fetch(url, {
+        method: "GET"
+    });
+
+    if (!response.ok) {
+
+        alert("Data sync failed, if this issue persists, contact support.");
+    }
+    else {
+
+        console.log("SUCCESS DATA SYNC");
+    }
 }
 
 function initItemEvents(item) {
@@ -169,7 +211,11 @@ async function onCategorySelectChanged(e) {
 
     const categoryId = conversionUtils.getNumberOrNullFromString(value);
 
-    const url = `api/components/productEditor/manufacturersInCategory?categoryId=${categoryId}`;
+    let url = "api/components/productEditor/manufacturersInCategory";
+
+    if (categoryId != null) {
+        url += `?categoryId=${categoryId}`;
+    }
 
     const response = await fetch(url, {
         method: "GET",
@@ -186,7 +232,9 @@ async function onCategorySelectChanged(e) {
 
     const selectedManufacturerId = conversionUtils.getNumberOrNullFromString(manufacturerSelect.value);
 
-    for (const option of manufacturerSelect.options) {
+    for (let i = manufacturerSelect.options.length - 1; i >= 0; i--) {
+
+        const option = manufacturerSelect.options[i];
 
         if (!option.hasAttribute(searchSelectDefaultOptionAttribute)) {
             option.remove();
@@ -202,7 +250,7 @@ async function onCategorySelectChanged(e) {
 
         if (selectedManufacturerId == optionData.manufacturerId) {
 
-            option.setAttribute("selected");
+            option.selected = true;
         }
 
         manufacturerSelect.add(option);
@@ -321,6 +369,12 @@ async function searchProducts() {
 
     itemsTableBody.innerHTML = data;
 
+    const productEditorItemsDataScriptElement = document.getElementById(productEditorItemsDataId);
+
+    const jsonData = JSON.parse(productEditorItemsDataScriptElement.textContent);
+
+    productEditorItemsDataScriptElement.remove();
+
     const items = itemsTableBody.querySelectorAll(`[name="${itemName}"]`);
 
     for (const item of items) {
@@ -328,10 +382,84 @@ async function searchProducts() {
         initItemEvents(item);
     }
 
+    itemsTableIsOrderedByCategory = jsonData.ordering === ProductSearchResultOrderingType.DefaultWithCategory;
+
+    if (jsonData.ordering === ProductSearchResultOrderingType.ByProductId) {
+
+        const currentActiveOrdering = 
+            new tableOrdering.SingleActiveTypeActiveOrderingState(OrderingType.ByProductId, ProductIdOrderingOption.Largest);
+
+        itemsTableOrderingState = new tableOrdering.SingleActiveTypeOrderingState(orderingDefinitions, currentActiveOrdering);
+
+        return;
+    } 
+
     itemsTableOrderingState = new tableOrdering.SingleActiveTypeOrderingState(orderingDefinitions, null);
 }
 
-function orderExistingProducts(orderType, orderOption) {
+function orderExistingProductsByPlShow() {
+
+    if (itemsTableOrderingState.activeOrder != null
+        && itemsTableOrderingState.activeOrder.type == OrderingType.ByPlShow
+        && itemsTableOrderingState.activeOrder.option == PlShowOrderingOption.Hidden) {
+
+        orderExistingProducts(itemsTableIsOrderedByCategory);
+
+        itemsTableOrderingState.clearActiveOrder();
+
+        return;
+    }
+
+    orderExistingProducts(itemsTableIsOrderedByCategory, OrderingType.ByPlShow, PlShowOrderingOption.Hidden);
+
+    itemsTableOrderingState.changeActiveOrder(OrderingType.ByPlShow, PlShowOrderingOption.Hidden);
+}
+
+function orderExistingProductsByProductId() {
+
+    if (itemsTableOrderingState.activeOrder != null
+        && itemsTableOrderingState.activeOrder.type == OrderingType.ByProductId
+        && itemsTableOrderingState.activeOrder.option == ProductIdOrderingOption.Largest) {
+
+        orderExistingProducts(itemsTableIsOrderedByCategory);
+
+        itemsTableOrderingState.clearActiveOrder();
+
+        return;
+    }
+
+    orderExistingProducts(itemsTableIsOrderedByCategory, OrderingType.ByProductId, ProductIdOrderingOption.Largest);
+
+    itemsTableOrderingState.changeActiveOrder(OrderingType.ByProductId, ProductIdOrderingOption.Largest);
+}
+
+function orderExistingProductsByImagesCount() {
+
+    if (itemsTableOrderingState.activeOrder != null
+        && itemsTableOrderingState.activeOrder.type == OrderingType.ByImagesCount) {
+
+        if (itemsTableOrderingState.activeOrder.option == ImagesCountOrderingOption.WithoutImages) {
+
+            orderExistingProducts(itemsTableIsOrderedByCategory, OrderingType.ByImagesCount, ImagesCountOrderingOption.WithImages);
+
+            itemsTableOrderingState.changeActiveOrder(OrderingType.ByImagesCount, ImagesCountOrderingOption.WithImages);
+        }
+        else if (itemsTableOrderingState.activeOrder.option == ImagesCountOrderingOption.WithImages) {
+
+            orderExistingProducts(itemsTableIsOrderedByCategory);
+
+            itemsTableOrderingState.clearActiveOrder();
+        }
+
+        return;
+    }
+
+    orderExistingProducts(itemsTableIsOrderedByCategory, OrderingType.ByImagesCount, ImagesCountOrderingOption.WithoutImages);
+
+    itemsTableOrderingState.changeActiveOrder(OrderingType.ByImagesCount, ImagesCountOrderingOption.WithoutImages);
+}
+
+function orderExistingProducts(itemsTableIsOrderedByCategory, orderType = null, orderOption = null) {
 
     if (itemsTableOrderingState.activeOrder != null) {
 
@@ -344,7 +472,13 @@ function orderExistingProducts(orderType, orderOption) {
 
     const items = Array.from(itemsTableBody.children);
 
-    sortByOptions(items, orderType, orderOption);
+    if (orderType == null) {
+
+        items.sort((a, b) => sortByDefaultOrder(a, b, itemsTableIsOrderedByCategory));
+    }
+    else {
+        sortByOptions(items, orderType, orderOption, itemsTableIsOrderedByCategory);
+    }
 
     items.forEach(item => itemsTableBody.appendChild(item));
 
@@ -417,7 +551,7 @@ function addItemsTableNewOrderVisuals(orderType, orderOption) {
     }
 }
 
-function sortByOptions(arr, type, option) {
+function sortByOptions(arr, type, option, itemsTableIsOrderedByCategory) {
 
     switch (type) {
         case OrderingType.ByProductId:
@@ -427,12 +561,12 @@ function sortByOptions(arr, type, option) {
 
         case OrderingType.ByPlShow:
 
-            arr.sort((a, b) => sortByPlShow(a, b, option) || sortByDefaultOrder(a, b,/ ));
+            arr.sort((a, b) => sortByPlShow(a, b, option) || sortByDefaultOrder(a, b, itemsTableIsOrderedByCategory));
             break;
 
         case OrderingType.ByImagesCount:
 
-            arr.sort((a, b) => sortByImagesCount(a, b, option) || sortByDefaultOrder(a, b,/ ));
+            arr.sort((a, b) => sortByImagesCount(a, b, option) || sortByDefaultOrder(a, b, itemsTableIsOrderedByCategory));
             break;
 
         default:
@@ -440,28 +574,12 @@ function sortByOptions(arr, type, option) {
     }
 }
 
-function sortByOrders(arr, sorts) {
-
-    arr.sort((a, b) => {
-
-        for (const sort of sorts) {
-
-            const orderValue = sort(a, b);
-
-            if (orderValue != null) {
-
-                return orderValue;
-            }
-        }
-    });
-}
-
 function sortByPlShow(a, b, option) {
 
     if (option == PlShowOrderingOption.Hidden) {
 
-        const firstItemPlShowText = a.querySelector($`[name='${itemPlShowTextName}']`);
-        const secondItemPlShowText = b.querySelector($`[name='${itemPlShowTextName}']`);
+        const firstItemPlShowText = a.querySelector(`[name='${itemPlShowTextName}']`);
+        const secondItemPlShowText = b.querySelector(`[name='${itemPlShowTextName}']`);
 
         const isFirstHidden = firstItemPlShowText.getAttribute(itemPlShowTextIsProductHiddenAttribute) === "true";
         const isSecondHidden = secondItemPlShowText.getAttribute(itemPlShowTextIsProductHiddenAttribute) === "true";
@@ -482,8 +600,8 @@ function sortByProductId(a, b) {
 
 function sortByImagesCount(a, b, option) {
 
-    const firstItemImagesCountText = a.querySelector($`[name='${itemImagesCountTextName}']`);
-    const secondItemImagesCountText = b.querySelector($`[name='${itemImagesCountTextName}']`);
+    const firstItemImagesCountText = a.querySelector(`[name='${itemImagesCountTextName}']`);
+    const secondItemImagesCountText = b.querySelector(`[name='${itemImagesCountTextName}']`);
 
     const firstHasImages = firstItemImagesCountText.getAttribute(itemImagesCountTextHasImagesAttribute) === "true";
     const secondHasImages = secondItemImagesCountText.getAttribute(itemImagesCountTextHasImagesAttribute) === "true";
@@ -660,7 +778,7 @@ async function showProductImageFilesPopup(e) {
 
     productImageFilesPopupContainer.innerHTML = data;
 
-    const imageFileButtons = [...productImageFilesPopupContainer.querySelectorAll($`[name='${imageFileButtonName}']`)];
+    const imageFileButtons = [...productImageFilesPopupContainer.querySelectorAll(`[name='${imageFileButtonName}']`)];
 
     for (const imageFileButton of imageFileButtons) {
 
@@ -738,7 +856,7 @@ async function showPromotionProductFilePopup(e) {
 
     const dialog = promotionProductFilePopupContainer.querySelector("dialog");
 
-    promotionFilePopup.initEventsForReadonlyInstance();
+    promotionFilePopup.initEventsForReadonlyInstance(dialog);
 
     dialog.showModal();
 }
@@ -773,13 +891,45 @@ async function showSingleProductEditorPopup(e) {
     const dialog = singleProductEditorPopupContainer.querySelector("dialog");
 
     singleProductEditorPopup.initEvents(dialog);
+    singleProductEditorPopup.setOnSuccessfulSaveCallback(onSingleProductEditorSaveSuccessfulAsync);
 
     dialog.showModal();
+
+    singleProductEditorPopup.resizeElements(dialog);
 }
 
-function onSingleProductEditorSaveSuccessful() {
+async function onSingleProductEditorSaveSuccessfulAsync() {
 
+    const productId = singleProductEditorPopup.getProductId();
 
+    const itemsTable = document.getElementById(itemsTableId);
+
+    const itemsTableBody = itemsTable.querySelector("tbody");
+
+    const items = itemsTableBody.querySelectorAll(`[name="${itemName}"]`);
+
+    for (const item of items) {
+
+        const itemProductId = item.getAttribute(itemProductIdAttribute);
+
+        if (itemProductId != productId) continue;
+
+        const url = `api/components/productEditor/item/${productId}`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Accept": "text/html, application/problem+json"
+            }
+        });
+
+        if (!response.ok) {
+        }
+
+        const itemData = await response.text();
+
+        item.outerHTML = itemData;
+    }
 }
 
 function getProductIdFromItem(childElement) {

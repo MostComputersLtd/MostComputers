@@ -28,6 +28,7 @@ using MOSTComputers.Services.ProductRegister.Services.Cached;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport;
 using MOSTComputers.Services.ProductRegister.Services.ExternalXmlImport.Contracts;
+using MOSTComputers.Services.ProductRegister.Services.NewSaveService;
 using MOSTComputers.Services.ProductRegister.Services.ProductHtml;
 using MOSTComputers.Services.ProductRegister.Services.ProductHtml.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductIdentifiers;
@@ -331,6 +332,25 @@ public static class ConfigureServices
             return new(serviceProvider.GetRequiredKeyedService<IProductWorkStatusesService>(ProductWorkStatusesServiceKey),
                 serviceProvider.GetRequiredService<IFusionCache>());
         });
+    }
+
+    public const string ProductImageFileManagerKey = "MOSTComputers.Services.ProductRegister.ProductImageFiles.LocalFileManagementServiceKey";
+
+    public static IServiceCollection AddProductSaveService(this IServiceCollection services)
+    {
+        services.AddScoped<IProductDataSaveService, ProductDataSaveService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddLocalProductImageFileManager(this IServiceCollection services, string imageDirectoryFullPath)
+    {
+        services.AddKeyedScoped<ILocalFileManagementService, LocalFileManagementService>(ProductImageFileManagerKey, (serviceProvider, _) =>
+        {
+            return new(imageDirectoryFullPath, serviceProvider.GetRequiredService<ITransactionalFileManager>());
+        });
+
+        return services;
     }
 
     private static void AddValidation(IServiceCollection services)

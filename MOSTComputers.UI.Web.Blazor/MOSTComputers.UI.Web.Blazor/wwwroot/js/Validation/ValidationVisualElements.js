@@ -1,4 +1,28 @@
-export function clearValidationMessages(propertyNamesToValidationMessagesContainerIdsMap) {
+export function clearValidationMessages(validationMessagesContainer) {
+
+    while (validationMessagesContainer.lastElementChild) {
+
+        validationMessagesContainer.removeChild(validationMessagesContainer.lastElementChild);
+    }
+}
+
+export function displayValidationMessages(
+    validationErrors,
+    validationMessagesContainer,
+    getValidationMessageFromValidationErrorFunc) {
+
+    for (const [_, validationErrorObjects] of Object.entries(validationErrors)) {
+
+        for (const validationError of validationErrorObjects) {
+
+            const defaultMessage = getValidationMessageFromValidationErrorFunc(validationError);
+
+            createMessageAndInsertInContainer(validationMessagesContainer, defaultMessage);
+        }
+    }
+}
+
+export function clearValidationMessagesWithMap(propertyNamesToValidationMessagesContainerIdsMap) {
 
     for (const [_, validationMessagesId] of propertyNamesToValidationMessagesContainerIdsMap) {
 
@@ -11,12 +35,10 @@ export function clearValidationMessages(propertyNamesToValidationMessagesContain
     }
 }
 
-export function displayValidationMessages(
-    validationProblem,
+export function displayValidationMessagesWithMap(
+    validationErrors,
     propertyNamesToValidationMessagesContainerIdsMap,
     getValidationMessageFromValidationErrorFunc) {
-
-    const validationErrors = validationProblem.validationErrors;
 
     for (const [name, validationErrorObjects] of Object.entries(validationErrors)) {
 

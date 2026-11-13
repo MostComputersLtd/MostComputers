@@ -173,7 +173,7 @@ public class ApplicationDataSyncService
 
             imagesForProduct ??= Array.Empty<ProductImage>();
 
-            IEnumerable<ProductImageFileData>? imageFilesForProduct = imageFiles[productToUpdate.Id];
+            IEnumerable<ProductImageFileData>? imageFilesForProduct = imageFiles.GetValueOrDefault(productToUpdate.Id);
 
             OneOf<Success, ValidationResult, FileSaveFailureResult, FileDoesntExistResult, FileAlreadyExistsResult, UnexpectedFailureResult> updateResult
                 = await SaveFilesFromImagesAsync(currentUserName, productToUpdate.Id, imagesForProduct, imageFilesForProduct);

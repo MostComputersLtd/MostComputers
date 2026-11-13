@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Transactions;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
@@ -118,7 +119,10 @@ internal sealed class ProductDataSaveService(
         List<ProductImage> productImagesToDelete = new(allExistingProductImages);
 
         List<ProductImageFileData> oldProductImageFiles = validationData.ImageFiles;
+        List<ProductImageFileData> productImageFilesToDelete = new(oldProductImageFiles);
+
         List<PromotionProductFileInfo> oldPromotionProductFileInfos = validationData.PromotionProductFiles;
+        List<PromotionProductFileInfo> promotionProductFileInfosToDelete = new(oldPromotionProductFileInfos);
 
         List<ProductImageAndPromotionFileUpsertRequest> imageRequests = OrderItemsWithDisplayOrders(
             request.ImageRequests, oldPromotionProductFileInfos);
@@ -126,22 +130,22 @@ internal sealed class ProductDataSaveService(
         foreach (ProductImageAndPromotionFileUpsertRequest upsertRequest in imageRequests)
         {
             PromotionProductFileInfo? existingPromotionFile
-                = FindExisting(oldPromotionProductFileInfos, upsertRequest);
+                = FindExisting(promotionProductFileInfosToDelete, upsertRequest);
 
             ProductImageFileData? existingImageFile
-                = FindExisting(oldProductImageFiles, upsertRequest);
+                = FindExisting(productImageFilesToDelete, upsertRequest, existingPromotionFile);
 
             ProductImage? existingImage
                 = FindExisting(allExistingProductImages, upsertRequest, existingPromotionFile);
 
             if (existingPromotionFile != null)
             {
-                oldPromotionProductFileInfos.Remove(existingPromotionFile);
+                promotionProductFileInfosToDelete.Remove(existingPromotionFile);
             }
 
             if (existingImageFile != null)
             {
-                oldProductImageFiles.Remove(existingImageFile);
+                productImageFilesToDelete.Remove(existingImageFile);
             }
 
             if (existingImage != null)
@@ -255,7 +259,7 @@ internal sealed class ProductDataSaveService(
                     continue;
                 }
 
-                PromotionProductFileInfo promotionProductFile = validationData.PromotionProductFiles.Find(
+                PromotionProductFileInfo promotionProductFile = oldPromotionProductFileInfos.Find(
                     x => x.Id == promotionProductFileUpsertRequest.Id.Value)!;
 
                 ProductImageUpsertRequest productImageUpsertRequest = new()
@@ -448,7 +452,7 @@ internal sealed class ProductDataSaveService(
             imagesTransactionScope.Complete();
         }
 
-        foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in oldPromotionProductFileInfos)
+        foreach (PromotionProductFileInfo oldPromotionProductFileToBeRemoved in promotionProductFileInfosToDelete)
         {
             bool promotionProductFileDeleteResult = await _promotionProductFileInfoService.DeleteAsync(oldPromotionProductFileToBeRemoved.Id);
 
@@ -460,7 +464,7 @@ internal sealed class ProductDataSaveService(
             }
         }
 
-        foreach (ProductImageFileData oldImageFileToBeRemoved in oldProductImageFiles)
+        foreach (ProductImageFileData oldImageFileToBeRemoved in productImageFilesToDelete)
         {
             OneOf<Success, NotFound, FileDoesntExistResult> imageFileDeleteResult
                 = await _productImageFileService.FullSave_DeleteFileInternalAsync(oldImageFileToBeRemoved);
@@ -869,8 +873,8 @@ internal sealed class ProductDataSaveService(
             product,
             relatedProductCharacteristics,
             images,
-            imageFiles,
             allImageFiles,
+            imageFiles,
             promotionProductFiles,
             promotionFiles,
             productDocuments);
@@ -976,7 +980,8 @@ internal sealed class ProductDataSaveService(
 
     private static ProductImageFileData? FindExisting(
         List<ProductImageFileData> existingProductImageFileInfos,
-        ProductImageAndPromotionFileUpsertRequest request)
+        ProductImageAndPromotionFileUpsertRequest request,
+       PromotionProductFileInfo? existingPromotionFile)
     {
         return request.Request.Match(
             imageWithFileUpsertRequest =>
@@ -985,7 +990,12 @@ internal sealed class ProductDataSaveService(
             },
             imageFileCreateRequest => null,
             imageFileUpdateRequest => existingProductImageFileInfos.Find(x => x.Id == imageFileUpdateRequest.Id),
-            promotionProductFileUpsertRequest => null);
+            promotionProductFileUpsertRequest => 
+            {
+                if (existingPromotionFile?.ProductImageId == null) return null;
+
+                return existingProductImageFileInfos.Find(x => x.ImageId == existingPromotionFile.ProductImageId);
+            });
     }
 
     private static PromotionProductFileInfo? FindExisting(

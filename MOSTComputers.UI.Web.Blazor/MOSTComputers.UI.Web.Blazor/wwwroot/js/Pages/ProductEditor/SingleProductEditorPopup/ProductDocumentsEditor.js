@@ -1,32 +1,39 @@
-import * as common from "./Common.js";
+import * as validationMessages from "../../../Validation/ValidationMessages.js"
+import * as validationVisualElements from "../../../Validation/ValidationVisualElements.js"
 import * as dataStore from "./DataStore.js";
 import * as editorChanges from "./EditorChanges.js";
 
-const productDocumentListId = "singleEditorProductDocumentList";
+const listId = "singleEditorProductDocumentList";
 
-const productDocumentItemName = "productDocumentItem";
+const productDocumentPopupContainerId = "singleEditorProductDocumentPopupContainer";
 
-const productDocumentDescriptionName = "productDocumentDescription"
-const productDocumentShowPopupButtonName = "productDocumentShowPopupButton";
-const productDocumentSaveUrlButtonName = "productDocumentSaveUrlButton";
-const productDocumentRemoveButtonName = "productDocumentRemoveButton"
-const productDocumentDataName = "productDocumentItemData";
+const itemName = "productDocumentItem";
 
-const productDocumentShowPopupButtonProductIdAttribute = "data-product-id";
-const productDocumentShowPopupButtonBrowserFileUrlAttribute = "data-browser-file-url";
-const productDocumentSaveUrlButtonDocumentIdAttribute = "data-document-id";
-const productDocumentSaveUrlButtonDocumentUrlAttribute = "data-document-url";
+const descriptionName = "productDocumentDescription"
+const showPopupButtonName = "productDocumentShowPopupButton";
+const saveUrlButtonName = "productDocumentSaveUrlButton";
+const removeButtonName = "productDocumentRemoveButton"
+const jsonDataName = "productDocumentItemData";
+
+const validationMessagesListName = "productDocumentValidationMessagesList";
+
+const showPopupButtonProductIdAttribute = "data-product-id";
+const showPopupButtonBrowserFileUrlAttribute = "data-browser-file-url";
+const saveUrlButtonDocumentIdAttribute = "data-document-id";
+const saveUrlButtonDocumentUrlAttribute = "data-document-url";
 
 const fileFormFieldName = "previewUrl";
 const filePreviewUrlFormFieldName = "previewUrl";
-const fileIndexFormFieldName = "index";
 const fileProductIdFormFieldName = "productId";
+
+const endIndexCharacter = ']';
+const documentRequestsStartString = 'DocumentRequests[';
 
 const uploadedFiles = new Map();
 
 export function initEvents(dialogElement) {
 
-    const productDocumentItems = dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`);
+    const productDocumentItems = dialogElement.querySelectorAll(`[name='${itemName}']`);
 
     for (const productDocumentItem of productDocumentItems) {
 
@@ -36,34 +43,34 @@ export function initEvents(dialogElement) {
 
 function initProductDocumentItemEvents(productDocumentItem) {
 
-    const productDocumentDescription = productDocumentItem.querySelector(`[name='${productDocumentDescriptionName}']`);
+    const productDocumentDescription = productDocumentItem.querySelector(`[name='${descriptionName}']`);
+    const productDocumentShowPopupButton = productDocumentItem.querySelector(`[name='${showPopupButtonName}']`);
+    const productDocumentSaveUrlButton = productDocumentItem.querySelector(`[name='${saveUrlButtonName}']`);
+    const productDocumentRemoveButton = productDocumentItem.querySelector(`[name='${removeButtonName}']`);
 
     productDocumentDescription.addEventListener("change", onProductDocumentDescriptionChanged);
-
-    const productDocumentShowPopupButton = productDocumentItem.querySelector(`[name='${productDocumentShowPopupButtonName}']`);
-
     productDocumentShowPopupButton.addEventListener("click", onShowPopupButtonClicked);
-
-    const productDocumentSaveUrlButton = productDocumentItem.querySelector(`[name='${productDocumentSaveUrlButtonName}']`);
 
     if (productDocumentSaveUrlButton) {
 
         productDocumentSaveUrlButton.addEventListener("click", onSaveUrlButtonClickAsync);
     }
 
-    const productDocumentRemoveButton = productDocumentItem.querySelector(`[name='${productDocumentRemoveButtonName}']`);
-
     productDocumentRemoveButton.addEventListener("click", onRemoveButtonClicked);
 }
 
 function getProductDocumentItems() {
 
-    return [...dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`)];
+    const productDocumentList = document.getElementById(listId);
+
+    return [...productDocumentList.querySelectorAll(`[name='${itemName}']`)];
 }
 
 export function getProductDocumentRequests() {
 
-    const productDocumentItems = dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`);
+    const productDocumentList = document.getElementById(listId);
+
+    const productDocumentItems = productDocumentList.querySelectorAll(`[name='${itemName}']`);
 
     const itemDatas = [];
 
@@ -79,9 +86,9 @@ export function getProductDocumentRequests() {
 
 function getProductDocumentItemRequest(item) {
 
-    const productDocumentDescription = item.querySelector(`[name='${productDocumentDescriptionName}']`);
+    const productDocumentDescription = item.querySelector(`[name='${descriptionName}']`);
 
-    const productDocumentSaveUrlButton = item.querySelector(`[name='${productDocumentSaveUrlButtonName}']`);
+    const productDocumentSaveUrlButton = item.querySelector(`[name='${saveUrlButtonName}']`);
 
     const response = {
         description: productDocumentDescription.value,
@@ -89,9 +96,9 @@ function getProductDocumentItemRequest(item) {
 
     if (productDocumentSaveUrlButton) {
 
-        const id = productDocumentSaveUrlButton.getAttribute(productDocumentSaveUrlButtonDocumentIdAttribute);
+        const id = productDocumentSaveUrlButton.getAttribute(saveUrlButtonDocumentIdAttribute);
 
-        response.id = id;
+        response.id = parseInt(id);
 
         return response;
     }
@@ -102,44 +109,45 @@ function getProductDocumentItemRequest(item) {
     return response;
 }
 
-export function clearObjectUrls() {
+export function clearData() {
 
-    const productDocumentItems = dialogElement.querySelectorAll(`[name='${productDocumentItemName}']`);
+    const productDocumentList = document.getElementById(listId);
+
+    const productDocumentItems = productDocumentList.querySelectorAll(`[name='${itemName}']`);
 
     for (const productDocumentItem of productDocumentItems) {
 
-        if (uploadedFiles.productDocuments.has(productDocumentItem.id)) {
+        if (uploadedFiles.has(productDocumentItem.id)) {
 
-            const productDocumentShowPopupButton = productDocumentItem.querySelector(`[name='${productDocumentShowPopupButtonName}']`);
+            const productDocumentShowPopupButton = productDocumentItem.querySelector(`[name='${showPopupButtonName}']`);
 
-            const browserFileUrl = productDocumentShowPopupButton.getAttribute(productDocumentShowPopupButtonBrowserFileUrlAttribute);
+            const browserFileUrl = productDocumentShowPopupButton.getAttribute(showPopupButtonBrowserFileUrlAttribute);
 
             URL.revokeObjectURL(browserFileUrl);
         }
     }
+
+    uploadedFiles.clear();
 }
 
-export async function addFileToProductDocumentsAsync(blob) {
+export async function addFileToProductDocumentsAsync(blob, productId) {
 
     if (blob.size === 0) {
 
         return false;
     }
 
-    if (!blob.type !== "application/pdf") {
+    if (blob.type !== "application/pdf") {
 
         return false;
     }
 
     const previewUrl = URL.createObjectURL(blob);
 
-    const productDocumentItems = getProductDocumentItems();
-
     const formData = new FormData();
 
     formData.append(fileFormFieldName, blob);
     formData.append(filePreviewUrlFormFieldName, previewUrl);
-    formData.append(fileIndexFormFieldName, productDocumentItems.length);
     formData.append(fileProductIdFormFieldName, productId);
 
     const url = "api/components/productEditor/single/productDocument/add";
@@ -158,14 +166,14 @@ export async function addFileToProductDocumentsAsync(blob) {
 
     const data = await response.text();
 
-    const success = addNewProductDocumentFromElementHtml(data);
+    const success = addNewProductDocumentFromElementHtml(data, blob);
 
     return success;
 }
 
-function addNewProductDocumentFromElementHtml(productDocumentHtml) {
+function addNewProductDocumentFromElementHtml(productDocumentHtml, blob) {
 
-    const productDocumentList = document.getElementById(productDocumentListId);
+    const productDocumentList = document.getElementById(listId);
 
     const productDocumentItems = productDocumentList.children;
 
@@ -186,7 +194,7 @@ function addNewProductDocumentFromElementHtml(productDocumentHtml) {
         productDocumentItem = lastItem.nextElementSibling;
     }
 
-    const jsonDataScriptElement = productDocumentItem.querySelector(`[name='${productDocumentDataName}']`);
+    const jsonDataScriptElement = productDocumentItem.querySelector(`[name='${jsonDataName}']`);
 
     const jsonData = JSON.parse(jsonDataScriptElement.textContent);
 
@@ -196,22 +204,74 @@ function addNewProductDocumentFromElementHtml(productDocumentHtml) {
 
     const success = dataStore.addProductDocumentAndSave(jsonData.editorId, jsonData);
 
-    uploadedFiles.set(jsonData.editorId, file);
+    uploadedFiles.set(jsonData.editorId, blob);
 
     editorChanges.setDocumentChanged(jsonData.editorId, editorChanges.ItemChangeState.Added);
 
     return success;
 }
 
+export function displayValidationMessages(validationErrors) {
+
+    const productDocumentList = document.getElementById(listId);
+
+    const items = [...productDocumentList.querySelectorAll(`[name='${itemName}']`)];
+
+    for (let i = 0; i < items.length; i++) {
+
+        const item = items[i];
+
+        const validationMessagesList = item.querySelector(`[name='${validationMessagesListName}']`);
+
+        validationVisualElements.clearValidationMessages(validationMessagesList);
+    }
+
+    const documentValidationMessages = new Map();
+
+    for (const [name, _] of Object.entries(validationErrors)) {
+
+        if (!name.startsWith(documentRequestsStartString)) continue;
+
+        const startIndex = documentRequestsStartString.length;
+        const endIndex = name.indexOf(endIndexCharacter, startIndex);
+
+        const indexAsString = name.substring(startIndex, endIndex);
+        const index = parseInt(indexAsString);
+
+        if (!documentValidationMessages.has(index)) {
+
+            documentValidationMessages.set(index, []);
+        }
+
+        const messagesForProperty = documentValidationMessages.get(index);
+
+        messagesForProperty.push(validationErrors[name]); 
+    }
+
+    for (const [index, validationErrorsForProperty] of documentValidationMessages) {
+
+        const item = items[index];
+
+        const validationMessagesList = item.querySelector(`[name='${validationMessagesListName}']`);
+
+        validationVisualElements.displayValidationMessages(
+            validationErrorsForProperty,
+            validationMessagesList,
+            validationMessages.getDefaultValidationMessage)
+    }
+}
+
 function onProductDocumentDescriptionChanged(e) {
 
-    const productDocumentItem = e.currentTarget.closest(`[name='${productDocumentItemName}']`);
+    const productDocumentDescription = e.currentTarget;
+
+    const productDocumentItem = productDocumentDescription.closest(`[name='${itemName}']`);
 
     const editorId = productDocumentItem.id;
 
     dataStore.updateProductDocumentAndSave(editorId, productDocument =>
     {
-        productDocument.description = e.currentTarget.value;
+        productDocument.description = productDocumentDescription.value;
     });
 
     editorChanges.setDocumentChanged(editorId, editorChanges.ItemChangeState.Updated);
@@ -219,8 +279,10 @@ function onProductDocumentDescriptionChanged(e) {
 
 async function onShowPopupButtonClicked(e) {
 
-    const productId = e.currentTarget.getAttribute(productDocumentShowPopupButtonProductIdAttribute);
-    const browserFileUrl = e.currentTarget.getAttribute(productDocumentShowPopupButtonBrowserFileUrlAttribute);
+    const showPopupButton = e.currentTarget;
+
+    const productId = showPopupButton.getAttribute(showPopupButtonProductIdAttribute);
+    const browserFileUrl = showPopupButton.getAttribute(showPopupButtonBrowserFileUrlAttribute);
 
     await showProductDocumentPopup(productId, browserFileUrl);
 }
@@ -236,7 +298,8 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
     const response = await fetch(url, {
         method: "POST",
         headers: {
-            "Accept": "application/json"
+            "Content-Type": "application/json",
+            "Accept": "text/html"
         },
         body: JSON.stringify(body)
     });
@@ -245,7 +308,7 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
 
     const data = await response.text();
 
-    const productDocumentPopupContainer = document.getElementById(common.productDocumentPopupContainerId);
+    const productDocumentPopupContainer = document.getElementById(productDocumentPopupContainerId);
 
     productDocumentPopupContainer.innerHTML = data;
 
@@ -256,16 +319,18 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
 
 async function onSaveUrlButtonClickAsync(e) {
 
-    const documentUrl = e.currentTarget.getAttribute(productDocumentSaveUrlButtonDocumentUrlAttribute);
+    const documentUrl = e.currentTarget.getAttribute(saveUrlButtonDocumentUrlAttribute);
 
     await navigator.clipboard.writeText(documentUrl);
 }
 
 function onRemoveButtonClicked(e) {
 
-    const productDocumentItem = e.currentTarget.target.closest(`[name='${productDocumentItemName}']`);
+    const productDocumentItem = e.currentTarget.closest(`[name='${itemName}']`);
 
     const editorId = productDocumentItem.id;
+
+    uploadedFiles.delete(editorId);
 
     dataStore.removeProductDocumentAndSave(editorId);
 

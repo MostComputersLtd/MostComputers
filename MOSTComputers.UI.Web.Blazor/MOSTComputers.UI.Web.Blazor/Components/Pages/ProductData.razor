@@ -38,24 +38,24 @@
 @inject NavigationManager NavigationManager
 
 @{
-	string productNameInPageTitle = "Product Data";
-	string productNameInPageDescription = string.Empty;
+    string productNameInPageTitle = "Product Data";
+    string productNameInPageDescription = string.Empty;
 
-	string productPartNumberSectionInPageDescription = string.Empty;
+    string productPartNumberSectionInPageDescription = string.Empty;
 
-	if (Product != null)
-	{
-		productNameInPageTitle = Product.Name ?? Product.Id.ToString();
+    if (Product != null)
+    {
+        productNameInPageTitle = Product.Name ?? Product.Id.ToString();
 
-		productNameInPageDescription = Product.Name ?? Product.Id.ToString();
-		productPartNumberSectionInPageDescription = $"(Парт номер: {Product.PartNumber2}";
-	}
+        productNameInPageDescription = Product.Name ?? Product.Id.ToString();
+        productPartNumberSectionInPageDescription = $"(Парт номер: {Product.PartNumber2}";
+    }
 }
 
 <PageTitle>@productNameInPageTitle</PageTitle>
 
 <HeadContent>
-	<meta name="description"
+    <meta name="description"
         content="Информация за продукт @productNameInPageDescription @productPartNumberSectionInPageDescription" />
 
     <meta name="keywords" content="MOST Computers, МОСТ Компютърс, компютри, компоненти, лаптопи, сървъри, принтери, консумативи, цени" />
@@ -66,19 +66,19 @@
     <script src="@Assets[_pageScriptUrl]"></script>
 
     <style>
-		body > div.page > main > article {
-			padding-left: 1.25rem;
-			padding-right: 1.25rem;
-			padding-top: 1.1rem;
-		}
+        body > div.page > main > article {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+            padding-top: 1.1rem;
+        }
 
-	    @@media (max-width: 684px) {
-			body > div.page > main > article {
-				padding-left: 0.75rem;
-				padding-right: 0.75rem;
-				padding-top: 1.1rem;
-			}
-	    }
+        @@media (max-width: 684px) {
+            body > div.page > main > article {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                padding-top: 1.1rem;
+            }
+        }
     </style>
 </HeadContent>
 
@@ -90,13 +90,13 @@
 }
 
 <MOSTComputers.UI.Web.Blazor.Components.Product.ProductData
-	BaseProductPagePath="@NavigationManager.BaseUri"
+    BaseProductPagePath="@NavigationManager.BaseUri"
     ShowProductIdData="true"
     Product="Product"
     PriceData="ProductPriceData"
     ProductProperties="ProductProperties"
     ProductImages="ProductImages"
-	ProductRelatedGroupPromotions="ProductRelatedGroupPromotions"
+    ProductRelatedGroupPromotions="ProductRelatedGroupPromotions"
     ProductPromotions="ProductPromotions"
     ProductSearchStringParts="ProductSearchStringParts"/>
 
@@ -120,12 +120,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-		await SetProductDataAsync();
+        await SetProductDataAsync();
 
         StateHasChanged();
     }
 
-	private async Task SetProductDataAsync()
+    private async Task SetProductDataAsync()
     {
         if (ProductId is null) return;
 
@@ -153,7 +153,7 @@
         foreach (ProductProperty property in productProperties)
         {
             ProductCharacteristic? productCharacteristic = productCharacteristics?
-                .FirstOrDefault(characteristic => characteristic.Name == property.Characteristic);
+                .FirstOrDefault(characteristic => characteristic.Id == property.ProductCharacteristicId);
 
             if (productCharacteristic is null) continue;
 
@@ -231,7 +231,7 @@
 
         List<Promotion> productPromotions = await PromotionService.GetAllForProductAsync(ProductId.Value);
 
-		ProductPromotions = productPromotions.Where(x =>
+        ProductPromotions = productPromotions.Where(x =>
         {
             if (x.Id != Product.PromotionPid && x.Id != Product.PromotionRid) return false;
 

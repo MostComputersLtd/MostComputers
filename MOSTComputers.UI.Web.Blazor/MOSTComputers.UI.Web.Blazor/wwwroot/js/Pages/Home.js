@@ -10,6 +10,7 @@ const resultsCountSelectId = "productTableResultsCountSelect";
 const resultsShowImagesCheckboxId = "productTableResultsShowImagesCheckbox";
 const orderSummaryLabelTextId = "productTableOrderSummaryLabelText";
 const orderSummaryCheckboxId = "productTableOrderSummaryCheckbox";
+const offerPageButtonId = "productTableOfferPageButton"
 
 const productsDataContainerId = "productsDataContainer";
 
@@ -66,7 +67,7 @@ async function searchProductsAndDisplaySearchButtonLoader() {
     const showImagesCheckbox = document.getElementById(resultsShowImagesCheckboxId);
 
     orderSummaryCheckbox.checked = false;
-    orderSummaryLabelText.innerText = "Order Summary";
+    orderSummaryLabelText.innerText = "Order";
     showImagesCheckbox.checked = false;
 
     const searchButton = document.getElementById(searchButtonId);
@@ -217,6 +218,7 @@ function changeImagesDisplayForAll(productRowElements, showImages) {
 }
 
 function toggleOrderSummary() {
+
     const orderSummaryCheckbox = document.getElementById(orderSummaryCheckboxId);
 
     const showOrderSummary = orderSummaryCheckbox.checked === true;
@@ -228,9 +230,10 @@ function toggleOrderSummary() {
     const productRowElements = [...document.getElementsByName(productRowName)];
 
     if (!showOrderSummary) {
+
         searchInput.value = searchInput.getAttribute(searchInputTextWithoutOrderSummaryAttribute);
 
-        orderSummaryLabelText.innerText = "Order Summary";
+        orderSummaryLabelText.innerText = "Order";
 
         for (const productRowElement of productRowElements) {
 
@@ -298,6 +301,75 @@ function hideProductsThatAreNotInSummaryAndChangeSearchInputValue(productRowElem
     searchInput.value = orderSummaryProductIds.join(',');
 
     return orderSummaryProductRows;
+}
+
+function openOfferPage() {
+
+    const productQuantities = [];
+
+    const productRowElements = [...document.getElementsByName(productRowName)];
+
+    for (const productRowElement of productRowElements) {
+
+        const indexOfNumberInId = productRowElement.id.indexOf("-") + 1;
+
+        const productIdAsString = productRowElement.id.substring(indexOfNumberInId);
+
+        const quantityInput = document.getElementById(quantityInputIdPrefix + productIdAsString);
+
+        const quantityInputValue = quantityInput.value;
+
+        const quantity = parseInt(quantityInputValue);
+
+        if (isNaN(quantity) || quantity <= 0) {
+            continue;
+        }
+
+        const productIdAttribute = productRowElement.getAttribute(productRowProductIdAttribute);
+
+        const productId = parseInt(productIdAttribute);
+
+        const productQuantityData = {
+            id: productId,
+            quantity: quantity,
+        };
+
+        productQuantities.push(productQuantityData);
+    }
+
+    const form = document.createElement("form");
+
+    form.name = "HomeOrder";
+
+    form.method = "POST";
+    form.action = "/home/offer";
+    form.target = "_blank";
+
+    const formNameInput = document.createElement("input");
+    formNameInput.type = "hidden";
+    formNameInput.name = "_handler";
+    formNameInput.value = "HomeOrder";
+
+    const input = document.createElement("input");
+
+    input.type = "hidden";
+    input.name = "payload";
+    input.value = JSON.stringify(productQuantities);
+
+    const antiforgeryTokenInput = document.createElement("input");
+
+    antiforgeryTokenInput.type = "hidden";
+    antiforgeryTokenInput.name = "__RequestVerificationToken";
+    antiforgeryTokenInput.value = document.querySelector('input[type = "hidden"][name = "__RequestVerificationToken"]').value;
+
+    form.appendChild(formNameInput);
+    form.appendChild(input);
+    form.appendChild(antiforgeryTokenInput);
+
+    document.body.appendChild(form);
+
+    form.submit();
+    form.remove();
 }
 
 function getProductSearchOptions(pageNumber = null) {

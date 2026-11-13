@@ -14,7 +14,7 @@ function getDateOrNullFromString(value)
 
 function getFormDataFromObject(obj, formData = new FormData(), parentKey = "")
 {
-    for (const key in obj)
+    for (const key of obj)
     {
         if (!obj.hasOwnProperty(key)) continue;
 

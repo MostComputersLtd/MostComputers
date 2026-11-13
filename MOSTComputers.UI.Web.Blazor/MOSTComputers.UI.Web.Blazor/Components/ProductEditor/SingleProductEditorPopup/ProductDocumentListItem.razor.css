@@ -1,0 +1,32 @@
+.product-document-list-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.75em;
+}
+
+.product-document-edit-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.product-document-file-name-text {
+    margin-right: 1rem;
+}
+
+.product-document-description-input {
+    width: 40%;
+    min-width: 12em;
+    margin-right: 0.5em;
+    line-height: 1.4rem;
+    font-size: 0.9rem;
+}
+
+.product-document-view-button {
+    margin-left: auto;
+    margin-right: 0.5em;
+}
+
+.product-document-copy-url-button {
+    margin-right: 0.5em;
+}

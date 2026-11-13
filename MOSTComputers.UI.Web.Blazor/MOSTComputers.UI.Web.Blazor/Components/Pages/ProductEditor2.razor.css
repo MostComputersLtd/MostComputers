@@ -19,11 +19,12 @@ body > div {
             overflow-y: auto;
         }
 
-p {
+p, ::deep p {
     margin-bottom: 0px;
 }
 
-button:not(:focus-visible), .btn:not(:focus-visible) {
+button:not(:focus-visible), .btn:not(:focus-visible),
+::deep button:not(:focus-visible), ::deep .btn:not(:focus-visible) {
     box-shadow: none !important;
 }
 
@@ -75,36 +76,6 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
     width: 100%;
 }
 
-.button-with-loader.loading {
-    display: flex;
-    flex-direction: column;
-    -webkit-align-items: center;
-    align-items: center;
-}
-
-    .button-with-loader > p {
-        border: 0px;
-        padding: 0px;
-        margin: 0px;
-    }
-
-    .button-with-loader.loading > p {
-        height: 0px;
-        visibility: hidden;
-    }
-
-    .button-with-loader > .round-loader-default {
-        display: none;
-    }
-
-        .button-with-loader.loading > .round-loader-default {
-            display: block;
-            padding: initial;
-            width: 1.5rem;
-            height: 1.5rem;
-            border-width: 3.25px;
-        }
-
 .manufacturer-select {
     min-width: 9.75em;
 }
@@ -134,20 +105,4 @@ button:not(:focus-visible), .btn:not(:focus-visible) {
 
 .legacy-xml-product-loader {
     width: 1em;
-}
-
-::deep .product-image-file-active-button-container {
-    position: absolute;
-    display: flex;
-    align-items: flex-start;
-    width: 100%;
-    left: 0px;
-    top: 0;
-    bottom: 0px;
-    pointer-events: none;
-    user-select: none;
-}
-
-::deep .product-image-file-active-button {
-    pointer-events: none;
 }

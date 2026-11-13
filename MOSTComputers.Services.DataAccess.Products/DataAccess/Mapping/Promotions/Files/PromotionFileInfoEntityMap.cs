@@ -13,7 +13,7 @@ internal sealed class PromotionFileInfoEntityMap : EntityMap<PromotionFileInfo>
         Map(x => x.ValidFrom).ToColumn(ValidFromDateColumnAlias);
         Map(x => x.ValidTo).ToColumn(ValidToDateColumnAlias);
         Map(x => x.FileName).ToColumn(FileNameColumnName);
-        Map(x => x.FileName).ToColumn(ContentTypeColumnName);
+        Map(x => x.ContentType).ToColumn(ContentTypeColumnName);
         Map(x => x.Description).ToColumn(DescriptionColumnName);
         Map(x => x.RelatedProductsString).ToColumn(RelatedProductsColumnName);
         Map(x => x.CreateUserName).ToColumn(CreateUserNameColumnAlias);

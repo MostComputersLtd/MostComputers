@@ -1,7 +1,6 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 @{
-    Product product = PopupData.Product;
-    ProductDocumentDisplayData productDocumentData = PopupData.ProductDocumentDisplayData; 
+    MOSTComputers.Models.Product.Models.Product product = PopupData.Product;
 }
 
 <Popup IsVisible='@PopupData.IsVislble'
@@ -9,20 +8,20 @@
     AddFullScreenButtonToHeader="true">
     <HeaderContent>
 
-        <div class="product-data-popup-header">
+        <div class="product-document-popup-header">
 
             @if (product.Manufacturer is not null)
             {
-                <h4 class="popup-header-text product-data-popup-header-text">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
+                <h4 class="popup-header-text product-document-popup-header-text">Manufacturer: @product.Manufacturer.RealCompanyName</h4>
             }
 
             @if (product.Category is not null)
             {
-                <h4 class="popup-header-text me-2 product-data-popup-header-text">Category: @product.Category.Description</h4>
+                <h4 class="popup-header-text me-2 product-document-popup-header-text">Category: @product.Category.Description</h4>
             }
 
-            <h4 class="popup-header-text product-data-popup-header-text">ID: @(product.Id)</h4>
-            <h4 class="popup-header-text product-data-popup-header-text">@(product.Name ?? "-")</h4>
+            <h4 class="popup-header-text product-document-popup-header-text">ID: @(product.Id)</h4>
+            <h4 class="popup-header-text product-document-popup-header-text">@(product.Name ?? "-")</h4>
         </div>
     </HeaderContent>
 

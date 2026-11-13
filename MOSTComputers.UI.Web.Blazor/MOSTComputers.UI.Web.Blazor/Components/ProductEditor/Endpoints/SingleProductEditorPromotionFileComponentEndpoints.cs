@@ -23,6 +23,7 @@ using SingleEditorReadonlyDataAlias
 
 using SingleEditorDataAlias
 = MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SinglePromotionFilePopup.PromotionProductFileInfoEditData;
+using MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.Files;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
@@ -79,13 +80,13 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
     }
 
     private static async Task<IResult> ShowPromotionProductFilePopupAsync(
-        [FromRoute] int productId,
         [FromBody] PromotionProductFilePopupRequest request,
         [FromServices] IProductService productService,
         [FromServices] IPromotionService promotionService,
-        [FromServices] IPromotionProductFileService promotionProductFileService)
+        [FromServices] IPromotionProductFileService promotionProductFileService,
+        [FromServices] IPromotionFileService promotionFileService)
     {
-        MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
+        MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(request.ProductId);
 
         if (product == null)
         {
@@ -95,6 +96,34 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
         List<PromotionProductFileInfo> promotionProductFiles
             = await promotionProductFileService.GetAllForProductAsync(request.ProductId);
 
+        List<PromotionFileInfo> promotionFiles = [];
+
+        List<int> additionalPromotionFileIds = [];
+
+        if (request.PromotionProductFiles != null)
+        {
+            foreach (PromotionFileEditorPopup.PromotionProductFileEditorJsonData promotionFileEditorData in request.PromotionProductFiles)
+            {
+                if (promotionFileEditorData.PromotionFileId == null) continue;
+
+                PromotionProductFileInfo? promotionProductFile
+                    = promotionProductFiles.Find(x => x.PromotionFileInfoId == promotionFileEditorData.PromotionFileId);
+
+                if (promotionProductFile != null)
+                {
+                    promotionFiles.Add(promotionProductFile.PromotionFileInfo);
+
+                    continue;
+                }
+
+                additionalPromotionFileIds.Add(promotionFileEditorData.PromotionFileId.Value);
+            }
+        }
+
+        List<PromotionFileInfo> promotionFilesFromService = await promotionFileService.GetByIdsAsync(additionalPromotionFileIds);
+
+        promotionFiles.AddRange(promotionFilesFromService);
+
         List<EditorDataAlias> promotionFileData = new();
         List<PromotionFileEditorPopup.PromotionProductFileEditorJsonData> promotionFileJsonData = new();
 
@@ -103,11 +132,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
             foreach (PromotionFileEditorPopup.PromotionProductFileEditorJsonData promotionFileEditorData in request.PromotionProductFiles)
             {
                 PromotionProductFileInfo? promotionProductFile = null;
-
-                if (promotionFileEditorData.Id != null)
-                {
-                    promotionProductFile = promotionProductFiles.Find(x => x.Id == promotionFileEditorData.Id);
-                }
+                PromotionFileInfo? promotionFile = promotionFiles.Find(x => x.Id == promotionFileEditorData.PromotionFileId);
 
                 EditorDataAlias editorData = new()
                 {
@@ -117,7 +142,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
                     ValidTo = promotionFileEditorData.ValidTo,
                     Active = promotionFileEditorData.Active,
                     ProductImageId = promotionProductFile?.ProductImageId,
-                    PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
+                    PromotionFileInfo = promotionFile,
                 };
 
                 PromotionFileEditorPopup.PromotionProductFileEditorJsonData jsonData = new()
@@ -127,7 +152,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
                     ValidFrom = promotionFileEditorData.ValidFrom,
                     ValidTo = promotionFileEditorData.ValidTo,
                     Active = promotionFileEditorData.Active,
-                    PromotionFileId = promotionProductFile?.PromotionFileInfo.Id,
+                    PromotionFileId = promotionFile?.Id,
                 };
 
                 promotionFileData.Add(editorData);
@@ -175,13 +200,27 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
 
     private static async Task<IResult> GetPromotionProductFileEditorItemAsync(
         [FromBody] PromotionProductFileEditorPopupItemRequest request,
-        [FromServices] IPromotionProductFileService promotionProductFileService)
+        [FromServices] IPromotionProductFileService promotionProductFileService,
+        [FromServices] IPromotionFileService promotionFileService)
     {
         PromotionProductFileInfo? promotionProductFile = null;
+        PromotionFileInfo? promotionFile = null;
 
         if (request.Id != null)
         {
             promotionProductFile = await promotionProductFileService.GetByIdAsync(request.Id.Value);
+
+            if (promotionProductFile != null
+                && request.PromotionFileId == promotionProductFile.PromotionFileInfoId)
+            {
+                promotionFile = promotionProductFile.PromotionFileInfo;
+            }
+        }
+
+        if (promotionFile == null
+            && request.PromotionFileId != null)
+        {
+            promotionFile = await promotionFileService.GetByIdAsync(request.PromotionFileId.Value);
         }
 
         string editorId = request.ExistingEditorId ?? GeneratePromotionFileId(null);
@@ -194,7 +233,7 @@ internal static class SingleProductEditorPromotionFileComponentEndpoints
             ValidFrom = request.ValidFrom,
             ValidTo = request.ValidTo,
             ProductImageId = promotionProductFile?.ProductImageId,
-            PromotionFileInfo = promotionProductFile?.PromotionFileInfo,
+            PromotionFileInfo = promotionFile,
         };
 
         OneOf<ReadonlyEditorDataAlias, EditorDataAlias> itemDataWrapped

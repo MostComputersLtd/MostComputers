@@ -37,6 +37,7 @@ using static MOSTComputers.Services.ProductRegister.Utils.ImageUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.EditorIdsGenerateUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPopup.SingleProductEditorPopup;
 using static MOSTComputers.UI.Web.Blazor.Utils.AuthenticationUtils;
+using static MOSTComputers.UI.Web.Blazor.Utils.UrlUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
@@ -47,7 +48,7 @@ internal static class SingleProductEditorComponentEndpoints
         [JsonPropertyName("productProperties")]
         public List<ProductDataPopupPropertyRequest>? ProductProperties { get; init; }
 
-        [JsonPropertyName("productImages")]
+        [JsonPropertyName("productImageUrls")]
         public List<string>? ProductImageUrls { get; init; }
     }
 
@@ -94,6 +95,7 @@ internal static class SingleProductEditorComponentEndpoints
 
         endpointGroup.MapPost("/productDataPopup/{productId:int}", GetProductDataPopupAsync);
         endpointGroup.MapPost("/productLegacyDisplayPopup/{productId:int}", GetProductLegacyDisplayPopupAsync);
+        endpointGroup.MapGet("/unsavedChangesPopup", GetUnsavedChangesPopup);
 
         endpointGroup.MapPut("/updateProductWorkStatus/{productId:int}/{productNewStatus:int}",
             UpdateProductWorkStatusAsync);
@@ -123,6 +125,31 @@ internal static class SingleProductEditorComponentEndpoints
 
         if (product == null) return Results.NotFound();
 
+        return await GetSingleProductEditorPopupForProductAsync(
+            product,
+            productPropertyService,
+            productCharacteristicService,
+            productImageService,
+            productImageFileService,
+            productWorkStatusesService,
+            promotionService,
+            promotionProductFileService,
+            productDocumentFileService,
+            searchStringOriginService);
+    }
+
+    public static async Task<RazorComponentResult<SingleProductEditorPopup.SingleProductEditorPopup>> GetSingleProductEditorPopupForProductAsync(
+        MOSTComputers.Models.Product.Models.Product product,
+        IProductPropertyService productPropertyService, 
+        IProductCharacteristicService productCharacteristicService,
+        IProductImageService productImageService,
+        IProductImageFileService productImageFileService,
+        IProductWorkStatusesService productWorkStatusesService,
+        IPromotionService promotionService,
+        IPromotionProductFileService promotionProductFileService,
+        IProductDocumentFileService productDocumentFileService,
+        ISearchStringOriginService searchStringOriginService)
+    {
         List<ProductImageData> productImages = await productImageService.GetAllInProductWithoutFileDataAsync(product.Id);
 
         List<ProductImageData> productImagesCopy = new(productImages);
@@ -131,14 +158,14 @@ internal static class SingleProductEditorComponentEndpoints
 
         List<ProductImageFileData> productImageFilesCopy = new(productImageFiles);
 
-        List<PromotionProductFileInfo> promotionProductFileInfos = await promotionProductFileService.GetAllForProductAsync(productId);
+        List<PromotionProductFileInfo> promotionProductFileInfos = await promotionProductFileService.GetAllForProductAsync(product.Id);
 
         List<PromotionFileEditorPopup.PromotionProductFileEditorJsonData> promotionProductFileEditorJsonDatas = [];
         List<PromotionFileEditorPopup.PromotionProductFileRecoveryJsonData> promotionProductFileRecoveryJsonDatas = [];
 
         foreach (PromotionProductFileInfo promotionProductFileInfo in promotionProductFileInfos)
         {
-            string editorId = GeneratePromotionFileId(promotionProductFileInfo.Id); 
+            string editorId = GeneratePromotionFileId(promotionProductFileInfo.Id);
 
             PromotionFileEditorPopup.PromotionProductFileEditorJsonData promotionFileEditorJsonData = new()
             {
@@ -184,7 +211,7 @@ internal static class SingleProductEditorComponentEndpoints
 
             string editorId = GenerateImageId(relatedImage.Id, relatedImageFile.Id, promotionProductFile.Id);
 
-            ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
+            PromotionFileImageListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
             {
                 EditorId = editorId,
                 Index = i,
@@ -200,7 +227,7 @@ internal static class SingleProductEditorComponentEndpoints
                 RelatedPromotionFileEditorId = promotionProductFileData.EditorId,
             };
 
-            ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
+            PromotionFileImageListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
             {
                 EditorId = editorId,
                 ImageFileData = new()
@@ -314,7 +341,7 @@ internal static class SingleProductEditorComponentEndpoints
         IOrderedEnumerable<ProductCharacteristic> orderedCharacteristics
             = relatedProductCharacteristics.OrderBy(x => x.DisplayOrder ?? 0);
 
-        List<ProductProperty> activeProperties = await productPropertyService.GetAllInProductAsync(productId);
+        List<ProductProperty> activeProperties = await productPropertyService.GetAllInProductAsync(product.Id);
 
         List<ProductPropertyListItem.ProductPropertyDisplayData> productProperties = [];
         List<ProductPropertyListItem.ProductPropertyDisplayData> productLinks = [];
@@ -399,16 +426,17 @@ internal static class SingleProductEditorComponentEndpoints
 
             string editorId = GenerateDocumentId(productDocument.Id);
 
+            string documentBrowserUrl = JoinUrlPath(ProductDocumentEndpoints.EndpointGroupRoute, productDocument.Id.ToString());
+
             ProductDocumentListItem.ProductDocumentDisplayData productDocumentDisplayData = new()
             {
                 EditorId = editorId,
-                Index = i,
                 ExistingDocument = new()
                 {
                     Id = productDocument.Id,
                     FileName = productDocument.FileName,
                 },
-                BrowserFilePath = $"{ProductDocumentEndpoints.EndpointGroupRoute}/{productDocument.Id}",
+                BrowserFilePath = documentBrowserUrl,
                 CurrentDescription = productDocument.Description ?? string.Empty,
             };
 
@@ -454,7 +482,7 @@ internal static class SingleProductEditorComponentEndpoints
         };
 
         return new RazorComponentResult<SingleProductEditorPopup.SingleProductEditorPopup>(output);
-    } 
+    }
 
     private static async Task<IResult> GetProductDataPopupAsync(
         HttpContext httpContext,
@@ -801,12 +829,7 @@ internal static class SingleProductEditorComponentEndpoints
             return Results.BadRequest("Invalid product new status");
         }
 
-        string? currentUserName = httpContext.User.Identity?.Name;
-
-        if (currentUserName is null)
-        {
-            return Results.Forbid();
-        }
+        string currentUserName = httpContext.User.Identity!.Name!;
 
         ProductNewStatus productStatusParsed = (ProductNewStatus)productNewStatus;
 

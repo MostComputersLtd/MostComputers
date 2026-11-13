@@ -74,7 +74,7 @@
         <p class="file-empty-placeholder"></p>
     }
 
-    <ValidationMessages Messages="ItemData.ValidationMessages" />
+    <ValidationMessages name="productImageValidationMessagesList" RenderEvenIfNull="true" />
 </li>
 
 @code{
@@ -84,7 +84,6 @@
         public required int Id { get; set; }
         public DateTime? DateModified { get; set; }
         public ProductImageItemFileDisplayData? RelatedImageFile { get; set; }
-        public List<string> ValidationMessages { get; set; } = new();
     }
 
     public sealed class ProductImageItemFileDisplayData

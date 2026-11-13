@@ -376,7 +376,7 @@ async function readInvoice() {
         return;
     }
 
-    const invoiceXmlData = response.text();
+    const invoiceXmlData = await response.text();
 
     console.log(invoiceXmlData);
 }

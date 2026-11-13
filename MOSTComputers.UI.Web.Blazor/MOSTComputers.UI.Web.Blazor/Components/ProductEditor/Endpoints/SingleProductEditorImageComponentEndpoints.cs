@@ -17,11 +17,13 @@ namespace MOSTComputers.UI.Web.Blazor.Components.ProductEditor.Endpoints;
 
 internal static class SingleProductEditorImageComponentEndpoints
 {
-    private sealed class ProductImageFromNewPromotionRequest
+    private sealed class ProductImageFromPromotionRequest
     {
-        [JsonPropertyName("editorId")] public required string EditorId { get; init; }
-        [JsonPropertyName("promotionFileId")] public int PromotionFileId { get; init; }
-        [JsonPropertyName("index")] public int Index { get; init; }
+        [JsonPropertyName("existingEditorId")] public string? ExistingEditorId { get; init; } = null;
+        [JsonPropertyName("relatedPromotionFileEditorId")] public required string RelatedPromotionFileEditorId { get; init; }
+        [JsonPropertyName("promotionFileId")] public required int PromotionFileId { get; init; }
+        [JsonPropertyName("index")] public required int Index { get; init; }
+        [JsonPropertyName("active")] public required bool Active { get; init; }
     }
 
     internal const string EndpointGroupUniqueRoute = "productImage";
@@ -41,7 +43,7 @@ internal static class SingleProductEditorImageComponentEndpoints
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupUniqueRoute);
 
         endpointGroup.MapPost("/add", (Delegate)GetProductImageFromExternalFileAsync); 
-        endpointGroup.MapPost("/add/promotionFile", GetProductImageFromNewPromotionFileAsync);
+        endpointGroup.MapPost("/promotionFile", GetProductImageFromPromotionFileAsync);
 
         return endpointGroup;
     }
@@ -90,9 +92,9 @@ internal static class SingleProductEditorImageComponentEndpoints
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "A file is required");
         }
 
-        IFormFile? file = selectedFiles[0];
+        IFormFile file = selectedFiles[0];
 
-        if (file is null || file.Length == 0)
+        if (file.Length == 0)
         {
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest, detail: "A file is required");
         }
@@ -144,8 +146,8 @@ internal static class SingleProductEditorImageComponentEndpoints
         return new RazorComponentResult<ProductImageUploadedFileListItem>(output);
     }
 
-    private static async Task<IResult> GetProductImageFromNewPromotionFileAsync(
-        [FromBody] ProductImageFromNewPromotionRequest request,
+    private static async Task<IResult> GetProductImageFromPromotionFileAsync(
+        [FromBody] ProductImageFromPromotionRequest request,
         [FromServices] IPromotionFileService promotionFileService)
     {
         PromotionFileInfo? promotionFile = await promotionFileService.GetByIdAsync(request.PromotionFileId);
@@ -162,9 +164,9 @@ internal static class SingleProductEditorImageComponentEndpoints
             return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
         }
 
-        string editorId = EditorIdsGenerateUtils.GenerateImageId(null, null, null);
+        string editorId = request.ExistingEditorId ?? EditorIdsGenerateUtils.GenerateImageId(null, null, null);
 
-        ProductImagePromotionFileListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
+        PromotionFileImageListItem.PromotionFileImageItemDisplayData promotionFileImageData = new()
         {
             EditorId = editorId,
             Index = request.Index,
@@ -175,19 +177,19 @@ internal static class SingleProductEditorImageComponentEndpoints
             },
             ImageData = new()
             {
-                Active = true,
+                Active = request.Active,
             },
-            RelatedPromotionFileEditorId = request.EditorId,
+            RelatedPromotionFileEditorId = request.RelatedPromotionFileEditorId,
         };
 
-        ProductImagePromotionFileListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
+        PromotionFileImageListItem.PromotionFileImageItemRecoveryJsonData promotionFileImageRecoveryJsonData = new()
         {
             EditorId = editorId,
             ImageFileData = new()
             {
-                Active = true,
+                Active = request.Active,
             },
-            RelatedPromotionFileEditorId = request.EditorId,
+            RelatedPromotionFileEditorId = request.RelatedPromotionFileEditorId,
         };
 
         string parametersJsonData = JsonSerializer.Serialize(promotionFileImageRecoveryJsonData, _jsonDataOptions);
@@ -198,6 +200,6 @@ internal static class SingleProductEditorImageComponentEndpoints
             JsonData = parametersJsonData,
         };
 
-        return new RazorComponentResult<ProductImagePromotionFileListItem>(output);
+        return new RazorComponentResult<PromotionFileImageListItem>(output);
     }
 }

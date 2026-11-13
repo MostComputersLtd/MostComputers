@@ -1,5 +1,5 @@
 import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
-import * as antiforgeryUtils from "../../Common/AntiforgeryUtils.js";
+import * as antiforgeryUtils from "../../../Common/AntiforgeryUtils.js";
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
 import * as propertiesEditor from "./PropertiesEditor.js"
@@ -7,13 +7,22 @@ import * as productDocumentsEditor from "./ProductDocumentsEditor.js"
 import * as productImagesEditor from "./ProductImagesEditor.js"
 import * as promotionFilePopup from "./PromotionFilePopup.js"
 
-const popupId = "singleEditorProductPopup";
+const popupId = "singleProductEditorPopup";
 
 const productIdHiddenInputId = "singleEditorProductIdHiddenInput";
 
+const productNewStatusSelectId = "singleEditorProductNewStatusSelect";
+
 const showProductDataPopupButtonId = "singleEditorShowProductDataPopupButton";
 const showProductLegacyDisplayPopupButtonId = "singleEditorShowProductLegacyDisplayPopupButton";
+const showPromotionProductFileEditorPopupButtonId = "singleEditorShowPromotionProductFileEditorPopupButton";
 const showSearchStringPopupButtonId = "singleEditorShowSearchStringPopupButton";
+
+const addImageFileButtonId = "singleEditorAddImageFileButton";
+const addImageFileInputId = "singleEditorAddImageFileInput";
+const addDocumentFileButtonId = "singleEditorAddDocumentFileButton";
+const addDocumentFileInputId = "singleEditorAddDocumentFileInput";
+const addImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
 
 const productDataPopupContainerId = "singleEditorProductDataPopupContainer";
 const productLegacyDisplayPopupContainerId = "singleEditorProductLegacyDisplayPopupContainer";
@@ -21,14 +30,6 @@ const promotionProductFileEditorPopupContainerId = "singleEditorPromotionProduct
 const searchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
 const unsavedChangesPopupContainerId = "singleEditorUnsavedChangesPopupContainer";
 
-const productNewStatusSelectId = "singleEditorProductNewStatusSelect";
-const addImageFileButtonId = "singleEditorAddImageFileButton";
-const addImageFileInputId = "singleEditorAddImageFileInput";
-const addDocumentFileButtonId = "singleEditorAddDocumentFileButton";
-const addDocumentFileInputId = "singleEditorAddDocumentFileInput";
-const addImageFromClipboardFileButtonId = "singleEditorAddImageFromClipboardFileButton";
-
-const saveButtonContainerId = "singleProductEditorSaveButtonContainer";
 const saveButtonId = "singleProductEditorSaveButton";
 
 const unsavedChangesPopupSaveButtonName = "unsavedChangesPopupSaveButton";
@@ -42,6 +43,7 @@ export function initEvents(dialogElement) {
 
     const showProductDataPopupButton = document.getElementById(showProductDataPopupButtonId);
     const showProductLegacyDisplayPopupButton = document.getElementById(showProductLegacyDisplayPopupButtonId);
+    const showPromotionProductFileEditorPopupButton = document.getElementById(showPromotionProductFileEditorPopupButtonId);
     const showSearchStringPopupButton = document.getElementById(showSearchStringPopupButtonId);
 
     const addImageFileButton = document.getElementById(addImageFileButtonId);
@@ -58,6 +60,7 @@ export function initEvents(dialogElement) {
 
     showProductDataPopupButton.addEventListener("click", showProductDataPopupAsync)
     showProductLegacyDisplayPopupButton.addEventListener("click", showProductLegacyDisplayPopupAsync)
+    showPromotionProductFileEditorPopupButton.addEventListener("click", showPromotionProductFileEditorPopupAsync);
     showSearchStringPopupButton.addEventListener("click", showProductSearchStringPopupAsync);
 
     addImageFileButton.addEventListener("click", onAddImageFileButtonClick);
@@ -85,6 +88,10 @@ export function initEvents(dialogElement) {
     editorChanges.setCallback(changeSaveButtonText);
 }
 
+export function resizeElements(dialogElement) {
+    propertiesEditor.resizeTextareas(dialogElement);
+}
+
 function changeSaveButtonText() {
 
     const anyChanges = editorChanges.anyChanges();
@@ -110,6 +117,13 @@ export function registerData(jsonDataObject) {
     dataStore.saveData(jsonDataObject);
 }
 
+export function setOnSuccessfulSaveCallback(onSuccessfulSaveCallback) {
+
+    const dialog = document.getElementById(popupId);
+
+    dialog.__onSuccessfulSaveCallback = onSuccessfulSaveCallback;
+}
+
 export function clearAll() {
     clearWindowEvents();
     clearCallbacks();
@@ -118,8 +132,8 @@ export function clearAll() {
 
 export function clearData() {
 
-    productImagesEditor.clearObjectUrls();
-    productDocumentsEditor.clearObjectUrls();
+    productImagesEditor.clearData();
+    productDocumentsEditor.clearData();
     promotionFilePopup.clearInitializedData();
 
     editorChanges.clearChanges();
@@ -131,12 +145,30 @@ export function clearWindowEvents() {
 }
 
 export function clearCallbacks() {
+
+    const dialog = document.getElementById(popupId);
+
+    dialog.__onSuccessfulSaveCallback = null;
+
     editorChanges.removeCallback();
+}
+
+export function getProductId() {
+
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
+
+    return parseInt(productIdHiddenInput.value);
 }
 
 async function onProductStatusSelectChangedAsync(e) {
 
-    const productStatus = e.currentTarget.value;
+    const productNewStatusSelect = e.currentTarget;
+
+    const productStatus = productNewStatusSelect.value;
+
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
+
+    const productId = productIdHiddenInput.value;
 
     const url = `api/components/productEditor/single/updateProductWorkStatus/${productId}/${productStatus}`;
 
@@ -162,7 +194,7 @@ async function onProductStatusSelectChangedAsync(e) {
 
     const productNewStatusValue = data.productNewStatus;
 
-    e.currentTarget.value = productNewStatusValue;
+    productNewStatusSelect.value = productNewStatusValue;
 }
 
 function onAddImageFileButtonClick() {
@@ -207,7 +239,11 @@ async function onAddDocumentFileInputChangeAsync(e) {
 
     const file = singleEditorAddImageFileInput.files.item(0);
 
-    const success = await productDocumentsEditor.addFileToProductDocumentsAsync(file);
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
+
+    const productId = productIdHiddenInput.value;
+
+    const success = await productDocumentsEditor.addFileToProductDocumentsAsync(file, productId);
 
     if (!success) {
     }
@@ -275,7 +311,7 @@ async function showProductDataPopupAsync() {
 
     const body = {
         productProperties: propertyRequests,
-        ProductImageUrls: productImageUrls,
+        productImageUrls: productImageUrls,
     };
 
     const url = `api/components/productEditor/single/productDataPopup/${productId}`;
@@ -368,7 +404,7 @@ async function showProductLegacyDisplayPopupAsync() {
 
                 break;
 
-            case "uploadedFile":
+            case "uploadedImage":
                 imageRequest = {
                     imageUrl: imageUrl,
                     active: productImageData.active,
@@ -421,7 +457,7 @@ async function showPromotionProductFileEditorPopupAsync() {
 
     const productId = productIdHiddenInput.value;
 
-    const url = `api/components/productEditor/single/promotionFile/showPopup/${productId}`;
+    const url = `api/components/productEditor/single/promotionFile/showPopup`;
 
     const promotionProductFileData = promotionFilePopup.getPromotionProductFileRequests();
 
@@ -473,20 +509,11 @@ async function onPromotionProductFileEditorItemUpdatedAsync(promotionProductFile
 
     const editorId = promotionProductFileData.editorId;
 
-    const productImages = productImagesEditor.getProductImagesRequestData();
-
-    const relatedImage = productImages.find(x =>
-    {
-        const itemType = x["$type"];
-
-        return itemType == "promotionProductFile" && x.promotionFileEditorId == editorId;
-    });
+    const relatedImageItem = productImagesEditor.getProductImageItemRelatedToPromotionFile(editorId);
 
     if (!promotionProductFileData.shouldAddToImages) {
 
-        if (relatedImage != null) {
-
-            const relatedImageItem = document.getElementById(editorId);
+        if (relatedImageItem != null) {
 
             productImagesEditor.removeProductImage(relatedImageItem);
         }
@@ -495,24 +522,16 @@ async function onPromotionProductFileEditorItemUpdatedAsync(promotionProductFile
     }
 
     productImagesEditor.changePromotionProductFileImageItemAsync(
-        promotionProductFileData.editorId,
-        promotionProductFileData.selectedFileId)
+        editorId,
+        promotionProductFileData.selectedFileId,
+        promotionProductFileData.active);
 }
 
 async function onPromotionProductFileEditorItemDeletedAsync(editorId) {
 
-    const productImages = productImagesEditor.getProductImagesRequestData();
+    const relatedImageItem = productImagesEditor.getProductImageItemRelatedToPromotionFile(editorId);
 
-    const relatedImage = productImages.find(x =>
-    {
-        const itemType = x["$type"];
-
-        return itemType == "promotionProductFile" && x.promotionFileEditorId == editorId;
-    });
-
-    if (relatedImage == null) return;
-
-    const relatedImageItem = document.getElementById(editorId);
+    if (relatedImageItem == null) return;
 
     productImagesEditor.removeProductImage(relatedImageItem);
 }
@@ -553,15 +572,15 @@ async function onCloseButtonClickedAsync() {
     else {
         clearAll();
 
-        const dialogElement = document.getElementById(popupId);
+        const dialog = document.getElementById(popupId);
 
-        dialogElement.close();
+        dialog.close();
     }
 }
 
 async function showUnsavedChangesPopup() {
 
-    const url = "api/components/productEditor/single/unsavedChangesPopup/";
+    const url = "api/components/productEditor/single/unsavedChangesPopup";
 
     const response = await fetch(url, {
         method: "GET",
@@ -597,17 +616,20 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
 
     let response = null;
 
-    const saveButtonContainer = document.getElementById(saveButtonContainerId);
     const saveButton = document.getElementById(saveButtonId);
 
-    saveButtonContainer.classList.add(loadingClass);
-    saveButton.setAttribute("disabled");
+    saveButton.classList.add(loadingClass);
+    saveButton.setAttribute("disabled", "disabled");
+
+    let formData;
 
     try {
-        response = await saveFromCurrentDataAsync();
+        formData = getSaveRequestFromCurrentData();
+
+        response = await saveAsync(formData);
     }
     finally {
-        saveButtonContainer.classList.remove(loadingClass);
+        saveButton.classList.remove(loadingClass);
         saveButton.removeAttribute("disabled");
     }
 
@@ -619,12 +641,23 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
 
     if (!response.ok) {
 
+        const responseProblem = await response.json();
+
+        if (responseProblem?.type === "/problems/validation") {
+
+            const dataFromRequestEntry = formData.get("data");
+
+            const dataFromRequest = JSON.parse(dataFromRequestEntry);
+
+            propertiesEditor.displayValidationMessages(responseProblem.validationErrors, dataFromRequest.productProperties);
+            productImagesEditor.displayValidationMessages(responseProblem.validationErrors);
+            productDocumentsEditor.displayValidationMessages(responseProblem.validationErrors);
+        }
+
         return;
     }
 
     const data = await response.json();
-
-    clearAll();
 
     const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
 
@@ -633,6 +666,10 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
     unsavedChangesDialog.close();
 
     const singleProductEditorDialog = document.getElementById(popupId);
+
+    const onSuccessfulSaveCallback = singleProductEditorDialog.__onSuccessfulSaveCallback;
+
+    clearAll();
 
     const dialogContainer = singleProductEditorDialog.parentElement;
 
@@ -648,6 +685,10 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
 
     jsonDataScriptElement.remove();
 
+    initEvents(newSingleProductEditorDialog);
+
+    newSingleProductEditorDialog.__onSuccessfulSaveCallback = onSuccessfulSaveCallback;
+
     newSingleProductEditorDialog.showModal();
 }
 
@@ -661,9 +702,9 @@ async function onUnsavedChangesPopupExitButtonClicked() {
 
     unsavedChangesDialog.close();
 
-    const dialogElement = document.getElementById(popupId);
+    const dialog = document.getElementById(popupId);
 
-    dialogElement.close();
+    dialog.close();
 }
 
 async function saveOnShortcut(e) {
@@ -682,17 +723,20 @@ async function onSaveButtonClicked() {
 
     let response = null;
 
-    const saveButtonContainer = document.getElementById(saveButtonContainerId);
     const saveButton = document.getElementById(saveButtonId);
 
-    saveButtonContainer.classList.add(loadingClass);
-    saveButton.setAttribute("disabled");
+    saveButton.classList.add(loadingClass);
+    saveButton.setAttribute("disabled", "disabled");
+
+    let formData;
 
     try {
-        response = await saveFromCurrentDataAsync();
+        formData = getSaveRequestFromCurrentData();
+
+        response = await saveAsync(formData);
     }
     finally {
-        saveButtonContainer.classList.remove(loadingClass);
+        saveButton.classList.remove(loadingClass);
         saveButton.removeAttribute("disabled");
     }
 
@@ -704,14 +748,29 @@ async function onSaveButtonClicked() {
 
     if (!response.ok) {
 
+        const responseProblem = await response.json();
+
+        if (responseProblem?.type === "/problems/validation") {
+
+            const dataFromRequestEntry = formData.get("data");
+
+            const dataFromRequest = JSON.parse(dataFromRequestEntry);
+
+            propertiesEditor.displayValidationMessages(responseProblem.validationErrors, dataFromRequest.productProperties);
+            productImagesEditor.displayValidationMessages(responseProblem.validationErrors);
+            productDocumentsEditor.displayValidationMessages(responseProblem.validationErrors);
+        }
+
         return;
     }
 
     const data = await response.json();
 
-    clearAll();
-
     const dialog = document.getElementById(popupId);
+
+    const onSuccessfulSaveCallback = dialog.__onSuccessfulSaveCallback;
+
+    clearAll();
 
     const dialogContainer = dialog.parentElement;
 
@@ -727,12 +786,57 @@ async function onSaveButtonClicked() {
 
     jsonDataScriptElement.remove();
 
+    initEvents(newDialog);
+
+    newDialog.__onSuccessfulSaveCallback = onSuccessfulSaveCallback;
+
     newDialog.showModal();
+
+    onSuccessfulSaveCallback();
 }
 
-async function saveFromCurrentDataAsync() {
+async function saveAsync(requestData) {
+
+    for (const [name, data] of requestData.entries()) {
+
+        if (name === "data") {
+
+            console.log(JSON.parse(data));
+
+            continue;
+        }
+
+        console.log(`${name}: ${data.type}, ${data.size}`);
+    }
+
+    const url = `api/components/productEditor/single/save`;
+
+    const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Accept": "text/html, application/problem+json",
+            [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
+        },
+        body: requestData
+    });
+
+    if (response.ok) {
+        console.log("SUCCESS");
+    }
+    else if (response.status !== 400) {
+        console.log(response);
+    }
+
+    return response;
+}
+
+function getSaveRequestFromCurrentData() {
 
     const formData = new FormData();
+
+    const productIdHiddenInput = document.getElementById(productIdHiddenInputId);
+
+    const productId = parseInt(productIdHiddenInput.value);
 
     const allPropertyData = propertiesEditor.getProductPropertyRequestData();
 
@@ -756,9 +860,9 @@ async function saveFromCurrentDataAsync() {
 
         const imageType = imageRequest["$type"];
 
-        if (imageType !== "uploadedFile") continue;
+        if (imageType !== "uploadedImage") continue;
 
-        formData.append(editorId, imageRequest.uploadedFile);
+        formData.append(imageRequest.editorId, imageRequest.uploadedFile);
 
         delete imageRequest.uploadedFile;
     }
@@ -803,6 +907,7 @@ async function saveFromCurrentDataAsync() {
     }
 
     const request = {
+        productId: productId,
         productProperties: propertyRequests,
         productImages: imageRequests,
         promotionProductFiles: promotionProductFileRequests,
@@ -812,13 +917,5 @@ async function saveFromCurrentDataAsync() {
 
     formData.append("data", JSON.stringify(request));
 
-    const url = `api/components/productEditor/single/save`;
-
-    return await fetch(url, {
-        method: "PUT",
-        headers: {
-            [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
-        },
-        body: formData
-    }); 
+    return formData;
 }

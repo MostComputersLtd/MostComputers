@@ -26,7 +26,7 @@ async function addNewImageFileToProduct(productId, fileInputElement, imageFilesP
 
     if (response.status !== 200) return;
 
-    const responseData = response.text();
+    const responseData = await response.text();
     
     const imagesPopupModalContent = document.getElementById(imageFilesPopupContentId);
 

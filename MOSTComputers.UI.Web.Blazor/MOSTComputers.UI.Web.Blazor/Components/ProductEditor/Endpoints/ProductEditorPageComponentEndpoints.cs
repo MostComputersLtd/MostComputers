@@ -27,6 +27,7 @@ using MOSTComputers.UI.Web.Blazor.Components.ProductEditor.SingleProductEditorPo
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Documents;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
+using MOSTComputers.UI.Web.Blazor.Services.ProductEditor;
 using MOSTComputers.UI.Web.Blazor.Services.ProductEditor.Contracts;
 using OneOf;
 using SixLabors.ImageSharp;
@@ -53,6 +54,19 @@ internal static class ProductEditorPageComponentEndpoints
         public int? ResultsCount { get; init; }
     }
 
+    private enum ProductSearchResultsOrdering
+    {
+        Default = 0,
+        ByProductId = 1,
+        DefaultWithCategory = 2,
+    }
+
+    private sealed class ProductSearchResult
+    {
+        public required List<MOSTComputers.Models.Product.Models.Product> Products { get; init; }
+        public required ProductSearchResultsOrdering ProductOrdering { get; init; }
+    }
+
     private sealed class ManufacturerSelectOption
     {
         public required int ManufacturerId { get; set; }
@@ -73,6 +87,9 @@ internal static class ProductEditorPageComponentEndpoints
             .RequireAuthorization(policy => policy.RequireRole("ProductEditor"));
 
         endpointGroup.MapGet("/manufacturersInCategory", GetManufacturersThatHaveActiveProductsInACategoryAsync);
+        endpointGroup.MapGet("/item/{productId:int}", GetProductEditorItemAsync);
+
+        endpointGroup.MapGet("/_sync", StartApplicationSyncAsync);
 
         endpointGroup.MapGet("/productXmlDataPopup/{productId:int}", GetProductXmlPopupDataAsync);
         endpointGroup.MapGet("/productPromotionPopup/{productId:int}/{promotionId:int}", GetProductPromotionPopupDataAsync);
@@ -91,16 +108,43 @@ internal static class ProductEditorPageComponentEndpoints
         return endpointGroup;
     }
 
+    private static async Task StartApplicationSyncAsync(
+        HttpContext httpContext,
+        [FromServices] ApplicationDataSyncService applicationDataSyncService)
+    {
+        string userName = httpContext.User.Identity!.Name!;
+
+        await applicationDataSyncService.SyncApplicationAsync(userName!);
+    }
+
+    private static async Task<IResult> GetProductEditorItemAsync(
+        [FromRoute(Name = "productId")] int productId,
+        IProductService productService,
+        IProductEditorDataService productEditorDataService)
+    {
+        MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
+
+        if (product == null) return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+
+        Pages.ProductEditor.ProductEditorProductData productEditorData
+            = await productEditorDataService.GetProductEditorProductDataAsync(product);
+
+        return new RazorComponentResult<ProductEditorTableItem>(new
+        {
+            ItemData = productEditorData,
+        });
+    }
+
     private static async Task<IResult> GetSearchedProductsAsync(
         [FromBody] SearchProductsRequest request,
         IProductSearchService productSearchService,
         IProductEditorDataService productEditorDataService)
     {
-        List<MOSTComputers.Models.Product.Models.Product> products
+        ProductSearchResult searchResult
             = await SearchProductsAsync(request, productSearchService);
 
         List<Pages.ProductEditor.ProductEditorProductData> oldProductDatas
-            = await productEditorDataService.GetProductEditorProductDatasAsync(products);
+            = await productEditorDataService.GetProductEditorProductDatasAsync(searchResult.Products);
 
         List<ProductEditorProductData> productDatas = new();
 
@@ -109,13 +153,20 @@ internal static class ProductEditorPageComponentEndpoints
             productDatas.Add(TEMP__Map(productData));
         }
 
+        var jsonParameters = new {
+            ordering = (int)searchResult.ProductOrdering,
+        };
+
+        string jsonData = JsonSerializer.Serialize(jsonParameters);
+
         return new RazorComponentResult<ProductEditorTableItems>(new
         {
             ProductDatas = productDatas,
+            JsonData = jsonData,
         });
     }
 
-    private static async Task<List<MOSTComputers.Models.Product.Models.Product>> SearchProductsAsync(
+    private static async Task<ProductSearchResult> SearchProductsAsync(
         SearchProductsRequest request,
         IProductSearchService productSearchService)
     {
@@ -143,6 +194,13 @@ internal static class ProductEditorPageComponentEndpoints
             promotionSearchOptions = (PromotionSearchOptions)request.PromotionStatus.Value;
         }
 
+        int? manufacturerId = request.ManufacturerId;
+
+        if (manufacturerId == -1)
+        {
+            manufacturerId = null;
+        }
+
         bool orderProductsByLastAddedDate = productNewStatus == ProductEditorProductNewStatusSearchOptions.LastAdded
             || productNewStatus == ProductEditorProductNewStatusSearchOptions.LastAddedNew;
 
@@ -159,15 +217,26 @@ internal static class ProductEditorPageComponentEndpoints
             searchMaxResultCount = null;
         }
 
-        List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions
-            = GetSearchOptionsFromEditorSearchOptions(productNewStatus);
+        List<ProductNewStatusSearchOptions>? productNewStatusSearchOptions = productNewStatus switch
+        {
+            ProductEditorProductNewStatusSearchOptions.New => [ProductNewStatusSearchOptions.New],
+            ProductEditorProductNewStatusSearchOptions.WorkInProgress => [ProductNewStatusSearchOptions.WorkInProgress],
+            ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress =>
+                [ProductNewStatusSearchOptions.New, ProductNewStatusSearchOptions.WorkInProgress],
+            ProductEditorProductNewStatusSearchOptions.ReadyForUse => [ProductNewStatusSearchOptions.ReadyForUse],
+            ProductEditorProductNewStatusSearchOptions.Postponed1 => [ProductNewStatusSearchOptions.Postponed1],
+            ProductEditorProductNewStatusSearchOptions.Postponed2 => [ProductNewStatusSearchOptions.Postponed2],
+            ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.New],
+            ProductEditorProductNewStatusSearchOptions.None => [ProductNewStatusSearchOptions.None],
+            _ => null
+        };
 
         ProductSearchRequest productSearchRequest = new()
         {
             OnlyVisibleByEndUsers = false,
             UserInputString = request.UserInput,
             CategoryId = request.CategoryId,
-            ManufacturerId = request.ManufacturerId,
+            ManufacturerId = manufacturerId,
             ProductNewStatuses = productNewStatusSearchOptions,
             ProductStatus = productStatus,
             PromotionSearchOptions = promotionSearchOptions,
@@ -176,18 +245,17 @@ internal static class ProductEditorPageComponentEndpoints
 
         List<MOSTComputers.Models.Product.Models.Product> products = await productSearchService.SearchProductsAsync(productSearchRequest);
 
-        _productOrderByStatusDate = orderProductsByLastAddedDate ? ProductOrderByStatusDate.LastUpdatedDate : ProductOrderByStatusDate.None;
-        _productOrderByImages = ProductOrderByImages.None;
-        _productOrderByPlShow = ProductOrderByPlShow.None;
-        _productOrderByCategory = orderProductsFromSecondCategoryUp ? ProductOrderByCategory.FromSecondUp : ProductOrderByCategory.None;
+        ProductSearchResultsOrdering ordering = ProductSearchResultsOrdering.Default;
 
         if (orderProductsByLastAddedDate)
         {
             products = products.OrderByDescending(x => x.Id).ToList();
+            ordering = ProductSearchResultsOrdering.ByProductId;
         }
         else if (orderProductsFromSecondCategoryUp)
         {
             SortProductsFromSecondCategoryUp(products);
+            ordering = ProductSearchResultsOrdering.DefaultWithCategory;
         }
         else
         {
@@ -197,12 +265,18 @@ internal static class ProductEditorPageComponentEndpoints
                 .ToList();
         }
 
-        if (request.ResultsCount is null || request.ResultsCount <= 0 || request.ResultsCount > products.Count)
+        if (request.ResultsCount != null
+            && request.ResultsCount > 0
+            && request.ResultsCount <= products.Count)
         {
-            return products;
+            products = products[..request.ResultsCount.Value];
         }
 
-        return products[..request.ResultsCount.Value];
+        return new()
+        {
+            Products = products,
+            ProductOrdering = ordering,
+        };
     }
 
     private static void SortProductsFromSecondCategoryUp(List<MOSTComputers.Models.Product.Models.Product> products)
@@ -228,23 +302,6 @@ internal static class ProductEditorPageComponentEndpoints
         if (displayOrderComparison != 0) return displayOrderComparison;
 
         return product1.Id.CompareTo(product2.Id);
-    }
-
-    private static List<ProductNewStatusSearchOptions>? GetSearchOptionsFromEditorSearchOptions(
-        ProductEditorProductNewStatusSearchOptions? productEditorProductNewStatusSearchOptions)
-    {
-        return productEditorProductNewStatusSearchOptions switch
-        {
-            ProductEditorProductNewStatusSearchOptions.New => [ProductNewStatusSearchOptions.New],
-            ProductEditorProductNewStatusSearchOptions.WorkInProgress => [ProductNewStatusSearchOptions.WorkInProgress],
-            ProductEditorProductNewStatusSearchOptions.NewAndWorkInProgress => [ProductNewStatusSearchOptions.New, ProductNewStatusSearchOptions.WorkInProgress],
-            ProductEditorProductNewStatusSearchOptions.ReadyForUse => [ProductNewStatusSearchOptions.ReadyForUse],
-            ProductEditorProductNewStatusSearchOptions.Postponed1 => [ProductNewStatusSearchOptions.Postponed1],
-            ProductEditorProductNewStatusSearchOptions.Postponed2 => [ProductNewStatusSearchOptions.Postponed2],
-            ProductEditorProductNewStatusSearchOptions.LastAddedNew => [ProductNewStatusSearchOptions.New],
-            ProductEditorProductNewStatusSearchOptions.None => [ProductNewStatusSearchOptions.None],
-            _ => null
-        };
     }
 
     private static async Task<IResult> GetManufacturersThatHaveActiveProductsInACategoryAsync(
