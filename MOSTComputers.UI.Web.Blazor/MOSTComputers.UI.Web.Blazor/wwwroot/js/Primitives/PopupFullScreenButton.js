@@ -1,17 +1,31 @@
-﻿const popupNormalLeftMarginAttribute = "data-normal-left-margin";
+const fullScreenButtonName = "popupFullScreenButton";
+const normalScreenIconName = "normalScreenFullScreenButtonIcon";
+const fullScreenIconName = "fullScreenFullScreenButtonIcon";
+
+const popupNormalLeftMarginAttribute = "data-normal-left-margin";
 const popupNormalRightMarginAttribute = "data-normal-right-margin";
 const popupNormalTopMarginAttribute = "data-normal-top-margin";
 const popupNormalBottomMarginAttribute = "data-normal-bottom-margin";
+
 const isDialogFullScreenAttribute = "data-is-dialog-full-screen";
 
 const displayNoneClass = "display-none";
 
-function toggleFullScreenAndChangeFullScreenButton(dialogId, normalScreenButtonId, fullScreenButtonId) {
-    const dialog = document.getElementById(dialogId);
-    const normalScreenButton = document.getElementById(normalScreenButtonId);
-    const fullScreenButton = document.getElementById(fullScreenButtonId);
+export function attachFullScreenButtonEvent(dialog) {
 
-    if (!dialog) return;
+    const fullScreenButton = dialog.querySelector(`[name='${fullScreenButtonName}']`);
+
+    fullScreenButton.addEventListener("click", toggleFullScreenAndChangeFullScreenButton);
+}
+
+function toggleFullScreenAndChangeFullScreenButton(e) {
+
+    const fullScreenButton = e.currentTarget;
+
+    const dialog = fullScreenButton.closest("dialog");
+
+    const normalScreenIcon = fullScreenButton.querySelector(`[name='${normalScreenIconName}']`);
+    const fullScreenIcon = fullScreenButton.querySelector(`[name='${fullScreenIconName}']`);
 
     const htmlElement = document.querySelector("html");
 
@@ -19,7 +33,7 @@ function toggleFullScreenAndChangeFullScreenButton(dialogId, normalScreenButtonI
         && htmlElement.style.overflowY != "show"
         && htmlElement.scrollHeight > htmlElement.clientHeight;
 
-    var verticalScrollBarWidthPixels = 0;
+    let verticalScrollBarWidthPixels = 0;
 
     if (hasScrollbar)
     {
@@ -29,16 +43,17 @@ function toggleFullScreenAndChangeFullScreenButton(dialogId, normalScreenButtonI
     const isDialogFullScreenAttributeValue = dialog.getAttribute(isDialogFullScreenAttribute);
 
     if (isDialogFullScreenAttributeValue == null || isDialogFullScreenAttributeValue !== "true") {
+
         goFullScreen(dialog, verticalScrollBarWidthPixels);
 
         dialog.setAttribute(isDialogFullScreenAttribute, "true");
 
-        if (normalScreenButton) {
-            normalScreenButton.classList.add(displayNoneClass);
+        if (normalScreenIcon) {
+            normalScreenIcon.classList.add(displayNoneClass);
         }
 
-        if (fullScreenButton) {
-            fullScreenButton.classList.remove(displayNoneClass);
+        if (fullScreenIcon) {
+            fullScreenIcon.classList.remove(displayNoneClass);
         }
 
         return;
@@ -48,29 +63,13 @@ function toggleFullScreenAndChangeFullScreenButton(dialogId, normalScreenButtonI
 
     dialog.setAttribute(isDialogFullScreenAttribute, "false");
 
-    if (fullScreenButton) {
-        fullScreenButton.classList.add(displayNoneClass);
+    if (fullScreenIcon) {
+        fullScreenIcon.classList.add(displayNoneClass);
     }
 
-    if (normalScreenButton) {
-        normalScreenButton.classList.remove(displayNoneClass);
+    if (normalScreenIcon) {
+        normalScreenIcon.classList.remove(displayNoneClass);
     }
-}
-
-function toggleFullScreen(dialogId, additionalRightMarginPixels = 0)
-{
-    const dialog = document.getElementById(dialogId);
-
-    if (!dialog) return;
-
-    const isDialogFullScreenAttribute = dialog.getAttribute(isDialogFullScreenAttribute);
-
-    if (isDialogFullScreenAttribute == null || isDialogFullScreenAttribute !== "true")
-    {
-        goFullScreen(dialog, additionalRightMarginPixels);
-    }
-
-    goBackToNormalScreen(dialog);
 }
 
 function goFullScreen(dialog, additionalRightMarginPixels) {

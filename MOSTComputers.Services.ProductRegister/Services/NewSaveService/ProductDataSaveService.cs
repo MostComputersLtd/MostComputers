@@ -113,16 +113,17 @@ internal sealed class ProductDataSaveService(
         if (!validationResult.IsValid) return validationResult;
 
         List<ProductProperty> existingProductProperties = await _productPropertyCrudService.GetAllInProductAsync(productId);
-        List<ProductImage> allExistingProductImages = await _productImageCrudService.GetAllInProductAsync(productId);
+        List<ProductImage> existingProductImages = await _productImageCrudService.GetAllInProductAsync(productId);
         ProductWorkStatuses? existingWorkStatuses = await _productWorkStatusesService.GetByProductIdAsync(productId);
 
-        List<ProductImage> productImagesToDelete = new(allExistingProductImages);
+        List<ProductImage> oldProductImages = [];
+        List<ProductImage> productImagesToDelete = new(existingProductImages);
 
-        List<ProductImageFileData> oldProductImageFiles = validationData.ImageFiles;
-        List<ProductImageFileData> productImageFilesToDelete = new(oldProductImageFiles);
+        List<ProductImageFileData> oldProductImageFiles = [];
+        List<ProductImageFileData> productImageFilesToDelete = new(validationData.ImageFiles);
 
-        List<PromotionProductFileInfo> oldPromotionProductFileInfos = validationData.PromotionProductFiles;
-        List<PromotionProductFileInfo> promotionProductFileInfosToDelete = new(oldPromotionProductFileInfos);
+        List<PromotionProductFileInfo> oldPromotionProductFileInfos = [];
+        List<PromotionProductFileInfo> promotionProductFileInfosToDelete = new(validationData.PromotionProductFiles);
 
         List<ProductImageAndPromotionFileUpsertRequest> imageRequests = OrderItemsWithDisplayOrders(
             request.ImageRequests, oldPromotionProductFileInfos);
@@ -136,20 +137,23 @@ internal sealed class ProductDataSaveService(
                 = FindExisting(productImageFilesToDelete, upsertRequest, existingPromotionFile);
 
             ProductImage? existingImage
-                = FindExisting(allExistingProductImages, upsertRequest, existingPromotionFile);
+                = FindExisting(productImagesToDelete, upsertRequest, existingPromotionFile);
 
             if (existingPromotionFile != null)
             {
+                oldPromotionProductFileInfos.Add(existingPromotionFile);
                 promotionProductFileInfosToDelete.Remove(existingPromotionFile);
             }
 
             if (existingImageFile != null)
             {
+                oldProductImageFiles.Add(existingImageFile);
                 productImageFilesToDelete.Remove(existingImageFile);
             }
 
             if (existingImage != null)
             {
+                oldProductImages.Add(existingImage);
                 productImagesToDelete.Remove(existingImage);
             }
         }
@@ -178,7 +182,7 @@ internal sealed class ProductDataSaveService(
                         doNotUpdate =>
                         {
                             ProductImage? existingImage
-                                = allExistingProductImages.FirstOrDefault(x => x.Id == imageUpsertRequest.ExistingImageId);
+                                = oldProductImages.FirstOrDefault(x => x.Id == imageUpsertRequest.ExistingImageId);
 
                             return existingImage?.HtmlData;
                         },
@@ -278,7 +282,7 @@ internal sealed class ProductDataSaveService(
                             if (existingPromotionProductFile?.ProductImageId == null) return null;
 
                             ProductImage? existingImage
-                                = allExistingProductImages.Find(x => x.Id == existingPromotionProductFile.ProductImageId);
+                                = oldProductImages.Find(x => x.Id == existingPromotionProductFile.ProductImageId);
 
                             return existingImage?.HtmlData;
                         },
@@ -351,7 +355,7 @@ internal sealed class ProductDataSaveService(
                         result, productId, $"deleting image (ID: {oldImageToBeRemoved.Id})");
                 }
 
-                allExistingProductImages.Remove(oldImageToBeRemoved);
+                oldProductImages.Remove(oldImageToBeRemoved);
             }
 
             foreach (ImageUpsertDataInUpsert imageUpsertData in imageUpsertDataInUpserts)
@@ -391,7 +395,7 @@ internal sealed class ProductDataSaveService(
 
                     if (imageUpsertRequest.ExistingImageId != null)
                     {
-                        ProductImage existingProductImage = allExistingProductImages.Find(x => x.Id == imageUpsertRequest.ExistingImageId)!;
+                        ProductImage existingProductImage = oldProductImages.Find(x => x.Id == imageUpsertRequest.ExistingImageId)!;
 
                         if (IsRequestEqualToExistingData(imageUpsertRequest, existingProductImage))
                         {
@@ -593,7 +597,12 @@ internal sealed class ProductDataSaveService(
 
                 string fileExtension = Path.GetExtension(promotionFile.FileName)!;
 
-                int imageId = imageIdsForRequests[upsertRequest];
+                int? imageId = null;
+
+                if (promotionProductFileUpsertRequest.UpsertInProductImagesRequest != null)
+                {
+                    imageId = imageIdsForRequests[upsertRequest];
+                }
 
                 if (promotionProductFileUpsertRequest.Id == null)
                 {
@@ -713,7 +722,7 @@ internal sealed class ProductDataSaveService(
                     = await FullSave_UpsertImageFileForImageAsync(
                         imageFile,
                         productId,
-                        imageId,
+                        imageId!.Value,
                         fileData,
                         promotionProductFileUpsertRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.Active,
                         promotionProductFileUpsertRequest.UpsertInProductImagesRequest.ImageFileUpsertRequest.CustomDisplayOrder,
@@ -972,7 +981,11 @@ internal sealed class ProductDataSaveService(
             imageFileUpdateRequest => null,
             promotionProductFileUpsertRequest =>
             {
-                if (existingPromotionFile?.ProductImageId == null) return null;
+                if (promotionProductFileUpsertRequest.UpsertInProductImagesRequest == null
+                    || existingPromotionFile?.ProductImageId == null)
+                {
+                    return null;
+                }
 
                 return existingProductImages.FirstOrDefault(x => x.Id == existingPromotionFile.ProductImageId);
             });
@@ -981,7 +994,7 @@ internal sealed class ProductDataSaveService(
     private static ProductImageFileData? FindExisting(
         List<ProductImageFileData> existingProductImageFileInfos,
         ProductImageAndPromotionFileUpsertRequest request,
-       PromotionProductFileInfo? existingPromotionFile)
+        PromotionProductFileInfo? existingPromotionFile)
     {
         return request.Request.Match(
             imageWithFileUpsertRequest =>
@@ -990,9 +1003,13 @@ internal sealed class ProductDataSaveService(
             },
             imageFileCreateRequest => null,
             imageFileUpdateRequest => existingProductImageFileInfos.Find(x => x.Id == imageFileUpdateRequest.Id),
-            promotionProductFileUpsertRequest => 
+            promotionProductFileUpsertRequest =>
             {
-                if (existingPromotionFile?.ProductImageId == null) return null;
+                if (promotionProductFileUpsertRequest.UpsertInProductImagesRequest == null
+                    || existingPromotionFile?.ProductImageId == null)
+                {
+                    return null;
+                }
 
                 return existingProductImageFileInfos.Find(x => x.ImageId == existingPromotionFile.ProductImageId);
             });

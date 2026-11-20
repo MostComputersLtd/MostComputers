@@ -389,6 +389,8 @@ public static class PromotionGroupsPageComponentEndpoints
     {
         List<PromotionGroup> promotionGroups = await promotionGroupService.GetAllAsync();
 
+        promotionGroups.RemoveAll(x => x.IsDefault);
+
         if (id == null)
         {
             GroupPromotionContentEditorData newPromotionData = new()

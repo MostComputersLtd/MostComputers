@@ -17,7 +17,7 @@ function initEvents()
     const addPromotionGroupButton = document.getElementById(common.addPromotionGroupButtonId);
 
     searchPromotionButton.addEventListener("click", searchGroupPromotions);
-    addPromotionButton.addEventListener("click", openGroupPromotionEditorPopup);
+    addPromotionButton.addEventListener("click", openGroupPromotionEditor);
     addPromotionGroupButton.addEventListener("click", openPromotionGroupEditorPopup);
 }
 
@@ -51,7 +51,7 @@ export async function searchGroupPromotions() {
 
     for (const promotionListItem of promotionListItems) {
 
-        promotionListItem.addEventListener("click", () => openPromotionGroupEditorPopupFromListItem(promotionListItem));
+        promotionListItem.addEventListener("click", () => openPromotionGroupEditorFromListItem(promotionListItem));
     }
 }
 
@@ -72,7 +72,7 @@ function getGroupPromotionSearchOptionsFromCurrentData() {
     };
 }
 
-function openGroupPromotionEditorPopup() {
+function openGroupPromotionEditor() {
     promotionEditor.openPromotionEditorForPromotion(null);
 
     deselectAllListItems();
@@ -82,7 +82,7 @@ function openPromotionGroupEditorPopup() {
     promotionGroupEditor.openPromotionGroupEditorPopup(null);
 }
 
-function openPromotionGroupEditorPopupFromListItem(promotionListItem) {
+function openPromotionGroupEditorFromListItem(promotionListItem) {
 
     const promotionIdAttribute = promotionListItem.getAttribute(common.promotionListItemPromotionIdAttribute);
 

@@ -1,74 +1,74 @@
 @using MOSTComputers.UI.Web.Blazor.Components.Primitives
 
 <Popup IsVisible="PopupData.IsVisible"
-	PopupMarginOptions='PopupData.MarginOptions'
-	AdditionalBodyAttributes='new() { ["style"] = "display: flex;" }'>
-	
-	<HeaderContent>
-		<p class="popup-header-text">@PopupData.ImageIdentifierText - (@(PopupData.CurrentWidth)px X @(PopupData.CurrentHeight)px)</p>
-	</HeaderContent>
-	<ChildContent>
-		<div class="image-resize-popup-body">
-			<div class="preview-image-section-container">
-				<div class="preview-image-container">
-					<img id="imageResizePopupPreviewImage"
-						class="preview-image"
-						src="@PopupData.ImageUrl"
-						data-original-file-name="@PopupData.OriginalFileName"
-						data-original-content-type="@PopupData.OriginalContentType"/>
-					</div>
+    PopupMarginOptions='PopupData.MarginOptions'
+    AdditionalBodyAttributes='new() { ["style"] = "display: flex;" }'>
+    
+    <HeaderContent>
+        <p class="popup-header-text">@PopupData.ImageIdentifierText - (@(PopupData.CurrentWidth)px X @(PopupData.CurrentHeight)px)</p>
+    </HeaderContent>
+    <ChildContent>
+        <div class="image-resize-popup-body">
+            <div class="preview-image-section-container">
+                <div class="preview-image-container">
+                    <img id="imageResizePopupPreviewImage"
+                        class="preview-image"
+                        src="@PopupData.ImageUrl"
+                        data-original-file-name="@PopupData.OriginalFileName"
+                        data-original-content-type="@PopupData.OriginalContentType"/>
+                    </div>
 
-				<p class="preview-text">Preview</p>
-			</div>
+                <p class="preview-text">Preview</p>
+            </div>
 
-			<div class="resize-controls-container">
-				<div class="resize-dimensions-container">
-					<div class="resize-dimension">
-						<label for="imageResizePopupWidthInput" class="resize-dimension-label">Width (px)</label>
-						<input id="imageResizePopupWidthInput" type="number"
-							class="resize-dimension-input"
-							max="16000"
-							value="@(PopupData.PreferredResizeWidth ?? PopupData.CurrentWidth)"
-							data-original-width="@PopupData.CurrentWidth"/>
-					</div>
+            <div class="resize-controls-container">
+                <div class="resize-dimensions-container">
+                    <div class="resize-dimension">
+                        <label for="imageResizePopupWidthInput" class="resize-dimension-label">Width (px)</label>
+                        <input id="imageResizePopupWidthInput" type="number"
+                            class="resize-dimension-input"
+                            max="16000"
+                            value="@(PopupData.PreferredResizeWidth ?? PopupData.CurrentWidth)"
+                            data-original-width="@PopupData.CurrentWidth"/>
+                    </div>
 
-					<div class="resize-dimension">
-						<label for="imageResizePopupHeightInput" class="resize-dimension-label">Height (px)</label>
-						<input id="imageResizePopupHeightInput" type="number"
-							class="resize-dimension-input"
-							max="16000"
-							value="@(PopupData.PreferredResizeHeight ?? PopupData.CurrentHeight)"
-							data-original-height="@PopupData.CurrentHeight"/>
-					</div>	
-				</div>
+                    <div class="resize-dimension">
+                        <label for="imageResizePopupHeightInput" class="resize-dimension-label">Height (px)</label>
+                        <input id="imageResizePopupHeightInput" type="number"
+                            class="resize-dimension-input"
+                            max="16000"
+                            value="@(PopupData.PreferredResizeHeight ?? PopupData.CurrentHeight)"
+                            data-original-height="@PopupData.CurrentHeight"/>
+                    </div>  
+                </div>
 
-				<div class="maintain-aspect-ratio-container">
-					<input id="imageResizePopupMaintainAspectRatioCheckbox" class="maintain-aspect-ratio-checkbox" type="checkbox" checked />
-					<label for="imageResizePopupMaintainAspectRatioCheckbox" class="maintain-aspect-ratio-label">Maintain Aspect Ratio</label>
-				</div>
+                <div class="maintain-aspect-ratio-container">
+                    <input id="imageResizePopupMaintainAspectRatioCheckbox" class="maintain-aspect-ratio-checkbox" type="checkbox" checked />
+                    <label for="imageResizePopupMaintainAspectRatioCheckbox" class="maintain-aspect-ratio-label">Maintain Aspect Ratio</label>
+                </div>
 
-				<button id="imageResizePopupConfirmButton" type="button" class="btn btn-primary confirm-button">
-					Confirm
-				</button>
-			</div>
-		</div>
-	</ChildContent>
+                <button id="imageResizePopupConfirmButton" type="button" class="btn btn-primary confirm-button">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </ChildContent>
 </Popup>
 
 @code{
-	public sealed class GroupPromotionEditorImageResizePopupData
-	{
-		public required bool IsVisible { get; set; }
-		public required string ImageIdentifierText { get; set; }
-		public required string ImageUrl { get; set; }
-		public required int CurrentWidth { get; set; }
-		public required int CurrentHeight { get; set; }
-		public int? PreferredResizeWidth { get; set; }
-		public int? PreferredResizeHeight { get; set; }
-		public string? OriginalFileName { get; set; }
-		public string? OriginalContentType { get; set; }
-		public Popup.MarginOptions MarginOptions { get; set; } = new();
-	}
+    public sealed class GroupPromotionEditorImageResizePopupData
+    {
+        public required bool IsVisible { get; set; }
+        public required string ImageIdentifierText { get; set; }
+        public required string ImageUrl { get; set; }
+        public required int CurrentWidth { get; set; }
+        public required int CurrentHeight { get; set; }
+        public int? PreferredResizeWidth { get; set; }
+        public int? PreferredResizeHeight { get; set; }
+        public string? OriginalFileName { get; set; }
+        public string? OriginalContentType { get; set; }
+        public Popup.MarginOptions MarginOptions { get; set; } = new();
+    }
 
-	[Parameter, EditorRequired] public required GroupPromotionEditorImageResizePopupData PopupData { get; set; }
+    [Parameter, EditorRequired] public required GroupPromotionEditorImageResizePopupData PopupData { get; set; }
 }

@@ -19,11 +19,6 @@
 <HeadContent>
     <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-    @* <script src="@Assets[_carouselScriptUrl]"></script>
-    <script src="@Assets[_productDataScriptUrl]"></script> *@
-
-    <script src="@Assets[_popupScriptUrl]"></script>
-
     <script type="module" src="@Assets[_pageScriptUrl]"></script>
 </HeadContent>
 
@@ -246,11 +241,7 @@
         None = 8,
     }
 
-    private const string _popupScriptUrl = "js/Popup/Popup.js";
     private const string _pageScriptUrl = "js/Pages/ProductEditor/Page.js";
-
-    private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
-    private const string _productDataScriptUrl = "js/Product/ProductData.js";
 
     private const int _maxProductSearchResultCount = 2000;
 

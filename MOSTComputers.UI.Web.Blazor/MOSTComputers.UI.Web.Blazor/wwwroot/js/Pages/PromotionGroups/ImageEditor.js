@@ -1,4 +1,5 @@
 ﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as popup from "../../Primitives/Popup.js";
 import * as common from "./Common.js";
 import * as createHtmlImageRepresentation from "./CreateHtmlImageRepresentation.js";
 import * as imageResize from "./ImageResize.js";
@@ -216,6 +217,8 @@ async function showImageResizePopupOnClick(e) {
     imageResize.initEventsAndInitialDataAsync(() => onImageResizeConfirmButtonClicked(imageElement));
 
     const dialog = imageResizePopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }

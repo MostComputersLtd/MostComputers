@@ -183,6 +183,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                     .MaximumLength(ProductDocumentConstraints.FileExtensionMaxLength);
 
                 RuleFor(x => x.Request.AsT0.FileData)
+                    .Cascade(CascadeMode.Stop)
                     .NotNull()
                     .NotEmpty()
                     .Must(x => x.Length <= ProductDocumentConstraints.FileDataMaxSizeBytes)
@@ -220,6 +221,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                 .WithMessage(_invalidImageIdErrorMessage);
 
             RuleFor(x => x.FileExtension)
+                .Cascade(CascadeMode.Stop)
                 .NotNullOrWhiteSpace()
                 .Must(extension =>
                 {
@@ -238,6 +240,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                 .WithErrorCode(MaximumLengthErrorCode);
 
             RuleFor(x => x.ImageData)
+                .Cascade(CascadeMode.Stop)
                 .NotNull()
                 .NotEmpty()
                 .IsIdentifiableImageData();
@@ -276,6 +279,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
             When(x => x.FileData != null, () =>
             {
                 RuleFor(x => x.FileData!.FileName)
+                    .Cascade(CascadeMode.Stop)
                     .NotNullOrWhiteSpace()
                     .MaximumLength(ProductImageFileDataConstraints.FileNameMaxLength)
                     .Must(fileName => !allFileInfos.Exists(x => x.FileName == fileName))
@@ -283,6 +287,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                     .WithMessage(_fileAlreadyExistsErrorMessage);
 
                 RuleFor(x => x.FileData!.Data)
+                    .Cascade(CascadeMode.Stop)
                     .NotNull()
                     .NotEmpty()
                     .IsIdentifiableImageData();
@@ -314,6 +319,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
             When(x => x.UpdateFileDataRequest.IsT0 && x.UpdateFileDataRequest.AsT0 != null, () =>
             {
                 RuleFor(x => x.UpdateFileDataRequest.AsT0!.FileName)
+                    .Cascade(CascadeMode.Stop)
                     .NotNullOrWhiteSpace()
                     .Must(fileName => allImageFiles.Exists(x => x.FileName == fileName))
                     .WithErrorCode(FileDoesntExistErrorCode)
@@ -324,6 +330,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                     .WithMessage(_fileAlreadyExistsErrorMessage);
 
                 RuleFor(x => x.UpdateFileDataRequest.AsT0!.Data)
+                    .Cascade(CascadeMode.Stop)
                     .NotNull()
                     .NotEmpty()
                     .IsIdentifiableImageData();
@@ -344,6 +351,7 @@ internal sealed class ProductDataSaveValidationDataValidator : AbstractValidator
                 .WithMessage(_invalidPromotionProductFileIdErrorMessage);
 
             RuleFor(x => x.PromotionFileInfoId)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0)
                 .Must(id => promotionFiles.Exists(x => x.Id == id))
                 .WithErrorCode(InvalidIdErrorCode)

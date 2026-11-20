@@ -304,7 +304,7 @@ public sealed class ProductToXmlService : IProductToXmlService
 
         List<SubCategory> subCategories = await _subCategoryService.GetByIdsAsync(subCategoryIds);
 
-        List<IGrouping<int?, Promotion>> promotions = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
+        List<IGrouping<int?, Promotion>> promotions = await _promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
 
         List<ManufacturerToPromotionGroupRelation> promotionGroupRelations = await _manufacturerToPromotionGroupRelationService.GetAllAsync();
 

@@ -1,6 +1,8 @@
 const loginPageUrl = "account/login";
 const accessDeniedUrl = "account/accessDenied"
 
+export const AuthRedirected = Symbol("AuthRedirected");
+
 export async function fetchWithAuthRedirect(url, options)
 {
     const response = await fetch(url, options);
@@ -55,7 +57,6 @@ export async function fetchWithAuthRedirectAndReturnUrl(url, options, loginRetur
 }
 
 function getLoginPageUrlWithReturnUrl(loginPageUrl, returnUrl) {
-
 
     return `${loginPageUrl}?returnUrl=${encodeURIComponent(returnUrl)}`;
 }

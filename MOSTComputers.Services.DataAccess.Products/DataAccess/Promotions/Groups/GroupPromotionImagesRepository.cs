@@ -34,15 +34,11 @@ internal sealed class GroupPromotionImagesRepository : IGroupPromotionImagesRepo
             SELECT {IdColumnName}, {PromotionIdColumnName}, {ContentTypeColumnName} FROM {GroupPromotionImagesTableName} WITH (NOLOCK)
             """;
 
-        using TransactionScope suppressedTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-
         using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
 
         var parameters = new { };
 
         IEnumerable<GroupPromotionImageWithoutFile> promotionImages = await connection.QueryAsync<GroupPromotionImageWithoutFile>(query, parameters, commandType: CommandType.Text);
-
-        suppressedTransactionScope.Complete();
 
         return promotionImages.AsList();
     }
@@ -139,8 +135,6 @@ internal sealed class GroupPromotionImagesRepository : IGroupPromotionImagesRepo
             WHERE {IdColumnName} = @id;
             """;
 
-        using TransactionScope suppressedTransactionScope = new(TransactionScopeOption.Suppress, TransactionScopeAsyncFlowOption.Enabled);
-
         using SqlConnection connection = new(_connectionStringProvider.ConnectionString);
 
         var parameters = new
@@ -148,9 +142,8 @@ internal sealed class GroupPromotionImagesRepository : IGroupPromotionImagesRepo
             id = id,
         };
 
-        GroupPromotionImage? promotionImage = await connection.QueryFirstOrDefaultAsync<GroupPromotionImage>(query, parameters, commandType: CommandType.Text);
-
-        suppressedTransactionScope.Complete();
+        GroupPromotionImage? promotionImage = await connection.QueryFirstOrDefaultAsync<GroupPromotionImage>(
+            query, parameters, commandType: CommandType.Text);
 
         return promotionImage;
     }

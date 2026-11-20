@@ -8,7 +8,6 @@ export const copyImageIdPrefix = "id=";
 
 export const copyImageDataSeparator = ",";
 
-
 export function copyPromotionImageForHtml(imageElementId) {
 
     const imageElement = document.getElementById(imageElementId);

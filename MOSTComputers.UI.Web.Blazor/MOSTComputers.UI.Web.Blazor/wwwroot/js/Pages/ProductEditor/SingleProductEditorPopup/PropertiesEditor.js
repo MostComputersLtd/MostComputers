@@ -1,5 +1,5 @@
-import * as validationMessages from "../../../Validation/ValidationMessages.js"
-import * as validationVisualElements from "../../../Validation/ValidationVisualElements.js"
+import * as validationMessages from "../../../Common/Validation/ValidationMessages.js"
+import * as validationVisualElements from "../../../Common/Validation/ValidationVisualElements.js"
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
 
@@ -95,7 +95,6 @@ function getProductPropertyAndLinkItems() {
 
 export function displayValidationMessages(validationErrors, propertyRequestsUsed) {
 
-    console.log("HERE");
     const items = getProductPropertyAndLinkItems();
 
     for (let i = 0; i < items.length; i++) {
@@ -112,7 +111,7 @@ export function displayValidationMessages(validationErrors, propertyRequestsUsed
 
     const propertyValidationMessages = new Map();
 
-    for (const [name, _] of Object.entries(validationErrors)) {
+    for (const [name, validationErrorsForProperty] of Object.entries(validationErrors)) {
 
         if (!name.startsWith(propertyRequestsStartString)) continue;
 
@@ -129,7 +128,7 @@ export function displayValidationMessages(validationErrors, propertyRequestsUsed
 
         const messagesForProperty = propertyValidationMessages.get(index);
 
-        messagesForProperty.push(validationErrors[name]); 
+        messagesForProperty.push(validationErrorsForProperty); 
     }
 
     for (const [index, validationErrorsForProperty] of propertyValidationMessages) {

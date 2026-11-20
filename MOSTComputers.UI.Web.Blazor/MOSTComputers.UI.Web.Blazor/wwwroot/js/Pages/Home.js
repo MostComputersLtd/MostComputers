@@ -1,6 +1,14 @@
-﻿const searchInputId = "productTableSearchInput";
+﻿import * as antiforgeryUtils from "../Common/AntiforgeryUtils.js";
+import * as popup from "../Primitives/Popup.js";
+import * as popupFullScreenButton from "../Primitives/PopupFullScreenButton.js";
+import * as carouselModule from "../Primitives/Carousel.js";
+import * as productData from "../Product/ProductData.js";
+import * as groupPromotionsDisplay from "../Promotions/GroupPromotionsDisplay.js";
+import * as urlUtils from "../Common/UrlUtils.js";
+
+const showSearchHelpPopupButtonId = "showSearchHelpPopupButton";
+const searchInputId = "productTableSearchInput";
 const searchButtonId = "productTableSearchButton";
-const searchButtonLoaderId = "productTableSearchLoader";
 const categorySelectId = "productTableCategorySelect";
 const manufacturerSelectId = "productTableManufacturerSelect";
 const productStatusSelectId = "productTableProductStatusSelect";
@@ -14,83 +22,166 @@ const offerPageButtonId = "productTableOfferPageButton"
 
 const productsDataContainerId = "productsDataContainer";
 
+const unavailableProductsRowName = "productTableUnavailableProductsRow";
+
 const productRowName = "productTableItem";
-const productPromotionTableItemIdPrefix = "productPromotionTableItem-"
-const quantityInputIdPrefix = "quantityInput-";
-const productImagesRowIdPrefix = "productImagesRow-";
-const productImagesColumnPlaceholderIdPrefix = "productImagesColumnPlaceholder-";
 
 const productXmlPopupContainerId = "productXmlPopupContainer";
-const productDisplayPopupContainerId = "productDisplayPopupContainer";
+const productDataPopupContainerId = "productDataPopupContainer";
 const promotionGroupImagesPopupContainerId = "promotionGroupImagesPopupContainer";
 const productSearchStringPartsPopupContainerId = "productSearchStringPartsPopupContainer";
 const searchHelpPopupId = "searchHelpPopup";
 
 const productDataDialogCarouselId = "productDataCarousel";
 
-const productRowProductIdAttribute = "data-product-id";
+const productPromotionTableItemName = "productPromotionTableItem"
+const itemQuantityInputName = "quantityInput";
+const itemShowProductXmlPopupButtonName = "showProductXmlPopupButton";
+const itemShowProductDataPopupButtonName = "showProductDataPopupButton";
+const itemShowPromotionGroupImagesPopupButtonName = "showPromotionGroupImagesPopupButton";
+const itemShowProductSearchStringPartsPopupButtonName = "showProductSearchStringPartsPopupButton";
+const productImagesColumnPlaceholderName = "productImagesColumnPlaceholder";
+
 const searchInputTextWithoutOrderSummaryAttribute = "data-search-without-order-summary";
+
+const productRowProductIdAttribute = "data-product-id";
+const productRowIsExternalOrderSummaryItemAttribute = "data-is-external-order-summary-item";
+const productRowShowPromotionGroupImagesPopupButtonPromotionGroupIdAttribute = "data-manufacturer-promotion-group-id";
+const productRowImageDataSourceAttribute = "data-src";
 
 const loadingClass = "loading";
 
-document.addEventListener("visibilitychange", handleVisibilityChange);
-window.addEventListener("resize", handleResize);
+const productsWithSelectedQuantities = new Map();
 
-function handleVisibilityChange() {
+let isOrderSummaryFetchingExternalEntries = false;
 
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
-
-    if (!productDataDialogCarousel) return;
-
-    if (document.hidden) {
-        stopAutoSlide(productDataDialogCarouselId);
-    }
-    else {
-        startAutoSlide(true, productDataDialogCarouselId);
-    }
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initEvents);
+}
+else {
+    initEvents();
 }
 
-function handleResize() {
+document.addEventListener("visibilitychange", onDocumentVisibilityChange);
+window.addEventListener("resize", onWindowResize);
 
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+function initEvents() {
+
+    const showSearchHelpPopupButton = document.getElementById(showSearchHelpPopupButtonId);
+    const searchButton = document.getElementById(searchButtonId);
+    const categorySelect = document.getElementById(categorySelectId);
+    const manufacturerSelect = document.getElementById(manufacturerSelectId);
+    const resultsShowImagesCheckbox = document.getElementById(resultsShowImagesCheckboxId);
+    const orderSummaryCheckbox = document.getElementById(orderSummaryCheckboxId);
+    const offerPageButton = document.getElementById(offerPageButtonId);
+
+    showSearchHelpPopupButton.addEventListener("click", showSearchHelpPopup);
+    searchButton.addEventListener("click", searchProductsAndDisplaySearchButtonLoader);
+    categorySelect.addEventListener("change", setManufacturersForCategory);
+    manufacturerSelect.addEventListener("change", searchProductsAndDisplaySearchButtonLoader);
+    resultsShowImagesCheckbox.addEventListener("change", toggleShowImages);
+    orderSummaryCheckbox.addEventListener("change", toggleOrderSummary);
+    offerPageButton.addEventListener("click", openOfferPage);
+}
+
+function onDocumentVisibilityChange() {
+
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
+
+    const productDataDialog = productDataPopupContainer.querySelector("dialog");
+
+    if (!productDataDialog) return;
+
+    const productDataDialogCarousel = productDataDialog.querySelector(`[name='${carouselModule.carouselName}']`);
 
     if (!productDataDialogCarousel) return;
 
-    resizeHtmlContentInCarousel(productDataDialogCarousel);
+    productData.onDocumentVisibilityChange(productDataDialogCarousel);
+}
+
+async function onWindowResize() {
+
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
+
+    const productDataDialog = productDataPopupContainer.querySelector("dialog");
+
+    if (!productDataDialog) return;
+
+    const productDataDialogCarousel = productDataDialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    if (!productDataDialogCarousel) return;
+
+    await productData.resizeHtmlContentInCarousel(productDataDialogCarousel);
+}
+
+function initItemEventsAndQuantityData(item) {
+
+    const productIdAttribute = item.getAttribute(productRowProductIdAttribute);
+
+    const productId = parseInt(productIdAttribute);
+
+    const itemQuantityInput = item.querySelector(`[name='${itemQuantityInputName}']`);
+    const itemShowProductXmlPopupButton = item.querySelector(`[name='${itemShowProductXmlPopupButtonName}']`);
+    const itemShowProductDataPopupButton = item.querySelector(`[name='${itemShowProductDataPopupButtonName}']`);
+    const itemShowPromotionGroupImagesPopupButton = item.querySelector(`[name='${itemShowPromotionGroupImagesPopupButtonName}']`);
+    const itemShowProductSearchStringPartsPopupButton = item.querySelector(`[name='${itemShowProductSearchStringPartsPopupButtonName}']`);
+
+    const existingListedQuantity = productsWithSelectedQuantities.get(productId);
+
+    if (existingListedQuantity != null) {
+        itemQuantityInput.value = existingListedQuantity;
+    }
+
+    itemQuantityInput.addEventListener("change", onItemQuantityInputChange);
+    itemShowProductXmlPopupButton.addEventListener("click", showProductXmlPopupAsync);
+    itemShowProductDataPopupButton.addEventListener("click", showProductDataPopupAsync);
+
+    if (itemShowPromotionGroupImagesPopupButton) {
+        itemShowPromotionGroupImagesPopupButton.addEventListener("click", showPromotionGroupImagesPopupAsync);
+    }
+
+    itemShowProductSearchStringPartsPopupButton.addEventListener("click", showProductSearchStringPartsPopupAsync);
 }
 
 async function searchProductsAndDisplaySearchButtonLoader() {
+
+    const searchInput = document.getElementById(searchInputId);
 
     const orderSummaryCheckbox = document.getElementById(orderSummaryCheckboxId);
     const orderSummaryLabelText = document.getElementById(orderSummaryLabelTextId);
 
     const showImagesCheckbox = document.getElementById(resultsShowImagesCheckboxId);
 
-    orderSummaryCheckbox.checked = false;
-    orderSummaryLabelText.innerText = "Order";
-    showImagesCheckbox.checked = false;
+    if (orderSummaryCheckbox.checked) {
 
-    const searchButton = document.getElementById(searchButtonId);
-    const searchButtonLoader = document.getElementById(searchButtonLoaderId);
+        revertHeaderFromOrderSummary(searchInput, orderSummaryLabelText);
 
-    if (searchButton && searchButtonLoader) {
-        searchButton.classList.add(loadingClass);
-        searchButtonLoader.classList.add(loadingClass);
-
-        searchButton.toggleAttribute("disabled", true);
+        orderSummaryCheckbox.checked = false;
     }
 
-    await searchProductsAndReplaceInTableAsync();
+    const showImages = showImagesCheckbox.checked === true;
 
-    if (searchButton && searchButtonLoader) {
+    const searchButton = document.getElementById(searchButtonId);
+
+    searchButton.classList.add(loadingClass);
+
+    try {
+        await searchProductsAndReplaceInTableAsync();
+
+        if (showImages) {
+
+            const productRowElements = [...document.getElementsByName(productRowName)];
+
+            changeImagesDisplayForAll(productRowElements, showImages);
+        }
+    }
+    finally {
         searchButton.classList.remove(loadingClass);
-        searchButtonLoader.classList.remove(loadingClass);
-
-        searchButton.toggleAttribute("disabled", false);
     }
 }
 
 async function searchProductsAndReplaceInTableAsync() {
+
     const searchOptions = getProductSearchOptions();
 
     const url = "api/components/home/search";
@@ -111,6 +202,13 @@ async function searchProductsAndReplaceInTableAsync() {
     const data = await response.text();
 
     productsDataContainer.innerHTML = data;
+
+    const productRows = document.getElementsByName(productRowName);
+
+    for (const productRow of productRows) {
+
+        initItemEventsAndQuantityData(productRow);
+    }
 }
 
 async function setManufacturersForCategory() {
@@ -125,8 +223,7 @@ async function setManufacturersForCategory() {
         url += `/${categoryId}`;
     }
 
-    const response = await fetch(url,
-    {
+    const response = await fetch(url, {
         method: "GET"
     });
 
@@ -136,13 +233,15 @@ async function setManufacturersForCategory() {
 
     const manufacturerSelect = document.getElementById(manufacturerSelectId);
 
-    for (var i = manufacturerSelect.options.length - 1; i >= 0; i--) {
+    for (let i = manufacturerSelect.options.length - 1; i >= 0; i--) {
+
         if (manufacturerSelect.options[i].value === "") continue;
 
         manufacturerSelect.remove(i);
     }
 
     data.forEach(manufacturer => {
+
         const option = document.createElement("option");
 
         option.value = manufacturer.id;
@@ -180,22 +279,27 @@ function changeImagesDisplayForAll(productRowElements, showImages) {
 
     for (const productRowElement of productRowElements) {
 
-        const indexOfNumberInId = productRowElement.id.indexOf("-") + 1;
+        const productPromotionTableItem = productRowElement.querySelector(`[name='${productPromotionTableItemName}']`);
 
-        const productIdAsString = productRowElement.id.substring(indexOfNumberInId);
+        const productImagesRow = productRowElement.nextElementSibling;
+        const productImagesColumnPlaceholder = productImagesRow.querySelector(`[name='${productImagesColumnPlaceholderName}']`);
 
-        const productPromotionTableItem = document.getElementById(productPromotionTableItemIdPrefix + productIdAsString);
-        const productImagesRow = document.getElementById(productImagesRowIdPrefix + productIdAsString);
-        const productImagesColumnPlaceholder = document.getElementById(productImagesColumnPlaceholderIdPrefix + productIdAsString);
+        const images = productImagesRow.getElementsByTagName("img");
 
-        const willShowImages = showImages && productImagesRow.getElementsByTagName("img").length > 0;
+        const willShowImages = showImages && images.length > 0;
 
         if (!willShowImages) {
+
             productPromotionTableItem.setAttribute("rowspan", "1");
 
             productImagesColumnPlaceholder.setAttribute("colspan", "4");
 
             productImagesRow.style.display = "none";
+
+            for (const image of images) {
+
+                image.removeEventListener("dblclick", openImageUrlInNewWindow);
+            }
 
             continue;
         }
@@ -204,20 +308,30 @@ function changeImagesDisplayForAll(productRowElements, showImages) {
 
         productImagesColumnPlaceholder.setAttribute("colspan", "3");
 
-        const unsetImages = [...productImagesRow.querySelectorAll("img[data-src]")];
+        for (const image of images) {
 
-        for (const image of unsetImages) {
+            if (image.hasAttribute(productRowImageDataSourceAttribute)) {
 
-            image.src = image.getAttribute("data-src");
+                image.src = image.getAttribute(productRowImageDataSourceAttribute);
 
-            image.removeAttribute("data-src");
+                image.removeAttribute(productRowImageDataSourceAttribute);
+            }
+
+            image.addEventListener("dblclick", openImageUrlInNewWindow);
         }
 
         productImagesRow.style.display = "";
     }
 }
 
-function toggleOrderSummary() {
+function openImageUrlInNewWindow(e) {
+
+    const imageUrl = e.currentTarget.src;
+
+    urlUtils.openDataUrlInNewWindow(imageUrl);
+}
+
+async function toggleOrderSummary() {
 
     const orderSummaryCheckbox = document.getElementById(orderSummaryCheckboxId);
 
@@ -227,107 +341,237 @@ function toggleOrderSummary() {
 
     const searchInput = document.getElementById(searchInputId);
 
-    const productRowElements = [...document.getElementsByName(productRowName)];
+    const showImagesCheckbox = document.getElementById(resultsShowImagesCheckboxId);
 
-    if (!showOrderSummary) {
+    const showImages = showImagesCheckbox.checked === true;
 
-        searchInput.value = searchInput.getAttribute(searchInputTextWithoutOrderSummaryAttribute);
+    const productsDataContainer = document.getElementById(productsDataContainerId);
 
-        orderSummaryLabelText.innerText = "Order";
+    let productsDataTableBody = productsDataContainer.querySelector("tbody");
+
+    let productRowElements;
+    let tableDoesNotExist;
+
+    if (productsDataTableBody) {
+
+        productRowElements = productsDataTableBody.querySelectorAll(`[name='${productRowName}']`);
+        tableDoesNotExist = false;
+    }
+    else {
+        productRowElements = [];
+        tableDoesNotExist = true;
+    }
+
+    if (isOrderSummaryFetchingExternalEntries && !showOrderSummary) {
+
+        isOrderSummaryFetchingExternalEntries = true;
+    }
+    else {
+        const productRowElementProductIds = new Map();
 
         for (const productRowElement of productRowElements) {
 
-            productRowElement.style.display = "";
+            const productIdAttribute = productRowElement.getAttribute(productRowProductIdAttribute);
+
+            const productId = parseInt(productIdAttribute);
+
+            productRowElementProductIds.set(productId, productRowElement);
         }
 
-        const showImagesCheckbox = document.getElementById(resultsShowImagesCheckboxId);
+        for (const [productId, _] of productsWithSelectedQuantities) {
 
-        const showImages = showImagesCheckbox.checked === true;
+            if (!productRowElementProductIds.has(productId)) {
+
+                isOrderSummaryFetchingExternalEntries = true;
+
+                break;
+            }
+
+            isOrderSummaryFetchingExternalEntries = false;
+        }
+    }
+
+    if (!tableDoesNotExist) {
+
+        const unavailableProductsRow = productsDataTableBody.querySelector(`[name='${unavailableProductsRowName}']`);
+
+        if (unavailableProductsRow) {
+
+            unavailableProductsRow.remove();
+        }
+    }
+
+    if (!showOrderSummary) {
+
+        revertHeaderFromOrderSummary(searchInput, orderSummaryLabelText);
+
+        const productRowElementsToChangeImages = [];
+
+        if (isOrderSummaryFetchingExternalEntries) {
+
+            for (const productRowElement of productRowElements) {
+
+                const isExternalOrderSummaryItemAttribute = productRowElement.getAttribute(productRowIsExternalOrderSummaryItemAttribute);
+
+                if (isExternalOrderSummaryItemAttribute === "true") {
+
+                    productRowElement.nextElementSibling.remove();
+                    productRowElement.remove();
+
+                    continue;
+                }
+
+                productRowElement.style.display = "";
+
+                productRowElementsToChangeImages.push(productRowElement);
+            }
+        }
+        else {
+            for (const productRowElement of productRowElements) {
+
+                productRowElement.style.display = "";
+                productRowElementsToChangeImages.push(productRowElement);
+            }
+        }
 
         if (showImages) {
-            changeImagesDisplayForAll(productRowElements, true);
+            changeImagesDisplayForAll(productRowElementsToChangeImages, true);
         }
-        
+
         return;
     }
 
-    orderSummaryLabelText.innerText = "Show Search";
-
-    const shownProducts = hideProductsThatAreNotInSummaryAndChangeSearchInputValue(productRowElements, searchInput);
-
-    const notShownProducts = productRowElements.filter(
-        productRowElement => !shownProducts.includes(productRowElement));
-
-    changeImagesDisplayForAll(notShownProducts, false);
-}
-
-function hideProductsThatAreNotInSummaryAndChangeSearchInputValue(productRowElements, searchInput) {
-    
     const orderSummaryProductIds = [];
-    const orderSummaryProductRows = [];
 
-    for (const productRowElement of productRowElements) {
+    if (isOrderSummaryFetchingExternalEntries) {
 
-        const indexOfNumberInId = productRowElement.id.indexOf("-") + 1;
+        const currencySelect = document.getElementById(currencySelectId);
 
-        const productIdAsString = productRowElement.id.substring(indexOfNumberInId);
+        const currency = getNumberOrNullFromString(currencySelect.value);
 
-        const quantityInput = document.getElementById(quantityInputIdPrefix + productIdAsString);
+        const productQuantities = []; 
 
-        const quantityInputValue = quantityInput.value;
+        for (const [productId, quantity] of productsWithSelectedQuantities) {
 
-        if (quantityInputValue == null || quantityInputValue === "") {
-            productRowElement.style.display = "none";
+            const productQuantityData = {
+                id: productId,
+                quantity: quantity,
+            };
 
-            continue;
+            productQuantities.push(productQuantityData);
         }
 
-        const quantity = parseInt(quantityInputValue);
+        const body = {
+            productQuantities: productQuantities,
+            currency: currency,
+            showEntireTable: tableDoesNotExist,
+        };
 
-        if (isNaN(quantity) || quantity <= 0) {
-            productRowElement.style.display = "none";
+        const url = "api/components/home/orderSummary";
 
-            continue;
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "text/html, application/problem+json",
+                [antiforgeryUtils.antiforgeryHeaderName]: antiforgeryUtils.getAntiforgeryTokenValue()
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.text();
+
+        if (!tableDoesNotExist) {
+
+            for (const productRowElement of productRowElements) {
+
+                productRowElement.style.display = "none";
+            } 
+
+            productsDataTableBody.insertAdjacentHTML("afterbegin", data);
+        }
+        else {
+
+            productsDataContainer.innerHTML = data;
+
+            productsDataTableBody = productsDataContainer.querySelector("tbody"); 
         }
 
-        const productId = productRowElement.getAttribute(productRowProductIdAttribute);
+        const newProductRows = productsDataTableBody.querySelectorAll(
+            `[name='${productRowName}'][${productRowIsExternalOrderSummaryItemAttribute}='true']`);
 
-        orderSummaryProductIds.push(productId);
-        orderSummaryProductRows.push(productRowElement);
+        for (const productRow of newProductRows) {
+
+            initItemEventsAndQuantityData(productRow);
+
+            const productIdAttribute = productRow.getAttribute(productRowProductIdAttribute);
+
+            const productId = parseInt(productIdAttribute);
+
+            orderSummaryProductIds.push(productId);
+        }
+
+        for (const [productId, _] of productsWithSelectedQuantities) {
+
+            if (!orderSummaryProductIds.includes(productId)) {
+
+                productsWithSelectedQuantities.delete(productId);
+            }
+        }
+
+        changeImagesDisplayForAll(productRowElements, false);
+
+        if (showImages) {
+            changeImagesDisplayForAll(newProductRows, true);
+        }
+    }
+    else {
+        const notShownProducts = [];
+
+        for (const productRowElement of productRowElements) {
+
+            const quantityInput = productRowElement.querySelector(`[name='${itemQuantityInputName}']`);
+
+            const quantity = parseInt(quantityInput.value);
+
+            if (isNaN(quantity) || quantity <= 0) {
+
+                productRowElement.style.display = "none";
+
+                notShownProducts.push(productRowElement);
+
+                continue;
+            }
+
+            const productId = productRowElement.getAttribute(productRowProductIdAttribute);
+
+            orderSummaryProductIds.push(productId);
+        }
+
+        changeImagesDisplayForAll(notShownProducts, false);
     }
 
     searchInput.setAttribute(searchInputTextWithoutOrderSummaryAttribute, searchInput.value);
 
     searchInput.value = orderSummaryProductIds.join(',');
 
-    return orderSummaryProductRows;
+    orderSummaryLabelText.innerText = "Show Search"; 
+}
+
+function revertHeaderFromOrderSummary(searchInput, orderSummaryLabelText) {
+
+    searchInput.value = searchInput.getAttribute(searchInputTextWithoutOrderSummaryAttribute);
+
+    orderSummaryLabelText.innerText = "Order";
 }
 
 function openOfferPage() {
 
     const productQuantities = [];
 
-    const productRowElements = [...document.getElementsByName(productRowName)];
-
-    for (const productRowElement of productRowElements) {
-
-        const indexOfNumberInId = productRowElement.id.indexOf("-") + 1;
-
-        const productIdAsString = productRowElement.id.substring(indexOfNumberInId);
-
-        const quantityInput = document.getElementById(quantityInputIdPrefix + productIdAsString);
-
-        const quantityInputValue = quantityInput.value;
-
-        const quantity = parseInt(quantityInputValue);
-
-        if (isNaN(quantity) || quantity <= 0) {
-            continue;
-        }
-
-        const productIdAttribute = productRowElement.getAttribute(productRowProductIdAttribute);
-
-        const productId = parseInt(productIdAttribute);
+    for (const [productId, quantity] of productsWithSelectedQuantities) {
 
         const productQuantityData = {
             id: productId,
@@ -359,8 +603,8 @@ function openOfferPage() {
     const antiforgeryTokenInput = document.createElement("input");
 
     antiforgeryTokenInput.type = "hidden";
-    antiforgeryTokenInput.name = "__RequestVerificationToken";
-    antiforgeryTokenInput.value = document.querySelector('input[type = "hidden"][name = "__RequestVerificationToken"]').value;
+    antiforgeryTokenInput.name = antiforgeryUtils.antiforgeryInputName;
+    antiforgeryTokenInput.value = antiforgeryUtils.getAntiforgeryTokenValue();
 
     form.appendChild(formNameInput);
     form.appendChild(input);
@@ -373,6 +617,7 @@ function openOfferPage() {
 }
 
 function getProductSearchOptions(pageNumber = null) {
+
     const searchInput = document.getElementById(searchInputId);
     const categorySelect = document.getElementById(categorySelectId);
     const manufacturerSelect = document.getElementById(manufacturerSelectId);
@@ -402,12 +647,41 @@ function getProductSearchOptions(pageNumber = null) {
 }
 
 function showSearchHelpPopup() {
+
     const dialog = document.getElementById(searchHelpPopupId);
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
 
-async function showProductXmlPopup(productId) {
+function onItemQuantityInputChange(e) {
+
+    const quantityInput = e.currentTarget;
+
+    const item = quantityInput.closest(`[name='${productRowName}']`);
+
+    const productIdAttribute = item.getAttribute(productRowProductIdAttribute);
+
+    const productId = parseInt(productIdAttribute);
+
+    const quantity = parseInt(quantityInput.value);
+
+    if (isNaN(quantity) || quantity <= 0) {
+
+        productsWithSelectedQuantities.delete(productId)
+
+        return;
+    }
+
+    productsWithSelectedQuantities.set(productId, quantity);
+}
+
+async function showProductXmlPopupAsync(e) {
+
+    const item = e.currentTarget.closest(`[name='${productRowName}']`);
+
+    const productId = item.getAttribute(productRowProductIdAttribute);
     
     const data = await getProductXmlPopupDataAsync(productId);
 
@@ -417,42 +691,58 @@ async function showProductXmlPopup(productId) {
 
     const dialog = productXmlPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog);
+
     dialog.showModal();
 }
 
-async function showProductDisplayPopupAsync(productId) {
+async function showProductDataPopupAsync(e) {
 
-    const data = await getProductDisplayPopupDataAsync(productId);
+    const item = e.currentTarget.closest(`[name='${productRowName}']`);
 
-    const productDisplayPopupContainer = document.getElementById(productDisplayPopupContainerId);
+    const productId = item.getAttribute(productRowProductIdAttribute);
 
-    productDisplayPopupContainer.innerHTML = data;
+    const data = await getProductDataPopupDataAsync(productId);
 
-    const productDataDialog = productDisplayPopupContainer.querySelector("dialog");
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
 
-    if (productDataDialogCarousel) {
+    productDataPopupContainer.innerHTML = data;
 
-        requestAnimationFrame(function ()
-        { 
-            resizeHtmlContentInCarousel(productDataDialogCarousel);
+    const productDataDialog = productDataPopupContainer.querySelector("dialog");
 
-            startAutoSlide(true, productDataDialogCarouselId);
+    popup.attachCloseEvents(productDataDialog, onProductDataDialogClose);
+    popupFullScreenButton.attachFullScreenButtonEvent(productDataDialog);
 
-            productDataDialog.addEventListener("close", function () {
-                stopAutoSlide(productDataDialogCarouselId);
-            });
+    const productDataDialogCarousel = productDataDialog.querySelector(`[name='${carouselModule.carouselName}']`);
 
-            productDataDialog.addEventListener("cancel", function () {
-                stopAutoSlide(productDataDialogCarouselId);
-            });
-        });
-    } 
+    await productData.initEventsAndCarousel(productDataDialogCarousel);
 
     productDataDialog.showModal();
 }
 
-async function showPromotionGroupImagesPopup(promotionGroupId, productId) {
+function onProductDataDialogClose(e) {
+
+    const productDataDialog = e.currentTarget;
+
+    const carousel = productDataDialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    if (carousel) {
+
+        carouselModule.stopAutoSlide(carousel);
+    }
+}
+
+async function showPromotionGroupImagesPopupAsync(e) {
+
+    const itemShowPromotionGroupImagesPopupButton = e.currentTarget;
+
+    const item = itemShowPromotionGroupImagesPopupButton.closest(`[name='${productRowName}']`);
+
+    const promotionGroupId = itemShowPromotionGroupImagesPopupButton
+        .getAttribute(productRowShowPromotionGroupImagesPopupButtonPromotionGroupIdAttribute);
+
+    const productId = item.getAttribute(productRowProductIdAttribute);
+
     const data = await getPromotionGroupImagesPopupDataAsync(promotionGroupId, productId);
 
     const promotionGroupImagesPopupContainer = document.getElementById(promotionGroupImagesPopupContainerId);
@@ -461,10 +751,18 @@ async function showPromotionGroupImagesPopup(promotionGroupId, productId) {
 
     const dialog = promotionGroupImagesPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog);
+    groupPromotionsDisplay.initEvents();
+
     dialog.showModal();
 }
 
-async function showProductSearchStringPartsPopupAsync(productId) {
+async function showProductSearchStringPartsPopupAsync(e) {
+
+    const item = e.currentTarget.closest(`[name='${productRowName}']`);
+
+    const productId = item.getAttribute(productRowProductIdAttribute);
+
     const data = await getProductSearchStringPartsPopupDataAsync(productId);
 
     const productSearchStringPartsPopupContainer = document.getElementById(productSearchStringPartsPopupContainerId);
@@ -472,6 +770,8 @@ async function showProductSearchStringPartsPopupAsync(productId) {
     productSearchStringPartsPopupContainer.innerHTML = data;
 
     const dialog = productSearchStringPartsPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -489,7 +789,7 @@ async function getProductXmlPopupDataAsync(productId) {
     return await response.text();
 }
 
-async function getProductDisplayPopupDataAsync(productId) {
+async function getProductDataPopupDataAsync(productId) {
 
     const url = `api/components/home/productDataPopup/${productId}`;
 

@@ -15,6 +15,7 @@
     string? lastUpdateUserName = null;
     DateTime? lastUpdateDate = null;
     bool isInImage = false;
+    string isInImageLabelText = default!;
 
     PopupData.Switch(
         data =>
@@ -29,6 +30,7 @@
             lastUpdateUserName = data.LastUpdateUserName;
             lastUpdateDate = data.LastUpdateDate;
             isInImage = data.IsInImage;
+            isInImageLabelText = "Has image:";
         },
         data =>
         {
@@ -42,6 +44,7 @@
             lastUpdateUserName = data.LastUpdateUserName;
             lastUpdateDate = data.LastUpdateDate;
             isInImage = data.IsInImage;
+            isInImageLabelText = "Add to images:";
         });
 }
 
@@ -115,10 +118,21 @@
 
                     <div class="basic-input-container">
                         <label for="singleProductPromotionFileEditorActiveInput" class="basic-input-label">Active:</label>
-                        <input id="singleProductPromotionFileEditorActiveInput"
-                            type="checkbox"
-                            readonly="@_isReadonly"
-                            checked="@active" />
+
+                        @if (_isReadonly)
+                        {
+                            <input id="singleProductPromotionFileEditorActiveInput"
+                                type="checkbox"
+                                class="readonly-checkbox"
+                                checked="@active" />
+                        }
+                        else
+                        {
+                            <input id="singleProductPromotionFileEditorActiveInput"
+                                type="checkbox"
+                                checked="@active" />
+                        }
+
                     </div>
 
                     <div class="basic-input-container">
@@ -138,11 +152,12 @@
                     </div>
 
                     <div class="basic-input-container">
-                        <label for="singleProductPromotionFileEditorShouldAddToImagesInput" class="basic-input-label">Add to images:</label>
+                        <label for="singleProductPromotionFileEditorShouldAddToImagesInput" class="basic-input-label">@isInImageLabelText</label>
 
                         @if (_isReadonly)
                         {
                             <input id="singleProductPromotionFileEditorShouldAddToImagesInput" type="checkbox"
+                                class="readonly-checkbox"
                                 checked="@isInImage" />
                         }
                         else
@@ -158,9 +173,9 @@
                 {
                     PromotionFileInfo promotionFile = PopupData.AsT0.PromotionFile;
 
-                    <div class="col-12 col-md-6 file-container">
+                    <div class="col-12 col-md-6 readonly-file-container">
                         <PromotionFile FileOptions="@PromotionFile.FilePathOptions.CreateForExistingFile(
-                            promotionFile.FileName, promotionFile.ContentType)" />
+                            promotionFile.FileName, promotionFile.ContentType)" class="readonly-promotion-file" />
                     </div>
                 }
                 else

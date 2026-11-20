@@ -1,5 +1,8 @@
-import * as validationMessages from "../../../Validation/ValidationMessages.js"
-import * as validationVisualElements from "../../../Validation/ValidationVisualElements.js"
+import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
+import * as popup from "../../../Primitives/Popup.js"
+import * as popupFullScreenButton from "../../../Primitives/PopupFullScreenButton.js"
+import * as validationMessages from "../../../Common/Validation/ValidationMessages.js"
+import * as validationVisualElements from "../../../Common/Validation/ValidationVisualElements.js"
 import * as dataStore from "./DataStore.js";
 import * as editorChanges from "./EditorChanges.js";
 
@@ -160,6 +163,10 @@ export async function addFileToProductDocumentsAsync(blob, productId) {
         body: formData
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return fetchWithAuthRedirect.AuthRedirected;
+
     if (!response.ok) {
         return false;
     }
@@ -304,6 +311,10 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
         body: JSON.stringify(body)
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -314,6 +325,9 @@ async function showProductDocumentPopup(productId, browserFileUrl) {
 
     const dialog = productDocumentPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog);
+    popupFullScreenButton.attachFullScreenButtonEvent(dialog);
+
     dialog.showModal();
 }
 
@@ -321,7 +335,9 @@ async function onSaveUrlButtonClickAsync(e) {
 
     const documentUrl = e.currentTarget.getAttribute(saveUrlButtonDocumentUrlAttribute);
 
-    await navigator.clipboard.writeText(documentUrl);
+    const documentFullUrl = new URL(documentUrl, window.location.origin).href;
+
+    await navigator.clipboard.writeText(documentFullUrl);
 }
 
 function onRemoveButtonClicked(e) {

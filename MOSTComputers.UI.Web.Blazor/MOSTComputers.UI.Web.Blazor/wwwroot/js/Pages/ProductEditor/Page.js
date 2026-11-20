@@ -1,4 +1,5 @@
 import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as popup from "../../Primitives/Popup.js";
 import * as conversionUtils from "../../Common/ConversionUtils.js"
 import * as tableOrdering from "./TableOrdering.js";
 import * as productEditorImageFilePopup from "./ProductEditorImageFilePopup.js";
@@ -34,8 +35,6 @@ const productPropertiesPopupContainerId = "productPropertiesPopupContainer";
 const promotionProductFilePopupContainerId = "promotionProductFilePopupContainer";
 const productSearchStringPopupContainerId = "productSearchStringPopupContainer";
 const singleProductEditorPopupContainerId = "singleProductEditorPopupContainer";
-
-const singleProductEditorPopupJsonDataScriptId = "singleEditorData";
 
 const itemName = "productEditorItem";
 
@@ -154,6 +153,10 @@ async function startApplicationSync() {
         method: "GET"
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) {
 
         alert("Data sync failed, if this issue persists, contact support.");
@@ -223,6 +226,10 @@ async function onCategorySelectChanged(e) {
             "Accept": "application/json"
         }
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) return;
 
@@ -358,6 +365,10 @@ async function searchProducts() {
     } 
 
     if (response == null) return;
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) return;
 
@@ -676,6 +687,10 @@ async function showProductXmlPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -685,6 +700,8 @@ async function showProductXmlPopup(e) {
     productXmlPopupContainer.innerHTML = data;
 
     const dialog = productXmlPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -701,6 +718,10 @@ async function showProductPromotionPopup() {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -710,6 +731,8 @@ async function showProductPromotionPopup() {
     productPromotionPopupContainer.innerHTML = data;
 
     const dialog = productPromotionPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -724,6 +747,10 @@ async function showProductInfoPromotionPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -732,7 +759,9 @@ async function showProductInfoPromotionPopup(e) {
 
     productInfoPromotionPopupContainer.innerHTML = data;
 
-    const dialog = productInfoPromotionPopupContainer.querySelector("dialog");
+    const dialog = productInfoPromotionPopupContainer.querySelector("dialog"); 
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -747,6 +776,10 @@ async function showProductImagesPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -756,6 +789,8 @@ async function showProductImagesPopup(e) {
     productImagesPopupContainer.innerHTML = data;
 
     const dialog = productImagesPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -769,6 +804,10 @@ async function showProductImageFilesPopup(e) {
     const response = await fetch(url, {
         method: "GET",
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) return;
 
@@ -787,6 +826,8 @@ async function showProductImageFilesPopup(e) {
 
     const dialog = productImageFilesPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog);
+
     dialog.showModal();
 }
 
@@ -800,6 +841,10 @@ async function showProductPropertiesPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -809,6 +854,8 @@ async function showProductPropertiesPopup(e) {
     productPropertiesPopupContainer.innerHTML = data;
 
     const dialog = productPropertiesPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -823,6 +870,10 @@ async function showProductSearchStringPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -832,6 +883,8 @@ async function showProductSearchStringPopup(e) {
     productSearchStringPopupContainer.innerHTML = data;
 
     const dialog = productSearchStringPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }
@@ -845,6 +898,10 @@ async function showPromotionProductFilePopup(e) {
     const response = await fetch(url, {
         method: "GET",
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) return;
 
@@ -871,6 +928,10 @@ async function showSingleProductEditorPopup(e) {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -879,7 +940,7 @@ async function showSingleProductEditorPopup(e) {
 
     singleProductEditorPopupContainer.innerHTML = data;
 
-    const jsonDataScriptElement = document.getElementById(singleProductEditorPopupJsonDataScriptId);
+    const jsonDataScriptElement = document.getElementById(singleProductEditorPopup.jsonDataScriptId);
 
     const jsonData = JSON.parse(jsonDataScriptElement.textContent);
 
@@ -908,28 +969,44 @@ async function onSingleProductEditorSaveSuccessfulAsync() {
 
     const items = itemsTableBody.querySelectorAll(`[name="${itemName}"]`);
 
+    let itemToReplace = null;
+
     for (const item of items) {
 
         const itemProductId = item.getAttribute(itemProductIdAttribute);
 
         if (itemProductId != productId) continue;
 
-        const url = `api/components/productEditor/item/${productId}`;
+        itemToReplace = item;
 
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Accept": "text/html, application/problem+json"
-            }
-        });
-
-        if (!response.ok) {
-        }
-
-        const itemData = await response.text();
-
-        item.outerHTML = itemData;
+        break;
     }
+
+    if (itemToReplace == null) return;
+
+    const url = `api/components/productEditor/item/${productId}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Accept": "text/html, application/problem+json"
+        }
+    });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
+    if (!response.ok) {
+    }
+
+    const itemData = await response.text();
+
+    itemToReplace.outerHTML = itemData;
+
+    const newItem = itemsTableBody.querySelector(`[name="${itemName}"][${itemProductIdAttribute}="${productId}"]`)
+
+    initItemEvents(newItem);
 }
 
 function getProductIdFromItem(childElement) {

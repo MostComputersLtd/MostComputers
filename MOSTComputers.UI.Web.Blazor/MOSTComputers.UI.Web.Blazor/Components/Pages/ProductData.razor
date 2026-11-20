@@ -61,9 +61,7 @@
     <meta name="keywords" content="MOST Computers, МОСТ Компютърс, компютри, компоненти, лаптопи, сървъри, принтери, консумативи, цени" />
     <meta name="robots" content="INDEX,FOLLOW">
 
-    <script src="@Assets[_carouselScriptUrl]"></script>
-    <script src="@Assets[_productDataScriptUrl]"></script>
-    <script src="@Assets[_pageScriptUrl]"></script>
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
 
     <style>
         body > div.page > main > article {
@@ -91,6 +89,7 @@
 
 <MOSTComputers.UI.Web.Blazor.Components.Product.ProductData
     BaseProductPagePath="@NavigationManager.BaseUri"
+    UseNewModuleScriptLogic="true"
     ShowProductIdData="true"
     Product="Product"
     PriceData="ProductPriceData"
@@ -102,8 +101,6 @@
 
 @code {
 
-    private const string _productDataScriptUrl = "js/Product/ProductData.js";
-    private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
     private const string _pageScriptUrl = "js/Pages/ProductData.js";
 
     [Parameter] public required int? ProductId { get; set; }

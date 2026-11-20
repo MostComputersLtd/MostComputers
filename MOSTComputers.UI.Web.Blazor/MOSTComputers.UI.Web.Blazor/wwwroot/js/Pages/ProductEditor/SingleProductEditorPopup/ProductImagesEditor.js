@@ -1,5 +1,6 @@
-import * as validationMessages from "../../../Validation/ValidationMessages.js"
-import * as validationVisualElements from "../../../Validation/ValidationVisualElements.js"
+import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
+import * as validationMessages from "../../../Common/Validation/ValidationMessages.js"
+import * as validationVisualElements from "../../../Common/Validation/ValidationVisualElements.js"
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
 import * as promotionFilePopup from "./PromotionFilePopup.js"
@@ -208,6 +209,10 @@ export async function addFileToImagesAsync(blob) {
         body: formData
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return fetchWithAuthRedirect.AuthRedirected;
+
     if (!response.ok) {
         return false;
     }
@@ -247,6 +252,10 @@ export async function addNewPromotionProductFileToImagesAsync(promotionProductFi
         },
         body: JSON.stringify(newImageItemRequest)
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return fetchWithAuthRedirect.AuthRedirected;
 
     if (!response.ok) {
         return false;
@@ -307,9 +316,7 @@ export async function changePromotionProductFileImageItemAsync(promotionProductF
 
     if (existingRelatedImageItem == null) {
 
-        await addNewPromotionProductFileToImagesAsync(promotionProductFileEditorId, promotionFileId);
-
-        return;
+        return await addNewPromotionProductFileToImagesAsync(promotionProductFileEditorId, promotionFileId);
     }
 
     const imageItemIndex = productImageItems.indexOf(existingRelatedImageItem);
@@ -333,6 +340,10 @@ export async function changePromotionProductFileImageItemAsync(promotionProductF
         body: JSON.stringify(newImageItemRequest)
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return fetchWithAuthRedirect.AuthRedirected;
+
     if (!response.ok) {
         return false;
     }
@@ -351,14 +362,14 @@ export async function changePromotionProductFileImageItemAsync(promotionProductF
 
     initProductImageItemEvents(newRelatedImageItem);
 
-    const success = dataStore.updateProductImageAndSave(editorId, image =>
+    dataStore.updateProductImageAndSave(editorId, image =>
     {
         image.imageFileData.active = jsonData.imageFileData.active;
     });
 
     editorChanges.setImageChanged(editorId, editorChanges.ItemChangeState.Updated);
 
-    return success;
+    return true;
 }
 
 export function getProductImageItemRelatedToPromotionFile(promotionFileEditorId) {

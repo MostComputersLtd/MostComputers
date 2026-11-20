@@ -1,4 +1,5 @@
 ﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as popup from "../../Primitives/Popup.js";
 import * as common from "./Common.js";
 import * as promotionEditorRelatedProducts from "./PromotionEditorRelatedProducts.js";
 
@@ -68,6 +69,8 @@ export async function openAddRelatedProductsToPromotionPopup(initialGroupId = nu
     selectAllButton.addEventListener("click", onSelectAllButtonClicked);
 
     const addRelatedProductsPopup = document.getElementById(common.relatedProductsPopupId);
+
+    popup.attachCloseEvents(addRelatedProductsPopup);
 
     addRelatedProductsPopup.showModal();
 }

@@ -1,6 +1,7 @@
 import * as conversionUtils from "../../Common/ConversionUtils.js"
-import * as validationMessages from "../../Validation/ValidationMessages.js"
-import * as validationVisualElements from "../../Validation/ValidationVisualElements.js"
+import * as popup from "../../Primitives/Popup.js"
+import * as validationMessages from "../../Common/Validation/ValidationMessages.js"
+import * as validationVisualElements from "../../Common/Validation/ValidationVisualElements.js"
 
 const singlePromotionFileEditorHiddenIdInputId = "singlePromotionFileEditorHiddenIdInput";
 
@@ -79,7 +80,7 @@ export function initEvents(dialogElement, saveButtonCallback = null) {
         singlePromotionFileEditorSaveButton.addEventListener("click", saveButtonCallback);
     }
 
-    dialogElement.addEventListener("close", onClose);
+    popup.attachCloseEvents(dialogElement, onClose);
 }
 
 function onClose() {

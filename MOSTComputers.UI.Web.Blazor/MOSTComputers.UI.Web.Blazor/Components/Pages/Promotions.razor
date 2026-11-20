@@ -12,8 +12,7 @@
 <HeadContent>
     <link href="@Assets["/css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-    <script src="@Assets[_groupPromotionsDisplayScriptUrl]"></script>
-    <script src="@Assets[_pageScriptUrl]"></script>
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
 </HeadContent>
 
 <div class="group-promotions-page">
@@ -25,7 +24,6 @@
 
 @code {
 
-	private const string _groupPromotionsDisplayScriptUrl = "/js/Promotions/GroupPromotionsDisplay.js";
 	private const string _pageScriptUrl = "/js/Pages/Promotions.js";
 
 	private const string _groupIdQueryParameterName = "displayedGroupId";

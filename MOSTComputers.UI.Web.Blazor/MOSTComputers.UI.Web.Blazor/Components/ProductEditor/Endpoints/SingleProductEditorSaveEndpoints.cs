@@ -272,7 +272,13 @@ try{
 }
 catch(Exception e)
 {
-    return Results.InternalServerError(e);
+return Results.Json(new
+    {
+        Type = e.GetType().FullName,
+        e.Message,
+        e.StackTrace,
+        InnerException = e.InnerException?.ToString()
+    }, statusCode: StatusCodes.Status500InternalServerError);
 }
     }
 
@@ -477,6 +483,7 @@ catch(Exception e)
         IProductImageService productImageService,
         IProductImageFileManagementService productImageFileManagementService)
     {
+        List<PromotionProductFileSaveRequest> promotionProductFileRequestsCopy = new(promotionProductFileRequests);
         List<ProductImageAndPromotionFileUpsertRequest> output = new();
 
         for (int i = 0; i < imageRequests.Count; i++)
@@ -485,8 +492,12 @@ catch(Exception e)
 
             if (imageSaveRequest is SavePromotionProductFileImageRequest promotionProductFileImageRequest)
             {
-                PromotionProductFileSaveRequest promotionFileRequest
-                    = promotionProductFileRequests.First(x => x.EditorId == promotionProductFileImageRequest.PromotionFileEditorId);
+                int promotionFileRequestIndex
+                    = promotionProductFileRequestsCopy.FindIndex(x => x.EditorId == promotionProductFileImageRequest.PromotionFileEditorId);
+
+                PromotionProductFileSaveRequest promotionFileRequest = promotionProductFileRequestsCopy[promotionFileRequestIndex];
+
+                promotionProductFileRequestsCopy.RemoveAt(promotionFileRequestIndex);
 
                 PromotionProductFileForProductUpsertRequest promotionProductFileUpdateRequest = new()
                 {
@@ -593,6 +604,21 @@ catch(Exception e)
 
                 output.Add(new(imageUpsertRequest));
             }
+        }
+
+        foreach (PromotionProductFileSaveRequest promotionFileRequest in promotionProductFileRequestsCopy)
+        {
+            PromotionProductFileForProductUpsertRequest promotionProductFileUpdateRequest = new()
+            {
+                Id = promotionFileRequest.Id,
+                PromotionFileInfoId = promotionFileRequest.PromotionFileId,
+                Active = promotionFileRequest.Active,
+                ValidFrom = promotionFileRequest.ValidFrom,
+                ValidTo = promotionFileRequest.ValidTo,
+                UpsertInProductImagesRequest = null,
+            };
+
+            output.Add(new(promotionProductFileUpdateRequest));
         }
 
         return output;

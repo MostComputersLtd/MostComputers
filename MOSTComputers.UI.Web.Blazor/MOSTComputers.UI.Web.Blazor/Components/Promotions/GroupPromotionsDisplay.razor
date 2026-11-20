@@ -24,7 +24,8 @@
 
         <li id="promotionGroupItem-default"
             class="promotion-group-item @(isDefaultGroupSelected ? "selected" : string.Empty)"
-            onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-default', 'promotionGroupItem-default')">
+            name="promotionGroupItem"
+            data-image-container-id="promotionGroupImageContainer-default">
 
             <button class="promotion-group-item-group-name-button">
                 <p class="promotion-group-item-group-name">All Promotions</p>
@@ -50,8 +51,9 @@
             promotionGroupButtonIndex++;
 
             <li id="promotionGroupItem-@promotionGroup.Id"
+                name="promotionGroupItem"
                 class="promotion-group-item @(isSelected ? "selected" : string.Empty)"
-                onclick="changeActiveDisplayedGroup('promotionGroupImageContainer-@promotionGroup.Id', 'promotionGroupItem-@promotionGroup.Id')">
+                data-image-container-id="promotionGroupImageContainer-@promotionGroup.Id">
 
                 @if (promotionGroup.LogoContentType is not null && promotionGroup.LogoImage?.Length > 0)
                 {
@@ -145,6 +147,8 @@
 
         foreach (PromotionGroup promotionGroup in promotionGroups)
         {
+            if (promotionGroup.IsDefault) continue;
+
             IEnumerable<GroupPromotionContent>? promotionGroupContent = promotionContentsGrouped
                 .FirstOrDefault(x => x.Key == promotionGroup.Id)?
                 .OrderBy(x => x.DisplayOrder ?? int.MaxValue);

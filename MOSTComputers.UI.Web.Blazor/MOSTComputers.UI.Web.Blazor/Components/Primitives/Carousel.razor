@@ -60,9 +60,10 @@
         </div>
     </div>
 }
-else
+else if (!UseNewModuleScriptLogic)
 {
     <div id="@CarouselId"
+        name="customCarousel"
         @attributes="AdditionalAttributes"
         class="custom-carousel @_additionalClasses"
         onload="startAutoSlide(@(AutoPlayOptions.IsT0 ? "true" : "false"), '@CarouselId')"
@@ -139,6 +140,82 @@ else
         </div>
     </div>
 }
+else 
+{
+    <div name="customCarousel"
+        @attributes="AdditionalAttributes"
+        class="custom-carousel @_additionalClasses"
+        data-custom-carousel-transition-time-ms="@TransitionMs"
+        data-custom-carousel-auto-slide-interval-time-ms="@(AutoPlayOptions.IsT0 ? AutoPlayOptions.AsT0.TotalMilliseconds : 0)">
+
+        <div @attributes="AdditionalViewportAttributes" class="custom-carousel-viewport @_additionalViewportClasses">
+
+            @for (int i = 0; i < Items.Count; i++)
+            {
+                TItem carouselItem = Items[i];
+
+                int index = i;
+
+                bool isFirst = index == 0;
+
+                string transformStyle = isFirst ? "translateX(0%)" : "translateX(100%)";
+                string itemActiveClass = isFirst ? "active-carousel-item" : string.Empty;
+
+                <div id="custom-carousel-item-@index" class="custom-carousel-slide @itemActiveClass" style="transform: @transformStyle">
+                    @ItemTemplate(carouselItem)
+                </div>
+            }
+
+            <button name="prevControl" class="custom-carousel-control custom-prev">&lt;</button>
+            <button name="nextControl" class="custom-carousel-control custom-next">&gt;</button>
+        </div>
+
+        <div @attributes="AdditionalIndicatorsListContainerAttributes"
+            class="custom-carousel-indicators-container @_additionalIndicatorsListContainerClasses">
+
+            <div @attributes="AdditionalIndicatorsListAttributes"
+                class="custom-carousel-indicators @_additionalIndicatorsListClasses"
+                role="listbox"
+                aria-multiselectable="false"
+                aria-activedescendant="carousel-option-0">
+
+                @for (int i = 0; i < Items.Count; i++)
+                {
+                    int index = i;
+
+                    TItem carouselItem = Items[i];
+
+                    CarouselIndicator carouselIndicator = new()
+                    {
+                        Carousel = this,
+                        Item = carouselItem,
+                        Index = i,
+                        IsActive = index == _activeItemIndex,
+                    };
+
+                    @if (ItemIndicatorTemplate is not null)
+                    {
+                        @ItemIndicatorTemplate(carouselIndicator);
+                    }
+                    else
+                    {
+                        bool isFirstItem = index == 0;
+
+                        string activeClass = isFirstItem ? "active-carousel-indicator" : string.Empty;
+                        string ariaSelected = isFirstItem ? "selected" : string.Empty;
+
+                        <button id="carousel-option-@index"
+                            class="custom-dot @activeClass"
+                            role="option"
+                            aria-label="Go to slide @(index + 1)"
+                            aria-selected="@ariaSelected">
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code{
     private sealed class CarouselItem
@@ -184,6 +261,8 @@ else
     [Parameter] public string CarouselId { get; set; } = string.Empty;
 
     [Parameter] public List<TItem> Items { get; set; } = new();
+
+    [Parameter] public bool UseNewModuleScriptLogic { get; set; } = false;
 
     private List<CarouselItem> _carouselItems { get; set; } = new();
 

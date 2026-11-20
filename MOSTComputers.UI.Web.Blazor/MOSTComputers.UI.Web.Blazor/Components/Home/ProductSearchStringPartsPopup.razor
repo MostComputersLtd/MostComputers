@@ -8,7 +8,7 @@
 }
 
 <Popup @bind-IsVisible="ProductSearchStringPartsPopupData.IsVisible"
-    PopupMarginOptions='new() { Left = "5vw", Top = "5vh", Right = "5vw", Bottom = "5vh" }'>
+    PopupMarginOptions="PopupMarginOptions">
     <HeaderContent>
         <div class="full-parent-width full-parent-height d-flex flex-row align-items-center">
 
@@ -34,4 +34,5 @@
 
 @code {
     [Parameter, EditorRequired] public required ProductSearchStringPartsPopupData ProductSearchStringPartsPopupData { get; set; }
+    [Parameter] public Popup.MarginOptions PopupMarginOptions { get; set; } = new();
 }

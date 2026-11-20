@@ -84,7 +84,8 @@ internal static class ProductEditorPageComponentEndpoints
     {
         RouteGroupBuilder endpointGroup = endpoints.MapGroup(EndpointGroupRoute)
             .RequireAuthorization(Policies.Cookie)
-            .RequireAuthorization(policy => policy.RequireRole("ProductEditor"));
+            .RequireAuthorization(policy => policy.RequireRole("ProductEditor"))
+            .DisableCookieRedirect();
 
         endpointGroup.MapGet("/manufacturersInCategory", GetManufacturersThatHaveActiveProductsInACategoryAsync);
         endpointGroup.MapGet("/item/{productId:int}", GetProductEditorItemAsync);
@@ -131,7 +132,7 @@ internal static class ProductEditorPageComponentEndpoints
 
         return new RazorComponentResult<ProductEditorTableItem>(new
         {
-            ItemData = productEditorData,
+            ItemData = TEMP__Map(productEditorData),
         });
     }
 

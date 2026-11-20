@@ -27,7 +27,7 @@ public class IndexModel : PageModel
     {
         Default = 0,
         PriceDescending = 1,
-        PriceAcsending = 2,
+        PriceAscending = 2,
         PromotionsFirst = 3,
         Alphabetically = 4,
     }
@@ -236,7 +236,7 @@ public class IndexModel : PageModel
             return products.OrderBy(x => x.Price ?? int.MaxValue).ToList();
         }
 
-        if (productSearchSortingOptions == ProductSearchSortingOptions.PriceAcsending)
+        if (productSearchSortingOptions == ProductSearchSortingOptions.PriceAscending)
         {
             return products.OrderByDescending(x => x.Price ?? int.MinValue).ToList();
         }
@@ -245,7 +245,7 @@ public class IndexModel : PageModel
         {
             IEnumerable<int> productIds = products.Select(x => x.Id);
 
-            List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
+            List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
 
             Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
                 .Where(group => group.Key.HasValue)

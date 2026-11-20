@@ -1,5 +1,9 @@
 import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
 import * as antiforgeryUtils from "../../../Common/AntiforgeryUtils.js";
+import * as popup from "../../../Primitives/Popup.js";
+import * as popupFullScreenButton from "../../../Primitives/PopupFullScreenButton.js";
+import * as carouselModule from "../../../Primitives/Carousel.js";
+import * as productData from "../../../Product/ProductData.js";
 import * as dataStore from "./DataStore.js"
 import * as editorChanges from "./EditorChanges.js"
 import * as propertiesEditor from "./PropertiesEditor.js"
@@ -31,6 +35,8 @@ const searchStringPopupContainerId = "singleEditorSearchStringPopupContainer";
 const unsavedChangesPopupContainerId = "singleEditorUnsavedChangesPopupContainer";
 
 const saveButtonId = "singleProductEditorSaveButton";
+
+export const jsonDataScriptId = "singleEditorData";
 
 const unsavedChangesPopupSaveButtonName = "unsavedChangesPopupSaveButton";
 const unsavedChangesPopupExitButtonName = "unsavedChangesPopupExitButton";
@@ -73,13 +79,11 @@ export function initEvents(dialogElement) {
 
     saveButton.addEventListener("click", onSaveButtonClicked);
 
+    document.addEventListener("visibilitychange", onDocumentVisiblilityChange);
+    window.addEventListener("resize", onWindowResize);
     window.addEventListener("keydown", saveOnShortcut);
 
-    const closeButton = dialogElement.querySelector(".btn-close");
-
-    closeButton.onclick = null;
-
-    closeButton.addEventListener("click", onCloseButtonClickedAsync);
+    popup.attachCloseEvents(dialogElement, onCloseRequestAsync, onForceCloseAsync);
 
     propertiesEditor.initEvents(dialogElement);
     productDocumentsEditor.initEvents(dialogElement);
@@ -124,8 +128,38 @@ export function setOnSuccessfulSaveCallback(onSuccessfulSaveCallback) {
     dialog.__onSuccessfulSaveCallback = onSuccessfulSaveCallback;
 }
 
+function onDocumentVisiblilityChange() {
+
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
+
+    const dialog = productDataPopupContainer.querySelector("dialog");
+
+    if (!dialog) return;
+
+    const productDataDialogCarousel = dialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    if (!productDataDialogCarousel) return;
+
+    productData.onDocumentVisibilityChange(productDataDialogCarousel);
+}
+
+async function onWindowResize() {
+
+    const productDataPopupContainer = document.getElementById(productDataPopupContainerId);
+
+    const dialog = productDataPopupContainer.querySelector("dialog");
+
+    if (!dialog) return;
+
+    const productDataDialogCarousel = dialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    if (!productDataDialogCarousel) return;
+
+    await productData.resizeHtmlContentInCarousel(productDataDialogCarousel);
+}
+
 export function clearAll() {
-    clearWindowEvents();
+    clearDocumentAndWindowEvents();
     clearCallbacks();
     clearData();
 }
@@ -140,11 +174,14 @@ export function clearData() {
     dataStore.clearData();
 }
 
-export function clearWindowEvents() {
+function clearDocumentAndWindowEvents() {
+
+    document.removeEventListener("visibilitychange", onDocumentVisiblilityChange);
+    window.removeEventListener("resize", onWindowResize);
     window.removeEventListener("keydown", saveOnShortcut);
 }
 
-export function clearCallbacks() {
+function clearCallbacks() {
 
     const dialog = document.getElementById(popupId);
 
@@ -217,6 +254,8 @@ async function onAddImageFileInputChangeAsync(e) {
 
     const success = await productImagesEditor.addFileToImagesAsync(file);
 
+    if (success === fetchWithAuthRedirect.AuthRedirected) return;
+
     if (!success) {
     }
 }
@@ -244,6 +283,11 @@ async function onAddDocumentFileInputChangeAsync(e) {
     const productId = productIdHiddenInput.value;
 
     const success = await productDocumentsEditor.addFileToProductDocumentsAsync(file, productId);
+
+    if (success === fetchWithAuthRedirect.AuthRedirected) {
+
+        return;
+    }
 
     if (!success) {
     }
@@ -273,6 +317,8 @@ async function onAddImageFromClipboardButtonClickAsync() {
     }
 
     const success = await productImagesEditor.addFileToImagesAsync(blob);
+
+    if (success === fetchWithAuthRedirect.AuthRedirected) return;
 
     if (!success) {
     }
@@ -325,6 +371,10 @@ async function showProductDataPopupAsync() {
         body: JSON.stringify(body)
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) {
         return;
     }
@@ -337,7 +387,26 @@ async function showProductDataPopupAsync() {
 
     const dialog = productDataPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog, onProductDataDialogClose);
+    popupFullScreenButton.attachFullScreenButtonEvent(dialog);
+
+    const productDataDialogCarousel = dialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    await productData.initEventsAndCarousel(productDataDialogCarousel);
+
     dialog.showModal();
+}
+
+function onProductDataDialogClose(e) {
+
+    const productDataDialog = e.currentTarget;
+
+    const carousel = productDataDialog.querySelector(`[name='${carouselModule.carouselName}']`);
+
+    if (carousel) {
+
+        carouselModule.stopAutoSlide(carousel);
+    }
 }
 
 async function showProductLegacyDisplayPopupAsync() {
@@ -436,6 +505,10 @@ async function showProductLegacyDisplayPopupAsync() {
         body: JSON.stringify(body)
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) {
         return;
     }
@@ -447,6 +520,9 @@ async function showProductLegacyDisplayPopupAsync() {
     productLegacyDisplayPopupContainer.innerHTML = data;
 
     const dialog = productLegacyDisplayPopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
+    popupFullScreenButton.attachFullScreenButtonEvent(dialog);
 
     dialog.showModal();
 }
@@ -474,6 +550,10 @@ async function showPromotionProductFileEditorPopupAsync() {
         },
         body: JSON.stringify(body)
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) {
         return;
@@ -548,6 +628,10 @@ async function showProductSearchStringPopupAsync() {
         method: "GET",
     });
 
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
+
     if (!response.ok) return;
 
     const data = await response.text();
@@ -558,24 +642,33 @@ async function showProductSearchStringPopupAsync() {
 
     const dialog = searchStringPopupContainer.querySelector("dialog");
 
+    popup.attachCloseEvents(dialog);
+
     dialog.showModal();
 }
 
-async function onCloseButtonClickedAsync() {
+async function onCloseRequestAsync(e) {
+
+    console.log("onCloseRequestAsync");
 
     const anyChanges = editorChanges.anyChanges();
 
     if (anyChanges) {
 
+        e.preventDefault();
+
         await showUnsavedChangesPopup();
     }
     else {
         clearAll();
-
-        const dialog = document.getElementById(popupId);
-
-        dialog.close();
     }
+}
+
+async function onForceCloseAsync() {
+
+    console.log("onForceCloseAsync");
+
+    clearAll();
 }
 
 async function showUnsavedChangesPopup() {
@@ -585,6 +678,10 @@ async function showUnsavedChangesPopup() {
     const response = await fetch(url, {
         method: "GET",
     });
+
+    const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
+
+    if (!didNotRedirect) return;
 
     if (!response.ok) return;
 
@@ -596,8 +693,6 @@ async function showUnsavedChangesPopup() {
 
     const dialog = unsavedChangesPopupContainer.querySelector("dialog");
 
-    dialog.addEventListener("cancel", onUnsavedChangesPopupClose);
-
     const unsavedChangesPopupSaveButton = dialog.querySelector(`[name='${unsavedChangesPopupSaveButtonName}']`)
     const unsavedChangesPopupExitButton = dialog.querySelector(`[name='${unsavedChangesPopupExitButtonName}']`)
 
@@ -605,11 +700,6 @@ async function showUnsavedChangesPopup() {
     unsavedChangesPopupExitButton.addEventListener("click", onUnsavedChangesPopupExitButtonClicked);
 
     dialog.showModal(); 
-}
-
-function onUnsavedChangesPopupClose(e) {
-
-    e.preventDefault();
 }
 
 async function onUnsavedChangesPopupSaveButtonClicked() {
@@ -639,6 +729,12 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
 
     if (!didNotRedirect) return;
 
+    const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
+
+    const unsavedChangesDialog = unsavedChangesPopupContainer.querySelector("dialog");
+
+    unsavedChangesDialog.close();
+
     if (!response.ok) {
 
         const responseProblem = await response.json();
@@ -657,13 +753,7 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
         return;
     }
 
-    const data = await response.json();
-
-    const unsavedChangesPopupContainer = document.getElementById(unsavedChangesPopupContainerId);
-
-    const unsavedChangesDialog = unsavedChangesPopupContainer.querySelector("dialog");
-
-    unsavedChangesDialog.close();
+    const data = await response.text();
 
     const singleProductEditorDialog = document.getElementById(popupId);
 
@@ -677,7 +767,7 @@ async function onUnsavedChangesPopupSaveButtonClicked() {
 
     const newSingleProductEditorDialog = document.getElementById(popupId);
 
-    const jsonDataScriptElement = document.getElementById(singleProductEditorPopupJsonDataScriptId);
+    const jsonDataScriptElement = document.getElementById(jsonDataScriptId);
 
     const jsonData = JSON.parse(jsonDataScriptElement.textContent);
 
@@ -764,7 +854,7 @@ async function onSaveButtonClicked() {
         return;
     }
 
-    const data = await response.json();
+    const data = await response.text();
 
     const dialog = document.getElementById(popupId);
 
@@ -778,7 +868,7 @@ async function onSaveButtonClicked() {
 
     const newDialog = document.getElementById(popupId);
 
-    const jsonDataScriptElement = document.getElementById(singleProductEditorPopupJsonDataScriptId);
+    const jsonDataScriptElement = document.getElementById(jsonDataScriptId);
 
     const jsonData = JSON.parse(jsonDataScriptElement.textContent);
 

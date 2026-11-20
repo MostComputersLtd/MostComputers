@@ -8,10 +8,6 @@ const additionalInfoInputId = "additionalInfoInput";
 
 const saveButtonId = "saveButton";
 const printButtonId = "printButton";
-const copyButtonId = "copyButton";
-const generateButtonId = "generateButton";
-const shareButtonOperationId = "shareButtonOperation";
-const shareButtonId = "shareButton";
 
 const itemName = "productOfferItem";
 const itemQuantityInputName = "productQuantityInput";
@@ -23,11 +19,8 @@ const itemProductIdAttribute = "data-product-id";
 const singleItemPriceInputPreviousValueAttribute = "data-previous-value";
 
 const loadingClass = "loading";
-const shareOperationNoItemClass = "no-item";
 
 const defaultVATPercentage = 0.2;
-
-let generatedPdfFile = null;
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initEvents);
@@ -44,13 +37,9 @@ function initEvents() {
 
     const saveButton = document.getElementById(saveButtonId);
     const printButton = document.getElementById(printButtonId);
-    const copyButton = document.getElementById(copyButtonId);
-    const generateButton = document.getElementById(generateButtonId);
 
     saveButton.addEventListener("click", onSaveButtonClicked);
     printButton.addEventListener("click", onPrintButtonClicked);
-    copyButton.addEventListener("click", onCopyButtonClicked);
-    generateButton.addEventListener("click", onGenerateButtonClicked);
 
     const items = document.querySelectorAll(`[name="${itemName}"]`);
 
@@ -310,100 +299,9 @@ function printDocumentViaIframe(blob) {
         { once: true });
 }
 
-async function onCopyButtonClicked(e) {
-
-    const copyButton = e.currentTarget;
-
-    try {
-        if (!ClipboardItem.supports("application/pdf")) {
-
-            alert("The clipboard does not support copying PDF files, try downloading instead");
-
-            return;
-        }
-
-        copyButton.classList.add(loadingClass);
-
-        const file = await getHomeOfferPdfFromCurrentData();
-
-        if (file == null) return;
-
-        await window.navigator.clipboard.write([
-            new ClipboardItem({
-                [file.type]: file,
-            })
-        ]);
-    }
-    finally {
-        copyButton.classList.remove(loadingClass);
-    }
-}
-
-async function onGenerateButtonClicked(e) {
-
-    const generateButton = e.currentTarget;
-
-    try { 
-
-        generateButton.classList.add(loadingClass);
-
-        const requestData = getHomeOfferPdfRequestData();
-
-        const blob = await getHomeOfferPdfAsync(requestData);
-
-        if (blob == null) return;
-
-        const filename = generateHomeOfferPdfFilename(requestData.offerNumber);
-
-        const file = new File([blob], filename, {
-            type: blob.type
-        });
-
-        generatedPdfFile = file;
-
-        const shareButtonOperation = document.getElementById(shareButtonOperationId);
-
-        if (!shareButtonOperation.classList.contains(shareOperationNoItemClass)) return;
-
-        const shareButton = document.getElementById(shareButtonId);
-
-        shareButton.addEventListener("click", onShareButtonClicked);
-
-        shareButtonOperation.classList.remove(shareOperationNoItemClass);
-    }
-    finally {
-        generateButton.classList.remove(loadingClass);
-    }
-}
-
-async function onShareButtonClicked(e) { 
-
-    const shareButton = e.currentTarget;
-
-    try {
-        const shareData = {
-            files: [generatedPdfFile]
-        };
-
-        shareButton.classList.add(loadingClass);
-
-        if (!navigator.canShare(shareData)) {
-
-            alert("The operating systen does not support sharing PDF files, try downloading instead");
-
-            return;
-        } 
-
-        await navigator.share(shareData);
-    }
-    finally {
-        shareButton.classList.remove(loadingClass);
-    }
-}
-
 function generateHomeOfferPdfFilename(offerNumber) {
 
-    let filename = "MOST_OFFER";
+    let filename = "MOST";
 
     if (offerNumber != null) {
 

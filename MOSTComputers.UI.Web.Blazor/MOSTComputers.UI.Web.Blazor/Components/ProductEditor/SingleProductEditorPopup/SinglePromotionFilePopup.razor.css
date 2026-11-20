@@ -61,14 +61,30 @@ p {
 
 .basic-input-container {
     margin-bottom: 0.5em;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 .basic-input-label {
     margin-right: 0.5em;
 }
 
-.file-container {
+.readonly-checkbox {
+    pointer-events: none;
+}
+
+.readonly-file-container {
     max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+::deep .readonly-promotion-file {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .file-select-container {

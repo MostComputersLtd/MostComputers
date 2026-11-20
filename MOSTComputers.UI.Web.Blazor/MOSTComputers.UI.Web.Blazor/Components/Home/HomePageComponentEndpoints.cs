@@ -1,10 +1,16 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Components.Endpoints;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using MOSTComputers.Models.Common;
 using MOSTComputers.Models.Product.Models;
 using MOSTComputers.Models.Product.Models.ProductImages;
+using MOSTComputers.Models.Product.Models.Promotions;
 using MOSTComputers.Models.Product.Models.Promotions.Groups;
 using MOSTComputers.Services.Currencies.Contracts;
+using MOSTComputers.Services.Currencies.Models;
+using MOSTComputers.Services.PDF.Models.HomeOffers;
+using MOSTComputers.Services.PDF.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Models.Requests.Product;
 using MOSTComputers.Services.ProductRegister.Services.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.ProductImages.Contracts;
@@ -14,15 +20,13 @@ using MOSTComputers.Services.ProductRegister.Services.Promotions.Contracts;
 using MOSTComputers.Services.ProductRegister.Services.Promotions.Groups.Contracts;
 using MOSTComputers.Services.SearchStringOrigin.Models;
 using MOSTComputers.Services.SearchStringOrigin.Services.Contracts;
+using MOSTComputers.UI.Web.Blazor.Components.Primitives;
 using MOSTComputers.UI.Web.Blazor.Endpoints;
 using MOSTComputers.UI.Web.Blazor.Endpoints.Images;
+using MOSTComputers.UI.Web.Blazor.Utils;
 using OneOf;
-using static MOSTComputers.Utils.Files.FilePathUtils;
 using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.AspNetCore.Components.Endpoints;
-using MOSTComputers.Services.PDF.Models.HomeOffers;
-using MOSTComputers.Services.PDF.Services.Contracts;
+using static MOSTComputers.Utils.Files.FilePathUtils;
 
 namespace MOSTComputers.UI.Web.Blazor.Components.Home;
 
@@ -33,10 +37,23 @@ public static class HomePageComponentEndpoints
         public string? SearchData { get; set; }
         public int? CategoryId { get; set; }
         public int? ManufacturerId { get; set; }
-        public ProductStatusSearchOptions ProductStatusSearchOptions { get; set; } = ProductStatusSearchOptions.AvailableAndCall;
+        public HomeProductStatusSearchOptions? ProductStatusSearchOptions { get; set; } = null;
         public PromotionSearchOptions? PromotionSearchOptions { get; set; } = null;
         public Currency? Currency { get; set; } = null;
         public int? MaxSearchResults { get; set; } = null;
+    } 
+
+    private sealed class ProductOrderSummariesRequest
+    {
+        public List<ProductOrderSummaryRequest>? ProductQuantities { get; set; }
+        public Currency? Currency { get; set; } = null;
+        public bool ShowEntireTable { get; set; } = false;
+    }
+
+    private sealed class ProductOrderSummaryRequest
+    {
+        public int Id { get; init; }
+        public int Quantity { get; init; }
     }
 
     private sealed class ManufacturerSearchResponse
@@ -48,6 +65,7 @@ public static class HomePageComponentEndpoints
     internal const string EndpointGroupRoute = EndpointRoutingCommonElements.ApiEndpointPathPrefix + "components/" + "home";
 
     private const int _maxProductsSearchCount = 2000;
+    private const int _maxProductOrderSummariesCount = 2000;
 
     public static IEndpointConventionBuilder MapProductDataComponentEndpoints(
         this IEndpointRouteBuilder endpoints,
@@ -63,6 +81,7 @@ public static class HomePageComponentEndpoints
         endpointGroup.MapGet("/productSearchStringPopup/{productId:int}", GetProductSearchStringPartsPopupAsync);
 
         endpointGroup.MapPost("/search", GetProductTableForSearchedProductsAsync);
+        endpointGroup.MapPost("/orderSummary", GetOrderSummaryForProductsAsync);
 
         ConfigureHomeOfferPageEndpoint(razorEndpointBuilder);
 
@@ -75,7 +94,11 @@ public static class HomePageComponentEndpoints
         HttpContext httpContext,
         [FromBody] ProductSearchData productSearchData,
         [FromServices] IProductService productService,
-        [FromServices] IProductSearchService productSearchService)
+        [FromServices] IProductSearchService productSearchService,
+        [FromServices] IProductImageFileService productImageFileService,
+        [FromServices] IPromotionService promotionService,
+        [FromServices] IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService,
+        [FromServices] ICurrencyConversionService currencyConversionService)
     {
         httpContext.Response.ContentType = "application/html";
         httpContext.Response.Headers.TryAdd("Content-Disposition", "inline; filename=data.xml");
@@ -83,11 +106,26 @@ public static class HomePageComponentEndpoints
         List<ProductDisplayData> productDisplayDatas = await SearchProductsAsync(
             productService, productSearchService, productSearchData);
 
+        Currency currency = productSearchData.Currency ?? Currency.EUR;
+
+        Currency? secondaryCurrency = null;
+
+        if (currency == Currency.EUR)
+        {
+            secondaryCurrency = Currency.BGN;
+        }
+
+        await AddCurrenciesToProductDataAsync(currencyConversionService, productDisplayDatas, currency, secondaryCurrency);
+
+        await AddActivePromotionsToProductDataAsync(promotionService, productDisplayDatas);
+
+        await AddImageUrlsToProductDataAsync(productImageFileService, productDisplayDatas);
+
+        await AddManufacturerGroupPromotionIdToProductDataAsync(manufacturerToPromotionGroupRelationService, productDisplayDatas);
+
         return new RazorComponentResult<ProductDatasTable>(new
         {
             ProductDisplayDatas = productDisplayDatas,
-            productSearchData.Currency,
-            SecondaryCurrency = (Currency?)(productSearchData.Currency == Currency.EUR ? Currency.BGN : null),
             ShowImages = false
         });
     }
@@ -121,6 +159,14 @@ public static class HomePageComponentEndpoints
             }
         }
 
+        ProductStatusSearchOptions productStatusSearchOptions = productSearchData.ProductStatusSearchOptions switch
+        {
+            HomeProductStatusSearchOptions.Available => ProductStatusSearchOptions.Available,
+            HomeProductStatusSearchOptions.Call => ProductStatusSearchOptions.Call,
+            HomeProductStatusSearchOptions.AvailableAndCall => ProductStatusSearchOptions.AvailableAndCall,
+            _ => ProductStatusSearchOptions.AvailableAndCall
+        };
+
         if (products.Count <= 0)
         {
             ProductSearchRequest productSearchRequest = new()
@@ -129,7 +175,7 @@ public static class HomePageComponentEndpoints
                 UserInputString = productSearchData.SearchData,
                 CategoryId = productSearchData.CategoryId,
                 ManufacturerId = productSearchData.ManufacturerId,
-                ProductStatus = productSearchData.ProductStatusSearchOptions,
+                ProductStatus = productStatusSearchOptions,
                 PromotionSearchOptions = productSearchData.PromotionSearchOptions,
                 MaxResultCount = finalResultCount,
             };
@@ -149,16 +195,266 @@ public static class HomePageComponentEndpoints
 
         products = products[..productsToDisplayCount];
 
-        List<ProductDisplayData> productDisplayDatas = products.Select(product =>
+        List<ProductDisplayData> productDisplayDatas = [];
+
+        foreach (MOSTComputers.Models.Product.Models.Product product in products)
         {
-            return new ProductDisplayData()
+            ProductDisplayData productData = new()
             {
                 Product = product,
             };
-        })
-            .ToList();
+
+            productDisplayDatas.Add(productData);
+        }
 
         return productDisplayDatas;
+    }
+
+    private static async Task<IResult> GetOrderSummaryForProductsAsync(
+        HttpContext httpContext,
+        [FromBody] ProductOrderSummariesRequest request,
+        [FromServices] IProductService productService,
+        [FromServices] IProductImageFileService productImageFileService,
+        [FromServices] IPromotionService promotionService,
+        [FromServices] IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService,
+        [FromServices] ICurrencyConversionService currencyConversionService)
+    {
+        List<ProductOrderSummaryRequest>? productQuantities = request.ProductQuantities;
+
+        if (productQuantities == null
+            || productQuantities.Count > _maxProductOrderSummariesCount)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        List<int> productIds = [];
+
+        foreach (ProductOrderSummaryRequest productQuantity in productQuantities)
+        {
+            productIds.Add(productQuantity.Id);
+        }
+
+        List<MOSTComputers.Models.Product.Models.Product> products = await productService.GetByIdsAsync(productIds);
+
+        List<ProductDisplayData> productDisplayDatas = [];
+
+        List<MOSTComputers.Models.Product.Models.Product> unavailableProducts = [];
+
+        foreach (MOSTComputers.Models.Product.Models.Product product in products)
+        {
+            if (product.PlShow == 2 || product.Status == ProductStatus.Unavailable)
+            {
+                unavailableProducts.Add(product);
+
+                continue;
+            }
+
+            ProductDisplayData productData = new()
+            {
+                Product = product,
+                IsExternalOrderSummaryItem = true,
+            };
+
+            productDisplayDatas.Add(productData);
+        }
+
+        Currency currency = request.Currency ?? Currency.EUR;
+
+        Currency? secondaryCurrency = null;
+
+        if (currency == Currency.EUR)
+        {
+            secondaryCurrency = Currency.BGN;
+        }
+
+        await AddCurrenciesToProductDataAsync(currencyConversionService, productDisplayDatas, currency, secondaryCurrency);
+
+        await AddActivePromotionsToProductDataAsync(promotionService, productDisplayDatas);
+
+        await AddImageUrlsToProductDataAsync(productImageFileService, productDisplayDatas);
+
+        await AddManufacturerGroupPromotionIdToProductDataAsync(manufacturerToPromotionGroupRelationService, productDisplayDatas);
+
+        if (request.ShowEntireTable)
+        {
+            return new RazorComponentResult<ProductDatasTable>(new
+            {
+                ProductDisplayDatas = productDisplayDatas,
+                UnavailableProducts = unavailableProducts,
+                ShowImages = false
+            });
+        }
+
+        return new RazorComponentResult<ProductDatasTableItems>(new
+        {
+            ProductDisplayDatas = productDisplayDatas,
+            UnavailableProducts = unavailableProducts,
+            ShowImages = false
+        });
+    }
+
+    private static async Task AddCurrenciesToProductDataAsync(
+        ICurrencyConversionService currencyConversionService,
+        List<ProductDisplayData> productDisplayDatas,
+        Currency currency,
+        Currency? secondaryCurrency = null)
+    {
+        Dictionary<ProductDisplayData, ChangeCurrencyRequest> currencyChangeRequests = productDisplayDatas
+            .Where(productData => productData.Product.Price.HasValue && productData.Product.Currency.HasValue)
+            .ToDictionary(product => product, productData =>
+            {
+                return new ChangeCurrencyRequest()
+                {
+                    Value = productData.Product.Price!.Value,
+                    CurrentCurrency = productData.Product.Currency!.Value,
+                    NewCurrency = currency
+                };
+            });
+
+        Dictionary<ProductDisplayData, ChangeCurrencyRequest>? secondaryChangeRequests = null;
+
+        if (secondaryCurrency is not null)
+        {
+            secondaryChangeRequests = productDisplayDatas
+                .Where(productData => productData.Product.Price.HasValue && productData.Product.Currency.HasValue)
+                .ToDictionary(product => product, productData =>
+                {
+                    return new ChangeCurrencyRequest()
+                    {
+                        Value = productData.Product.Price!.Value,
+                        CurrentCurrency = productData.Product.Currency!.Value,
+                        NewCurrency = secondaryCurrency.Value,
+                    };
+                });
+        }
+
+        Dictionary<ChangeCurrencyRequest, OneOf<decimal, OneOf.Types.NotFound>> currencyChangeResults
+            = await currencyConversionService.ChangeCurrenciesAsync(currencyChangeRequests.Values.ToList());
+
+        Dictionary<ChangeCurrencyRequest, OneOf<decimal, OneOf.Types.NotFound>>? secondaryCurrencyChangeResults = null;
+
+        if (secondaryChangeRequests is not null)
+        {
+            secondaryCurrencyChangeResults = await currencyConversionService.ChangeCurrenciesAsync(secondaryChangeRequests.Values.ToList());
+        }
+
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            decimal? displayPrice = null;
+            decimal? secondaryDisplayPrice = null;
+
+            if (productDisplayData.Product.Price is not null && productDisplayData.Product.Currency is not null)
+            {
+                OneOf<decimal, OneOf.Types.NotFound>? getPriceResult = currencyChangeResults.TryGetValue(
+                    currencyChangeRequests[productDisplayData], out OneOf<decimal, OneOf.Types.NotFound> result)
+                        ? result
+                        : null;
+
+                if (getPriceResult is not null && getPriceResult.Value.IsT0)
+                {
+                    displayPrice = getPriceResult.Value.AsT0;
+                }
+
+                if (secondaryChangeRequests is not null && secondaryCurrencyChangeResults is not null)
+                {
+                    OneOf<decimal, OneOf.Types.NotFound>? getSecondaryPriceResult = secondaryCurrencyChangeResults.TryGetValue(
+                        secondaryChangeRequests[productDisplayData], out OneOf<decimal, OneOf.Types.NotFound> secondaryResult)
+                            ? secondaryResult
+                            : null;
+
+                    if (getSecondaryPriceResult is not null && getSecondaryPriceResult.Value.IsT0)
+                    {
+                        secondaryDisplayPrice = getSecondaryPriceResult.Value.AsT0;
+                    }
+                }
+            }
+
+            if (displayPrice is not null)
+            {
+                productDisplayData.DisplayPrice = new() { Price = displayPrice.Value, Currency = currency };
+            }
+
+            if (secondaryDisplayPrice is not null)
+            {
+                productDisplayData.SecondaryDisplayPrice = new() { Price = secondaryDisplayPrice.Value, Currency = secondaryCurrency!.Value };
+            }
+        }
+    }
+
+    private static async Task AddActivePromotionsToProductDataAsync(
+        IPromotionService promotionService,
+        List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        List<IGrouping<int?, Promotion>> promotions = await promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            List<Promotion>? activePromotions = promotions
+                .FirstOrDefault(x => x.Key == productDisplayData.Product.Id)?
+                .Where(x =>
+                {
+                    if (x.Id != productDisplayData.Product.PromotionPid && x.Id != productDisplayData.Product.PromotionRid) return false;
+
+                    return (x.StartDate is null || x.StartDate <= DateTime.Now)
+                        && (x.ExpirationDate is null || x.ExpirationDate >= DateTime.Now);
+                })
+                .ToList();
+
+            productDisplayData.Promotions = activePromotions;
+        }
+    }
+
+    private static async Task AddImageUrlsToProductDataAsync(
+        IProductImageFileService productImageFileService,
+        List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> productIds = productDisplayDatas.Select(x => x.Product.Id);
+
+        List<IGrouping<int, ProductImageFileData>> imageFiles = await productImageFileService.GetAllInProductsAsync(productIds);
+
+        foreach (IGrouping<int, ProductImageFileData> imageFilesForProduct in imageFiles)
+        {
+            ProductDisplayData productData = productDisplayDatas.First(x => x.Product.Id == imageFilesForProduct.Key);
+
+            productData.ImageUrls ??= new();
+
+            foreach (ProductImageFileData imageFile in imageFilesForProduct)
+            {
+                if (string.IsNullOrWhiteSpace(imageFile.FileName)) continue;
+
+                string imageFileUrl = UrlUtils.JoinUrlPath(ProductImageFileDataEndpoints.EndpointGroupRoute, imageFile.FileName);
+
+                productData.ImageUrls.Add('/' + imageFileUrl);
+            }
+        }
+    }
+
+    private static async Task AddManufacturerGroupPromotionIdToProductDataAsync(
+        IManufacturerToPromotionGroupRelationService manufacturerToPromotionGroupRelationService,
+        List<ProductDisplayData> productDisplayDatas)
+    {
+        IEnumerable<int> manufacturerIds = productDisplayDatas
+            .Where(x => x.Product.ManufacturerId is not null)
+            .Select(x => (int)x.Product.ManufacturerId!);
+
+        List<ManufacturerToPromotionGroupRelation> relations = await manufacturerToPromotionGroupRelationService.GetAllAsync();
+
+        IEnumerable<ManufacturerToPromotionGroupRelation> matchingRelations = relations
+            .Where(x => manufacturerIds.Contains(x.ManufacturerId));
+
+        foreach (ProductDisplayData productDisplayData in productDisplayDatas)
+        {
+            ManufacturerToPromotionGroupRelation? matchingRelation = matchingRelations.FirstOrDefault(
+                x => x.ManufacturerId == productDisplayData.Product.ManufacturerId);
+
+            if (matchingRelation is null) continue;
+
+            productDisplayData.ManufacturerPromotionGroupId = matchingRelation.PromotionGroupId;
+        }
     }
 
     private static async Task<IResult> GetManufacturersForCategoryAsync(
@@ -248,7 +544,7 @@ public static class HomePageComponentEndpoints
         int productId)
     {
         MOSTComputers.Models.Product.Models.Product? product = await productService.GetByIdAsync(productId);
-        
+
         if (product == null)
         {
             return Results.NotFound();
@@ -512,7 +808,8 @@ public static class HomePageComponentEndpoints
                 IsVisible = true,
                 Product = product,
                 SearchStringOriginDataList = searchStringParts ?? new()
-            }
+            },
+            PopupMarginOptions = new Popup.MarginOptions() { Left = "15vw", Top = "15vh", Right = "15vw", Bottom = "15vh" }
         });
     }
 

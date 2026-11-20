@@ -1,43 +1,38 @@
-﻿const productDataDialogCarouselId = "productDataCarousel";
+﻿import * as carouselModule from "../Primitives/Carousel.js";
+import * as productData from "../Product/ProductData.js";
+
+const productDataDialogCarouselId = "productDataCarousel";
 
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", onStartOfPage);
 } else {
-    onStartOfPage();
+    await onStartOfPage();
 }
 
 document.addEventListener("visibilitychange", handleVisibilityChange);
 window.addEventListener("resize", handleResize);
 
-function onStartOfPage() {
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+async function onStartOfPage() {
 
-    if (!productDataDialogCarousel) return;
+    const productDataDialogCarousel = document.querySelector(`[name='${carouselModule.carouselName}']`);
 
-    startAutoSlide(true, productDataDialogCarouselId);
-
-    resizeHtmlContentInCarousel(productDataDialogCarousel);
+    await productData.initEventsAndCarousel(productDataDialogCarousel);
 }
 
 function handleVisibilityChange() {
 
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+    const productDataDialogCarousel = document.querySelector(`[name='${carouselModule.carouselName}']`);
 
     if (!productDataDialogCarousel) return;
 
-    if (document.hidden) {
-        stopAutoSlide(productDataDialogCarouselId);
-    }
-    else {
-        startAutoSlide(true, productDataDialogCarouselId);
-    }
+    productData.onDocumentVisibilityChange(productDataDialogCarousel);
 }
 
-function handleResize() {
+async function handleResize() {
 
-    const productDataDialogCarousel = document.getElementById(productDataDialogCarouselId);
+    const productDataDialogCarousel = document.querySelector(`[name='${carouselModule.carouselName}']`);
 
     if (!productDataDialogCarousel) return;
 
-    resizeHtmlContentInCarousel(productDataDialogCarousel);
+    await productData.resizeHtmlContentInCarousel(productDataDialogCarousel);
 }

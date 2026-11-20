@@ -104,7 +104,7 @@ public class ProductListItemsViewComponent : ViewComponent
 
         Dictionary<ChangeCurrencyRequest, OneOf<decimal, NotFound>>? secondaryCurrencyChangeResults = null;
 
-        List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllForSelectionOfProductsAsync(productIds);
+        List<IGrouping<int?, Promotion>> promotionsForProducts = await _promotionService.GetAllActiveForSelectionOfProductsAsync(productIds);
 
         Dictionary<int, List<Promotion>> promotionsByProductId = promotionsForProducts
             .Where(group => group.Key.HasValue)

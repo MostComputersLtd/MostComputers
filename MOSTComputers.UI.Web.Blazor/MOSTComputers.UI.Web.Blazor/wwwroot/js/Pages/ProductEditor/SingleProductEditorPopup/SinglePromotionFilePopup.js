@@ -32,7 +32,9 @@ export function initEvents(saveButtonClickedCallback) {
 
 export async function initializePromotionFile() {
 
-    await searchPromotionFilesAsync(null, null);
+    const searchResult = await searchPromotionFilesAsync(null, null);
+
+    if (searchResult === fetchWithAuthRedirect.AuthRedirected) return fetchWithAuthRedirect.AuthRedirected;
 
     const shouldAddToImagesInput = document.getElementById(shouldAddToImagesInputId);
 
@@ -138,7 +140,9 @@ async function searchPromotionFilesFromCurrentData() {
 
     const selectedPromotionFile = promotionFileSelectList.getSelectedElementData(promotionFileList);
 
-    await searchPromotionFilesAsync(validOnDate, searchInput.value);
+    const searchResult = await searchPromotionFilesAsync(validOnDate, searchInput.value);
+
+    if (searchResult === fetchWithAuthRedirect.AuthRedirected) return;
 
     const newPromotionFileList = promotionFileListContainer.querySelector("ul");
 
@@ -184,11 +188,13 @@ async function searchPromotionFilesAsync(validOnDate, searchText) {
         body: JSON.stringify(body)
     });
 
-    if (response == null) return;
+    if (response == null) return false;
 
     const didNotRedirect = fetchWithAuthRedirect.handleAuthRedirect(response);
 
-    if (!didNotRedirect || !response.ok) return;
+    if (!didNotRedirect) return fetchWithAuthRedirect.AuthRedirected;
+
+    if (!response.ok) return false;
 
     const data = await response.text();
 
@@ -199,6 +205,8 @@ async function searchPromotionFilesAsync(validOnDate, searchText) {
     const promotionFileList = promotionFileListContainer.querySelector("ul");
 
     promotionFileSelectList.initEvents(promotionFileList, onPromotionFileListChanged);
+
+    return true;
 }
 
 function onPromotionFileListChanged(promotionFileData) {

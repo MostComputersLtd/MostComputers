@@ -566,7 +566,9 @@ public sealed class ProductSearchService : IProductSearchService
             .ToList();
     }
 
-    private async Task<List<Product>> GetFilteredProductsByPromotionSearchOptionsAsync(PromotionSearchOptions promotionSearchEnum, IEnumerable<Product> products)
+    private async Task<List<Product>> GetFilteredProductsByPromotionSearchOptionsAsync(
+        PromotionSearchOptions promotionSearchEnum,
+        IEnumerable<Product> products)
     {
         IEnumerable<int> productIds = products.Select(x => x.Id);
 

@@ -1,0 +1,361 @@
+@using System.Text
+@using MOSTComputers.Models.Common
+@using MOSTComputers.Models.Product.Models.ProductIdentifiers
+@using MOSTComputers.Models.Product.Models.Promotions
+@using static MOSTComputers.UI.Web.Blazor.Components.Pages.Home
+@using static MOSTComputers.UI.Web.Blazor.Utils.DataToTextConversion
+
+@if (UnavailableProducts?.Count > 0)
+{
+    StringBuilder unavailableProductsDescriptionBuilder = new();
+
+    foreach (MOSTComputers.Models.Product.Models.Product product in UnavailableProducts)
+    {
+        if (unavailableProductsDescriptionBuilder.Length > 0)
+        {
+            unavailableProductsDescriptionBuilder.Append(", ");
+        }
+
+        if (string.IsNullOrEmpty(product.Name))
+        {
+            unavailableProductsDescriptionBuilder.Append($"ID: {product.Id}");
+        }
+        else
+        {
+            unavailableProductsDescriptionBuilder.Append($"'{product.Name}' (ID: {product.Id})");
+        }
+    }
+
+    string unavailableProductsDescription = unavailableProductsDescriptionBuilder.ToString();
+
+    string productsText = "Product";
+    string haveText = "has";
+
+    if (UnavailableProducts.Count > 1)
+    {
+        productsText = "Products";
+        haveText = "have";
+    }
+
+    <tr name="productTableUnavailableProductsRow" class="product-table-unavailable-products-row">
+        <td colspan="10" class="product-table-unavailable-products-row-text-item">
+            <p class="product-table-unavailable-products-text">
+                @productsText <span class="product-table-unavailable-products-description-text">@unavailableProductsDescription</span> @haveText been marked as unavailable and removed from your order.
+            </p>
+        </td>
+    </tr>
+}
+
+@for (int i = 0; i < ProductDisplayDatas.Count; i++)
+{
+    ProductDisplayData productData = ProductDisplayDatas[i];
+
+    decimal? price = productData.DisplayPrice?.Price ?? productData.Product.Price;
+    Currency? currency = productData.DisplayPrice?.Currency ?? productData.Product.Currency;
+
+    string quantityInputId = productData.IsExternalOrderSummaryItem
+        ? $"quantityInput-external-{i}"
+        : $"quantityInput-{i}";
+
+    bool isValidEAN13Code = false;
+
+    if (productData.Product.PartNumber1 is not null)
+    {
+        isValidEAN13Code = ProductGTINCodeType.EAN13.IsValid(productData.Product.PartNumber1);
+    }
+
+    int? promotionPictureId = productData.Product.AlertPictureId;
+
+    if (promotionPictureId is null || promotionPictureId <= 0)
+    {
+        promotionPictureId = productData.Product.PromotionPictureId;
+    }
+
+    DateTime? promotionExpireDate = productData.Product.AlertExpireDate;
+
+    bool isShowingImages = ShowImages && productData.ImageUrls is not null && productData.ImageUrls.Count > 0;
+
+    int rowspanOfPromoColumn = isShowingImages ? 2 : 1;
+    int colspanOfColumnBeforeImageColumn = isShowingImages ? 3 : 4;
+
+    <tr name="productTableItem"
+        data-product-id="@productData.Product.Id"
+        data-is-external-order-summary-item="@(productData.IsExternalOrderSummaryItem ? "true" : "false")"
+        style="border-top: 1px gray solid;">
+
+        <td name="productPromotionTableItem"
+            rowspan="@rowspanOfPromoColumn">
+
+            @if (promotionPictureId > 0
+                && (promotionExpireDate is null || promotionExpireDate >= DateTime.Now))
+            {
+                <MOSTComputers.UI.Web.Blazor.Components.Product.Promotion.PromotionImage
+                    PromotionPictureId="promotionPictureId.Value"
+                    class="product-promotions-promotion-status-image" />
+            }
+
+            @if (productData.Promotions?.Count > 0)
+            {
+                <div class="product-promotions">
+
+                    @foreach (Promotion promotion in productData.Promotions)
+                    {
+                        string? promotionTypeString = null;
+
+                        if (promotion.Type is not null)
+                        {
+                            promotionTypeString = promotion.Type.Value switch
+                            {
+                                1 => "Promotion",
+                                2 => "Consignation",
+                                _ => null
+                            };
+                        }
+
+                        string? expirationDateString = null;
+
+                        if (promotion.ExpirationDate is not null)
+                        {
+                            if (promotion.ExpirationDate.Value.TimeOfDay == TimeSpan.Zero)
+                            {
+                                expirationDateString = promotion.ExpirationDate.Value.ToString("d");
+                            }
+                            else
+                            {
+                                expirationDateString = promotion.ExpirationDate.Value.ToString();
+                            }
+                        }
+
+                        <div class="product-promotion mt-1">
+                            <div class="product-promotion-period">
+
+                                @if (promotionTypeString is not null)
+                                {
+                                    <p class="mb-0 me-1">@promotionTypeString:</p>
+                                }
+                                else
+                                {
+                                    <p class="mb-0 me-1">Promo:</p>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(promotion.Name))
+                                {
+                                    <p class="mb-0 me-1">@promotion.Name</p>
+                                } 
+                            </div>
+
+                            @if (promotion.DiscountEUR is not null && promotion.DiscountEUR > 0.00M)
+                            {
+                                <p class="product-promotion-discount">
+                                    Discount: @promotion.DiscountEUR @GetPriceSuffixStringFromCurrency(Currency.EUR)
+                                </p>
+                            }
+                            else if (promotion.DiscountUSD is not null && promotion.DiscountUSD > 0.00M)
+                            {
+                                <p class="product-promotion-discount">
+                                    Discount: @promotion.DiscountUSD @GetPriceSuffixStringFromCurrency(Currency.USD)
+                                </p>
+                            }
+
+                            @if (promotion.StartDate is not null)
+                            {
+                                string startDateString;
+
+                                if (promotion.StartDate.Value.TimeOfDay == TimeSpan.Zero)
+                                {
+                                    startDateString = promotion.StartDate.Value.ToString("d");
+                                }
+                                else
+                                {
+                                    startDateString = promotion.StartDate.Value.ToString();
+                                }
+
+                                if (promotion.ExpirationDate is not null)
+                                {
+                                    <p>@startDateString - @expirationDateString</p>
+                                }
+                                else
+                                {
+                                    <p>Starts on: @startDateString</p>
+                                }
+                            }
+                            else
+                            {
+                                <p>Expires on: @expirationDateString</p>
+                            }
+
+                            @if (promotion.MinimumQuantity is not null && promotion.MinimumQuantity > 0)
+                            {
+                                <p class="product-promotion-discount">
+                                    Min Qty: @promotion.MinimumQuantity
+                                </p>
+                            }
+
+                            @if (promotion.MaximumQuantity is not null && promotion.MaximumQuantity > 0)
+                            {
+                                <p class="product-promotion-discount">
+                                    Max Qty: @promotion.MaximumQuantity
+                                </p>
+                            }
+
+                            @if (promotion.QuantityIncrement is not null && promotion.QuantityIncrement > 0)
+                            {
+                                <p class="product-promotion-discount">
+                                    Qty Increment: @promotion.QuantityIncrement
+                                </p>
+                            }
+
+                            @if (promotion.ExpQuantity is not null && promotion.ExpQuantity > 0)
+                            {
+                                <p class="product-promotion-discount">
+                                    Expire Qty: @promotion.ExpQuantity
+                                </p>
+                            } 
+                        </div>
+                    }
+                </div>
+            }
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <p>
+                    @(productData.Product.Status is not null ? GetStringFromProductStatus(productData.Product.Status.Value) : "-")
+                </p>
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <input id="@quantityInputId"
+                    name="quantityInput"
+                    type="number"
+                    value="@productData.OrderQuantity"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    aria-label="Quantity"
+                    class="product-list-item-quantity-input input-number-remove-spinners" />
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <button name="showProductXmlPopupButton"
+                    class="btn link-info product-list-item-column-button product-list-item-column-interactable-item">
+                    @productData.Product.Id
+                </button>
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <button name="showProductDataPopupButton"
+                    class="btn link-info product-list-item-column-button product-list-item-column-interactable-item">
+                    @(string.IsNullOrEmpty(productData.Product.Name) ? "-" : productData.Product.Name)
+                </button>
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                @if (price is not null && currency is not null)
+                {
+                    <p class="product-list-item-price">
+                        @(price.ToString() + " " + GetPriceSuffixStringFromCurrency(currency.Value))
+                    </p>
+
+                    @if (productData.SecondaryDisplayPrice is not null)
+                    {
+                        <p class="product-list-item-secondary-price">
+                            (
+                                @(productData.SecondaryDisplayPrice.Value.Price.ToString() + " "
+                                    + GetPriceSuffixStringFromCurrency(productData.SecondaryDisplayPrice.Value.Currency))
+                            )
+                        </p>
+                    }
+                }
+                else
+                {
+                    <p>-</p>
+                }
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+
+                @if (productData.ManufacturerPromotionGroupId is not null)
+                {
+                    <button name="showPromotionGroupImagesPopupButton"
+                        class="btn link-info product-list-item-column-button product-list-item-column-interactable-item"
+                        data-manufacturer-promotion-group-id="@productData.ManufacturerPromotionGroupId">
+                        @(string.IsNullOrEmpty(productData.Product.Manufacturer?.RealCompanyName) ? "-" : productData.Product.Manufacturer.RealCompanyName)
+                    </button>
+                }
+                else
+                {
+                    <p>
+                        @(string.IsNullOrEmpty(productData.Product.Manufacturer?.RealCompanyName) ? "-" : productData.Product.Manufacturer.RealCompanyName)
+                    </p>
+                }
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <p class="@(isValidEAN13Code ? string.Empty : "product-list-item-invalid-ean-code")">
+                    @(string.IsNullOrEmpty(productData.Product.PartNumber1) ? "-" : productData.Product.PartNumber1)
+                </p>
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <p>
+                    @(string.IsNullOrEmpty(productData.Product.PartNumber2) ? "-" : productData.Product.PartNumber2)
+                </p>
+            </div>
+        </td>
+        <td>
+            <div class="product-list-item-column">
+                <button name="showProductSearchStringPartsPopupButton"
+                    class="btn link-info product-list-item-column-button product-list-item-column-interactable-item">
+                    @(string.IsNullOrEmpty(productData.Product.SearchString) ? "-" : productData.Product.SearchString)
+                </button>
+            </div>
+        </td>
+    </tr>
+
+    <tr style="@(isShowingImages ? string.Empty : "display: none;")">
+
+        <td name="productImagesColumnPlaceholder"
+            colspan="@colspanOfColumnBeforeImageColumn">
+        </td>
+
+        <td colspan="6">
+            <div class="product-list-item-images-container">
+
+                @if (productData.ImageUrls != null && productData.ImageUrls.Count > 0)
+                {
+                    @for (int j = 0; j < productData.ImageUrls!.Count; j++)
+                    {
+                        string imageUrl = productData.ImageUrls[j];
+
+                        if (isShowingImages)
+                        {
+                            <img src="@imageUrl" 
+                                data-src="@imageUrl"
+                                alt="Product Image @j"
+                                class="product-list-item-image" />
+                        }
+                        else
+                        {
+                            <img data-src="@imageUrl"
+                                alt="Product Image @j"
+                                class="product-list-item-image" />
+                        }
+                    }
+                }
+            </div>
+        </td>
+    </tr>
+}
+
+@code {
+
+    [Parameter, EditorRequired] public required List<ProductDisplayData> ProductDisplayDatas { get; set; }
+    [Parameter] public List<MOSTComputers.Models.Product.Models.Product>? UnavailableProducts { get; set; } = null;
+    [Parameter] public bool ShowImages { get; set; } = false;
+}

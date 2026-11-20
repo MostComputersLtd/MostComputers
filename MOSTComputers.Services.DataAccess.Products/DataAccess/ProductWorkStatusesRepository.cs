@@ -348,24 +348,13 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
 
         await dbConnection.OpenAsync();
 
-        using SqlTransaction transaction = dbConnection.BeginTransaction();
+        using TransactionScope transactionScope = new(TransactionScopeAsyncFlowOption.Enabled);
 
-        List<Tuple<int, int>> results;
+        List<Tuple<int, int>> results = await ExecuteListQueryWithParametersInChunksAsync(
+            RunInsertAllQueryForChunkOfProductIdsAsync,
+            createRequest.ProductIds);
 
-        try
-        {
-            results = await ExecuteListQueryWithParametersInChunksAsync(
-                RunInsertAllQueryForChunkOfProductIdsAsync,
-                createRequest.ProductIds);
-
-            await transaction.CommitAsync();
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-
-            throw;
-        }
+        transactionScope.Complete();
 
         Dictionary<int, OneOf<int, ValidationResult, UnexpectedFailureResult>> output = new();
 
@@ -438,7 +427,6 @@ internal sealed class ProductWorkStatusesRepository : IProductWorkStatusesReposi
             using SqlCommand sqlCommand = new()
             {
                 Connection = dbConnection,
-                Transaction = transaction,
                 CommandText = stringBuilder.ToString(),
                 CommandType = CommandType.Text,
             };

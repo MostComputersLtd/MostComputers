@@ -1,4 +1,5 @@
 import * as fetchWithAuthRedirect from "../../../Authentication/FetchWithAuthRedirect.js"
+import * as popup from "../../../Primitives/Popup.js";
 import * as dataStore from "./DataStore.js";
 import * as editorChanges from "./EditorChanges.js";
 import * as singlePromotionFilePopup from "./SinglePromotionFilePopup.js";
@@ -32,6 +33,8 @@ export function initEventsForReadonlyInstance(dialogElement) {
 
         editorButton.addEventListener("click", onReadonlyEditorItemEditButtonClicked);
     }
+
+    popup.attachCloseEvents(dialogElement);
 }
 
 export function initEvents(dialogElement, onAddCallback, onUpdateCallback, onDeleteCallback) {
@@ -50,6 +53,8 @@ export function initEvents(dialogElement, onAddCallback, onUpdateCallback, onDel
     dialogElement.__onAddCallback = onAddCallback;
     dialogElement.__onUpdateCallback = onUpdateCallback;
     dialogElement.__onDeleteCallback = onDeleteCallback;
+
+    popup.attachCloseEvents(dialogElement);
 }
 
 function initPromotionProductFileItemEvents(editorItem) {
@@ -65,7 +70,6 @@ export function initData(data) {
 
     for (const jsonItem of data) {
 
-    console.log(jsonItem);
         promotionProductFiles.push(jsonItem);
     }
 }
@@ -146,12 +150,10 @@ async function showReadonlySinglePromotionProductFileEditorPopup(promotionProduc
     const url = `api/components/productEditor/singlePromotionFilePopup/${promotionProductFileId}`;
 
     const response = await fetch(url, {
-        method: "POST",
+        method: "GET",
         headers: {
-            "Content-Type": "application/json",
             "Accept": "text/html, application/problem+json"
-        },
-        body: JSON.stringify(request)
+        }
     });
 
     if (response == null) return;
@@ -209,7 +211,10 @@ async function showSinglePromotionProductFileEditorPopup(request) {
     const dialog = singleEditorPopupContainer.querySelector("dialog");
 
     singlePromotionFilePopup.initEvents(onSingleEditorPopupSaveButtonClicked);
-    singlePromotionFilePopup.initializePromotionFile();
+
+    const initFileResponse = singlePromotionFilePopup.initializePromotionFile();
+
+    if (initFileResponse === fetchWithAuthRedirect.AuthRedirected) return;
 
     dialog.showModal();
 }
@@ -358,8 +363,6 @@ function onEditorItemDeleteButtonClicked(e) {
 
 export function onEditorItemRelatedImageDeleted(editorId) {
 
-    const editorItem = document.getElementById(editorId);
-
     const promotionProductFileIndex = promotionProductFiles.findIndex(x => x.editorId == editorId);
 
     promotionProductFiles.splice(promotionProductFileIndex, 1);
@@ -368,5 +371,10 @@ export function onEditorItemRelatedImageDeleted(editorId) {
 
     editorChanges.setPromotionProductFileChanged(editorId, editorChanges.ItemChangeState.Deleted);
 
-    editorItem.remove();
+    const editorItem = document.getElementById(editorId);
+
+    if (editorItem) {
+
+        editorItem.remove();
+    }
 }

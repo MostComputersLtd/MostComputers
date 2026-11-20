@@ -12,7 +12,7 @@
 {
     @* <div class="popup-overlay @(IsVisible ? "show" : "")" @onclick="CloseAsync"> *@
         @* <div class="popup-content" *@
-    <dialog id="@PopupId" class="popup-dialog" closedBy="any"
+    <dialog id="@PopupId" class="popup-dialog" closedBy="@ClosedBy"
         style="margin-left: @(PopupMarginOptions.Left); margin-top: @(PopupMarginOptions.Top);
             margin-right: @(PopupMarginOptions.Right); margin-bottom: @(PopupMarginOptions.Bottom);">
         <div class="popup-content"
@@ -60,7 +60,7 @@
 }
 else
 {
-    <dialog id="@PopupId" class="popup-dialog"
+    <dialog id="@PopupId" class="popup-dialog" closedBy="@ClosedBy"
             style="margin-left:@PopupMarginOptions.Left;
                    margin-top:@PopupMarginOptions.Top;
                    margin-right:@PopupMarginOptions.Right;
@@ -85,8 +85,7 @@ else
                         <PopupFullScreenButton DialogId="@PopupId" PopupContext="null!" />
                     }
 
-                    <button class="btn-close popup-close-button ms-2"
-                            onclick='closeDialog("@PopupId")'>
+                    <button name="popupCloseButton" class="btn-close popup-close-button ms-2">
                     </button>
                 </div>
             }
@@ -146,6 +145,8 @@ else
     [Parameter] public bool DisplayHeader { get; set; } = true;
 
     [Parameter] public bool AddFullScreenButtonToHeader { get; set; } = false;
+
+    [Parameter] public string ClosedBy { get; set; } = "any";
 
     [Parameter] public RenderFragment<PopupContext>? HeaderContent { get; set; }
 

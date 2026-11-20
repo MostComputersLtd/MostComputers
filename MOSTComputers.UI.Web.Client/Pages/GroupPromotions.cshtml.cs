@@ -55,6 +55,8 @@ public class GroupPromotionsModel : PageModel
 
         foreach (PromotionGroup promotionGroup in promotionGroups)
         {
+            if (promotionGroup.IsDefault) continue;
+
             IEnumerable<GroupPromotionContent>? promotionGroupContent
                 = promotionContentsGrouped.FirstOrDefault(x => x.Key == promotionGroup.Id)?
                 .OrderBy(x => x.DisplayOrder ?? int.MaxValue);
@@ -73,7 +75,7 @@ public class GroupPromotionsModel : PageModel
                 string? modifiedPromotionHtml = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
                     groupPromotionContent.HtmlContent,
                     imageFilesForPromotion,
-					promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+                    promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
                 );
 
                 if (imageFilesForPromotion == null) continue;
@@ -97,17 +99,17 @@ public class GroupPromotionsModel : PageModel
             IEnumerable<GroupPromotionImageFileData>? imageFilesForPromotion = promotionImageFiles
                 .FirstOrDefault(x => x.Key == defaultGroupPromotion.Id);
 
-			string? modifiedPromotionHtml = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
-				defaultGroupPromotion.HtmlContent,
-				imageFilesForPromotion,
-				promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
-			);
+            string? modifiedPromotionHtml = _groupPromotionReadService.ChangeLegacyUrlsToNewOnes(
+                defaultGroupPromotion.HtmlContent,
+                imageFilesForPromotion,
+                promotionImageFile => CombinePathsWithSeparator('/', GroupPromotionImageFileEndpoints.EndpointGroupRoute, promotionImageFile.Id.ToString())
+            );
 
             GroupPromotionWithImageFileData promotionData = new()
-			{
-				GroupPromotionContent = defaultGroupPromotion,
-				ModifiedPromotionHtml = modifiedPromotionHtml,
-			};
+            {
+                GroupPromotionContent = defaultGroupPromotion,
+                ModifiedPromotionHtml = modifiedPromotionHtml,
+            };
 
             DefaultGroupPromotions.Add(promotionData);
 

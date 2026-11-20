@@ -68,13 +68,37 @@ else
                                         </svg> *@
                                     </button>
                                 }
-                                else
+                                else if (!UseNewModuleScriptLogic)
                                 {
                                     <button id="copyLinkButton" class="btn download-button copy-link-button"
                                         onclick="copyLinkToClipboardAndAnimateCopyButton('@(Path.Combine(BaseProductPagePath, $"product/productData/{Product.Id}"))')">
                                         <p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
 
                                         <CopyConfirmationCheckmarkIcon id="copyLinkButtonCheckmark" Classes="copy-link-button-checkmark" LineStroke="#FFFFFF" />
+
+                                        <svg id="copyLinkButtonCheckmark"
+                                            class="copy-link-button-checkmark"
+                                            viewBox="0 0 24 24">
+                                            <path d="M4 12 L10 18 L20 6"
+                                                fill="none"
+                                                stroke="#FFFFFF"
+                                                stroke-width="3"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button id="copyLinkButton" class="btn download-button copy-link-button"
+                                        data-product-id="@Product.Id">
+
+                                        <p id="copyLinkButtonText" class="copy-link-button-text">Copy link</p>
+
+                                        <CopyConfirmationCheckmarkIcon
+                                            id="copyLinkButtonCheckmark"
+                                            Classes="copy-link-button-checkmark"
+                                            LineStroke="#FFFFFF" />
 
                                         <svg id="copyLinkButtonCheckmark"
                                             class="copy-link-button-checkmark"
@@ -100,6 +124,7 @@ else
                         {
                             <Carousel TItem="ProductImageInCarouselDisplayData"
                                 CarouselId="@CarouselId"
+                                UseNewModuleScriptLogic="UseNewModuleScriptLogic"
                                 Items="AllCarouselContent"
                                 TransitionMs="1000"
                                 AutoPlayOptions="TimeSpan.FromSeconds(6)"
@@ -151,12 +176,34 @@ else
                                             }
                                         </button>
                                     }
-                                    else
+                                    else if (!UseNewModuleScriptLogic)
                                     {
                                         <button type="button"
                                             class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
                                             onclick="goTo('@CarouselId', @context.Index)"
                                             ondblclick="openDataUrlInNewWindow('@context.Item.ImageSrcOrHtmlContent')">
+
+                                            @if (!context.Item.IsUsingHtmlContent)
+                                            {
+                                                <img src="@context.Item.ImageSrcOrHtmlContent" class="carousel-indicator-image" alt="Navigate to image">
+                                            }
+                                            else
+                                            {
+                                                <div class="carousel-indicator-html-content-item">
+                                                    <div class="carousel-indicator-html-content-container">
+
+                                                        @((MarkupString)context.Item.ImageSrcOrHtmlContent)
+                                                    </div>
+                                                </div>
+                                            }
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                            name="carouselIndicator"
+                                            class="btn carousel-indicator @(context.IsActive ? "active-carousel-indicator" : string.Empty)"
+                                            data-image-or-html-content-url="@context.Item.ImageSrcOrHtmlContent">
 
                                             @if (!context.Item.IsUsingHtmlContent)
                                             {
@@ -475,6 +522,8 @@ else
     private bool IsRenderedInteractively => AssignedRenderMode != null;
 
     [Parameter, EditorRequired] public required string BaseProductPagePath { get; set; }
+
+    [Parameter] public bool UseNewModuleScriptLogic { get; set; } = false;
 
     [Parameter] public bool ShowProductIdData { get; set; } = false;
 

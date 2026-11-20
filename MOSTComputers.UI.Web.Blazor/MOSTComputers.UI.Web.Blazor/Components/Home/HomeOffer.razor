@@ -27,7 +27,7 @@
 
 @if (PageData is not null)
 {
-    string currentTimeString = PageData.CurrentTime.ToString();
+    string currentTimeString = PageData.CurrentDate.ToString("dd.MM.yyyy");
 
     <div class="home-offer-page">
 
@@ -45,7 +45,6 @@
                     <p>Количество</p>
                     <p>Ед. цена (EUR)</p>
                     <p>Сума (EUR)</p>
-                    <p class="offer-products-grid-info-heading">Информация</p>
                 </div>
 
                 @foreach (ProductOfferItemDisplayData productQuantityData in PageData.Items)
@@ -54,7 +53,9 @@
 
                         <p class="product-id-text">@productQuantityData.Id</p>
 
-                        <p>@(productQuantityData.Name ?? "-")</p>
+                        <a href="/product/productData/@productQuantityData.Id" target="_blank" class="product-page-link link-info">
+                            @(productQuantityData.Name ?? "-")
+                        </a>
 
                         <input id="productQuantityInput-@productQuantityData.Id"
                             name="productQuantityInput"
@@ -66,17 +67,12 @@
                             name="productSinglePriceInput"
                             type="number"
                             class="product-single-price-input"
-                            value="@productQuantityData.SinglePriceEUR.ToString("F2")"/>
+                            value="@productQuantityData.SinglePriceEUR.ToString("F2")"
+                            step="0.01"/>
 
                         <p name="productTotalPriceText" class="product-total-price-text">
                             @productQuantityData.TotalPriceEUR.ToString("F2")
                         </p>
-
-                        <div class="product-info-item">
-                            <button name="productShowInformationPopupButton" type="button" class="btn btn-secondary">
-                                Информация
-                            </button>
-                        </div>
                     </div>
                 }
 
@@ -120,16 +116,6 @@
                     <p>Print</p>
                     <div class="round-loader-default"></div>
                 </button>
-
-                <button id="copyButton" type="button" class="btn btn-secondary button-with-loader">
-                    <p>Copy</p>
-                    <div class="round-loader-default"></div>
-                </button>
-
-                <button id="generateButton" type="button" class="btn btn-secondary button-with-loader">
-                    <p>Generate</p>
-                    <div class="round-loader-default"></div>
-                </button> 
             </div>
 
             <div id="shareButtonOperation" class="share-operation no-item">
@@ -155,7 +141,7 @@
         public required decimal NetPrice { get; init; }
         public required decimal VatPrice { get; init; }
         public required decimal TotalPrice { get; init; }
-        public required DateTime CurrentTime { get; init; }
+        public required DateTime CurrentDate { get; init; }
     }
 
     private sealed class ProductOfferItemDisplayData
@@ -248,7 +234,7 @@
         PageData = new()
         {
             Items = items,
-            CurrentTime = DateTime.Now,
+            CurrentDate = DateTime.Today,
             NetPrice = netPrice,
             VatPrice = vatPrice,
             TotalPrice = totalPrice,
@@ -260,7 +246,7 @@
         return new()
         {
             Items = [],
-            CurrentTime = DateTime.Now,
+            CurrentDate = DateTime.Today,
             NetPrice = 0M,
             VatPrice = 0M,
             TotalPrice = 0M,

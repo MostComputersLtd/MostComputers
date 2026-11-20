@@ -4,6 +4,9 @@ const promotionImagesListId = "promotionImages";
 const displayedGroupIdAttribute = "data-displayed-group-id";
 const userFocusedPromotionIdAttribute = "data-user-focused-promotion-id";
 
+const activePromotionImagesClass = "active";
+const selectedPromotionGroupClass = "selected";
+
 function getPromotionElementId(promotionId, groupId = null) {
 
     if (groupId == null) {
@@ -13,9 +16,6 @@ function getPromotionElementId(promotionId, groupId = null) {
 
     return `groupPromotion-${promotionId}`;
 }
-
-const activePromotionImagesClass = "active";
-const selectedPromotionGroupClass = "selected";
 
 window.addEventListener("pageshow", scrollToUserFocusedElement);
 window.addEventListener("DOMContentLoaded", scrollToUserFocusedElement);

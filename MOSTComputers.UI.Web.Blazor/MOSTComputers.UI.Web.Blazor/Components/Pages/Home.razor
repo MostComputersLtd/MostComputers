@@ -27,13 +27,8 @@
 
     <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
-    @* <script src="@_promotionGroupImagesViewerScriptUrlWithVersion!"></script> *@
-    <script src="@Assets[_groupPromotionsDisplayScriptUrl]"></script>
-    <script src="@Assets[_carouselScriptUrl]"></script>
-    <script src="@Assets[_productDataScriptUrl]"></script>
-    <script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
-    <script src="@Assets[_popupScriptUrl]"></script>
-    <script src="@Assets[_pageScriptUrl]"></script>
+    <script type="module" src="@Assets[_groupPromotionsDisplayScriptUrl]"></script>
+    <script type="module" src="@Assets[_pageScriptUrl]"></script>
 </HeadContent>	
 
 <div class="home-page">
@@ -48,25 +43,23 @@
                     aria-label="User Input"
                     placeholder="Search..." />
 
-                <button class="btn header-search-input-help-button" onclick="showSearchHelpPopup()">
+                <button id="showSearchHelpPopupButton" class="btn header-search-input-help-button">
                     ?
                 </button>
             </li>
 
             <li class="header-search-button-list-item">
-                <button id="productTableSearchButton" type="button"
-                    class="btn btn-outline-primary search-button"
-                    aria-label="Search"
-                    onclick="searchProductsAndDisplaySearchButtonLoader()">
-                    Search
-                </button>
 
-                <div id="productTableSearchLoader" class="search-button-loader round-loader-default"></div>
+                <button id="productTableSearchButton" type="button"
+                    class="btn btn-outline-primary button-with-loader"
+                    aria-label="Search">
+                    <p>Search</p>
+                    <div class="round-loader-default"></div>
+                </button>
             </li>
 
             <li class="header-list-item">
                 <select id="productTableCategorySelect"
-                    onchange="setManufacturersForCategory()"
                     aria-label="Product Category">
 
                     <option value="">All</option>
@@ -81,7 +74,6 @@
             <li class="header-list-item">
                 <select id="productTableManufacturerSelect"
                     class="product-table-manufacturer-select"
-                    onchange="searchProductsAndDisplaySearchButtonLoader()"
                     aria-label="Manufacturer">
 
                     @if (SelectedManufacturerId == string.Empty)
@@ -115,9 +107,9 @@
                 <select id="productTableProductStatusSelect"
                      aria-label="Product status">
 
-                    @foreach (ProductStatusSearchOptions productStatus in ProductStatusesInSelect)
+                    @foreach (HomeProductStatusSearchOptions productStatus in ProductStatusesInSelect)
                     {
-                        <option value="@((int)productStatus)">@GetStringFromProductStatusSearchOptions(productStatus)</option>
+                        <option value="@((int)productStatus)">@GetStringFromHomeProductStatusSearchOptions(productStatus)</option>
                     }
                 </select>
             </li>
@@ -168,19 +160,16 @@
             <li class="header-list-item header-show-images-list-item">
                 <label for="productTableResultsShowImagesCheckbox" class="header-show-images-label">Images:</label>
 
-                <input id="productTableResultsShowImagesCheckbox" type="checkbox" alt="Show Images"
-                    onchange="toggleShowImages()" />
+                <input id="productTableResultsShowImagesCheckbox" type="checkbox" alt="Show Images" />
             </li>
 
             <li class="header-list-item header-order-summary-list-item">
                 <label id="productTableOrderSummaryLabel" type="button" class="btn btn-secondary">
                     <span id="productTableOrderSummaryLabelText">Order</span>
-                    <input id="productTableOrderSummaryCheckbox" type="checkbox"
-                        onchange="toggleOrderSummary()" hidden />
+                    <input id="productTableOrderSummaryCheckbox" type="checkbox" hidden />
                 </label>
 
-                <button id="productTableOfferPageButton" type="button" class="btn btn-secondary"
-                    onclick="openOfferPage()">
+                <button id="productTableOfferPageButton" type="button" class="btn btn-secondary">
                     Print
                 </button>
             </li>
@@ -197,7 +186,7 @@
 <div id="productXmlPopupContainer">
 </div>
 
-<div id="productDisplayPopupContainer">
+<div id="productDataPopupContainer">
 </div>
 
 <div id="promotionGroupImagesPopupContainer">
@@ -233,12 +222,20 @@
         public List<Promotion>? Promotions { get; set; }
 
         public int? ManufacturerPromotionGroupId { get; set; }
+        public bool IsExternalOrderSummaryItem { get; set; } = false;
     }
 
     public struct DisplayPrice
     {
         public required decimal Price { get; set; }
         public required Currency Currency { get; set; }
+    }
+
+    public enum HomeProductStatusSearchOptions
+    {
+        Available = 0,
+        Call = 1,
+        AvailableAndCall = 2,
     }
 
     public sealed class ProductDataPopupData
@@ -274,12 +271,7 @@
         public required List<SearchStringPartOriginData> SearchStringOriginDataList { get; set; }
     }
 
-    // private const string _promotionGroupImagesViewerScriptUrl = "js/Product/Promotions/Groups/PromotionGroupImagesViewer.js";
 	private const string _groupPromotionsDisplayScriptUrl = "/js/Promotions/GroupPromotionsDisplay.js";
-    private const string _carouselScriptUrl = "js/Carousel/Carousel.js";
-    private const string _productDataScriptUrl = "js/Product/ProductData.js";
-    private const string _popupFullScreenButtonScriptUrl = "js/Popup/PopupFullScreenButton.js";
-    private const string _popupScriptUrl = "js/Popup/Popup.js";
     private const string _pageScriptUrl = "js/Pages/Home.js";
 
 	public string? UserInputString { get; set; } = string.Empty;
@@ -293,12 +285,12 @@
     public List<Manufacturer> ManufacturersInSelect { get; set; } = new();
     public List<Manufacturer> AllManufacturers { get; set; } = new();
 
-    public string SelectedProductStatus { get; set; } = ((int)ProductStatusSearchOptions.AvailableAndCall).ToString();
+    public string SelectedProductStatus { get; set; } = ((int)HomeProductStatusSearchOptions.AvailableAndCall).ToString();
 
-    public List<ProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
-        ProductStatusSearchOptions.AvailableAndCall,
-        ProductStatusSearchOptions.Available,
-        ProductStatusSearchOptions.Call,
+    public List<HomeProductStatusSearchOptions> ProductStatusesInSelect { get; set; } = [
+        HomeProductStatusSearchOptions.AvailableAndCall,
+        HomeProductStatusSearchOptions.Available,
+        HomeProductStatusSearchOptions.Call,
     ];
 
     public string SelectedPromotionSearchOptions { get; set; } = string.Empty;
@@ -346,5 +338,16 @@
     private async Task<List<Manufacturer>> GetAllManufacturersAsync()
     {
         return await ManufacturerService.GetAllWithActiveProductsAsync();
+    }
+
+    public static string? GetStringFromHomeProductStatusSearchOptions(HomeProductStatusSearchOptions productStatusEnum)
+    {
+        return productStatusEnum switch
+        {
+            HomeProductStatusSearchOptions.Available => "Avl",
+            HomeProductStatusSearchOptions.Call => "Call",
+            HomeProductStatusSearchOptions.AvailableAndCall => "Avl & Call",
+            _ => null
+        };
     }
 }

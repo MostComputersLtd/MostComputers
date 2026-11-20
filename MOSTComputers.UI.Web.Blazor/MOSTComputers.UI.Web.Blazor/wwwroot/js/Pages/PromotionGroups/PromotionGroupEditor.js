@@ -1,4 +1,5 @@
 ﻿import * as fetchWithAuthRedirect from "../../Authentication/FetchWithAuthRedirect.js";
+import * as popup from "../../Primitives/Popup.js";
 import * as common from "./Common.js";
 import * as imageResize from "./ImageResize.js";
 
@@ -39,6 +40,8 @@ export async function openPromotionGroupEditorPopup(id = null) {
     }
 
     const promotionGroupEditorPopup = document.getElementById(common.promotionGroupEditorPopupId);
+
+    popup.attachCloseEvents(promotionGroupEditorPopup);
 
     promotionGroupEditorPopup.showModal();
 }
@@ -330,6 +333,8 @@ export async function openResizePopupForPromotionGroupImage(e) {
     imageResize.initEventsAndInitialDataAsync(onImageResizeConfirmButtonClicked);
 
     const dialog = imageResizePopupContainer.querySelector("dialog");
+
+    popup.attachCloseEvents(dialog);
 
     dialog.showModal();
 }

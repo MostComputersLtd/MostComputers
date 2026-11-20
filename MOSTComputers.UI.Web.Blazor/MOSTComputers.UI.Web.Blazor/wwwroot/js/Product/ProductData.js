@@ -1,6 +1,15 @@
-﻿const copyLinkButtonId = "copyLinkButton";
+import * as urlUtils from "../Common/UrlUtils.js";
+import * as carouselModule from "../Primitives/Carousel.js";
+
+const copyLinkButtonId = "copyLinkButton";
 const copyLinkButtonTextId = "copyLinkButtonText";
 const copyLinkButtonCheckmarkId = "copyLinkButtonCheckmark";
+
+const carouselIndicatorName = "carouselIndicator";
+
+const copyLinkButtonProductIdAttribute = "data-product-id";
+
+const carouselIndicatorImageOrHtmlContentUrlAttribute = "data-image-or-html-content-url";
 
 const copyLinkButtonCheckedClass = "link-copied";
 
@@ -10,7 +19,52 @@ const htmlContentInCarouselContainerClass = "carousel-html-content-container";
 const htmlContentInCarouselIndicatorItemClass = "carousel-indicator-html-content-item";
 const htmlContentInCarouselIndicatorContainerClass = "carousel-indicator-html-content-container";
 
-async function resizeHtmlContentInCarousel(carousel) {
+export async function initEventsAndCarousel(carousel) {
+
+    const copyLinkButton = document.getElementById(copyLinkButtonId);
+
+    copyLinkButton.addEventListener("click", copyLinkToClipboardAndAnimateCopyButton)
+
+    if (carousel) {
+
+        const carouselIndicators = carousel.querySelectorAll(`[name='${carouselIndicatorName}']`);
+
+        for (const carouselIndicator of carouselIndicators) {
+
+            carouselIndicator.addEventListener("dblclick", openCarouselIndicatorDataUrlInNewWindow);
+        }
+
+        carouselModule.initNavigationEvents(carousel);
+
+        await carouselModule.waitForAllImagesInContainerToDecode(carousel);
+
+        await resizeHtmlContentInCarousel(carousel);
+
+        await carouselModule.initAutoSlideEventsAsync(carousel, true, true);
+    } 
+}
+
+export function onDocumentVisibilityChange(carousel) {
+
+    if (!carousel) return;
+
+    if (document.hidden) {
+
+        carouselModule.stopAutoSlide(carousel);
+    }
+    else {
+        carouselModule.startAutoSlide(carousel);
+    }
+}
+
+function openCarouselIndicatorDataUrlInNewWindow(e) {
+
+    const url = e.currentTarget.getAttribute(carouselIndicatorImageOrHtmlContentUrlAttribute);
+
+    urlUtils.openDataUrlInNewWindow(url);
+}
+
+export async function resizeHtmlContentInCarousel(carousel) {
 
     const htmlItemsInCarouselViewport = [...carousel.getElementsByClassName(htmlContentInCarouselItemClass)];
 
@@ -22,7 +76,7 @@ async function resizeHtmlContentInCarousel(carousel) {
 
         const htmlContainer = htmlItem.querySelector(`.${htmlContentInCarouselContainerClass}`)
 
-        await waitForAllImagesInContainerToLoad(htmlContainer);
+        await carouselModule.waitForAllImagesInContainerToDecode(htmlContainer);
 
         const scale = Math.min(
             htmlItem.clientWidth / htmlContainer.scrollWidth,
@@ -37,7 +91,7 @@ async function resizeHtmlContentInCarousel(carousel) {
 
         const htmlContainer = htmlItem.querySelector(`.${htmlContentInCarouselIndicatorContainerClass}`)
 
-        await waitForAllImagesInContainerToLoad(htmlContainer);
+        await carouselModule.waitForAllImagesInContainerToDecode(htmlContainer);
 
         const scale = Math.min(
             htmlItem.clientWidth / htmlContainer.scrollWidth,
@@ -50,27 +104,11 @@ async function resizeHtmlContentInCarousel(carousel) {
     }
 }
 
-async function waitForAllImagesInContainerToLoad(container) {
+async function copyLinkToClipboardAndAnimateCopyButton(e) {
 
-    const images = [...container.querySelectorAll('img')];
+    const productId = e.currentTarget.getAttribute(copyLinkButtonProductIdAttribute);
 
-    if (images.length === 0) return;
-
-    await Promise.all(
-
-        images.map(img => {
-
-            if (img.complete) return Promise.resolve();
-
-            return new Promise(resolve =>
-                img.addEventListener('load', resolve, { once: true }));
-        })
-    );
-}
-
-async function copyLinkToClipboardAndAnimateCopyButton(uriRelativeToRoot) {
-
-    const success = copyLinkToClipboard(uriRelativeToRoot);
+    const success = copyLinkToClipboard(`/product/productData/${productId}`);
 
     if (!success) return;
 
@@ -103,8 +141,4 @@ async function copyLinkToClipboard(uriRelativeToRoot) {
     catch (error) {
         return false;
     }
-}
-
-function openDataUrlInNewWindow(url) {
-    window.open(url, '_blank');
 }

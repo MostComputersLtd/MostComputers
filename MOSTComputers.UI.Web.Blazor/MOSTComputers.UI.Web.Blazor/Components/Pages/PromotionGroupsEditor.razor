@@ -18,9 +18,6 @@
     <link href="@Assets["css/ScopeHtmlAndBodyHeightToViewport.css"]" rel="stylesheet" />
 
     <script type="module" src="@Assets[_pageScriptUrl]"></script>
-
-    <script src="@Assets[_popupFullScreenButtonScriptUrl]"></script>
-    <script src="@Assets[_popupScriptUrl]"></script>
 </HeadContent>
 
 <div class="promotion-group-editor-layout">
@@ -88,15 +85,16 @@
 
 @code {
 
-    private const string _popupFullScreenButtonScriptUrl = "/js/Popup/PopupFullScreenButton.js";
-    private const string _popupScriptUrl = "/js/Popup/Popup.js";
-
     internal const string _pageScriptUrl = "/js/Pages/PromotionGroups/Page.js";
 
     public List<PromotionGroup> PromotionGroupsInSelect = new();    
 
     protected override async Task OnInitializedAsync()
     {
-        PromotionGroupsInSelect = await PromotionGroupService.GetAllAsync();
+        List<PromotionGroup> promotionGroupsInSelect = await PromotionGroupService.GetAllAsync();
+
+        promotionGroupsInSelect.RemoveAll(x => x.IsDefault);
+
+        PromotionGroupsInSelect = promotionGroupsInSelect;
     }
 }

@@ -426,7 +426,7 @@ internal static class SingleProductEditorComponentEndpoints
 
             string editorId = GenerateDocumentId(productDocument.Id);
 
-            string documentBrowserUrl = JoinUrlPath(ProductDocumentEndpoints.EndpointGroupRoute, productDocument.Id.ToString());
+            string documentBrowserUrl = '/' + JoinUrlPath(ProductDocumentEndpoints.EndpointGroupRoute, productDocument.Id.ToString());
 
             ProductDocumentListItem.ProductDocumentDisplayData productDocumentDisplayData = new()
             {

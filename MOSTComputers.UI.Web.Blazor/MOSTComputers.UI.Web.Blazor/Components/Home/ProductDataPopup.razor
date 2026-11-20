@@ -8,7 +8,7 @@
     Product product = ProductDataPopupData.Product;
 }
 
-<Popup @bind-IsVisible='@ProductDataPopupData.IsVisible'
+<Popup IsVisible='@ProductDataPopupData.IsVisible'
     PopupMarginOptions='MarginOptions'
     AddFullScreenButtonToHeader="true"
     AdditionalHeaderAttributes='new()
@@ -39,6 +39,7 @@
 
     <ChildContent>
         <MOSTComputers.UI.Web.Blazor.Components.Product.ProductData Product="product"
+            UseNewModuleScriptLogic="true"
 			BaseProductPagePath="@ProductDataPopupData.BaseProductPagePath"
             PriceData="ProductDataPopupData.ProductDataPopupPriceData"
             ProductProperties="ProductDataPopupData.ProductProperties"

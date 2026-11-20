@@ -62,26 +62,7 @@
 .header-search-button-list-item {
     margin-bottom: 0.5em;
     margin-right: 0.5em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
-
-.search-button {
-    width: 100%;
-}
-
-    .search-button.loading {
-        display: none;
-    }
-
-.search-button-loader {
-    display: none;
-}
-
-    .search-button-loader.loading {
-        display: unset;
-    }
 
 .product-table-manufacturer-select {
     min-width: 9.75em;
@@ -145,6 +126,22 @@
     position: sticky;
     top: 0;
     background-color: inherit;
+}
+
+::deep .product-table-unavailable-products-row {
+    background-color: #F76464;
+}
+
+::deep .product-table-unavailable-products-row-text-item {
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+}
+
+::deep .product-table-unavailable-products-text {
+    font-size: medium;
+}
+
+::deep .product-table-unavailable-products-description-text {
+    font-weight: 600;
 }
 
 ::deep .product-promotions-promotion-status-image {
@@ -259,6 +256,7 @@
     max-height: 6em;
     object-fit: contain;
     margin-right: 0.25em;
+    cursor: pointer;
 }
 
 ::deep .group-promotion-display-container {

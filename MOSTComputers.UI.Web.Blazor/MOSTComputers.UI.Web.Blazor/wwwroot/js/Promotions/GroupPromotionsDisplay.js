@@ -1,8 +1,15 @@
 ﻿const promotionGroupsListId = "promotionGroups";
 const promotionImagesListId = "promotionImages";
 
+const promotionGroupItemName = "promotionGroupItem";
+
 const displayedGroupIdAttribute = "data-displayed-group-id";
 const userFocusedPromotionIdAttribute = "data-user-focused-promotion-id";
+
+const itemImageContainerIdAttribute = "data-image-container-id";
+
+const activePromotionImagesClass = "active";
+const selectedPromotionGroupClass = "selected";
 
 function getPromotionElementId(promotionId, groupId = null) {
 
@@ -14,10 +21,19 @@ function getPromotionElementId(promotionId, groupId = null) {
     return `groupPromotion-${promotionId}`;
 }
 
-const activePromotionImagesClass = "active";
-const selectedPromotionGroupClass = "selected";
+export function initEvents() {
 
-function scrollToUserFocusedElement() {
+    const promotionGroupsList = document.getElementById(promotionGroupsListId);
+
+    const promotionGroupItems = promotionGroupsList.querySelectorAll(`[name='${promotionGroupItemName}']`);
+
+    for (const promotionGroupItem of promotionGroupItems) {
+
+        promotionGroupItem.addEventListener("click", changeActiveDisplayedGroup);
+    }
+}
+
+export function scrollToUserFocusedElement() {
 
     const promotionImagesList = document.getElementById(promotionImagesListId);
 
@@ -49,13 +65,16 @@ function scrollToUserFocusedElement() {
     elementToShow.scrollIntoView({ behavior: "instant", block: "center" });
 }
 
-function changeActiveDisplayedGroup(newActiveImagesContainerId, newActiveGroupButtonId) {
+function changeActiveDisplayedGroup(e) {
+
+    const newActiveGroupButton = e.currentTarget;
+
+    const newActiveImagesContainerId = newActiveGroupButton.getAttribute(itemImageContainerIdAttribute);
+
+    const newActiveImagesContainer = document.getElementById(newActiveImagesContainerId);
 
     const promotionGroupsList = document.getElementById(promotionGroupsListId);
     const promotionImagesList = document.getElementById(promotionImagesListId);
-
-    const newActiveImagesContainer = document.getElementById(newActiveImagesContainerId);
-    const newActiveGroupButton = document.getElementById(newActiveGroupButtonId);
 
     const currentActiveImagesContainer = promotionImagesList.querySelector(`.${activePromotionImagesClass}`);
     const currentActiveGroupButton = promotionGroupsList.querySelector(`.${selectedPromotionGroupClass}`);
